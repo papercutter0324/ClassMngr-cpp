@@ -66,8 +66,6 @@ classmngr_add_qt_test(
         NAME OnScreenKeyboard
         SOURCES
             tests/on_screen_keyboard_tests.cpp
-            src/ui/shared/input/hangul_composer.cpp
-            src/ui/shared/widgets/on_screen_keyboard.cpp
         LIBRARIES
             Qt6::Core
             Qt6::Gui
@@ -75,6 +73,11 @@ classmngr_add_qt_test(
             Qt6::Widgets
         OFFSCREEN
     )
+
+target_sources(ClassMngrOnScreenKeyboardTests
+    PRIVATE
+        $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
+)
 
     qt_add_resources(ClassMngrOnScreenKeyboardTests keyboard_test_resources
         PREFIX "/"

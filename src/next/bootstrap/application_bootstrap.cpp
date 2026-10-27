@@ -13,6 +13,7 @@
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "next/platform/settings_manager_preferences_port.h"
+#include "next/platform/settings_manager_save_mode_preferences_port.h"
 #include "next/platform/resource_document_catalog_port.h"
 #include "next/platform/workspace_store_gateway.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
@@ -32,6 +33,8 @@
 #include "next/ui/qt_file_dialog_presenter.h"
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
+#include "next/ui/teacher_profile_page.h"
+#include "next/platform/teacher_validator_teacher_profile_validation_policy.h"
 
 #include <QApplication>
 #include <QCoreApplication>
@@ -224,6 +227,33 @@ namespace
     };
 }
 
+[[nodiscard]] Ui::PageDescriptor teacherProfilePageDescriptor(
+    std::function<Ui::TeacherProfilePageActions()> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(QStringLiteral("teacher_profile")),
+        .label = navigationLabel("Teacher Profile"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::TeacherProfilePage>(
+                    context,
+                    actionsFactory()
+                    );
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)
+            };
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+}
+
 [[nodiscard]] std::vector<Ui::NavigationNode> placeholderNavigationTree()
 {
     using Ui::NavigationNode;
@@ -248,7 +278,12 @@ namespace
                 NavigationNode::group(
                     QStringLiteral("teachers_all_korean"),
                     navigationLabel("Korean Teachers"),
-                    {},
+                    {
+                        NavigationNode::page(
+                            pageId(QStringLiteral("teacher_profile")),
+                            workspace
+                            )
+                    },
                     workspace,
                     true
                     ),
@@ -745,6 +780,54 @@ Application::StartupResult ApplicationBootstrap::start()
             {
                 initialPageFailure = registration.error().message;
                 break;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const Ui::PageHostResult<void> registration =
+                m_shell->pageHost().registerPage(teacherProfilePageDescriptor([this] {
+                    Ui::TeacherProfilePageActions actions;
+                    actions.saveMode =
+                        Platform::SettingsManagerSaveModePreferencesPort().read();
+                    actions.validate = [this](
+                        const Domain::TeacherProfile& profile
+                        ) {
+                        if (auto* const gateway =
+                                dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                                    m_workspaceGateway.get()))
+                        {
+                            return gateway->validateTeacherProfile(profile);
+                        }
+                        Platform::TeacherValidatorTeacherProfileValidationPolicy
+                            validation;
+                        return validation.validate(profile);
+                    };
+                    actions.edit = [this](
+                        const Application::TeacherProfileEditRequest& request
+                        ) {
+                        if (auto* const gateway =
+                                dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                                    m_workspaceGateway.get()))
+                        {
+                            return gateway->editTeacherProfile(request);
+                        }
+                        return Application::TeacherProfileEditResult{
+                            std::unexpected(Application::TeacherProfileEditFailure{
+                                .kind = Application::TeacherProfileEditFailureKind::UpdateFailed,
+                                .cause = {
+                                    .code = Domain::ErrorCode::NotFound,
+                                    .message = "The active workspace store is unavailable.",
+                                    .recoverable = true
+                                }
+                            })
+                        };
+                    };
+                    return actions;
+                }));
+            if (!registration)
+            {
+                initialPageFailure = registration.error().message;
             }
         }
 
@@ -3569,6 +3652,103 @@ Ui::ApplicationShell* ApplicationBootstrap::shell() noexcept
 const Ui::ApplicationShell* ApplicationBootstrap::shell() const noexcept
 {
     return m_shell.get();
+}
+
+bool ApplicationBootstrap::openTeacherProfile(
+    const Domain::TeacherId& teacherId
+    )
+{
+    if (!m_shell)
+    {
+        return false;
+    }
+
+    auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get()
+        );
+    if (!gateway)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The active workspace store is unavailable.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return false;
+    }
+
+    // Read first so an invalid or missing requested profile cannot disturb the
+    // currently selected page or its in-memory draft.
+    const Application::TeacherProfileReadResult loaded =
+        gateway->readTeacherProfile(teacherId);
+    if (!loaded)
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = loaded.error().message,
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return false;
+    }
+
+    const QString profilePageKey = QStringLiteral("teacher_profile");
+    const auto activePageKey = m_shell->pageHost().activePageKey();
+    auto* profilePage = dynamic_cast<Ui::TeacherProfilePage*>(
+        m_shell->pageHost().pageInstance(profilePageKey)
+        );
+    if (activePageKey == std::optional<QString>(profilePageKey))
+    {
+        if (!profilePage)
+        {
+            static_cast<void>(m_shell->notificationPort().show(
+                Application::NotificationRequest{
+                    .message = "The Teacher Profile page is unavailable.",
+                    .severity = Application::NotificationSeverity::Error
+                }
+                ));
+            return false;
+        }
+        if (profilePage->selectedTeacherId()
+            == std::optional<Domain::TeacherId>(teacherId))
+        {
+            return true;
+        }
+
+        // ApplicationShell intentionally short-circuits same-page navigation,
+        // so resolve a dirty profile explicitly before replacing its ID.
+        if (!resolveActivePageChangesBeforeLeaving(
+                "opening another teacher profile"))
+        {
+            return false;
+        }
+        return profilePage->displayProfile(loaded.value());
+    }
+
+    // For a different active page, the normal shell guard owns Save/Discard/
+    // Cancel. No profile state is committed until the guarded switch succeeds.
+    if (!m_shell->navigateTo(
+            pageId(profilePageKey),
+            Ui::NavigationCause::Selection
+            ))
+    {
+        return false;
+    }
+
+    profilePage = dynamic_cast<Ui::TeacherProfilePage*>(
+        m_shell->pageHost().pageInstance(profilePageKey)
+        );
+    if (!profilePage || !profilePage->displayProfile(loaded.value()))
+    {
+        static_cast<void>(m_shell->notificationPort().show(
+            Application::NotificationRequest{
+                .message = "The Teacher Profile page could not display the selected teacher.",
+                .severity = Application::NotificationSeverity::Error
+            }
+            ));
+        return false;
+    }
+    return true;
 }
 
 const std::optional<Application::StartupWorkspaceOutcome>&

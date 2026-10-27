@@ -65,6 +65,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrData ${CLASSMNGR_DATA_SOURCES})
     _classmngr_record_manifest(ClassMngrDomain ${CLASSMNGR_DOMAIN_SOURCES})
     _classmngr_record_manifest(ClassMngrUiShared ${CLASSMNGR_UI_SHARED_SOURCES})
+    _classmngr_record_manifest(ClassMngrOnScreenKeyboard
+        ${CLASSMNGR_ON_SCREEN_KEYBOARD_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrFeatures ${CLASSMNGR_FEATURES_SOURCES})
     _classmngr_record_manifest(ClassMngrSignature ${CLASSMNGR_SIGNATURE_SOURCES})
     _classmngr_record_manifest(ClassMngrAppServices ${CLASSMNGR_APP_SERVICES_SOURCES})

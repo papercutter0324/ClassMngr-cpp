@@ -18,6 +18,7 @@
 #include "next/application/teacher_create.h"
 #include "next/application/workspace_contracts.h"
 #include "next/application/workspace_state.h"
+#include "next/domain/domain_types.h"
 #include "next/bootstrap/startup_diagnostics_sink.h"
 #include "next/bootstrap/startup_update_dispatcher.h"
 #include "next/resources/resource_root_resolver.h"
@@ -133,6 +134,9 @@ public:
     [[nodiscard]] bool shutdownRequested() const noexcept;
     [[nodiscard]] Ui::ApplicationShell* shell() noexcept;
     [[nodiscard]] const Ui::ApplicationShell* shell() const noexcept;
+    // Opens the selected Korean teacher profile through the static profile
+    // page route. Callers provide only a typed identity, never page state.
+    [[nodiscard]] bool openTeacherProfile(const Domain::TeacherId& teacherId);
     [[nodiscard]] const std::optional<Application::StartupWorkspaceOutcome>&
     startupWorkspaceOutcome() const noexcept;
     [[nodiscard]] Application::WorkspaceStateSnapshot

@@ -9853,6 +9853,51 @@ Version: %2</source>
     </message>
 </context>
 <context>
+    <name>TeacherProfilePage</name>
+    <message><source>Teacher Information</source><translation>교사 정보</translation></message>
+    <message><source>Teacher Information for %1</source><translation>%1 선생님 정보</translation></message>
+    <message><source>View and manage teacher details.</source><translation>교사 세부 정보를 확인하고 관리합니다.</translation></message>
+    <message><source>Select a teacher to view or edit their profile.</source><translation>교사 프로필을 보거나 수정하려면 교사를 선택하세요.</translation></message>
+    <message><source>Teacher Details</source><translation>교사 세부 정보</translation></message>
+    <message><source>Connectivity</source><translation>연결 정보</translation></message>
+    <message><source>Notes</source><translation>노트</translation></message>
+    <message><source>Not set</source><translation>설정 안 됨</translation></message>
+    <message><source>Korean Keyboard</source><translation>한국어 키보드</translation></message>
+    <message><source>Open Korean / English on-screen keyboard</source><translation>한/영 화면 키보드 열기</translation></message>
+    <message><source>Save Changes</source><translation>변경 사항 저장</translation></message>
+    <message><source>Korean Name</source><translation>한국어 이름</translation></message>
+    <message><source>English Name</source><translation>영어 이름</translation></message>
+    <message><source>Preferred Spelling</source><translation>선호 표기</translation></message>
+    <message><source>Preferred Name</source><translation>선호 이름</translation></message>
+    <message><source>Room Number</source><translation>교실 번호</translation></message>
+    <message><source>Birthday</source><translation>생일</translation></message>
+    <message><source>Phone Number</source><translation>전화번호</translation></message>
+    <message><source>Internet Type</source><translation>인터넷 유형</translation></message>
+    <message><source>WiFi Name</source><translation>WiFi 이름</translation></message>
+    <message><source>WiFi Password</source><translation>WiFi 비밀번호</translation></message>
+    <message><source>Projection Type</source><translation>프로젝션 유형</translation></message>
+    <message><source>Both</source><translation>둘 다</translation></message>
+    <message><source>Any</source><translation>무관</translation></message>
+    <message><source>N/A</source><translation>해당 없음</translation></message>
+    <message><source>Zoom ID</source><translation>Zoom ID</translation></message>
+    <message><source>Zoom Password</source><translation>Zoom 비밀번호</translation></message>
+    <message><source>This field is required.</source><translation>필수 입력 항목입니다.</translation></message>
+    <message><source>Enter no more than %1 characters.</source><translation>최대 %1자까지 입력할 수 있습니다.</translation></message>
+    <message><source>Choose a listed value.</source><translation>목록에서 값을 선택하세요.</translation></message>
+    <message><source>Review this value.</source><translation>이 값을 확인하세요.</translation></message>
+    <message><source>Validation is temporarily unavailable.</source><translation>현재 유효성 검사를 사용할 수 없습니다.</translation></message>
+    <message><source>Enter a valid value.</source><translation>올바른 값을 입력하세요.</translation></message>
+    <message><source>Fix the highlighted errors before saving.</source><translation>저장하기 전에 강조 표시된 오류를 수정하세요.</translation></message>
+    <message><source>Review the highlighted warnings. You can still save.</source><translation>강조 표시된 경고를 확인하세요. 계속 저장할 수 있습니다.</translation></message>
+    <message><source>Select a teacher before saving.</source><translation>저장하기 전에 교사를 선택하세요.</translation></message>
+    <message><source>Reload this teacher before editing or saving again.</source><translation>다시 수정하거나 저장하기 전에 이 교사 정보를 다시 불러오세요.</translation></message>
+    <message><source>Teacher profile editing is unavailable.</source><translation>교사 프로필 수정을 사용할 수 없습니다.</translation></message>
+    <message><source>Changes were saved, but the latest teacher profile could not be reloaded. Navigate away and reopen this teacher before editing or saving again.</source><translation>변경 사항은 저장했지만 최신 교사 프로필을 다시 불러오지 못했습니다. 다시 수정하거나 저장하기 전에 다른 페이지로 이동한 후 이 교사를 다시 여세요.</translation></message>
+    <message><source>Your changes could not be saved automatically. Your draft is still here.</source><translation>변경 사항을 자동으로 저장하지 못했습니다. 작성 중인 내용은 유지됩니다.</translation></message>
+    <message><source>The teacher profile could not be saved.</source><translation>교사 프로필을 저장하지 못했습니다.</translation></message>
+    <message><source>Save Teacher Profile</source><translation>교사 프로필 저장</translation></message>
+</context>
+<context>
     <name>NextNavigation</name>
     <message><source>My Workspace</source><translation>내 작업 공간</translation></message>
     <message><source>Classes</source><translation>수업</translation></message>
@@ -9860,6 +9905,7 @@ Version: %2</source>
     <message><source>Co-Teachers</source><translation>공동 교사</translation></message>
     <message><source>Campus Staff</source><translation>캠퍼스 직원</translation></message>
     <message><source>Korean Teachers</source><translation>한국인 교사</translation></message>
+    <message><source>Teacher Profile</source><translation>교사 프로필</translation></message>
     <message><source>Native English Teachers</source><translation>원어민 영어 교사</translation></message>
     <message><source>GS Team</source><translation>GS 팀</translation></message>
     <message><source>Useful Links</source><translation>유용한 링크</translation></message>

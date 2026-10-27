@@ -135,6 +135,27 @@ void OnScreenKeyboard::setTriggerButton(
     }
 }
 
+void OnScreenKeyboard::setTriggerIcons(
+    const QIcon& lightThemeIcon,
+    const QIcon& darkThemeIcon
+    )
+{
+    if (lightThemeIcon.isNull() || darkThemeIcon.isNull())
+    {
+        m_lightTriggerIcon = {};
+        m_darkTriggerIcon = {};
+        m_hasInjectedTriggerIcons = false;
+    }
+    else
+    {
+        m_lightTriggerIcon = lightThemeIcon;
+        m_darkTriggerIcon = darkThemeIcon;
+        m_hasInjectedTriggerIcons = true;
+    }
+
+    refreshTriggerIcon();
+}
+
 void OnScreenKeyboard::setTarget(
     QWidget* target
     )
@@ -639,11 +660,19 @@ void OnScreenKeyboard::refreshTriggerIcon()
                 .color(QPalette::ButtonText)
                 .lightness() > 128
             );
-    const QString iconPath = usesDarkTheme
-        ? QStringLiteral(":/assets/icons/keyboard_dark.svg")
-        : QStringLiteral(":/assets/icons/keyboard_light.svg");
-
-    m_triggerButton->setIcon(QIcon(iconPath));
+    if (m_hasInjectedTriggerIcons)
+    {
+        m_triggerButton->setIcon(
+            usesDarkTheme ? m_darkTriggerIcon : m_lightTriggerIcon
+            );
+    }
+    else
+    {
+        const QString iconPath = usesDarkTheme
+            ? QStringLiteral(":/assets/icons/keyboard_dark.svg")
+            : QStringLiteral(":/assets/icons/keyboard_light.svg");
+        m_triggerButton->setIcon(QIcon(iconPath));
+    }
     m_triggerButton->setIconSize(QSize(24, 24));
 }
 

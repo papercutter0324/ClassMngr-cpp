@@ -834,6 +834,7 @@ endforeach()
 qt_add_executable(ClassMngrNext
     "${PROJECT_SOURCE_DIR}/${CLASSMNGR_NEXT_MAIN_SOURCE}"
     ${_classmngr_next_bootstrap_sources}
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
 )
 
 target_compile_features(ClassMngrNext

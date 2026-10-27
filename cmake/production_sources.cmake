@@ -167,6 +167,7 @@ set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_creation_lifecycle_adapter.cpp"
     "src/next/platform/workspace_store_creation_lifecycle_adapter.h"
     "src/next/platform/workspace_store_initial_setup_teacher_entry_port.h"
+    "src/next/platform/workspace_store_teacher_profile_port.h"
     "src/next/platform/workspace_store_initial_setup_class_times_ports.h"
     "src/next/platform/workspace_store_schedule_import_state_snapshot_port.h"
     "src/next/platform/workspace_store_schedule_import_apply_port.h"
@@ -175,6 +176,7 @@ set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_custom_color_palette_preferences_port.h"
     "src/next/platform/workspace_store_personal_details_port.h"
     "src/next/platform/teacher_validator_teacher_create_validation_policy.h"
+    "src/next/platform/teacher_validator_teacher_profile_validation_policy.h"
     "src/next/platform/workspace_store_initial_setup_lifecycle_adapter.cpp"
     "src/next/platform/workspace_store_initial_setup_lifecycle_adapter.h"
     "src/next/platform/next_startup_profiler_inactive_workspace_compat.cpp"
@@ -265,8 +267,6 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/dialogs/user_prompt_service.h"
     "src/ui/shared/testing/qt_startup_workflow_test_adapters.cpp"
     "src/ui/shared/testing/qt_startup_workflow_test_adapters.h"
-    "src/ui/shared/input/hangul_composer.cpp"
-    "src/ui/shared/input/hangul_composer.h"
     "src/ui/shared/menus/menu_utils.h"
     "src/ui/shared/models/editable_text_table_model.h"
     "src/ui/shared/pages/autosave_coordinator.cpp"
@@ -328,8 +328,6 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/widgets/navigation_tab_widget.h"
     "src/ui/shared/widgets/no_wheel_combobox.cpp"
     "src/ui/shared/widgets/no_wheel_combobox.h"
-    "src/ui/shared/widgets/on_screen_keyboard.cpp"
-    "src/ui/shared/widgets/on_screen_keyboard.h"
     "src/ui/shared/widgets/sectioncards/class_info_section_card.cpp"
     "src/ui/shared/widgets/sectioncards/class_info_section_card.h"
     "src/ui/shared/widgets/sectioncards/class_time_row.cpp"
@@ -357,6 +355,13 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/widgets/sidebar/sidebar_types.h"
     "src/ui/shared/widgets/text_fit_dialog_button_box.h"
     "src/ui/shared/widgets/text_fit_push_button.h"
+)
+
+set(CLASSMNGR_ON_SCREEN_KEYBOARD_SOURCES
+    "src/ui/shared/input/hangul_composer.cpp"
+    "src/ui/shared/input/hangul_composer.h"
+    "src/ui/shared/widgets/on_screen_keyboard.cpp"
+    "src/ui/shared/widgets/on_screen_keyboard.h"
 )
 
 set(CLASSMNGR_FEATURES_SOURCES
@@ -716,6 +721,8 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/initial_setup_teacher_import_dialog.h"
     "src/next/ui/teacher_import_request_mapper.cpp"
     "src/next/ui/teacher_import_request_mapper.h"
+    "src/next/ui/teacher_profile_page.cpp"
+    "src/next/ui/teacher_profile_page.h"
     "src/next/ui/schedule_import_request_mapper.cpp"
     "src/next/ui/schedule_import_request_mapper.h"
     "src/next/ui/navigation_model.cpp"

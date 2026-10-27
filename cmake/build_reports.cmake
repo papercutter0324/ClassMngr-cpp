@@ -71,6 +71,7 @@ set(_classmngr_qt_module_report_targets
     ClassMngrData
     ClassMngrDomain
     ClassMngrUiShared
+    ClassMngrOnScreenKeyboard
     ClassMngrFeatures
     ClassMngrAppServices
 )

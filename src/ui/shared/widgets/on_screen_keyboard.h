@@ -5,6 +5,7 @@
 #include <QPointer>
 #include <QPersistentModelIndex>
 #include <QMetaObject>
+#include <QIcon>
 #include <QVector>
 #include <QWidget>
 
@@ -26,6 +27,11 @@ public:
 
     void setTriggerButton(
         QAbstractButton* button
+        );
+
+    void setTriggerIcons(
+        const QIcon& lightThemeIcon,
+        const QIcon& darkThemeIcon
         );
 
     void setTarget(
@@ -144,6 +150,9 @@ private:
     QPersistentModelIndex m_targetIndex;
     QMetaObject::Connection m_focusChangedConnection;
     QPointer<QAbstractButton> m_triggerButton;
+    QIcon m_lightTriggerIcon;
+    QIcon m_darkTriggerIcon;
+    bool m_hasInjectedTriggerIcons = false;
     QVector<CharacterButton> m_characterButtons;
     QPushButton* m_shiftButton = nullptr;
     QPushButton* m_languageButton = nullptr;

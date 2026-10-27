@@ -7,10 +7,14 @@
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_descriptor.h"
 #include "next/resources/resource_error.h"
+#include "next/resources/resource_loader.h"
+#include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
 #include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
+#include "next/ui/teacher_profile_page.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 #include "core/settingsmanager.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "data/database/workspace_store.h"
@@ -21,6 +25,7 @@
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QApplication>
+#include <QCalendarWidget>
 #include <QCheckBox>
 #include <QCryptographicHash>
 #include <QComboBox>
@@ -29,9 +34,11 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFocusEvent>
 #include <QGroupBox>
 #include <QImage>
 #include <QPointer>
+#include <QPlainTextEdit>
 #include <QPixmap>
 #include <QLabel>
 #include <QLineEdit>
@@ -56,6 +63,8 @@
 #include <QStatusBar>
 #include <QTemporaryDir>
 #include <QTimer>
+#include <QToolButton>
+#include <QTableView>
 #include <QTreeWidget>
 #include <QTreeWidgetItemIterator>
 #include <QWidget>
@@ -126,6 +135,7 @@ private slots:
     void recentRestoreSavesDirtyWorkspaceBeforeReplacement();
     void recentRestoreRemembersDirectoryWhenHistorySaveFails();
     void clearRecentHistoryPreservesClosedAndOpenWorkspaceState();
+    void teacherProfileUsesTypedOpenAndStaticPageHistory();
     void saveAsActionUsesNextGatewayAndPreservesActiveSessionIdentity();
     void exportActionUsesNextGatewayWithoutResolvingDirtyPage();
     void saveAndCloseProfileActionsUseNextGateway();
@@ -1115,6 +1125,33 @@ private:
             SettingsManager::instance().remove(key);
         }
     }
+};
+
+class StartupSaveModeGuard final
+{
+public:
+    explicit StartupSaveModeGuard(const int mode)
+        : m_key(QString::fromUtf8(OptionKeys::SaveMode))
+        , m_previous(SettingsManager::instance().get(m_key))
+    {
+        SettingsManager::instance().set(m_key, mode);
+    }
+
+    ~StartupSaveModeGuard()
+    {
+        if (m_previous.isValid())
+        {
+            SettingsManager::instance().set(m_key, m_previous);
+        }
+        else
+        {
+            SettingsManager::instance().remove(m_key);
+        }
+    }
+
+private:
+    QString m_key;
+    QVariant m_previous;
 };
 
 class TeacherProfileDirectoryPreferenceGuard final
@@ -7946,6 +7983,622 @@ shutdownClosesThroughTheGatewayUsedForStartupOpen()
     QCOMPARE(gatewayProbe->events,
              (std::vector<std::string>{"constructed", "open", "close", "destroyed"}));
 
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::teacherProfileUsesTypedOpenAndStaticPageHistory()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupSaveModeGuard saveMode(static_cast<int>(Application::SaveMode::Automatic));
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        QStringLiteral("en_US"), QStringLiteral("light")));
+    QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
+    QVERIFY(resources.addResource(QStringLiteral("assets/icons/keyboard_light.svg")));
+    QVERIFY(resources.addResource(QStringLiteral("assets/icons/keyboard_dark.svg")));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("teacher-profile-page.tps")
+        );
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 profilePath,
+                 QStringLiteral("representative_startup.sql"),
+                 &fixtureError
+                 ),
+        qPrintable(fixtureError));
+
+    const QString triggerConnectionName = QUuid::createUuid().toString(
+        QUuid::WithoutBraces
+        );
+    {
+        QSqlDatabase triggerDatabase = QSqlDatabase::addDatabase(
+            QStringLiteral("QSQLITE"), triggerConnectionName
+            );
+        triggerDatabase.setDatabaseName(profilePath);
+        QVERIFY(triggerDatabase.open());
+        QSqlQuery trigger(triggerDatabase);
+        QVERIFY2(trigger.exec(QStringLiteral(
+            "CREATE TRIGGER reject_teacher_profile_update "
+            "BEFORE UPDATE OF teacher_en ON teachers "
+            "WHEN NEW.teacher_en = 'Update Failure' "
+            "BEGIN SELECT RAISE(ABORT, 'injected profile update failure'); END"
+            )), qPrintable(trigger.lastError().text()));
+        QVERIFY2(trigger.exec(QStringLiteral(
+            "CREATE TRIGGER remove_teacher_after_profile_update "
+            "AFTER UPDATE OF teacher_en ON teachers "
+            "WHEN NEW.teacher_en = 'Reload Failure' "
+            "BEGIN DELETE FROM teachers WHERE id = NEW.id; END"
+            )), qPrintable(trigger.lastError().text()));
+        QSqlQuery largeTeacher(triggerDatabase);
+        QVERIFY(largeTeacher.prepare(QStringLiteral(
+            "INSERT INTO teachers ("
+            "id, teacher_kr, teacher_en, preferred_romanization, "
+            "preferred_name, room_number, birthday, phone_number, "
+            "wifi_name, wifi_password, internet_type, zoom_id, "
+            "zoom_password, projection_type, notes) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            )));
+        largeTeacher.addBindValue(qint64{2147483650});
+        largeTeacher.addBindValue(QStringLiteral("홍길동"));
+        largeTeacher.addBindValue(QStringLiteral("Hong Gildong"));
+        largeTeacher.addBindValue(QStringLiteral("Hong Gil-dong"));
+        largeTeacher.addBindValue(QStringLiteral("Hong Gildong"));
+        largeTeacher.addBindValue(QStringLiteral("Room 7"));
+        largeTeacher.addBindValue(QStringLiteral("04-18"));
+        largeTeacher.addBindValue(QStringLiteral("010-1111-2222"));
+        largeTeacher.addBindValue(QStringLiteral("Old WiFi"));
+        largeTeacher.addBindValue(QStringLiteral("old-wifi-password"));
+        largeTeacher.addBindValue(QStringLiteral("WiFi"));
+        largeTeacher.addBindValue(QStringLiteral("old-zoom-id"));
+        largeTeacher.addBindValue(QStringLiteral("old-zoom-password"));
+        largeTeacher.addBindValue(QStringLiteral("HDMI"));
+        largeTeacher.addBindValue(QStringLiteral("Old profile notes"));
+        QVERIFY2(largeTeacher.exec(), qPrintable(largeTeacher.lastError().text()));
+        triggerDatabase.close();
+    }
+    QSqlDatabase::removeDatabase(triggerConnectionName);
+
+    auto promptProbe = std::make_shared<UnsavedChangesPromptProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("teacher-profile-test"), profilePath
+    };
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.pathExists = [](const Application::WorkspaceLocation& location) {
+        return QFileInfo::exists(QString::fromUtf8(
+            location.value().data(),
+            static_cast<qsizetype>(location.value().size())
+            ));
+    };
+    seams.workspaceLifecycleUserPromptPortFactory = [promptProbe] {
+        return std::make_unique<RecordingWorkspaceLifecycleUserPrompt>(promptProbe);
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        QStringList{QStringLiteral("en-US")},
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    Ui::NavigationModel* const navigation = shell->navigationModel();
+    QVERIFY(navigation);
+    const Ui::PageId profilePageId = *Ui::PageId::fromString(
+        QStringLiteral("teacher_profile")
+        );
+    QVERIFY(navigation->isPageVisible(profilePageId));
+    QVERIFY(shell->pageHost().isPageRegistered(QStringLiteral("teacher_profile")));
+
+    // A direct route selection has a defined empty state and no feature ID.
+    QVERIFY(shell->navigateTo(profilePageId));
+    auto* page = dynamic_cast<Ui::TeacherProfilePage*>(
+        shell->pageHost().pageInstance(QStringLiteral("teacher_profile"))
+        );
+    QVERIFY(page);
+    QVERIFY(!page->selectedTeacherId().has_value());
+    QLabel* const noSelection = page->findChild<QLabel*>(
+        QStringLiteral("teacherProfileNoSelectionState")
+        );
+    QVERIFY(noSelection);
+    QVERIFY(noSelection->isVisible());
+    QVERIFY(shell->navigateBack());
+    QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("my_workspace"));
+
+    const Domain::TeacherId firstTeacher =
+        Domain::TeacherId::fromString("1").value();
+    const Domain::TeacherId secondTeacher =
+        Domain::TeacherId::fromString("2").value();
+    const Domain::TeacherId thirdTeacher =
+        Domain::TeacherId::fromString("3").value();
+    QVERIFY(bootstrap.openTeacherProfile(firstTeacher));
+    QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("teacher_profile"));
+    QCOMPARE(page->selectedTeacherId(), std::optional{firstTeacher});
+    auto* const englishName = page->findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit")
+        );
+    QVERIFY(englishName);
+    QCOMPARE(englishName->text(), QStringLiteral("Dana Kim"));
+    auto* const keyboardButton = page->findChild<QPushButton*>(
+        QStringLiteral("teacherProfileKoreanKeyboardButton")
+        );
+    auto* const onScreenKeyboard = page->findChild<OnScreenKeyboard*>(
+        QStringLiteral("onScreenKeyboard")
+        );
+    QVERIFY(keyboardButton);
+    QVERIFY(onScreenKeyboard);
+    const QString originalEnglishName = englishName->text();
+    QTest::mouseClick(keyboardButton, Qt::LeftButton);
+    englishName->setFocus();
+    QFocusEvent englishNameFocus(QEvent::FocusIn, Qt::OtherFocusReason);
+    QCoreApplication::sendEvent(englishName, &englishNameFocus);
+    QTRY_COMPARE(onScreenKeyboard->target(), static_cast<QWidget*>(englishName));
+    auto* const keyboardRKey = onScreenKeyboard->findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardKey_r")
+        );
+    auto* const keyboardKKey = onScreenKeyboard->findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardKey_k")
+        );
+    auto* const keyboardEnterKey = onScreenKeyboard->findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardEnter")
+        );
+    QVERIFY(keyboardRKey);
+    QVERIFY(keyboardKKey);
+    QVERIFY(keyboardEnterKey);
+    keyboardRKey->click();
+    keyboardKKey->click();
+    keyboardEnterKey->click();
+    QCOMPARE(englishName->text(), originalEnglishName + QStringLiteral("가"));
+    englishName->setText(originalEnglishName);
+    onScreenKeyboard->close();
+    auto* const saveButton = page->findChild<QPushButton*>(
+        QStringLiteral("teacherProfileSaveButton")
+        );
+    QVERIFY(saveButton);
+    QVERIFY(saveButton->isHidden());
+
+    // The default save mode is automatic and runs through the direct-store
+    // profile edit use case after the established debounce interval.
+    englishName->setText(QStringLiteral("Dana Kim Auto Saved"));
+    auto* const birthday = page->findChild<QLineEdit*>(
+        QStringLiteral("birthdayEdit")
+        );
+    QVERIFY(birthday);
+    QTest::qWait(1000);
+    QString validationMessages;
+    for (QLabel* const label : page->findChildren<QLabel*>())
+    {
+        if (label->objectName().endsWith(QStringLiteral("ValidationMessage"))
+            && label->isVisible())
+        {
+            validationMessages += label->text() + QStringLiteral("; ");
+        }
+    }
+    auto* const saveStatus = page->findChild<QLabel*>(
+        QStringLiteral("teacherProfileSaveStatus")
+        );
+    QVERIFY2(!page->hasUnsavedChanges(),
+        qPrintable((saveStatus ? saveStatus->text() : QString{})
+            + QStringLiteral(" | ") + validationMessages));
+    QCOMPARE(englishName->text(), QStringLiteral("Dana Kim Auto Saved"));
+    QCOMPARE(
+        birthday->text(),
+        QLocale().toString(QDate(2000, 1, 14), QStringLiteral("MMMM d"))
+        );
+
+    // An automatic persistence failure keeps the live draft and reports the
+    // failure without blocking the UI thread on a dialog.
+    englishName->setText(QStringLiteral("Update Failure"));
+    QTest::qWait(1000);
+    QVERIFY(page->hasUnsavedChanges());
+    QCOMPARE(englishName->text(), QStringLiteral("Update Failure"));
+    QVERIFY(saveStatus->text().contains(QStringLiteral("draft is still here")));
+    QVERIFY(page->discardChanges());
+    QCOMPARE(englishName->text(), QStringLiteral("Dana Kim Auto Saved"));
+
+    // Back and Forward track only the single static page route. The selected
+    // teacher remains page state when the page is suspended and restored.
+    QVERIFY(shell->navigateBack());
+    QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("my_workspace"));
+    QVERIFY(shell->navigateForward());
+    QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("teacher_profile"));
+    QCOMPARE(page->selectedTeacherId(), std::optional{firstTeacher});
+
+    page->setSaveMode(Application::SaveMode::Manual);
+    auto* const phoneNumber = page->findChild<QLineEdit*>(
+        QStringLiteral("phoneNumberEdit")
+        );
+    QVERIFY(phoneNumber);
+    const QString savedPhoneNumber = phoneNumber->text();
+    phoneNumber->setText(QString(33, QLatin1Char('1')));
+    QVERIFY(page->hasUnsavedChanges());
+    QVERIFY(!saveButton->isEnabled());
+    QVERIFY(!page->saveChanges());
+    QVERIFY(page->hasUnsavedChanges());
+    phoneNumber->setText(savedPhoneNumber);
+
+    englishName->setText(QStringLiteral("Unsaved draft kept on cancel"));
+    const std::vector<Ui::PageId> historyBeforeSwitch = navigation->history();
+    QVERIFY(!bootstrap.openTeacherProfile(
+        Domain::TeacherId::fromString("999").value()
+        ));
+    QVERIFY(page->hasUnsavedChanges());
+    QCOMPARE(page->selectedTeacherId(), std::optional{firstTeacher});
+    QCOMPARE(englishName->text(), QStringLiteral("Unsaved draft kept on cancel"));
+    QCOMPARE(promptProbe->requests.size(), std::size_t(0));
+
+    // The second ID is read before dirty resolution. Cancel retains the old
+    // profile draft and selection because ApplicationShell sees one static ID.
+    promptProbe->action = Application::UnsavedChangesAction::Cancel;
+    QVERIFY(!bootstrap.openTeacherProfile(secondTeacher));
+    QCOMPARE(promptProbe->requests.size(), std::size_t(1));
+    QCOMPARE(page->selectedTeacherId(), std::optional{firstTeacher});
+    QCOMPARE(englishName->text(), QStringLiteral("Unsaved draft kept on cancel"));
+    QCOMPARE(navigation->history(), historyBeforeSwitch);
+
+    promptProbe->action = Application::UnsavedChangesAction::Discard;
+    QVERIFY(bootstrap.openTeacherProfile(secondTeacher));
+    QCOMPARE(promptProbe->requests.size(), std::size_t(2));
+    QCOMPARE(page->selectedTeacherId(), std::optional{secondTeacher});
+    QCOMPARE(englishName->text(), QStringLiteral("Jordan Lee"));
+    QVERIFY(!page->hasUnsavedChanges());
+    QCOMPARE(navigation->history(), historyBeforeSwitch);
+
+    // Saving during an ID switch completes the update and reload before the
+    // requested third profile replaces the visible draft.
+    englishName->setText(QStringLiteral("Jordan Lee Saved"));
+    promptProbe->action = Application::UnsavedChangesAction::Save;
+    QVERIFY(bootstrap.openTeacherProfile(thirdTeacher));
+    QCOMPARE(promptProbe->requests.size(), std::size_t(3));
+    QCOMPARE(page->selectedTeacherId(), std::optional{thirdTeacher});
+    QCOMPARE(englishName->text(), QStringLiteral("Minseo Park"));
+
+    // A completed write followed by a failed reload has a distinct locked
+    // state: the submitted values remain visible and are no longer dirty.
+    englishName->setText(QStringLiteral("Reload Failure"));
+    bool saveWarningDismissed = false;
+    QTimer::singleShot(0, [&saveWarningDismissed] {
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            saveWarningDismissed = true;
+            modal->close();
+        }
+    });
+    QVERIFY(!page->saveChanges());
+    QVERIFY(saveWarningDismissed);
+    QVERIFY(!page->hasUnsavedChanges());
+    QCOMPARE(englishName->text(), QStringLiteral("Reload Failure"));
+    QVERIFY(!englishName->isEnabled());
+    QVERIFY(page->findChild<QLabel*>(
+        QStringLiteral("teacherProfileSaveStatus")
+        )->property("teacherProfileReloadRequired").toBool());
+
+    QVERIFY(bootstrap.openTeacherProfile(secondTeacher));
+    QCOMPARE(page->selectedTeacherId(), std::optional{secondTeacher});
+    QCOMPARE(englishName->text(), QStringLiteral("Jordan Lee Saved"));
+    QCOMPARE(navigation->history(), historyBeforeSwitch);
+    QVERIFY(shell->navigateBack());
+    QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("my_workspace"));
+    QVERIFY(shell->navigateForward());
+    QCOMPARE(navigation->currentPageId()->value(), QStringLiteral("teacher_profile"));
+    QCOMPARE(page->selectedTeacherId(), std::optional{secondTeacher});
+
+    // Exercise the full typed-ID read/update/reload path with a value above
+    // the legacy int range, and round-trip every TeacherProfileFields member.
+    const Domain::TeacherId largeTeacherId =
+        Domain::TeacherId::fromString("2147483650").value();
+    QVERIFY(bootstrap.openTeacherProfile(largeTeacherId));
+    QCOMPARE(page->selectedTeacherId(), std::optional{largeTeacherId});
+    QCOMPARE(englishName->text(), QStringLiteral("Hong Gildong"));
+
+    auto* const koreanName = page->findChild<QLineEdit*>(
+        QStringLiteral("teacherKrEdit")
+        );
+    auto* const romanization = page->findChild<QLineEdit*>(
+        QStringLiteral("preferredRomanizationEdit")
+        );
+    auto* const preferredName = page->findChild<QComboBox*>(
+        QStringLiteral("preferredNameCombo")
+        );
+    auto* const roomNumber = page->findChild<QLineEdit*>(
+        QStringLiteral("roomNumberEdit")
+        );
+    auto* const phoneNumberEdit = page->findChild<QLineEdit*>(
+        QStringLiteral("phoneNumberEdit")
+        );
+    auto* const wifiName = page->findChild<QLineEdit*>(
+        QStringLiteral("wifiNameEdit")
+        );
+    auto* const wifiPassword = page->findChild<QLineEdit*>(
+        QStringLiteral("wifiPasswordEdit")
+        );
+    auto* const internetType = page->findChild<QComboBox*>(
+        QStringLiteral("internetTypeCombo")
+        );
+    auto* const zoomId = page->findChild<QLineEdit*>(
+        QStringLiteral("zoomIdEdit")
+        );
+    auto* const zoomPassword = page->findChild<QLineEdit*>(
+        QStringLiteral("zoomPasswordEdit")
+        );
+    auto* const projectionType = page->findChild<QComboBox*>(
+        QStringLiteral("projectionTypeCombo")
+        );
+    auto* const notes = page->findChild<QPlainTextEdit*>(
+        QStringLiteral("teacherNotesEdit")
+        );
+    QVERIFY(koreanName);
+    QVERIFY(romanization);
+    QVERIFY(preferredName);
+    QVERIFY(roomNumber);
+    QVERIFY(phoneNumberEdit);
+    QVERIFY(wifiName);
+    QVERIFY(wifiPassword);
+    QVERIFY(internetType);
+    QVERIFY(zoomId);
+    QVERIFY(zoomPassword);
+    QVERIFY(projectionType);
+    QVERIFY(notes);
+
+    koreanName->setText(QStringLiteral("김가나다"));
+    englishName->setText(QStringLiteral("Alexandra"));
+    romanization->setText(QStringLiteral("Alexandra Kim"));
+    QVERIFY(preferredName->findText(QStringLiteral("Alexandra")) >= 0);
+    preferredName->setCurrentText(QStringLiteral("Alexandra"));
+    roomNumber->setText(QStringLiteral("Room 42"));
+    phoneNumberEdit->setText(QStringLiteral("010-9999-8888"));
+    wifiName->setText(QStringLiteral("Studio WiFi"));
+    wifiPassword->setText(QStringLiteral("wifi-new-password"));
+    internetType->setCurrentIndex(internetType->findData(QStringLiteral("LAN")));
+    zoomId->setText(QStringLiteral("new-zoom-id"));
+    zoomPassword->setText(QStringLiteral("new-zoom-password"));
+    projectionType->setCurrentIndex(
+        projectionType->findData(QStringLiteral("Zoom"))
+        );
+    notes->setPlainText(QStringLiteral("Round-trip notes for every profile field."));
+
+    QTest::mouseClick(birthday, Qt::LeftButton);
+    QApplication::processEvents();
+    QWidget* const birthdayPopup = QApplication::activePopupWidget();
+    QVERIFY(birthdayPopup);
+    auto* const calendar = birthdayPopup->findChild<QCalendarWidget*>(
+        QStringLiteral("teacherBirthdayCalendar")
+        );
+    QVERIFY(calendar);
+    const QDate selectedBirthday(2000, 10, 5);
+    calendar->setFirstDayOfWeek(Qt::Monday);
+    calendar->setCurrentPage(selectedBirthday.year(), selectedBirthday.month());
+    calendar->setSelectedDate(selectedBirthday);
+    auto* const calendarView = calendar->findChild<QTableView*>();
+    QVERIFY(calendarView);
+    const QDate firstOfMonth(selectedBirthday.year(), selectedBirthday.month(), 1);
+    const int firstDayOffset = (firstOfMonth.dayOfWeek()
+        - static_cast<int>(Qt::Monday) + 7) % 7;
+    const int selectedDayIndex = firstDayOffset + selectedBirthday.day() - 1;
+    // The calendar's internal table includes a weekday-header row at index 0.
+    const QModelIndex selectedDay = calendarView->model()->index(
+        1 + selectedDayIndex / 7,
+        selectedDayIndex % 7
+        );
+    QVERIFY(selectedDay.isValid());
+    const QRect selectedDayRect = calendarView->visualRect(selectedDay);
+    QVERIFY(selectedDayRect.isValid());
+    QTest::mouseClick(
+        calendarView->viewport(),
+        Qt::LeftButton,
+        Qt::NoModifier,
+        selectedDayRect.center()
+        );
+    QCOMPARE(
+        birthday->text(),
+        QLocale().toString(selectedBirthday, QStringLiteral("MMMM d"))
+        );
+
+    auto* const koreanNameWarning = page->findChild<QLabel*>(
+        QStringLiteral("teacherKrValidationMessage")
+        );
+    QVERIFY(koreanNameWarning);
+    QCOMPARE(
+        koreanNameWarning->property("formValidationSeverity").toString(),
+        QStringLiteral("warning")
+        );
+    QVERIFY(saveButton->isEnabled());
+    QVERIFY(page->hasUnsavedChanges());
+    const Ui::PageOperationResult<void> largeProfileSave = page->saveChanges();
+    QString profileValidationDiagnostics;
+    for (QLabel* const label : page->findChildren<QLabel*>())
+    {
+        if (label->objectName().endsWith(QStringLiteral("ValidationMessage"))
+            && !label->isHidden())
+        {
+            profileValidationDiagnostics += label->objectName()
+                + QStringLiteral(": ") + label->text()
+                + QStringLiteral("; ");
+        }
+    }
+    QVERIFY2(largeProfileSave.has_value(), qPrintable(
+        saveStatus->text() + QStringLiteral(" | ")
+            + profileValidationDiagnostics
+        ));
+    QVERIFY(!page->hasUnsavedChanges());
+
+    const auto readStoredBirthday = [&profilePath]()
+        -> std::optional<QString> {
+        const QString connectionName = QUuid::createUuid().toString(
+            QUuid::WithoutBraces
+            );
+        std::optional<QString> value;
+        {
+            QSqlDatabase database = QSqlDatabase::addDatabase(
+                QStringLiteral("QSQLITE"), connectionName
+                );
+            database.setDatabaseName(profilePath);
+            if (database.open())
+            {
+                QSqlQuery query(database);
+                if (query.exec(QStringLiteral(
+                        "SELECT birthday FROM teachers "
+                        "WHERE id = 2147483650"
+                        ))
+                    && query.next())
+                {
+                    value = query.value(0).toString();
+                }
+            }
+            database.close();
+        }
+        QSqlDatabase::removeDatabase(connectionName);
+        return value;
+    };
+    QCOMPARE(readStoredBirthday(), std::optional{QStringLiteral("10-05")});
+
+    // Switch away and reopen so the assertions read the repository result,
+    // rather than only inspecting the form after its update callback.
+    QVERIFY(bootstrap.openTeacherProfile(firstTeacher));
+    QVERIFY(bootstrap.openTeacherProfile(largeTeacherId));
+    QCOMPARE(page->selectedTeacherId(), std::optional{largeTeacherId});
+    QCOMPARE(koreanName->text(), QStringLiteral("김가나다"));
+    QCOMPARE(englishName->text(), QStringLiteral("Alexandra"));
+    QCOMPARE(romanization->text(), QStringLiteral("Alexandra Kim"));
+    QCOMPARE(preferredName->currentText(), QStringLiteral("Alexandra"));
+    QCOMPARE(roomNumber->text(), QStringLiteral("Room 42"));
+    QCOMPARE(
+        birthday->text(),
+        QLocale().toString(selectedBirthday, QStringLiteral("MMMM d"))
+        );
+    QCOMPARE(phoneNumberEdit->text(), QStringLiteral("010-9999-8888"));
+    QCOMPARE(wifiName->text(), QStringLiteral("Studio WiFi"));
+    QCOMPARE(wifiPassword->text(), QStringLiteral("wifi-new-password"));
+    QCOMPARE(internetType->currentData().toString(), QStringLiteral("LAN"));
+    QCOMPARE(zoomId->text(), QStringLiteral("new-zoom-id"));
+    QCOMPARE(zoomPassword->text(), QStringLiteral("new-zoom-password"));
+    QCOMPARE(projectionType->currentData().toString(), QStringLiteral("Zoom"));
+    QCOMPARE(notes->toPlainText(), QStringLiteral("Round-trip notes for every profile field."));
+
+    auto* const birthdayClearButton = birthday->findChild<QToolButton*>();
+    QVERIFY(birthdayClearButton);
+    QVERIFY(birthdayClearButton->isVisible());
+    QVERIFY(birthdayClearButton->isEnabled());
+    QTest::mouseClick(birthdayClearButton, Qt::LeftButton);
+    QVERIFY(birthday->text().isEmpty());
+    QVERIFY(page->saveChanges());
+    QCOMPARE(readStoredBirthday(), std::optional{QString{}});
+    QVERIFY(bootstrap.openTeacherProfile(firstTeacher));
+    QVERIFY(bootstrap.openTeacherProfile(largeTeacherId));
+    QVERIFY(birthday->text().isEmpty());
+
+    // Install the real Korean QM through the page ResourceLoader, then remove
+    // it to return to the English translator loaded at application startup.
+    englishName->setText(QStringLiteral("Locale draft"));
+    QVERIFY(page->hasUnsavedChanges());
+    const auto koreanTranslationId = Resources::ResourceId::fromString(
+        QStringLiteral("resource:assets/translations/ClassMngr_ko_KR.ts")
+        );
+    QVERIFY(koreanTranslationId.has_value());
+    const auto koreanTranslationRequest = Resources::ResourceRequest::create(
+        *koreanTranslationId,
+        Resources::ResourceScopeKind::Operation,
+        QStringLiteral("teacher-profile-language-test")
+        );
+    QVERIFY(koreanTranslationRequest.has_value());
+    auto loadedKoreanTranslation = page->resourceContext().resourceLoader()
+        .loadTranslation(*koreanTranslationRequest, application);
+    QVERIFY(loadedKoreanTranslation.has_value());
+    std::optional<Resources::ScopedResource<Resources::ResourceTranslation>>
+        installedKoreanTranslation;
+    installedKoreanTranslation.emplace(std::move(*loadedKoreanTranslation));
+    QLabel* const profileTitle = page->findChild<QLabel*>(QStringLiteral("pageTitle"));
+    QVERIFY(profileTitle);
+    QLabel* const pageSubtitle = page->findChild<QLabel*>(
+        QStringLiteral("pageSubtitle")
+        );
+    QVERIFY(pageSubtitle);
+    QEvent koreanLanguageChange(QEvent::LanguageChange);
+    QApplication::sendEvent(page, &koreanLanguageChange);
+    QCOMPARE(
+        page->findChild<QLabel*>(QStringLiteral("teacherKrLabel"))->text(),
+        QStringLiteral("한국어 이름")
+        );
+    QCOMPARE(
+        profileTitle->text(),
+        QStringLiteral("Locale draft 선생님 정보")
+        );
+    QCOMPARE(
+        pageSubtitle->text(),
+        QStringLiteral("교사 세부 정보를 확인하고 관리합니다.")
+        );
+    QCOMPARE(
+        page->findChild<QLabel*>(
+            QStringLiteral("preferredRomanizationLabel")
+            )->text(),
+        QStringLiteral("선호 표기")
+        );
+    QCOMPARE(
+        page->findChild<QLabel*>(
+            QStringLiteral("projectionTypeLabel")
+            )->text(),
+        QStringLiteral("프로젝션 유형")
+        );
+    auto* const notesCard = page->findChild<QWidget*>(
+        QStringLiteral("teacherProfileNotesCard")
+        );
+    QVERIFY(notesCard);
+    QCOMPARE(
+        notesCard->findChild<QLabel*>(QStringLiteral("sectionTitle"))->text(),
+        QStringLiteral("노트")
+        );
+    QCOMPARE(
+        page->findChild<QPushButton*>(
+            QStringLiteral("teacherProfileKoreanKeyboardButton")
+            )->toolTip(),
+        QStringLiteral("한/영 화면 키보드 열기")
+        );
+    QCOMPARE(
+        saveStatus->text(),
+        QStringLiteral("강조 표시된 경고를 확인하세요. 계속 저장할 수 있습니다.")
+        );
+    QCOMPARE(englishName->text(), QStringLiteral("Locale draft"));
+    QVERIFY(page->hasUnsavedChanges());
+
+    installedKoreanTranslation.reset();
+    QEvent englishLanguageChange(QEvent::LanguageChange);
+    QApplication::sendEvent(page, &englishLanguageChange);
+    QCOMPARE(
+        page->findChild<QLabel*>(QStringLiteral("teacherKrLabel"))->text(),
+        QStringLiteral("Korean Name")
+        );
+    QCOMPARE(
+        profileTitle->text(),
+        QStringLiteral("Teacher Information for Locale draft")
+        );
+    QCOMPARE(
+        notesCard->findChild<QLabel*>(QStringLiteral("sectionTitle"))->text(),
+        QStringLiteral("Notes")
+        );
+    QCOMPARE(
+        saveStatus->text(),
+        QStringLiteral("Review the highlighted warnings. You can still save.")
+        );
+    QCOMPARE(englishName->text(), QStringLiteral("Locale draft"));
+    QVERIFY(page->hasUnsavedChanges());
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
 }
 

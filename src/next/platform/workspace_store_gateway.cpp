@@ -7,6 +7,8 @@
 #include "next/application/personal_details_save_use_case.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
 #include "next/application/teacher_create_use_case.h"
+#include "next/application/teacher_profile_edit_use_case.h"
+#include "next/application/teacher_profile_read_query.h"
 #include "next/application/class_create_use_case.h"
 #include "next/application/class_details_save_use_case.h"
 #include "next/platform/workspace_store_personal_details_port.h"
@@ -14,6 +16,8 @@
 #include "next/platform/workspace_store_custom_color_palette_preferences_port.h"
 #include "next/platform/workspace_store_initial_setup_class_times_ports.h"
 #include "next/platform/teacher_validator_teacher_create_validation_policy.h"
+#include "next/platform/teacher_validator_teacher_profile_validation_policy.h"
+#include "next/platform/workspace_store_teacher_profile_port.h"
 
 #include <QByteArray>
 #include <QString>
@@ -140,6 +144,37 @@ WorkspaceStoreGateway::createInitialSetupTeacher(
     return Application::TeacherCreateUseCase::execute(
         request,
         validationPolicy,
+        port
+        );
+}
+
+Application::TeacherProfileReadResult
+WorkspaceStoreGateway::readTeacherProfile(const Domain::TeacherId& id) const
+{
+    WorkspaceStoreTeacherProfilePort port(*m_store);
+    const Application::TeacherProfileReadQuery query(port);
+    return query.execute(id);
+}
+
+Application::TeacherProfileValidationResult
+WorkspaceStoreGateway::validateTeacherProfile(
+    const Domain::TeacherProfile& profile
+    ) const
+{
+    TeacherValidatorTeacherProfileValidationPolicy validation;
+    return validation.validate(profile);
+}
+
+Application::TeacherProfileEditResult
+WorkspaceStoreGateway::editTeacherProfile(
+    const Application::TeacherProfileEditRequest& request
+    ) const
+{
+    WorkspaceStoreTeacherProfilePort port(*m_store);
+    TeacherValidatorTeacherProfileValidationPolicy validation;
+    return Application::TeacherProfileEditUseCase::execute(
+        request,
+        validation,
         port
         );
 }

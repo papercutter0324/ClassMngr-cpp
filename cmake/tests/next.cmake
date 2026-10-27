@@ -6,6 +6,7 @@ add_executable(ClassMngrNextBootstrapTests
     tests/next/application_bootstrap_tests.cpp
     ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
     $<TARGET_OBJECTS:ClassMngrSettings>
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
 )
 target_compile_features(ClassMngrNextBootstrapTests
     PRIVATE
@@ -53,6 +54,58 @@ add_test(
 set_tests_properties(ClassMngrNextBootstrapTests
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+# Temporary visual comparison harness for the legacy and Next teacher profile
+# pages. Captures are written only when invoked with an explicit output path.
+add_executable(ClassMngrTeacherProfileVisualCapture
+    tests/next/teacher_profile_visual_capture.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/teacher_profile_page.cpp
+)
+target_compile_features(ClassMngrTeacherProfileVisualCapture PRIVATE cxx_std_23)
+target_include_directories(ClassMngrTeacherProfileVisualCapture
+    PRIVATE "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrTeacherProfileVisualCapture
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrTeacherProfileVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Resources
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrTeacherProfileVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrTeacherProfileVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrTeacherProfileVisualCapture ClassMngrNextResourcePackage)
+qt_add_resources(ClassMngrTeacherProfileVisualCapture
+    teacher_profile_visual_capture_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
+)
+add_test(
+    NAME ClassMngrTeacherProfileVisualCapture
+    COMMAND ClassMngrTeacherProfileVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/teacher-profile-visual-capture"
+)
+set_tests_properties(ClassMngrTeacherProfileVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
 # Keep the UI-to-WorkspaceStore teacher-entry acceptance check in its own

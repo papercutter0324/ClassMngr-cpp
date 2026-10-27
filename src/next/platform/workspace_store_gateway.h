@@ -7,6 +7,8 @@
 #include "next/application/initial_setup_class_times_requirement.h"
 #include "next/application/teacher_create.h"
 #include "next/application/teacher_import_use_case.h"
+#include "next/application/teacher_profile_edit_use_case.h"
+#include "next/application/teacher_profile_read_port.h"
 #include "next/application/workspace_contracts.h"
 
 #include <memory>
@@ -76,6 +78,16 @@ public:
         ) const;
     [[nodiscard]] Application::TeacherCreateResult createInitialSetupTeacher(
         const Application::TeacherCreateRequest& request
+        ) const;
+    [[nodiscard]] Application::TeacherProfileReadResult readTeacherProfile(
+        const Domain::TeacherId& id
+        ) const;
+    [[nodiscard]] Application::TeacherProfileValidationResult
+    validateTeacherProfile(
+        const Domain::TeacherProfile& profile
+        ) const;
+    [[nodiscard]] Application::TeacherProfileEditResult editTeacherProfile(
+        const Application::TeacherProfileEditRequest& request
         ) const;
     [[nodiscard]] Application::ClassCreateResult createInitialSetupClass() const;
     [[nodiscard]] Application::InitialSetupClassTimesSaveResult

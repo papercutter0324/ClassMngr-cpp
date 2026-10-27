@@ -224,6 +224,12 @@ target_link_libraries(ClassMngrUiShared
         ClassMngrNext::Application
 )
 classmngr_add_production_objects(
+    TARGET ClassMngrOnScreenKeyboard
+    SOURCES ${CLASSMNGR_ON_SCREEN_KEYBOARD_SOURCES}
+    LIBRARIES
+        Qt6::Widgets
+)
+classmngr_add_production_objects(
     TARGET ClassMngrFeatures
     SOURCES ${CLASSMNGR_FEATURES_SOURCES}
     LIBRARIES
@@ -296,6 +302,7 @@ add_library(ClassMngrRuntime STATIC
     $<TARGET_OBJECTS:ClassMngrData>
     $<TARGET_OBJECTS:ClassMngrDomain>
     $<TARGET_OBJECTS:ClassMngrUiShared>
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
     $<TARGET_OBJECTS:ClassMngrFeatures>
     $<TARGET_OBJECTS:ClassMngrAppServices>
 )
@@ -349,6 +356,7 @@ if(APPLE AND BUILD_TESTING)
         $<TARGET_OBJECTS:ClassMngrData>
         $<TARGET_OBJECTS:ClassMngrDomain>
         $<TARGET_OBJECTS:ClassMngrUiShared>
+        $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
         $<TARGET_OBJECTS:ClassMngrFeatures>
         $<TARGET_OBJECTS:ClassMngrAppServices>
     )
