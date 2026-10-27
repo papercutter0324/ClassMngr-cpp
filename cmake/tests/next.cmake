@@ -27,6 +27,8 @@ target_link_libraries(ClassMngrNextBootstrapTests
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
         ClassMngrNextStartupUpdates
+        ClassMngrTeacherImportParser
+        Qt6::Concurrent
         Qt6::Sql
         Qt6::Test
         Qt6::Widgets
@@ -79,6 +81,8 @@ target_link_libraries(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationT
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
         ClassMngrNextStartupUpdates
+        ClassMngrTeacherImportParser
+        Qt6::Concurrent
         Qt6::Sql
         Qt6::Test
         Qt6::Widgets
@@ -135,6 +139,8 @@ add_executable(ClassMngrNextPageHostTests
     tests/next/page_host_tests.cpp
     tests/next/preferences_test_ports.h
     src/next/ui/initial_page.cpp
+    src/next/ui/initial_setup_teacher_import_dialog.cpp
+    src/next/ui/teacher_import_request_mapper.cpp
     src/next/ui/page_host.cpp
 )
 target_compile_features(ClassMngrNextPageHostTests
@@ -154,6 +160,8 @@ target_link_libraries(ClassMngrNextPageHostTests
     PRIVATE
         ClassMngrSignature
         ClassMngrNext::Resources
+        ClassMngrTeacherImportParser
+        Qt6::Concurrent
         Qt6::Test
         Qt6::Widgets
 )
@@ -174,6 +182,54 @@ add_test(
     COMMAND ClassMngrNextPageHostTests
 )
 set_tests_properties(ClassMngrNextPageHostTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+add_executable(ClassMngrNextTeacherImportWorkflowTests
+    tests/next/teacher_import_workflow_tests.cpp
+    src/next/ui/initial_setup_teacher_import_dialog.cpp
+    src/next/ui/teacher_import_request_mapper.cpp
+)
+target_compile_features(ClassMngrNextTeacherImportWorkflowTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextTeacherImportWorkflowTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextTeacherImportWorkflowTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextTeacherImportWorkflowTests
+    PRIVATE
+        ClassMngrNext::Resources
+        ClassMngrTeacherImportParser
+        Qt6::Concurrent
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextTeacherImportWorkflowTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextTeacherImportWorkflowTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextTeacherImportWorkflowTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextTeacherImportWorkflowTests
+    COMMAND ClassMngrNextTeacherImportWorkflowTests
+)
+set_tests_properties(ClassMngrNextTeacherImportWorkflowTests
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )

@@ -4,6 +4,7 @@
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
 #include "next/application/teacher_create.h"
 #include "next/domain/personal_signature_image_save_bytes.h"
+#include "next/ui/initial_setup_teacher_import_dialog.h"
 #include "next/ui/page.h"
 
 #include <QByteArray>
@@ -50,6 +51,7 @@ struct InitialSetupPageActions final
     std::function<Application::TeacherCreateResult(
         const Application::TeacherCreateRequest&
         )> createTeacher;
+    InitialSetupTeacherImportActions teacherImport;
     std::function<Domain::Result<std::optional<QByteArray>>()> chooseSignatureImage;
 };
 
@@ -71,6 +73,7 @@ private:
     void loadPersonalDetails();
     void savePersonalDetails();
     void saveTeacher(bool addAnother);
+    void importTeachersFromWorkbook();
     void clearTeacherFields();
     void updatePreferredTeacherNames();
     void updateTeacherEntryControls();
@@ -115,6 +118,7 @@ private:
     QLabel* m_teacherEntryStatusLabel = nullptr;
     QPushButton* m_addAnotherTeacherButton = nullptr;
     QPushButton* m_continueTeacherEntryButton = nullptr;
+    QPushButton* m_importTeachersButton = nullptr;
     Application::PersonalDetailsSaveRequest m_personalDetails;
     QByteArray m_imageSignature;
     bool m_setupWasPending = false;

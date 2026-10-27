@@ -1,6 +1,7 @@
 #include "next/platform/workspace_store_gateway.h"
 
 #include "data/database/workspace_store.h"
+#include "data/repositories/teacher_import_repository.h"
 #include "next/platform/repository_error_code.h"
 #include "next/application/personal_details_save_use_case.h"
 #include "next/application/initial_setup_teacher_choices_read_query.h"
@@ -121,6 +122,25 @@ WorkspaceStoreGateway::createInitialSetupTeacher(
         validationPolicy,
         port
         );
+}
+
+std::expected<
+    Application::TeacherImportUseCaseResult,
+    Application::TeacherImportUseCaseError
+    > WorkspaceStoreGateway::applyTeacherImportUseCase(
+        const Application::TeacherImportUseCaseRequest& request
+        ) const
+{
+    TeacherImportRepository* const repository =
+        m_store->teacherImportRepository();
+    if (!m_store->isOpen() || !repository)
+    {
+        return std::unexpected(Application::TeacherImportUseCaseError{
+            .kind = Application::TeacherImportUseCaseErrorKind::InvalidRequest
+        });
+    }
+
+    return repository->applyUseCase(request);
 }
 
 Domain::Result<Application::WorkspaceSession>

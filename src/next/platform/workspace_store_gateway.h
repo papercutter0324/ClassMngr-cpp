@@ -3,6 +3,7 @@
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
 #include "next/application/teacher_create.h"
+#include "next/application/teacher_import_use_case.h"
 #include "next/application/workspace_contracts.h"
 
 #include <memory>
@@ -63,6 +64,12 @@ public:
     [[nodiscard]] Application::TeacherCreateResult createInitialSetupTeacher(
         const Application::TeacherCreateRequest& request
         ) const;
+    [[nodiscard]] std::expected<
+        Application::TeacherImportUseCaseResult,
+        Application::TeacherImportUseCaseError
+        > applyTeacherImportUseCase(
+            const Application::TeacherImportUseCaseRequest& request
+            ) const;
 
 private:
     [[nodiscard]] Domain::Result<Application::WorkspaceSession> sessionForOpenStore() const;

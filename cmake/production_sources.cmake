@@ -123,6 +123,22 @@ set(CLASSMNGR_WORKSPACE_STORE_SOURCES
     "src/features/schedule/services/schedule_import_plan_validator.cpp"
 )
 
+# The XLSX reader and sectioned teacher importer are a shared QtCore+ZLIB
+# production component. Legacy teacher import and the Next setup workflow use
+# this one compiled implementation.
+set(CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES
+    "src/features/calendar/calendar_workbook_reader.cpp"
+    "src/features/calendar/calendar_workbook_reader.h"
+    "src/features/teacher/import/sectioned_contact_list_template.cpp"
+    "src/features/teacher/import/sectioned_contact_list_template.h"
+    "src/features/teacher/import/teacher_import_file_validator.cpp"
+    "src/features/teacher/import/teacher_import_file_validator.h"
+    "src/features/teacher/import/teacher_import_name_utils.h"
+    "src/features/teacher/import/teacher_import_template.h"
+    "src/features/teacher/import/teacher_import_template_registry.cpp"
+    "src/features/teacher/import/teacher_import_template_registry.h"
+)
+
 set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_gateway.cpp"
     "src/next/platform/workspace_store_gateway.h"
@@ -332,8 +348,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/calendar/calendar_event_projection_query.cpp"
     "src/features/calendar/calendar_event_projection_query.h"
     "src/features/calendar/calendar_settings_keys.h"
-    "src/features/calendar/calendar_workbook_reader.cpp"
-    "src/features/calendar/calendar_workbook_reader.h"
     "src/features/calendar/ui/academic_calendar_provider.cpp"
     "src/features/calendar/ui/academic_calendar_provider.h"
     "src/features/calendar/ui/calendar_event_cache.cpp"
@@ -582,14 +596,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/sub_prep/ui/sub_prep_print_dialog.h"
     "src/features/sub_prep/ui/sub_prep_print_source_mapper.cpp"
     "src/features/sub_prep/ui/sub_prep_print_source_mapper.h"
-    "src/features/teacher/import/sectioned_contact_list_template.cpp"
-    "src/features/teacher/import/sectioned_contact_list_template.h"
-    "src/features/teacher/import/teacher_import_file_validator.cpp"
-    "src/features/teacher/import/teacher_import_file_validator.h"
-    "src/features/teacher/import/teacher_import_name_utils.h"
-    "src/features/teacher/import/teacher_import_template.h"
-    "src/features/teacher/import/teacher_import_template_registry.cpp"
-    "src/features/teacher/import/teacher_import_template_registry.h"
     "src/features/teacher/ui/staff_directory_page.cpp"
     "src/features/teacher/ui/staff_directory_page.h"
     "src/features/teacher/ui/teacher_import_apply_error_display.h"
@@ -683,6 +689,10 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/application_shell.h"
     "src/next/ui/initial_page.cpp"
     "src/next/ui/initial_page.h"
+    "src/next/ui/initial_setup_teacher_import_dialog.cpp"
+    "src/next/ui/initial_setup_teacher_import_dialog.h"
+    "src/next/ui/teacher_import_request_mapper.cpp"
+    "src/next/ui/teacher_import_request_mapper.h"
     "src/next/ui/navigation_model.cpp"
     "src/next/ui/navigation_model.h"
     "src/next/ui/prompt_automation.h"

@@ -9948,5 +9948,48 @@ Version: %2</source>
     <message><source>The teacher could not be saved. Your entries are still here; retry to save.</source><translation>교사를 저장하지 못했습니다. 입력한 내용은 그대로 유지됩니다. 다시 시도하세요.</translation></message>
     <message><source>Teacher saved. Enter another teacher or continue to the next step.</source><translation>교사를 저장했습니다. 다른 교사를 입력하거나 다음 단계로 계속할 수 있습니다.</translation></message>
     <message><source>Teacher saved. Setup remains pending.</source><translation>교사를 저장했습니다. 초기 설정은 계속 진행 중입니다.</translation></message>
+    <message><source>Import Teachers from Workbook</source><translation>엑셀 파일에서 교사 가져오기</translation></message>
+</context>
+<context>
+    <name>InitialSetupTeacherImportDialog</name>
+    <message><source>Import Teachers from Workbook</source><translation>엑셀 파일에서 교사 가져오기</translation></message>
+    <message><source>File to import from:</source><translation>가져올 파일:</translation></message>
+    <message><source>Browse...</source><translation>찾아보기...</translation></message>
+    <message><source>Choose an XLSX teacher workbook to preview.</source><translation>미리 볼 XLSX 교사 파일을 선택하세요.</translation></message>
+    <message><source>Template: %1
+Source date: %2</source><translation>양식: %1
+원본 날짜: %2</translation></message>
+    <message><source>Automatically importing %1 Native English Teachers and %2 GS Team members.</source><translation>영어 원어민 교사 %1명과 GS 팀원 %2명을 자동으로 가져옵니다.</translation></message>
+    <message><source>Korean Teachers to Import:</source><translation>가져올 한국인 교사:</translation></message>
+    <message><source>Level</source><translation>수준</translation></message>
+    <message><source>All</source><translation>전체</translation></message>
+    <message><source>Select</source><translation>선택</translation></message>
+    <message><source>None</source><translation>없음</translation></message>
+    <message><source>Select %1 Teachers</source><translation>%1 교사 선택</translation></message>
+    <message><source>Name</source><translation>이름</translation></message>
+    <message><source>Room</source><translation>교실</translation></message>
+    <message><source>Apply Import</source><translation>가져오기 적용</translation></message>
+    <message><source>Cancel Setup</source><translation>초기 설정 취소</translation></message>
+    <message><source>The workbook selection service is unavailable.</source><translation>파일 선택 기능을 사용할 수 없습니다.</translation></message>
+    <message><source>Unable to choose a workbook: %1</source><translation>파일을 선택할 수 없습니다: %1</translation></message>
+    <message><source>The selected workbook could not be opened: %1</source><translation>선택한 파일을 열 수 없습니다: %1</translation></message>
+    <message><source>The selected workbook could not be read: %1</source><translation>선택한 파일을 읽을 수 없습니다: %1</translation></message>
+    <message><source>The selected workbook is invalid: %1</source><translation>선택한 파일이 올바르지 않습니다: %1</translation></message>
+    <message><source>Review the workbook, then apply the import.</source><translation>파일을 확인한 후 가져오기를 적용하세요.</translation></message>
+    <message><source>Review choices are invalid. Check the group selections.</source><translation>선택 항목이 올바르지 않습니다. 그룹별 선택을 확인하세요.</translation></message>
+    <message><source>The import workflow is unavailable.</source><translation>가져오기 기능을 사용할 수 없습니다.</translation></message>
+    <message><source>Import failed. Your workbook and review choices are still available.</source><translation>가져오기에 실패했습니다. 파일과 선택 항목은 유지되어 있습니다.</translation></message>
+    <message><source>Import complete from %1.
+Korean teachers: %2 created, %3 updated, %4 unchanged.
+Native English teachers: %5 created, %6 updated, %7 unchanged.
+GS Team members: %8 created, %9 updated, %10 unchanged.</source><translation>%1 원본을 가져왔습니다.
+한국인 교사: %2명 추가, %3명 업데이트, %4명 변경 없음.
+영어 원어민 교사: %5명 추가, %6명 업데이트, %7명 변경 없음.
+GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation></message>
+    <message><source>Select Teacher Import File</source><translation>교사 가져오기 파일 선택</translation></message>
+    <message><source>Excel Workbooks (*.xlsx)</source><translation>Excel 통합 문서 (*.xlsx)</translation></message>
+    <message><source>Reading and validating the workbook...</source><translation>파일을 읽고 확인하는 중...</translation></message>
+    <message><source>Loading the workbook timed out after %1 seconds. Try again or increase the timeout in Preferences.</source><translation>%1초 후 파일 읽기 시간이 초과되었습니다. 다시 시도하거나 환경 설정에서 제한 시간을 늘리세요.</translation></message>
+    <message><source>Retry</source><translation>다시 시도</translation></message>
 </context>
 </TS>

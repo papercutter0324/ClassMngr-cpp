@@ -9736,4 +9736,50 @@ Version: %2</source>
     <name>NextNavigation</name>
     <message><source>Initial Setup</source><translation>Initial Setup</translation></message>
 </context>
+<context>
+    <name>InitialSetupTeacherEntryPage</name>
+    <message><source>Import Teachers from Workbook</source><translation>Import Teachers from Workbook</translation></message>
+</context>
+<context>
+    <name>InitialSetupTeacherImportDialog</name>
+    <message><source>Import Teachers from Workbook</source><translation>Import Teachers from Workbook</translation></message>
+    <message><source>File to import from:</source><translation>File to import from:</translation></message>
+    <message><source>Browse...</source><translation>Browse...</translation></message>
+    <message><source>Choose an XLSX teacher workbook to preview.</source><translation>Choose an XLSX teacher workbook to preview.</translation></message>
+    <message><source>Template: %1
+Source date: %2</source><translation>Template: %1
+Source date: %2</translation></message>
+    <message><source>Automatically importing %1 Native English Teachers and %2 GS Team members.</source><translation>Automatically importing %1 Native English Teachers and %2 GS Team members.</translation></message>
+    <message><source>Korean Teachers to Import:</source><translation>Korean Teachers to Import:</translation></message>
+    <message><source>Level</source><translation>Level</translation></message>
+    <message><source>All</source><translation>All</translation></message>
+    <message><source>Select</source><translation>Select</translation></message>
+    <message><source>None</source><translation>None</translation></message>
+    <message><source>Select %1 Teachers</source><translation>Select %1 Teachers</translation></message>
+    <message><source>Name</source><translation>Name</translation></message>
+    <message><source>Room</source><translation>Room</translation></message>
+    <message><source>Apply Import</source><translation>Apply Import</translation></message>
+    <message><source>Cancel Setup</source><translation>Cancel Setup</translation></message>
+    <message><source>The workbook selection service is unavailable.</source><translation>The workbook selection service is unavailable.</translation></message>
+    <message><source>Unable to choose a workbook: %1</source><translation>Unable to choose a workbook: %1</translation></message>
+    <message><source>The selected workbook could not be opened: %1</source><translation>The selected workbook could not be opened: %1</translation></message>
+    <message><source>The selected workbook could not be read: %1</source><translation>The selected workbook could not be read: %1</translation></message>
+    <message><source>The selected workbook is invalid: %1</source><translation>The selected workbook is invalid: %1</translation></message>
+    <message><source>Review the workbook, then apply the import.</source><translation>Review the workbook, then apply the import.</translation></message>
+    <message><source>Review choices are invalid. Check the group selections.</source><translation>Review choices are invalid. Check the group selections.</translation></message>
+    <message><source>The import workflow is unavailable.</source><translation>The import workflow is unavailable.</translation></message>
+    <message><source>Import failed. Your workbook and review choices are still available.</source><translation>Import failed. Your workbook and review choices are still available.</translation></message>
+    <message><source>Import complete from %1.
+Korean teachers: %2 created, %3 updated, %4 unchanged.
+Native English teachers: %5 created, %6 updated, %7 unchanged.
+GS Team members: %8 created, %9 updated, %10 unchanged.</source><translation>Import complete from %1.
+Korean teachers: %2 created, %3 updated, %4 unchanged.
+Native English teachers: %5 created, %6 updated, %7 unchanged.
+GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
+    <message><source>Select Teacher Import File</source><translation>Select Teacher Import File</translation></message>
+    <message><source>Excel Workbooks (*.xlsx)</source><translation>Excel Workbooks (*.xlsx)</translation></message>
+    <message><source>Reading and validating the workbook...</source><translation>Reading and validating the workbook...</translation></message>
+    <message><source>Loading the workbook timed out after %1 seconds. Try again or increase the timeout in Preferences.</source><translation>Loading the workbook timed out after %1 seconds. Try again or increase the timeout in Preferences.</translation></message>
+    <message><source>Retry</source><translation>Retry</translation></message>
+</context>
 </TS>

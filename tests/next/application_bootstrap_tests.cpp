@@ -19,6 +19,7 @@
 #include "ui/shared/state/option_state_keys.h"
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QCryptographicHash>
 #include <QComboBox>
 #include <QEvent>
@@ -111,6 +112,7 @@ private slots:
     void staleFirstRecentPathIsPrunedWithoutTryingLaterCandidates();
     void interruptedSetupOffersRecoveryBeforeAutoOpenOrRecentHistory();
     void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
+    void teacherImportUsesPendingStoreTransactionAndCancelRecoversBackup();
     void imageSignatureSaveReopensAndResumesFromFixture();
     void failedPersonalDetailsSavePreservesReplacementBackup();
     void recentOpenErrorDoesNotFallThroughToLaterCandidates();
@@ -1145,6 +1147,85 @@ std::optional<QByteArray> fileSha256(
         file.readAll(),
         QCryptographicHash::Sha256
         );
+}
+
+struct TeacherImportPersistedRecords final
+{
+    QStringList koreanTeachers;
+    QStringList nativeEnglishTeachers;
+    QStringList gsTeamMembers;
+    std::optional<QString> latestSourceDate;
+};
+
+std::optional<TeacherImportPersistedRecords> readTeacherImportPersistedRecords(
+    const QString& profilePath,
+    QString* errorMessage
+    )
+{
+    WorkspaceStore store;
+    const RepositoryStatus opened = store.openExisting(profilePath);
+    if (!opened)
+    {
+        if (errorMessage)
+        {
+            *errorMessage = opened.error().diagnostic;
+        }
+        return std::nullopt;
+    }
+
+    TeacherImportPersistedRecords result;
+    const auto readNames = [&store, errorMessage](
+                               const QString& statement,
+                               QStringList& destination) {
+        QSqlQuery query(store.database());
+        if (!query.exec(statement))
+        {
+            if (errorMessage)
+            {
+                *errorMessage = query.lastError().text();
+            }
+            return false;
+        }
+        while (query.next())
+        {
+            destination.append(query.value(0).toString());
+        }
+        return true;
+    };
+    if (!readNames(
+            QStringLiteral("SELECT teacher_kr FROM teachers ORDER BY id"),
+            result.koreanTeachers)
+        || !readNames(
+            QStringLiteral("SELECT name FROM native_english_teachers ORDER BY id"),
+            result.nativeEnglishTeachers)
+        || !readNames(
+            QStringLiteral("SELECT name FROM gs_team ORDER BY id"),
+            result.gsTeamMembers))
+    {
+        store.close();
+        return std::nullopt;
+    }
+
+    {
+        QSqlQuery query(store.database());
+        query.prepare(QStringLiteral("SELECT value FROM app_settings WHERE key=?"));
+        query.addBindValue(QStringLiteral("teacher_import/latest_source_date"));
+        if (!query.exec())
+        {
+            if (errorMessage)
+            {
+                *errorMessage = query.lastError().text();
+            }
+            store.close();
+            return std::nullopt;
+        }
+        if (query.next())
+        {
+            result.latestSourceDate = query.value(0).toString();
+        }
+    }
+    store.close();
+    return result;
 }
 
 }
@@ -4334,6 +4415,439 @@ createActionUsesSelectedPathAndDoesNotRecordPendingProfile()
     QVERIFY(resumedMode->isChecked());
     QVERIFY(!resumedCancel->isHidden());
     QVERIFY(resumedBootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+teacherImportUsesPendingStoreTransactionAndCancelRecoversBackup()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("teacher-import-replacement.tps")
+        );
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    const QString workbookPath = QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+        QStringLiteral("tests/fixtures/teacher_import/sectioned_review.xlsx")
+        );
+    QString fixtureError;
+    QVERIFY2(
+        createWorkspaceWithFixture(
+            profilePath,
+            QStringLiteral("representative_startup.sql"),
+            &fixtureError
+            ),
+        qPrintable(fixtureError)
+        );
+    const auto originalRecords = readRepresentativeProfileRecords(
+        profilePath,
+        &fixtureError
+        );
+    QVERIFY2(originalRecords.has_value(), qPrintable(fixtureError));
+    const auto originalProfileHash = fileSha256(profilePath, &fixtureError);
+    QVERIFY2(originalProfileHash.has_value(), qPrintable(fixtureError));
+
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->selectedPath = Application::FileDialogPath(
+        profilePath.toUtf8().toStdString()
+        );
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        workbookPath.toUtf8().toStdString()
+        );
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("test-app")};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+    seams.initialSetupFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(fileDialogProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    auto* const page = dynamic_cast<Ui::InitialPage*>(
+        bootstrap.shell()->pageHost().pageInstance(QStringLiteral("initial_setup"))
+        );
+    QVERIFY(page);
+    auto* const createButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        );
+    QVERIFY(createButton);
+    createButton->click();
+    QCOMPARE(fileDialogProbe->saveCount, 1);
+    QVERIFY(QFileInfo::exists(profilePath));
+    QVERIFY(QFileInfo::exists(recoveryJournalPath));
+
+    QFile journalBeforeFile(recoveryJournalPath);
+    QVERIFY(journalBeforeFile.open(QIODevice::ReadOnly));
+    const QByteArray journalBefore = journalBeforeFile.readAll();
+    journalBeforeFile.close();
+    const QJsonDocument journalDocument = QJsonDocument::fromJson(journalBefore);
+    QVERIFY(journalDocument.isObject());
+    const QString backupPath = journalDocument.object()
+        .value(QStringLiteral("originalBackup")).toString();
+    QVERIFY(!backupPath.isEmpty());
+    QVERIFY(QFileInfo::exists(backupPath));
+    const auto backupHashBefore = fileSha256(backupPath, &fixtureError);
+    QVERIFY2(backupHashBefore.has_value(), qPrintable(fixtureError));
+    QCOMPARE(*backupHashBefore, *originalProfileHash);
+
+    QVERIFY(executeWorkspaceSql(
+        profilePath,
+        QStringLiteral(R"(
+            CREATE TRIGGER fail_teacher_import_gs_insert
+            BEFORE INSERT ON gs_team
+            BEGIN
+                SELECT RAISE(ABORT, 'forced teacher import failure');
+            END
+        )")
+        ));
+
+    auto* const importButton = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupImportTeachers")
+        );
+    auto* const setupStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupStatus")
+        );
+    auto* const teacherStatus = page->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntryStatus")
+        );
+    QVERIFY(importButton && setupStatus && teacherStatus);
+    QCOMPARE(setupStatus->text(), QStringLiteral("Profile created. Setup is pending."));
+    QVERIFY(!importButton->isHidden());
+
+    QString importInteractionError;
+    int importInteractionPhase = 0;
+    bool sawFailureWithSelectionsRetained = false;
+    std::optional<TeacherImportPersistedRecords> recordsAfterFailedTransaction;
+    QTimer importInteractionTimer;
+    importInteractionTimer.setInterval(10);
+    QObject::connect(
+        &importInteractionTimer,
+        &QTimer::timeout,
+        &importInteractionTimer,
+        [&] {
+            auto* const dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                return;
+            }
+            auto* const status = dialog->findChild<QLabel*>(
+                QStringLiteral("classMngrNextTeacherImportStatus")
+                );
+            const QString statusText = status ? status->text() : QString();
+            if (importInteractionPhase == 0)
+            {
+                auto* const browse = dialog->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportBrowse")
+                    );
+                if (!browse)
+                {
+                    importInteractionError = QStringLiteral(
+                        "The import dialog did not expose Browse."
+                        );
+                }
+                else
+                {
+                    importInteractionPhase = 1;
+                    browse->click();
+                }
+            }
+            else if (importInteractionPhase == 1
+                     && statusText.contains(QStringLiteral("Review")))
+            {
+                const QString expectedPath = QFileInfo(workbookPath).absoluteFilePath();
+                auto* const pathEdit = dialog->findChild<QLineEdit*>(
+                    QStringLiteral("classMngrNextTeacherImportFilePath")
+                    );
+                auto* const selectM1 = dialog->findChild<QRadioButton*>(
+                    QStringLiteral("classMngrNextTeacherImportSelect_0")
+                    );
+                auto* const noneM2 = dialog->findChild<QRadioButton*>(
+                    QStringLiteral("classMngrNextTeacherImportNone_1")
+                    );
+                auto* const allH1 = dialog->findChild<QRadioButton*>(
+                    QStringLiteral("classMngrNextTeacherImportAll_2")
+                    );
+                auto* const firstM1 = dialog->findChild<QCheckBox*>(
+                    QStringLiteral("classMngrNextTeacherImportCandidate_0_0")
+                    );
+                auto* const secondM1 = dialog->findChild<QCheckBox*>(
+                    QStringLiteral("classMngrNextTeacherImportCandidate_0_1")
+                    );
+                auto* const apply = dialog->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportApply")
+                    );
+                if (!pathEdit || !selectM1 || !noneM2 || !allH1
+                    || !firstM1 || !secondM1 || !apply
+                    || pathEdit->text() != expectedPath
+                    || !firstM1->isChecked() || secondM1->isChecked())
+                {
+                    importInteractionError = QStringLiteral(
+                        "The imported workbook path or group defaults were incorrect."
+                        );
+                    return;
+                }
+                selectM1->setChecked(true);
+                noneM2->setChecked(true);
+                allH1->setChecked(true);
+                importInteractionPhase = 2;
+                apply->click();
+            }
+            else if (importInteractionPhase == 2
+                     && statusText.contains(QStringLiteral("Import failed")))
+            {
+                auto* const pathEdit = dialog->findChild<QLineEdit*>(
+                    QStringLiteral("classMngrNextTeacherImportFilePath")
+                    );
+                auto* const selectM1 = dialog->findChild<QRadioButton*>(
+                    QStringLiteral("classMngrNextTeacherImportSelect_0")
+                    );
+                auto* const noneM2 = dialog->findChild<QRadioButton*>(
+                    QStringLiteral("classMngrNextTeacherImportNone_1")
+                    );
+                auto* const allH1 = dialog->findChild<QRadioButton*>(
+                    QStringLiteral("classMngrNextTeacherImportAll_2")
+                    );
+                auto* const firstM1 = dialog->findChild<QCheckBox*>(
+                    QStringLiteral("classMngrNextTeacherImportCandidate_0_0")
+                    );
+                auto* const secondM1 = dialog->findChild<QCheckBox*>(
+                    QStringLiteral("classMngrNextTeacherImportCandidate_0_1")
+                    );
+                auto* const apply = dialog->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportApply")
+                    );
+                if (!pathEdit || !selectM1 || !noneM2 || !allH1
+                    || !firstM1 || !secondM1 || !apply
+                    || pathEdit->text() != QFileInfo(workbookPath).absoluteFilePath()
+                    || !selectM1->isChecked() || !noneM2->isChecked()
+                    || !allH1->isChecked() || !firstM1->isChecked()
+                    || secondM1->isChecked())
+                {
+                    importInteractionError = QStringLiteral(
+                        "A retry did not retain the workbook and review choices."
+                        );
+                    return;
+                }
+                sawFailureWithSelectionsRetained = true;
+                recordsAfterFailedTransaction = readTeacherImportPersistedRecords(
+                    profilePath,
+                    &importInteractionError
+                    );
+                if (!recordsAfterFailedTransaction)
+                {
+                    return;
+                }
+                if (!recordsAfterFailedTransaction->koreanTeachers.isEmpty()
+                    || !recordsAfterFailedTransaction->nativeEnglishTeachers.isEmpty()
+                    || !recordsAfterFailedTransaction->gsTeamMembers.isEmpty()
+                    || recordsAfterFailedTransaction->latestSourceDate.has_value())
+                {
+                    importInteractionError = QStringLiteral(
+                        "A failed import transaction left teacher rows or a source date."
+                        );
+                    return;
+                }
+                if (!executeWorkspaceSql(
+                        profilePath,
+                        QStringLiteral("DROP TRIGGER fail_teacher_import_gs_insert")))
+                {
+                    importInteractionError = QStringLiteral(
+                        "The test could not remove its transaction failure trigger."
+                        );
+                    return;
+                }
+                importInteractionPhase = 3;
+                apply->click();
+            }
+        }
+        );
+    QTimer::singleShot(5000, &importInteractionTimer, [&] {
+        if (importInteractionPhase >= 3)
+        {
+            return;
+        }
+        importInteractionError = QStringLiteral(
+            "The import dialog did not reach the retryable success path."
+            );
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            if (auto* const cancel = modal->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportCancel")))
+            {
+                cancel->click();
+            }
+        }
+    });
+    importInteractionTimer.start();
+    importButton->click();
+    importInteractionTimer.stop();
+
+    QVERIFY2(importInteractionError.isEmpty(), qPrintable(importInteractionError));
+    QCOMPARE(importInteractionPhase, 3);
+    QVERIFY(sawFailureWithSelectionsRetained);
+    QVERIFY(recordsAfterFailedTransaction.has_value());
+    QCOMPARE(fileDialogProbe->openCount, 1);
+    QVERIFY(fileDialogProbe->lastOpenRequest.has_value());
+    QCOMPARE(
+        fileDialogProbe->lastOpenRequest->purpose,
+        Application::FileDialogPurpose::ImportWorkbook
+        );
+    QVERIFY(teacherStatus->text().contains(QStringLiteral("2026-09-01")));
+    QVERIFY(teacherStatus->text().contains(QStringLiteral("2 created")));
+    QCOMPARE(setupStatus->text(), QStringLiteral("Profile created. Setup is pending."));
+    QVERIFY(QFileInfo::exists(backupPath));
+    QFile journalAfterImportFile(recoveryJournalPath);
+    QVERIFY(journalAfterImportFile.open(QIODevice::ReadOnly));
+    QCOMPARE(journalAfterImportFile.readAll(), journalBefore);
+    journalAfterImportFile.close();
+    const auto backupHashAfterImport = fileSha256(backupPath, &fixtureError);
+    QVERIFY2(backupHashAfterImport.has_value(), qPrintable(fixtureError));
+    QCOMPARE(*backupHashAfterImport, *backupHashBefore);
+
+    const auto importedRecords = readTeacherImportPersistedRecords(
+        profilePath,
+        &fixtureError
+        );
+    QVERIFY2(importedRecords.has_value(), qPrintable(fixtureError));
+    QCOMPARE(
+        importedRecords->koreanTeachers,
+        QStringList({QString::fromUtf8("홍길동"), QString::fromUtf8("박민준")})
+        );
+    QCOMPARE(importedRecords->nativeEnglishTeachers, QStringList{QStringLiteral("Alex")});
+    QCOMPARE(importedRecords->gsTeamMembers, QStringList{QStringLiteral("Taylor")});
+    QVERIFY(importedRecords->latestSourceDate.has_value());
+    QCOMPARE(*importedRecords->latestSourceDate, QStringLiteral("2026-09-01"));
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(historyProbe->saves.empty());
+
+    const QString invalidWorkbookPath = temporaryDirectory.filePath(
+        QStringLiteral("invalid-teacher-import.xlsx")
+        );
+    QFile invalidWorkbook(invalidWorkbookPath);
+    QVERIFY(invalidWorkbook.open(QIODevice::WriteOnly));
+    QCOMPARE(invalidWorkbook.write(QByteArrayLiteral("not an xlsx")), qint64(11));
+    invalidWorkbook.close();
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        invalidWorkbookPath.toUtf8().toStdString()
+        );
+
+    int cancelInteractionCount = 0;
+    bool sawInvalidWorkbookError = false;
+    int cancelInteractionPhase = 0;
+    QTimer cancelInteractionTimer;
+    cancelInteractionTimer.setInterval(10);
+    QObject::connect(
+        &cancelInteractionTimer,
+        &QTimer::timeout,
+        &cancelInteractionTimer,
+        [&] {
+            auto* const dialog = qobject_cast<QDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!dialog)
+            {
+                return;
+            }
+            if (cancelInteractionPhase == 0)
+            {
+                auto* const browse = dialog->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportBrowse")
+                    );
+                if (browse)
+                {
+                    cancelInteractionPhase = 1;
+                    browse->click();
+                }
+                return;
+            }
+            auto* const status = dialog->findChild<QLabel*>(
+                QStringLiteral("classMngrNextTeacherImportStatus")
+                );
+            if (cancelInteractionPhase == 1 && status
+                && status->text().contains(QStringLiteral("invalid")))
+            {
+                const auto* const apply = dialog->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportApply")
+                    );
+                auto* const cancel = dialog->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportCancel")
+                    );
+                auto* const pathEdit = dialog->findChild<QLineEdit*>(
+                    QStringLiteral("classMngrNextTeacherImportFilePath")
+                    );
+                if (!apply || !cancel || !pathEdit
+                    || apply->isEnabled()
+                    || pathEdit->text() != QFileInfo(invalidWorkbookPath).absoluteFilePath())
+                {
+                    return;
+                }
+                sawInvalidWorkbookError = true;
+                ++cancelInteractionCount;
+                cancel->click();
+            }
+        }
+        );
+    QTimer::singleShot(3000, &cancelInteractionTimer, [&] {
+        if (cancelInteractionCount != 0)
+        {
+            return;
+        }
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            if (auto* const cancel = modal->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextTeacherImportCancel")))
+            {
+                cancel->click();
+            }
+        }
+    });
+    cancelInteractionTimer.start();
+    importButton->click();
+    cancelInteractionTimer.stop();
+    QCOMPARE(cancelInteractionCount, 1);
+    QCOMPARE(fileDialogProbe->openCount, 2);
+    QVERIFY(sawInvalidWorkbookError);
+    QVERIFY(!QFileInfo::exists(recoveryJournalPath));
+    QVERIFY(!QFileInfo::exists(backupPath));
+    QVERIFY(QFileInfo::exists(profilePath));
+    const auto restoredRecords = readRepresentativeProfileRecords(
+        profilePath,
+        &fixtureError
+        );
+    QVERIFY2(restoredRecords.has_value(), qPrintable(fixtureError));
+    QCOMPARE(*restoredRecords, *originalRecords);
+    QCOMPARE(historyProbe->saveCount, 0);
+    QVERIFY(historyProbe->saves.empty());
+    QCOMPARE(setupStatus->text(), QStringLiteral("Choose where to save your profile."));
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
 }
 

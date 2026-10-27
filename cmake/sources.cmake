@@ -138,6 +138,20 @@ set_target_properties(ClassMngrWorkspaceStore
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
 )
+add_library(ClassMngrTeacherImportParser STATIC
+    ${CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES}
+)
+target_link_libraries(ClassMngrTeacherImportParser
+    PUBLIC
+        ClassMngrBuildSettings
+        Qt6::Core
+        ZLIB::ZLIB
+)
+set_target_properties(ClassMngrTeacherImportParser
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 classmngr_add_production_objects(
     TARGET ClassMngrData
     SOURCES ${CLASSMNGR_DATA_SOURCES}
@@ -249,6 +263,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrBuildSettings
         ClassMngrSignature
         ClassMngrWorkspaceStore
+        ClassMngrTeacherImportParser
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
         ClassMngrSQLiteSnapshot
@@ -300,6 +315,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrBuildSettings
             ClassMngrSignature
             ClassMngrWorkspaceStore
+            ClassMngrTeacherImportParser
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE
             ClassMngrSQLiteSnapshot

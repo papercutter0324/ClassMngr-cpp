@@ -544,6 +544,14 @@ InitialPage::InitialPage(
     m_continueTeacherEntryButton->setObjectName(
         QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
         );
+    m_importTeachersButton = new QPushButton(
+        teacherEntryText("Import Teachers from Workbook"),
+        m_teacherEntryGroup
+        );
+    m_importTeachersButton->setObjectName(
+        QStringLiteral("classMngrNextInitialSetupImportTeachers")
+        );
+    teacherActions->insertWidget(0, m_importTeachersButton);
     teacherActions->addWidget(m_addAnotherTeacherButton);
     teacherActions->addWidget(m_continueTeacherEntryButton);
     teacherLayout->addLayout(teacherActions);
@@ -611,6 +619,8 @@ InitialPage::InitialPage(
             this, [this] { saveTeacher(true); });
     connect(m_continueTeacherEntryButton, &QPushButton::clicked,
             this, [this] { saveTeacher(false); });
+    connect(m_importTeachersButton, &QPushButton::clicked,
+            this, &InitialPage::importTeachersFromWorkbook);
     connect(m_teacherEnglishNameEdit, &QLineEdit::textChanged,
             this, &InitialPage::updatePreferredTeacherNames);
     connect(m_teacherPreferredSpellingEdit, &QLineEdit::textChanged,
@@ -977,6 +987,31 @@ void InitialPage::saveTeacher(const bool addAnother)
         "Teacher saved. Setup remains pending."
         ));
     updateTeacherEntryControls();
+}
+
+void InitialPage::importTeachersFromWorkbook()
+{
+    if (!m_actions.state || !m_actions.state().setupPending)
+    {
+        return;
+    }
+
+    InitialSetupTeacherImportDialog dialog(
+        InitialSetupTeacherImportActions{
+            .chooseWorkbook = m_actions.teacherImport.chooseWorkbook,
+            .validateWorkbook = m_actions.teacherImport.validateWorkbook,
+            .validationTimeoutMilliseconds =
+                m_actions.teacherImport.validationTimeoutMilliseconds,
+            .apply = m_actions.teacherImport.apply,
+            .cancelSetup = m_actions.cancelSetup
+        },
+        this
+        );
+    if (dialog.exec() == QDialog::Accepted)
+    {
+        m_teacherEntryStatusLabel->setText(dialog.successSummary());
+    }
+    refreshSetupState();
 }
 
 void InitialPage::clearTeacherFields()

@@ -9,6 +9,7 @@
 #include "next/application/initial_setup_lifecycle.h"
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
+#include "next/application/teacher_import_use_case.h"
 #include "next/application/teacher_create.h"
 #include "next/application/workspace_contracts.h"
 #include "next/application/workspace_state.h"
@@ -133,6 +134,14 @@ private:
     saveInitialSetupTeacher(
         const Application::TeacherCreateRequest& request
         ) const;
+    [[nodiscard]] Domain::Result<std::optional<QString>>
+    chooseInitialSetupTeacherImportWorkbook();
+    [[nodiscard]] std::expected<
+        Application::TeacherImportUseCaseResult,
+        Application::TeacherImportUseCaseError
+        > applyInitialSetupTeacherImport(
+            const Application::TeacherImportUseCaseRequest& request
+            ) const;
     [[nodiscard]] Domain::Result<std::optional<QByteArray>>
     chooseInitialSetupSignatureImage();
     [[nodiscard]] bool releaseWorkspace() noexcept;

@@ -4,6 +4,7 @@
 #include "next/application/recent_workspace_history_use_case.h"
 #include "core/settingsmanager.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
+#include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "next/platform/settings_manager_preferences_port.h"
 #include "next/platform/resource_document_catalog_port.h"
 #include "next/platform/workspace_store_gateway.h"
@@ -717,6 +718,26 @@ Application::StartupResult ApplicationBootstrap::start()
                             const Application::TeacherCreateRequest& request
                             ) {
                             return saveInitialSetupTeacher(request);
+                        },
+                        .teacherImport = {
+                            .chooseWorkbook = [this] {
+                                return chooseInitialSetupTeacherImportWorkbook();
+                            },
+                            .validateWorkbook = [](const QString& path) {
+                                return validateTeacherImportFile(path);
+                            },
+                            .validationTimeoutMilliseconds = [] {
+                                const Platform::SettingsManagerExcelImportTimeoutPort
+                                    timeoutPreferences;
+                                return timeoutPreferences.read().normalizedSeconds()
+                                    * 1000;
+                            },
+                            .apply = [this](
+                                const Application::TeacherImportUseCaseRequest& request
+                                ) {
+                                return applyInitialSetupTeacherImport(request);
+                            },
+                            .cancelSetup = [this] { cancelInitialSetupProfile(); }
                         },
                         .chooseSignatureImage = [this] {
                             return chooseInitialSetupSignatureImage();
@@ -1556,6 +1577,113 @@ Application::TeacherCreateResult ApplicationBootstrap::saveInitialSetupTeacher(
     }
 
     return storeGateway->createInitialSetupTeacher(request);
+}
+
+Domain::Result<std::optional<QString>>
+ApplicationBootstrap::chooseInitialSetupTeacherImportWorkbook()
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return Domain::Result<std::optional<QString>>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "No setup profile is active.",
+            .recoverable = true
+        });
+    }
+
+    const QByteArray title = QCoreApplication::translate(
+        "InitialSetupTeacherImportDialog",
+        "Select Teacher Import File"
+        ).toUtf8();
+    const QByteArray filter = QCoreApplication::translate(
+        "InitialSetupTeacherImportDialog",
+        "Excel Workbooks (*.xlsx)"
+        ).toUtf8();
+    const Application::OpenFileDialogRequest request{
+        .purpose = Application::FileDialogPurpose::ImportWorkbook,
+        .title = std::string(title.constData(),
+                             static_cast<std::size_t>(title.size())),
+        .nameFilters = {
+            std::string(filter.constData(),
+                        static_cast<std::size_t>(filter.size()))
+        }
+    };
+
+    using Response = Application::FileDialogResponse<
+        Application::FileDialogPath>;
+    const Domain::Result<Response> selected = [&]() -> Domain::Result<Response> {
+        if (m_startupWorkspaceSeams.initialSetupFileDialogPortFactory)
+        {
+            std::unique_ptr<Application::FileDialogPort> fileDialog =
+                m_startupWorkspaceSeams.initialSetupFileDialogPortFactory();
+            if (!fileDialog)
+            {
+                return Domain::Result<Response>::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = "The teacher import file dialog is unavailable.",
+                    .recoverable = true
+                });
+            }
+            return fileDialog->openOneFile(request);
+        }
+
+        if (!m_shell)
+        {
+            return Domain::Result<Response>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "The teacher import file dialog is unavailable.",
+                .recoverable = true
+            });
+        }
+
+        Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+            directoryPreferences;
+        Ui::QtFileDialogPresenter fileDialog(directoryPreferences, m_shell.get());
+        return fileDialog.openOneFile(request);
+    }();
+
+    if (!selected)
+    {
+        return Domain::Result<std::optional<QString>>::failure(
+            selected.error());
+    }
+    if (!selected.value().selection.has_value())
+    {
+        return Domain::Result<std::optional<QString>>::success(std::nullopt);
+    }
+
+    const std::string& pathBytes = selected.value().selection->value();
+    return Domain::Result<std::optional<QString>>::success(QString::fromUtf8(
+        pathBytes.data(), static_cast<qsizetype>(pathBytes.size())));
+}
+
+std::expected<
+    Application::TeacherImportUseCaseResult,
+    Application::TeacherImportUseCaseError
+    > ApplicationBootstrap::applyInitialSetupTeacherImport(
+        const Application::TeacherImportUseCaseRequest& request
+        ) const
+{
+    if (!m_initialSetupLifecycle
+        || !m_initialSetupLifecycle->hasPendingSetup())
+    {
+        return std::unexpected(Application::TeacherImportUseCaseError{
+            .kind = Application::TeacherImportUseCaseErrorKind::InvalidRequest
+        });
+    }
+
+    auto* const storeGateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
+        m_workspaceGateway.get()
+        );
+    if (!storeGateway)
+    {
+        return std::unexpected(Application::TeacherImportUseCaseError{
+            .kind = Application::TeacherImportUseCaseErrorKind::InvalidRequest
+        });
+    }
+
+    return storeGateway->applyTeacherImportUseCase(request);
 }
 
 Domain::Result<std::optional<QByteArray>>
