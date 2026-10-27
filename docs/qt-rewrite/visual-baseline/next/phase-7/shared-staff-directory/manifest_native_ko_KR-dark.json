@@ -1,0 +1,137 @@
+{
+    "columns": 6,
+    "fixtureRows": 120,
+    "kind": "native",
+    "legacyCapture": "legacy_native_ko_KR-dark.png",
+    "legacySurface": {
+        "cellWidgetCount": 0,
+        "columns": 6,
+        "headers": [
+            "이름",
+            "직책",
+            "전화번호",
+            "이메일",
+            "생일",
+            "국적"
+        ],
+        "repositoryOrderMatched": true,
+        "rows": 120,
+        "sortingEnabled": false,
+        "tableItemCount": 0
+    },
+    "locale": "ko_KR",
+    "nextCapture": "next_native_ko_KR-dark.png",
+    "nextCellWidgetCount": 0,
+    "nextModelRecords": 120,
+    "nextSurface": {
+        "cellWidgetCount": 0,
+        "columns": 6,
+        "compactRecordCount": 120,
+        "headers": [
+            "이름",
+            "직책",
+            "전화번호",
+            "이메일",
+            "생일",
+            "국적"
+        ],
+        "repositoryOrderMatched": true,
+        "rows": 120,
+        "sortingEnabled": false,
+        "tableItemCount": 0
+    },
+    "processMemory": {
+        "legacy": {
+            "afterPageRelease": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:07.455",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 83132416,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 28312536,
+                "privateWorkingSetBytes": 27623424,
+                "threadCount": 3,
+                "workingSetBytes": 83132416
+            },
+            "beforePage": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:07.298",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 52658176,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 14992152,
+                "privateWorkingSetBytes": 14434304,
+                "threadCount": 3,
+                "workingSetBytes": 52019200
+            },
+            "scopeNotes": "Whole-process snapshots include Qt, the fixture workspace, and shared runtime state. They are not per-page allocation deltas or a memory-budget claim.",
+            "whilePageVisible": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:07.438",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 79446016,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 24839128,
+                "privateWorkingSetBytes": 24150016,
+                "threadCount": 3,
+                "workingSetBytes": 79446016
+            }
+        },
+        "next": {
+            "afterPageRelease": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:07.483",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 83542016,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 28656600,
+                "privateWorkingSetBytes": 27967488,
+                "threadCount": 3,
+                "workingSetBytes": 83542016
+            },
+            "beforePage": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:07.455",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 83148800,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 28312536,
+                "privateWorkingSetBytes": 27623424,
+                "threadCount": 3,
+                "workingSetBytes": 83132416
+            },
+            "scopeNotes": "Whole-process snapshots include Qt, the fixture workspace, and shared runtime state. They are not per-page allocation deltas or a memory-budget claim.",
+            "whilePageVisible": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:07.463",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 83394560,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 28525528,
+                "privateWorkingSetBytes": 27836416,
+                "threadCount": 3,
+                "workingSetBytes": 83394560
+            }
+        }
+    },
+    "repositoryOrderExpectedFrom": "WorkspaceStoreGateway directory snapshots",
+    "sortingEnabled": false,
+    "task": "phase7_018_shared_staff_directory_implementation",
+    "theme": "dark",
+    "viewport": [
+        1024,
+        768
+    ]
+}

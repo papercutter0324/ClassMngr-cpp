@@ -1,0 +1,137 @@
+{
+    "columns": 6,
+    "fixtureRows": 120,
+    "kind": "native",
+    "legacyCapture": "legacy_native_en_US-light.png",
+    "legacySurface": {
+        "cellWidgetCount": 0,
+        "columns": 6,
+        "headers": [
+            "Name",
+            "Position",
+            "Phone Number",
+            "Email",
+            "Birthday",
+            "Nationality"
+        ],
+        "repositoryOrderMatched": true,
+        "rows": 120,
+        "sortingEnabled": false,
+        "tableItemCount": 0
+    },
+    "locale": "en_US",
+    "nextCapture": "next_native_en_US-light.png",
+    "nextCellWidgetCount": 0,
+    "nextModelRecords": 120,
+    "nextSurface": {
+        "cellWidgetCount": 0,
+        "columns": 6,
+        "compactRecordCount": 120,
+        "headers": [
+            "Name",
+            "Position",
+            "Phone Number",
+            "Email",
+            "Birthday",
+            "Nationality"
+        ],
+        "repositoryOrderMatched": true,
+        "rows": 120,
+        "sortingEnabled": false,
+        "tableItemCount": 0
+    },
+    "processMemory": {
+        "legacy": {
+            "afterPageRelease": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:06.929",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 80494592,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 27182016,
+                "privateWorkingSetBytes": 26509312,
+                "threadCount": 3,
+                "workingSetBytes": 80494592
+            },
+            "beforePage": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:06.785",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 52707328,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 14992080,
+                "privateWorkingSetBytes": 14483456,
+                "threadCount": 3,
+                "workingSetBytes": 52068352
+            },
+            "scopeNotes": "Whole-process snapshots include Qt, the fixture workspace, and shared runtime state. They are not per-page allocation deltas or a memory-budget claim.",
+            "whilePageVisible": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:06.896",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 75743232,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 22496144,
+                "privateWorkingSetBytes": 21856256,
+                "threadCount": 3,
+                "workingSetBytes": 75743232
+            }
+        },
+        "next": {
+            "afterPageRelease": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:06.956",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 80756736,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 27378624,
+                "privateWorkingSetBytes": 26705920,
+                "threadCount": 3,
+                "workingSetBytes": 80756736
+            },
+            "beforePage": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:06.929",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 80510976,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 27182016,
+                "privateWorkingSetBytes": 26509312,
+                "threadCount": 3,
+                "workingSetBytes": 80494592
+            },
+            "scopeNotes": "Whole-process snapshots include Qt, the fixture workspace, and shared runtime state. They are not per-page allocation deltas or a memory-budget claim.",
+            "whilePageVisible": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:06.936",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 80740352,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 27378624,
+                "privateWorkingSetBytes": 26705920,
+                "threadCount": 3,
+                "workingSetBytes": 80740352
+            }
+        }
+    },
+    "repositoryOrderExpectedFrom": "WorkspaceStoreGateway directory snapshots",
+    "sortingEnabled": false,
+    "task": "phase7_018_shared_staff_directory_implementation",
+    "theme": "light",
+    "viewport": [
+        1024,
+        768
+    ]
+}

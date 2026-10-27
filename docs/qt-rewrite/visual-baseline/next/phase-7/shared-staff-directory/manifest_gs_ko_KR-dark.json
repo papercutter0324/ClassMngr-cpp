@@ -1,0 +1,135 @@
+{
+    "columns": 5,
+    "fixtureRows": 120,
+    "kind": "gs",
+    "legacyCapture": "legacy_gs_ko_KR-dark.png",
+    "legacySurface": {
+        "cellWidgetCount": 0,
+        "columns": 5,
+        "headers": [
+            "이름",
+            "한국어 이름",
+            "직책",
+            "전화번호",
+            "생일"
+        ],
+        "repositoryOrderMatched": true,
+        "rows": 120,
+        "sortingEnabled": false,
+        "tableItemCount": 0
+    },
+    "locale": "ko_KR",
+    "nextCapture": "next_gs_ko_KR-dark.png",
+    "nextCellWidgetCount": 0,
+    "nextModelRecords": 120,
+    "nextSurface": {
+        "cellWidgetCount": 0,
+        "columns": 5,
+        "compactRecordCount": 120,
+        "headers": [
+            "이름",
+            "한국어 이름",
+            "직책",
+            "전화번호",
+            "생일"
+        ],
+        "repositoryOrderMatched": true,
+        "rows": 120,
+        "sortingEnabled": false,
+        "tableItemCount": 0
+    },
+    "processMemory": {
+        "legacy": {
+            "afterPageRelease": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:08.483",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 83066880,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 28361664,
+                "privateWorkingSetBytes": 27688960,
+                "threadCount": 3,
+                "workingSetBytes": 83066880
+            },
+            "beforePage": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:08.333",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 52707328,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 15008488,
+                "privateWorkingSetBytes": 14483456,
+                "threadCount": 3,
+                "workingSetBytes": 52068352
+            },
+            "scopeNotes": "Whole-process snapshots include Qt, the fixture workspace, and shared runtime state. They are not per-page allocation deltas or a memory-budget claim.",
+            "whilePageVisible": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:08.467",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 79331328,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 24871872,
+                "privateWorkingSetBytes": 24199168,
+                "threadCount": 3,
+                "workingSetBytes": 79331328
+            }
+        },
+        "next": {
+            "afterPageRelease": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:08.509",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 83492864,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 28722112,
+                "privateWorkingSetBytes": 28049408,
+                "threadCount": 3,
+                "workingSetBytes": 83492864
+            },
+            "beforePage": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:08.483",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 83083264,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 28361664,
+                "privateWorkingSetBytes": 27688960,
+                "threadCount": 3,
+                "workingSetBytes": 83066880
+            },
+            "scopeNotes": "Whole-process snapshots include Qt, the fixture workspace, and shared runtime state. They are not per-page allocation deltas or a memory-budget claim.",
+            "whilePageVisible": {
+                "available": true,
+                "capturedAt": "2026-10-27T16:58:08.490",
+                "handleCount": 0,
+                "pagefileUsageBytes": 0,
+                "peakWorkingSetBytes": 83345408,
+                "platform": "macos",
+                "privateDirtyBytes": 0,
+                "privateUsageBytes": 28591040,
+                "privateWorkingSetBytes": 27918336,
+                "threadCount": 3,
+                "workingSetBytes": 83345408
+            }
+        }
+    },
+    "repositoryOrderExpectedFrom": "WorkspaceStoreGateway directory snapshots",
+    "sortingEnabled": false,
+    "task": "phase7_018_shared_staff_directory_implementation",
+    "theme": "dark",
+    "viewport": [
+        1024,
+        768
+    ]
+}

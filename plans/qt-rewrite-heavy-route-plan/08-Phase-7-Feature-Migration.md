@@ -41,10 +41,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: 7A.1–7A.15 are accepted; Batch 1 is pushed at `c5af6755`.
   Candidate #16, Teacher profile page and navigation, is accepted at
   `24c14f5e`; candidate #17, Korean teacher sidebar directory, is accepted at
-  `d6574628`. Batch 2 is active at candidate #18, Shared Staff Directory for
-  Native English and GS Team. The 7A screenshot comparison and memory
-  measurement remain open, as do the 7A and Phase 7 exit gates. See the
-  progress log for slice evidence and limits.
+  `d6574628`; candidate #18, Shared Staff Directory for Native English and GS
+  Team, is accepted at `aab11f67`. Batch 2 is active at candidate #19, normal
+  teacher workbook import in Next, separate from Initial Setup. The 7A
+  screenshot comparison and memory measurement remain open, as do the 7A and
+  Phase 7 exit gates. See the progress log for slice evidence and limits.
 
 ### Slice batches
 
@@ -489,6 +490,33 @@ keep current status in this plan and live batches in the shared tracker.
   per-list deltas and do not
   establish a budget or close the 7A or Phase 9 memory gates. The 7A screenshot
   comparison and 7A/Phase 7 exit gates also remain open.
+
+### Candidate #18 — Shared Staff Directory accepted (2026-10-27)
+
+- Commit: `aab11f67` (`Phase7 - Add shared staff directory`). Native English
+  and GS Team use a shared model/view directory with in-place refresh,
+  active-cell editors, and separate typed `WorkspaceStore` branches. The
+  `refreshFromStore()` seam is for candidate #19; normal teacher workbook
+  import is not part of #18.
+- Verification: incremental build and CMake reconfiguration in standard
+  `build/macos-clang-debug`; CMake validated one owner for 1,769 handwritten
+  sources. Focused CTest passed 19/19. The filtered offscreen Bootstrap route
+  check passed 3/3 with missing-icon and unsupported-operation warnings.
+  Resource inventory `--check` and `git diff --check` passed. The Executor
+  added assertions for header order, direct-store row order, row/column counts,
+  sorting state, zero table items, and zero cell widgets. Independent Tester
+  rechecked the slice.
+- Visual review: Main and Tester reviewed the four legacy/Next pairs across
+  Native English and GS Team in English/light and Korean/dark. Content and
+  layout align closely; the Next table bottom edge is about 6 px lower. See the
+  [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/shared-staff-directory/README.md)
+  for the fixture, assertions, memory evidence, and limits.
+- Limits: snapshots are sequential whole-process macOS measurements, not
+  per-page allocation deltas or a budget. No handle-count/private-dirty metric,
+  full suite, Windows run, native-window verification, or phase exit gate was
+  verified. The 7A screenshot comparison and memory evidence and the 7A/Phase 7
+  exit gates remain open. Candidate #19, normal teacher workbook import in
+  Next separate from Initial Setup, is active.
 
 ## Objective
 

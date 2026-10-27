@@ -14,11 +14,13 @@ slices. Work through these ordered candidates:
     visual evidence and focused verification are in the [Phase 7 progress
     log](08-Phase-7-Feature-Migration.md#progress-log) and [capture
     package](../../docs/qt-rewrite/visual-baseline/next/phase-7/korean-teacher-directory/README.md).
-18. **Active — Shared Staff Directory page/model-view for Native English and
-    GS Team.** Preserve each data kind's fields, IDs, validation, and read/write
-    branches.
-19. Normal teacher workbook import in the Next shell, separate from Initial
-    Setup import. Preserve review/transaction/version prompts and refresh of
+18. **Accepted — Shared Staff Directory page/model-view for Native English and
+    GS Team** (`aab11f67`). It preserves separate typed store branches and
+    exposes `refreshFromStore()` for the following import slice. See the
+    [Phase 7 progress log](08-Phase-7-Feature-Migration.md#progress-log) and
+    [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/shared-staff-directory/README.md).
+19. **Active — Normal teacher workbook import in the Next shell, separate from
+    Initial Setup.** Preserve review/transaction/version prompts and refresh of
     profile, list, and directories.
 20. Upcoming birthdays and daily dismissal in the Next shell. This depends on
     reads for all three staff groups.

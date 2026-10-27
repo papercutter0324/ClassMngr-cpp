@@ -9,8 +9,10 @@
 - Current milestone: Phase 7 remains in progress. 7A.1–7A.15 are accepted;
   Batch 1 is pushed at `c5af6755`; candidate #16, Teacher profile page and
   navigation, is accepted at `24c14f5e`; candidate #17, Korean teacher sidebar
-  directory, is accepted at `d6574628`. Batch 2 is active at candidate #18,
-  Shared Staff Directory for Native English and GS Team. The 7A screenshot
+  directory, is accepted at `d6574628`; candidate #18, Shared Staff Directory
+  for Native English and GS Team, is accepted at `aab11f67`. Batch 2 is active
+  at candidate #19, normal teacher workbook import in Next, separate from
+  Initial Setup. The 7A screenshot
   comparison and memory measurement remain open, as do the 7A and Phase 7 exit
   gates. See the [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current
   batch tracker](Current-Slice-Batches.md).
@@ -37,7 +39,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — 7A.1–7A.15 accepted; Batch 2 candidate #18 active | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — 7A.1–7A.15 accepted; Batch 2 candidate #19 active | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |
