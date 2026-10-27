@@ -1,0 +1,164 @@
+{
+    "emptyScheduleAssertions": {
+        "legacy": {
+            "closeText": "닫기",
+            "dismissalChecked": false,
+            "dismissalText": "오늘 다시 보지 않기",
+            "nextWeekEmpty": "다음 주에 생일인 사람이 없습니다.",
+            "nextWeekEntries": 0,
+            "nextWeekTitle": "다음 주",
+            "nextWeekVisible": true,
+            "size": [
+                520,
+                560
+            ],
+            "thisWeekEmpty": "이번 주에 생일인 사람이 없습니다.",
+            "thisWeekEntries": 0,
+            "thisWeekTitle": "이번 주",
+            "thisWeekVisible": true,
+            "title": "다가오는 생일",
+            "todayEntries": 0,
+            "todayTitle": "오늘 생일",
+            "todayVisible": false,
+            "visibleNames": [
+            ]
+        },
+        "next": {
+            "closeText": "닫기",
+            "dismissalChecked": false,
+            "dismissalText": "오늘 다시 보지 않기",
+            "nextWeekEmpty": "다음 주에 생일인 사람이 없습니다.",
+            "nextWeekEntries": 0,
+            "nextWeekTitle": "다음 주",
+            "nextWeekVisible": true,
+            "size": [
+                520,
+                560
+            ],
+            "thisWeekEmpty": "이번 주에 생일인 사람이 없습니다.",
+            "thisWeekEntries": 0,
+            "thisWeekTitle": "이번 주",
+            "thisWeekVisible": true,
+            "title": "다가오는 생일",
+            "todayEntries": 0,
+            "todayTitle": "오늘 생일",
+            "todayVisible": false,
+            "visibleNames": [
+            ]
+        }
+    },
+    "expectedDialogSize": [
+        520,
+        560
+    ],
+    "legacyCapture": "legacy.png",
+    "legacySurface": {
+        "closeText": "닫기",
+        "dismissalChecked": false,
+        "dismissalText": "오늘 다시 보지 않기",
+        "nextWeekEmpty": "",
+        "nextWeekEntries": 2,
+        "nextWeekTitle": "다음 주",
+        "nextWeekVisible": true,
+        "size": [
+            520,
+            560
+        ],
+        "thisWeekEmpty": "",
+        "thisWeekEntries": 1,
+        "thisWeekTitle": "이번 주",
+        "thisWeekVisible": true,
+        "title": "다가오는 생일",
+        "todayEntries": 1,
+        "todayTitle": "오늘 생일",
+        "todayVisible": true,
+        "visibleNames": [
+            "오늘 생일",
+            "Week Teacher",
+            "Next Native",
+            "Next GS"
+        ]
+    },
+    "locale": "ko_KR",
+    "nextCapture": "next.png",
+    "nextSurface": {
+        "closeText": "닫기",
+        "dismissalChecked": false,
+        "dismissalText": "오늘 다시 보지 않기",
+        "nextWeekEmpty": "",
+        "nextWeekEntries": 2,
+        "nextWeekTitle": "다음 주",
+        "nextWeekVisible": true,
+        "size": [
+            520,
+            560
+        ],
+        "thisWeekEmpty": "",
+        "thisWeekEntries": 1,
+        "thisWeekTitle": "이번 주",
+        "thisWeekVisible": true,
+        "title": "다가오는 생일",
+        "todayEntries": 1,
+        "todayTitle": "오늘 생일",
+        "todayVisible": true,
+        "visibleNames": [
+            "오늘 생일",
+            "Week Teacher",
+            "Next Native",
+            "Next GS"
+        ]
+    },
+    "processMemory": {
+        "afterDialogCleanup": {
+            "available": true,
+            "capturedAt": "2026-10-27T19:17:36.346",
+            "handleCount": 0,
+            "peakWorkingSetBytes": 73236480,
+            "platform": "macos",
+            "privateUsageBytes": 22496216,
+            "privateWorkingSetBytes": 21807104,
+            "threadCount": 3,
+            "workingSetBytes": 73220096
+        },
+        "afterLegacyCapture": {
+            "available": true,
+            "capturedAt": "2026-10-27T19:17:36.324",
+            "handleCount": 0,
+            "peakWorkingSetBytes": 73170944,
+            "platform": "macos",
+            "privateUsageBytes": 22496216,
+            "privateWorkingSetBytes": 21807104,
+            "threadCount": 3,
+            "workingSetBytes": 73170944
+        },
+        "afterNextCapture": {
+            "available": true,
+            "capturedAt": "2026-10-27T19:17:36.346",
+            "handleCount": 0,
+            "peakWorkingSetBytes": 73220096,
+            "platform": "macos",
+            "privateUsageBytes": 22496216,
+            "privateWorkingSetBytes": 21807104,
+            "threadCount": 3,
+            "workingSetBytes": 73220096
+        },
+        "before": {
+            "available": true,
+            "capturedAt": "2026-10-27T19:17:36.219",
+            "handleCount": 0,
+            "peakWorkingSetBytes": 46612480,
+            "platform": "macos",
+            "privateUsageBytes": 12731088,
+            "privateWorkingSetBytes": 12222464,
+            "threadCount": 3,
+            "workingSetBytes": 46612480
+        }
+    },
+    "referenceDate": "2026-07-10",
+    "task": "phase7_020_upcoming_birthdays_implementation",
+    "theme": "dark",
+    "viewport": [
+        1024,
+        768
+    ]
+}

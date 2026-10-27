@@ -43,10 +43,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   `24c14f5e`; candidate #17, Korean teacher sidebar directory, is accepted at
   `d6574628`; candidate #18, Shared Staff Directory for Native English and GS
   Team, is accepted at `aab11f67`; candidate #19, normal teacher workbook
-  import, is accepted at `6dedd431`. Batch 2 is active at candidate #20,
-  upcoming birthdays and daily dismissal in Next. The 7A screenshot comparison
-  and memory measurement remain open, as do the 7A and Phase 7 exit gates. See
-  the progress log for slice evidence and limits.
+  import, is accepted at `6dedd431`; candidate #20, upcoming birthdays and
+  daily dismissal, is accepted at `a36a1fb5`. Batch 3 is active at candidate
+  #21, My Details and Signature. The 7A screenshot comparison and memory
+  measurement remain open, as do the 7A and Phase 7 exit gates. See the
+  progress log for slice evidence and limits.
 
 ### Slice batches
 
@@ -548,6 +549,29 @@ keep current status in this plan and live batches in the shared tracker.
   verification was recorded. The 7A screenshot comparison and memory evidence
   and 7A/Phase 7 exit gates remain open. Candidate #20, upcoming birthdays and
   daily dismissal in Next, is active.
+
+### Candidate #20 — Upcoming birthdays and daily dismissal accepted (2026-10-27)
+
+- Commit: `a36a1fb5`. The Next dialog matches the legacy 520×560 layout and
+  content in English/light and Korean/dark. Main reviewed all four captures;
+  the independent Tester confirmed content, layout, and empty states. Capture
+  manifests include populated birthday sections and empty-schedule assertions.
+  See the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/upcoming-birthdays/README.md).
+- Dismissal behavior: checking “Don't show again today” writes today's local
+  ISO date on close. Legacy does not automatically trigger the dialog or read
+  that setting; Next adds neither behavior.
+- Verification: standard incremental `build/macos-clang-debug`; CMake
+  ownership check passed for 1,778 handwritten sources; focused CTest passed
+  7/7. The Next dependency boundary, resource inventory `--check`, and
+  `git diff --check` passed.
+- Limits: no dirty-editor-page scenario or separate GS-only failure test was
+  run. Whole-process macOS snapshots showed working set about 44.30→66.19 MiB
+  and private usage 11.99→18.99 MiB in English/light; Korean/dark was
+  44.45→69.83 MiB and 12.14→21.45 MiB. Memory remains after dialog cleanup;
+  these are not feature-only deltas or a budget. No full suite, Windows, or
+  phase exit gate was verified. The 7A screenshot comparison and memory
+  evidence and 7A/Phase 7 exit gates remain open. Candidate #21, My Details and
+  Signature, is active.
 
 ## Objective
 

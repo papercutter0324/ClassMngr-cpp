@@ -1,0 +1,164 @@
+{
+    "emptyScheduleAssertions": {
+        "legacy": {
+            "closeText": "Close",
+            "dismissalChecked": false,
+            "dismissalText": "Don't show again today",
+            "nextWeekEmpty": "No birthdays next week.",
+            "nextWeekEntries": 0,
+            "nextWeekTitle": "Next Week",
+            "nextWeekVisible": true,
+            "size": [
+                520,
+                560
+            ],
+            "thisWeekEmpty": "No birthdays this week.",
+            "thisWeekEntries": 0,
+            "thisWeekTitle": "This Week",
+            "thisWeekVisible": true,
+            "title": "Upcoming Birthdays",
+            "todayEntries": 0,
+            "todayTitle": "Today's Birthdays",
+            "todayVisible": false,
+            "visibleNames": [
+            ]
+        },
+        "next": {
+            "closeText": "Close",
+            "dismissalChecked": false,
+            "dismissalText": "Don't show again today",
+            "nextWeekEmpty": "No birthdays next week.",
+            "nextWeekEntries": 0,
+            "nextWeekTitle": "Next Week",
+            "nextWeekVisible": true,
+            "size": [
+                520,
+                560
+            ],
+            "thisWeekEmpty": "No birthdays this week.",
+            "thisWeekEntries": 0,
+            "thisWeekTitle": "This Week",
+            "thisWeekVisible": true,
+            "title": "Upcoming Birthdays",
+            "todayEntries": 0,
+            "todayTitle": "Today's Birthdays",
+            "todayVisible": false,
+            "visibleNames": [
+            ]
+        }
+    },
+    "expectedDialogSize": [
+        520,
+        560
+    ],
+    "legacyCapture": "legacy.png",
+    "legacySurface": {
+        "closeText": "Close",
+        "dismissalChecked": false,
+        "dismissalText": "Don't show again today",
+        "nextWeekEmpty": "",
+        "nextWeekEntries": 2,
+        "nextWeekTitle": "Next Week",
+        "nextWeekVisible": true,
+        "size": [
+            520,
+            560
+        ],
+        "thisWeekEmpty": "",
+        "thisWeekEntries": 1,
+        "thisWeekTitle": "This Week",
+        "thisWeekVisible": true,
+        "title": "Upcoming Birthdays",
+        "todayEntries": 1,
+        "todayTitle": "Today's Birthdays",
+        "todayVisible": true,
+        "visibleNames": [
+            "오늘 생일",
+            "Week Teacher",
+            "Next Native",
+            "Next GS"
+        ]
+    },
+    "locale": "en_US",
+    "nextCapture": "next.png",
+    "nextSurface": {
+        "closeText": "Close",
+        "dismissalChecked": false,
+        "dismissalText": "Don't show again today",
+        "nextWeekEmpty": "",
+        "nextWeekEntries": 2,
+        "nextWeekTitle": "Next Week",
+        "nextWeekVisible": true,
+        "size": [
+            520,
+            560
+        ],
+        "thisWeekEmpty": "",
+        "thisWeekEntries": 1,
+        "thisWeekTitle": "This Week",
+        "thisWeekVisible": true,
+        "title": "Upcoming Birthdays",
+        "todayEntries": 1,
+        "todayTitle": "Today's Birthdays",
+        "todayVisible": true,
+        "visibleNames": [
+            "오늘 생일",
+            "Week Teacher",
+            "Next Native",
+            "Next GS"
+        ]
+    },
+    "processMemory": {
+        "afterDialogCleanup": {
+            "available": true,
+            "capturedAt": "2026-10-27T19:17:35.937",
+            "handleCount": 0,
+            "peakWorkingSetBytes": 69419008,
+            "platform": "macos",
+            "privateUsageBytes": 19907472,
+            "privateWorkingSetBytes": 19267584,
+            "threadCount": 3,
+            "workingSetBytes": 69402624
+        },
+        "afterLegacyCapture": {
+            "available": true,
+            "capturedAt": "2026-10-27T19:17:35.913",
+            "handleCount": 0,
+            "peakWorkingSetBytes": 69337088,
+            "platform": "macos",
+            "privateUsageBytes": 19891088,
+            "privateWorkingSetBytes": 19251200,
+            "threadCount": 3,
+            "workingSetBytes": 69337088
+        },
+        "afterNextCapture": {
+            "available": true,
+            "capturedAt": "2026-10-27T19:17:35.936",
+            "handleCount": 0,
+            "peakWorkingSetBytes": 69402624,
+            "platform": "macos",
+            "privateUsageBytes": 19907472,
+            "privateWorkingSetBytes": 19267584,
+            "threadCount": 3,
+            "workingSetBytes": 69402624
+        },
+        "before": {
+            "available": true,
+            "capturedAt": "2026-10-27T19:17:35.812",
+            "handleCount": 0,
+            "peakWorkingSetBytes": 46448640,
+            "platform": "macos",
+            "privateUsageBytes": 12567248,
+            "privateWorkingSetBytes": 12058624,
+            "threadCount": 3,
+            "workingSetBytes": 46448640
+        }
+    },
+    "referenceDate": "2026-07-10",
+    "task": "phase7_020_upcoming_birthdays_implementation",
+    "theme": "light",
+    "viewport": [
+        1024,
+        768
+    ]
+}
