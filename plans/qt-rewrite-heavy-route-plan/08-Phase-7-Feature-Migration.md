@@ -38,10 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-28
-- Current note: 7A.1–7A.15 and candidates #23–27 remain accepted. Batch 3
-  candidate #28, Testing classes and blocks, is active. The 7A screenshot
-  comparison and memory evidence remain open, as do the 7A and Phase 7 exit
-  gates. See the
+- Current note: 7A.1–7A.15 and candidates #23–28 remain accepted. Batch 3
+  candidate #29, Class transfer, is active. The 7A screenshot comparison and
+  memory evidence remain open, as do the 7A and Phase 7 exit gates. See the
   progress log for slice evidence and limits.
 
 ### Slice batches
@@ -788,6 +787,42 @@ keep current status in this plan and live batches in the shared tracker.
   visual parity; memory snapshots do not establish a budget. The 7A evidence
   and 7A/Phase 7 exit gates remain open. No full-suite or Windows result is
   claimed.
+
+### Candidate #28 — Testing classes and blocks accepted (2026-10-28)
+
+- Commit: `9bdbe3aa`. The accepted manager boundary is the Next testing-class
+  list/model, one selected Details/Notes editor, create/update/delete, full
+  cascade cleanup, and typed pending-slot create. It does not include Roster
+  UI (#35) or the weekly block/assignment editor (#30/#32).
+- Verification after the translation-context fix: affected Next manager tests
+  passed 12/12; the visual capture target passed with all Korean assertions.
+  Separate Legacy persistence, delete, cancel, and schedule-handoff targets
+  passed. `NextStartupWorkspaceDependencyBoundary`, `git diff --check`,
+  resource inventory `--check`, and the Next route scan passed. The scanned
+  Next UI/App/Platform path contains no `ApplicationServices`, `DataService`,
+  SQL, Gateway, or direct database reference.
+- A wider 34-registration focused selection before the translation-only fix
+  passed 33/34. Its sole failure was the unchanged Legacy aggregate
+  `ClassMngrTestingClassesPageTests`, independently reproduced at 48 passed
+  and 4 failed: `rosterEditorOmitsRemoveButtonAndKeepsContextAction`,
+  `rosterKeyboardTriggerOpensInAppPalette`,
+  `rosterKeyboardWritesToKoreanNameCell`, and
+  `outputAvailabilityFollowsRosterTabAndLoadedClass`. The failures reported
+  `QSqlQuery::prepare: database not open`. Tester found these cases instantiate
+  `ApplicationServices`/`DataService` without opening a database. The Legacy
+  page, tests, and CMake target were unchanged by #28; the report does not
+  establish when these failures first appeared.
+- Evidence and limits: the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/testing-classes/README.md)
+  records the 96-testing-class fixture, Details/Notes/pending-slot matrix,
+  Korean localization, one-editor lifecycle, and process-wide memory scope.
+  Legacy holds the pending weekday/start in page state without a visible label;
+  Next displays the pending tuple. Their captures are not a parity claim. No
+  full-suite, Windows, or memory-budget result is claimed. The 7A evidence and
+  7A/Phase 7 exit gates remain open.
+- Capture metadata follow-up: `c2ec78e9` after source commit `9bdbe3aa` records
+  the typed Thursday 10:00 tuple and localized display text in pending Next
+  states; non-pending Next states have null slot fields. The capture target
+  passed 1/1 after this metadata-only correction.
 
 ## Objective
 
