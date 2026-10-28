@@ -38,8 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-28
-- Current note: 7A.1–7A.15 and candidates #23–25 remain accepted. Batch 3
-  candidate #26, Class notes, is active. The 7A screenshot comparison and
+- Current note: 7A.1–7A.15 and candidates #23–26 remain accepted. Batch 3
+  candidate #27, Class analytics and speaking-evaluation defaults, is active.
+  The 7A screenshot comparison and
   memory evidence remain open, as do the 7A and Phase 7 exit gates. See the
   progress log for slice evidence and limits.
 
@@ -739,6 +740,27 @@ keep current status in this plan and live batches in the shared tracker.
   reflects a fixture/catalog limitation for the selected E4 class. The 7A
   screenshot comparison and memory evidence and the 7A/Phase 7 exit gates
   remain open.
+
+### Candidate #26 — Class notes and time filler accepted (2026-10-28)
+
+- Commit: `833e9074`. Independent acceptance covered Notes/Time Filler read,
+  save, class/workspace lifecycle, and preservation of related class data.
+- Verification: affected targets built and the corrected focused CTest
+  selection passed 13/13. The real `.tps`
+  `classNotesPathActionsBoundTextAndPreserveDetailsTransactionally` test passed
+  three QtTest results including setup/cleanup. It covers both fields' exact
+  length boundaries, persisted over-limit read failure, supplementary
+  UTF-16-unit boundaries, trim semantics, transactional preservation, trigger
+  rollback/retry, and Details saves preserving Notes. The dependency boundary,
+  `git diff --check`, resource inventory `--check` (194 runtime records), and
+  bounded source scan passed.
+- Evidence and limits: the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/class-notes/README.md)
+  documents the paired 96-class matrix, 600 Legacy and 230 Next widgets,
+  lifecycle counts, process-wide memory observations, and Legacy Save geometry.
+  The hidden Legacy Save button is below the 768px crop in both locales;
+  Legacy and Next layouts differ, so no visual-parity result is claimed. The
+  7A screenshot/memory evidence and 7A/Phase 7 exit gates remain open. No full
+  suite, Windows, or memory-budget result is claimed.
 
 ## Objective
 

@@ -1,0 +1,461 @@
+{
+    "captureLimitation": "The legacy Notes page expanded to 1024x844 under the offscreen layout. Both captures use the top-left 1024x768 viewport crop; each legacy entry records the Save widget's actual visibility and geometry. visibleInViewport is null only when the stable Save widget cannot be located.",
+    "captures": [
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "fixtureClassCount": 96,
+                "image": "classes_notes_en_US_light_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.314",
+                        "peakWorkingSetBytes": 78610432,
+                        "platform": "macos",
+                        "privateUsageBytes": 25265064,
+                        "privateWorkingSetBytes": 24608768,
+                        "workingSetBytes": 78610432
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.358",
+                        "peakWorkingSetBytes": 85557248,
+                        "platform": "macos",
+                        "privateUsageBytes": 29918168,
+                        "privateWorkingSetBytes": 29229056,
+                        "workingSetBytes": 85557248
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:37.806",
+                        "peakWorkingSetBytes": 38649856,
+                        "platform": "macos",
+                        "privateUsageBytes": 10896104,
+                        "privateWorkingSetBytes": 10371072,
+                        "workingSetBytes": 38649856
+                    }
+                },
+                "pageSize": {
+                    "height": 844,
+                    "width": 1024
+                },
+                "route": "legacy ClassesPage",
+                "saveButton": {
+                    "candidates": [
+                        {
+                            "height": 30,
+                            "isHidden": true,
+                            "isVisible": false,
+                            "parentObjectName": "",
+                            "visibleInViewport": false,
+                            "widgetVisibleToPage": false,
+                            "width": 100,
+                            "x": 35,
+                            "y": 817
+                        }
+                    ],
+                    "found": true,
+                    "visibleInViewport": false,
+                    "widgetVisibleToPage": false
+                },
+                "selectedClassId": 1,
+                "widgetCountWhileActive": 600
+            },
+            "locale": "en_US",
+            "next": {
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "image": "classes_notes_en_US_light_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.403",
+                        "peakWorkingSetBytes": 91406336,
+                        "platform": "macos",
+                        "privateUsageBytes": 33735640,
+                        "privateWorkingSetBytes": 33046528,
+                        "workingSetBytes": 91406336
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.360",
+                        "peakWorkingSetBytes": 85606400,
+                        "platform": "macos",
+                        "privateUsageBytes": 29918168,
+                        "privateWorkingSetBytes": 29229056,
+                        "workingSetBytes": 85606400
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.422",
+                        "peakWorkingSetBytes": 91455488,
+                        "platform": "macos",
+                        "privateUsageBytes": 33768408,
+                        "privateWorkingSetBytes": 33079296,
+                        "workingSetBytes": 91455488
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "selectedClassId": "1",
+                "selectedEditorDescendantCount": 182,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 230,
+                "widgetCountWhileActive": 230
+            },
+            "sameSelectedClass": true,
+            "section": "Notes and Time Filler",
+            "seededActivitiesLength": 37,
+            "seededNotesLength": 32,
+            "selectedClassId": "1",
+            "theme": "light"
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "fixtureClassCount": 96,
+                "image": "classes_notes_en_US_dark_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.743",
+                        "peakWorkingSetBytes": 92684288,
+                        "platform": "macos",
+                        "privateUsageBytes": 34292696,
+                        "privateWorkingSetBytes": 33603584,
+                        "workingSetBytes": 91979776
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.755",
+                        "peakWorkingSetBytes": 92684288,
+                        "platform": "macos",
+                        "privateUsageBytes": 34292696,
+                        "privateWorkingSetBytes": 33603584,
+                        "workingSetBytes": 91979776
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.425",
+                        "peakWorkingSetBytes": 91848704,
+                        "platform": "macos",
+                        "privateUsageBytes": 34161624,
+                        "privateWorkingSetBytes": 33472512,
+                        "workingSetBytes": 91848704
+                    }
+                },
+                "pageSize": {
+                    "height": 844,
+                    "width": 1024
+                },
+                "route": "legacy ClassesPage",
+                "saveButton": {
+                    "candidates": [
+                        {
+                            "height": 30,
+                            "isHidden": true,
+                            "isVisible": false,
+                            "parentObjectName": "",
+                            "visibleInViewport": false,
+                            "widgetVisibleToPage": false,
+                            "width": 100,
+                            "x": 35,
+                            "y": 817
+                        }
+                    ],
+                    "found": true,
+                    "visibleInViewport": false,
+                    "widgetVisibleToPage": false
+                },
+                "selectedClassId": 1,
+                "widgetCountWhileActive": 600
+            },
+            "locale": "en_US",
+            "next": {
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "image": "classes_notes_en_US_dark_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.788",
+                        "peakWorkingSetBytes": 92684288,
+                        "platform": "macos",
+                        "privateUsageBytes": 34391000,
+                        "privateWorkingSetBytes": 33701888,
+                        "workingSetBytes": 92078080
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.757",
+                        "peakWorkingSetBytes": 92684288,
+                        "platform": "macos",
+                        "privateUsageBytes": 34292696,
+                        "privateWorkingSetBytes": 33603584,
+                        "workingSetBytes": 91979776
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.808",
+                        "peakWorkingSetBytes": 92684288,
+                        "platform": "macos",
+                        "privateUsageBytes": 34391000,
+                        "privateWorkingSetBytes": 33701888,
+                        "workingSetBytes": 92078080
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "selectedClassId": "1",
+                "selectedEditorDescendantCount": 182,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 230,
+                "widgetCountWhileActive": 230
+            },
+            "sameSelectedClass": true,
+            "section": "Notes and Time Filler",
+            "seededActivitiesLength": 37,
+            "seededNotesLength": 32,
+            "selectedClassId": "1",
+            "theme": "dark"
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "fixtureClassCount": 96,
+                "image": "classes_notes_ko_KR_light_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.138",
+                        "peakWorkingSetBytes": 93274112,
+                        "platform": "macos",
+                        "privateUsageBytes": 34653144,
+                        "privateWorkingSetBytes": 33964032,
+                        "workingSetBytes": 93274112
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.152",
+                        "peakWorkingSetBytes": 93306880,
+                        "platform": "macos",
+                        "privateUsageBytes": 34669528,
+                        "privateWorkingSetBytes": 33980416,
+                        "workingSetBytes": 93306880
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:38.812",
+                        "peakWorkingSetBytes": 92684288,
+                        "platform": "macos",
+                        "privateUsageBytes": 34391000,
+                        "privateWorkingSetBytes": 33701888,
+                        "workingSetBytes": 92127232
+                    }
+                },
+                "pageSize": {
+                    "height": 838,
+                    "width": 1024
+                },
+                "route": "legacy ClassesPage",
+                "saveButton": {
+                    "candidates": [
+                        {
+                            "height": 30,
+                            "isHidden": true,
+                            "isVisible": false,
+                            "parentObjectName": "",
+                            "visibleInViewport": false,
+                            "widgetVisibleToPage": false,
+                            "width": 100,
+                            "x": 35,
+                            "y": 811
+                        }
+                    ],
+                    "found": true,
+                    "visibleInViewport": false,
+                    "widgetVisibleToPage": false
+                },
+                "selectedClassId": 1,
+                "widgetCountWhileActive": 600
+            },
+            "locale": "ko_KR",
+            "next": {
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "image": "classes_notes_ko_KR_light_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.188",
+                        "peakWorkingSetBytes": 93732864,
+                        "platform": "macos",
+                        "privateUsageBytes": 35062744,
+                        "privateWorkingSetBytes": 34373632,
+                        "workingSetBytes": 93732864
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.153",
+                        "peakWorkingSetBytes": 93323264,
+                        "platform": "macos",
+                        "privateUsageBytes": 34669528,
+                        "privateWorkingSetBytes": 33980416,
+                        "workingSetBytes": 93306880
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.209",
+                        "peakWorkingSetBytes": 93765632,
+                        "platform": "macos",
+                        "privateUsageBytes": 35095512,
+                        "privateWorkingSetBytes": 34406400,
+                        "workingSetBytes": 93765632
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "selectedClassId": "1",
+                "selectedEditorDescendantCount": 182,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 230,
+                "widgetCountWhileActive": 230
+            },
+            "sameSelectedClass": true,
+            "section": "Notes and Time Filler",
+            "seededActivitiesLength": 37,
+            "seededNotesLength": 32,
+            "selectedClassId": "1",
+            "theme": "light"
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "fixtureClassCount": 96,
+                "image": "classes_notes_ko_KR_dark_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.534",
+                        "peakWorkingSetBytes": 94683136,
+                        "platform": "macos",
+                        "privateUsageBytes": 35357656,
+                        "privateWorkingSetBytes": 34668544,
+                        "workingSetBytes": 94027776
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.547",
+                        "peakWorkingSetBytes": 94683136,
+                        "platform": "macos",
+                        "privateUsageBytes": 35357656,
+                        "privateWorkingSetBytes": 34668544,
+                        "workingSetBytes": 94027776
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.212",
+                        "peakWorkingSetBytes": 93896704,
+                        "platform": "macos",
+                        "privateUsageBytes": 35357656,
+                        "privateWorkingSetBytes": 34668544,
+                        "workingSetBytes": 93896704
+                    }
+                },
+                "pageSize": {
+                    "height": 838,
+                    "width": 1024
+                },
+                "route": "legacy ClassesPage",
+                "saveButton": {
+                    "candidates": [
+                        {
+                            "height": 30,
+                            "isHidden": true,
+                            "isVisible": false,
+                            "parentObjectName": "",
+                            "visibleInViewport": false,
+                            "widgetVisibleToPage": false,
+                            "width": 100,
+                            "x": 35,
+                            "y": 811
+                        }
+                    ],
+                    "found": true,
+                    "visibleInViewport": false,
+                    "widgetVisibleToPage": false
+                },
+                "selectedClassId": 1,
+                "widgetCountWhileActive": 600
+            },
+            "locale": "ko_KR",
+            "next": {
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "image": "classes_notes_ko_KR_dark_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.581",
+                        "peakWorkingSetBytes": 94683136,
+                        "platform": "macos",
+                        "privateUsageBytes": 35374040,
+                        "privateWorkingSetBytes": 34684928,
+                        "workingSetBytes": 94044160
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.548",
+                        "peakWorkingSetBytes": 94683136,
+                        "platform": "macos",
+                        "privateUsageBytes": 35357656,
+                        "privateWorkingSetBytes": 34668544,
+                        "workingSetBytes": 94027776
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:42:39.601",
+                        "peakWorkingSetBytes": 94683136,
+                        "platform": "macos",
+                        "privateUsageBytes": 35374040,
+                        "privateWorkingSetBytes": 34684928,
+                        "workingSetBytes": 94044160
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "selectedClassId": "1",
+                "selectedEditorDescendantCount": 182,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 230,
+                "widgetCountWhileActive": 230
+            },
+            "sameSelectedClass": true,
+            "section": "Notes and Time Filler",
+            "seededActivitiesLength": 37,
+            "seededNotesLength": 32,
+            "selectedClassId": "1",
+            "theme": "dark"
+        }
+    ],
+    "fixture": "generated-large-classes-visual.tps",
+    "fixtureClassCount": 96,
+    "memoryLimitation": "Measurements are whole-process working/private memory snapshots; they do not isolate widget allocations or establish a memory budget.",
+    "scope": "Paired Legacy and Next Classes Notes and Time Filler surfaces",
+    "viewport": {
+        "height": 768,
+        "width": 1024
+    }
+}
