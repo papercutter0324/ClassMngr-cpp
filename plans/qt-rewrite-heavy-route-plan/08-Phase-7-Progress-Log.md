@@ -842,3 +842,41 @@ Entries are preserved in their original document order.
   107–135 MB working set and 54–75 MB private usage; they do not measure page
   allocation or establish a Windows memory budget. The 7A screenshot/memory
   evidence and the 7A/Phase 7 exit gates remain open.
+
+### Candidate #31 — Schedule workbook import/review/apply accepted (2026-10-28)
+
+- Commit: `c1166d79`. Normal workspace Schedule Import owns source, worksheet,
+  and block selection; asynchronous seekable-`QIODevice` parsing; model-backed
+  review and diagnostic acknowledgement; explicit teacher/class decisions;
+  Normal and Intensive modes; typed path-scoped `WorkspaceStore` snapshot and
+  transactional apply; rollback/retry; Schedule refresh; and lifecycle cleanup.
+  It does not use Setup Import recovery, finish, or profile-name semantics.
+  Both profile-update flags remain false; recent history, setup journal, and
+  profile information are preserved.
+- Two real `.tps` files with overlapping IDs verified exact-path isolation.
+  Coverage includes teacher revalidation, stale workspace/source, active parse
+  cancellation/timeout and late results, second worksheet/block, unresolved
+  diagnostic acknowledgement, Normal/Intensive preserve/replace/counts,
+  successful apply, rollback/retry, Schedule refresh, suspension/replacement
+  cleanup, and the setup boundary. A separate
+  `ClassMngrNextNormalScheduleImportIntegrationTests` target covers this flow;
+  setup-only `ClassMngrNextScheduleImportWorkflowTests` remains a regression.
+- Verification: macOS Debug build in `build/macos-clang-debug`
+  passed; focused CTest passed 23/23, and Bootstrap passed 1/1. The build also
+  covered the repaired `ClassMngrNextScheduleVisualCapture` target. Resource
+  inventory `--check` (194 runtime resources), `git diff --check`, and the path
+  boundary scan passed. No full suite or Windows result is claimed;
+  `build/windows-x64-debug` was unavailable.
+- Evidence and limits: the [capture package](../../docs/qt-rewrite/visual-baseline/release/normal-schedule-import-next/README.md)
+  contains 40 Next scenes, 16 Legacy references and their 16 aliases across
+  English/Korean × light/dark. Dialog sizes match at 436×520 for source and
+  selection and 800×800 for review and conflict, but there is no visual-parity
+  claim. Next requires horizontal scrolling to see full meeting times in its
+  preview and shows generic overlap status; Legacy names the conflicting pair
+  and some Korean fallback strings remain English. The stress workbook has
+  96 candidates across five blocks; the selected conflict block contains 20
+  rows with six preview rows visible. No 96-row apply was tested. A separate
+  successful 20-candidate real-store apply persisted 20 classes and 30 schedule
+  rows. Whole-process memory samples do not establish a parser or process
+  memory budget. The 7A screenshot/memory evidence and 7A/Phase 7 exit gates
+  remain open.

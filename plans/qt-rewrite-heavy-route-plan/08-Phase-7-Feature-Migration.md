@@ -38,10 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-28
-- Current note: Candidate #30, Schedule display/editing, is accepted; Batch 3
-  candidate #31, schedule workbook import/review/apply, is active. The 7A
-  screenshot comparison and memory evidence remain open, as do the 7A and
-  Phase 7 exit gates. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
+- Current note: Candidate #31, normal Schedule workbook import/review/apply,
+  is accepted; Batch 3 candidate #32, testing assignments and schedule
+  output/printing, is active. The 7A screenshot comparison and memory evidence
+  remain open, as do the 7A and Phase 7 exit gates. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
   for accepted-slice evidence and limits.
 
 ### Slice batches
