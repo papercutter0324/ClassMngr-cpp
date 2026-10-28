@@ -10600,10 +10600,35 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Your personal details could not be loaded. The displayed controls are preserved; reload before saving.</source><translation>개인 정보를 불러오지 못했습니다. 현재 화면의 입력 내용은 유지되며, 저장하기 전에 다시 불러오세요.</translation></message>
     <message><source>Your personal details could not be saved. Your changes are still here.</source><translation>개인 정보를 저장하지 못했습니다. 변경 내용은 그대로 유지됩니다.</translation></message>
     <message><source>Your personal details could not be reloaded. Your current form is preserved.</source><translation>개인 정보를 다시 불러오지 못했습니다. 현재 입력 내용은 유지됩니다.</translation></message>
-    <message><source>My Schedule will be available in a later update.</source><translation>내 일정은 이후 업데이트에서 사용할 수 있습니다.</translation></message>
     <message><source>The signature image could not be selected.</source><translation>서명 이미지를 선택하지 못했습니다.</translation></message>
     <message><source>The signature image could not be prepared.</source><translation>서명 이미지를 준비하지 못했습니다.</translation></message>
     <message><source>The signature image could not be displayed.</source><translation>서명 이미지를 표시하지 못했습니다.</translation></message>
+    <message><source>Weekly Class Schedule</source><translation>주간 수업 일정</translation></message>
+    <message><source>Read-only regular schedule from registered classes.</source><translation>등록된 수업의 정규 일정을 읽기 전용으로 표시합니다.</translation></message>
+    <message><source>Schedule data is not loaded.</source><translation>일정 데이터를 불러오지 않았습니다.</translation></message>
+    <message><source>Upcoming Events</source><translation>다가오는 행사</translation></message>
+    <message><source>The next 10 events starting today.</source><translation>오늘부터 예정된 다음 10개 행사입니다.</translation></message>
+    <message><source>Upcoming events are not loaded.</source><translation>행사 데이터를 불러오지 않았습니다.</translation></message>
+    <message><source>Retry</source><translation>다시 시도</translation></message>
+    <message><source>Day</source><translation>요일</translation></message>
+    <message><source>Time</source><translation>시간</translation></message>
+    <message><source>Class / Teacher</source><translation>수업 / 교사</translation></message>
+    <message><source>Room</source><translation>교실</translation></message>
+    <message><source>Schedule Type</source><translation>일정 유형</translation></message>
+    <message><source>Regular</source><translation>정규</translation></message>
+    <message><source>Intensive</source><translation>집중</translation></message>
+    <message><source>Date</source><translation>날짜</translation></message>
+    <message><source>Title</source><translation>제목</translation></message>
+    <message><source>Type</source><translation>유형</translation></message>
+    <message><source>All day</source><translation>종일</translation></message>
+    <message><source>Unknown Time</source><translation>시간 미정</translation></message>
+    <message><source>Unconfirmed Time</source><translation>시간 미확정</translation></message>
+    <message><source>Loading schedule...</source><translation>일정을 불러오는 중...</translation></message>
+    <message><source>The schedule could not be loaded. Retry this tab.</source><translation>일정을 불러오지 못했습니다. 이 탭에서 다시 시도하세요.</translation></message>
+    <message><source>There are no schedule entries.</source><translation>등록된 일정 항목이 없습니다.</translation></message>
+    <message><source>Loading upcoming events...</source><translation>예정된 행사를 불러오는 중...</translation></message>
+    <message><source>Upcoming events could not be loaded. Retry this tab.</source><translation>예정된 행사를 불러오지 못했습니다. 이 탭에서 다시 시도하세요.</translation></message>
+    <message><source>There are no upcoming events.</source><translation>예정된 행사가 없습니다.</translation></message>
 </context>
 <context>
     <name>NextMyClassesPage</name>

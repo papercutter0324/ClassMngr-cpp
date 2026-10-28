@@ -9922,9 +9922,34 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
     <message><source>Your personal details could not be loaded. The displayed controls are preserved; reload before saving.</source><translation>Your personal details could not be loaded. The displayed controls are preserved; reload before saving.</translation></message>
     <message><source>Your personal details could not be saved. Your changes are still here.</source><translation>Your personal details could not be saved. Your changes are still here.</translation></message>
     <message><source>Your personal details could not be reloaded. Your current form is preserved.</source><translation>Your personal details could not be reloaded. Your current form is preserved.</translation></message>
-    <message><source>My Schedule will be available in a later update.</source><translation>My Schedule will be available in a later update.</translation></message>
     <message><source>The signature image could not be selected.</source><translation>The signature image could not be selected.</translation></message>
     <message><source>The signature image could not be prepared.</source><translation>The signature image could not be prepared.</translation></message>
     <message><source>The signature image could not be displayed.</source><translation>The signature image could not be displayed.</translation></message>
+    <message><source>Weekly Class Schedule</source><translation>Weekly Class Schedule</translation></message>
+    <message><source>Read-only regular schedule from registered classes.</source><translation>Read-only regular schedule from registered classes.</translation></message>
+    <message><source>Schedule data is not loaded.</source><translation>Schedule data is not loaded.</translation></message>
+    <message><source>Upcoming Events</source><translation>Upcoming Events</translation></message>
+    <message><source>The next 10 events starting today.</source><translation>The next 10 events starting today.</translation></message>
+    <message><source>Upcoming events are not loaded.</source><translation>Upcoming events are not loaded.</translation></message>
+    <message><source>Retry</source><translation>Retry</translation></message>
+    <message><source>Day</source><translation>Day</translation></message>
+    <message><source>Time</source><translation>Time</translation></message>
+    <message><source>Class / Teacher</source><translation>Class / Teacher</translation></message>
+    <message><source>Room</source><translation>Room</translation></message>
+    <message><source>Schedule Type</source><translation>Schedule Type</translation></message>
+    <message><source>Regular</source><translation>Regular</translation></message>
+    <message><source>Intensive</source><translation>Intensive</translation></message>
+    <message><source>Date</source><translation>Date</translation></message>
+    <message><source>Title</source><translation>Title</translation></message>
+    <message><source>Type</source><translation>Type</translation></message>
+    <message><source>All day</source><translation>All day</translation></message>
+    <message><source>Unknown Time</source><translation>Unknown Time</translation></message>
+    <message><source>Unconfirmed Time</source><translation>Unconfirmed Time</translation></message>
+    <message><source>Loading schedule...</source><translation>Loading schedule...</translation></message>
+    <message><source>The schedule could not be loaded. Retry this tab.</source><translation>The schedule could not be loaded. Retry this tab.</translation></message>
+    <message><source>There are no schedule entries.</source><translation>There are no schedule entries.</translation></message>
+    <message><source>Loading upcoming events...</source><translation>Loading upcoming events...</translation></message>
+    <message><source>Upcoming events could not be loaded. Retry this tab.</source><translation>Upcoming events could not be loaded. Retry this tab.</translation></message>
+    <message><source>There are no upcoming events.</source><translation>There are no upcoming events.</translation></message>
 </context>
 </TS>

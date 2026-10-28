@@ -20,6 +20,7 @@
 #include "next/platform/settings_manager_upcoming_birthday_dismissal_port.h"
 #include "next/platform/resource_document_catalog_port.h"
 #include "next/platform/workspace_store_gateway.h"
+#include "next/platform/workspace_store_my_workspace_overview_read_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -134,6 +135,37 @@ namespace
     }
 
     return {};
+}
+
+template <typename Result, typename Read>
+Result withActiveWorkspacePath(
+    Application::ApplicationRuntime* runtime,
+    Read&& read
+    )
+{
+    if (!runtime)
+    {
+        return Result::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace is unavailable.",
+            .recoverable = true
+        });
+    }
+    const auto session = runtime->workspaceState().snapshot().session();
+    if (!session)
+    {
+        return Result::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    const QString databasePath = QString::fromUtf8(
+        session->location().value().data(),
+        static_cast<qsizetype>(session->location().value().size())
+        );
+    return std::forward<Read>(read)(databasePath);
 }
 
 [[nodiscard]] bool isSupportedStartupWorkspacePath(const QString& path)
@@ -1005,6 +1037,26 @@ Application::StartupResult ApplicationBootstrap::start()
                     };
                     actions.chooseSignatureImage = [this] {
                         return chooseWorkspaceSignatureImage();
+                    };
+                    actions.readSchedule = [this] {
+                        return withActiveWorkspacePath<
+                            Application::MyWorkspaceScheduleReadResult>(
+                            m_applicationRuntime.get(),
+                            [](const QString& databasePath) {
+                                return Platform::readMyWorkspaceScheduleAtPath(
+                                    databasePath);
+                            }
+                            );
+                    };
+                    actions.readUpcomingEvents = [this] {
+                        return withActiveWorkspacePath<
+                            Application::MyWorkspaceUpcomingEventsReadResult>(
+                            m_applicationRuntime.get(),
+                            [](const QString& databasePath) {
+                                return Platform::readMyWorkspaceUpcomingEventsAtPath(
+                                    databasePath);
+                            }
+                            );
                     };
                     actions.workspaceIdentity = [this] {
                         if (!m_applicationRuntime)

@@ -3060,6 +3060,8 @@ classmngr_add_qt_test(
 # personal-details bundle, including failure/retry and identity replacement.
 add_executable(ClassMngrNextMyWorkspacePageTests
     tests/next/my_workspace_page_tests.cpp
+    src/core/process_memory_snapshot.cpp
+    src/core/startup_profiler.cpp
     src/next/ui/my_workspace_page.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
@@ -3079,6 +3081,7 @@ target_compile_definitions(ClassMngrNextMyWorkspacePageTests
         CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
         CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
         CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
 )
 target_link_libraries(ClassMngrNextMyWorkspacePageTests
     PRIVATE
@@ -3112,6 +3115,66 @@ add_test(
 set_tests_properties(ClassMngrNextMyWorkspacePageTests
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+# Capture the legacy and Next My Workspace schedule composition, plus the
+# Next upcoming-events surface, at a matched 1024x768 Fusion viewport.
+add_executable(ClassMngrNextMyWorkspaceVisualCapture
+    tests/next/my_workspace_visual_capture.cpp
+    src/next/ui/my_workspace_page.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextMyWorkspaceVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextMyWorkspaceVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextMyWorkspaceVisualCapture
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextMyWorkspaceVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Resources
+        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspaceDomain
+        ClassMngrTeacherImportParser
+        ClassMngrScheduleImportParser
+        ClassMngrSignature
+        Qt6::Concurrent
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextMyWorkspaceVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextMyWorkspaceVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextMyWorkspaceVisualCapture
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextMyWorkspaceVisualCapture
+    COMMAND ClassMngrNextMyWorkspaceVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/my-workspace-visual-capture"
+)
+set_tests_properties(ClassMngrNextMyWorkspaceVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
 # Exercise the standalone Next My Classes model, direct WorkspaceStore read

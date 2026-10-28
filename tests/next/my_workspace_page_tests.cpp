@@ -3,7 +3,11 @@
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/my_info/data/typed_signature_renderer.h"
 #include "next/application/personal_details_save_use_case.h"
+#include "next/application/my_workspace_schedule_read.h"
+#include "next/application/my_workspace_upcoming_events_read.h"
 #include "next/platform/workspace_store_personal_details_port.h"
+#include "next/platform/workspace_store_my_workspace_schedule_read_port.h"
+#include "next/platform/workspace_store_my_workspace_upcoming_events_read_port.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/my_workspace_page.h"
@@ -14,13 +18,19 @@
 #include <QBuffer>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDate>
+#include <QDir>
 #include <QFile>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QTabBar>
 #include <QSqlQuery>
+#include <QScopeGuard>
+#include <QTableView>
 #include <QTemporaryDir>
+#include <QTranslator>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -62,6 +72,85 @@ bool executeSql(WorkspaceStore& store, const QString& statement)
     return query.exec(statement);
 }
 
+bool addWorkspaceReadFixture(
+    WorkspaceStore& store,
+    const QString& grade,
+    const QString& level,
+    const QString& teacherName,
+    const QString& room,
+    const QString& eventPrefix,
+    const int eventCount
+    )
+{
+    QSqlQuery teacher(store.database());
+    teacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id, teacher_kr, teacher_en, preferred_name, room_number
+        ) VALUES (1, ?, ?, ?, ?)
+    )"));
+    teacher.addBindValue(teacherName);
+    teacher.addBindValue(teacherName);
+    teacher.addBindValue(teacherName);
+    teacher.addBindValue(room);
+    if (!teacher.exec())
+    {
+        return false;
+    }
+
+    QSqlQuery classroom(store.database());
+    classroom.prepare(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (101, ?)"));
+    classroom.addBindValue(level);
+    if (!classroom.exec())
+    {
+        return false;
+    }
+
+    QSqlQuery info(store.database());
+    info.prepare(QStringLiteral(R"(
+        INSERT INTO class_info (
+            class_id, teacher_id, class_grade, class_level
+        ) VALUES (101, 1, ?, ?)
+    )"));
+    info.addBindValue(grade);
+    info.addBindValue(level);
+    if (!info.exec())
+    {
+        return false;
+    }
+
+    QSqlQuery time(store.database());
+    time.prepare(QStringLiteral(R"(
+        INSERT INTO class_times (class_id, day, start_time, end_time)
+        VALUES (101, 'Monday', '09:00', '10:00')
+    )"));
+    if (!time.exec())
+    {
+        return false;
+    }
+
+    QSqlQuery event(store.database());
+    event.prepare(QStringLiteral(R"(
+        INSERT INTO calendar_events (
+            title, event_type, time_status, all_day, start_date, start_time,
+            end_date, end_time
+        ) VALUES (?, 'Meeting', 'Timed', 0, ?, '09:00', ?, '10:00')
+    )"));
+    const QDate today = QDate::currentDate();
+    for (int index = 0; index < eventCount; ++index)
+    {
+        const QString date = today.addDays(index).toString(Qt::ISODate);
+        event.bindValue(0, eventPrefix + QStringLiteral(" %1").arg(index, 2, 10, QLatin1Char('0')));
+        event.bindValue(1, date);
+        event.bindValue(2, date);
+        if (!event.exec())
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 std::string utf8(const QString& value)
 {
     const QByteArray encoded = value.toUtf8();
@@ -84,6 +173,11 @@ struct PageFixture final
     QString activeIdentity = QStringLiteral("first");
     bool readFailure = false;
     bool saveFailure = false;
+    bool scheduleReadFailure = false;
+    bool upcomingEventsReadFailure = false;
+    int personalDetailsReadCount = 0;
+    int scheduleReadCount = 0;
+    int upcomingEventsReadCount = 0;
     QByteArray chosenImage;
     int warningCount = 0;
     Test::MemoryPreferences preferences;
@@ -91,13 +185,31 @@ struct PageFixture final
     std::unique_ptr<Resources::ResourceLoader> loader;
     std::unique_ptr<Ui::PageHost> host;
 
-    bool initialize()
+    bool initialize(const bool activateDetails = true)
     {
         if (!directory.isValid()
             || !firstStore.open(databasePath(directory, QStringLiteral("first")))
             || !applyFixture(firstStore)
             || !secondStore.open(databasePath(directory, QStringLiteral("second")))
-            || !applyFixture(secondStore))
+            || !applyFixture(secondStore)
+            || !addWorkspaceReadFixture(
+                firstStore,
+                QStringLiteral("Grade 4"),
+                QStringLiteral("First Schedule"),
+                QStringLiteral("First Teacher"),
+                QStringLiteral("Room 101"),
+                QStringLiteral("First Event"),
+                12
+                )
+            || !addWorkspaceReadFixture(
+                secondStore,
+                QStringLiteral("Grade 5"),
+                QStringLiteral("Second Schedule"),
+                QStringLiteral("Second Teacher"),
+                QStringLiteral("Room 202"),
+                QStringLiteral("Second Event"),
+                2
+                ))
         {
             return false;
         }
@@ -126,6 +238,7 @@ struct PageFixture final
                 Ui::MyWorkspacePageActions actions;
                 actions.saveMode = Application::SaveMode::Manual;
                 actions.readDetails = [this] {
+                    ++personalDetailsReadCount;
                     if (readFailure || !activeStore)
                     {
                         return Application::PersonalDetailsReadResult::failure({
@@ -166,6 +279,34 @@ struct PageFixture final
                             : std::optional<QByteArray>{chosenImage}
                         );
                 };
+                actions.readSchedule = [this] {
+                    ++scheduleReadCount;
+                    if (scheduleReadFailure || !activeStore)
+                    {
+                        return Application::MyWorkspaceScheduleReadResult::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "forced workspace schedule read failure",
+                            .recoverable = true
+                        });
+                    }
+                    Platform::WorkspaceStoreMyWorkspaceScheduleReadPort port(
+                        *activeStore);
+                    return Application::MyWorkspaceScheduleReadUseCase::execute(port);
+                };
+                actions.readUpcomingEvents = [this] {
+                    ++upcomingEventsReadCount;
+                    if (upcomingEventsReadFailure || !activeStore)
+                    {
+                        return Application::MyWorkspaceUpcomingEventsReadResult::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "forced upcoming-event read failure",
+                            .recoverable = true
+                        });
+                    }
+                    Platform::WorkspaceStoreMyWorkspaceUpcomingEventsReadPort port(
+                        *activeStore);
+                    return Application::MyWorkspaceUpcomingEventsReadUseCase::execute(port);
+                };
                 actions.workspaceIdentity = [this] { return activeIdentity; };
                 actions.reportWarning = [this](const QString&, const QString&) {
                     ++warningCount;
@@ -181,6 +322,19 @@ struct PageFixture final
             || !host->activatePage(QStringLiteral("my_workspace")))
         {
             return false;
+        }
+        if (activateDetails)
+        {
+            Ui::MyWorkspacePage* const activePage = page();
+            auto* const tabs = activePage
+                ? activePage->findChild<QTabBar*>(
+                      QStringLiteral("nextMyWorkspaceTabBar"))
+                : nullptr;
+            if (!tabs)
+            {
+                return false;
+            }
+            tabs->setCurrentIndex(0);
         }
         return page() != nullptr;
     }
@@ -216,6 +370,11 @@ private slots:
     void typedSignaturePreviewRendersTheSelectedTextAndFont();
     void signaturePreviewIsReleasedOnSuspendAndReloadedOnActivation();
     void workspaceIdentityReplacementDiscardsOldDraftWithoutSavingIt();
+    void workspaceScheduleAndNextTenEventsAreLazyBoundedAndOrdered();
+    void scheduleWeekdayUsesLegacyCatalogWithoutChangingCanonicalSource();
+    void overviewRefreshUsesTheReplacedActiveStoreAndCloseReleasesRows();
+    void overviewReadErrorsExposeRetryAndEmptyStates();
+    void overviewSummariesReloadAfterSuspendAndThemeLanguageChanges();
     void automaticModeDebouncesSave();
     void activePageChangesAdapterSavesAndDiscardsTheDetailsDraft();
 };
@@ -644,6 +803,246 @@ void NextMyWorkspacePageTests::workspaceIdentityReplacementDiscardsOldDraftWitho
              std::string("Fixture Teacher"));
     QCOMPARE(fixture.readActive().value().name,
              std::string("Second Workspace Teacher"));
+}
+
+void NextMyWorkspacePageTests::
+workspaceScheduleAndNextTenEventsAreLazyBoundedAndOrdered()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize(false));
+    Ui::MyWorkspacePage* const page = fixture.page();
+    auto* const tabs = page->findChild<QTabBar*>(
+        QStringLiteral("nextMyWorkspaceTabBar"));
+    auto* const scheduleTable = page->findChild<QTableView*>(
+        QStringLiteral("nextMyWorkspaceScheduleTable"));
+    auto* const eventsTable = page->findChild<QTableView*>(
+        QStringLiteral("nextMyWorkspaceUpcomingEventsTable"));
+    QVERIFY(tabs && scheduleTable && eventsTable);
+    QCOMPARE(tabs->count(), 3);
+    QCOMPARE(tabs->currentIndex(), 1);
+    QCOMPARE(fixture.personalDetailsReadCount, 0);
+    QCOMPARE(fixture.scheduleReadCount, 1);
+    QCOMPARE(fixture.upcomingEventsReadCount, 0);
+
+    QAbstractItemModel* const scheduleModel = scheduleTable->model();
+    QAbstractItemModel* const eventModel = eventsTable->model();
+    QVERIFY(scheduleModel && eventModel);
+    QCOMPARE(scheduleModel->rowCount(), 1);
+    QCOMPARE(scheduleModel->data(scheduleModel->index(0, 0)).toString(),
+             QStringLiteral("Monday"));
+    QVERIFY(scheduleModel->data(scheduleModel->index(0, 2)).toString()
+                .contains(QStringLiteral("First Teacher")));
+    QCOMPARE(scheduleModel->data(scheduleModel->index(0, 3)).toString(),
+             QStringLiteral("Room 101"));
+    QCOMPARE(eventModel->rowCount(), 0);
+
+    tabs->setCurrentIndex(2);
+    QCOMPARE(fixture.scheduleReadCount, 1);
+    QCOMPARE(fixture.upcomingEventsReadCount, 1);
+    QCOMPARE(fixture.personalDetailsReadCount, 0);
+    QCOMPARE(scheduleModel->rowCount(), 0);
+    QCOMPARE(eventModel->rowCount(), 10);
+    QCOMPARE(eventModel->data(eventModel->index(0, 2)).toString(),
+             QStringLiteral("First Event 00"));
+    QCOMPARE(eventModel->data(eventModel->index(0, 1)).toString(),
+             QStringLiteral("9:00 AM - 10:00 AM"));
+    QCOMPARE(eventModel->data(eventModel->index(0, 3)).toString(),
+             QStringLiteral("Meeting"));
+    QCOMPARE(eventModel->data(eventModel->index(9, 2)).toString(),
+             QStringLiteral("First Event 09"));
+
+    tabs->setCurrentIndex(1);
+    QCOMPARE(fixture.scheduleReadCount, 2);
+    QCOMPARE(eventModel->rowCount(), 0);
+    QCOMPARE(scheduleModel->rowCount(), 1);
+
+    page->onSuspending();
+    QCOMPARE(scheduleModel->rowCount(), 0);
+    QCOMPARE(eventModel->rowCount(), 0);
+    QVERIFY(page->onActivating());
+    QCOMPARE(fixture.scheduleReadCount, 3);
+    QCOMPARE(fixture.upcomingEventsReadCount, 1);
+    QCOMPARE(fixture.personalDetailsReadCount, 0);
+    QCOMPARE(scheduleModel->rowCount(), 1);
+
+    tabs->setCurrentIndex(0);
+    QCOMPARE(fixture.personalDetailsReadCount, 1);
+    QVERIFY(page->findChild<QLineEdit*>(QStringLiteral("nextMyWorkspaceName")));
+}
+
+void NextMyWorkspacePageTests::
+scheduleWeekdayUsesLegacyCatalogWithoutChangingCanonicalSource()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize(false));
+    Ui::MyWorkspacePage* const page = fixture.page();
+    auto* const scheduleTable = page->findChild<QTableView*>(
+        QStringLiteral("nextMyWorkspaceScheduleTable"));
+    QVERIFY(scheduleTable && scheduleTable->model());
+    QCOMPARE(scheduleTable->model()->data(
+                 scheduleTable->model()->index(0, 0)).toString(),
+             QStringLiteral("Monday"));
+
+    QSqlQuery storedDay(fixture.firstStore.database());
+    QVERIFY(storedDay.exec(QStringLiteral(
+        "SELECT day FROM class_times WHERE class_id = 101")));
+    QVERIFY(storedDay.next());
+    QCOMPARE(storedDay.value(0).toString(), QStringLiteral("Monday"));
+
+    const QString translationPath = QDir(QStringLiteral(
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY)).filePath(
+            QStringLiteral("ClassMngr_ko_KR.qm"));
+    QTranslator koreanTranslator;
+    QVERIFY(koreanTranslator.load(translationPath));
+    QVERIFY(QCoreApplication::installTranslator(&koreanTranslator));
+    const auto removeTranslator = qScopeGuard([&koreanTranslator] {
+        QCoreApplication::removeTranslator(&koreanTranslator);
+    });
+    Q_UNUSED(removeTranslator);
+
+    QEvent languageChange(QEvent::LanguageChange);
+    QCoreApplication::sendEvent(page, &languageChange);
+    QCOMPARE(scheduleTable->model()->data(
+                 scheduleTable->model()->index(0, 0)).toString(),
+             QStringLiteral("월요일"));
+
+    QCoreApplication::removeTranslator(&koreanTranslator);
+    QEvent englishChange(QEvent::LanguageChange);
+    QCoreApplication::sendEvent(page, &englishChange);
+    QCOMPARE(scheduleTable->model()->data(
+                 scheduleTable->model()->index(0, 0)).toString(),
+             QStringLiteral("Monday"));
+}
+
+void NextMyWorkspacePageTests::
+overviewRefreshUsesTheReplacedActiveStoreAndCloseReleasesRows()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize(false));
+    Ui::MyWorkspacePage* const page = fixture.page();
+    auto* const tabs = page->findChild<QTabBar*>(
+        QStringLiteral("nextMyWorkspaceTabBar"));
+    auto* const scheduleTable = page->findChild<QTableView*>(
+        QStringLiteral("nextMyWorkspaceScheduleTable"));
+    auto* const eventsTable = page->findChild<QTableView*>(
+        QStringLiteral("nextMyWorkspaceUpcomingEventsTable"));
+    auto* const scheduleStatus = page->findChild<QLabel*>(
+        QStringLiteral("nextMyWorkspaceScheduleStatus"));
+    auto* const eventsStatus = page->findChild<QLabel*>(
+        QStringLiteral("nextMyWorkspaceUpcomingEventsStatus"));
+    QVERIFY(tabs && scheduleTable && eventsTable && scheduleStatus && eventsStatus);
+
+    QAbstractItemModel* const scheduleModel = scheduleTable->model();
+    QAbstractItemModel* const eventModel = eventsTable->model();
+    QVERIFY(scheduleModel && eventModel);
+    QVERIFY(scheduleModel->data(scheduleModel->index(0, 2)).toString()
+                .contains(QStringLiteral("First Schedule")));
+
+    fixture.activeStore = &fixture.secondStore;
+    fixture.activeIdentity = QStringLiteral("second-workspace");
+    page->refreshForWorkspaceIdentity();
+    QCOMPARE(fixture.scheduleReadCount, 2);
+    QCOMPARE(scheduleModel->rowCount(), 1);
+    const QString currentSchedule =
+        scheduleModel->data(scheduleModel->index(0, 2)).toString();
+    QVERIFY(currentSchedule.contains(QStringLiteral("Second Schedule")));
+    QVERIFY(!currentSchedule.contains(QStringLiteral("First Schedule")));
+
+    tabs->setCurrentIndex(2);
+    QCOMPARE(fixture.upcomingEventsReadCount, 1);
+    QCOMPARE(eventModel->rowCount(), 2);
+    QCOMPARE(eventModel->data(eventModel->index(0, 2)).toString(),
+             QStringLiteral("Second Event 00"));
+    QVERIFY(!eventModel->data(eventModel->index(0, 2)).toString()
+                 .contains(QStringLiteral("First Event")));
+
+    page->clearForClosedWorkspace();
+    QCOMPARE(scheduleModel->rowCount(), 0);
+    QCOMPARE(eventModel->rowCount(), 0);
+    QVERIFY(scheduleStatus->text().contains(QStringLiteral("No Teacher Profile")));
+    QVERIFY(eventsStatus->text().contains(QStringLiteral("No Teacher Profile")));
+}
+
+void NextMyWorkspacePageTests::overviewReadErrorsExposeRetryAndEmptyStates()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize(false));
+    Ui::MyWorkspacePage* const page = fixture.page();
+    auto* const tabs = page->findChild<QTabBar*>(
+        QStringLiteral("nextMyWorkspaceTabBar"));
+    auto* const scheduleTable = page->findChild<QTableView*>(
+        QStringLiteral("nextMyWorkspaceScheduleTable"));
+    auto* const eventsTable = page->findChild<QTableView*>(
+        QStringLiteral("nextMyWorkspaceUpcomingEventsTable"));
+    auto* const scheduleStatus = page->findChild<QLabel*>(
+        QStringLiteral("nextMyWorkspaceScheduleStatus"));
+    auto* const eventsStatus = page->findChild<QLabel*>(
+        QStringLiteral("nextMyWorkspaceUpcomingEventsStatus"));
+    auto* const scheduleRetry = page->findChild<QPushButton*>(
+        QStringLiteral("nextMyWorkspaceScheduleRetry"));
+    auto* const eventsRetry = page->findChild<QPushButton*>(
+        QStringLiteral("nextMyWorkspaceUpcomingEventsRetry"));
+    QVERIFY(tabs && scheduleTable && eventsTable && scheduleStatus && eventsStatus
+            && scheduleRetry && eventsRetry);
+
+    fixture.scheduleReadFailure = true;
+    tabs->setCurrentIndex(0);
+    tabs->setCurrentIndex(1);
+    QVERIFY(scheduleStatus->text().contains(QStringLiteral("could not be loaded")));
+    QVERIFY(!scheduleRetry->isHidden());
+    fixture.scheduleReadFailure = false;
+    scheduleRetry->click();
+    QCOMPARE(scheduleTable->model()->rowCount(), 1);
+    QVERIFY(scheduleRetry->isHidden());
+
+    fixture.upcomingEventsReadFailure = true;
+    tabs->setCurrentIndex(2);
+    QVERIFY(eventsStatus->text().contains(QStringLiteral("could not be loaded")));
+    QVERIFY(!eventsRetry->isHidden());
+    fixture.upcomingEventsReadFailure = false;
+    eventsRetry->click();
+    QCOMPARE(eventsTable->model()->rowCount(), 10);
+    QVERIFY(eventsRetry->isHidden());
+
+    QVERIFY(executeSql(fixture.firstStore, QStringLiteral("DELETE FROM class_times")));
+    QVERIFY(executeSql(fixture.firstStore, QStringLiteral("DELETE FROM calendar_events")));
+    tabs->setCurrentIndex(0);
+    tabs->setCurrentIndex(1);
+    QCOMPARE(scheduleTable->model()->rowCount(), 0);
+    QVERIFY(scheduleStatus->text().contains(QStringLiteral("no schedule entries")));
+    tabs->setCurrentIndex(2);
+    QCOMPARE(eventsTable->model()->rowCount(), 0);
+    QVERIFY(eventsStatus->text().contains(QStringLiteral("no upcoming events")));
+}
+
+void NextMyWorkspacePageTests::
+overviewSummariesReloadAfterSuspendAndThemeLanguageChanges()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize(false));
+    Ui::MyWorkspacePage* const page = fixture.page();
+    auto* const tabs = page->findChild<QTabBar*>(
+        QStringLiteral("nextMyWorkspaceTabBar"));
+    auto* const scheduleTable = page->findChild<QTableView*>(
+        QStringLiteral("nextMyWorkspaceScheduleTable"));
+    QVERIFY(tabs && scheduleTable);
+    QCOMPARE(fixture.scheduleReadCount, 1);
+
+    QEvent paletteChange(QEvent::PaletteChange);
+    QCoreApplication::sendEvent(page, &paletteChange);
+    QCOMPARE(fixture.scheduleReadCount, 2);
+    QCOMPARE(scheduleTable->model()->rowCount(), 1);
+
+    QEvent languageChange(QEvent::LanguageChange);
+    QCoreApplication::sendEvent(page, &languageChange);
+    QCOMPARE(fixture.scheduleReadCount, 3);
+    QCOMPARE(scheduleTable->model()->rowCount(), 1);
+
+    page->onSuspending();
+    QCOMPARE(scheduleTable->model()->rowCount(), 0);
+    QVERIFY(page->onActivating());
+    QCOMPARE(fixture.scheduleReadCount, 4);
+    QCOMPARE(scheduleTable->model()->rowCount(), 1);
 }
 
 void NextMyWorkspacePageTests::automaticModeDebouncesSave()
