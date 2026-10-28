@@ -36,7 +36,14 @@ public:
     explicit ApplicationServicesCalendarEventSavePort(
         ApplicationServices& services
         ) noexcept
-        : m_services(services)
+        : m_store(services.workspaceStore())
+    {
+    }
+
+    explicit ApplicationServicesCalendarEventSavePort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
     {
     }
 
@@ -93,7 +100,7 @@ public:
                 }
             }
 
-            WorkspaceStore* const store = m_services.workspaceStore();
+            WorkspaceStore* const store = m_store;
             if (!store || !store->isOpen())
             {
                 return unavailableSessionFailure();
@@ -311,7 +318,7 @@ private:
         });
     }
 
-    ApplicationServices& m_services;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

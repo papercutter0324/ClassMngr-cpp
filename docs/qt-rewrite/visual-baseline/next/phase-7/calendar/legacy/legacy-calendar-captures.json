@@ -1,0 +1,110 @@
+{
+    "captures": [
+        {
+            "height": 920,
+            "image": "legacy-calendar-en-light-grid-top.png",
+            "locale": "en_US",
+            "state": "grid-top",
+            "theme": "light",
+            "width": 1280
+        },
+        {
+            "height": 920,
+            "image": "legacy-calendar-en-light-upcoming.png",
+            "locale": "en_US",
+            "state": "upcoming-scroll",
+            "theme": "light",
+            "width": 1280
+        },
+        {
+            "height": 920,
+            "image": "legacy-calendar-en-dark-grid-top.png",
+            "locale": "en_US",
+            "state": "grid-top",
+            "theme": "dark",
+            "width": 1280
+        },
+        {
+            "height": 920,
+            "image": "legacy-calendar-en-dark-upcoming.png",
+            "locale": "en_US",
+            "state": "upcoming-scroll",
+            "theme": "dark",
+            "width": 1280
+        },
+        {
+            "height": 920,
+            "image": "legacy-calendar-ko-light-grid-top.png",
+            "locale": "ko_KR",
+            "state": "grid-top",
+            "theme": "light",
+            "width": 1280
+        },
+        {
+            "height": 920,
+            "image": "legacy-calendar-ko-light-upcoming.png",
+            "locale": "ko_KR",
+            "state": "upcoming-scroll",
+            "theme": "light",
+            "width": 1280
+        },
+        {
+            "height": 920,
+            "image": "legacy-calendar-ko-dark-grid-top.png",
+            "locale": "ko_KR",
+            "state": "grid-top",
+            "theme": "dark",
+            "width": 1280
+        },
+        {
+            "height": 920,
+            "image": "legacy-calendar-ko-dark-upcoming.png",
+            "locale": "ko_KR",
+            "state": "upcoming-scroll",
+            "theme": "dark",
+            "width": 1280
+        }
+    ],
+    "fixture": {
+        "eventTypeFilters": "all enabled",
+        "events": [
+            {
+                "allDay": false,
+                "color": "#8a4f5d",
+                "endDate": "2026-10-06",
+                "endTime": "10:30",
+                "eventType": "Meeting",
+                "startDate": "2026-10-06",
+                "startTime": "09:30",
+                "title": "Campus meeting"
+            },
+            {
+                "allDay": false,
+                "color": "#5f7f52",
+                "endDate": "2026-10-15",
+                "endTime": "10:30",
+                "eventType": "Workshop",
+                "startDate": "2026-10-15",
+                "startTime": "09:30",
+                "title": "Term planning"
+            },
+            {
+                "allDay": true,
+                "color": "#7a5f9e",
+                "endDate": "2026-10-26",
+                "eventType": "Holiday",
+                "startDate": "2026-10-26",
+                "title": "School holiday"
+            }
+        ],
+        "firstWeekday": "Monday",
+        "upcomingScope": "This month",
+        "visibleMonth": "2026-10"
+    },
+    "limitations": "The two scroll positions are separate Legacy viewports. These images are visual references, not pixel-parity assertions or current-date query evidence.",
+    "source": "Legacy CalendarPage",
+    "viewport": {
+        "height": 920,
+        "width": 1280
+    }
+}

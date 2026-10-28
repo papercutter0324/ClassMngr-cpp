@@ -101,6 +101,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrNextScheduleOutput
         ${CLASSMNGR_NEXT_SCHEDULE_OUTPUT_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrNextCalendarUi
+        ${CLASSMNGR_NEXT_CALENDAR_UI_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrNextDomain
         ${CLASSMNGR_NEXT_DOMAIN_SOURCES}
     )

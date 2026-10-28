@@ -24,17 +24,24 @@
 #include <QDateEdit>
 #include <QDateTime>
 #include <QDialogButtonBox>
+#include <QDir>
+#include <QFile>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocale>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QQmlContext>
+#include <QPalette>
 #include <QPushButton>
 #include <QPointer>
 #include <QQuickItem>
 #include <QQuickWidget>
 #include <QRadioButton>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -48,6 +55,7 @@
 #include <algorithm>
 #include <array>
 #include <functional>
+#include <memory>
 #include <utility>
 
 namespace
@@ -1677,6 +1685,7 @@ class CalendarPageEventMutationParityTests final : public QObject
 private slots:
     void workspaceCalendarResourcesReleaseAndRestore_data();
     void workspaceCalendarResourcesReleaseAndRestore();
+    void capturesLegacyFullCalendarPageWhenConfigured();
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals_data();
     void ordinaryCreateEditAndDeleteUseCalendarPageSignals();
     void staleEventActivationShowsWarningWithoutMutation();
@@ -1843,6 +1852,303 @@ void CalendarPageEventMutationParityTests::workspaceCalendarResourcesReleaseAndR
         const QDate freshDate = eventDate.addDays(1);
         QCOMPARE(model->eventsForDate(freshDate.year(), freshDate.month(), freshDate.day()).size(), cycle + 1);
     }
+}
+
+void CalendarPageEventMutationParityTests::
+capturesLegacyFullCalendarPageWhenConfigured()
+{
+    const QString outputDirectory = qEnvironmentVariable(
+        "CLASSMNGR_LEGACY_CALENDAR_CAPTURE_DIR");
+    if (outputDirectory.trimmed().isEmpty())
+    {
+        QSKIP("Set CLASSMNGR_LEGACY_CALENDAR_CAPTURE_DIR to write reference captures.");
+    }
+    QVERIFY(QDir().mkpath(outputDirectory));
+
+    const QLocale previousLocale;
+    const QPalette previousPalette = QApplication::palette();
+    const QString previousStyleSheet = qApp->styleSheet();
+    struct RestoreVisualEnvironment final
+    {
+        QLocale locale;
+        QPalette palette;
+        QString styleSheet;
+        ~RestoreVisualEnvironment()
+        {
+            QLocale::setDefault(locale);
+            QApplication::setPalette(palette);
+                qApp->setStyleSheet(styleSheet);
+        }
+    } restoreEnvironment{
+        previousLocale,
+        previousPalette,
+        previousStyleSheet
+    };
+
+    const QDate visibleMonth(2026, 10, 1);
+    const QStringList locales{
+        QStringLiteral("en_US"),
+        QStringLiteral("ko_KR")
+    };
+    const QStringList themes{
+        QStringLiteral("light"),
+        QStringLiteral("dark")
+    };
+    QJsonArray captures;
+
+    for (const QString& locale : locales)
+    {
+        const bool korean = locale == QStringLiteral("ko_KR");
+        QLocale::setDefault(QLocale(locale));
+
+        for (const QString& theme : themes)
+        {
+            const bool dark = theme == QStringLiteral("dark");
+            QPalette palette = QApplication::style()->standardPalette();
+            if (dark)
+            {
+                palette.setColor(QPalette::Window, QColor(QStringLiteral("#20242a")));
+                palette.setColor(QPalette::WindowText, QColor(QStringLiteral("#f3f4f6")));
+                palette.setColor(QPalette::Base, QColor(QStringLiteral("#272c33")));
+                palette.setColor(QPalette::AlternateBase, QColor(QStringLiteral("#343b44")));
+                palette.setColor(QPalette::Text, QColor(QStringLiteral("#f3f4f6")));
+                palette.setColor(QPalette::Button, QColor(QStringLiteral("#343b44")));
+                palette.setColor(QPalette::ButtonText, QColor(QStringLiteral("#f3f4f6")));
+                palette.setColor(QPalette::Highlight, QColor(QStringLiteral("#6487a5")));
+                palette.setColor(QPalette::HighlightedText, Qt::white);
+            }
+            QApplication::setPalette(palette);
+
+            const QString sourceDirectory = QString::fromUtf8(
+                CLASSMNGR_CALENDAR_CAPTURE_SOURCE_DIR);
+            QFile stylesheetFile(
+                QDir(sourceDirectory).filePath(
+                    QStringLiteral("resources/assets/styles/%1.qss").arg(theme))
+                );
+            QVERIFY2(stylesheetFile.open(QIODevice::ReadOnly | QIODevice::Text),
+                qPrintable(QStringLiteral("Could not open %1 theme stylesheet.")
+                    .arg(theme)));
+            const QByteArray stylesheet = stylesheetFile.readAll();
+            QVERIFY(!stylesheet.isEmpty());
+            qApp->setStyleSheet(QString::fromUtf8(stylesheet));
+
+            QTranslator koreanTranslator;
+            std::unique_ptr<ScopedTranslatorInstallation> translatorInstallation;
+            if (korean)
+            {
+                QVERIFY2(koreanTranslator.load(
+                    QStringLiteral(":/i18n/ClassMngr_ko_KR.qm")),
+                    "Could not load the compiled Korean application translation.");
+                translatorInstallation = std::make_unique<ScopedTranslatorInstallation>(
+                    &koreanTranslator);
+                QVERIFY(translatorInstallation->installed());
+            }
+
+            CalendarWorkspace workspace;
+            QString setupError;
+            QVERIFY2(initializeWorkspace(workspace, &setupError),
+                qPrintable(setupError));
+            QVERIFY2(removePreservedFixtureEvent(workspace, &setupError),
+                qPrintable(setupError));
+
+            CalendarEvent meeting;
+            meeting.title = QStringLiteral("Campus meeting");
+            meeting.eventType = QStringLiteral("Meeting");
+            meeting.timeStatus = QStringLiteral("Timed");
+            meeting.startDate = QDate(2026, 10, 6);
+            meeting.startTime = QTime(9, 30);
+            meeting.endDate = meeting.startDate;
+            meeting.endTime = QTime(10, 30);
+            QVERIFY2(saveFixtureEvent(workspace, meeting, &setupError) > 0,
+                qPrintable(setupError));
+
+            CalendarEvent planning;
+            planning.title = QStringLiteral("Term planning");
+            planning.eventType = QStringLiteral("Workshop");
+            planning.timeStatus = QStringLiteral("Timed");
+            planning.startDate = QDate(2026, 10, 15);
+            planning.startTime = QTime(9, 30);
+            planning.endDate = planning.startDate;
+            planning.endTime = QTime(10, 30);
+            QVERIFY2(saveFixtureEvent(workspace, planning, &setupError) > 0,
+                qPrintable(setupError));
+
+            CalendarEvent holiday;
+            holiday.title = QStringLiteral("School holiday");
+            holiday.eventType = QStringLiteral("Holiday");
+            holiday.timeStatus = QStringLiteral("All Day");
+            holiday.allDay = true;
+            holiday.startDate = QDate(2026, 10, 26);
+            holiday.endDate = holiday.startDate;
+            QVERIFY2(saveFixtureEvent(workspace, holiday, &setupError) > 0,
+                qPrintable(setupError));
+
+            CalendarPage page(&workspace.services);
+            page.resize(1280, 920);
+            auto* const root = calendarRoot(page);
+            QVERIFY(root);
+            QVERIFY(root->setProperty(
+                "shownDate",
+                QDateTime(visibleMonth, QTime(0, 0))));
+            QCOMPARE(root->property("shownDate").toDateTime().date(), visibleMonth);
+            QVERIFY(page.academicCalendarProvider());
+            QVERIFY(page.academicCalendarProvider()->setFirstDayOfWeek(1));
+            QCOMPARE(page.academicCalendarProvider()->firstDayOfWeek(), 1);
+
+            NavigationTabWidget* const tabs = upcomingTabs(page);
+            QVERIFY(tabs);
+            tabs->setCurrentIndex(static_cast<int>(UpcomingEventsScope::CurrentMonth));
+            QCOMPARE(tabs->currentIndex(),
+                static_cast<int>(UpcomingEventsScope::CurrentMonth));
+
+            page.show();
+            QApplication::processEvents();
+            QVERIFY(page.isVisible());
+
+            CalendarEventModel* const model = calendarModel(page);
+            CalendarEventCache* const cache = page.findChild<CalendarEventCache*>();
+            QVERIFY(model);
+            QVERIFY(cache);
+            QTRY_VERIFY_WITH_TIMEOUT(
+                model->isMonthLoaded(visibleMonth.year(), visibleMonth.month()),
+                10000);
+            QTRY_VERIFY_WITH_TIMEOUT(!cache->isLoading(), 10000);
+            QCOMPARE(page.runtimeMetrics().cacheEventCount, 3);
+            QCOMPARE(model->eventsForDate(2026, 10, 6).size(), 1);
+            QCOMPARE(model->eventsForDate(2026, 10, 15).size(), 1);
+            QCOMPARE(model->eventsForDate(2026, 10, 26).size(), 1);
+
+            const QString expectedTitle = korean
+                ? QStringLiteral("캘린더")
+                : QStringLiteral("Calendar");
+            bool titleFound = false;
+            for (QLabel* const label : page.findChildren<QLabel*>())
+            {
+                if (label->text() == expectedTitle)
+                {
+                    titleFound = true;
+                    break;
+                }
+            }
+            QVERIFY2(titleFound,
+                qPrintable(QStringLiteral("Calendar title did not render in %1.")
+                    .arg(locale)));
+
+            int eventFilterCount = 0;
+            for (QPushButton* const button : page.findChildren<QPushButton*>())
+            {
+                if (button->property("eventType").toString().isEmpty())
+                {
+                    continue;
+                }
+                QVERIFY(button->isChecked());
+                ++eventFilterCount;
+            }
+            QCOMPARE(eventFilterCount, 18);
+
+            const QStringList upcomingRows = visibleUpcomingRows(tabs->currentWidget());
+            QCOMPARE(upcomingRows.size(), 3);
+            const QString joinedRows = upcomingRows.join(QLatin1Char('\n'));
+            QVERIFY(joinedRows.contains(meeting.title));
+            QVERIFY(joinedRows.contains(planning.title));
+            QVERIFY(joinedRows.contains(holiday.title));
+
+            auto* const scrollArea = page.findChild<QScrollArea*>();
+            QVERIFY(scrollArea);
+            const QString mode = QStringLiteral("%1-%2")
+                .arg(korean ? QStringLiteral("ko") : QStringLiteral("en"), theme);
+
+            scrollArea->verticalScrollBar()->setValue(0);
+            QApplication::processEvents();
+            const QImage gridImage = page.grab().toImage();
+            QCOMPARE(gridImage.size(), QSize(1280, 920));
+            const QString gridFile = QStringLiteral("legacy-calendar-%1-grid-top.png")
+                .arg(mode);
+            QVERIFY(gridImage.save(QDir(outputDirectory).filePath(gridFile)));
+            captures.append(QJsonObject{
+                {QStringLiteral("image"), gridFile},
+                {QStringLiteral("locale"), locale},
+                {QStringLiteral("theme"), theme},
+                {QStringLiteral("state"), QStringLiteral("grid-top")},
+                {QStringLiteral("width"), gridImage.width()},
+                {QStringLiteral("height"), gridImage.height()}
+            });
+
+            scrollArea->verticalScrollBar()->setValue(
+                scrollArea->verticalScrollBar()->maximum());
+            QApplication::processEvents();
+            const QImage upcomingImage = page.grab().toImage();
+            QCOMPARE(upcomingImage.size(), QSize(1280, 920));
+            const QString upcomingFile = QStringLiteral(
+                "legacy-calendar-%1-upcoming.png").arg(mode);
+            QVERIFY(upcomingImage.save(
+                QDir(outputDirectory).filePath(upcomingFile)));
+            captures.append(QJsonObject{
+                {QStringLiteral("image"), upcomingFile},
+                {QStringLiteral("locale"), locale},
+                {QStringLiteral("theme"), theme},
+                {QStringLiteral("state"), QStringLiteral("upcoming-scroll")},
+                {QStringLiteral("width"), upcomingImage.width()},
+                {QStringLiteral("height"), upcomingImage.height()}
+            });
+
+            translatorInstallation.reset();
+        }
+    }
+
+    const QJsonObject manifest{
+        {QStringLiteral("source"), QStringLiteral("Legacy CalendarPage")},
+        {QStringLiteral("fixture"), QJsonObject{
+            {QStringLiteral("visibleMonth"), QStringLiteral("2026-10")},
+            {QStringLiteral("firstWeekday"), QStringLiteral("Monday")},
+            {QStringLiteral("upcomingScope"), QStringLiteral("This month")},
+            {QStringLiteral("eventTypeFilters"), QStringLiteral("all enabled")},
+            {QStringLiteral("events"), QJsonArray{
+                QJsonObject{
+                    {QStringLiteral("title"), QStringLiteral("Campus meeting")},
+                    {QStringLiteral("eventType"), QStringLiteral("Meeting")},
+                    {QStringLiteral("startDate"), QStringLiteral("2026-10-06")},
+                    {QStringLiteral("startTime"), QStringLiteral("09:30")},
+                    {QStringLiteral("endDate"), QStringLiteral("2026-10-06")},
+                    {QStringLiteral("endTime"), QStringLiteral("10:30")},
+                    {QStringLiteral("allDay"), false},
+                    {QStringLiteral("color"), QStringLiteral("#8a4f5d")}
+                },
+                QJsonObject{
+                    {QStringLiteral("title"), QStringLiteral("Term planning")},
+                    {QStringLiteral("eventType"), QStringLiteral("Workshop")},
+                    {QStringLiteral("startDate"), QStringLiteral("2026-10-15")},
+                    {QStringLiteral("startTime"), QStringLiteral("09:30")},
+                    {QStringLiteral("endDate"), QStringLiteral("2026-10-15")},
+                    {QStringLiteral("endTime"), QStringLiteral("10:30")},
+                    {QStringLiteral("allDay"), false},
+                    {QStringLiteral("color"), QStringLiteral("#5f7f52")}
+                },
+                QJsonObject{
+                    {QStringLiteral("title"), QStringLiteral("School holiday")},
+                    {QStringLiteral("eventType"), QStringLiteral("Holiday")},
+                    {QStringLiteral("startDate"), QStringLiteral("2026-10-26")},
+                    {QStringLiteral("endDate"), QStringLiteral("2026-10-26")},
+                    {QStringLiteral("allDay"), true},
+                    {QStringLiteral("color"), QStringLiteral("#7a5f9e")}
+                }
+            }}
+        }},
+        {QStringLiteral("viewport"), QJsonObject{
+            {QStringLiteral("width"), 1280},
+            {QStringLiteral("height"), 920}
+        }},
+        {QStringLiteral("captures"), captures},
+        {QStringLiteral("limitations"), QStringLiteral(
+            "The two scroll positions are separate Legacy viewports. These images "
+            "are visual references, not pixel-parity assertions or current-date query evidence.")}
+    };
+    QFile manifestFile(QDir(outputDirectory).filePath(
+        QStringLiteral("legacy-calendar-captures.json")));
+    QVERIFY(manifestFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    const QByteArray manifestBytes = QJsonDocument(manifest).toJson(
+        QJsonDocument::Indented);
+    QCOMPARE(manifestFile.write(manifestBytes), qint64(manifestBytes.size()));
 }
 
 void CalendarPageEventMutationParityTests::ordinaryCreateEditAndDeleteUseCalendarPageSignals_data()

@@ -1,6 +1,5 @@
 #include "calendar_event_cache.h"
 
-#include "domain/rules/schedule_value_parser.h"
 #include "features/calendar/calendar_event_projection_query.h"
 #include "next/platform/calendar_event_time_status_adapter.h"
 
@@ -28,7 +27,7 @@ QString projectionText(
         );
 }
 
-std::optional<qint64> legacyIdFromProjection(
+std::optional<qint64> numericEventIdFromProjection(
     const CalendarEventSummary& summary
     )
 {
@@ -84,8 +83,8 @@ bool summaryComesBefore(
         return left.title < right.title;
     }
 
-    const auto leftId = legacyIdFromProjection(left);
-    const auto rightId = legacyIdFromProjection(right);
+    const auto leftId = numericEventIdFromProjection(left);
+    const auto rightId = numericEventIdFromProjection(right);
     if (leftId && rightId && *leftId != *rightId)
     {
         return *leftId < *rightId;
@@ -113,8 +112,8 @@ bool summaryComesBeforeOnDate(
         return left.title < right.title;
     }
 
-    const auto leftId = legacyIdFromProjection(left);
-    const auto rightId = legacyIdFromProjection(right);
+    const auto leftId = numericEventIdFromProjection(left);
+    const auto rightId = numericEventIdFromProjection(right);
     if (leftId && rightId && *leftId != *rightId)
     {
         return *leftId < *rightId;
@@ -185,17 +184,12 @@ std::optional<CalendarEvent> legacyEventFromProjection(
     const CalendarEventSummary& summary
     )
 {
-    const auto id = legacyIdFromProjection(summary);
-    const QDate startDate =
-        QDate::fromString(projectionText(summary.startDate), Qt::ISODate);
-    const QDate endDate =
-        QDate::fromString(projectionText(summary.endDate), Qt::ISODate);
-    if (
-        !id
-        || !startDate.isValid()
-        || !endDate.isValid()
-        || endDate < startDate
-        )
+    const auto id = numericEventIdFromProjection(summary);
+    const QDate startDate = QDate::fromString(
+        projectionText(summary.startDate), Qt::ISODate);
+    const QDate endDate = QDate::fromString(
+        projectionText(summary.endDate), Qt::ISODate);
+    if (!id || !startDate.isValid() || !endDate.isValid() || endDate < startDate)
     {
         return std::nullopt;
     }
@@ -206,8 +200,7 @@ std::optional<CalendarEvent> legacyEventFromProjection(
     event.eventType = projectionText(summary.eventType.value());
     event.timeStatus =
         ClassMngr::Next::Platform::calendarEventTimeStatusToLegacyText(
-            summary.timeStatus
-            );
+            summary.timeStatus);
     event.repeatSeriesId = summary.repeatSeriesId
         ? projectionText(summary.repeatSeriesId->value())
         : QString();
@@ -217,26 +210,17 @@ std::optional<CalendarEvent> legacyEventFromProjection(
 
     if (!summary.allDay && summary.startTime && summary.endTime)
     {
-        const QString rawStartTime =
-            projectionText(*summary.startTime);
-        const QString rawEndTime =
-            projectionText(*summary.endTime);
-        const auto parsedStartTime =
-            ScheduleValueParser::parseTime(rawStartTime);
-        const auto parsedEndTime =
-            ScheduleValueParser::parseTime(rawEndTime);
-        if (
-            !parsedStartTime
-            || parsedStartTime->text != rawStartTime
-            || !parsedEndTime
-            || parsedEndTime->text != rawEndTime
-            )
+        const QString rawStartTime = projectionText(*summary.startTime);
+        const QString rawEndTime = projectionText(*summary.endTime);
+        const QTime startTime = QTime::fromString(rawStartTime, QStringLiteral("HH:mm"));
+        const QTime endTime = QTime::fromString(rawEndTime, QStringLiteral("HH:mm"));
+        if (!startTime.isValid() || startTime.toString(QStringLiteral("HH:mm")) != rawStartTime
+            || !endTime.isValid() || endTime.toString(QStringLiteral("HH:mm")) != rawEndTime)
         {
             return std::nullopt;
         }
-
-        event.startTime = parsedStartTime->value;
-        event.endTime = parsedEndTime->value;
+        event.startTime = startTime;
+        event.endTime = endTime;
     }
 
     return event;
@@ -247,10 +231,7 @@ QList<CalendarEvent> legacyEventsFromProjection(
     )
 {
     QList<CalendarEvent> events;
-    events.reserve(
-        static_cast<qsizetype>(projection.eventCount())
-        );
-
+    events.reserve(static_cast<qsizetype>(projection.eventCount()));
     for (const CalendarEventSummary& summary : projection.events())
     {
         const auto event = legacyEventFromProjection(summary);
@@ -259,7 +240,6 @@ QList<CalendarEvent> legacyEventsFromProjection(
             events.append(*event);
         }
     }
-
     return events;
 }
 
@@ -543,9 +523,7 @@ QList<CalendarEvent> CalendarEventCache::eventsForDate(
     const QDate& date
     ) const
 {
-    return legacyEventsFromProjection(
-        eventProjectionForDate(date)
-        );
+    return legacyEventsFromProjection(eventProjectionForDate(date));
 }
 
 QList<CalendarEvent> CalendarEventCache::eventsInRange(
@@ -553,53 +531,8 @@ QList<CalendarEvent> CalendarEventCache::eventsInRange(
     const QDate& endDate
     ) const
 {
-    QList<CalendarEvent> events;
-
-    if (
-        !startDate.isValid()
-        || !endDate.isValid()
-        || endDate < startDate
-        )
-    {
-        return events;
-    }
-
-    QSet<qint64> eventIds;
-    for (
-        QDate date = startDate;
-        date <= endDate;
-        date = date.addDays(1)
-        )
-    {
-        const auto dateEventIds =
-            m_eventIdsByDate.constFind(date);
-        if (dateEventIds == m_eventIdsByDate.cend())
-        {
-            continue;
-        }
-
-        for (const qint64 eventId : *dateEventIds)
-        {
-            eventIds.insert(eventId);
-        }
-    }
-
-    std::vector<CalendarEventSummary> summaries;
-    summaries.reserve(static_cast<std::size_t>(eventIds.size()));
-    for (const qint64 eventId : eventIds)
-    {
-        const auto event = m_eventsById.constFind(eventId);
-        if (event != m_eventsById.cend())
-        {
-            summaries.push_back(event.value());
-        }
-    }
-
-    std::sort(summaries.begin(), summaries.end(), summaryComesBefore);
-
     return legacyEventsFromProjection(
-        projectionFromSummaries(std::move(summaries))
-        );
+        eventProjectionInRange(startDate, endDate));
 }
 
 bool CalendarEventCache::isRangeLoaded(
@@ -958,7 +891,7 @@ void CalendarEventCache::insertEvents(
 
     for (const CalendarEventSummary& event : events)
     {
-        const auto eventId = legacyIdFromProjection(event);
+        const auto eventId = numericEventIdFromProjection(event);
         const QDate startDate = QDate::fromString(
             projectionText(event.startDate),
             Qt::ISODate

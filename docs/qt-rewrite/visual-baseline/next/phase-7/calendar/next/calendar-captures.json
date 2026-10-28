@@ -1,0 +1,228 @@
+{
+    "captures": {
+        "en-dark": {
+            "activeWidgetCount": 33,
+            "cacheDateBucketCount": 3,
+            "cacheEventCount": 3,
+            "cacheRetainedRangeCount": 1,
+            "calendarViewConstructionCount": 1,
+            "firstWeekday": "Monday",
+            "image": "calendar-en-dark.png",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.709",
+                    "peakWorkingSetBytes": 118358016,
+                    "platform": "macos",
+                    "privateUsageBytes": 60638192,
+                    "privateWorkingSetBytes": 59932672,
+                    "workingSetBytes": 118358016
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.595",
+                    "peakWorkingSetBytes": 118325248,
+                    "platform": "macos",
+                    "privateUsageBytes": 59163632,
+                    "privateWorkingSetBytes": 58458112,
+                    "workingSetBytes": 116883456
+                },
+                "released": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.735",
+                    "peakWorkingSetBytes": 118374400,
+                    "platform": "macos",
+                    "privateUsageBytes": 59261936,
+                    "privateWorkingSetBytes": 58556416,
+                    "workingSetBytes": 116981760
+                },
+                "scope": "Whole-process observations, not page allocation or memory budgets"
+            },
+            "releasedCalendarRoots": 0,
+            "releasedCalendarViews": 0,
+            "upcomingRangeDays": 31,
+            "upcomingResultCount": 3,
+            "upcomingResultLimit": 10,
+            "upcomingScope": "This month",
+            "visibleGridDays": 35,
+            "visibleMonth": "2026-10"
+        },
+        "en-light": {
+            "activeWidgetCount": 33,
+            "cacheDateBucketCount": 3,
+            "cacheEventCount": 3,
+            "cacheRetainedRangeCount": 1,
+            "calendarViewConstructionCount": 1,
+            "firstWeekday": "Monday",
+            "image": "calendar-en-light.png",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.410",
+                    "peakWorkingSetBytes": 111345664,
+                    "platform": "macos",
+                    "privateUsageBytes": 54887336,
+                    "privateWorkingSetBytes": 54231040,
+                    "workingSetBytes": 110100480
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.302",
+                    "peakWorkingSetBytes": 111345664,
+                    "platform": "macos",
+                    "privateUsageBytes": 53511080,
+                    "privateWorkingSetBytes": 52854784,
+                    "workingSetBytes": 108691456
+                },
+                "released": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.436",
+                    "peakWorkingSetBytes": 114917376,
+                    "platform": "macos",
+                    "privateUsageBytes": 58311616,
+                    "privateWorkingSetBytes": 57638912,
+                    "workingSetBytes": 113557504
+                },
+                "scope": "Whole-process observations, not page allocation or memory budgets"
+            },
+            "releasedCalendarRoots": 0,
+            "releasedCalendarViews": 0,
+            "upcomingRangeDays": 31,
+            "upcomingResultCount": 3,
+            "upcomingResultLimit": 10,
+            "upcomingScope": "This month",
+            "visibleGridDays": 35,
+            "visibleMonth": "2026-10"
+        },
+        "ko-dark": {
+            "activeWidgetCount": 33,
+            "cacheDateBucketCount": 3,
+            "cacheEventCount": 3,
+            "cacheRetainedRangeCount": 1,
+            "calendarViewConstructionCount": 1,
+            "firstWeekday": "Monday",
+            "image": "calendar-ko-dark.png",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.842",
+                    "peakWorkingSetBytes": 118423552,
+                    "platform": "macos",
+                    "privateUsageBytes": 60638192,
+                    "privateWorkingSetBytes": 59932672,
+                    "workingSetBytes": 118423552
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.735",
+                    "peakWorkingSetBytes": 118374400,
+                    "platform": "macos",
+                    "privateUsageBytes": 59261936,
+                    "privateWorkingSetBytes": 58556416,
+                    "workingSetBytes": 116981760
+                },
+                "released": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.868",
+                    "peakWorkingSetBytes": 118439936,
+                    "platform": "macos",
+                    "privateUsageBytes": 59261936,
+                    "privateWorkingSetBytes": 58556416,
+                    "workingSetBytes": 117047296
+                },
+                "scope": "Whole-process observations, not page allocation or memory budgets"
+            },
+            "releasedCalendarRoots": 0,
+            "releasedCalendarViews": 0,
+            "upcomingRangeDays": 31,
+            "upcomingResultCount": 3,
+            "upcomingResultLimit": 10,
+            "upcomingScope": "This month",
+            "visibleGridDays": 35,
+            "visibleMonth": "2026-10"
+        },
+        "ko-light": {
+            "activeWidgetCount": 33,
+            "cacheDateBucketCount": 3,
+            "cacheEventCount": 3,
+            "cacheRetainedRangeCount": 1,
+            "calendarViewConstructionCount": 1,
+            "firstWeekday": "Monday",
+            "image": "calendar-ko-light.png",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.569",
+                    "peakWorkingSetBytes": 118308864,
+                    "platform": "macos",
+                    "privateUsageBytes": 60523504,
+                    "privateWorkingSetBytes": 59817984,
+                    "workingSetBytes": 118308864
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.437",
+                    "peakWorkingSetBytes": 114917376,
+                    "platform": "macos",
+                    "privateUsageBytes": 58311616,
+                    "privateWorkingSetBytes": 57638912,
+                    "workingSetBytes": 113573888
+                },
+                "released": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T17:32:26.594",
+                    "peakWorkingSetBytes": 118325248,
+                    "platform": "macos",
+                    "privateUsageBytes": 59163632,
+                    "privateWorkingSetBytes": 58458112,
+                    "workingSetBytes": 116948992
+                },
+                "scope": "Whole-process observations, not page allocation or memory budgets"
+            },
+            "releasedCalendarRoots": 0,
+            "releasedCalendarViews": 0,
+            "upcomingRangeDays": 31,
+            "upcomingResultCount": 3,
+            "upcomingResultLimit": 10,
+            "upcomingScope": "This month",
+            "visibleGridDays": 35,
+            "visibleMonth": "2026-10"
+        }
+    },
+    "fixture": {
+        "campusFilter": "No campus IDs are attached to the fixture events",
+        "eventTypeFilters": [
+            "Vacation",
+            "Holiday",
+            "Workshop",
+            "CM",
+            "Meeting",
+            "Other"
+        ],
+        "events": [
+            {
+                "date": "2026-10-06",
+                "endTime": "10:30",
+                "startTime": "09:30",
+                "title": "Campus meeting",
+                "type": "Meeting"
+            },
+            {
+                "date": "2026-10-15",
+                "endTime": "10:30",
+                "startTime": "09:30",
+                "title": "Term planning",
+                "type": "Workshop"
+            },
+            {
+                "allDay": true,
+                "date": "2026-10-26",
+                "title": "School holiday",
+                "type": "Holiday"
+            }
+        ],
+        "firstWeekday": "Monday",
+        "upcomingScope": "This month",
+        "visibleMonth": "2026-10"
+    }
+}

@@ -1008,6 +1008,29 @@
         <source>Delete</source>
         <translation>삭제</translation>
     </message>
+    <message><source>Edit Calendar Event</source><translation>캘린더 일정 편집</translation></message>
+    <message><source>New Calendar Event</source><translation>새 캘린더 일정</translation></message>
+    <message><source>Start date</source><translation>시작일</translation></message>
+    <message><source>Start time</source><translation>시작 시간</translation></message>
+    <message><source>End date</source><translation>종료일</translation></message>
+    <message><source>End time</source><translation>종료 시간</translation></message>
+    <message><source>All day</source><translation>하루 종일</translation></message>
+    <message><source>Timed</source><translation>시간 지정</translation></message>
+    <message><source>Time unknown</source><translation>시간 미상</translation></message>
+    <message><source>Time unconfirmed</source><translation>시간 미확정</translation></message>
+    <message><source>Time status</source><translation>시간 상태</translation></message>
+    <message><source>Vacation</source><translation>방학</translation></message>
+    <message><source>Holiday</source><translation>공휴일</translation></message>
+    <message><source>Workshop</source><translation>워크숍</translation></message>
+    <message><source>CM</source><translation>CM</translation></message>
+    <message><source>Meeting</source><translation>회의</translation></message>
+    <message><source>Other</source><translation>기타</translation></message>
+    <message><source>Event type</source><translation>일정 유형</translation></message>
+    <message><source>Repeat event</source><translation>일정 반복</translation></message>
+    <message><source>Repeat frequency</source><translation>반복 주기</translation></message>
+    <message><source>Repeat through</source><translation>반복 종료일</translation></message>
+    <message><source>Check the title, dates, and times, then try again.</source><translation>제목, 날짜 및 시간을 확인한 다음 다시 시도하세요.</translation></message>
+    <message><source>The repeat end date must be on or after the start date.</source><translation>반복 종료일은 시작일과 같거나 이후여야 합니다.</translation></message>
 </context>
 <context>
     <name>CalendarEventImportService</name>
@@ -1090,6 +1113,23 @@
         <source>Some calendar display preferences could not be loaded. Default values are being used.</source>
         <translation>일부 달력 표시 설정을 불러오지 못했습니다. 기본값을 사용합니다.</translation>
     </message>
+    <message><source>View and manage monthly events and upcoming dates.</source><translation>월간 일정과 예정된 날짜를 확인하고 관리합니다.</translation></message>
+    <message><source>New Event</source><translation>새 일정</translation></message>
+    <message><source>Preferences</source><translation>설정</translation></message>
+    <message><source>Event types</source><translation>일정 유형</translation></message>
+    <message><source>The workspace calendar could not be opened.</source><translation>워크스페이스 캘린더를 열 수 없습니다.</translation></message>
+    <message><source>This month</source><translation>이번 달</translation></message>
+    <message><source>Next 30 days</source><translation>다음 30일</translation></message>
+    <message><source>Next 10 events</source><translation>다음 10개 일정</translation></message>
+    <message><source>The calendar grid could not be loaded.</source><translation>캘린더 그리드를 불러오지 못했습니다.</translation></message>
+    <message><source>Loading upcoming events…</source><translation>예정된 일정을 불러오는 중…</translation></message>
+    <message><source>There are no upcoming events in this range.</source><translation>이 기간에 예정된 일정이 없습니다.</translation></message>
+    <message><source>Open a workspace to edit calendar events.</source><translation>캘린더 일정을 편집하려면 워크스페이스를 여세요.</translation></message>
+    <message><source>Delete Calendar Event?</source><translation>캘린더 일정을 삭제할까요?</translation></message>
+    <message><source>Delete this event? This action cannot be undone.</source><translation>이 일정을 삭제할까요? 이 작업은 되돌릴 수 없습니다.</translation></message>
+    <message><source>Calendar Event Not Saved</source><translation>캘린더 일정을 저장하지 못했습니다</translation></message>
+    <message><source>The event could not be saved. Your edits are still available.</source><translation>일정을 저장하지 못했습니다. 편집 내용은 계속 사용할 수 있습니다.</translation></message>
+    <message><source>Calendar Event</source><translation>캘린더 일정</translation></message>
 </context>
 <context>
     <name>CalendarSettingsDialog</name>
@@ -5473,6 +5513,15 @@ Rm: %1</source>
         <source>The ZIP archive could not be finalized.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message><source>Vacation</source><translation>방학</translation></message>
+    <message><source>Holiday</source><translation>공휴일</translation></message>
+    <message><source>Workshop</source><translation>워크숍</translation></message>
+    <message><source>CM</source><translation>CM</translation></message>
+    <message><source>Meeting</source><translation>회의</translation></message>
+    <message><source>The calendar operation could not be completed.</source><translation>캘린더 작업을 완료하지 못했습니다.</translation></message>
+    <message><source>All day</source><translation>하루 종일</translation></message>
+    <message><source>Time unknown</source><translation>시간 미상</translation></message>
+    <message><source>Time unconfirmed</source><translation>시간 미확정</translation></message>
 </context>
 <context>
     <name>ResourcePackUpdateService</name>
@@ -11319,4 +11368,48 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
         <translation>강의실 업데이트</translation>
     </message>
 </context>
+<context>
+    <name>CalendarPreferencesDialog</name>
+    <message><source>Calendar Preferences</source><translation>캘린더 설정</translation></message>
+    <message><source>Options</source><translation>옵션</translation></message>
+    <message><source>Show Events at All Campuses</source><translation>모든 캠퍼스의 일정 표시</translation></message>
+    <message><source>Hide Start of Term Events</source><translation>학기 시작 일정 숨기기</translation></message>
+    <message><source>Sunday</source><translation>일요일</translation></message>
+    <message><source>Monday</source><translation>월요일</translation></message>
+    <message><source>Tuesday</source><translation>화요일</translation></message>
+    <message><source>Wednesday</source><translation>수요일</translation></message>
+    <message><source>Thursday</source><translation>목요일</translation></message>
+    <message><source>Friday</source><translation>금요일</translation></message>
+    <message><source>Saturday</source><translation>토요일</translation></message>
+    <message><source>First day of week</source><translation>주의 첫째 날</translation></message>
+    <message><source>Event Colors</source><translation>일정 색상</translation></message>
+    <message><source>Academic Term Schedule</source><translation>학기 일정</translation></message>
+    <message><source>Academic year</source><translation>학년도</translation></message>
+    <message><source>Restore Defaults</source><translation>기본값 복원</translation></message>
+    <message><source>Winter</source><translation>겨울</translation></message>
+    <message><source>Spring</source><translation>봄</translation></message>
+    <message><source>Summer</source><translation>여름</translation></message>
+    <message><source>Fall</source><translation>가을</translation></message>
+    <message><source>School level</source><translation>학교급</translation></message>
+    <message><source>Winter start</source><translation>겨울 학기 시작일</translation></message>
+    <message><source>%1 weeks</source><translation>%1주</translation></message>
+    <message><source>Elementary</source><translation>초등학교</translation></message>
+    <message><source>Middle School</source><translation>중학교</translation></message>
+    <message><source>Reset Calendar to Defaults</source><translation>캘린더를 기본값으로 초기화</translation></message>
+    <message><source>Some preferences could not be loaded. Those controls are disabled.</source><translation>일부 설정을 불러오지 못해 해당 항목을 사용할 수 없습니다.</translation></message>
+    <message><source>Choose Event Color</source><translation>일정 색상 선택</translation></message>
+    <message><source>Calendar reset is unavailable.</source><translation>캘린더 초기화를 사용할 수 없습니다.</translation></message>
+    <message><source>Reset Calendar?</source><translation>캘린더를 초기화할까요?</translation></message>
+    <message><source>This will permanently delete all calendar events and restore the calendar event list to defaults. This cannot be undone.</source><translation>모든 캘린더 일정을 영구적으로 삭제하고 일정 목록을 기본값으로 복원합니다. 이 작업은 되돌릴 수 없습니다.</translation></message>
+    <message><source>Calendar events could not be reset. Your settings are still available.</source><translation>캘린더 일정을 초기화하지 못했습니다. 설정은 계속 사용할 수 있습니다.</translation></message>
+    <message><source>Calendar display preferences could not be saved.</source><translation>캘린더 표시 설정을 저장하지 못했습니다.</translation></message>
+    <message><source>Calendar display preferences could not be saved. Your edits are still available.</source><translation>캘린더 표시 설정을 저장하지 못했습니다. 편집 내용은 계속 사용할 수 있습니다.</translation></message>
+    <message><source>The first day of the week could not be saved. Your edits are still available.</source><translation>주의 첫째 날을 저장하지 못했습니다. 편집 내용은 계속 사용할 수 있습니다.</translation></message>
+    <message><source>Every term must start on a Monday and last between 1 and 53 weeks.</source><translation>모든 학기는 월요일에 시작하고 1주에서 53주 사이여야 합니다.</translation></message>
+    <message><source>Winter must begin 1 to 53 complete weeks after the preceding Fall term starts.</source><translation>겨울 학기는 이전 가을 학기 시작일로부터 1주에서 53주가 지난 뒤에 시작해야 합니다.</translation></message>
+    <message><source>Replace Later Academic Schedules?</source><translation>이후 학기 일정을 바꿀까요?</translation></message>
+    <message><source>Saving this year will replace custom schedules for later years. Continue?</source><translation>이 연도 일정을 저장하면 이후 연도의 사용자 지정 일정이 바뀝니다. 계속할까요?</translation></message>
+    <message><source>The academic schedule could not be saved. Your edits are still available.</source><translation>학기 일정을 저장하지 못했습니다. 편집 내용은 계속 사용할 수 있습니다.</translation></message>
+    <message><source>An event color could not be saved. Your edits are still available.</source><translation>일정 색상을 저장하지 못했습니다. 편집 내용은 계속 사용할 수 있습니다.</translation></message>
+ </context>
 </TS>

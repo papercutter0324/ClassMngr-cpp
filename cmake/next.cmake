@@ -749,6 +749,51 @@ set_target_properties(ClassMngrNextScheduleOutput
         POSITION_INDEPENDENT_CODE ON
 )
 
+# Reuse the bounded Calendar cache, model, and QML provider without pulling the
+# broad Legacy Features or shared UI objects into ClassMngrNext. The page and
+# its Next-owned dialogs live in this same narrow target.
+add_library(ClassMngrNextCalendarUi STATIC
+    ${CLASSMNGR_NEXT_CALENDAR_UI_SOURCES}
+)
+target_compile_features(ClassMngrNextCalendarUi
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextCalendarUi
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextCalendarUi
+    PUBLIC
+        ClassMngrNext::Calendar
+        Qt6::Widgets
+        Qt6::Qml
+        Qt6::Quick
+        Qt6::QuickWidgets
+    PRIVATE
+        ClassMngrBuildSettings
+        ClassMngrWorkspaceStore
+        Qt6::Concurrent
+)
+set_target_properties(ClassMngrNextCalendarUi
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+target_link_libraries(ClassMngrRuntime
+    PUBLIC
+        ClassMngrNextCalendarUi
+)
+if(TARGET ClassMngrTestRuntime)
+    target_link_libraries(ClassMngrTestRuntime
+        PUBLIC
+            ClassMngrNextCalendarUi
+    )
+endif()
+
 # Startup catalog metadata is consumed by ClassMngrNext without the broader
 # Platform umbrella, which also owns network-facing adapters.
 add_library(ClassMngrNextDocumentCatalog STATIC
@@ -854,6 +899,16 @@ classmngr_next_assert_dependencies(ClassMngrNextScheduleOutput
     "$<LINK_ONLY:ClassMngrSchedulePrint>"
     "$<LINK_ONLY:Qt6::Widgets>"
 )
+classmngr_next_assert_dependencies(ClassMngrNextCalendarUi
+    ClassMngrNext::Calendar
+    Qt6::Widgets
+    Qt6::Qml
+    Qt6::Quick
+    Qt6::QuickWidgets
+    "$<LINK_ONLY:ClassMngrBuildSettings>"
+    "$<LINK_ONLY:ClassMngrWorkspaceStore>"
+    "$<LINK_ONLY:Qt6::Concurrent>"
+)
 classmngr_next_assert_dependencies(ClassMngrNextUiShared
     ClassMngrNext::Application
     ClassMngrNext::Resources
@@ -909,6 +964,7 @@ target_link_libraries(ClassMngrNext
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNextScheduleOutput
+        ClassMngrNextCalendarUi
         ClassMngrNextDocumentCatalog
         ClassMngrNextStartupUpdates
         ClassMngrTeacherImportParser
@@ -923,12 +979,13 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
     message(FATAL_ERROR
         "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, "
         "ClassMngrNext::Application, ClassMngrClassTransferSupport, "
         "ClassMngrNext::Resources, "
         "ClassMngrNextWorkspace, ClassMngrNextScheduleOutput, "
+        "ClassMngrNextCalendarUi, "
         "ClassMngrNextDocumentCatalog, "
         "ClassMngrNextStartupUpdates, ClassMngrTeacherImportParser, "
         "ClassMngrScheduleImportParser, "

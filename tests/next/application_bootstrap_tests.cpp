@@ -1897,7 +1897,7 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
              QStringLiteral("initial_setup"));
     const std::vector<Ui::NavigationNode>& navigationNodes =
         shell->navigationModel()->nodes();
-    QCOMPARE(navigationNodes.size(), std::size_t(11));
+    QCOMPARE(navigationNodes.size(), std::size_t(12));
     const auto findPageNode = [&navigationNodes](const QString& id)
         -> const Ui::NavigationNode* {
         const auto found = std::find_if(
@@ -1919,6 +1919,8 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     QVERIFY(findPageNode(QStringLiteral("my_workspace")));
     QVERIFY(findPageNode(QStringLiteral("schedule")));
     QVERIFY(pageHost.isPageRegistered(QStringLiteral("schedule")));
+    QVERIFY(findPageNode(QStringLiteral("calendar")));
+    QVERIFY(pageHost.isPageRegistered(QStringLiteral("calendar")));
     QVERIFY(findPageNode(QStringLiteral("my_classes")));
     QVERIFY(findPageNode(QStringLiteral("classes")));
     QVERIFY(findPageNode(QStringLiteral("sub_prep")));

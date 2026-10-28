@@ -37,6 +37,13 @@ public:
     {
     }
 
+    explicit ApplicationServicesCalendarFirstDayOfWeekPreferencesPort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
+    {
+    }
+
     ApplicationServicesCalendarFirstDayOfWeekPreferencesPort(
         const ApplicationServicesCalendarFirstDayOfWeekPreferencesPort&
         ) = delete;

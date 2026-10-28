@@ -1,8 +1,17 @@
 #pragma once
 
+#include <QDate>
 #include <QObject>
 #include <QStringList>
 #include <QVariantList>
+
+#include <vector>
+
+namespace ClassMngr::Next::Application
+{
+class CalendarEventProjection;
+class CalendarEventSummary;
+}
 
 class CalendarEventCache;
 
@@ -31,12 +40,20 @@ public:
         int month
         ) const;
 
+    [[nodiscard]] ClassMngr::Next::Application::CalendarEventProjection
+    visibleEventsInRange(
+        const QDate& startDate,
+        const QDate& endDate
+        ) const;
+
     void setCampusFilter(
         const QStringList& currentCampusCodes,
         const QStringList& allCampusCodes,
         bool showAllCampuses,
         bool hideStartOfTermEvents
         );
+
+    void setActiveEventTypes(const QStringList& eventTypes);
 
     void reload();
 
@@ -45,10 +62,16 @@ signals:
     void loadingChanged();
 
 private:
+    [[nodiscard]] bool isVisible(
+        const ClassMngr::Next::Application::CalendarEventSummary& event
+        ) const;
+
     CalendarEventCache* m_cache = nullptr;
     QStringList m_currentCampusCodes;
     QStringList m_allCampusCodes;
     bool m_showAllCampuses = false;
     bool m_hideStartOfTermEvents = false;
+    QStringList m_activeEventTypes;
+    bool m_activeEventTypesSet = false;
     int m_revision = 0;
 };

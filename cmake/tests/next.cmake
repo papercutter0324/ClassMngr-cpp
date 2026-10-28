@@ -25,6 +25,8 @@ target_compile_definitions(ClassMngrNextBootstrapTests
 target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
         ClassMngrClassTransferSupport
+        ClassMngrNextCalendarUi
+        ClassMngrNextScheduleOutput
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
@@ -194,6 +196,7 @@ target_compile_definitions(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegra
 target_link_libraries(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
     PRIVATE
         ClassMngrClassTransferSupport
+        ClassMngrNextCalendarUi
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
@@ -7340,4 +7343,91 @@ classmngr_add_qt_test(
     NAME NextPlatformSettingsManagerPreferencesPort
     SOURCES tests/next_platform_settings_manager_preferences_port_tests.cpp
     LIBRARIES ClassMngrNext::Platform Qt6::Test
+)
+
+# Exercise the Next Calendar page's lazy QML grid, bounded active ranges,
+# typed event actions, cancellation behavior, and localized theme captures.
+add_executable(ClassMngrNextCalendarPageTests
+    tests/next/calendar_page_tests.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextCalendarPageTests PRIVATE cxx_std_23)
+target_include_directories(ClassMngrNextCalendarPageTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextCalendarPageTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_CALENDAR_CAPTURE_DIR="${CMAKE_CURRENT_BINARY_DIR}/calendar-captures"
+)
+target_link_libraries(ClassMngrNextCalendarPageTests
+    PRIVATE
+        ClassMngrClassTransferSupport
+        ClassMngrNextCalendarUi
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrTeacherImportParser
+        ClassMngrScheduleImportParser
+        ClassMngrWorkspaceStore
+        Qt6::Concurrent
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextCalendarPageTests
+    PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextCalendarPageTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+classmngr_next_add_calendar_qml_resources(ClassMngrNextCalendarPageTests)
+add_dependencies(ClassMngrNextCalendarPageTests
+    ClassMngrNextResourcePackage
+    ClassMngrNextTranslationOutputs
+)
+add_test(
+    NAME ClassMngrNextCalendarPageTests
+    COMMAND ClassMngrNextCalendarPageTests
+)
+set_tests_properties(ClassMngrNextCalendarPageTests
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Exercise the real Next calendar WorkspaceStore bridge independently from
+# the callback fakes used by the page tests.
+add_executable(ClassMngrNextCalendarWorkspaceStoreActionsTests
+    tests/next/calendar_workspace_store_actions_tests.cpp
+)
+target_compile_features(ClassMngrNextCalendarWorkspaceStoreActionsTests
+    PRIVATE cxx_std_23
+)
+target_include_directories(ClassMngrNextCalendarWorkspaceStoreActionsTests
+    PRIVATE "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextCalendarWorkspaceStoreActionsTests
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNextCalendarUi
+        ClassMngrNext::Application
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Test
+)
+set_target_properties(ClassMngrNextCalendarWorkspaceStoreActionsTests
+    PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextCalendarWorkspaceStoreActionsTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextCalendarWorkspaceStoreActionsTests
+    COMMAND ClassMngrNextCalendarWorkspaceStoreActionsTests
 )

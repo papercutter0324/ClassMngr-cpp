@@ -37,6 +37,13 @@ public:
     {
     }
 
+    explicit ApplicationServicesCurrentCampusPreferencesPort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
+    {
+    }
+
     ApplicationServicesCurrentCampusPreferencesPort(
         const ApplicationServicesCurrentCampusPreferencesPort&
         ) = delete;

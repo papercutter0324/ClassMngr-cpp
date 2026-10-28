@@ -37,6 +37,13 @@ public:
     {
     }
 
+    explicit ApplicationServicesAcademicCalendarSchedulePreferencesPort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
+    {
+    }
+
     ApplicationServicesAcademicCalendarSchedulePreferencesPort(
         const ApplicationServicesAcademicCalendarSchedulePreferencesPort&
         ) = delete;

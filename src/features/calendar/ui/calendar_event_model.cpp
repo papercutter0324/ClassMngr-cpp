@@ -1,12 +1,13 @@
 #include "calendar_event_model.h"
 
 #include "calendar_event_cache.h"
-#include "domain/rules/schedule_value_parser.h"
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "next/application/calendar_event_visibility_policy.h"
+#include "next/application/calendar_event_projection.h"
 #include "next/platform/calendar_event_time_status_adapter.h"
 
 #include <QDateTime>
+#include <QTime>
 #include <QVariantMap>
 
 #include <string>
@@ -69,6 +70,29 @@ bool CalendarEventModel::isLoading() const
     return m_cache && m_cache->isLoading();
 }
 
+bool CalendarEventModel::isVisible(const CalendarEventSummary& event) const
+{
+    if (m_activeEventTypesSet
+        && !m_activeEventTypes.contains(projectionText(event.eventType.value())))
+    {
+        return false;
+    }
+
+    return CalendarEventVisibilityPolicy::shouldShowEvent(
+        event,
+        m_hideStartOfTermEvents,
+        [&]()
+        {
+            return CalendarEventCampusFilter::eventMatchesCampus(
+                event,
+                m_currentCampusCodes,
+                m_allCampusCodes,
+                m_showAllCampuses
+                );
+        }
+        );
+}
+
 QVariantList CalendarEventModel::eventsForDate(
     int year,
     int month,
@@ -98,19 +122,7 @@ QVariantList CalendarEventModel::eventsForDate(
 
     for (const CalendarEventSummary& event : projection.events())
     {
-        if (!CalendarEventVisibilityPolicy::shouldShowEvent(
-                event,
-                m_hideStartOfTermEvents,
-                [&]()
-                {
-                    return CalendarEventCampusFilter::eventMatchesCampus(
-                        event,
-                        m_currentCampusCodes,
-                        m_allCampusCodes,
-                        m_showAllCampuses
-                        );
-                }
-                ))
+        if (!isVisible(event))
         {
             continue;
         }
@@ -149,22 +161,24 @@ QVariantList CalendarEventModel::eventsForDate(
                 projectionText(*event.startTime);
             const QString rawEndTime =
                 projectionText(*event.endTime);
-            const auto parsedStartTime =
-                ScheduleValueParser::parseTime(rawStartTime);
-            const auto parsedEndTime =
-                ScheduleValueParser::parseTime(rawEndTime);
+            const QTime parsedStartTime =
+                QTime::fromString(rawStartTime, QStringLiteral("HH:mm"));
+            const QTime parsedEndTime =
+                QTime::fromString(rawEndTime, QStringLiteral("HH:mm"));
             if (
-                !parsedStartTime
-                || parsedStartTime->text != rawStartTime
-                || !parsedEndTime
-                || parsedEndTime->text != rawEndTime
+                !parsedStartTime.isValid()
+                || parsedStartTime.toString(QStringLiteral("HH:mm"))
+                    != rawStartTime
+                || !parsedEndTime.isValid()
+                || parsedEndTime.toString(QStringLiteral("HH:mm"))
+                    != rawEndTime
                 )
             {
                 continue;
             }
 
-            startTime = parsedStartTime->value;
-            endTime = parsedEndTime->value;
+            startTime = parsedStartTime;
+            endTime = parsedEndTime;
         }
 
         QVariantMap value;
@@ -226,6 +240,34 @@ bool CalendarEventModel::isMonthLoaded(
             );
 }
 
+ClassMngr::Next::Application::CalendarEventProjection
+CalendarEventModel::visibleEventsInRange(
+    const QDate& startDate,
+    const QDate& endDate
+    ) const
+{
+    using namespace ClassMngr::Next::Application;
+    if (!m_cache || !startDate.isValid() || !endDate.isValid()
+        || endDate < startDate)
+    {
+        return {};
+    }
+
+    CalendarEventProjectionInput input;
+    const CalendarEventProjection projection =
+        m_cache->eventProjectionInRange(startDate, endDate);
+    input.events.reserve(projection.events().size());
+    for (const CalendarEventSummary& event : projection.events())
+    {
+        if (isVisible(event))
+        {
+            input.events.push_back(event);
+        }
+    }
+    const auto filtered = CalendarEventProjection::create(std::move(input));
+    return filtered ? filtered.value() : CalendarEventProjection{};
+}
+
 void CalendarEventModel::setCampusFilter(
     const QStringList& currentCampusCodes,
     const QStringList& allCampusCodes,
@@ -252,6 +294,27 @@ void CalendarEventModel::setCampusFilter(
     m_hideStartOfTermEvents =
         hideStartOfTermEvents;
 
+    reload();
+}
+
+void CalendarEventModel::setActiveEventTypes(const QStringList& eventTypes)
+{
+    QStringList normalized;
+    normalized.reserve(eventTypes.size());
+    for (const QString& eventType : eventTypes)
+    {
+        const QString value = eventType.trimmed();
+        if (!value.isEmpty() && !normalized.contains(value))
+        {
+            normalized.append(value);
+        }
+    }
+    if (m_activeEventTypesSet && m_activeEventTypes == normalized)
+    {
+        return;
+    }
+    m_activeEventTypes = std::move(normalized);
+    m_activeEventTypesSet = true;
     reload();
 }
 

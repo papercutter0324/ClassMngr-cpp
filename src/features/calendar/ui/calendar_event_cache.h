@@ -78,10 +78,12 @@ public:
         const QDate& endDate
         ) const;
 
-    QList<CalendarEvent> eventsForDate(
+    // Compatibility reads retained for the Legacy Calendar cache consumers.
+    // The Next page uses only the typed projection API above.
+    [[nodiscard]] QList<CalendarEvent> eventsForDate(
         const QDate& date
         ) const;
-    QList<CalendarEvent> eventsInRange(
+    [[nodiscard]] QList<CalendarEvent> eventsInRange(
         const QDate& startDate,
         const QDate& endDate
         ) const;

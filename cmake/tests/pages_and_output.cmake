@@ -228,6 +228,8 @@ classmngr_add_qt_test(
         Qt6::Sql
         Qt6::Test
         Qt6::Widgets
+    COMPILE_DEFINITIONS
+        CLASSMNGR_CALENDAR_CAPTURE_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     OFFSCREEN
 )
 
@@ -305,6 +307,12 @@ qt_add_resources(
     FILES
         resources/assets/icons/keyboard_dark.svg
         resources/assets/icons/keyboard_light.svg
+)
+
+qt_add_translations(
+    TARGETS ClassMngrCalendarPageEventMutationParityTests
+    TS_FILES
+        resources/assets/translations/ClassMngr_ko_KR.ts
 )
 
 classmngr_add_qt_test(

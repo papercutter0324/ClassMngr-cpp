@@ -34,6 +34,13 @@ public:
     {
     }
 
+    explicit ApplicationServicesCalendarEventDisplayPreferencesPort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
+    {
+    }
+
     ApplicationServicesCalendarEventDisplayPreferencesPort(
         const ApplicationServicesCalendarEventDisplayPreferencesPort&
         ) = delete;

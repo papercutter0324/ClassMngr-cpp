@@ -37,6 +37,13 @@ public:
     {
     }
 
+    explicit ApplicationServicesCalendarEventTypeColorPreferencesPort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
+    {
+    }
+
     ApplicationServicesCalendarEventTypeColorPreferencesPort(
         const ApplicationServicesCalendarEventTypeColorPreferencesPort&
         ) = delete;

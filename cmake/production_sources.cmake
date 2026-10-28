@@ -377,23 +377,11 @@ set(CLASSMNGR_ON_SCREEN_KEYBOARD_SOURCES
 set(CLASSMNGR_FEATURES_SOURCES
     "src/features/calendar/academic_calendar_event_parser.cpp"
     "src/features/calendar/academic_calendar_event_parser.h"
-    "src/features/calendar/academic_calendar_schedule.cpp"
-    "src/features/calendar/academic_calendar_schedule.h"
-    "src/features/calendar/calendar_event_campus_filter.cpp"
-    "src/features/calendar/calendar_event_campus_filter.h"
     "src/features/calendar/calendar_event_import_service.cpp"
     "src/features/calendar/calendar_event_import_service.h"
-    "src/features/calendar/calendar_event_projection_query.cpp"
-    "src/features/calendar/calendar_event_projection_query.h"
     "src/features/calendar/calendar_settings_keys.h"
-    "src/features/calendar/ui/academic_calendar_provider.cpp"
-    "src/features/calendar/ui/academic_calendar_provider.h"
-    "src/features/calendar/ui/calendar_event_cache.cpp"
-    "src/features/calendar/ui/calendar_event_cache.h"
     "src/features/calendar/ui/calendar_event_dialog.cpp"
     "src/features/calendar/ui/calendar_event_dialog.h"
-    "src/features/calendar/ui/calendar_event_model.cpp"
-    "src/features/calendar/ui/calendar_event_model.h"
     "src/features/calendar/ui/calendar_page.cpp"
     "src/features/calendar/ui/calendar_page.h"
     "src/features/calendar/ui/calendar_page_events.cpp"
@@ -735,6 +723,35 @@ set(CLASSMNGR_SCHEDULE_PRINT_SOURCES
 set(CLASSMNGR_NEXT_SCHEDULE_OUTPUT_SOURCES
     "src/next/platform/qt_schedule_output_adapter.cpp"
     "src/next/platform/qt_schedule_output_adapter.h"
+)
+
+# Calendar's bounded event cache, QML adapters, and query boundary are a
+# focused surface shared by the Legacy and Next pages. Keep this closure out of
+# the broad Legacy Features object so Next can use it without inheriting that
+# target's dependencies.
+set(CLASSMNGR_NEXT_CALENDAR_UI_SOURCES
+    "src/features/calendar/academic_calendar_schedule.cpp"
+    "src/features/calendar/academic_calendar_schedule.h"
+    "src/features/calendar/calendar_event_campus_filter.cpp"
+    "src/features/calendar/calendar_event_campus_filter.h"
+    "src/features/calendar/calendar_event_projection_query.cpp"
+    "src/features/calendar/calendar_event_projection_query.h"
+    "src/features/calendar/ui/academic_calendar_provider.cpp"
+    "src/features/calendar/ui/academic_calendar_provider.h"
+    "src/features/calendar/ui/calendar_event_cache.cpp"
+    "src/features/calendar/ui/calendar_event_cache.h"
+    "src/features/calendar/ui/calendar_event_model.cpp"
+    "src/features/calendar/ui/calendar_event_model.h"
+    "src/next/platform/workspace_store_calendar_actions.cpp"
+    "src/next/platform/workspace_store_calendar_actions.h"
+    "src/next/platform/calendar_page_resource_campus_directory_query_adapter.cpp"
+    "src/next/platform/calendar_page_resource_campus_directory_query_adapter.h"
+    "src/next/ui/calendar_event_dialog.cpp"
+    "src/next/ui/calendar_event_dialog.h"
+    "src/next/ui/calendar_page.cpp"
+    "src/next/ui/calendar_page.h"
+    "src/next/ui/calendar_preferences_dialog.cpp"
+    "src/next/ui/calendar_preferences_dialog.h"
 )
 
 set(CLASSMNGR_MAIN_SOURCE "src/main.cpp")

@@ -395,6 +395,7 @@ private slots:
     void wideIdsSurviveCacheAndModel();
     void rangeLoadPopulatesModelWithoutUiThreadDatabaseAccess();
     void injectedQueryFactoryFeedsLegacyCacheBoundary();
+    void typedRangeResultsRespectCampusAndEventTypeFilters();
     void injectedQueryFactoryPreservesUtf8DatabasePath();
     void injectedInvalidTimesAreFilteredByCacheAndModel();
     void projectionMappingPreservesRichCalendarFieldsAndCleansConnections();
@@ -601,6 +602,73 @@ void CalendarEventCacheTests::injectedQueryFactoryFeedsLegacyCacheBoundary()
     QCOMPARE(nextEventSpy.at(0).at(0).toDate(), QDate(2026, 7, 10));
     QCOMPARE(state->createCalls, 2);
     QCOMPARE(state->nextEventCalls, 1);
+}
+
+void CalendarEventCacheTests::typedRangeResultsRespectCampusAndEventTypeFilters()
+{
+    using namespace ClassMngr::Next;
+    auto state = std::make_shared<InjectedQueryState>();
+    Application::CalendarEventProjectionInput input;
+    const auto append = [&input](
+        const char* id,
+        const char* title,
+        const char* eventType)
+    {
+        input.events.push_back({
+            *Domain::CalendarEventId::fromString(id),
+            std::nullopt,
+            std::nullopt,
+            title,
+            "2026-07-10",
+            "2026-07-10",
+            std::string("09:00"),
+            std::string("10:00"),
+            {},
+            {},
+            Application::CalendarEventOrder(0),
+            false,
+            Application::CalendarEventTypeName(std::string(eventType)),
+            Domain::CalendarEventTimeStatus::Timed,
+            std::nullopt
+        });
+    };
+    append("42", "BDG meeting", "Meeting");
+    append("43", "SNU vacation", "Vacation");
+    append("44", "General event", "Meeting");
+    const auto projection = Application::CalendarEventProjection::create(
+        std::move(input));
+    QVERIFY(projection);
+    state->rangeProjection = projection.value();
+
+    CalendarEventCache cache(std::make_shared<InjectedQueryFactory>(state));
+    cache.setDatabasePath(QStringLiteral("calendar-filter.db"));
+    const QDate start(2026, 7, 10);
+    const QDate end(2026, 7, 11);
+    cache.requestRange(start, end);
+    QTRY_VERIFY_WITH_TIMEOUT(cache.isRangeLoaded(start, end), 5000);
+
+    CalendarEventModel model(&cache);
+    model.setCampusFilter(
+        {QStringLiteral("BDG")},
+        {QStringLiteral("BDG"), QStringLiteral("SNU")},
+        false,
+        false);
+    auto visible = model.visibleEventsInRange(start, end);
+    QCOMPARE(visible.eventCount(), std::size_t(2));
+
+    model.setActiveEventTypes({QStringLiteral("Meeting")});
+    visible = model.visibleEventsInRange(start, end);
+    QCOMPARE(visible.eventCount(), std::size_t(2));
+    const QVariantList dateEvents = model.eventsForDate(2026, 7, 10);
+    QCOMPARE(dateEvents.size(), 2);
+    for (const QVariant& value : dateEvents)
+    {
+        QCOMPARE(value.toMap().value(QStringLiteral("eventType")).toString(),
+                 QStringLiteral("Meeting"));
+    }
+
+    model.setActiveEventTypes({QStringLiteral("Vacation")});
+    QCOMPARE(model.visibleEventsInRange(start, end).eventCount(), std::size_t(0));
 }
 
 void CalendarEventCacheTests::injectedQueryFactoryPreservesUtf8DatabasePath()
