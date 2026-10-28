@@ -7,6 +7,8 @@
 #include "next/application/class_delete.h"
 #include "next/application/class_details_page_read_port.h"
 #include "next/application/class_details_save_workflow.h"
+#include "next/application/class_notes_page_read_port.h"
+#include "next/application/class_notes_save_port.h"
 
 #include <QString>
 
@@ -17,6 +19,16 @@ namespace ClassMngr::Next::Platform
 readClassDetailsAtPath(
     const QString& databasePath,
     const Domain::ClassId& classId
+    );
+
+[[nodiscard]] Application::ClassNotesPageReadResult readClassNotesAtPath(
+    const QString& databasePath,
+    const Domain::ClassId& classId
+    );
+
+[[nodiscard]] Application::ClassNotesSaveResult saveClassNotesAtPath(
+    const QString& databasePath,
+    const Application::ClassNotesSaveRequest& request
     );
 
 [[nodiscard]] Application::ClassCoTeacherPageReadResult

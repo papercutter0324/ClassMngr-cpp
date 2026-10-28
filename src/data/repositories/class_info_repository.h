@@ -181,6 +181,10 @@ struct ClassNotesPageReadOutcome final
 {
     ClassNotesPageReadRecord record;
     bool parentMissing = false;
+    bool metadataLimitExceeded = false;
+    bool notesLimitExceeded = false;
+    bool timeFillerActivitiesLimitExceeded = false;
+    bool regularScheduleTokenLimitExceeded = false;
 };
 
 struct ClassDetailsPageReadRecord final
@@ -588,6 +592,13 @@ public:
     // legacy record's default-success behavior.
     [[nodiscard]] RepositoryResult<ClassNotesPageReadOutcome>
         loadClassNotesPageRecordDetailed(int classId);
+    [[nodiscard]] RepositoryResult<ClassNotesPageReadOutcome>
+        loadBoundedClassNotesPageRecordDetailed(
+            int classId,
+            int maximumTextCodeUnits,
+            int maximumMetadataFieldCodeUnits,
+            int maximumScheduleTokenLength
+            );
     [[nodiscard]] RepositoryResult<ClassDetailsPageReadRecord>
         loadClassDetailsPageRecord(int classId);
     [[nodiscard]] RepositoryResult<ClassDetailsPageReadOutcome>

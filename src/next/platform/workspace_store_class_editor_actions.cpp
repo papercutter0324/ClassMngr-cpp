@@ -15,6 +15,8 @@
 #include "next/application/class_create_use_case.h"
 #include "next/application/class_delete_use_case.h"
 #include "next/application/class_details_page_query.h"
+#include "next/application/class_notes_page_read_query.h"
+#include "next/application/class_notes_save_use_case.h"
 #include "next/application/positive_decimal_id_validation.h"
 #include "next/platform/repository_error_code.h"
 
@@ -42,6 +44,9 @@ constexpr int kMaximumCoTeacherNameBytes = 4'096;
 constexpr qint64 kMaximumTotalCoTeacherNameBytes = 4 * 1024 * 1024;
 constexpr int kMaximumCoTeacherProfileFieldBytes = 16 * 1024;
 constexpr qint64 kMaximumCoTeacherProfileBytes = 64 * 1024;
+constexpr int kMaximumClassNotesMetadataFieldCodeUnits = 256;
+constexpr int kMaximumClassNotesScheduleTokenCodeUnits = 64;
+constexpr int kMaximumClassNotesTeacherNameFieldCodeUnits = 4'096;
 
 [[nodiscard]] std::optional<int> legacyClassId(const Domain::ClassId& id)
 {
@@ -101,6 +106,8 @@ constexpr qint64 kMaximumCoTeacherProfileBytes = 64 * 1024;
     return std::string(bytes.constData(), static_cast<std::size_t>(bytes.size()));
 }
 
+[[nodiscard]] std::string displayName(const TeacherDisplayNameReadRecord& record);
+
 [[nodiscard]] Domain::Result<Application::ClassDetailsPageFields>
 classFieldsFailure(const Domain::OperationError& source)
 {
@@ -147,6 +154,215 @@ public:
 
 private:
     Application::ClassDetailsPageReadSnapshot m_value;
+};
+
+class WorkspaceStoreClassNotesReadPort final
+    : public Application::ClassNotesPageReadPort
+{
+public:
+    explicit WorkspaceStoreClassNotesReadPort(QString databasePath)
+        : m_databasePath(std::move(databasePath))
+    {
+    }
+
+    [[nodiscard]] Application::ClassNotesPageReadResult readClassNotesPage(
+        const Domain::ClassId& classId
+        ) const override
+    {
+        const auto id = legacyClassId(classId);
+        if (!id)
+        {
+            return Application::ClassNotesPageReadResult::failure(error(
+                Domain::ErrorCode::InvalidInput,
+                "Class ID must be a canonical positive integer.", false));
+        }
+        WorkspaceStore store;
+        const RepositoryStatus opened = store.openExisting(m_databasePath);
+        if (!opened)
+        {
+            return Application::ClassNotesPageReadResult::failure(openedError(
+                opened, "The active workspace could not be opened for class notes."));
+        }
+        ClassInfoRepository* const infoRepository = store.classInfoRepository();
+        if (!infoRepository)
+        {
+            return Application::ClassNotesPageReadResult::failure(error(
+                Domain::ErrorCode::NotFound,
+                "The class notes repository is unavailable."));
+        }
+
+        RepositoryResult<ClassNotesPageReadOutcome> loaded = [&]() {
+            try
+            {
+                return infoRepository->loadBoundedClassNotesPageRecordDetailed(
+                    *id,
+                    static_cast<int>(Application::kClassNotesSaveMaxTextCodeUnits),
+                    kMaximumClassNotesMetadataFieldCodeUnits,
+                    kMaximumClassNotesScheduleTokenCodeUnits);
+            }
+            catch (const std::exception&)
+            {
+                return RepositoryResult<ClassNotesPageReadOutcome>(
+                    std::unexpected(RepositoryError(
+                        RepositoryErrorCode::Technical,
+                        QStringLiteral("Class notes could not be loaded."))));
+            }
+            catch (...)
+            {
+                return RepositoryResult<ClassNotesPageReadOutcome>(
+                    std::unexpected(RepositoryError(
+                        RepositoryErrorCode::Technical,
+                        QStringLiteral("Class notes could not be loaded."))));
+            }
+        }();
+        if (!loaded)
+        {
+            return Application::ClassNotesPageReadResult::failure(repositoryError(
+                loaded.error(), "Class notes could not be loaded."));
+        }
+        if (loaded->parentMissing)
+        {
+            return Application::ClassNotesPageReadResult::failure(error(
+                Domain::ErrorCode::NotFound,
+                "The selected class no longer exists."));
+        }
+        if (loaded->metadataLimitExceeded
+            || loaded->notesLimitExceeded
+            || loaded->timeFillerActivitiesLimitExceeded
+            || loaded->regularScheduleTokenLimitExceeded)
+        {
+            return Application::ClassNotesPageReadResult::failure(error(
+                Domain::ErrorCode::Validation,
+                "Stored class notes exceed the supported text or summary limit.",
+                false));
+        }
+
+        Application::ClassNotesPageFields fields{
+            .classGrade = loaded->record.classGrade.toStdU16String(),
+            .classLevel = loaded->record.classLevel.toStdU16String(),
+            .notes = loaded->record.notes.toStdU16String(),
+            .timeFillerActivities =
+                loaded->record.timeFillerActivities.toStdU16String()
+        };
+        fields.regularSchedule.reserve(
+            static_cast<std::size_t>(loaded->record.regularTimes.size()));
+        for (const ClassNotesPageRegularTime& row : loaded->record.regularTimes)
+        {
+            fields.regularSchedule.push_back({
+                .day = row.day.toStdU16String(),
+                .startTime = row.startTime.toStdU16String()
+            });
+        }
+
+        Domain::Result<std::u16string> teacherDisplayName =
+            Domain::Result<std::u16string>::success({});
+        if (loaded->record.teacherId > 0)
+        {
+            TeacherRepository* const teacherRepository = store.teacherRepository();
+            if (!teacherRepository)
+            {
+                teacherDisplayName = Domain::Result<std::u16string>::failure(error(
+                    Domain::ErrorCode::NotFound,
+                    "The class teacher display name is unavailable."));
+            }
+            else
+            {
+                const auto teacher = teacherRepository->lookupBoundedTeacherDisplayName(
+                    loaded->record.teacherId,
+                    kMaximumClassNotesTeacherNameFieldCodeUnits);
+                if (!teacher)
+                {
+                    teacherDisplayName = Domain::Result<std::u16string>::failure(
+                        repositoryError(teacher.error(),
+                            "The class teacher display name is unavailable."));
+                }
+                else
+                {
+                    const std::string displayNameUtf8 =
+                        displayName(teacher.value());
+                    const QString selectedName = QString::fromUtf8(
+                        displayNameUtf8.data(),
+                        static_cast<qsizetype>(displayNameUtf8.size()));
+                    teacherDisplayName = Domain::Result<std::u16string>::success(
+                        selectedName.toStdU16String());
+                }
+            }
+        }
+
+        return Application::ClassNotesPageReadResult::success({
+            .classId = classId,
+            .classFields = Domain::Result<Application::ClassNotesPageFields>::success(
+                std::move(fields)),
+            .teacherDisplayName = std::move(teacherDisplayName)
+        });
+    }
+
+private:
+    QString m_databasePath;
+};
+
+class WorkspaceStoreClassNotesSavePort final
+    : public Application::ClassNotesSavePort
+{
+public:
+    explicit WorkspaceStoreClassNotesSavePort(QString databasePath)
+        : m_databasePath(std::move(databasePath))
+    {
+    }
+
+    [[nodiscard]] Application::ClassNotesSaveResult saveClassNotes(
+        const Application::ClassNotesSaveRequest& request
+        ) const override
+    {
+        const auto id = legacyClassId(request.classId);
+        if (!id)
+        {
+            return Application::ClassNotesSaveResult::failure(error(
+                Domain::ErrorCode::InvalidInput,
+                "Class ID must be a canonical positive integer.", false));
+        }
+        WorkspaceStore store;
+        const RepositoryStatus opened = store.openExisting(m_databasePath);
+        if (!opened)
+        {
+            return Application::ClassNotesSaveResult::failure(openedError(
+                opened, "The active workspace could not be opened to save class notes."));
+        }
+        ClassInfoRepository* const repository = store.classInfoRepository();
+        if (!repository)
+        {
+            return Application::ClassNotesSaveResult::failure(error(
+                Domain::ErrorCode::NotFound,
+                "The class notes repository is unavailable."));
+        }
+
+        const QString notes = fromUtf16(request.notes).trimmed();
+        const QString activities = fromUtf16(request.timeFillerActivities).trimmed();
+        try
+        {
+            const RepositoryStatus saved = repository->saveClassNotesDetailed(
+                *id, notes, activities);
+            if (!saved)
+            {
+                return Application::ClassNotesSaveResult::failure(repositoryError(
+                    saved.error(), "Class notes could not be saved."));
+            }
+            return Application::ClassNotesSaveResult::success();
+        }
+        catch (const std::exception&)
+        {
+            return Application::ClassNotesSaveResult::failure(error(
+                Domain::ErrorCode::Technical, "Class notes could not be saved."));
+        }
+        catch (...)
+        {
+            return Application::ClassNotesSaveResult::failure(error(
+                Domain::ErrorCode::Technical, "Class notes could not be saved."));
+        }
+    }
+
+private:
+    QString m_databasePath;
 };
 
 [[nodiscard]] Application::ClassDetailsPageFields fields(
@@ -653,6 +869,24 @@ private:
 }
 
 } // namespace
+
+Application::ClassNotesPageReadResult readClassNotesAtPath(
+    const QString& databasePath,
+    const Domain::ClassId& classId
+    )
+{
+    WorkspaceStoreClassNotesReadPort port(databasePath);
+    return Application::ClassNotesPageReadQuery(port).execute(classId);
+}
+
+Application::ClassNotesSaveResult saveClassNotesAtPath(
+    const QString& databasePath,
+    const Application::ClassNotesSaveRequest& request
+    )
+{
+    WorkspaceStoreClassNotesSavePort port(databasePath);
+    return Application::ClassNotesSaveUseCase::execute(request, port);
+}
 
 Application::ClassDetailsPageReadResult readClassDetailsAtPath(
     const QString& databasePath,

@@ -301,6 +301,11 @@ bool ClassesNavigatorPage::refreshFromStore()
     const auto path = activePath();
     if (!path || path->trimmed().isEmpty())
     {
+        if (hasUnsavedChanges()
+            && !prepareForSelectionChange(translated("closing the workspace")))
+        {
+            return false;
+        }
         clearForClosedWorkspace();
         return false;
     }
@@ -323,6 +328,11 @@ bool ClassesNavigatorPage::refreshFromStore()
     }
     if (m_workspaceIdentity && *m_workspaceIdentity != identity)
     {
+        if (hasUnsavedChanges()
+            && !prepareForSelectionChange(translated("switching workspaces")))
+        {
+            return false;
+        }
         discardSelectionState();
         notifyActiveClassSelection();
         discardDayFilterState();
@@ -734,8 +744,10 @@ void ClassesNavigatorPage::buildUi()
     editorActions.readCoTeacher = m_actions.readClassCoTeacher;
     editorActions.readTeacherChoices = m_actions.readClassCoTeacherChoices;
     editorActions.readTeacherDetails = m_actions.readClassCoTeacherTeacherDetails;
+    editorActions.readNotes = m_actions.readClassNotes;
     editorActions.saveDetails = m_actions.saveClassDetails;
     editorActions.saveCoTeacher = m_actions.saveClassCoTeacher;
+    editorActions.saveNotes = m_actions.saveClassNotes;
     editorActions.resolveUnsavedChanges = m_actions.resolveUnsavedChanges;
     m_selectedClassEditor = new SelectedClassEditor(
         std::move(editorActions), m_contentSplitter);
@@ -1047,7 +1059,8 @@ void ClassesNavigatorPage::loadSelectedClassEditor()
         m_selectedClassEditor->clear();
         return;
     }
-    m_selectedClassEditor->loadClass(*path, *m_selectedClassId);
+    m_selectedClassEditor->loadClass(*path, *m_selectedClassId,
+        m_model->classNameForClassId(*m_selectedClassId));
 }
 
 void ClassesNavigatorPage::clearSelectedClassEditor()

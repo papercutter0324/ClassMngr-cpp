@@ -545,6 +545,116 @@ TeacherRepository::lookupTeacherDisplayName(
     };
 }
 
+RepositoryResult<TeacherDisplayNameReadRecord>
+TeacherRepository::lookupBoundedTeacherDisplayName(
+    const qint64 teacherId,
+    const int maximumFieldCodeUnits
+    )
+{
+    if (teacherId <= 0 || maximumFieldCodeUnits <= 0)
+    {
+        return repositoryUnexpected(
+            QObject::tr("Loading teacher display name failed: invalid ID or read bound."),
+            RepositoryErrorCode::InvalidInput);
+    }
+
+    QSqlQuery query(m_database);
+    const QString statement = QStringLiteral(R"(
+        WITH bounds AS (SELECT ? AS max_units, ? AS max_bytes)
+        SELECT id AS teacher_id,
+               CASE WHEN length(COALESCE(teacher_kr, '')) <= bounds.max_units
+                          AND length(CAST(COALESCE(teacher_kr, '') AS BLOB))
+                              <= bounds.max_bytes
+                    THEN COALESCE(teacher_kr, '') ELSE NULL END AS teacher_kr,
+               CASE WHEN length(COALESCE(teacher_en, '')) <= bounds.max_units
+                          AND length(CAST(COALESCE(teacher_en, '') AS BLOB))
+                              <= bounds.max_bytes
+                    THEN COALESCE(teacher_en, '') ELSE NULL END AS teacher_en,
+               CASE WHEN length(COALESCE(preferred_romanization, ''))
+                                <= bounds.max_units
+                          AND length(CAST(COALESCE(preferred_romanization, '') AS BLOB))
+                                <= bounds.max_bytes
+                    THEN COALESCE(preferred_romanization, '') ELSE NULL END
+                    AS preferred_romanization,
+               CASE WHEN length(COALESCE(preferred_name, '')) <= bounds.max_units
+                          AND length(CAST(COALESCE(preferred_name, '') AS BLOB))
+                              <= bounds.max_bytes
+                    THEN COALESCE(preferred_name, '') ELSE NULL END AS preferred_name,
+               (length(COALESCE(teacher_kr, '')) > bounds.max_units
+                OR length(CAST(COALESCE(teacher_kr, '') AS BLOB)) > bounds.max_bytes
+                OR length(COALESCE(teacher_en, '')) > bounds.max_units
+                OR length(CAST(COALESCE(teacher_en, '') AS BLOB)) > bounds.max_bytes
+                OR length(COALESCE(preferred_romanization, '')) > bounds.max_units
+                OR length(CAST(COALESCE(preferred_romanization, '') AS BLOB))
+                    > bounds.max_bytes
+                OR length(COALESCE(preferred_name, '')) > bounds.max_units
+                OR length(CAST(COALESCE(preferred_name, '') AS BLOB))
+                    > bounds.max_bytes) AS text_exceeds_bound
+        FROM teachers CROSS JOIN bounds
+        WHERE id = ?
+    )");
+    if (!query.prepare(statement))
+    {
+        return repositoryUnexpected(SqlQueryUtils::errorFor(
+            query, QObject::tr("Loading teacher display name"), statement,
+            teacherIdentity(teacherId)).userMessage());
+    }
+    query.addBindValue(maximumFieldCodeUnits);
+    query.addBindValue(static_cast<qint64>(maximumFieldCodeUnits) * 4);
+    query.addBindValue(teacherId);
+    const auto executed = SqlQueryUtils::executePrepared(
+        query, QObject::tr("Loading teacher display name"),
+        teacherIdentity(teacherId));
+    if (!executed)
+    {
+        return repositoryUnexpected(executed.error().userMessage());
+    }
+    if (!query.next())
+    {
+        if (query.lastError().isValid())
+        {
+            return repositoryUnexpected(SqlQueryUtils::errorFor(
+                query, QObject::tr("Loading teacher display name"), statement,
+                teacherIdentity(teacherId)).userMessage());
+        }
+        return repositoryUnexpected(
+            QObject::tr("Loading teacher display name failed: no teacher matched %1.")
+                .arg(teacherIdentity(teacherId)), RepositoryErrorCode::NotFound);
+    }
+    if (query.value(QStringLiteral("text_exceeds_bound")).toBool())
+    {
+        return repositoryUnexpected(
+            QObject::tr("Loading teacher display name failed: text exceeds the supported bound."),
+            RepositoryErrorCode::Validation);
+    }
+
+    TeacherDisplayNameReadRecord record{
+        query.value(QStringLiteral("teacher_kr")).toString(),
+        query.value(QStringLiteral("teacher_en")).toString(),
+        query.value(QStringLiteral("preferred_romanization")).toString(),
+        query.value(QStringLiteral("preferred_name")).toString()
+    };
+    if (record.teacherKr.size() > maximumFieldCodeUnits
+        || record.teacherEn.size() > maximumFieldCodeUnits
+        || record.preferredRomanization.size() > maximumFieldCodeUnits
+        || record.preferredName.size() > maximumFieldCodeUnits)
+    {
+        return repositoryUnexpected(
+            QObject::tr("Loading teacher display name failed: text exceeds the supported UTF-16 bound."),
+            RepositoryErrorCode::Validation);
+    }
+    bool returnedTeacherIdOk = false;
+    const qint64 returnedTeacherId = query.value(
+        QStringLiteral("teacher_id")).toLongLong(&returnedTeacherIdOk);
+    if (!returnedTeacherIdOk || returnedTeacherId != teacherId)
+    {
+        return repositoryUnexpected(
+            QObject::tr("Loading teacher display name failed: the returned ID is invalid."),
+            RepositoryErrorCode::Validation);
+    }
+    return record;
+}
+
 RepositoryResult<QList<TeacherDisplayNameBatchReadRecord>>
 TeacherRepository::loadTeacherDisplayNameRecords(
     const QList<int>& teacherIds

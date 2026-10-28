@@ -5,6 +5,8 @@
 #include "next/application/class_co_teacher_teacher_choices_read_port.h"
 #include "next/application/class_details_page_read_port.h"
 #include "next/application/class_details_save_workflow.h"
+#include "next/application/class_notes_page_read_port.h"
+#include "next/application/class_notes_save_port.h"
 #include "next/application/save_mode_preferences.h"
 #include "next/domain/domain_types.h"
 
@@ -21,6 +23,7 @@ class QLineEdit;
 class QPushButton;
 class QTableWidget;
 class QTabWidget;
+class QTextEdit;
 class QTimer;
 class QWidget;
 
@@ -45,12 +48,16 @@ struct SelectedClassEditorActions final
         const QString&)> readTeacherChoices;
     std::function<Domain::Result<Application::ClassCoTeacherTeacherChoice>(
         const QString&, const Domain::TeacherId&)> readTeacherDetails;
+    std::function<Application::ClassNotesPageReadResult(
+        const QString&, const Domain::ClassId&)> readNotes;
     std::function<Application::ClassDetailsSaveWorkflowResult(
         const QString&, const Application::ClassDetailsSaveWorkflowRequest&)>
         saveDetails;
     std::function<Domain::Result<void>(
         const QString&, const Application::ClassCoTeacherAssignmentRequest&)>
         saveCoTeacher;
+    std::function<Application::ClassNotesSaveResult(
+        const QString&, const Application::ClassNotesSaveRequest&)> saveNotes;
     std::function<UnsavedChangesChoice(const QString&)> resolveUnsavedChanges;
 };
 
@@ -74,7 +81,11 @@ public:
     [[nodiscard]] QTableWidget* regularSchedule() const noexcept;
     [[nodiscard]] QTableWidget* intensiveSchedule() const noexcept;
 
-    void loadClass(const QString& databasePath, const Domain::ClassId& classId);
+    void loadClass(
+        const QString& databasePath,
+        const Domain::ClassId& classId,
+        const QString& classNameFallback = {}
+        );
     void clear();
     [[nodiscard]] bool resolveUnsavedChanges(const QString& reason);
     [[nodiscard]] bool saveChanges(QString* error = nullptr);
@@ -84,10 +95,15 @@ private:
     void ensureUi();
     QWidget* buildDetailsTab();
     QWidget* buildCoTeacherTab();
+    QWidget* buildNotesTab();
     void setStatus(const QString& message, bool error);
     void setCoTeacherStatus(const QString& message, bool error);
+    void setNotesStatus(const QString& message, bool error, bool retryable = false);
     void clearDetailsDisplay();
+    void clearNotesDisplay();
     void readClassDetails();
+    void readNotes();
+    [[nodiscard]] bool loadNotesIfNeeded();
     void readCoTeacher();
     void readTeacherChoices();
     void readSelectedTeacherDetails();
@@ -97,9 +113,11 @@ private:
     void updateCoTeacherDisplay();
     void updateDirtyState();
     void scheduleDetailsSave();
+    void scheduleNotesSave();
     [[nodiscard]] Application::ClassDetailsValidationInput detailsDraft() const;
     [[nodiscard]] bool saveDetails(QString* error);
     [[nodiscard]] bool saveCoTeacher(QString* error);
+    [[nodiscard]] bool saveNotes(QString* error);
     [[nodiscard]] bool loadCoTeacherIfNeeded();
     [[nodiscard]] bool applyDetailsSnapshot(
         const Application::ClassDetailsPageReadSnapshot& snapshot,
@@ -127,6 +145,7 @@ private:
     QTabWidget* m_sections = nullptr;
     QWidget* m_detailsTab = nullptr;
     QWidget* m_coTeacherTab = nullptr;
+    QWidget* m_notesTab = nullptr;
     QLabel* m_emptyState = nullptr;
     QLabel* m_detailsStatus = nullptr;
     QLabel* m_coTeacherStatus = nullptr;
@@ -140,6 +159,11 @@ private:
     QLabel* m_coTeacherProjectionLabel = nullptr;
     QLabel* m_coTeacherZoomIdLabel = nullptr;
     QLabel* m_coTeacherZoomPasswordLabel = nullptr;
+    QLabel* m_notesTitleLabel = nullptr;
+    QLabel* m_notesLabel = nullptr;
+    QLabel* m_timeFillerActivitiesLabel = nullptr;
+    QLabel* m_notesSubtitleLabel = nullptr;
+    QLabel* m_notesStatus = nullptr;
     QComboBox* m_grade = nullptr;
     QComboBox* m_level = nullptr;
     QComboBox* m_readingBook = nullptr;
@@ -157,20 +181,32 @@ private:
     QComboBox* m_coTeacher = nullptr;
     QPushButton* m_saveCoTeacherButton = nullptr;
     QPushButton* m_retryCoTeacherButton = nullptr;
+    QPushButton* m_saveNotesButton = nullptr;
+    QPushButton* m_retryNotesButton = nullptr;
+    QTextEdit* m_notesEdit = nullptr;
+    QTextEdit* m_timeFillerActivitiesEdit = nullptr;
     QTimer* m_detailsAutosave = nullptr;
+    QTimer* m_notesAutosave = nullptr;
     std::optional<Domain::ClassId> m_classId;
     std::optional<QString> m_databasePath;
+    QString m_classNameFallback;
     std::optional<Application::ClassDetailsPageReadSnapshot> m_detailsSnapshot;
     std::optional<Application::ClassCoTeacherPageReadSnapshot> m_coTeacherSnapshot;
     std::optional<Application::ClassCoTeacherTeacherChoicesSnapshot> m_teacherChoices;
     std::optional<Application::ClassCoTeacherTeacherChoice> m_selectedTeacherDetails;
     std::optional<Domain::TeacherId> m_savedCoTeacherId;
     std::optional<Domain::TeacherId> m_selectedTeacherDetailsId;
+    QString m_savedNotes;
+    QString m_savedTimeFillerActivities;
+    QString m_notesSubtitle;
     bool m_detailsLoaded = false;
     bool m_coTeacherReadAttempted = false;
     bool m_coTeacherChoicesReadAttempted = false;
     bool m_detailsDirty = false;
     bool m_coTeacherDirty = false;
+    bool m_notesLoaded = false;
+    bool m_notesReadAttempted = false;
+    bool m_notesDirty = false;
     bool m_loading = false;
     bool m_rebuildingChoices = false;
     int m_previousSectionIndex = 0;

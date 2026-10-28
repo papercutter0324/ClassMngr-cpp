@@ -580,6 +580,17 @@ QString ClassesNavigatorModel::labelForClassId(
     return {};
 }
 
+QString ClassesNavigatorModel::classNameForClassId(
+    const Domain::ClassId& classId
+    ) const
+{
+    const auto found = std::find_if(m_classes.classes.cbegin(),
+        m_classes.classes.cend(), [&classId](const auto& classroom) {
+            return classroom.classId == classId;
+        });
+    return found == m_classes.classes.cend() ? QString{} : fromValue(found->className);
+}
+
 std::vector<Domain::ClassId> ClassesNavigatorModel::classIdsForGroup(
     const QString& key
     ) const

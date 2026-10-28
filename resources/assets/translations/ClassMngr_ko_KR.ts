@@ -10664,6 +10664,11 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Delete Class</source><translation>수업 삭제</translation></message>
     <message><source>Class Details and Times</source><translation>수업 정보 및 시간</translation></message>
     <message><source>Co-Teacher</source><translation>공동 교사</translation></message>
+    <message><source>Notes</source><translation>노트</translation></message>
+    <message><source>Class Notes</source><translation>수업 노트</translation></message>
+    <message><source>Time Filler Activities</source><translation>자투리 시간 활동</translation></message>
+    <message><source>No Teacher</source><translation>교사 없음</translation></message>
+    <message><source>Unknown Class</source><translation>알 수 없는 수업</translation></message>
     <message><source>Select a class to edit its details.</source><translation>수업을 선택해 정보를 수정하세요.</translation></message>
     <message><source>Class Details</source><translation>수업 정보</translation></message>
     <message><source>Grade</source><translation>학년</translation></message>
@@ -10700,6 +10705,10 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Unavailable</source><translation>사용할 수 없음</translation></message>
     <message><source>Unavailable (%1)</source><translation>사용할 수 없음 (%1)</translation></message>
     <message><source>Class details could not be loaded. Retry this section.</source><translation>수업 정보를 불러오지 못했습니다. 이 섹션에서 다시 시도하세요.</translation></message>
+    <message><source>Class notes could not be loaded. Retry this section.</source><translation>수업 노트를 불러오지 못했습니다. 이 섹션에서 다시 시도하세요.</translation></message>
+    <message><source>Class notes returned a different class.</source><translation>수업 노트에서 다른 수업 식별자가 반환되었습니다.</translation></message>
+    <message><source>The teacher display name could not be loaded. Notes can still be saved.</source><translation>교사 표시 이름을 불러오지 못했지만 노트는 저장할 수 있습니다.</translation></message>
+    <message><source>Class notes cannot be saved right now.</source><translation>현재 수업 노트를 저장할 수 없습니다.</translation></message>
     <message><source>Co-Teacher details could not be loaded.</source><translation>공동 교사 정보를 불러오지 못했습니다.</translation></message>
     <message><source>Teacher choices could not be loaded.</source><translation>교사 선택 항목을 불러오지 못했습니다.</translation></message>
     <message><source>Class details have %1 validation error(s).</source><translation>수업 정보에 유효성 오류가 %1개 있습니다.</translation></message>

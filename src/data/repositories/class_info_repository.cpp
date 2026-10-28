@@ -2428,6 +2428,237 @@ ClassInfoRepository::loadClassNotesPageRecordDetailed(const int classId)
     };
 }
 
+RepositoryResult<ClassNotesPageReadOutcome>
+ClassInfoRepository::loadBoundedClassNotesPageRecordDetailed(
+    const int classId,
+    const int maximumTextCodeUnits,
+    const int maximumMetadataFieldCodeUnits,
+    const int maximumScheduleTokenLength
+    )
+{
+    ++m_classNotesPageReadMetrics.callCount;
+    if (classId <= 0 || maximumTextCodeUnits <= 0
+        || maximumMetadataFieldCodeUnits <= 0
+        || maximumScheduleTokenLength < 0)
+    {
+        return repositoryFailure(
+            QObject::tr("Loading class notes failed: one or more read bounds are invalid."),
+            RepositoryErrorCode::InvalidInput);
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(classId);
+    ClassNotesPageReadRecord record;
+    record.classId = classId;
+    QSqlQuery metadataQuery(m_database);
+    const QString metadataStatement = QStringLiteral(R"(
+        WITH bounds AS (
+            SELECT ? AS max_text_units, ? AS max_text_bytes,
+                   ? AS max_metadata_units, ? AS max_metadata_bytes
+        )
+        SELECT class_info.teacher_id AS teacher_id,
+               CASE WHEN length(COALESCE(class_info.class_grade, ''))
+                              <= bounds.max_metadata_units
+                          AND length(CAST(COALESCE(class_info.class_grade, '') AS BLOB))
+                              <= bounds.max_metadata_bytes
+                    THEN COALESCE(class_info.class_grade, '') ELSE NULL END AS class_grade,
+               CASE WHEN length(COALESCE(class_info.class_level, ''))
+                              <= bounds.max_metadata_units
+                          AND length(CAST(COALESCE(class_info.class_level, '') AS BLOB))
+                              <= bounds.max_metadata_bytes
+                    THEN COALESCE(class_info.class_level, '') ELSE NULL END AS class_level,
+               CASE WHEN length(COALESCE(class_info.notes, ''))
+                              <= bounds.max_text_units
+                          AND length(CAST(COALESCE(class_info.notes, '') AS BLOB))
+                              <= bounds.max_text_bytes
+                    THEN COALESCE(class_info.notes, '') ELSE NULL END AS notes,
+               CASE WHEN length(COALESCE(class_info.time_filler_activities, ''))
+                              <= bounds.max_text_units
+                          AND length(CAST(COALESCE(class_info.time_filler_activities, '') AS BLOB))
+                              <= bounds.max_text_bytes
+                    THEN COALESCE(class_info.time_filler_activities, '')
+                    ELSE NULL END AS time_filler_activities,
+               (length(COALESCE(class_info.class_grade, ''))
+                    > bounds.max_metadata_units
+                OR length(CAST(COALESCE(class_info.class_grade, '') AS BLOB))
+                    > bounds.max_metadata_bytes
+                OR length(COALESCE(class_info.class_level, ''))
+                    > bounds.max_metadata_units
+                OR length(CAST(COALESCE(class_info.class_level, '') AS BLOB))
+                    > bounds.max_metadata_bytes) AS metadata_limit_exceeded,
+               (length(COALESCE(class_info.notes, ''))
+                    > bounds.max_text_units
+                OR length(CAST(COALESCE(class_info.notes, '') AS BLOB))
+                    > bounds.max_text_bytes) AS notes_limit_exceeded,
+               (length(COALESCE(class_info.time_filler_activities, ''))
+                    > bounds.max_text_units
+                OR length(CAST(COALESCE(class_info.time_filler_activities, '') AS BLOB))
+                    > bounds.max_text_bytes) AS activities_limit_exceeded
+        FROM classes
+        LEFT JOIN class_info ON class_info.class_id = classes.id
+        CROSS JOIN bounds
+        WHERE classes.id = ?
+    )");
+    if (!metadataQuery.prepare(metadataStatement))
+    {
+        return repositoryFailure(SqlQueryUtils::errorFor(
+            metadataQuery, QObject::tr("Loading class notes"),
+            metadataStatement, identity).userMessage());
+    }
+    metadataQuery.addBindValue(maximumTextCodeUnits);
+    metadataQuery.addBindValue(static_cast<qint64>(maximumTextCodeUnits) * 4);
+    metadataQuery.addBindValue(maximumMetadataFieldCodeUnits);
+    metadataQuery.addBindValue(
+        static_cast<qint64>(maximumMetadataFieldCodeUnits) * 4);
+    metadataQuery.addBindValue(classId);
+    ++m_classNotesPageReadMetrics.metadataStatementCount;
+    const auto loadedMetadata = SqlQueryUtils::executePrepared(
+        metadataQuery, QObject::tr("Loading class notes"), identity);
+    if (!loadedMetadata)
+    {
+        return repositoryFailure(loadedMetadata.error().userMessage());
+    }
+    if (!metadataQuery.next())
+    {
+        if (metadataQuery.lastError().isValid())
+        {
+            return repositoryFailure(SqlQueryUtils::errorFor(
+                metadataQuery, QObject::tr("Loading class notes"),
+                metadataStatement, identity).userMessage());
+        }
+        return ClassNotesPageReadOutcome{.record = std::move(record),
+            .parentMissing = true};
+    }
+
+    bool metadataLimitExceeded = metadataQuery.value(
+        QStringLiteral("metadata_limit_exceeded")).toBool();
+    bool notesLimitExceeded = metadataQuery.value(
+        QStringLiteral("notes_limit_exceeded")).toBool();
+    bool activitiesLimitExceeded = metadataQuery.value(
+        QStringLiteral("activities_limit_exceeded")).toBool();
+    const QVariant persistedTeacherId = metadataQuery.value(
+        QStringLiteral("teacher_id"));
+    if (persistedTeacherId.isNull())
+    {
+        record.teacherId = -1;
+    }
+    else
+    {
+        bool teacherIdOk = false;
+        record.teacherId = persistedTeacherId.toString().toLongLong(&teacherIdOk);
+        if (!teacherIdOk)
+        {
+            return repositoryFailure(
+                QObject::tr("Loading class notes failed: teacher id for %1 is invalid.")
+                    .arg(identity), RepositoryErrorCode::Validation);
+        }
+    }
+
+    if (!metadataLimitExceeded)
+    {
+        record.classGrade = metadataQuery.value(
+            QStringLiteral("class_grade")).toString();
+        record.classLevel = metadataQuery.value(
+            QStringLiteral("class_level")).toString();
+        metadataLimitExceeded = record.classGrade.size()
+                > maximumMetadataFieldCodeUnits
+            || record.classLevel.size() > maximumMetadataFieldCodeUnits;
+    }
+    if (!notesLimitExceeded)
+    {
+        record.notes = metadataQuery.value(QStringLiteral("notes")).toString();
+        notesLimitExceeded = record.notes.size() > maximumTextCodeUnits;
+        if (notesLimitExceeded)
+        {
+            record.notes.clear();
+        }
+    }
+    if (!activitiesLimitExceeded)
+    {
+        record.timeFillerActivities = metadataQuery.value(
+            QStringLiteral("time_filler_activities")).toString();
+        activitiesLimitExceeded =
+            record.timeFillerActivities.size() > maximumTextCodeUnits;
+        if (activitiesLimitExceeded)
+        {
+            record.timeFillerActivities.clear();
+        }
+    }
+
+    bool scheduleTokenLimitExceeded = false;
+    if (!metadataLimitExceeded)
+    {
+        QSqlQuery scheduleQuery(m_database);
+        const QString scheduleStatement = QStringLiteral(R"(
+            WITH bounds AS (SELECT ? AS max_token_units, ? AS max_token_bytes)
+            SELECT CASE WHEN length(COALESCE(day, '')) <= bounds.max_token_units
+                             AND length(CAST(COALESCE(day, '') AS BLOB))
+                                 <= bounds.max_token_bytes
+                        THEN COALESCE(day, '') ELSE NULL END AS day,
+                   CASE WHEN length(COALESCE(start_time, '')) <= bounds.max_token_units
+                             AND length(CAST(COALESCE(start_time, '') AS BLOB))
+                                 <= bounds.max_token_bytes
+                        THEN COALESCE(start_time, '') ELSE NULL END AS start_time,
+                   (length(COALESCE(day, '')) > bounds.max_token_units
+                    OR length(CAST(COALESCE(day, '') AS BLOB))
+                        > bounds.max_token_bytes
+                    OR length(COALESCE(start_time, '')) > bounds.max_token_units
+                    OR length(CAST(COALESCE(start_time, '') AS BLOB))
+                        > bounds.max_token_bytes) AS token_limit_exceeded
+            FROM class_times CROSS JOIN bounds
+            WHERE class_id = ?
+            ORDER BY id
+            LIMIT 1
+        )");
+        if (!scheduleQuery.prepare(scheduleStatement))
+        {
+            return repositoryFailure(SqlQueryUtils::errorFor(
+                scheduleQuery, QObject::tr("Loading regular class times"),
+                scheduleStatement, identity).userMessage());
+        }
+        scheduleQuery.addBindValue(maximumScheduleTokenLength);
+        scheduleQuery.addBindValue(
+            static_cast<qint64>(maximumScheduleTokenLength) * 4);
+        scheduleQuery.addBindValue(classId);
+        ++m_classNotesPageReadMetrics.regularScheduleStatementCount;
+        const auto loadedSchedule = SqlQueryUtils::executePrepared(
+            scheduleQuery, QObject::tr("Loading regular class times"), identity);
+        if (!loadedSchedule)
+        {
+            return repositoryFailure(loadedSchedule.error().userMessage());
+        }
+        if (scheduleQuery.next())
+        {
+            scheduleTokenLimitExceeded = scheduleQuery.value(
+                QStringLiteral("token_limit_exceeded")).toBool();
+            if (!scheduleTokenLimitExceeded)
+            {
+                ClassNotesPageRegularTime firstTime{
+                    scheduleQuery.value(QStringLiteral("day")).toString(),
+                    scheduleQuery.value(QStringLiteral("start_time")).toString()
+                };
+                scheduleTokenLimitExceeded = firstTime.day.size()
+                        > maximumScheduleTokenLength
+                    || firstTime.startTime.size() > maximumScheduleTokenLength;
+                if (!scheduleTokenLimitExceeded)
+                {
+                    record.regularTimes.append(std::move(firstTime));
+                }
+            }
+        }
+        if (scheduleQuery.lastError().isValid())
+        {
+            return repositoryFailure(SqlQueryUtils::errorFor(
+                scheduleQuery, QObject::tr("Loading regular class times"),
+                scheduleStatement, identity).userMessage());
+        }
+    }
+
+    return ClassNotesPageReadOutcome{
+        std::move(record), false, metadataLimitExceeded, notesLimitExceeded,
+        activitiesLimitExceeded, scheduleTokenLimitExceeded
+    };
+}
+
 RepositoryResult<ClassDetailsPageReadRecord>
 ClassInfoRepository::loadClassDetailsPageRecord(const int classId)
 {

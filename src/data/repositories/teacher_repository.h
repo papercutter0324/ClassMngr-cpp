@@ -281,6 +281,8 @@ public:
         qint64 teacherId
         );
     [[nodiscard]] RepositoryResult<TeacherDisplayNameReadRecord>
+        lookupBoundedTeacherDisplayName(qint64 teacherId, int maximumFieldCodeUnits);
+    [[nodiscard]] RepositoryResult<TeacherDisplayNameReadRecord>
         loadTeacherDisplayNameFields(int teacherId);
     [[nodiscard]] RepositoryResult<TeacherDisplayNameReadRecord>
         loadTeacherDisplayNameFields(qint64 teacherId);

@@ -56,12 +56,16 @@ struct ClassesNavigatorPageActions final
         const QString&)> readClassCoTeacherChoices;
     std::function<Domain::Result<Application::ClassCoTeacherTeacherChoice>(
         const QString&, const Domain::TeacherId&)> readClassCoTeacherTeacherDetails;
+    std::function<Application::ClassNotesPageReadResult(
+        const QString&, const Domain::ClassId&)> readClassNotes;
     std::function<Application::ClassDetailsSaveWorkflowResult(
         const QString&, const Application::ClassDetailsSaveWorkflowRequest&)>
         saveClassDetails;
     std::function<Domain::Result<void>(
         const QString&, const Application::ClassCoTeacherAssignmentRequest&)>
         saveClassCoTeacher;
+    std::function<Application::ClassNotesSaveResult(
+        const QString&, const Application::ClassNotesSaveRequest&)> saveClassNotes;
     std::function<Application::ClassCreateResult(const QString&)> createClass;
     std::function<Application::ClassDeleteResult(
         const QString&, const Application::ClassDeleteRequest&)> deleteClass;

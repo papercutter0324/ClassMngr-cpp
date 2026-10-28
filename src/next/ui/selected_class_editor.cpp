@@ -25,6 +25,7 @@
 #include <QTableWidgetItem>
 #include <QTabWidget>
 #include <QTimer>
+#include <QTextEdit>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -143,6 +144,7 @@ SelectedClassEditor::SelectedClassEditor(
     , m_actions(std::move(actions))
     , m_saveMode(m_actions.saveMode)
     , m_detailsAutosave(new QTimer(this))
+    , m_notesAutosave(new QTimer(this))
 {
     setObjectName(QStringLiteral("selectedClassEditor"));
     auto* const layout = new QVBoxLayout(this);
@@ -161,11 +163,20 @@ SelectedClassEditor::SelectedClassEditor(
             static_cast<void>(saveDetails(&ignored));
         }
     });
+    m_notesAutosave->setSingleShot(true);
+    m_notesAutosave->setInterval(750);
+    connect(m_notesAutosave, &QTimer::timeout, this, [this] {
+        if (m_notesDirty && m_saveMode == Application::SaveMode::Automatic)
+        {
+            QString ignored;
+            static_cast<void>(saveNotes(&ignored));
+        }
+    });
 }
 
 bool SelectedClassEditor::hasUnsavedChanges() const noexcept
 {
-    return m_detailsDirty || m_coTeacherDirty;
+    return m_detailsDirty || m_coTeacherDirty || m_notesDirty;
 }
 
 bool SelectedClassEditor::isLoaded() const noexcept
@@ -220,8 +231,10 @@ void SelectedClassEditor::ensureUi()
     m_sections->setObjectName(QStringLiteral("selectedClassEditorSections"));
     m_detailsTab = buildDetailsTab();
     m_coTeacherTab = buildCoTeacherTab();
+    m_notesTab = buildNotesTab();
     m_sections->addTab(m_detailsTab, translated("Class Details and Times"));
     m_sections->addTab(m_coTeacherTab, translated("Co-Teacher"));
+    m_sections->addTab(m_notesTab, translated("Notes"));
     layout->addWidget(m_sections, 1);
     connect(m_sections, &QTabWidget::currentChanged, this, [this](const int index) {
         if (m_loading)
@@ -241,6 +254,10 @@ void SelectedClassEditor::ensureUi()
         if (index == 1)
         {
             static_cast<void>(loadCoTeacherIfNeeded());
+        }
+        else if (index == 2)
+        {
+            static_cast<void>(loadNotesIfNeeded());
         }
     });
     retranslateUi();
@@ -476,9 +493,110 @@ QWidget* SelectedClassEditor::buildCoTeacherTab()
     return body;
 }
 
+QWidget* SelectedClassEditor::buildNotesTab()
+{
+    auto* const body = new QWidget(this);
+    auto* const layout = new QVBoxLayout(body);
+    layout->setContentsMargins(4, 8, 4, 8);
+    layout->setSpacing(8);
+
+    m_notesTitleLabel = new QLabel(translated("Class Notes"), body);
+    m_notesTitleLabel->setObjectName(QStringLiteral("classEditorNotesTitle"));
+    QFont titleFont = m_notesTitleLabel->font();
+    titleFont.setPointSize(titleFont.pointSize() + 2);
+    titleFont.setBold(true);
+    m_notesTitleLabel->setFont(titleFont);
+    layout->addWidget(m_notesTitleLabel);
+    m_notesSubtitleLabel = new QLabel(body);
+    m_notesSubtitleLabel->setObjectName(QStringLiteral("classEditorNotesSubtitle"));
+    m_notesSubtitleLabel->setWordWrap(true);
+    layout->addWidget(m_notesSubtitleLabel);
+
+    m_notesLabel = new QLabel(translated("Notes"), body);
+    m_notesLabel->setObjectName(QStringLiteral("classEditorNotesLabel"));
+    layout->addWidget(m_notesLabel);
+    m_notesEdit = new QTextEdit(body);
+    m_notesEdit->setObjectName(QStringLiteral("classEditorClassNotes"));
+    m_notesEdit->setAcceptRichText(false);
+    m_notesEdit->setMinimumHeight(140);
+    layout->addWidget(m_notesEdit, 1);
+
+    m_timeFillerActivitiesLabel = new QLabel(
+        translated("Time Filler Activities"), body);
+    m_timeFillerActivitiesLabel->setObjectName(
+        QStringLiteral("classEditorTimeFillerLabel"));
+    layout->addWidget(m_timeFillerActivitiesLabel);
+    m_timeFillerActivitiesEdit = new QTextEdit(body);
+    m_timeFillerActivitiesEdit->setObjectName(
+        QStringLiteral("classEditorTimeFillerActivities"));
+    m_timeFillerActivitiesEdit->setAcceptRichText(false);
+    m_timeFillerActivitiesEdit->setMinimumHeight(140);
+    layout->addWidget(m_timeFillerActivitiesEdit, 1);
+
+    m_notesStatus = new QLabel(body);
+    m_notesStatus->setObjectName(QStringLiteral("classEditorNotesStatus"));
+    m_notesStatus->setProperty("role", QStringLiteral("status"));
+    m_notesStatus->setWordWrap(true);
+    layout->addWidget(m_notesStatus);
+    auto* const actions = new QHBoxLayout();
+    m_retryNotesButton = new QPushButton(translated("Retry"), body);
+    m_retryNotesButton->setObjectName(QStringLiteral("classEditorRetryNotes"));
+    m_saveNotesButton = new QPushButton(translated("Save Changes"), body);
+    m_saveNotesButton->setObjectName(QStringLiteral("classEditorSaveNotes"));
+    actions->addWidget(m_retryNotesButton);
+    actions->addStretch(1);
+    actions->addWidget(m_saveNotesButton);
+    layout->addLayout(actions);
+    layout->addStretch(1);
+
+    connect(m_notesEdit, &QTextEdit::textChanged, this, [this] {
+        if (m_loading)
+        {
+            return;
+        }
+        m_notesDirty = m_notesEdit->toPlainText().trimmed() != m_savedNotes
+            || m_timeFillerActivitiesEdit->toPlainText().trimmed()
+                != m_savedTimeFillerActivities;
+        updateDirtyState();
+        scheduleNotesSave();
+    });
+    connect(m_timeFillerActivitiesEdit, &QTextEdit::textChanged, this, [this] {
+        if (m_loading)
+        {
+            return;
+        }
+        m_notesDirty = m_notesEdit->toPlainText().trimmed() != m_savedNotes
+            || m_timeFillerActivitiesEdit->toPlainText().trimmed()
+                != m_savedTimeFillerActivities;
+        updateDirtyState();
+        scheduleNotesSave();
+    });
+    connect(m_retryNotesButton, &QPushButton::clicked, this, [this] {
+        m_notesReadAttempted = false;
+        readNotes();
+        updateDirtyState();
+    });
+    connect(m_saveNotesButton, &QPushButton::clicked, this, [this] {
+        QString message;
+        if (!saveNotes(&message) && !message.isEmpty())
+        {
+            setNotesStatus(message, true, false);
+        }
+    });
+    for (QWidget* const control : {static_cast<QWidget*>(m_notesEdit),
+             static_cast<QWidget*>(m_timeFillerActivitiesEdit)})
+    {
+        control->setEnabled(false);
+    }
+    m_retryNotesButton->hide();
+    m_saveNotesButton->setEnabled(false);
+    return body;
+}
+
 void SelectedClassEditor::loadClass(
     const QString& databasePath,
-    const Domain::ClassId& classId
+    const Domain::ClassId& classId,
+    const QString& classNameFallback
     )
 {
     if (m_classId == classId && m_databasePath == databasePath && m_detailsLoaded)
@@ -486,8 +604,10 @@ void SelectedClassEditor::loadClass(
         return;
     }
     m_detailsAutosave->stop();
+    m_notesAutosave->stop();
     m_classId = classId;
     m_databasePath = databasePath;
+    m_classNameFallback = classNameFallback.trimmed();
     m_detailsSnapshot.reset();
     m_coTeacherSnapshot.reset();
     m_teacherChoices.reset();
@@ -513,6 +633,12 @@ void SelectedClassEditor::loadClass(
     m_coTeacherChoicesReadAttempted = false;
     m_detailsDirty = false;
     m_coTeacherDirty = false;
+    m_notesLoaded = false;
+    m_notesReadAttempted = false;
+    m_notesDirty = false;
+    m_savedNotes.clear();
+    m_savedTimeFillerActivities.clear();
+    m_notesSubtitle.clear();
     m_loading = true;
     ensureUi();
     m_sections->setCurrentIndex(0);
@@ -520,6 +646,7 @@ void SelectedClassEditor::loadClass(
     m_emptyState->hide();
     m_sections->show();
     m_loading = false;
+    clearNotesDisplay();
     readClassDetails();
     updateDirtyState();
 }
@@ -527,8 +654,10 @@ void SelectedClassEditor::loadClass(
 void SelectedClassEditor::clear()
 {
     m_detailsAutosave->stop();
+    m_notesAutosave->stop();
     m_classId.reset();
     m_databasePath.reset();
+    m_classNameFallback.clear();
     m_detailsSnapshot.reset();
     m_coTeacherSnapshot.reset();
     m_teacherChoices.reset();
@@ -540,6 +669,12 @@ void SelectedClassEditor::clear()
     m_coTeacherChoicesReadAttempted = false;
     m_detailsDirty = false;
     m_coTeacherDirty = false;
+    m_notesLoaded = false;
+    m_notesReadAttempted = false;
+    m_notesDirty = false;
+    m_savedNotes.clear();
+    m_savedTimeFillerActivities.clear();
+    m_notesSubtitle.clear();
     if (m_sections)
     {
         m_loading = true;
@@ -569,6 +704,7 @@ void SelectedClassEditor::clear()
         }
         setStatus({}, false);
         setCoTeacherStatus({}, false);
+        clearNotesDisplay();
         if (m_retryDetailsButton)
         {
             m_retryDetailsButton->hide();
@@ -607,6 +743,10 @@ bool SelectedClassEditor::saveChanges(QString* error)
     {
         return false;
     }
+    if (m_notesDirty && !saveNotes(error))
+    {
+        return false;
+    }
     return true;
 }
 
@@ -616,12 +756,15 @@ bool SelectedClassEditor::discardChanges(QString* error)
     {
         m_detailsDirty = false;
         m_coTeacherDirty = false;
+        m_notesDirty = false;
         updateDirtyState();
         return true;
     }
     m_detailsAutosave->stop();
+    m_notesAutosave->stop();
     m_detailsDirty = false;
     m_coTeacherDirty = false;
+    m_notesDirty = false;
     m_detailsLoaded = false;
     m_coTeacherReadAttempted = false;
     m_coTeacherChoicesReadAttempted = false;
@@ -630,6 +773,10 @@ bool SelectedClassEditor::discardChanges(QString* error)
     m_teacherChoices.reset();
     m_selectedTeacherDetails.reset();
     m_selectedTeacherDetailsId.reset();
+    m_notesLoaded = false;
+    m_notesReadAttempted = false;
+    m_savedNotes.clear();
+    m_savedTimeFillerActivities.clear();
     readClassDetails();
     if (m_sections && m_sections->currentIndex() == 1)
     {
@@ -641,6 +788,15 @@ bool SelectedClassEditor::discardChanges(QString* error)
             }
             return false;
         }
+    }
+    if (m_sections && m_sections->currentIndex() == 2
+        && !loadNotesIfNeeded())
+    {
+        if (error)
+        {
+            *error = m_notesStatus ? m_notesStatus->text() : QString{};
+        }
+        return false;
     }
     updateDirtyState();
     return m_detailsLoaded;
@@ -667,6 +823,53 @@ void SelectedClassEditor::setCoTeacherStatus(const QString& message, const bool 
     m_coTeacherStatus->setStyleSheet(error ? QStringLiteral("color: #a32121;") : QString{});
     m_coTeacherStatus->setVisible(!message.isEmpty());
     m_retryCoTeacherButton->setVisible(error);
+}
+
+void SelectedClassEditor::setNotesStatus(
+    const QString& message,
+    const bool error,
+    const bool retryable
+    )
+{
+    if (!m_notesStatus)
+    {
+        return;
+    }
+    m_notesStatus->setText(message);
+    m_notesStatus->setStyleSheet(error ? QStringLiteral("color: #a32121;") : QString{});
+    m_notesStatus->setVisible(!message.isEmpty());
+    if (m_retryNotesButton)
+    {
+        m_retryNotesButton->setVisible(retryable);
+    }
+}
+
+void SelectedClassEditor::clearNotesDisplay()
+{
+    if (!m_notesEdit || !m_timeFillerActivitiesEdit)
+    {
+        return;
+    }
+    m_loading = true;
+    m_notesEdit->clear();
+    m_timeFillerActivitiesEdit->clear();
+    m_notesEdit->setEnabled(false);
+    m_timeFillerActivitiesEdit->setEnabled(false);
+    m_notesSubtitle = m_classNameFallback;
+    if (m_notesSubtitle.isEmpty() && m_classId)
+    {
+        m_notesSubtitle = translated("Class %1").arg(text(m_classId->value()));
+    }
+    if (m_notesSubtitleLabel)
+    {
+        m_notesSubtitleLabel->setText(m_notesSubtitle);
+    }
+    setNotesStatus({}, false);
+    if (m_saveNotesButton)
+    {
+        m_saveNotesButton->setEnabled(false);
+    }
+    m_loading = false;
 }
 
 void SelectedClassEditor::clearDetailsDisplay()
@@ -776,6 +979,159 @@ void SelectedClassEditor::readClassDetails()
         m_retryDetailsButton->hide();
     }
     setStatus({}, false);
+}
+
+bool SelectedClassEditor::loadNotesIfNeeded()
+{
+    if (!m_notesReadAttempted)
+    {
+        readNotes();
+    }
+    return m_notesLoaded;
+}
+
+void SelectedClassEditor::readNotes()
+{
+    m_notesReadAttempted = true;
+    if (!m_classId || !m_databasePath || !m_actions.readNotes)
+    {
+        if (!m_notesDirty)
+        {
+            m_notesLoaded = false;
+            clearNotesDisplay();
+        }
+        setNotesStatus(translated(
+            "Class notes could not be loaded. Retry this section."), true, true);
+        return;
+    }
+
+    Application::ClassNotesPageReadResult read = [&] {
+        try
+        {
+            return m_actions.readNotes(*m_databasePath, *m_classId);
+        }
+        catch (...)
+        {
+            return Application::ClassNotesPageReadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "Class notes could not be loaded.",
+                .recoverable = true
+            });
+        }
+    }();
+    if (!read)
+    {
+        if (!m_notesDirty)
+        {
+            m_notesLoaded = false;
+            clearNotesDisplay();
+        }
+        setNotesStatus(errorText(read.error()), true, true);
+        return;
+    }
+    const Application::ClassNotesPageReadSnapshot& snapshot = read.value();
+    if (snapshot.classId != *m_classId)
+    {
+        if (!m_notesDirty)
+        {
+            m_notesLoaded = false;
+            clearNotesDisplay();
+        }
+        setNotesStatus(translated("Class notes returned a different class."),
+            true, true);
+        return;
+    }
+    if (!snapshot.classFields)
+    {
+        if (!m_notesDirty)
+        {
+            m_notesLoaded = false;
+            clearNotesDisplay();
+        }
+        setNotesStatus(errorText(snapshot.classFields.error()), true, true);
+        return;
+    }
+
+    const Application::ClassNotesPageFields& fields = snapshot.classFields.value();
+    QString teacherDisplayName;
+    if (snapshot.teacherDisplayName)
+    {
+        teacherDisplayName = text(snapshot.teacherDisplayName.value()).trimmed();
+    }
+    QString levelText = text(fields.classGrade).trimmed();
+    const QString level = text(fields.classLevel).trimmed();
+    if (!level.isEmpty())
+    {
+        levelText = levelText.isEmpty()
+            ? level : QStringLiteral("%1 %2").arg(levelText, level);
+    }
+    if (levelText.isEmpty())
+    {
+        levelText = m_classNameFallback.isEmpty()
+            ? translated("Unknown Class")
+            : m_classNameFallback;
+    }
+    if (teacherDisplayName.isEmpty())
+    {
+        teacherDisplayName = QStringLiteral("No Teacher");
+    }
+    m_notesSubtitle = QStringLiteral("%1 • %2")
+        .arg(levelText, teacherDisplayName);
+    if (!fields.regularSchedule.empty())
+    {
+        QString day = text(fields.regularSchedule.front().day);
+        const QStringList dayAbbreviations{
+            QStringLiteral("Monday"), QStringLiteral("Mon"),
+            QStringLiteral("Tuesday"), QStringLiteral("Tues"),
+            QStringLiteral("Wednesday"), QStringLiteral("Wed"),
+            QStringLiteral("Thursday"), QStringLiteral("Thurs"),
+            QStringLiteral("Friday"), QStringLiteral("Fri"),
+            QStringLiteral("Saturday"), QStringLiteral("Sat"),
+            QStringLiteral("Sunday"), QStringLiteral("Sun")
+        };
+        for (qsizetype index = 0; index + 1 < dayAbbreviations.size(); index += 2)
+        {
+            if (day == dayAbbreviations.at(index))
+            {
+                day = dayAbbreviations.at(index + 1);
+                break;
+            }
+        }
+        QString startTime = text(fields.regularSchedule.front().startTime);
+        startTime.replace(QStringLiteral(" AM"), QString{});
+        startTime.replace(QStringLiteral(" PM"), QString{});
+        m_notesSubtitle += QStringLiteral(" • %1 (%2)").arg(day, startTime);
+    }
+    if (m_notesSubtitleLabel)
+    {
+        m_notesSubtitleLabel->setText(m_notesSubtitle);
+    }
+
+    m_notesLoaded = true;
+    m_savedNotes = text(fields.notes).trimmed();
+    m_savedTimeFillerActivities = text(fields.timeFillerActivities).trimmed();
+    if (!m_notesDirty)
+    {
+        m_loading = true;
+        m_notesEdit->setPlainText(m_savedNotes);
+        m_timeFillerActivitiesEdit->setPlainText(m_savedTimeFillerActivities);
+        m_notesDirty = false;
+        m_loading = false;
+    }
+    m_notesEdit->setEnabled(true);
+    m_timeFillerActivitiesEdit->setEnabled(true);
+
+    if (!snapshot.teacherDisplayName)
+    {
+        setNotesStatus(translated(
+            "The teacher display name could not be loaded. Notes can still be saved."),
+            true, true);
+    }
+    else
+    {
+        setNotesStatus({}, false);
+    }
+    updateDirtyState();
 }
 
 bool SelectedClassEditor::applyDetailsSnapshot(
@@ -1180,6 +1536,10 @@ void SelectedClassEditor::updateDirtyState()
             m_coTeacherSnapshot.has_value() && m_teacherChoices.has_value()
             && m_coTeacherDirty);
     }
+    if (m_saveNotesButton)
+    {
+        m_saveNotesButton->setEnabled(m_notesLoaded && m_notesDirty);
+    }
     update();
 }
 
@@ -1189,6 +1549,15 @@ void SelectedClassEditor::scheduleDetailsSave()
         && m_saveMode == Application::SaveMode::Automatic)
     {
         m_detailsAutosave->start();
+    }
+}
+
+void SelectedClassEditor::scheduleNotesSave()
+{
+    if (m_notesLoaded && m_notesAutosave
+        && m_saveMode == Application::SaveMode::Automatic)
+    {
+        m_notesAutosave->start();
     }
 }
 
@@ -1344,6 +1713,80 @@ bool SelectedClassEditor::saveCoTeacher(QString* error)
     return true;
 }
 
+bool SelectedClassEditor::saveNotes(QString* error)
+{
+    if (!m_notesDirty)
+    {
+        return true;
+    }
+    if (!m_classId || !m_databasePath || !m_actions.saveNotes || !m_notesLoaded)
+    {
+        const QString message = translated("Class notes cannot be saved right now.");
+        if (error)
+        {
+            *error = message;
+        }
+        setNotesStatus(message, true, false);
+        return false;
+    }
+
+    const Application::ClassNotesSaveRequest request{
+        .classId = *m_classId,
+        .notes = m_notesEdit->toPlainText().trimmed().toStdU16String(),
+        .timeFillerActivities = m_timeFillerActivitiesEdit->toPlainText()
+            .trimmed().toStdU16String()
+    };
+    const auto requestValidation = request.validate();
+    if (!requestValidation)
+    {
+        const QString message = errorText(requestValidation.error());
+        if (error)
+        {
+            *error = message;
+        }
+        setNotesStatus(message, true, false);
+        return false;
+    }
+
+    Application::ClassNotesSaveResult saved = [&] {
+        try
+        {
+            return m_actions.saveNotes(*m_databasePath, request);
+        }
+        catch (...)
+        {
+            return Application::ClassNotesSaveResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "Class notes could not be saved.",
+                .recoverable = true
+            });
+        }
+    }();
+    if (!saved)
+    {
+        const QString message = errorText(saved.error());
+        if (error)
+        {
+            *error = message;
+        }
+        setNotesStatus(message, true, false);
+        updateDirtyState();
+        return false;
+    }
+
+    m_notesAutosave->stop();
+    m_savedNotes = request.notes.empty()
+        ? QString{}
+        : QString::fromStdU16String(request.notes);
+    m_savedTimeFillerActivities = request.timeFillerActivities.empty()
+        ? QString{}
+        : QString::fromStdU16String(request.timeFillerActivities);
+    m_notesDirty = false;
+    setNotesStatus({}, false);
+    updateDirtyState();
+    return true;
+}
+
 void SelectedClassEditor::populateSchedule(
     QTableWidget* table,
     const std::vector<Application::ClassDetailsPageScheduleRow>& rows
@@ -1450,6 +1893,7 @@ void SelectedClassEditor::retranslateUi()
     {
         m_sections->setTabText(0, translated("Class Details and Times"));
         m_sections->setTabText(1, translated("Co-Teacher"));
+        m_sections->setTabText(2, translated("Notes"));
     }
     if (m_chooseColor)
     {
@@ -1460,6 +1904,16 @@ void SelectedClassEditor::retranslateUi()
         m_retryCoTeacherButton->setText(translated("Retry"));
         m_coTeacherLocale->setItemText(0, translated("English"));
         m_coTeacherLocale->setItemText(1, translated("Korean"));
+        m_saveNotesButton->setText(translated("Save Changes"));
+        m_retryNotesButton->setText(translated("Retry"));
+        m_notesTitleLabel->setText(translated("Class Notes"));
+        m_notesLabel->setText(translated("Notes"));
+        m_timeFillerActivitiesLabel->setText(
+            translated("Time Filler Activities"));
+        m_notesSubtitleLabel->setText(m_notesSubtitle);
+        m_notesEdit->setPlaceholderText(translated("Notes"));
+        m_timeFillerActivitiesEdit->setPlaceholderText(
+            translated("Time Filler Activities"));
     }
 }
 

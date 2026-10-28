@@ -15,6 +15,7 @@
 #include <QTabBar>
 #include <QTabWidget>
 #include <QTableWidget>
+#include <QTextEdit>
 #include <QToolButton>
 #include <QTranslator>
 #include <QtTest/QtTest>
@@ -131,6 +132,10 @@ struct ReadState final
     bool failFirstNavigationRead = false;
     bool failEveryNavigationRead = false;
     bool failDetailsRead = false;
+    bool failNotesRead = false;
+    bool failNotesTeacherRead = false;
+    bool blankNotesClassMetadata = false;
+    bool failNotesSave = false;
     bool failScheduleSave = false;
     bool failVisibilitySave = false;
     bool failDetailsSave = false;
@@ -141,9 +146,13 @@ struct ReadState final
     Ui::UnsavedChangesChoice unsavedChoice = Ui::UnsavedChangesChoice::Cancel;
     std::optional<Domain::ClassId> sharedSelection;
     std::unordered_map<std::string, QString> savedGrades;
+    std::unordered_map<std::string, QString> savedNotes;
+    std::unordered_map<std::string, QString> savedTimeFillerActivities;
     std::unordered_map<std::string, std::optional<Domain::TeacherId>> coTeacherIds;
     std::vector<std::string> blankClassIds;
     std::vector<std::string> teacherDetailReadIds;
+    std::vector<QString> notesReadPaths;
+    std::vector<QString> notesSavePaths;
     int listReadCount = 0;
     int navigationReadCount = 0;
     int scheduleSaveCount = 0;
@@ -153,6 +162,8 @@ struct ReadState final
     int teacherChoicesReadCount = 0;
     int teacherDetailsReadCount = 0;
     int detailsSaveCount = 0;
+    int notesReadCount = 0;
+    int notesSaveCount = 0;
     int coTeacherSaveCount = 0;
     int createCount = 0;
     int deleteCount = 0;
@@ -317,6 +328,52 @@ struct PageFixture final
                             Application::ClassDetailsStudentCount(3))
                     });
                 };
+                actions.readClassNotes = [this](
+                    const QString& path,
+                    const Domain::ClassId& id
+                    ) {
+                    ++state.notesReadCount;
+                    state.notesReadPaths.push_back(path);
+                    if (state.failNotesRead)
+                    {
+                        return Application::ClassNotesPageReadResult::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "class notes read failed",
+                            .recoverable = true
+                        });
+                    }
+                    const std::string key = id.value();
+                    const QString notes = state.savedNotes.contains(key)
+                        ? state.savedNotes.at(key)
+                        : QStringLiteral("  Notes for %1  \n").arg(key);
+                    const QString activities =
+                        state.savedTimeFillerActivities.contains(key)
+                        ? state.savedTimeFillerActivities.at(key)
+                        : QStringLiteral("  Activities for %1  \n").arg(key);
+                    Application::ClassNotesPageFields fields{
+                        .classGrade = state.blankNotesClassMetadata
+                            ? std::u16string{} : std::u16string(u"E4"),
+                        .classLevel = state.blankNotesClassMetadata
+                            ? std::u16string{} : std::u16string(u"Theseus"),
+                        .regularSchedule = {{u"Monday", u"9:00 AM"}},
+                        .notes = notes.toStdU16String(),
+                        .timeFillerActivities = activities.toStdU16String()
+                    };
+                    Domain::Result<std::u16string> teacherName =
+                        state.failNotesTeacherRead
+                        ? Domain::Result<std::u16string>::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "teacher display read failed",
+                            .recoverable = true
+                        })
+                        : Domain::Result<std::u16string>::success(u"Preferred Teacher");
+                    return Application::ClassNotesPageReadResult::success({
+                        .classId = id,
+                        .classFields = Domain::Result<
+                            Application::ClassNotesPageFields>::success(std::move(fields)),
+                        .teacherDisplayName = std::move(teacherName)
+                    });
+                };
                 actions.readClassCoTeacher = [this](
                     const QString&,
                     const Domain::ClassId& id
@@ -420,6 +477,26 @@ struct PageFixture final
                             .normalized = request.input
                         }
                     };
+                };
+                actions.saveClassNotes = [this](
+                    const QString& path,
+                    const Application::ClassNotesSaveRequest& request
+                    ) {
+                    ++state.notesSaveCount;
+                    state.notesSavePaths.push_back(path);
+                    if (state.failNotesSave)
+                    {
+                        return Application::ClassNotesSaveResult::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "class notes save failed",
+                            .recoverable = true
+                        });
+                    }
+                    state.savedNotes[request.classId.value()] =
+                        QString::fromStdU16String(request.notes);
+                    state.savedTimeFillerActivities[request.classId.value()] =
+                        QString::fromStdU16String(request.timeFillerActivities);
+                    return Application::ClassNotesSaveResult::success();
                 };
                 actions.saveClassCoTeacher = [this](
                     const QString&,
@@ -559,6 +636,11 @@ private slots:
     void detailsReadFailureHasVisibleRetryPath();
     void detailsAutosaveDebouncesAndRetainsFailedDrafts();
     void detailsManualSaveWaitsForExplicitSave();
+    void notesLoadTrimTeacherFailureAndExplicitSave();
+    void notesSubtitleUsesClassNameWhenMetadataIsBlank();
+    void notesAutosaveManualModeAndFailedDrafts();
+    void notesReadRetryDiscardAndTextBounds();
+    void notesDraftGuardsClassAndWorkspaceChanges();
     void coTeacherKeepsWideIdsAndRetriesSaveFailures();
     void coTeacherLoadsOnlySelectedTeacherAndRetriesProfileRead();
     void scheduleEditorStopsAtFourteenRows();
@@ -1311,6 +1393,272 @@ void ClassesNavigatorPageTests::detailsManualSaveWaitsForExplicitSave()
     QCOMPARE(fixture.state.detailsSaveCount, 1);
     QVERIFY(!editor->hasUnsavedChanges());
     QCOMPARE(fixture.state.savedGrades.at("1"), QStringLiteral("E5"));
+}
+
+void ClassesNavigatorPageTests::notesLoadTrimTeacherFailureAndExplicitSave()
+{
+    PageFixture fixture;
+    fixture.state.saveMode = Application::SaveMode::Manual;
+    QVERIFY(fixture.initialize());
+    fixture.state.classes = classList({{1, QStringLiteral("First")} });
+    fixture.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("First"), QStringLiteral("E4"),
+            QStringLiteral("Theseus"), QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM"))
+    });
+    fixture.state.savedNotes["1"] = QStringLiteral("  existing notes \n");
+    fixture.state.savedTimeFillerActivities["1"] =
+        QStringLiteral("  existing activities \n");
+    fixture.state.failNotesTeacherRead = true;
+    QVERIFY(fixture.activate());
+    Ui::SelectedClassEditor* const editor = fixture.page()->selectedClassEditor();
+    QVERIFY(editor);
+    editor->sections()->setCurrentIndex(2);
+
+    auto* const notes = editor->findChild<QTextEdit*>(
+        QStringLiteral("classEditorClassNotes"));
+    auto* const activities = editor->findChild<QTextEdit*>(
+        QStringLiteral("classEditorTimeFillerActivities"));
+    auto* const status = editor->findChild<QLabel*>(
+        QStringLiteral("classEditorNotesStatus"));
+    auto* const save = editor->findChild<QPushButton*>(
+        QStringLiteral("classEditorSaveNotes"));
+    auto* const subtitle = editor->findChild<QLabel*>(
+        QStringLiteral("classEditorNotesSubtitle"));
+    QVERIFY(notes && activities && status && save && subtitle);
+    QCOMPARE(notes->toPlainText(), QStringLiteral("existing notes"));
+    QCOMPARE(activities->toPlainText(), QStringLiteral("existing activities"));
+    QVERIFY(notes->isEnabled());
+    QVERIFY(status->text().contains(QStringLiteral("could not be loaded")));
+    QVERIFY(subtitle->text().contains(QStringLiteral("No Teacher")));
+    QVERIFY(subtitle->text().contains(QStringLiteral("Mon (9:00)")));
+
+    notes->setPlainText(QStringLiteral("  edited notes \n"));
+    activities->setPlainText(QStringLiteral("  edited activities \n"));
+    QVERIFY(editor->hasUnsavedChanges());
+    save->click();
+    QCOMPARE(fixture.state.notesSaveCount, 1);
+    QCOMPARE(fixture.state.savedNotes.at("1"), QStringLiteral("edited notes"));
+    QCOMPARE(fixture.state.savedTimeFillerActivities.at("1"),
+        QStringLiteral("edited activities"));
+    QVERIFY(!editor->hasUnsavedChanges());
+    QVERIFY(status->isHidden());
+}
+
+void ClassesNavigatorPageTests::notesSubtitleUsesClassNameWhenMetadataIsBlank()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    fixture.state.classes = classList({{1, QStringLiteral("Fallback Class Name")} });
+    fixture.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("Fallback Class Name"), QStringLiteral(""),
+            QStringLiteral(""), QStringLiteral("Monday"), QStringLiteral("9:00 AM"))
+    });
+    fixture.state.blankNotesClassMetadata = true;
+    QVERIFY(fixture.activate());
+    Ui::SelectedClassEditor* const editor = fixture.page()->selectedClassEditor();
+    QVERIFY(editor);
+    editor->sections()->setCurrentIndex(2);
+    const auto* const subtitle = editor->findChild<QLabel*>(
+        QStringLiteral("classEditorNotesSubtitle"));
+    QVERIFY(subtitle);
+    QVERIFY(subtitle->text().startsWith(
+        QStringLiteral("Fallback Class Name • Preferred Teacher")));
+    QVERIFY(subtitle->text().contains(QStringLiteral("Mon (9:00)")));
+}
+
+void ClassesNavigatorPageTests::notesAutosaveManualModeAndFailedDrafts()
+{
+    PageFixture automatic;
+    QVERIFY(automatic.initialize());
+    automatic.state.classes = classList({{1, QStringLiteral("First")} });
+    automatic.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("First"), QStringLiteral("E4"),
+            QStringLiteral("Theseus"), QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM"))
+    });
+    QVERIFY(automatic.activate());
+    Ui::SelectedClassEditor* const automaticEditor =
+        automatic.page()->selectedClassEditor();
+    QVERIFY(automaticEditor);
+    automaticEditor->sections()->setCurrentIndex(2);
+    auto* const automaticNotes = automaticEditor->findChild<QTextEdit*>(
+        QStringLiteral("classEditorClassNotes"));
+    QVERIFY(automaticNotes);
+    automaticNotes->setPlainText(QStringLiteral("first automatic draft"));
+    QVERIFY(automaticEditor->hasUnsavedChanges());
+    QTest::qWait(500);
+    QCOMPARE(automatic.state.notesSaveCount, 0);
+    QTRY_COMPARE_WITH_TIMEOUT(automatic.state.notesSaveCount, 1, 500);
+    QVERIFY(!automaticEditor->hasUnsavedChanges());
+    QCOMPARE(automatic.state.savedNotes.at("1"),
+        QStringLiteral("first automatic draft"));
+
+    automatic.state.failNotesSave = true;
+    automaticNotes->setPlainText(QStringLiteral("draft after save failure"));
+    QTRY_COMPARE_WITH_TIMEOUT(automatic.state.notesSaveCount, 2, 1'500);
+    QVERIFY(automaticEditor->hasUnsavedChanges());
+    QCOMPARE(automaticNotes->toPlainText(), QStringLiteral("draft after save failure"));
+    QCOMPARE(automatic.state.savedNotes.at("1"),
+        QStringLiteral("first automatic draft"));
+    QVERIFY(automaticEditor->findChild<QLabel*>(
+        QStringLiteral("classEditorNotesStatus"))->text().contains(
+            QStringLiteral("class notes save failed")));
+
+    PageFixture manual;
+    manual.state.saveMode = Application::SaveMode::Manual;
+    QVERIFY(manual.initialize());
+    manual.state.classes = classList({{1, QStringLiteral("First")} });
+    manual.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("First"), QStringLiteral("E4"),
+            QStringLiteral("Theseus"), QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM"))
+    });
+    QVERIFY(manual.activate());
+    Ui::SelectedClassEditor* const manualEditor =
+        manual.page()->selectedClassEditor();
+    QVERIFY(manualEditor);
+    manualEditor->sections()->setCurrentIndex(2);
+    auto* const manualNotes = manualEditor->findChild<QTextEdit*>(
+        QStringLiteral("classEditorClassNotes"));
+    auto* const manualSave = manualEditor->findChild<QPushButton*>(
+        QStringLiteral("classEditorSaveNotes"));
+    QVERIFY(manualNotes && manualSave);
+    manualNotes->setPlainText(QStringLiteral("manual draft"));
+    QTest::qWait(900);
+    QCOMPARE(manual.state.notesSaveCount, 0);
+    QVERIFY(manualEditor->hasUnsavedChanges());
+    QVERIFY(manualSave->isEnabled());
+    manualSave->click();
+    QCOMPARE(manual.state.notesSaveCount, 1);
+    QCOMPARE(manual.state.savedNotes.at("1"), QStringLiteral("manual draft"));
+    QVERIFY(!manualEditor->hasUnsavedChanges());
+}
+
+void ClassesNavigatorPageTests::notesReadRetryDiscardAndTextBounds()
+{
+    PageFixture fixture;
+    fixture.state.saveMode = Application::SaveMode::Manual;
+    QVERIFY(fixture.initialize());
+    fixture.state.classes = classList({{1, QStringLiteral("First")} });
+    fixture.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("First"), QStringLiteral("E4"),
+            QStringLiteral("Theseus"), QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM"))
+    });
+    fixture.state.failNotesRead = true;
+    QVERIFY(fixture.activate());
+    Ui::SelectedClassEditor* const editor = fixture.page()->selectedClassEditor();
+    QVERIFY(editor);
+    editor->sections()->setCurrentIndex(2);
+    auto* const status = editor->findChild<QLabel*>(
+        QStringLiteral("classEditorNotesStatus"));
+    auto* const retry = editor->findChild<QPushButton*>(
+        QStringLiteral("classEditorRetryNotes"));
+    auto* const notes = editor->findChild<QTextEdit*>(
+        QStringLiteral("classEditorClassNotes"));
+    auto* const activities = editor->findChild<QTextEdit*>(
+        QStringLiteral("classEditorTimeFillerActivities"));
+    auto* const save = editor->findChild<QPushButton*>(
+        QStringLiteral("classEditorSaveNotes"));
+    QVERIFY(status && retry && notes && activities && save);
+    QVERIFY(status->text().contains(QStringLiteral("class notes read failed")));
+    QVERIFY(!retry->isHidden());
+    QVERIFY(!notes->isEnabled());
+    fixture.state.failNotesRead = false;
+    retry->click();
+    QVERIFY(retry->isHidden());
+    QVERIFY(notes->isEnabled());
+    QCOMPARE(fixture.state.notesReadCount, 2);
+
+    notes->setPlainText(QString(10'000, QLatin1Char('N')));
+    save->click();
+    QCOMPARE(fixture.state.notesSaveCount, 1);
+    QCOMPARE(fixture.state.savedNotes.at("1").size(), 10'000);
+    QVERIFY(!editor->hasUnsavedChanges());
+
+    activities->setPlainText(QString(10'001, QLatin1Char('A')));
+    save->click();
+    QCOMPARE(fixture.state.notesSaveCount, 1);
+    QVERIFY(editor->hasUnsavedChanges());
+    QVERIFY(status->text().contains(QStringLiteral("10,000 UTF-16")));
+
+    activities->setPlainText(QStringLiteral("persisted activities"));
+    notes->setPlainText(QStringLiteral("discard this"));
+    QVERIFY(editor->hasUnsavedChanges());
+    fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Discard;
+    editor->sections()->setCurrentIndex(0);
+    QCOMPARE(editor->sections()->currentIndex(), 0);
+    QVERIFY(!editor->hasUnsavedChanges());
+    editor->sections()->setCurrentIndex(2);
+    QCOMPARE(notes->toPlainText(), QString(10'000, QLatin1Char('N')));
+    QCOMPARE(activities->toPlainText(), QStringLiteral("Activities for 1"));
+}
+
+void ClassesNavigatorPageTests::notesDraftGuardsClassAndWorkspaceChanges()
+{
+    PageFixture fixture;
+    fixture.state.saveMode = Application::SaveMode::Manual;
+    QVERIFY(fixture.initialize());
+    fixture.state.classes = classList({
+        {1, QStringLiteral("First")}, {2, QStringLiteral("Second")}
+    });
+    fixture.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("First"), QStringLiteral("E4"),
+            QStringLiteral("Theseus"), QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM")),
+        navigationEntry(2, QStringLiteral("Second"), QStringLiteral("E5"),
+            QStringLiteral("Artemis"), QStringLiteral("Tuesday"),
+            QStringLiteral("10:00 AM"))
+    });
+    fixture.state.savedNotes["1"] = QStringLiteral("saved class one");
+    fixture.state.savedNotes["2"] = QStringLiteral("saved class two");
+    QVERIFY(fixture.activate());
+    Ui::ClassesNavigatorPage* const page = fixture.page();
+    Ui::SelectedClassEditor* const editor = page->selectedClassEditor();
+    QVERIFY(editor);
+    editor->sections()->setCurrentIndex(2);
+    auto* const notes = editor->findChild<QTextEdit*>(
+        QStringLiteral("classEditorClassNotes"));
+    QVERIFY(notes);
+    QCOMPARE(notes->toPlainText(), QStringLiteral("saved class one"));
+    notes->setPlainText(QStringLiteral("unsaved class one"));
+
+    fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Cancel;
+    page->classList()->setCurrentIndex(page->model()->indexForClassId(classId(2)));
+    QCOMPARE(page->selectedClassId()->value(), std::string("1"));
+    QCOMPARE(notes->toPlainText(), QStringLiteral("unsaved class one"));
+    QVERIFY(editor->hasUnsavedChanges());
+
+    fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Discard;
+    page->classList()->setCurrentIndex(page->model()->indexForClassId(classId(2)));
+    QCOMPARE(page->selectedClassId()->value(), std::string("2"));
+    editor->sections()->setCurrentIndex(2);
+    QCOMPARE(notes->toPlainText(), QStringLiteral("saved class two"));
+    QVERIFY(!editor->hasUnsavedChanges());
+    QCOMPARE(fixture.state.notesReadPaths.back(), QStringLiteral("workspace-a.tps"));
+
+    notes->setPlainText(QStringLiteral("unsaved class two"));
+    fixture.state.identity = QStringLiteral("replacement-workspace");
+    fixture.state.path = QStringLiteral("replacement.tps");
+    fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Cancel;
+    QVERIFY(!page->refreshFromStore());
+    QCOMPARE(notes->toPlainText(), QStringLiteral("unsaved class two"));
+    QVERIFY(editor->hasUnsavedChanges());
+
+    fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Discard;
+    QVERIFY(page->refreshFromStore());
+    QVERIFY(page->selectedClassId().has_value());
+    QCOMPARE(page->selectedClassId()->value(), std::string("1"));
+    QCOMPARE(editor->classId()->value(), std::string("1"));
+    QVERIFY(!editor->hasUnsavedChanges());
+    QVERIFY(notes->toPlainText().isEmpty());
+    page->classList()->setCurrentIndex(page->model()->indexForClassId(classId(2)));
+    QCOMPARE(page->selectedClassId()->value(), std::string("2"));
+    editor->sections()->setCurrentIndex(2);
+    QVERIFY(fixture.state.notesReadPaths.size() >= 3);
+    QCOMPARE(fixture.state.notesReadPaths.back(), QStringLiteral("replacement.tps"));
+    QCOMPARE(notes->toPlainText(), QStringLiteral("saved class two"));
 }
 
 void ClassesNavigatorPageTests::addDeleteAndWorkspaceLifecycleClearSelectedEditor()

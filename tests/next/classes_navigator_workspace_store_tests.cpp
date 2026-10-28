@@ -32,6 +32,18 @@ QString fixturePath(QTemporaryDir& directory, const QString& filename)
         : QString{};
 }
 
+QString supplementaryCharacters(const int count)
+{
+    QString text;
+    text.reserve(count * 2);
+    for (int index = 0; index < count; ++index)
+    {
+        text.append(QChar(0xD83D));
+        text.append(QChar(0xDE00));
+    }
+    return text;
+}
+
 Application::ClassesNavigationSnapshotQuery queryFor(
     const Application::ClassesListSnapshot& classes
     )
@@ -101,7 +113,299 @@ private slots:
     void classEditorPathActionsPersistDetailsAndCoTeacherTransactionally();
     void classEditorDetailsEnforceFourteenRowsPerScheduleSource();
     void classCoTeacherReadsEnforceRowAndTextBounds();
+    void classNotesPathActionsBoundTextAndPreserveDetailsTransactionally();
 };
+
+void ClassesNavigatorWorkspaceStoreTests::
+classNotesPathActionsBoundTextAndPreserveDetailsTransactionally()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("class-notes.tps"));
+    int numericClassId = 0;
+    qint64 teacherId = 0;
+    const QString exactNotes(10'000, QLatin1Char('N'));
+    const QString exactActivities(10'000, QLatin1Char('A'));
+    {
+        WorkspaceStore store;
+        QVERIFY2(store.open(path), "temporary workspace should be created");
+        const auto created = store.classRepository()->createClass(
+            QStringLiteral("Notes persistence"));
+        QVERIFY(created);
+        numericClassId = created.value();
+        QSqlQuery teacher(store.database());
+        QVERIFY(teacher.exec(QStringLiteral(
+            "INSERT INTO teachers(teacher_kr, teacher_en, preferred_name) "
+            "VALUES('담당 교사', 'Main Teacher', 'Preferred Teacher')")));
+        teacherId = teacher.lastInsertId().toLongLong();
+        QVERIFY(teacherId > 0);
+
+        ClassInfo info;
+        info.classId = numericClassId;
+        info.classGrade = QStringLiteral("E4");
+        info.classLevel = QStringLiteral("Theseus");
+        info.readingBook = QStringLiteral("Reading Explorer 1");
+        info.essayBook = QStringLiteral("4A");
+        info.classColor = QStringLiteral("#ABCDEF");
+        info.fontColor = QStringLiteral("#000000");
+        info.notes = exactNotes;
+        info.timeFillerActivities = exactActivities;
+        info.classTimes = {{QStringLiteral("Monday"), QStringLiteral("9:00 AM"),
+            QStringLiteral("9:50 AM")}};
+        info.intensiveTimes = {{QStringLiteral("Tuesday"), QStringLiteral("10:00 AM"),
+            QStringLiteral("10:50 AM")}};
+        QVERIFY(store.classInfoRepository()->saveClassDetailsDetailed(
+            info, teacherId).has_value());
+    }
+
+    const auto classId = Domain::ClassId::fromString(std::to_string(numericClassId));
+    QVERIFY(classId.has_value());
+    const auto exactRead = Platform::readClassNotesAtPath(path, *classId);
+    QVERIFY(exactRead);
+    QVERIFY(exactRead.value().classFields);
+    QCOMPARE(exactRead.value().classFields.value().notes.size(), std::size_t(10'000));
+    QCOMPARE(exactRead.value().classFields.value().timeFillerActivities.size(),
+        std::size_t(10'000));
+    QCOMPARE(exactRead.value().classFields.value().regularSchedule.size(), std::size_t(1));
+    QVERIFY(exactRead.value().teacherDisplayName);
+    QCOMPARE(QString::fromStdU16String(
+        exactRead.value().teacherDisplayName.value()), QStringLiteral("Preferred Teacher"));
+
+    const QString exactSupplementary = supplementaryCharacters(5'000);
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery update(store.database());
+        QVERIFY(update.prepare(QStringLiteral(
+            "UPDATE class_info SET notes = ?, time_filler_activities = ? "
+            "WHERE class_id = ?")));
+        update.addBindValue(exactSupplementary);
+        update.addBindValue(exactActivities);
+        update.addBindValue(numericClassId);
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    }
+    const auto exactSupplementaryNotes = Platform::readClassNotesAtPath(path, *classId);
+    QVERIFY(exactSupplementaryNotes);
+    QVERIFY(exactSupplementaryNotes.value().classFields);
+    QCOMPARE(exactSupplementaryNotes.value().classFields.value().notes.size(),
+        std::size_t(10'000));
+    QCOMPARE(QString::fromStdU16String(
+        exactSupplementaryNotes.value().classFields.value().notes), exactSupplementary);
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery update(store.database());
+        QVERIFY(update.prepare(QStringLiteral(
+            "UPDATE class_info SET notes = ?, time_filler_activities = ? "
+            "WHERE class_id = ?")));
+        update.addBindValue(exactNotes);
+        update.addBindValue(exactSupplementary);
+        update.addBindValue(numericClassId);
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    }
+    const auto exactSupplementaryActivities =
+        Platform::readClassNotesAtPath(path, *classId);
+    QVERIFY(exactSupplementaryActivities);
+    QVERIFY(exactSupplementaryActivities.value().classFields);
+    QCOMPARE(exactSupplementaryActivities.value().classFields.value()
+        .timeFillerActivities.size(), std::size_t(10'000));
+    QCOMPARE(QString::fromStdU16String(exactSupplementaryActivities.value()
+        .classFields.value().timeFillerActivities), exactSupplementary);
+    QCOMPARE(exactSupplementary.size(), 10'000);
+
+    const Application::ClassNotesSaveRequest exactSaveRequest{
+        .classId = *classId,
+        .notes = exactNotes.toStdU16String(),
+        .timeFillerActivities = exactActivities.toStdU16String()
+    };
+    QVERIFY(Platform::saveClassNotesAtPath(path, exactSaveRequest));
+
+    const Application::ClassNotesSaveRequest trimmedRequest{
+        .classId = *classId,
+        .notes = u"  trimmed note  ",
+        .timeFillerActivities = u"  trimmed activities \n"
+    };
+    QVERIFY(Platform::saveClassNotesAtPath(path, trimmedRequest));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery saved(store.database());
+        QVERIFY(saved.prepare(QStringLiteral(
+            "SELECT teacher_id, class_grade, class_level, reading_book, essay_book, "
+            "class_color, font_color, notes, time_filler_activities "
+            "FROM class_info WHERE class_id = ?")));
+        saved.addBindValue(numericClassId);
+        QVERIFY(saved.exec());
+        QVERIFY(saved.next());
+        QCOMPARE(saved.value(0).toLongLong(), teacherId);
+        QCOMPARE(saved.value(1).toString(), QStringLiteral("E4"));
+        QCOMPARE(saved.value(2).toString(), QStringLiteral("Theseus"));
+        QCOMPARE(saved.value(3).toString(), QStringLiteral("Reading Explorer 1"));
+        QCOMPARE(saved.value(4).toString(), QStringLiteral("4A"));
+        QCOMPARE(saved.value(5).toString(), QStringLiteral("#ABCDEF"));
+        QCOMPARE(saved.value(6).toString(), QStringLiteral("#000000"));
+        QCOMPARE(saved.value(7).toString(), QStringLiteral("trimmed note"));
+        QCOMPARE(saved.value(8).toString(), QStringLiteral("trimmed activities"));
+    }
+
+    Application::ClassNotesSaveRequest tooLongNotes{
+        .classId = *classId,
+        .notes = std::u16string(10'001, u'N'),
+        .timeFillerActivities = u"unchanged"
+    };
+    const auto notesSaveOverflow = Platform::saveClassNotesAtPath(path, tooLongNotes);
+    QVERIFY(!notesSaveOverflow);
+    QCOMPARE(notesSaveOverflow.error().code, Domain::ErrorCode::Validation);
+    Application::ClassNotesSaveRequest tooLongActivities{
+        .classId = *classId,
+        .notes = u"unchanged",
+        .timeFillerActivities = std::u16string(10'001, u'A')
+    };
+    const auto activitiesSaveOverflow = Platform::saveClassNotesAtPath(
+        path, tooLongActivities);
+    QVERIFY(!activitiesSaveOverflow);
+    QCOMPARE(activitiesSaveOverflow.error().code, Domain::ErrorCode::Validation);
+
+    const QString overSupplementary = supplementaryCharacters(5'001);
+    QCOMPARE(overSupplementary.size(), 10'002);
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery update(store.database());
+        QVERIFY(update.prepare(QStringLiteral(
+            "UPDATE class_info SET notes = ?, time_filler_activities = ? "
+            "WHERE class_id = ?")));
+        update.addBindValue(overSupplementary);
+        update.addBindValue(exactActivities);
+        update.addBindValue(numericClassId);
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    }
+    const auto overSupplementaryNotes = Platform::readClassNotesAtPath(path, *classId);
+    QVERIFY(!overSupplementaryNotes);
+    QCOMPARE(overSupplementaryNotes.error().code, Domain::ErrorCode::Validation);
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery update(store.database());
+        QVERIFY(update.prepare(QStringLiteral(
+            "UPDATE class_info SET notes = ?, time_filler_activities = ? "
+            "WHERE class_id = ?")));
+        update.addBindValue(exactNotes);
+        update.addBindValue(overSupplementary);
+        update.addBindValue(numericClassId);
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    }
+    const auto overSupplementaryActivities =
+        Platform::readClassNotesAtPath(path, *classId);
+    QVERIFY(!overSupplementaryActivities);
+    QCOMPARE(overSupplementaryActivities.error().code, Domain::ErrorCode::Validation);
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery update(store.database());
+        QVERIFY(update.prepare(QStringLiteral(
+            "UPDATE class_info SET notes = ? WHERE class_id = ?")));
+        update.addBindValue(QString(10'001, QLatin1Char('X')));
+        update.addBindValue(numericClassId);
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    }
+    const auto notesReadOverflow = Platform::readClassNotesAtPath(path, *classId);
+    QVERIFY(!notesReadOverflow);
+    QCOMPARE(notesReadOverflow.error().code, Domain::ErrorCode::Validation);
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery update(store.database());
+        QVERIFY(update.prepare(QStringLiteral(
+            "UPDATE class_info SET notes = ?, time_filler_activities = ? "
+            "WHERE class_id = ?")));
+        update.addBindValue(QStringLiteral("notes before trigger"));
+        update.addBindValue(QString(10'001, QLatin1Char('X')));
+        update.addBindValue(numericClassId);
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    }
+    const auto activitiesReadOverflow = Platform::readClassNotesAtPath(path, *classId);
+    QVERIFY(!activitiesReadOverflow);
+    QCOMPARE(activitiesReadOverflow.error().code, Domain::ErrorCode::Validation);
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery restore(store.database());
+        QVERIFY(restore.prepare(QStringLiteral(
+            "UPDATE class_info SET notes = ?, time_filler_activities = ? "
+            "WHERE class_id = ?")));
+        restore.addBindValue(QStringLiteral("before trigger"));
+        restore.addBindValue(QStringLiteral("before trigger activities"));
+        restore.addBindValue(numericClassId);
+        QVERIFY2(restore.exec(), qPrintable(restore.lastError().text()));
+        QSqlQuery trigger(store.database());
+        QVERIFY2(trigger.exec(QStringLiteral(
+            "CREATE TRIGGER reject_class_notes BEFORE UPDATE OF notes ON class_info "
+            "WHEN NEW.class_id = %1 BEGIN SELECT RAISE(ABORT, 'forced notes failure'); END"
+            ).arg(numericClassId)), qPrintable(trigger.lastError().text()));
+    }
+
+    const Application::ClassNotesSaveRequest triggerRequest{
+        .classId = *classId,
+        .notes = u"retry value",
+        .timeFillerActivities = u"retry activities"
+    };
+    const auto failed = Platform::saveClassNotesAtPath(path, triggerRequest);
+    QVERIFY(!failed);
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery afterFailure(store.database());
+        QVERIFY(afterFailure.prepare(QStringLiteral(
+            "SELECT teacher_id, class_grade, notes, time_filler_activities "
+            "FROM class_info WHERE class_id = ?")));
+        afterFailure.addBindValue(numericClassId);
+        QVERIFY(afterFailure.exec());
+        QVERIFY(afterFailure.next());
+        QCOMPARE(afterFailure.value(0).toLongLong(), teacherId);
+        QCOMPARE(afterFailure.value(1).toString(), QStringLiteral("E4"));
+        QCOMPARE(afterFailure.value(2).toString(), QStringLiteral("before trigger"));
+        QCOMPARE(afterFailure.value(3).toString(),
+            QStringLiteral("before trigger activities"));
+        QSqlQuery drop(store.database());
+        QVERIFY2(drop.exec(QStringLiteral("DROP TRIGGER reject_class_notes")),
+            qPrintable(drop.lastError().text()));
+    }
+    QVERIFY(Platform::saveClassNotesAtPath(path, triggerRequest));
+
+    Application::ClassDetailsValidationInput detailsInput;
+    detailsInput.classId = *classId;
+    detailsInput.classGrade = u"E5";
+    detailsInput.classLevel = u"Artemis";
+    detailsInput.readingBook = u"Reading Explorer 2";
+    detailsInput.essayBook = u"5A";
+    detailsInput.classColor = u"#123456";
+    detailsInput.fontColor = u"#FFFFFF";
+    detailsInput.regularTimes = {{u"Wednesday", u"4:00 PM", u"4:50 PM"}};
+    detailsInput.intensiveTimes = {{u"Thursday", u"5:00 PM", u"5:50 PM"}};
+    const auto detailsSaved = Platform::saveClassDetailsAtPath(path, {
+        .input = detailsInput,
+        .saveRegularTimes = true,
+        .saveIntensiveTimes = true
+    });
+    QVERIFY(std::holds_alternative<Application::ClassDetailsSaveWorkflowSuccess>(
+        detailsSaved));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        const auto record = store.classInfoRepository()->loadClassDetailsSaveInfo(
+            numericClassId);
+        QVERIFY(record);
+        QCOMPARE(record->teacherId, teacherId);
+        QCOMPARE(record->info.notes, QStringLiteral("retry value"));
+        QCOMPARE(record->info.timeFillerActivities,
+            QStringLiteral("retry activities"));
+        QCOMPARE(record->info.classGrade, QStringLiteral("E5"));
+    }
+}
 
 void ClassesNavigatorWorkspaceStoreTests::
 classEditorDetailsEnforceFourteenRowsPerScheduleSource()

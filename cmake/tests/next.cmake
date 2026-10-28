@@ -3402,6 +3402,68 @@ set_tests_properties(ClassMngrNextClassesDetailsCoTeacherVisualCapture
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
+# Capture paired Legacy and Next Notes/Time Filler surfaces using the same
+# selected class and seeded tracked 96-class workspace fixture.
+add_executable(ClassMngrNextClassesNotesVisualCapture
+    tests/next/classes_notes_visual_capture.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/platform/workspace_store_class_editor_actions.cpp
+    src/next/platform/workspace_store_classes_navigator_read_actions.cpp
+    src/next/ui/classes_navigator_page.cpp
+    src/next/ui/classes_navigator_model.cpp
+    src/next/ui/selected_class_editor.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextClassesNotesVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextClassesNotesVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextClassesNotesVisualCapture
+    PRIVATE
+        CLASSMNGR_CLASSES_NAVIGATOR_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextClassesNotesVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextClassesNotesVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextClassesNotesVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextClassesNotesVisualCapture
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextClassesNotesVisualCapture
+    COMMAND ClassMngrNextClassesNotesVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/classes-notes-visual-capture"
+)
+set_tests_properties(ClassMngrNextClassesNotesVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Exercise the standalone path-scoped Classes reads, input limits, identity
 # checks, and navigator setting persistence against a real WorkspaceStore.
 classmngr_add_qt_test(

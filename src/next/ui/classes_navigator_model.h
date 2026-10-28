@@ -62,6 +62,9 @@ public:
     [[nodiscard]] QString labelForClassId(
         const Domain::ClassId& classId
         ) const;
+    [[nodiscard]] QString classNameForClassId(
+        const Domain::ClassId& classId
+        ) const;
     [[nodiscard]] std::vector<Domain::ClassId> classIdsForGroup(
         const QString& key
         ) const;

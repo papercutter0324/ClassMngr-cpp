@@ -1173,6 +1173,12 @@ Application::StartupResult ApplicationBootstrap::start()
                         return Platform::readClassCoTeacherTeacherDetailsAtPath(
                             databasePath, teacherId);
                     };
+                    actions.readClassNotes = [](
+                        const QString& databasePath,
+                        const Domain::ClassId& classId
+                        ) {
+                        return Platform::readClassNotesAtPath(databasePath, classId);
+                    };
                     actions.saveClassDetails = [](
                         const QString& databasePath,
                         const Application::ClassDetailsSaveWorkflowRequest& request
@@ -1186,6 +1192,12 @@ Application::StartupResult ApplicationBootstrap::start()
                         ) {
                         return Platform::assignClassCoTeacherAtPath(
                             databasePath, request);
+                    };
+                    actions.saveClassNotes = [](
+                        const QString& databasePath,
+                        const Application::ClassNotesSaveRequest& request
+                        ) {
+                        return Platform::saveClassNotesAtPath(databasePath, request);
                     };
                     actions.createClass = [](
                         const QString& databasePath

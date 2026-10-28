@@ -499,6 +499,7 @@ void ClassNotesPage::buildUi()
             tr("Save Changes"),
             this
             );
+    m_saveButton->setObjectName(QStringLiteral("classNotesSaveButton"));
 
     m_saveButton->setEnabled(false);
 
