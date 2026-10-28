@@ -427,6 +427,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/my_workspace_schedule_read.h
     src/next/application/my_workspace_upcoming_events_read.h
     src/next/application/schedule_builder_source_snapshot.h
+    src/next/application/schedule_page_read.h
     src/next/application/last_selected_campus_id_policy.h
     src/next/application/user_preferences_state.h
     src/next/application/preferences_model.h

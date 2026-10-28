@@ -6622,6 +6622,24 @@ My Information name was updated.</source>
         <source>Generated from registered classes and their meeting times.</source>
         <translation>Generated from registered classes and their meeting times.</translation>
     </message>
+    <message><source>Regular</source><translation>Regular</translation></message>
+    <message><source>Intensive</source><translation>Intensive</translation></message>
+    <message><source>Testing</source><translation>Testing</translation></message>
+    <message><source>Preferences</source><translation>Preferences</translation></message>
+    <message><source>24-hour time</source><translation>24-hour time</translation></message>
+    <message><source>English teacher names</source><translation>English teacher names</translation></message>
+    <message><source>Show weekends</source><translation>Show weekends</translation></message>
+    <message><source>Show all intensive hours</source><translation>Show all intensive hours</translation></message>
+    <message><source>Testing affects M1</source><translation>Testing affects M1</translation></message>
+    <message><source>Retry</source><translation>Retry</translation></message>
+    <message><source>Schedule data is not loaded.</source><translation>Schedule data is not loaded.</translation></message>
+    <message><source>No Teacher Profile is open.</source><translation>No Teacher Profile is open.</translation></message>
+    <message><source>Loading schedule…</source><translation>Loading schedule…</translation></message>
+    <message><source>Schedule actions are unavailable.</source><translation>Schedule actions are unavailable.</translation></message>
+    <message><source>Schedule data is ready.</source><translation>Schedule data is ready.</translation></message>
+    <message><source>Schedule display mode could not be saved.</source><translation>Schedule display mode could not be saved.</translation></message>
+    <message><source>Schedule display preferences could not be saved.</source><translation>Schedule display preferences could not be saved.</translation></message>
+    <message><source>The selected schedule slot is invalid.</source><translation>The selected schedule slot is invalid.</translation></message>
 </context>
 <context>
     <name>SchedulePrintDialog</name>

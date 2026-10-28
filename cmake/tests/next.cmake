@@ -7069,6 +7069,153 @@ target_link_libraries(ClassMngrNextPreferencesSnapshotAdapterTests PRIVATE Class
 set_property(TARGET ClassMngrNextPreferencesSnapshotAdapterTests PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE)
 add_test(NAME ClassMngrNextPreferencesSnapshotAdapterTests COMMAND ClassMngrNextPreferencesSnapshotAdapterTests)
 
+# Verify the Schedule direct WorkspaceStore route independently from the
+# ApplicationServices compatibility ports and Legacy ScheduleWidget.
+add_executable(ClassMngrNextScheduleWorkspaceStoreActionsTests
+    tests/next/schedule_workspace_store_actions_tests.cpp
+    src/next/platform/workspace_store_schedule_actions.cpp
+)
+target_compile_features(ClassMngrNextScheduleWorkspaceStoreActionsTests
+    PRIVATE cxx_std_23
+)
+target_include_directories(ClassMngrNextScheduleWorkspaceStoreActionsTests
+    PRIVATE "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextScheduleWorkspaceStoreActionsTests
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+target_link_libraries(ClassMngrNextScheduleWorkspaceStoreActionsTests
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Test
+)
+set_target_properties(ClassMngrNextScheduleWorkspaceStoreActionsTests
+    PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextScheduleWorkspaceStoreActionsTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextScheduleWorkspaceStoreActionsTests
+    COMMAND ClassMngrNextScheduleWorkspaceStoreActionsTests
+)
+
+# Exercise the full Next Schedule page, path-scoped persistence, class-detail
+# handoff, retry/error states, and retained-row release across the page host.
+add_executable(ClassMngrNextSchedulePageTests
+    tests/next/schedule_page_tests.cpp
+    tests/next/sql_script_runner.h
+    src/next/platform/workspace_store_schedule_actions.cpp
+    src/next/platform/workspace_store_class_editor_actions.cpp
+    src/next/ui/schedule_page.cpp
+    src/next/ui/schedule_page_model.cpp
+    src/next/ui/schedule_page_slot_policy_bridge.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextSchedulePageTests
+    PRIVATE cxx_std_23
+)
+target_include_directories(ClassMngrNextSchedulePageTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextSchedulePageTests
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextSchedulePageTests
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        ClassMngrScheduleImportRules
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextSchedulePageTests
+    PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextSchedulePageTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextSchedulePageTests ClassMngrNextResourcePackage)
+add_test(
+    NAME ClassMngrNextSchedulePageTests
+    COMMAND ClassMngrNextSchedulePageTests
+)
+set_tests_properties(ClassMngrNextSchedulePageTests
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Capture matched Legacy/Next Schedule modes across English/Korean and
+# light/dark, plus the 96-class regular and intensive source fixture.
+add_executable(ClassMngrNextScheduleVisualCapture
+    tests/next/schedule_visual_capture.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/platform/workspace_store_schedule_actions.cpp
+    src/next/ui/schedule_page.cpp
+    src/next/ui/schedule_page_model.cpp
+    src/next/ui/schedule_page_slot_policy_bridge.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextScheduleVisualCapture
+    PRIVATE cxx_std_23
+)
+target_include_directories(ClassMngrNextScheduleVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextScheduleVisualCapture
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextScheduleVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        ClassMngrScheduleImportRules
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextScheduleVisualCapture
+    PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextScheduleVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextScheduleVisualCapture ClassMngrNextResourcePackage)
+add_test(
+    NAME ClassMngrNextScheduleVisualCapture
+    COMMAND ClassMngrNextScheduleVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/schedule-visual-capture"
+)
+set_tests_properties(ClassMngrNextScheduleVisualCapture
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 classmngr_add_qt_test(
     NAME NextFontSizePresenter
     OFFSCREEN

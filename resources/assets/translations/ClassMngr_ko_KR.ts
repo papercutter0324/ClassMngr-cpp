@@ -6697,6 +6697,24 @@ My Information name was updated.</source>
         <source>Generated from registered classes and their meeting times.</source>
         <translation>등록된 수업과 수업 시간에서 생성됩니다.</translation>
     </message>
+    <message><source>Regular</source><translation>정규</translation></message>
+    <message><source>Intensive</source><translation>집중</translation></message>
+    <message><source>Testing</source><translation>테스트</translation></message>
+    <message><source>Preferences</source><translation>표시 설정</translation></message>
+    <message><source>24-hour time</source><translation>24시간제</translation></message>
+    <message><source>English teacher names</source><translation>교사 영어 이름</translation></message>
+    <message><source>Show weekends</source><translation>주말 표시</translation></message>
+    <message><source>Show all intensive hours</source><translation>집중 수업 시간 전체 표시</translation></message>
+    <message><source>Testing affects M1</source><translation>테스트 일정에 M1 포함</translation></message>
+    <message><source>Retry</source><translation>다시 시도</translation></message>
+    <message><source>Schedule data is not loaded.</source><translation>시간표 데이터를 불러오지 않았습니다.</translation></message>
+    <message><source>No Teacher Profile is open.</source><translation>열린 교사 프로필이 없습니다.</translation></message>
+    <message><source>Loading schedule…</source><translation>시간표를 불러오는 중…</translation></message>
+    <message><source>Schedule actions are unavailable.</source><translation>시간표 작업을 사용할 수 없습니다.</translation></message>
+    <message><source>Schedule data is ready.</source><translation>시간표 데이터를 불러왔습니다.</translation></message>
+    <message><source>Schedule display mode could not be saved.</source><translation>시간표 표시 모드를 저장하지 못했습니다.</translation></message>
+    <message><source>Schedule display preferences could not be saved.</source><translation>시간표 표시 설정을 저장하지 못했습니다.</translation></message>
+    <message><source>The selected schedule slot is invalid.</source><translation>선택한 시간표 슬롯이 올바르지 않습니다.</translation></message>
 </context>
 <context>
     <name>SchedulePrintDialog</name>
@@ -6932,12 +6950,12 @@ My Information name was updated.</source>
     <message>
         <location line="+15"/>
         <source>Testing View — M1, M2, and M3 classes are hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>테스트 보기 — M1, M2, M3 수업은 숨겨집니다</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Testing View — M2 and M3 classes are hidden; M1 classes remain</source>
-        <translation type="unfinished"></translation>
+        <translation>테스트 보기 — M2, M3 수업은 숨겨지고 M1 수업은 표시됩니다</translation>
     </message>
     <message>
         <location line="+38"/>

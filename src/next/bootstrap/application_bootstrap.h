@@ -244,6 +244,7 @@ private:
     [[nodiscard]] Domain::Result<std::optional<QByteArray>>
     chooseWorkspaceSignatureImage();
     void refreshMyWorkspacePage();
+    void refreshSchedulePage();
     void clearMyWorkspacePageForClosedWorkspace();
     void clearMyClassesPageForWorkspaceChange();
     void clearMyClassesPageForClosedWorkspace();

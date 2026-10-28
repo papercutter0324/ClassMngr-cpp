@@ -26,6 +26,7 @@
 #include "next/platform/workspace_store_class_analytics_actions.h"
 #include "next/platform/workspace_store_testing_classes_actions.h"
 #include "next/platform/workspace_store_class_transfer_actions.h"
+#include "next/platform/workspace_store_schedule_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -41,6 +42,7 @@
 #include "next/ui/page_host_active_page_changes_adapter.h"
 #include "next/ui/placeholder_page.h"
 #include "next/ui/my_workspace_page.h"
+#include "next/ui/schedule_page.h"
 #include "next/ui/my_classes_page.h"
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/testing_classes_manager_page.h"
@@ -424,6 +426,30 @@ loadWorkspaceCampusChoices(
     };
 }
 
+[[nodiscard]] Ui::PageDescriptor schedulePageDescriptor(
+    std::function<Ui::SchedulePageActions()> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(QStringLiteral("schedule")),
+        .label = navigationLabel("Schedule"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::SchedulePage>(context, actionsFactory());
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)
+            };
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+}
+
 [[nodiscard]] Ui::PageDescriptor myClassesPageDescriptor(
     std::function<Ui::MyClassesPageActions()> actionsFactory
     )
@@ -537,6 +563,7 @@ loadWorkspaceCampusChoices(
 
     return {
         NavigationNode::page(pageId(QStringLiteral("my_workspace")), workspace),
+        NavigationNode::page(pageId(QStringLiteral("schedule")), workspace),
         NavigationNode::page(pageId(QStringLiteral("my_classes")), workspace),
         NavigationNode::page(pageId(QStringLiteral("classes")), workspace),
         NavigationNode::page(pageId(QStringLiteral("class_transfer")), workspace),
@@ -1617,6 +1644,82 @@ Application::StartupResult ApplicationBootstrap::start()
                                 .severity = Application::NotificationSeverity::Warning
                             }
                             ));
+                    };
+                    return actions;
+                }));
+            if (!registration)
+            {
+                initialPageFailure = registration.error().message;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const Ui::PageHostResult<void> registration =
+                m_shell->pageHost().registerPage(schedulePageDescriptor([this] {
+                    Ui::SchedulePageActions actions;
+                    actions.activeWorkspacePath = [this] {
+                        if (!m_applicationRuntime)
+                        {
+                            return QString{};
+                        }
+                        const auto session =
+                            m_applicationRuntime->workspaceState().snapshot().session();
+                        if (!session)
+                        {
+                            return QString{};
+                        }
+                        const std::string& path = session->location().value();
+                        return QString::fromUtf8(
+                            path.data(), static_cast<qsizetype>(path.size()));
+                    };
+                    actions.workspaceIdentity = [this] {
+                        if (!m_applicationRuntime)
+                        {
+                            return QString{};
+                        }
+                        const auto session =
+                            m_applicationRuntime->workspaceState().snapshot().session();
+                        if (!session)
+                        {
+                            return QString{};
+                        }
+                        const std::string& id = session->workspaceId().value();
+                        const std::string& path = session->location().value();
+                        return QString::fromUtf8(
+                                   id.data(), static_cast<qsizetype>(id.size()))
+                            + QLatin1Char('|')
+                            + QString::fromUtf8(
+                                path.data(), static_cast<qsizetype>(path.size()));
+                    };
+                    actions.readSchedule = [](const QString& path) {
+                        return Platform::readSchedulePageAtPath(path);
+                    };
+                    actions.saveDisplayPreferences = [](
+                        const QString& path,
+                        const Application::ScheduleDisplayPreferencesSaveRequest& request) {
+                        return Platform::saveScheduleDisplayPreferencesAtPath(
+                            path, request);
+                    };
+                    actions.saveDisplayMode = [](
+                        const QString& path,
+                        const Application::ScheduleDisplayMode mode) {
+                        return Platform::saveScheduleDisplayModeAtPath(path, mode);
+                    };
+                    actions.saveSlotState = [](
+                        const QString& path,
+                        const Application::ScheduleSlotStateSaveRequest& request) {
+                        return Platform::saveScheduleSlotStateAtPath(path, request);
+                    };
+                    actions.openClassDetails = [this](
+                        const Domain::ClassId& classId) {
+                        if (!m_applicationRuntime || !m_shell)
+                        {
+                            return;
+                        }
+                        m_applicationRuntime->selectionState().setSelection(classId);
+                        static_cast<void>(m_shell->navigateTo(
+                            pageId(QStringLiteral("classes"))));
                     };
                     return actions;
                 }));
@@ -3377,6 +3480,7 @@ void ApplicationBootstrap::saveWorkspaceAsFromMenu()
     if (outcome.status == Application::WorkspaceSaveAsStatus::Saved)
     {
         refreshMyWorkspacePage();
+        refreshSchedulePage();
     }
 }
 
@@ -4779,6 +4883,27 @@ void ApplicationBootstrap::refreshMyWorkspacePage()
     }
 }
 
+void ApplicationBootstrap::refreshSchedulePage()
+{
+    if (!m_shell)
+    {
+        return;
+    }
+    if (auto* const page = dynamic_cast<Ui::SchedulePage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("schedule"))))
+    {
+        if (m_shell->pageHost().activePageKey()
+            == std::optional<QString>(QStringLiteral("schedule")))
+        {
+            static_cast<void>(page->reload());
+        }
+        else
+        {
+            page->clearForWorkspaceChange();
+        }
+    }
+}
+
 void ApplicationBootstrap::clearMyWorkspacePageForClosedWorkspace()
 {
     if (!m_shell)
@@ -4797,6 +4922,16 @@ void ApplicationBootstrap::clearMyClassesPageForWorkspaceChange()
     if (!m_shell)
     {
         return;
+    }
+    if (auto* const page = dynamic_cast<Ui::SchedulePage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("schedule"))))
+    {
+        page->clearForWorkspaceChange();
+        if (m_shell->pageHost().activePageKey()
+            == std::optional<QString>(QStringLiteral("schedule")))
+        {
+            static_cast<void>(page->reload());
+        }
     }
     if (auto* const page = dynamic_cast<Ui::MyClassesPage*>(
             m_shell->pageHost().pageInstance(QStringLiteral("my_classes"))))
@@ -4845,6 +4980,11 @@ void ApplicationBootstrap::clearMyClassesPageForClosedWorkspace()
     if (!m_shell)
     {
         return;
+    }
+    if (auto* const page = dynamic_cast<Ui::SchedulePage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("schedule"))))
+    {
+        page->clearForClosedWorkspace();
     }
     if (auto* const page = dynamic_cast<Ui::MyClassesPage*>(
             m_shell->pageHost().pageInstance(QStringLiteral("my_classes"))))

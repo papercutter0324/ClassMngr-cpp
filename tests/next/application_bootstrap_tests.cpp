@@ -18,6 +18,8 @@
 #include "next/ui/my_classes_page.h"
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
+#include "next/ui/schedule_page.h"
+#include "next/ui/selected_class_editor.h"
 #include "next/ui/teacher_profile_page.h"
 #include "next/ui/shared_staff_directory_page.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
@@ -77,6 +79,7 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QTableView>
+#include <QTableWidget>
 #include <QTreeWidget>
 #include <QTreeWidgetItemIterator>
 #include <QItemSelectionModel>
@@ -144,6 +147,7 @@ private slots:
     void myClassesReloadsRealWorkspaceDataWhenProfileIsReplacedWhileActive();
     void classesNavigatorClearsAndReloadsWhenWorkspaceIsReplacedWhileActive();
     void classesNavigatorClearsWhenWorkspaceIsClosedWhileActive();
+    void scheduleSelectionOpensClassDetailsAndRefreshesAfterSave();
     void openActionDoesNotBypassPendingOrUnreadableSetupRecovery();
     void interruptedProfileRecoveryMenuActionOpensCopyOnlyAfterSuccessfulOpen();
     void recentFilesMenuRefreshesOrderedEscapedPathsAndEmptyState();
@@ -1893,28 +1897,56 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
              QStringLiteral("initial_setup"));
     const std::vector<Ui::NavigationNode>& navigationNodes =
         shell->navigationModel()->nodes();
-    QCOMPARE(navigationNodes.size(), std::size_t(9));
-    QCOMPARE(navigationNodes[0].pageId->value(), QStringLiteral("my_workspace"));
-    QCOMPARE(navigationNodes[1].pageId->value(), QStringLiteral("my_classes"));
-    QCOMPARE(navigationNodes[2].pageId->value(), QStringLiteral("classes"));
-    QCOMPARE(navigationNodes[3].pageId->value(), QStringLiteral("sub_prep"));
-    QCOMPARE(navigationNodes[4].label, QStringLiteral("Co-Teachers"));
-    QCOMPARE(navigationNodes[5].label, QStringLiteral("Campus Staff"));
-    QCOMPARE(navigationNodes[6].label, QStringLiteral("Useful Links"));
-    QCOMPARE(navigationNodes[7].label, QStringLiteral("Campus Directory"));
-    QCOMPARE(navigationNodes[8].pageId->value(), QStringLiteral("initial_setup"));
-    QCOMPARE(navigationNodes[5].children.size(), std::size_t(3));
-    QCOMPARE(navigationNodes[5].children[0].label, QStringLiteral("Korean Teachers"));
-    QCOMPARE(navigationNodes[5].children[1].pageId->value(),
+    QCOMPARE(navigationNodes.size(), std::size_t(11));
+    const auto findPageNode = [&navigationNodes](const QString& id)
+        -> const Ui::NavigationNode* {
+        const auto found = std::find_if(
+            navigationNodes.cbegin(), navigationNodes.cend(),
+            [&id](const Ui::NavigationNode& node) {
+                return node.pageId && node.pageId->value() == id;
+            });
+        return found == navigationNodes.cend() ? nullptr : &*found;
+    };
+    const auto findGroupNode = [&navigationNodes](const QString& label)
+        -> const Ui::NavigationNode* {
+        const auto found = std::find_if(
+            navigationNodes.cbegin(), navigationNodes.cend(),
+            [&label](const Ui::NavigationNode& node) {
+                return node.label == label;
+            });
+        return found == navigationNodes.cend() ? nullptr : &*found;
+    };
+    QVERIFY(findPageNode(QStringLiteral("my_workspace")));
+    QVERIFY(findPageNode(QStringLiteral("schedule")));
+    QVERIFY(pageHost.isPageRegistered(QStringLiteral("schedule")));
+    QVERIFY(findPageNode(QStringLiteral("my_classes")));
+    QVERIFY(findPageNode(QStringLiteral("classes")));
+    QVERIFY(findPageNode(QStringLiteral("sub_prep")));
+    QVERIFY(findPageNode(QStringLiteral("initial_setup")));
+    const Ui::NavigationNode* const coTeachers =
+        findGroupNode(QStringLiteral("Co-Teachers"));
+    const Ui::NavigationNode* const campusStaff =
+        findGroupNode(QStringLiteral("Campus Staff"));
+    const Ui::NavigationNode* const usefulLinks =
+        findGroupNode(QStringLiteral("Useful Links"));
+    const Ui::NavigationNode* const campusDirectory =
+        findGroupNode(QStringLiteral("Campus Directory"));
+    QVERIFY(coTeachers);
+    QVERIFY(campusStaff);
+    QVERIFY(usefulLinks);
+    QVERIFY(campusDirectory);
+    QCOMPARE(campusStaff->children.size(), std::size_t(3));
+    QCOMPARE(campusStaff->children[0].label, QStringLiteral("Korean Teachers"));
+    QCOMPARE(campusStaff->children[1].pageId->value(),
              QStringLiteral("native_english_teachers"));
-    QCOMPARE(navigationNodes[5].children[2].pageId->value(), QStringLiteral("gs_team"));
-    QCOMPARE(navigationNodes[7].children.size(), std::size_t(5));
-    QCOMPARE(navigationNodes[7].children[0].pageId->value(),
+    QCOMPARE(campusStaff->children[2].pageId->value(), QStringLiteral("gs_team"));
+    QCOMPARE(campusDirectory->children.size(), std::size_t(5));
+    QCOMPARE(campusDirectory->children[0].pageId->value(),
              QStringLiteral("campus_information"));
-    QCOMPARE(navigationNodes[7].children[1].pageId->value(),
+    QCOMPARE(campusDirectory->children[1].pageId->value(),
              QStringLiteral("campus_directions"));
-    QCOMPARE(navigationNodes[7].children[4].pageId->value(), QStringLiteral("campus_map"));
-    QCOMPARE(navigationNodes[6].children.size(), std::size_t(7));
+    QCOMPARE(campusDirectory->children[4].pageId->value(), QStringLiteral("campus_map"));
+    QCOMPARE(usefulLinks->children.size(), std::size_t(7));
     const QStringList usefulLinkLabels{
         QStringLiteral("Dropbox"),
         QStringLiteral("Vacation Calendar"),
@@ -1926,7 +1958,7 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     };
     for (std::size_t index = 0; index < usefulLinkLabels.size(); ++index)
     {
-        const Ui::NavigationNode& link = navigationNodes[6].children[index];
+        const Ui::NavigationNode& link = usefulLinks->children[index];
         QCOMPARE(link.kind, Ui::NavigationNode::Kind::Placeholder);
         QCOMPARE(link.label, usefulLinkLabels[static_cast<qsizetype>(index)]);
         QVERIFY(!link.pageId.has_value());
@@ -5585,6 +5617,148 @@ classesNavigatorClearsWhenWorkspaceIsClosedWhileActive()
                  ->text(),
         QStringLiteral("No Teacher Profile is open."));
 
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+scheduleSelectionOpensClassDetailsAndRefreshesAfterSave()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("schedule-class-details.tps"));
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 profilePath, QStringLiteral("representative_startup.sql"),
+                 &fixtureError), qPrintable(fixtureError));
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), profilePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    Ui::PageHost& host = bootstrap.shell()->pageHost();
+    QVERIFY(host.activatePage(QStringLiteral("schedule")));
+    auto* const schedule = dynamic_cast<Ui::SchedulePage*>(
+        host.pageInstance(QStringLiteral("schedule")));
+    QVERIFY(schedule);
+    QCOMPARE(host.activePageKey(), std::optional<QString>(QStringLiteral("schedule")));
+
+    const auto classOne = Domain::ClassId::fromString("1");
+    QVERIFY(classOne);
+    std::optional<QModelIndex> classOneIndex;
+    for (int row = 0; row < schedule->model()->rowCount() && !classOneIndex; ++row)
+    {
+        for (int column = 1;
+             column < schedule->model()->columnCount() && !classOneIndex;
+             ++column)
+        {
+            const Ui::SchedulePageCell* const cell =
+                schedule->model()->cellAt(row, column);
+            if (cell && std::any_of(cell->entries.cbegin(), cell->entries.cend(),
+                    [&classOne](const Ui::SchedulePageEntry& entry) {
+                        return entry.classId == *classOne;
+                    }))
+            {
+                classOneIndex = schedule->model()->index(row, column);
+            }
+        }
+    }
+    QVERIFY(classOneIndex);
+    schedule->scheduleTable()->scrollTo(*classOneIndex);
+    QApplication::processEvents();
+    const QRect cellRect = schedule->scheduleTable()->visualRect(*classOneIndex);
+    QVERIFY(cellRect.isValid());
+    QTest::mouseClick(schedule->scheduleTable()->viewport(), Qt::LeftButton,
+                      Qt::NoModifier, cellRect.center());
+    QApplication::processEvents();
+
+    QCOMPARE(host.activePageKey(), std::optional<QString>(QStringLiteral("classes")));
+    auto* const classes = dynamic_cast<Ui::ClassesNavigatorPage*>(
+        host.pageInstance(QStringLiteral("classes")));
+    QVERIFY(classes);
+    QCOMPARE(classes->selectedClassId(), classOne);
+    Ui::SelectedClassEditor* const editor = classes->selectedClassEditor();
+    QVERIFY(editor);
+    QVERIFY(editor->isLoaded());
+    QCOMPARE(editor->classId(), classOne);
+
+    QTableWidget* const regularSchedule = editor->regularSchedule();
+    QVERIFY(regularSchedule);
+    int mondayRow = -1;
+    for (int row = 0; row < regularSchedule->rowCount(); ++row)
+    {
+        if (regularSchedule->item(row, 0)
+            && regularSchedule->item(row, 0)->text() == QStringLiteral("Monday"))
+        {
+            mondayRow = row;
+            break;
+        }
+    }
+    QVERIFY(mondayRow >= 0);
+    regularSchedule->item(mondayRow, 1)->setText(QStringLiteral("8:00 PM"));
+    regularSchedule->item(mondayRow, 2)->setText(QStringLiteral("8:50 PM"));
+    editor->gradeChoice()->setCurrentText(QStringLiteral("E4"));
+    editor->levelChoice()->setCurrentText(QStringLiteral("Theseus"));
+    auto* const readingBook = editor->findChild<QComboBox*>(
+        QStringLiteral("classEditorReadingBook"));
+    auto* const essayBook = editor->findChild<QComboBox*>(
+        QStringLiteral("classEditorEssayBook"));
+    QVERIFY(readingBook);
+    QVERIFY(essayBook);
+    readingBook->setCurrentText(QStringLiteral("Reading Explorer 1"));
+    essayBook->setCurrentText(QStringLiteral("4A"));
+    QString saveError;
+    QVERIFY2(editor->saveChanges(&saveError), qPrintable(saveError));
+
+    QVERIFY(host.activatePage(QStringLiteral("schedule")));
+    bool foundUpdatedClass = false;
+    for (int row = 0; row < schedule->model()->rowCount() && !foundUpdatedClass; ++row)
+    {
+        for (int column = 1;
+             column < schedule->model()->columnCount() && !foundUpdatedClass;
+             ++column)
+        {
+            const Ui::SchedulePageCell* const cell =
+                schedule->model()->cellAt(row, column);
+            foundUpdatedClass = cell
+                && cell->day == QStringLiteral("Monday")
+                && cell->startMinute == 20 * 60
+                && std::any_of(cell->entries.cbegin(), cell->entries.cend(),
+                    [&classOne](const Ui::SchedulePageEntry& entry) {
+                        return entry.classId == *classOne;
+                    });
+        }
+    }
+    QVERIFY(foundUpdatedClass);
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
 }
