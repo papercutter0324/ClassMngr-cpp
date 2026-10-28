@@ -245,6 +245,8 @@ private:
     chooseWorkspaceSignatureImage();
     void refreshMyWorkspacePage();
     void clearMyWorkspacePageForClosedWorkspace();
+    void clearMyClassesPageForWorkspaceChange();
+    void clearMyClassesPageForClosedWorkspace();
     [[nodiscard]] bool releaseWorkspace() noexcept;
     [[nodiscard]] std::optional<Application::ShutdownFailureReason>
     runShutdownSequence() noexcept;

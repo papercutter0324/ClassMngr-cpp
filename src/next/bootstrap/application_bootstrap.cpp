@@ -10,6 +10,7 @@
 #include "next/application/unsaved_changes_resolution_flow.h"
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/positive_decimal_id_validation.h"
+#include "next/application/my_classes_page_read.h"
 #include "next/domain/teacher_display_name.h"
 #include "core/settingsmanager.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
@@ -34,6 +35,7 @@
 #include "next/ui/page_host_active_page_changes_adapter.h"
 #include "next/ui/placeholder_page.h"
 #include "next/ui/my_workspace_page.h"
+#include "next/ui/my_classes_page.h"
 #include "next/ui/qt_file_dialog_presenter.h"
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
@@ -307,6 +309,30 @@ loadWorkspaceCampusChoices(
     };
 }
 
+[[nodiscard]] Ui::PageDescriptor myClassesPageDescriptor(
+    std::function<Ui::MyClassesPageActions()> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(QStringLiteral("my_classes")),
+        .label = navigationLabel("My Classes"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::MyClassesPage>(context, actionsFactory());
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)
+            };
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+}
+
 [[nodiscard]] Ui::PageDescriptor sharedStaffDirectoryPageDescriptor(
     const QString& id,
     const QString& label,
@@ -396,6 +422,7 @@ loadWorkspaceCampusChoices(
 
     return {
         NavigationNode::page(pageId(QStringLiteral("my_workspace")), workspace),
+        NavigationNode::page(pageId(QStringLiteral("my_classes")), workspace),
         NavigationNode::page(pageId(QStringLiteral("classes")), workspace),
         NavigationNode::page(pageId(QStringLiteral("sub_prep")), workspace),
         NavigationNode::group(
@@ -1014,6 +1041,68 @@ Application::StartupResult ApplicationBootstrap::start()
                                 .severity = Application::NotificationSeverity::Warning
                             }
                             ));
+                    };
+                    return actions;
+                }));
+            if (!registration)
+            {
+                initialPageFailure = registration.error().message;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const Ui::PageHostResult<void> registration =
+                m_shell->pageHost().registerPage(myClassesPageDescriptor([this] {
+                    Ui::MyClassesPageActions actions;
+                    actions.readSummaries = [this] {
+                        if (auto* const gateway =
+                                dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                                    m_workspaceGateway.get()))
+                        {
+                            return gateway->readMyClassesPageSummaries();
+                        }
+                        return Application::MyClassesPageSummaryResult::failure({
+                            .code = Domain::ErrorCode::NotFound,
+                            .message = "The active workspace store is unavailable.",
+                            .recoverable = true
+                        });
+                    };
+                    actions.readSelectedDetails = [this](
+                        const Domain::ClassId& classId
+                        ) {
+                        if (auto* const gateway =
+                                dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                                    m_workspaceGateway.get()))
+                        {
+                            return gateway->readMyClassesPageSelectedDetails(classId);
+                        }
+                        return Application::MyClassesPageSelectedDetailsResult::failure({
+                            .code = Domain::ErrorCode::NotFound,
+                            .message = "The active workspace store is unavailable.",
+                            .recoverable = true
+                        });
+                    };
+                    actions.workspaceIdentity = [this] {
+                        if (!m_applicationRuntime)
+                        {
+                            return QString{};
+                        }
+                        const auto session =
+                            m_applicationRuntime->workspaceState().snapshot().session();
+                        if (!session)
+                        {
+                            return QString{};
+                        }
+                        return QString::fromUtf8(
+                            session->workspaceId().value().data(),
+                            static_cast<qsizetype>(
+                                session->workspaceId().value().size())
+                            ) + QLatin1Char('|') + QString::fromUtf8(
+                                session->location().value().data(),
+                                static_cast<qsizetype>(
+                                    session->location().value().size())
+                            );
                     };
                     return actions;
                 }));
@@ -2141,6 +2230,7 @@ void ApplicationBootstrap::createNewTeacherProfile()
     if (outcome.status == Application::NormalWorkspaceCreationStatus::Created)
     {
         refreshMyWorkspacePage();
+        clearMyClassesPageForWorkspaceChange();
         m_shell->updateNavigationAccessContext(
             m_applicationRuntime->workspaceState().snapshot().lifecycle(),
             std::nullopt
@@ -2280,6 +2370,7 @@ void ApplicationBootstrap::openTeacherProfile(
     }
 
     refreshMyWorkspacePage();
+    clearMyClassesPageForWorkspaceChange();
 
     if (selectedPath.has_value() && outcome.session.has_value())
     {
@@ -2479,6 +2570,7 @@ void ApplicationBootstrap::recoverInterruptedTeacherProfile()
     }
 
     refreshMyWorkspacePage();
+    clearMyClassesPageForWorkspaceChange();
 
     const QString destination = QString::fromUtf8(
         outcome.session->location().value().data(),
@@ -3197,6 +3289,7 @@ void ApplicationBootstrap::closeWorkspaceFromMenu()
     }
 
     clearMyWorkspacePageForClosedWorkspace();
+    clearMyClassesPageForClosedWorkspace();
 
     m_shell->updateNavigationAccessContext(
         Application::WorkspaceLifecycleState::Closed,
@@ -4118,6 +4211,37 @@ void ApplicationBootstrap::clearMyWorkspacePageForClosedWorkspace()
     }
     if (auto* const page = dynamic_cast<Ui::MyWorkspacePage*>(
             m_shell->pageHost().pageInstance(QStringLiteral("my_workspace"))))
+    {
+        page->clearForClosedWorkspace();
+    }
+}
+
+void ApplicationBootstrap::clearMyClassesPageForWorkspaceChange()
+{
+    if (!m_shell)
+    {
+        return;
+    }
+    if (auto* const page = dynamic_cast<Ui::MyClassesPage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("my_classes"))))
+    {
+        page->clearForWorkspaceChange();
+        if (m_shell->pageHost().activePageKey()
+            == std::optional<QString>(QStringLiteral("my_classes")))
+        {
+            static_cast<void>(page->onActivating());
+        }
+    }
+}
+
+void ApplicationBootstrap::clearMyClassesPageForClosedWorkspace()
+{
+    if (!m_shell)
+    {
+        return;
+    }
+    if (auto* const page = dynamic_cast<Ui::MyClassesPage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("my_classes"))))
     {
         page->clearForClosedWorkspace();
     }

@@ -216,6 +216,8 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/my_classes_class_information_batch_read_snapshot.h
     src/next/application/my_classes_class_information_batch_read_port.h
     src/next/application/my_classes_class_information_batch_read_query.h
+    src/next/application/my_classes_page_read.h
+    src/next/application/my_classes_page_read_query.h
     src/next/application/my_classes_class_summary_batch_read_snapshot.h
     src/next/application/my_classes_class_summary_batch_read_port.h
     src/next/application/my_classes_class_summary_batch_read_query.h

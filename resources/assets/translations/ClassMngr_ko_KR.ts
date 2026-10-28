@@ -9908,6 +9908,7 @@ Version: %2</source>
 <context>
     <name>NextNavigation</name>
     <message><source>My Workspace</source><translation>내 작업 공간</translation></message>
+    <message><source>My Classes</source><translation>내 수업</translation></message>
     <message><source>Classes</source><translation>수업</translation></message>
     <message><source>Sub Prep</source><translation>대체 수업 준비</translation></message>
     <message><source>Co-Teachers</source><translation>공동 교사</translation></message>
@@ -10603,5 +10604,48 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>The signature image could not be selected.</source><translation>서명 이미지를 선택하지 못했습니다.</translation></message>
     <message><source>The signature image could not be prepared.</source><translation>서명 이미지를 준비하지 못했습니다.</translation></message>
     <message><source>The signature image could not be displayed.</source><translation>서명 이미지를 표시하지 못했습니다.</translation></message>
+</context>
+<context>
+    <name>NextMyClassesPage</name>
+    <message><source>Class Information</source><translation>수업 정보</translation></message>
+    <message><source>Review teacher, class, and roster details.</source><translation>교사, 수업 및 명단 세부 정보를 검토하세요.</translation></message>
+    <message><source>Classes</source><translation>수업</translation></message>
+    <message><source>Class summaries</source><translation>수업 요약</translation></message>
+    <message><source>Select a class to view its details.</source><translation>수업을 선택해 자세한 정보를 확인하세요.</translation></message>
+    <message><source>Teacher Details</source><translation>교사 정보</translation></message>
+    <message><source>Class Details</source><translation>수업 정보</translation></message>
+    <message><source># of Students</source><translation>학생 수</translation></message>
+    <message><source>Regular</source><translation>정규 일정</translation></message>
+    <message><source>Intensive</source><translation>집중 일정</translation></message>
+    <message><source>Internet Type</source><translation>인터넷 유형</translation></message>
+    <message><source>WiFi Name</source><translation>WiFi 이름</translation></message>
+    <message><source>WiFi Password</source><translation>WiFi 비밀번호</translation></message>
+    <message><source>Projection Type</source><translation>프로젝션 유형</translation></message>
+    <message><source>Zoom ID</source><translation>Zoom ID</translation></message>
+    <message><source>Zoom Password</source><translation>Zoom 비밀번호</translation></message>
+    <message><source>Notes</source><translation>메모</translation></message>
+    <message><source>Class Notes</source><translation>수업 메모</translation></message>
+    <message><source>Time Filler Activities</source><translation>자투리 시간 활동</translation></message>
+    <message><source>Room</source><translation>교실</translation></message>
+    <message><source>Unassigned</source><translation>미배정</translation></message>
+    <message><source>Unavailable</source><translation>사용할 수 없음</translation></message>
+    <message><source>N/A</source><translation>해당 없음</translation></message>
+    <message><source>No time</source><translation>시간 정보 없음</translation></message>
+    <message><source>Int</source><translation>집중</translation></message>
+    <message><source>Other</source><translation>기타</translation></message>
+    <message><source>Class %1</source><translation>수업 %1</translation></message>
+    <message><source>Select a class.</source><translation>수업을 선택하세요.</translation></message>
+    <message><source>No classes available.</source><translation>사용 가능한 수업이 없습니다.</translation></message>
+    <message><source>Class summaries are unavailable.</source><translation>수업 요약을 사용할 수 없습니다.</translation></message>
+    <message><source>Selected class details are unavailable.</source><translation>선택한 수업 정보를 사용할 수 없습니다.</translation></message>
+    <message><source>No Teacher Profile is open.</source><translation>열린 교사 프로필이 없습니다.</translation></message>
+    <message><source>Workspace changed.</source><translation>작업 공간이 변경되었습니다.</translation></message>
+    <message><source>Mon</source><translation>월</translation></message>
+    <message><source>Tues</source><translation>화</translation></message>
+    <message><source>Wed</source><translation>수</translation></message>
+    <message><source>Thurs</source><translation>목</translation></message>
+    <message><source>Fri</source><translation>금</translation></message>
+    <message><source>Sat</source><translation>토</translation></message>
+    <message><source>Sun</source><translation>일</translation></message>
 </context>
 </TS>

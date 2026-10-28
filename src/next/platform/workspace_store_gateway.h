@@ -25,6 +25,8 @@
 #include <memory>
 #include <optional>
 
+#include "next/application/my_classes_page_read.h"
+
 class WorkspaceStore;
 
 namespace ClassMngr::Next::Platform
@@ -143,6 +145,12 @@ public:
         ) const;
     [[nodiscard]] Application::GsTeamDirectoryReadResult
     readGsTeamDirectory() const;
+    [[nodiscard]] Application::MyClassesPageSummaryResult
+    readMyClassesPageSummaries() const;
+    [[nodiscard]] Application::MyClassesPageSelectedDetailsResult
+    readMyClassesPageSelectedDetails(
+        const Domain::ClassId& classId
+        ) const;
     [[nodiscard]] Application::GsTeamDirectorySaveOutcome saveGsTeamDirectory(
         const Application::GsTeamDirectorySaveRequest& request
         ) const;

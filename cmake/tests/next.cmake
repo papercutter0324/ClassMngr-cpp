@@ -3083,7 +3083,8 @@ target_compile_definitions(ClassMngrNextMyWorkspacePageTests
 target_link_libraries(ClassMngrNextMyWorkspacePageTests
     PRIVATE
         ClassMngrNext::Resources
-        ClassMngrNextWorkspace
+        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspaceDomain
         ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser
         ClassMngrSignature
@@ -3111,6 +3112,123 @@ add_test(
 set_tests_properties(ClassMngrNextMyWorkspacePageTests
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+# Exercise the standalone Next My Classes model, direct WorkspaceStore read
+# boundary, selection lifecycle, and bounded widget ownership.
+add_executable(ClassMngrNextMyClassesPageTests
+    tests/next/my_classes_page_tests.cpp
+    src/next/ui/my_classes_page.cpp
+    src/next/ui/my_classes_summary_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextMyClassesPageTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextMyClassesPageTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextMyClassesPageTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+        CLASSMNGR_NEXT_MY_CLASSES_LARGE_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+)
+target_link_libraries(ClassMngrNextMyClassesPageTests
+    PRIVATE
+        ClassMngrNext::Resources
+        ClassMngrLegacyRuntimeClosure
+        ClassMngrNextWorkspaceDomain
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextMyClassesPageTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextMyClassesPageTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextMyClassesPageTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextMyClassesPageTests
+    COMMAND ClassMngrNextMyClassesPageTests
+)
+set_tests_properties(ClassMngrNextMyClassesPageTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Capture matched legacy and Next My Classes routes at 1024x768 in Fusion for
+# both supported locales and themes. The JSON manifest includes bounded model,
+# widget, lifecycle, and process-wide memory observations.
+add_executable(ClassMngrNextMyClassesVisualCapture
+    tests/next/my_classes_visual_capture.cpp
+    src/next/ui/my_classes_page.cpp
+    src/next/ui/my_classes_summary_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextMyClassesVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextMyClassesVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextMyClassesVisualCapture
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+        CLASSMNGR_NEXT_MY_CLASSES_LARGE_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+)
+target_link_libraries(ClassMngrNextMyClassesVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Resources
+        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspaceDomain
+        ClassMngrTeacherImportParser
+        ClassMngrScheduleImportParser
+        Qt6::Concurrent
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextMyClassesVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextMyClassesVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextMyClassesVisualCapture
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextMyClassesVisualCapture
+    COMMAND ClassMngrNextMyClassesVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/my-classes-visual-capture"
+)
+set_tests_properties(ClassMngrNextMyClassesVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
 classmngr_add_qt_test(

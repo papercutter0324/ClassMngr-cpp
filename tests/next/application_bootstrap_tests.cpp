@@ -14,6 +14,7 @@
 #include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
 #include "next/ui/initial_page.h"
+#include "next/ui/my_classes_page.h"
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
 #include "next/ui/teacher_profile_page.h"
@@ -24,6 +25,7 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/teacher_repository.h"
 #include "next/platform/workspace_store_personal_details_port.h"
+#include "next/platform/workspace_store_gateway.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
 #include "next/platform/qsettings_file_dialog_directory_preferences_adapter.h"
 #include "ui/shared/state/option_state_keys.h"
@@ -76,6 +78,7 @@
 #include <QTableView>
 #include <QTreeWidget>
 #include <QTreeWidgetItemIterator>
+#include <QItemSelectionModel>
 #include <QWidget>
 #include <QUuid>
 #include <QtTest/QtTest>
@@ -137,6 +140,7 @@ private slots:
     void interruptedSetupOffersRecoveryBeforeAutoOpenOrRecentHistory();
     void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
     void openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess();
+    void myClassesReloadsRealWorkspaceDataWhenProfileIsReplacedWhileActive();
     void openActionDoesNotBypassPendingOrUnreadableSetupRecovery();
     void interruptedProfileRecoveryMenuActionOpensCopyOnlyAfterSuccessfulOpen();
     void recentFilesMenuRefreshesOrderedEscapedPathsAndEmptyState();
@@ -1886,27 +1890,28 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
              QStringLiteral("initial_setup"));
     const std::vector<Ui::NavigationNode>& navigationNodes =
         shell->navigationModel()->nodes();
-    QCOMPARE(navigationNodes.size(), std::size_t(8));
+    QCOMPARE(navigationNodes.size(), std::size_t(9));
     QCOMPARE(navigationNodes[0].pageId->value(), QStringLiteral("my_workspace"));
-    QCOMPARE(navigationNodes[1].pageId->value(), QStringLiteral("classes"));
-    QCOMPARE(navigationNodes[2].pageId->value(), QStringLiteral("sub_prep"));
-    QCOMPARE(navigationNodes[3].label, QStringLiteral("Co-Teachers"));
-    QCOMPARE(navigationNodes[4].label, QStringLiteral("Campus Staff"));
-    QCOMPARE(navigationNodes[5].label, QStringLiteral("Useful Links"));
-    QCOMPARE(navigationNodes[6].label, QStringLiteral("Campus Directory"));
-    QCOMPARE(navigationNodes[7].pageId->value(), QStringLiteral("initial_setup"));
-    QCOMPARE(navigationNodes[4].children.size(), std::size_t(3));
-    QCOMPARE(navigationNodes[4].children[0].label, QStringLiteral("Korean Teachers"));
-    QCOMPARE(navigationNodes[4].children[1].pageId->value(),
+    QCOMPARE(navigationNodes[1].pageId->value(), QStringLiteral("my_classes"));
+    QCOMPARE(navigationNodes[2].pageId->value(), QStringLiteral("classes"));
+    QCOMPARE(navigationNodes[3].pageId->value(), QStringLiteral("sub_prep"));
+    QCOMPARE(navigationNodes[4].label, QStringLiteral("Co-Teachers"));
+    QCOMPARE(navigationNodes[5].label, QStringLiteral("Campus Staff"));
+    QCOMPARE(navigationNodes[6].label, QStringLiteral("Useful Links"));
+    QCOMPARE(navigationNodes[7].label, QStringLiteral("Campus Directory"));
+    QCOMPARE(navigationNodes[8].pageId->value(), QStringLiteral("initial_setup"));
+    QCOMPARE(navigationNodes[5].children.size(), std::size_t(3));
+    QCOMPARE(navigationNodes[5].children[0].label, QStringLiteral("Korean Teachers"));
+    QCOMPARE(navigationNodes[5].children[1].pageId->value(),
              QStringLiteral("native_english_teachers"));
-    QCOMPARE(navigationNodes[4].children[2].pageId->value(), QStringLiteral("gs_team"));
-    QCOMPARE(navigationNodes[6].children.size(), std::size_t(5));
-    QCOMPARE(navigationNodes[6].children[0].pageId->value(),
+    QCOMPARE(navigationNodes[5].children[2].pageId->value(), QStringLiteral("gs_team"));
+    QCOMPARE(navigationNodes[7].children.size(), std::size_t(5));
+    QCOMPARE(navigationNodes[7].children[0].pageId->value(),
              QStringLiteral("campus_information"));
-    QCOMPARE(navigationNodes[6].children[1].pageId->value(),
+    QCOMPARE(navigationNodes[7].children[1].pageId->value(),
              QStringLiteral("campus_directions"));
-    QCOMPARE(navigationNodes[6].children[4].pageId->value(), QStringLiteral("campus_map"));
-    QCOMPARE(navigationNodes[5].children.size(), std::size_t(7));
+    QCOMPARE(navigationNodes[7].children[4].pageId->value(), QStringLiteral("campus_map"));
+    QCOMPARE(navigationNodes[6].children.size(), std::size_t(7));
     const QStringList usefulLinkLabels{
         QStringLiteral("Dropbox"),
         QStringLiteral("Vacation Calendar"),
@@ -1918,7 +1923,7 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     };
     for (std::size_t index = 0; index < usefulLinkLabels.size(); ++index)
     {
-        const Ui::NavigationNode& link = navigationNodes[5].children[index];
+        const Ui::NavigationNode& link = navigationNodes[6].children[index];
         QCOMPARE(link.kind, Ui::NavigationNode::Kind::Placeholder);
         QCOMPARE(link.label, usefulLinkLabels[static_cast<qsizetype>(index)]);
         QVERIFY(!link.pageId.has_value());
@@ -2754,6 +2759,7 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
     struct Label final { const char* id; const char* english; const char* korean; };
     const Label pageLabels[] = {
         {"my_workspace", "My Workspace", "내 작업 공간"},
+        {"my_classes", "My Classes", "내 수업"},
         {"classes", "Classes", "수업"},
         {"sub_prep", "Sub Prep", "대체 수업 준비"},
         {"native_english_teachers", "Native English Teachers", "원어민 영어 교사"},
@@ -5162,6 +5168,16 @@ openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
     QCOMPARE(bootstrap.workspaceStateSnapshot().session(),
              std::optional<Application::WorkspaceSession>(firstSession));
 
+    QVERIFY(bootstrap.shell()->pageHost().activatePage(QStringLiteral("my_classes")));
+    auto* const myClasses = dynamic_cast<Ui::MyClassesPage*>(
+        bootstrap.shell()->pageHost().pageInstance(QStringLiteral("my_classes")));
+    QVERIFY(myClasses);
+    auto* const myClassesLoadState = myClasses->findChild<QLabel*>(
+        QStringLiteral("myClassesLoadState"));
+    QVERIFY(myClassesLoadState);
+    QCOMPARE(myClassesLoadState->text(),
+             QStringLiteral("The active workspace store is unavailable."));
+
     gatewayProbe->openError.reset();
     openAction->trigger();
     QCOMPARE(gatewayProbe->openCalls, 3);
@@ -5169,6 +5185,154 @@ openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
     QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
              failedNormalized);
     QCOMPARE(historyProbe->saves.back().paths.front(), failedNormalized);
+    QCOMPARE(bootstrap.shell()->pageHost().activePageKey(),
+             std::optional<QString>(QStringLiteral("my_classes")));
+    QCOMPARE(myClassesLoadState->text(),
+             QStringLiteral("The active workspace store is unavailable."));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+myClassesReloadsRealWorkspaceDataWhenProfileIsReplacedWhileActive()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString firstPath = temporaryDirectory.filePath(
+        QStringLiteral("my-classes-first.tps"));
+    const QString secondPath = temporaryDirectory.filePath(
+        QStringLiteral("my-classes-second.tps"));
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 firstPath, QStringLiteral("representative_startup.sql"),
+                 &fixtureError), qPrintable(fixtureError));
+    QVERIFY2(createWorkspaceWithFixture(
+                 secondPath, QStringLiteral("representative_startup.sql"),
+                 &fixtureError), qPrintable(fixtureError));
+    QVERIFY(executeWorkspaceSql(firstPath, QStringLiteral(
+        "UPDATE classes SET name='Store A Class' WHERE id=1")));
+    QVERIFY(executeWorkspaceSql(firstPath, QStringLiteral(
+        "UPDATE class_info SET class_level='Store A Level', "
+        "notes='Store A class notes' WHERE class_id=1")));
+    QVERIFY(executeWorkspaceSql(firstPath, QStringLiteral(
+        "UPDATE teachers SET teacher_en='Store A Teacher', "
+        "preferred_name='Store A Teacher', room_number='A-101', "
+        "notes='Store A teacher notes' WHERE id=1")));
+    QVERIFY(executeWorkspaceSql(secondPath, QStringLiteral(
+        "UPDATE classes SET name='Store B Class' WHERE id=1")));
+    QVERIFY(executeWorkspaceSql(secondPath, QStringLiteral(
+        "UPDATE class_info SET class_level='Store B Level', "
+        "notes='Store B class notes' WHERE class_id=1")));
+    QVERIFY(executeWorkspaceSql(secondPath, QStringLiteral(
+        "UPDATE teachers SET teacher_en='Store B Teacher', "
+        "preferred_name='Store B Teacher', room_number='B-202', "
+        "notes='Store B teacher notes' WHERE id=1")));
+
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        secondPath.toUtf8().toStdString());
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), firstPath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    seams.openProfileFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            fileDialogProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(bootstrap.shell()->pageHost().activatePage(
+        QStringLiteral("my_classes")));
+    auto* const page = dynamic_cast<Ui::MyClassesPage*>(
+        bootstrap.shell()->pageHost().pageInstance(
+            QStringLiteral("my_classes")));
+    QVERIFY(page);
+    QCOMPARE(page->summaryModel()->summaryCount(), 8);
+    const Domain::ClassId selectedId = *Domain::ClassId::fromString("1");
+    QModelIndex selected = page->summaryModel()->indexForClassId(selectedId);
+    QVERIFY(selected.isValid());
+    page->gradeTabs()->setCurrentIndex(selected.parent().row());
+    selected = page->summaryModel()->indexForClassId(selectedId);
+    page->classList()->selectionModel()->setCurrentIndex(
+        selected, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    QVERIFY(page->selectedDetails().has_value());
+    QCOMPARE(page->selectedDetails()->className, std::u16string(u"Store A Class"));
+    QCOMPARE(page->selectedDetails()->classNotes,
+             std::u16string(u"Store A class notes"));
+    QVERIFY(page->selectedDetails()->teacher.has_value());
+    QCOMPARE(page->selectedDetails()->teacher->englishName,
+             std::u16string(u"Store A Teacher"));
+    QCOMPARE(page->findChild<QLabel*>(QStringLiteral("myClassesTeacherTitle"))->text(),
+             QStringLiteral("Store A Teacher - Room A-101"));
+    QCOMPARE(page->findChild<QPlainTextEdit*>(
+                 QStringLiteral("myClassesTeacherNotes"))->toPlainText(),
+             QStringLiteral("Store A teacher notes"));
+
+    QAction* const openAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextOpenTeacherProfile"));
+    QVERIFY(openAction);
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 1);
+    QCOMPARE(bootstrap.shell()->pageHost().activePageKey(),
+             std::optional<QString>(QStringLiteral("my_classes")));
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+             std::optional<Application::WorkspaceLocation>(
+                 Application::WorkspaceLocation(
+                     QFileInfo(secondPath).canonicalFilePath()
+                         .toUtf8().toStdString())));
+    QCOMPARE(page->summaryModel()->summaryCount(), 8);
+    selected = page->summaryModel()->indexForClassId(selectedId);
+    QVERIFY(selected.isValid());
+    const auto* const summary = page->summaryModel()->summaryForIndex(selected);
+    QVERIFY(summary);
+    QCOMPARE(summary->className, std::u16string(u"Store B Class"));
+    QCOMPARE(page->selectedClassId(), std::optional<Domain::ClassId>(selectedId));
+    QVERIFY(page->selectedDetails().has_value());
+    QCOMPARE(page->selectedDetails()->className, std::u16string(u"Store B Class"));
+    QCOMPARE(page->selectedDetails()->classNotes,
+             std::u16string(u"Store B class notes"));
+    QVERIFY(page->selectedDetails()->teacher.has_value());
+    QCOMPARE(page->selectedDetails()->teacher->englishName,
+             std::u16string(u"Store B Teacher"));
+    QCOMPARE(page->findChild<QLabel*>(QStringLiteral("myClassesTeacherTitle"))->text(),
+             QStringLiteral("Store B Teacher - Room B-202"));
+    QCOMPARE(page->findChild<QPlainTextEdit*>(
+                 QStringLiteral("myClassesClassNotes"))->toPlainText(),
+             QStringLiteral("Store B class notes"));
+    QVERIFY(!page->findChild<QPlainTextEdit*>(
+        QStringLiteral("myClassesClassNotes"))->toPlainText().contains(
+            QStringLiteral("Store A")));
+    QVERIFY(!page->findChild<QPlainTextEdit*>(
+        QStringLiteral("myClassesTeacherNotes"))->toPlainText().contains(
+            QStringLiteral("Store A")));
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);

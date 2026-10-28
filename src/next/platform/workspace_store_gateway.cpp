@@ -37,6 +37,9 @@
 #include <string>
 #include <utility>
 
+#include "next/application/my_classes_page_read_query.h"
+#include "next/platform/workspace_store_my_classes_page_read_port.h"
+
 namespace ClassMngr::Next::Platform
 {
 namespace
@@ -114,6 +117,22 @@ WorkspaceStoreGateway::WorkspaceStoreGateway()
 }
 
 WorkspaceStoreGateway::~WorkspaceStoreGateway() = default;
+
+Application::MyClassesPageSummaryResult
+WorkspaceStoreGateway::readMyClassesPageSummaries() const
+{
+    WorkspaceStoreMyClassesPageReadPort port(*m_store);
+    return Application::MyClassesPageReadQuery(port).readSummaries();
+}
+
+Application::MyClassesPageSelectedDetailsResult
+WorkspaceStoreGateway::readMyClassesPageSelectedDetails(
+    const Domain::ClassId& classId
+    ) const
+{
+    WorkspaceStoreMyClassesPageReadPort port(*m_store);
+    return Application::MyClassesPageReadQuery(port).readSelectedDetails(classId);
+}
 
 Application::PersonalDetailsReadResult
 WorkspaceStoreGateway::readPersonalDetails() const
