@@ -19,8 +19,10 @@ ownership, dependencies, lifecycle, and verification.
 24. **Accepted — Classes list/navigation** (`368fcee8`). See its [Phase 7
     progress log](08-Phase-7-Feature-Migration.md#progress-log) and [capture
     package](../../docs/qt-rewrite/visual-baseline/next/phase-7/classes-navigation/README.md).
-25. **Active — Class details, create/edit, and co-teachers.**
-26. Class notes.
+25. **Accepted — Class details, create/edit, and co-teachers** (`c0cb9c93`).
+    See its [Phase 7 progress log](08-Phase-7-Feature-Migration.md#progress-log)
+    and [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/class-details-coteacher/README.md).
+26. **Active — Class notes.**
 27. Class analytics and speaking-evaluation defaults.
 28. Testing classes and blocks.
 29. Class transfer.

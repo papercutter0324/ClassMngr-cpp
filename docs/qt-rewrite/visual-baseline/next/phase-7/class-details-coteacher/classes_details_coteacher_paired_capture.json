@@ -1,0 +1,772 @@
+{
+    "captures": [
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "classId": 1,
+                "classScopedWidgetCount": 192,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_details_times_en_US_light_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:08.734",
+                        "peakWorkingSetBytes": 83574784,
+                        "platform": "macos",
+                        "privateUsageBytes": 28115856,
+                        "privateWorkingSetBytes": 27475968,
+                        "workingSetBytes": 83574784
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:08.764",
+                        "peakWorkingSetBytes": 90472448,
+                        "platform": "macos",
+                        "privateUsageBytes": 32752576,
+                        "privateWorkingSetBytes": 32079872,
+                        "workingSetBytes": 90472448
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:08.202",
+                        "peakWorkingSetBytes": 38715392,
+                        "platform": "macos",
+                        "privateUsageBytes": 11010768,
+                        "privateWorkingSetBytes": 10502144,
+                        "workingSetBytes": 38715392
+                    }
+                },
+                "route": "legacy ClassesPage",
+                "section": "Details and Times",
+                "widgetCountWhileActive": 1148,
+                "width": 1024
+            },
+            "locale": "en_US",
+            "next": {
+                "classId": "1",
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_details_times_en_US_light_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:08.804",
+                        "peakWorkingSetBytes": 93863936,
+                        "platform": "macos",
+                        "privateUsageBytes": 35259328,
+                        "privateWorkingSetBytes": 34586624,
+                        "workingSetBytes": 93863936
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:08.766",
+                        "peakWorkingSetBytes": 90587136,
+                        "platform": "macos",
+                        "privateUsageBytes": 32834496,
+                        "privateWorkingSetBytes": 32161792,
+                        "workingSetBytes": 90587136
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:08.826",
+                        "peakWorkingSetBytes": 94208000,
+                        "platform": "macos",
+                        "privateUsageBytes": 35603392,
+                        "privateWorkingSetBytes": 34930688,
+                        "workingSetBytes": 94208000
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "section": "Details and Times",
+                "selectedEditorDescendantCount": 162,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 210,
+                "widgetCountWhileActive": 210,
+                "width": 1024
+            },
+            "sameSelectedClass": true,
+            "section": "details_times",
+            "selectedClassId": "1",
+            "theme": "light"
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "classId": 1,
+                "classScopedWidgetCount": 192,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_coteacher_en_US_light_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.197",
+                        "peakWorkingSetBytes": 95322112,
+                        "platform": "macos",
+                        "privateUsageBytes": 35931072,
+                        "privateWorkingSetBytes": 35258368,
+                        "workingSetBytes": 95322112
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.218",
+                        "peakWorkingSetBytes": 95469568,
+                        "platform": "macos",
+                        "privateUsageBytes": 36078528,
+                        "privateWorkingSetBytes": 35405824,
+                        "workingSetBytes": 95469568
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:08.827",
+                        "peakWorkingSetBytes": 94224384,
+                        "platform": "macos",
+                        "privateUsageBytes": 35603392,
+                        "privateWorkingSetBytes": 34930688,
+                        "workingSetBytes": 94208000
+                    }
+                },
+                "route": "legacy ClassesPage",
+                "section": "Co-Teacher",
+                "widgetCountWhileActive": 632,
+                "width": 1024
+            },
+            "locale": "en_US",
+            "next": {
+                "classId": "1",
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_coteacher_en_US_light_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.285",
+                        "peakWorkingSetBytes": 96256000,
+                        "platform": "macos",
+                        "privateUsageBytes": 36864984,
+                        "privateWorkingSetBytes": 36175872,
+                        "workingSetBytes": 96256000
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.219",
+                        "peakWorkingSetBytes": 95485952,
+                        "platform": "macos",
+                        "privateUsageBytes": 36078528,
+                        "privateWorkingSetBytes": 35405824,
+                        "workingSetBytes": 95469568
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.319",
+                        "peakWorkingSetBytes": 96452608,
+                        "platform": "macos",
+                        "privateUsageBytes": 37061592,
+                        "privateWorkingSetBytes": 36372480,
+                        "workingSetBytes": 96452608
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "section": "Co-Teacher",
+                "selectedEditorDescendantCount": 162,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 210,
+                "widgetCountWhileActive": 210,
+                "width": 1024
+            },
+            "sameSelectedClass": true,
+            "section": "coteacher",
+            "selectedClassId": "1",
+            "theme": "light"
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "classId": 1,
+                "classScopedWidgetCount": 192,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_details_times_en_US_dark_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.731",
+                        "peakWorkingSetBytes": 97517568,
+                        "platform": "macos",
+                        "privateUsageBytes": 37569496,
+                        "privateWorkingSetBytes": 36880384,
+                        "workingSetBytes": 96960512
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.746",
+                        "peakWorkingSetBytes": 97517568,
+                        "platform": "macos",
+                        "privateUsageBytes": 37569496,
+                        "privateWorkingSetBytes": 36880384,
+                        "workingSetBytes": 96960512
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.322",
+                        "peakWorkingSetBytes": 96731136,
+                        "platform": "macos",
+                        "privateUsageBytes": 37340120,
+                        "privateWorkingSetBytes": 36651008,
+                        "workingSetBytes": 96731136
+                    }
+                },
+                "route": "legacy ClassesPage",
+                "section": "Details and Times",
+                "widgetCountWhileActive": 1148,
+                "width": 1024
+            },
+            "locale": "en_US",
+            "next": {
+                "classId": "1",
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_details_times_en_US_dark_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.783",
+                        "peakWorkingSetBytes": 97517568,
+                        "platform": "macos",
+                        "privateUsageBytes": 37684184,
+                        "privateWorkingSetBytes": 36995072,
+                        "workingSetBytes": 97075200
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.748",
+                        "peakWorkingSetBytes": 97517568,
+                        "platform": "macos",
+                        "privateUsageBytes": 37569496,
+                        "privateWorkingSetBytes": 36880384,
+                        "workingSetBytes": 96960512
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.806",
+                        "peakWorkingSetBytes": 97517568,
+                        "platform": "macos",
+                        "privateUsageBytes": 37684184,
+                        "privateWorkingSetBytes": 36995072,
+                        "workingSetBytes": 97075200
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "section": "Details and Times",
+                "selectedEditorDescendantCount": 162,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 210,
+                "widgetCountWhileActive": 210,
+                "width": 1024
+            },
+            "sameSelectedClass": true,
+            "section": "details_times",
+            "selectedClassId": "1",
+            "theme": "dark"
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "classId": 1,
+                "classScopedWidgetCount": 192,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_coteacher_en_US_dark_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.152",
+                        "peakWorkingSetBytes": 97861632,
+                        "platform": "macos",
+                        "privateUsageBytes": 37684184,
+                        "privateWorkingSetBytes": 36995072,
+                        "workingSetBytes": 97075200
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.167",
+                        "peakWorkingSetBytes": 97861632,
+                        "platform": "macos",
+                        "privateUsageBytes": 37684184,
+                        "privateWorkingSetBytes": 36995072,
+                        "workingSetBytes": 97075200
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:09.807",
+                        "peakWorkingSetBytes": 97517568,
+                        "platform": "macos",
+                        "privateUsageBytes": 37684184,
+                        "privateWorkingSetBytes": 36995072,
+                        "workingSetBytes": 97075200
+                    }
+                },
+                "route": "legacy ClassesPage",
+                "section": "Co-Teacher",
+                "widgetCountWhileActive": 632,
+                "width": 1024
+            },
+            "locale": "en_US",
+            "next": {
+                "classId": "1",
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_coteacher_en_US_dark_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.202",
+                        "peakWorkingSetBytes": 97861632,
+                        "platform": "macos",
+                        "privateUsageBytes": 37684184,
+                        "privateWorkingSetBytes": 36995072,
+                        "workingSetBytes": 97075200
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.168",
+                        "peakWorkingSetBytes": 97861632,
+                        "platform": "macos",
+                        "privateUsageBytes": 37684184,
+                        "privateWorkingSetBytes": 36995072,
+                        "workingSetBytes": 97075200
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.224",
+                        "peakWorkingSetBytes": 97861632,
+                        "platform": "macos",
+                        "privateUsageBytes": 37684184,
+                        "privateWorkingSetBytes": 36995072,
+                        "workingSetBytes": 97075200
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "section": "Co-Teacher",
+                "selectedEditorDescendantCount": 162,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 210,
+                "widgetCountWhileActive": 210,
+                "width": 1024
+            },
+            "sameSelectedClass": true,
+            "section": "coteacher",
+            "selectedClassId": "1",
+            "theme": "dark"
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "classId": 1,
+                "classScopedWidgetCount": 192,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_details_times_ko_KR_light_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.593",
+                        "peakWorkingSetBytes": 98222080,
+                        "platform": "macos",
+                        "privateUsageBytes": 38061016,
+                        "privateWorkingSetBytes": 37371904,
+                        "workingSetBytes": 98222080
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.608",
+                        "peakWorkingSetBytes": 98238464,
+                        "platform": "macos",
+                        "privateUsageBytes": 38061016,
+                        "privateWorkingSetBytes": 37371904,
+                        "workingSetBytes": 98222080
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.226",
+                        "peakWorkingSetBytes": 97861632,
+                        "platform": "macos",
+                        "privateUsageBytes": 37684184,
+                        "privateWorkingSetBytes": 36995072,
+                        "workingSetBytes": 97107968
+                    }
+                },
+                "route": "legacy ClassesPage",
+                "section": "Details and Times",
+                "widgetCountWhileActive": 1148,
+                "width": 1024
+            },
+            "locale": "ko_KR",
+            "next": {
+                "classId": "1",
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_details_times_ko_KR_light_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.646",
+                        "peakWorkingSetBytes": 98648064,
+                        "platform": "macos",
+                        "privateUsageBytes": 38454232,
+                        "privateWorkingSetBytes": 37765120,
+                        "workingSetBytes": 98648064
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.610",
+                        "peakWorkingSetBytes": 98238464,
+                        "platform": "macos",
+                        "privateUsageBytes": 38061016,
+                        "privateWorkingSetBytes": 37371904,
+                        "workingSetBytes": 98222080
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.668",
+                        "peakWorkingSetBytes": 98811904,
+                        "platform": "macos",
+                        "privateUsageBytes": 38618072,
+                        "privateWorkingSetBytes": 37928960,
+                        "workingSetBytes": 98811904
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "section": "Details and Times",
+                "selectedEditorDescendantCount": 162,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 210,
+                "widgetCountWhileActive": 210,
+                "width": 1024
+            },
+            "sameSelectedClass": true,
+            "section": "details_times",
+            "selectedClassId": "1",
+            "theme": "light"
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "classId": 1,
+                "classScopedWidgetCount": 192,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_coteacher_ko_KR_light_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.016",
+                        "peakWorkingSetBytes": 99598336,
+                        "platform": "macos",
+                        "privateUsageBytes": 38765528,
+                        "privateWorkingSetBytes": 38076416,
+                        "workingSetBytes": 98959360
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.030",
+                        "peakWorkingSetBytes": 99598336,
+                        "platform": "macos",
+                        "privateUsageBytes": 38765528,
+                        "privateWorkingSetBytes": 38076416,
+                        "workingSetBytes": 98959360
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:10.669",
+                        "peakWorkingSetBytes": 98828288,
+                        "platform": "macos",
+                        "privateUsageBytes": 38618072,
+                        "privateWorkingSetBytes": 37928960,
+                        "workingSetBytes": 98811904
+                    }
+                },
+                "route": "legacy ClassesPage",
+                "section": "Co-Teacher",
+                "widgetCountWhileActive": 632,
+                "width": 1024
+            },
+            "locale": "ko_KR",
+            "next": {
+                "classId": "1",
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_coteacher_ko_KR_light_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.067",
+                        "peakWorkingSetBytes": 99598336,
+                        "platform": "macos",
+                        "privateUsageBytes": 38912984,
+                        "privateWorkingSetBytes": 38223872,
+                        "workingSetBytes": 99106816
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.031",
+                        "peakWorkingSetBytes": 99598336,
+                        "platform": "macos",
+                        "privateUsageBytes": 38765528,
+                        "privateWorkingSetBytes": 38076416,
+                        "workingSetBytes": 98959360
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.089",
+                        "peakWorkingSetBytes": 99598336,
+                        "platform": "macos",
+                        "privateUsageBytes": 39060440,
+                        "privateWorkingSetBytes": 38371328,
+                        "workingSetBytes": 99254272
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "section": "Co-Teacher",
+                "selectedEditorDescendantCount": 162,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 210,
+                "widgetCountWhileActive": 210,
+                "width": 1024
+            },
+            "sameSelectedClass": true,
+            "section": "coteacher",
+            "selectedClassId": "1",
+            "theme": "light"
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "classId": 1,
+                "classScopedWidgetCount": 192,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_details_times_ko_KR_dark_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.453",
+                        "peakWorkingSetBytes": 99893248,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.468",
+                        "peakWorkingSetBytes": 99893248,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.091",
+                        "peakWorkingSetBytes": 99598336,
+                        "platform": "macos",
+                        "privateUsageBytes": 39060440,
+                        "privateWorkingSetBytes": 38371328,
+                        "workingSetBytes": 99106816
+                    }
+                },
+                "route": "legacy ClassesPage",
+                "section": "Details and Times",
+                "widgetCountWhileActive": 1148,
+                "width": 1024
+            },
+            "locale": "ko_KR",
+            "next": {
+                "classId": "1",
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_details_times_ko_KR_dark_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.504",
+                        "peakWorkingSetBytes": 99893248,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.470",
+                        "peakWorkingSetBytes": 99893248,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.527",
+                        "peakWorkingSetBytes": 99893248,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "section": "Details and Times",
+                "selectedEditorDescendantCount": 162,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 210,
+                "widgetCountWhileActive": 210,
+                "width": 1024
+            },
+            "sameSelectedClass": true,
+            "section": "details_times",
+            "selectedClassId": "1",
+            "theme": "dark"
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "classId": 1,
+                "classScopedWidgetCount": 192,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_coteacher_ko_KR_dark_legacy.png",
+                "instantiatedEditorCount": 1,
+                "loadedEditorClassCount": 1,
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.872",
+                        "peakWorkingSetBytes": 100106240,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    },
+                    "afterReleaseAndClose": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.886",
+                        "peakWorkingSetBytes": 100106240,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.528",
+                        "peakWorkingSetBytes": 99893248,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    }
+                },
+                "route": "legacy ClassesPage",
+                "section": "Co-Teacher",
+                "widgetCountWhileActive": 632,
+                "width": 1024
+            },
+            "locale": "ko_KR",
+            "next": {
+                "classId": "1",
+                "classScopedWidgetCount": 0,
+                "clearedOnSuspension": true,
+                "fixtureClassCount": 96,
+                "height": 768,
+                "image": "classes_coteacher_ko_KR_dark_next.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.921",
+                        "peakWorkingSetBytes": 100106240,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.887",
+                        "peakWorkingSetBytes": 100106240,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    },
+                    "scope": "Whole-process observations, not page allocation or memory budgets",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T02:05:11.943",
+                        "peakWorkingSetBytes": 100106240,
+                        "platform": "macos",
+                        "privateUsageBytes": 39125976,
+                        "privateWorkingSetBytes": 38436864,
+                        "workingSetBytes": 99319808
+                    }
+                },
+                "route": "Next ClassesNavigatorPage",
+                "section": "Co-Teacher",
+                "selectedEditorDescendantCount": 162,
+                "selectedEditorWidgetCount": 1,
+                "widgetCountAfterSuspension": 210,
+                "widgetCountWhileActive": 210,
+                "width": 1024
+            },
+            "sameSelectedClass": true,
+            "section": "coteacher",
+            "selectedClassId": "1",
+            "theme": "dark"
+        }
+    ],
+    "fixture": "generated-large-classes-visual.tps",
+    "fixtureClassCount": 96,
+    "memoryLimitation": "Measurements are whole-process working/private memory snapshots; they do not isolate widget allocations or establish a memory budget.",
+    "scope": "Paired legacy and Next Classes Details/Times and Co-Teacher surfaces",
+    "viewport": {
+        "height": 768,
+        "width": 1024
+    }
+}

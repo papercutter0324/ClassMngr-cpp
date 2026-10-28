@@ -38,10 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-28
-- Current note: 7A.1–7A.15 and candidates #23–24 remain accepted. Batch 3
-  candidate #25, Class details, create/edit, and co-teachers, is active. The 7A
-  screenshot comparison and memory measurement remain open, as do the 7A and
-  Phase 7 exit gates. See the
+- Current note: 7A.1–7A.15 and candidates #23–25 remain accepted. Batch 3
+  candidate #26, Class notes, is active. The 7A screenshot comparison and
+  memory evidence remain open, as do the 7A and Phase 7 exit gates. See the
   progress log for slice evidence and limits.
 
 ### Slice batches
@@ -719,7 +718,27 @@ keep current status in this plan and live batches in the shared tracker.
   `DocumentCatalog` symbols; it did not run and was not rerun. The focused suite
   uses the standalone Next WorkspaceStore path. No full suite or Windows result
   is claimed. The 7A screenshot/memory evidence and 7A/Phase 7 exit gates remain
-  open. Candidate #25, Class details, create/edit, and co-teachers, is active.
+  open.
+
+### Candidate #25 — Class details, create/edit, and co-teachers accepted (2026-10-28)
+
+- Commit: `c0cb9c93`. Independent acceptance confirmed the Details/Times and
+  Co-Teacher surfaces, with create/edit behavior and lifecycle coverage.
+- Verification: affected `ClassMngrNext`, Bootstrap, PageHost, Classes
+  navigator UI/WorkspaceStore, and related application-contract targets built.
+  The corrected focused CTest selection passed 21/21. The Manual save test
+  passed three QtTest results including setup/cleanup and confirmed manual and
+  automatic save behavior. The route boundary scan,
+  `NextStartupWorkspaceDependencyBoundary`, resource inventory `--check` (194
+  runtime records), and `git diff --check` passed.
+- Evidence and limits: the [paired capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/class-details-coteacher/README.md)
+  records the 96-class fixture, English/Korean × light/dark matrix, page and
+  lifecycle counts, and sequential whole-process memory scope. Legacy and
+  Next have substantially different layout/shell scope, so these captures do
+  not establish full visual parity. The `Level 02` value shown only by Next
+  reflects a fixture/catalog limitation for the selected E4 class. The 7A
+  screenshot comparison and memory evidence and the 7A/Phase 7 exit gates
+  remain open.
 
 ## Objective
 
