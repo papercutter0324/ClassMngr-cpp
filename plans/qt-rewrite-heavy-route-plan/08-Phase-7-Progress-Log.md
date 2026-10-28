@@ -911,3 +911,38 @@ Entries are preserved in their original document order.
   UI results, not physical hardware. No full suite, Windows, physical-printer,
   or memory-budget result is claimed. The 7A screenshot/memory evidence and
   7A/Phase 7 exit gates remain open.
+
+### Candidate #33 — Calendar events, preferences, and month grid accepted (2026-10-28)
+
+- Commit: `21f2d98c` (`Phase7 - Migrate calendar events and month grid`). The
+  lazy Next Calendar route uses typed calendar actions and the
+  WorkspaceStore path bridge. `ClassMngrNextCalendarUi` is the narrow target;
+  the strict `NextStartupWorkspaceDependencyBoundary` passes without adding
+  broad Legacy Features, UI Shared, or Core targets. Workbook import remains
+  candidate #34.
+- Behavior: Upcoming event-type filters no longer filter the month grid, which
+  remains complete like Legacy. Persisted event colors appear as Upcoming row
+  swatches. The scope dropdown and compact colored controls remain Next
+  presentation differences. Repeat occurrence/suffix edit and delete,
+  cancel/no-write, failure/retry, preferences, and reset are covered. The
+  [paired capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/calendar/README.md)
+  records its fixture, selector commands, and visual limits.
+- Verification: incremental `build/macos-clang-debug` configure/build reran
+  and source ownership validated one owner for 1,879 handwritten sources.
+  Final direct `ClassMngrNextCalendarPageTests -v1` passed 20/20; focused CTest
+  passed 3/3 (`NextStartupWorkspaceDependencyBoundary`,
+  `ClassMngrNextCalendarPageTests`,
+  `ClassMngrNextCalendarWorkspaceStoreActionsTests`). Bridge coverage includes
+  event save/readback, repeat-series operations, display/first-day preferences,
+  academic-schedule JSON round-trip, and missing-path failures. Resource
+  inventory `--check` and `git diff --check` passed. Gateway edit hashes match
+  their pre-candidate values.
+- Evidence and limits: 12 captures cover English/Korean × Light/Dark at
+  1280×920. Legacy dark grid cells remain light; Next follows the dark palette.
+  Legacy uses larger badges and separate grid-top/upcoming scroll captures
+  because its grid has an 840 px minimum; Next fits both in one view. No
+  clipping was observed. Manifest counts record 35 visible days, one retained
+  range, three cached events, Upcoming limit 10, and zero QML roots/views after
+  leave. Whole-process memory values are observational only, not a page budget
+  or Phase 9 acceptance. No clean build, full suite, Windows build, or Phase 9
+  memory budget ran. No production changes after the commit are pending.

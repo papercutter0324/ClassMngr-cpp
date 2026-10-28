@@ -189,17 +189,20 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-28 (candidate #32 accepted; #33 active)
+### Current checkpoint — 2026-10-28 (candidate #33 accepted; #34 active)
 
-Candidate #32, testing assignments and Schedule output/printing, is accepted at
-`51faa658`. The shared value-only print document and narrow Qt PDF/print
-targets preserve the existing preview and output controls without linking
-`ClassMngrNext` to broad Legacy targets. Focused CTest passed 16/16, the PDF
-suite passed 10/10, and the repair-delta CTest passed 5/5. The independent
-Tester verified source ownership, the Next dependency boundary, path-scoped
-assignment behavior, PDF geometry/content, and the 21-image capture manifest.
-No full suite, Windows build, physical-printer run, or pixel-parity claim is
-recorded. The 7A screenshot/memory evidence and 7A/Phase 7 exit gates remain
+Candidate #33, Calendar events, preferences, and month grid, is accepted at
+`21f2d98c`. The lazy Next Calendar page uses typed actions and a WorkspaceStore
+path bridge behind the narrow `ClassMngrNextCalendarUi` target; its QML grid
+loads only bounded active ranges and releases on page leave. Event-type
+filters affect Upcoming Events only, and the grid retains all otherwise-visible
+types. Focused CTest passed 3/3 after the parity repair; the page QtTest passed
+20/20. Configure validated 1,879 source owners and the strict Next dependency
+boundary passed. Twelve 1280×920 captures cover English/Korean and Light/Dark;
+the [capture package](../docs/qt-rewrite/visual-baseline/next/phase-7/calendar/README.md)
+records the qualitative comparisons and limits. Calendar import is candidate
+#34. No full suite, Windows build, or Phase 9 memory-budget acceptance is
+claimed. The 7A screenshot/memory evidence and 7A/Phase 7 exit gates remain
 open. Batch 3 stays unpushed through candidate #40; preserve the user's
 unstaged Schedule Import Gateway edits.
 

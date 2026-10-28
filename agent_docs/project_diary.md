@@ -2,6 +2,15 @@
 
 ## Decisions and Lessons
 
+### Phase 7 Calendar page and QML boundary — 2026-10-28
+
+Candidate #33 extends the narrow `ClassMngrNextCalendarUi` source owner with a
+lazy Next Calendar page, Store-backed typed actions, and a QML grid adapter.
+Keep workbook import in candidate #34, event-type filters on Upcoming Events
+only, and the month grid limited to its active ranges. The tracked capture
+package records layout and dark-theme differences without claiming pixel
+parity; whole-process observations do not establish a page memory budget.
+
 ### Phase 7 Schedule output target boundary — 2026-10-28
 
 Candidate #32 must retain the existing PDF preview and printer controls while

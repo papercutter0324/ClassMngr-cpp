@@ -42,8 +42,10 @@ ownership, dependencies, lifecycle, and verification.
 32. **Accepted — Testing assignments and Schedule output/printing** (`51faa658`).
     See the [Phase 7 progress log](08-Phase-7-Progress-Log.md) and [capture
     package](../../docs/qt-rewrite/visual-baseline/next/phase-7/schedule-testing-output/README.md).
-33. **Active — Calendar events, preferences, and month grid.**
-34. Calendar import.
+33. **Accepted — Calendar events, preferences, and month grid** (`21f2d98c`).
+    See the [Phase 7 progress log](08-Phase-7-Progress-Log.md) and [capture
+    package](../../docs/qt-rewrite/visual-baseline/next/phase-7/calendar/README.md).
+34. **Active — Calendar import.**
 35. Roster editor/student model with model/view and compact state.
 36. Roster imports/transfers.
 37. Roster templates/printing.
@@ -56,7 +58,8 @@ compact resident state. Bound import, review, and output data; release it when
 each stage completes. Candidate #31 schedule workbook import is distinct from
 #19 teacher workbook import. The 7J.1 Sub Prep path remains a combined
 large-workspace/output acceptance including 96 classes and 8 slots. Begin
-next-batch discovery when candidate #39 starts. Search then for possible work
+next-batch discovery when candidate #39 starts. Batch 3 remains open through
+#40 and must not be pushed before #40 completes. Search at #39 for possible work
 beyond #40: Campus Directory; Document catalog/viewer; 7J.1 Sub Prep; legacy
 `.db` compatibility import evidence; global shell, preferences, permissions,
 and updater parity; and any other remaining slices. No separate batch-history
