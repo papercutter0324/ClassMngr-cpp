@@ -58,6 +58,9 @@ struct ClassesNavigatorPageActions final
         const QString&, const Domain::TeacherId&)> readClassCoTeacherTeacherDetails;
     std::function<Application::ClassNotesPageReadResult(
         const QString&, const Domain::ClassId&)> readClassNotes;
+    std::function<Application::ClassAnalyticsPageReadResult(
+        const QString&, const Application::ClassAnalyticsPageReadRequest&)>
+        readClassAnalytics;
     std::function<Application::ClassDetailsSaveWorkflowResult(
         const QString&, const Application::ClassDetailsSaveWorkflowRequest&)>
         saveClassDetails;

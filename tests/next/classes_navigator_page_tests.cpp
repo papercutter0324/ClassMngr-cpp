@@ -15,6 +15,7 @@
 #include <QTabBar>
 #include <QTabWidget>
 #include <QTableWidget>
+#include <QTableView>
 #include <QTextEdit>
 #include <QToolButton>
 #include <QTranslator>
@@ -134,6 +135,8 @@ struct ReadState final
     bool failDetailsRead = false;
     bool failNotesRead = false;
     bool failNotesTeacherRead = false;
+    bool failAnalyticsRead = false;
+    bool analyticsDataAvailable = true;
     bool blankNotesClassMetadata = false;
     bool failNotesSave = false;
     bool failScheduleSave = false;
@@ -164,12 +167,16 @@ struct ReadState final
     int detailsSaveCount = 0;
     int notesReadCount = 0;
     int notesSaveCount = 0;
+    int analyticsReadCount = 0;
+    int analyticsRankingCount = 25;
     int coTeacherSaveCount = 0;
     int createCount = 0;
     int deleteCount = 0;
     int resolveCount = 0;
     int confirmDeleteCount = 0;
     QString lastUnsavedReason;
+    std::vector<Domain::ClassId> analyticsClassIds;
+    std::vector<Application::ClassAnalyticsPageReadRequest> analyticsRequests;
     std::vector<Application::ClassesNavigationSnapshotQuery> navigationQueries;
 };
 
@@ -372,6 +379,63 @@ struct PageFixture final
                         .classFields = Domain::Result<
                             Application::ClassNotesPageFields>::success(std::move(fields)),
                         .teacherDisplayName = std::move(teacherName)
+                    });
+                };
+                actions.readClassAnalytics = [this](
+                    const QString&,
+                    const Application::ClassAnalyticsPageReadRequest& request
+                    ) {
+                    ++state.analyticsReadCount;
+                    state.analyticsClassIds.push_back(request.classId);
+                    state.analyticsRequests.push_back(request);
+                    if (state.failAnalyticsRead)
+                    {
+                        return Application::ClassAnalyticsPageReadResult::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "analytics read failed",
+                            .recoverable = true
+                        });
+                    }
+                    Application::ClassAnalyticsSnapshot snapshot;
+                    snapshot.hasData = state.analyticsDataAvailable;
+                    snapshot.classAverage3 =
+                        Application::ClassAnalyticsAverageThousandths{4'125};
+                    snapshot.classAverageLetter = Domain::SpeakingEvaluationGrade::A;
+                    snapshot.rosterStudentCount =
+                        Application::ClassAnalyticsRosterRowCount{
+                            static_cast<std::size_t>(state.analyticsRankingCount)};
+                    snapshot.fullyScoredCount =
+                        Application::ClassAnalyticsFullyScoredStudentCount{
+                            static_cast<std::size_t>(state.analyticsRankingCount)};
+                    snapshot.strongestLabels = {u"Grammar"};
+                    snapshot.focusLabels = {u"Fluency"};
+                    for (int row = 0; row < state.analyticsRankingCount; ++row)
+                    {
+                        Application::ClassAnalyticsStudentRank rank;
+                        rank.englishName = QStringLiteral("Student%1")
+                            .arg(row + 1).toStdU16String();
+                        rank.koreanName = u"학생";
+                        rank.overall3 =
+                            Application::ClassAnalyticsAverageThousandths{4'125};
+                        rank.overallLetter = Domain::SpeakingEvaluationGrade::A;
+                        snapshot.rankings.push_back(std::move(rank));
+                    }
+                    Application::ClassAnalyticsDashboard dashboard;
+                    dashboard.selectedSnapshot = std::move(snapshot);
+                    dashboard.classShapeEvaluationName = u"Winter";
+                    dashboard.classShapeSnapshot = dashboard.selectedSnapshot;
+                    dashboard.yearToDatePoints.push_back({
+                        .evaluationName = u"Winter",
+                        .classAverage3 =
+                            Application::ClassAnalyticsAverageThousandths{4'125},
+                        .classAverageLetter = Domain::SpeakingEvaluationGrade::A
+                    });
+                    return Application::ClassAnalyticsPageReadResult::success({
+                        .classId = request.classId,
+                        .dashboard = std::move(dashboard),
+                        .selectedEvaluationName = request.useDefaultSelection
+                            ? std::optional<std::u16string>(u"Winter")
+                            : request.selectedEvaluationName
                     });
                 };
                 actions.readClassCoTeacher = [this](
@@ -641,6 +705,8 @@ private slots:
     void notesAutosaveManualModeAndFailedDrafts();
     void notesReadRetryDiscardAndTextBounds();
     void notesDraftGuardsClassAndWorkspaceChanges();
+    void analyticsLoadsOnlySelectedClassAndUsesOneRankingModel();
+    void analyticsReadFailureRetryEmptyStateAndSelectionRetention();
     void coTeacherKeepsWideIdsAndRetriesSaveFailures();
     void coTeacherLoadsOnlySelectedTeacherAndRetriesProfileRead();
     void scheduleEditorStopsAtFourteenRows();
@@ -1661,6 +1727,121 @@ void ClassesNavigatorPageTests::notesDraftGuardsClassAndWorkspaceChanges()
     QCOMPARE(notes->toPlainText(), QStringLiteral("saved class two"));
 }
 
+void ClassesNavigatorPageTests::
+analyticsLoadsOnlySelectedClassAndUsesOneRankingModel()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    std::vector<std::pair<int, QString>> classRows;
+    std::vector<Application::ClassesNavigationEntry> navigationRows;
+    for (int id = 1; id <= 96; ++id)
+    {
+        const QString name = QStringLiteral("Class %1").arg(id);
+        classRows.emplace_back(id, name);
+        navigationRows.push_back(navigationEntry(
+            id, name, QStringLiteral("E4"), QStringLiteral("Theseus"),
+            QStringLiteral("Monday"), QStringLiteral("9:00 AM")));
+    }
+    fixture.state.classes = classList(classRows);
+    fixture.state.navigation = navigation(std::move(navigationRows));
+    QVERIFY(fixture.activate());
+    Ui::ClassesNavigatorPage* const page = fixture.page();
+    Ui::SelectedClassEditor* const editor = page->selectedClassEditor();
+    QVERIFY(editor);
+    QCOMPARE(page->model()->classCount(), 96);
+    QVERIFY(editor->sections());
+    QCOMPARE(editor->sections()->count(), 4);
+    editor->sections()->setCurrentIndex(3);
+    const int reusableEditorWidgetCount = widgetCount(editor);
+    QCOMPARE(fixture.state.analyticsReadCount, 1);
+    QCOMPARE(fixture.state.analyticsClassIds.size(), std::size_t(1));
+    QCOMPARE(fixture.state.analyticsClassIds.front().value(), std::string("1"));
+    QVERIFY(fixture.state.analyticsRequests.front().useDefaultSelection);
+    QCOMPARE(fixture.state.analyticsRequests.front().classId.value(),
+        std::string("1"));
+
+    QTableView* const ranking = editor->analyticsRankingTable();
+    QComboBox* const evaluation = editor->analyticsEvaluationChoice();
+    QVERIFY(ranking && evaluation);
+    QCOMPARE(ranking->model()->rowCount(), 25);
+    QCOMPARE(evaluation->currentData().toString(), QStringLiteral("Winter"));
+    QCOMPARE(fixture.state.analyticsReadCount, 1);
+
+    evaluation->setCurrentIndex(0);
+    QCOMPARE(fixture.state.analyticsReadCount, 2);
+    QVERIFY(!fixture.state.analyticsRequests.back().useDefaultSelection);
+    QVERIFY(!fixture.state.analyticsRequests.back().selectedEvaluationName);
+    QCOMPARE(ranking->model()->rowCount(), 25);
+
+    evaluation->setCurrentIndex(3);
+    QCOMPARE(fixture.state.analyticsReadCount, 3);
+    QVERIFY(!fixture.state.analyticsRequests.back().useDefaultSelection);
+    QCOMPARE(fixture.state.analyticsRequests.back().selectedEvaluationName.value(),
+        std::u16string(u"Summer"));
+    QCOMPARE(evaluation->currentData().toString(), QStringLiteral("Summer"));
+
+    editor->sections()->setCurrentIndex(2);
+    QCOMPARE(ranking->model()->rowCount(), 0);
+    editor->sections()->setCurrentIndex(3);
+    QCOMPARE(fixture.state.analyticsReadCount, 4);
+    QVERIFY(!fixture.state.analyticsRequests.back().useDefaultSelection);
+    QCOMPARE(fixture.state.analyticsRequests.back().selectedEvaluationName.value(),
+        std::u16string(u"Summer"));
+    QCOMPARE(ranking->model()->rowCount(), 25);
+
+    page->classList()->setCurrentIndex(page->model()->indexForClassId(classId(2)));
+    QCOMPARE(editor->classId()->value(), std::string("2"));
+    QCOMPARE(ranking->model()->rowCount(), 0);
+    QCOMPARE(widgetCount(editor), reusableEditorWidgetCount);
+    editor->sections()->setCurrentIndex(3);
+    QCOMPARE(fixture.state.analyticsReadCount, 5);
+    QCOMPARE(fixture.state.analyticsClassIds.back().value(), std::string("2"));
+    QVERIFY(fixture.state.analyticsRequests.back().useDefaultSelection);
+    QCOMPARE(evaluation->currentData().toString(), QStringLiteral("Winter"));
+    QCOMPARE(ranking->model()->rowCount(), 25);
+}
+
+void ClassesNavigatorPageTests::
+analyticsReadFailureRetryEmptyStateAndSelectionRetention()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    fixture.state.classes = classList({{1, QStringLiteral("Selected")} });
+    fixture.state.navigation = navigation({navigationEntry(
+        1, QStringLiteral("Selected"), QStringLiteral("E4"),
+        QStringLiteral("Theseus"), QStringLiteral("Monday"),
+        QStringLiteral("9:00 AM"))});
+    fixture.state.failAnalyticsRead = true;
+    QVERIFY(fixture.activate());
+    Ui::SelectedClassEditor* const editor =
+        fixture.page()->selectedClassEditor();
+    QVERIFY(editor);
+    editor->sections()->setCurrentIndex(3);
+    QLabel* const status = editor->analyticsStatusLabel();
+    QPushButton* const retry = editor->findChild<QPushButton*>(
+        QStringLiteral("classEditorRetryAnalytics"));
+    QVERIFY(status && retry);
+    QVERIFY(status->text().contains(QStringLiteral("analytics read failed")));
+    QVERIFY(!retry->isHidden());
+    QCOMPARE(editor->analyticsRankingTable()->model()->rowCount(), 0);
+
+    fixture.state.failAnalyticsRead = false;
+    retry->click();
+    QVERIFY(retry->isHidden());
+    QCOMPARE(editor->analyticsEvaluationChoice()->currentData().toString(),
+        QStringLiteral("Winter"));
+    QCOMPARE(editor->analyticsRankingTable()->model()->rowCount(), 25);
+
+    fixture.state.analyticsDataAvailable = false;
+    editor->analyticsEvaluationChoice()->setCurrentIndex(2);
+    QCOMPARE(editor->analyticsRankingTable()->model()->rowCount(), 0);
+    const QLabel* const empty = editor->findChild<QLabel*>(
+        QStringLiteral("classEditorAnalyticsEmpty"));
+    QVERIFY(empty && !empty->isHidden());
+    QCOMPARE(editor->analyticsEvaluationChoice()->currentData().toString(),
+        QStringLiteral("Speech Contest"));
+}
+
 void ClassesNavigatorPageTests::addDeleteAndWorkspaceLifecycleClearSelectedEditor()
 {
     PageFixture fixture;
@@ -1793,11 +1974,30 @@ productionKoreanCatalogTranslatesNavigatorDisplay()
     QCOMPARE(page->model()->data(page->model()->index(0, 0)).toString(),
         QStringLiteral("E4 Hercules • 토 9:00"));
     QCOMPARE(page->selectedClassId()->value(), std::string("8"));
+    Ui::SelectedClassEditor* const editor = page->selectedClassEditor();
+    QVERIFY(editor);
+    editor->sections()->setCurrentIndex(3);
+    QCoreApplication::sendEvent(editor, &languageChange);
+    QCOMPARE(editor->sections()->tabText(3), QStringLiteral("분석"));
+    QCOMPARE(editor->findChild<QLabel*>(QStringLiteral(
+        "classEditorAnalyticsHeading"))->text(), QStringLiteral("수업 분석"));
+    QCOMPARE(editor->findChild<QLabel*>(QStringLiteral(
+        "classEditorAnalyticsEvaluationLabel"))->text(), QStringLiteral("평가"));
+    QCOMPARE(editor->analyticsEvaluationChoice()->itemText(1), QStringLiteral("겨울"));
+    QCOMPARE(editor->analyticsRankingTable()->model()->headerData(
+        0, Qt::Horizontal).toString(), QStringLiteral("순위"));
+    QWidget* const analyticsSummary = editor->findChild<QWidget*>(QStringLiteral(
+        "classEditorAnalyticsSummary"));
+    QVERIFY(analyticsSummary && !analyticsSummary->isHidden());
     QVERIFY(qApp->removeTranslator(&translator));
 
     QEvent englishChange(QEvent::LanguageChange);
     QCoreApplication::sendEvent(page, &englishChange);
+    QCoreApplication::sendEvent(editor, &englishChange);
     QCOMPARE(page->gradeTabs()->tabText(1), QStringLiteral("All"));
+    QCOMPARE(editor->sections()->tabText(3), QStringLiteral("Analytics"));
+    QCOMPARE(editor->analyticsEvaluationChoice()->currentData().toString(),
+        QStringLiteral("Winter"));
     QCOMPARE(page->selectedClassId()->value(), std::string("8"));
 }
 

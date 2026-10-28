@@ -1,21 +1,32 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
+#include "data/repositories/settings_repository.h"
+#include "data/repositories/speaking_eval_repository.h"
 #include "domain/models/class_info.h"
+#include "domain/models/speaking_evaluation.h"
+#include "features/calendar/academic_calendar_schedule.h"
 #include "next/application/classes_list_read_snapshot.h"
 #include "next/application/classes_navigation_snapshot.h"
+#include "next/application/evaluation_default_selection.h"
 #include "next/platform/workspace_store_class_editor_actions.h"
+#include "next/platform/workspace_store_class_analytics_actions.h"
 #include "next/platform/workspace_store_classes_navigator_read_actions.h"
 
 #include <QFile>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QDate>
 #include <QtTest/QtTest>
 
 #include <algorithm>
 #include <limits>
 #include <string>
+#include <vector>
 
 using namespace ClassMngr::Next;
 
@@ -30,6 +41,134 @@ QString fixturePath(QTemporaryDir& directory, const QString& filename)
         QStringLiteral(CLASSMNGR_CLASSES_NAVIGATOR_FIXTURE), destination)
         ? destination
         : QString{};
+}
+
+QString speakingAnalyticsFixturePath(
+    QTemporaryDir& directory,
+    const QString& filename
+    )
+{
+    const QString destination = directory.filePath(filename);
+    QFile::remove(destination);
+    return QFile::copy(
+        QString::fromUtf8(CLASSMNGR_SPEAKING_ANALYTICS_FIXTURE), destination)
+        ? destination
+        : QString{};
+}
+
+QString termScheduleJson()
+{
+    const QJsonObject elementaryInitialYear{
+        {QStringLiteral("winterStart"), QStringLiteral("2025-12-29")},
+        {QStringLiteral("weeks"), QJsonArray{11, 19, 11, 11}}
+    };
+    const QJsonObject middleInitialYear{
+        {QStringLiteral("winterStart"), QStringLiteral("2025-12-29")},
+        {QStringLiteral("weeks"), QJsonArray{11, 19, 4, 18}}
+    };
+    const QJsonObject elementaryCustomYear{
+        {QStringLiteral("winterStart"), QStringLiteral("2026-12-28")},
+        {QStringLiteral("weeks"), QJsonArray{10, 20, 11, 11}}
+    };
+    const QJsonObject middleCustomYear{
+        {QStringLiteral("winterStart"), QStringLiteral("2026-12-28")},
+        {QStringLiteral("weeks"), QJsonArray{10, 20, 4, 18}}
+    };
+    return QString::fromUtf8(QJsonDocument(QJsonObject{
+        {QStringLiteral("version"), 1},
+        {QStringLiteral("profiles"), QJsonObject{
+            {QStringLiteral("elementary"), QJsonObject{
+                {QStringLiteral("2026"), elementaryInitialYear},
+                {QStringLiteral("2027"), elementaryCustomYear}}},
+            {QStringLiteral("middle"), QJsonObject{
+                {QStringLiteral("2026"), middleInitialYear},
+                {QStringLiteral("2027"), middleCustomYear}}}
+        }}
+    }).toJson(QJsonDocument::Compact));
+}
+
+std::optional<Application::EvaluationPeriod> applicationPeriod(
+    const AcademicTerm term
+    )
+{
+    switch (term)
+    {
+    case AcademicTerm::Winter: return Application::EvaluationPeriod::Winter;
+    case AcademicTerm::Spring: return Application::EvaluationPeriod::Spring;
+    case AcademicTerm::Summer: return Application::EvaluationPeriod::Summer;
+    case AcademicTerm::Fall: return Application::EvaluationPeriod::Fall;
+    }
+    return std::nullopt;
+}
+
+std::optional<std::u16string> legacyDefaultForDate(
+    const AcademicCalendarSchedule& schedule,
+    const SchoolLevel schoolLevel,
+    const QDate& date,
+    const QStringList& populatedEvaluationNames
+    )
+{
+    const AcademicTermPosition position = schedule.termAt(schoolLevel, date);
+    if (!position.valid)
+    {
+        return std::nullopt;
+    }
+    const auto period = applicationPeriod(position.term);
+    if (!period)
+    {
+        return std::nullopt;
+    }
+    const QString currentName = QString::fromStdU16String(std::u16string(
+        Application::storedEvaluationName(*period)));
+    const auto selected = Application::selectDefaultEvaluationPeriod(
+        Application::EvaluationDefaultPolicy::CurrentOrPreviousTerm,
+        *period, populatedEvaluationNames.contains(currentName));
+    return selected
+        ? std::optional<std::u16string>(std::u16string(
+            Application::storedEvaluationName(*selected)))
+        : std::nullopt;
+}
+
+int createAnalyticsClass(
+    WorkspaceStore& store,
+    const QString& name,
+    const QString& grade,
+    const QStringList& populatedEvaluations
+    )
+{
+    const auto created = store.classRepository()->createClass(name);
+    if (!created)
+    {
+        return -1;
+    }
+    ClassInfo info;
+    info.classId = created.value();
+    info.classGrade = grade;
+    info.classLevel = QStringLiteral("Theseus");
+    info.readingBook = QStringLiteral("Reading Explorer 1");
+    info.essayBook = QStringLiteral("4A");
+    info.classColor = QStringLiteral("#FFFFFF");
+    info.fontColor = QStringLiteral("#000000");
+    if (!store.classInfoRepository()->saveClassDetailsDetailed(info, -1))
+    {
+        return -1;
+    }
+    for (const QString& evaluationName : populatedEvaluations)
+    {
+        SpeakingEvalRows rows = SpeakingEval::emptyRows();
+        rows[0][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+            QStringLiteral("Analytics Student");
+        rows[0][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+            QStringLiteral("분석 학생");
+        rows[0][SpeakingEval::toInt(SpeakingEvalColumn::Grammar)] =
+            QStringLiteral("A");
+        if (!store.speakingEvalRepository()->saveSpeakingEval(
+                created.value(), evaluationName, rows))
+        {
+            return -1;
+        }
+    }
+    return created.value();
 }
 
 QString supplementaryCharacters(const int count)
@@ -114,6 +253,10 @@ private slots:
     void classEditorDetailsEnforceFourteenRowsPerScheduleSource();
     void classCoTeacherReadsEnforceRowAndTextBounds();
     void classNotesPathActionsBoundTextAndPreserveDetailsTransactionally();
+    void classAnalyticsReadsTwentyFiveRowsForExplicitSelection();
+    void classAnalyticsDefaultUsesPolicyGradeAndSavedTermContext();
+    void classAnalyticsDefaultMatchesLegacyCustomAndExtendedBoundaries();
+    void classAnalyticsMalformedSchedulesFallBackToAll();
 };
 
 void ClassesNavigatorWorkspaceStoreTests::
@@ -1700,6 +1843,331 @@ void ClassesNavigatorWorkspaceStoreTests::repositoryReadFailuresRemainTyped()
             repositoryRequestFor(*classes), repositoryReadLimits());
         QVERIFY(!result);
         QCOMPARE(result.error().code, RepositoryErrorCode::Technical);
+    }
+}
+
+void ClassesNavigatorWorkspaceStoreTests::
+classAnalyticsReadsTwentyFiveRowsForExplicitSelection()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = speakingAnalyticsFixturePath(
+        directory, QStringLiteral("analytics-25-rows.tps"));
+    QVERIFY(!path.isEmpty());
+    const auto classId = Domain::ClassId::fromString("1");
+    QVERIFY(classId);
+
+    const Application::ClassAnalyticsPageReadResult result =
+        Platform::readClassAnalyticsAtPath(path, {
+            .classId = *classId,
+            .useDefaultSelection = false,
+            .selectedEvaluationName = std::u16string(u"Winter")
+        });
+    QVERIFY(result);
+    QCOMPARE(result.value().classId, *classId);
+    QCOMPARE(result.value().selectedEvaluationName.value(),
+        std::u16string(u"Winter"));
+    QVERIFY(result.value().dashboard.selectedSnapshot.hasData);
+    QCOMPARE(result.value().dashboard.selectedSnapshot.rankings.size(),
+        std::size_t(25));
+    QCOMPARE(result.value().dashboard.selectedSnapshot.fullyScoredCount.rawValue(),
+        std::size_t(25));
+}
+
+void ClassesNavigatorWorkspaceStoreTests::
+classAnalyticsDefaultUsesPolicyGradeAndSavedTermContext()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("analytics-defaults.tps"));
+    int elementaryCurrentId = 0;
+    int elementaryEmptyCurrentId = 0;
+    int middleCurrentId = 0;
+    int noDataId = 0;
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(path));
+        elementaryCurrentId = createAnalyticsClass(store,
+            QStringLiteral("Elementary summer"), QStringLiteral("E4"),
+            {QStringLiteral("Summer"), QStringLiteral("Speech Contest")});
+        elementaryEmptyCurrentId = createAnalyticsClass(store,
+            QStringLiteral("Elementary fallback"), QStringLiteral("E4"),
+            {QStringLiteral("Speech Contest")});
+        middleCurrentId = createAnalyticsClass(store,
+            QStringLiteral("Middle fall"), QStringLiteral("M1"),
+            {QStringLiteral("Fall")});
+        noDataId = createAnalyticsClass(store,
+            QStringLiteral("No data"), QStringLiteral("E4"), {});
+        QVERIFY(elementaryCurrentId > 0);
+        QVERIFY(elementaryEmptyCurrentId > 0);
+        QVERIFY(middleCurrentId > 0);
+        QVERIFY(noDataId > 0);
+        QVERIFY(store.settingsRepository()->saveSetting(
+            QStringLiteral("classes_navigation_evaluation_default_policy"),
+            QStringLiteral("current_or_previous_term")));
+        QVERIFY(store.settingsRepository()->saveSetting(
+            QStringLiteral("calendar/academicSchedule/v1"), termScheduleJson()));
+    }
+
+    const auto readDefault = [&path](
+        const int id,
+        const QDate date
+        ) {
+        return Platform::readClassAnalyticsAtPathForDate(path, {
+            .classId = *Domain::ClassId::fromString(std::to_string(id)),
+            .useDefaultSelection = true
+        }, date);
+    };
+    const auto elementarySummer = readDefault(
+        elementaryCurrentId, QDate(2026, 8, 30));
+    QVERIFY(elementarySummer);
+    QCOMPARE(elementarySummer.value().selectedEvaluationName.value(),
+        std::u16string(u"Summer"));
+
+    const auto emptyCurrentFallsBack = readDefault(
+        elementaryEmptyCurrentId, QDate(2026, 8, 30));
+    QVERIFY(emptyCurrentFallsBack);
+    QCOMPARE(emptyCurrentFallsBack.value().selectedEvaluationName.value(),
+        std::u16string(u"Speech Contest"));
+
+    const auto springUsesSpeechContest = readDefault(
+        elementaryCurrentId, QDate(2026, 4, 1));
+    QVERIFY(springUsesSpeechContest);
+    QCOMPARE(springUsesSpeechContest.value().selectedEvaluationName.value(),
+        std::u16string(u"Speech Contest"));
+
+    const auto middleFall = readDefault(middleCurrentId, QDate(2026, 8, 30));
+    QVERIFY(middleFall);
+    QCOMPARE(middleFall.value().selectedEvaluationName.value(),
+        std::u16string(u"Fall"));
+
+    const auto winterFallback = readDefault(noDataId, QDate(2026, 1, 5));
+    QVERIFY(winterFallback);
+    QCOMPARE(winterFallback.value().selectedEvaluationName.value(),
+        std::u16string(u"Fall"));
+
+    const Application::ClassAnalyticsPageReadRequest explicitWinter{
+        .classId = *Domain::ClassId::fromString(
+            std::to_string(elementaryCurrentId)),
+        .useDefaultSelection = false,
+        .selectedEvaluationName = std::u16string(u"Winter")
+    };
+    const auto retainedExplicit = Platform::readClassAnalyticsAtPathForDate(
+        path, explicitWinter, QDate(2026, 8, 30));
+    QVERIFY(retainedExplicit);
+    QCOMPARE(retainedExplicit.value().selectedEvaluationName.value(),
+        std::u16string(u"Winter"));
+
+    const QString missingSchedulePath = directory.filePath(
+        QStringLiteral("analytics-missing-schedule.tps"));
+    int missingScheduleClassId = 0;
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(missingSchedulePath));
+        missingScheduleClassId = createAnalyticsClass(store,
+            QStringLiteral("Missing schedule"), QStringLiteral("E4"),
+            {QStringLiteral("Winter")});
+        QVERIFY(missingScheduleClassId > 0);
+        QVERIFY(store.settingsRepository()->saveSetting(
+            QStringLiteral("classes_navigation_evaluation_default_policy"),
+            QStringLiteral("current_or_previous_term")));
+    }
+    const auto missingSchedule = Platform::readClassAnalyticsAtPathForDate(
+        missingSchedulePath, {
+            .classId = *Domain::ClassId::fromString(
+                std::to_string(missingScheduleClassId)),
+            .useDefaultSelection = true
+        }, QDate(2026, 1, 5));
+    QVERIFY(missingSchedule);
+    QVERIFY(!missingSchedule.value().selectedEvaluationName);
+
+    const QString invalidSchedulePath = directory.filePath(
+        QStringLiteral("analytics-invalid-schedule.tps"));
+    int invalidScheduleClassId = 0;
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(invalidSchedulePath));
+        invalidScheduleClassId = createAnalyticsClass(store,
+            QStringLiteral("Invalid schedule"), QStringLiteral("E4"),
+            {QStringLiteral("Winter")});
+        QVERIFY(invalidScheduleClassId > 0);
+        QVERIFY(store.settingsRepository()->saveSetting(
+            QStringLiteral("classes_navigation_evaluation_default_policy"),
+            QStringLiteral("current_or_previous_term")));
+        QVERIFY(store.settingsRepository()->saveSetting(
+            QStringLiteral("calendar/academicSchedule/v1"),
+            QStringLiteral("not-json")));
+    }
+    const auto invalidSchedule = Platform::readClassAnalyticsAtPathForDate(
+        invalidSchedulePath, {
+            .classId = *Domain::ClassId::fromString(
+                std::to_string(invalidScheduleClassId)),
+            .useDefaultSelection = true
+        }, QDate(2026, 1, 5));
+    QVERIFY(invalidSchedule);
+    QVERIFY(!invalidSchedule.value().selectedEvaluationName);
+}
+
+void ClassesNavigatorWorkspaceStoreTests::
+classAnalyticsDefaultMatchesLegacyCustomAndExtendedBoundaries()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("analytics-boundaries.tps"));
+    int elementaryId = 0;
+    int middleId = 0;
+    const QStringList elementaryEvaluations{
+        QStringLiteral("Winter"), QStringLiteral("Speech Contest"),
+        QStringLiteral("Summer")
+    };
+    const QStringList middleEvaluations{
+        QStringLiteral("Winter"), QStringLiteral("Fall")
+    };
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(path));
+        elementaryId = createAnalyticsClass(store,
+            QStringLiteral("Elementary boundaries"), QStringLiteral("E4"),
+            elementaryEvaluations);
+        middleId = createAnalyticsClass(store,
+            QStringLiteral("Middle boundaries"), QStringLiteral("M1"),
+            middleEvaluations);
+        QVERIFY(elementaryId > 0);
+        QVERIFY(middleId > 0);
+        QVERIFY(store.settingsRepository()->saveSetting(
+            QStringLiteral("classes_navigation_evaluation_default_policy"),
+            QStringLiteral("current_or_previous_term")));
+        QVERIFY(store.settingsRepository()->saveSetting(
+            QStringLiteral("calendar/academicSchedule/v1"), termScheduleJson()));
+    }
+
+    AcademicCalendarSchedule legacySchedule;
+    const QJsonDocument scheduleDocument = QJsonDocument::fromJson(
+        termScheduleJson().toUtf8());
+    QVERIFY(scheduleDocument.isObject());
+    QVERIFY(legacySchedule.fromJson(scheduleDocument.object()));
+
+    struct BoundaryCase final
+    {
+        int classId;
+        SchoolLevel schoolLevel;
+        QStringList populatedEvaluations;
+        QDate date;
+    };
+    const std::vector<BoundaryCase> cases{
+        {elementaryId, SchoolLevel::Elementary, elementaryEvaluations,
+            QDate(2026, 12, 27)},
+        {elementaryId, SchoolLevel::Elementary, elementaryEvaluations,
+            QDate(2026, 12, 28)},
+        {elementaryId, SchoolLevel::Elementary, elementaryEvaluations,
+            QDate(2027, 3, 7)},
+        {elementaryId, SchoolLevel::Elementary, elementaryEvaluations,
+            QDate(2027, 3, 8)},
+        {middleId, SchoolLevel::Middle, middleEvaluations,
+            QDate(2026, 12, 27)},
+        {middleId, SchoolLevel::Middle, middleEvaluations,
+            QDate(2026, 12, 28)},
+        {middleId, SchoolLevel::Middle, middleEvaluations,
+            QDate(2027, 3, 7)},
+        {middleId, SchoolLevel::Middle, middleEvaluations,
+            QDate(2027, 3, 8)},
+        {elementaryId, SchoolLevel::Elementary, elementaryEvaluations,
+            QDate(2201, 6, 1)},
+        {middleId, SchoolLevel::Middle, middleEvaluations,
+            QDate(2201, 6, 1)}
+    };
+
+    for (const BoundaryCase& boundary : cases)
+    {
+        const std::optional<std::u16string> legacySelection = legacyDefaultForDate(
+            legacySchedule, boundary.schoolLevel, boundary.date,
+            boundary.populatedEvaluations);
+        QVERIFY2(legacySelection.has_value(),
+            qPrintable(QStringLiteral("Legacy default unresolved for %1")
+                .arg(boundary.date.toString(Qt::ISODate))));
+        const auto classId = Domain::ClassId::fromString(
+            std::to_string(boundary.classId));
+        QVERIFY(classId);
+        const auto nextSelection = Platform::readClassAnalyticsAtPathForDate(
+            path, {
+                .classId = *classId,
+                .useDefaultSelection = true
+            }, boundary.date);
+        QVERIFY(nextSelection);
+        QCOMPARE(nextSelection.value().selectedEvaluationName, legacySelection);
+    }
+}
+
+void ClassesNavigatorWorkspaceStoreTests::
+classAnalyticsMalformedSchedulesFallBackToAll()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QJsonObject validRoot = QJsonDocument::fromJson(
+        termScheduleJson().toUtf8()).object();
+    std::vector<std::pair<QString, QString>> malformedSchedules;
+
+    QJsonObject missingProfile = validRoot;
+    QJsonObject missingProfileList = missingProfile.value(
+        QStringLiteral("profiles")).toObject();
+    missingProfileList.remove(QStringLiteral("middle"));
+    missingProfile.insert(QStringLiteral("profiles"), missingProfileList);
+    malformedSchedules.emplace_back(QStringLiteral("missing-profile"),
+        QString::fromUtf8(QJsonDocument(missingProfile).toJson(QJsonDocument::Compact)));
+
+    QJsonObject invalidWeek = validRoot;
+    QJsonObject invalidWeekProfiles = invalidWeek.value(
+        QStringLiteral("profiles")).toObject();
+    QJsonObject elementary = invalidWeekProfiles.value(
+        QStringLiteral("elementary")).toObject();
+    QJsonObject elementary2026 = elementary.value(QStringLiteral("2026")).toObject();
+    elementary2026.insert(QStringLiteral("weeks"), QJsonArray{11, 0, 11, 11});
+    elementary.insert(QStringLiteral("2026"), elementary2026);
+    invalidWeekProfiles.insert(QStringLiteral("elementary"), elementary);
+    invalidWeek.insert(QStringLiteral("profiles"), invalidWeekProfiles);
+    malformedSchedules.emplace_back(QStringLiteral("invalid-week"),
+        QString::fromUtf8(QJsonDocument(invalidWeek).toJson(QJsonDocument::Compact)));
+
+    QJsonObject invalidDate = validRoot;
+    QJsonObject invalidDateProfiles = invalidDate.value(
+        QStringLiteral("profiles")).toObject();
+    QJsonObject middle = invalidDateProfiles.value(
+        QStringLiteral("middle")).toObject();
+    QJsonObject middle2026 = middle.value(QStringLiteral("2026")).toObject();
+    middle2026.insert(QStringLiteral("winterStart"), QStringLiteral("2026-01-01"));
+    middle.insert(QStringLiteral("2026"), middle2026);
+    invalidDateProfiles.insert(QStringLiteral("middle"), middle);
+    invalidDate.insert(QStringLiteral("profiles"), invalidDateProfiles);
+    malformedSchedules.emplace_back(QStringLiteral("invalid-date"),
+        QString::fromUtf8(QJsonDocument(invalidDate).toJson(QJsonDocument::Compact)));
+
+    for (const auto& [caseName, scheduleJson] : malformedSchedules)
+    {
+        const QString path = directory.filePath(caseName + QStringLiteral(".tps"));
+        int classIdValue = 0;
+        {
+            WorkspaceStore store;
+            QVERIFY(store.open(path));
+            classIdValue = createAnalyticsClass(store,
+                QStringLiteral("Malformed schedule %1").arg(caseName),
+                QStringLiteral("E4"), {QStringLiteral("Winter")});
+            QVERIFY(classIdValue > 0);
+            QVERIFY(store.settingsRepository()->saveSetting(
+                QStringLiteral("classes_navigation_evaluation_default_policy"),
+                QStringLiteral("current_or_previous_term")));
+            QVERIFY(store.settingsRepository()->saveSetting(
+                QStringLiteral("calendar/academicSchedule/v1"), scheduleJson));
+        }
+        const auto classId = Domain::ClassId::fromString(
+            std::to_string(classIdValue));
+        QVERIFY(classId);
+        const auto result = Platform::readClassAnalyticsAtPathForDate(path, {
+            .classId = *classId,
+            .useDefaultSelection = true
+        }, QDate(2026, 1, 5));
+        QVERIFY2(result, qPrintable(caseName));
+        QVERIFY2(!result.value().selectedEvaluationName,
+            qPrintable(caseName + QStringLiteral(" must select All")));
     }
 }
 

@@ -3239,6 +3239,7 @@ add_executable(ClassMngrNextClassesNavigatorPageTests
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
+    src/next/ui/selected_class_analytics_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
@@ -3294,6 +3295,7 @@ add_executable(ClassMngrNextClassesNavigatorVisualCapture
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
+    src/next/ui/selected_class_analytics_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
@@ -3350,6 +3352,7 @@ add_executable(ClassMngrNextClassesDetailsCoTeacherVisualCapture
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
+    src/next/ui/selected_class_analytics_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
@@ -3412,6 +3415,7 @@ add_executable(ClassMngrNextClassesNotesVisualCapture
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
+    src/next/ui/selected_class_analytics_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
@@ -3464,14 +3468,81 @@ set_tests_properties(ClassMngrNextClassesNotesVisualCapture
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
-# Exercise the standalone path-scoped Classes reads, input limits, identity
-# checks, and navigator setting persistence against a real WorkspaceStore.
+# Capture matched Legacy and Next Analytics states for All and populated
+# Winter using fixture class 1 from the tracked 96-class workspace.
+add_executable(ClassMngrNextClassesAnalyticsVisualCapture
+    tests/next/classes_analytics_visual_capture.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/platform/workspace_store_class_analytics_actions.cpp
+    src/next/platform/workspace_store_class_editor_actions.cpp
+    src/next/platform/workspace_store_classes_navigator_read_actions.cpp
+    src/next/ui/classes_navigator_page.cpp
+    src/next/ui/classes_navigator_model.cpp
+    src/next/ui/selected_class_editor.cpp
+    src/next/ui/selected_class_analytics_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextClassesAnalyticsVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextClassesAnalyticsVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextClassesAnalyticsVisualCapture
+    PRIVATE
+        CLASSMNGR_SPEAKING_ANALYTICS_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-speaking-evaluation-boundary/generated-large-speaking-evaluation.tps"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextClassesAnalyticsVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextClassesAnalyticsVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextClassesAnalyticsVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextClassesAnalyticsVisualCapture
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextClassesAnalyticsVisualCapture
+    COMMAND ClassMngrNextClassesAnalyticsVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/classes-analytics-visual-capture"
+)
+set_tests_properties(ClassMngrNextClassesAnalyticsVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Exercise path-scoped Classes reads, identity and input limits, saved
+# evaluation defaults, and the selected-class Analytics projection against
+# real WorkspaceStore files and the tracked 25-row evaluation fixture.
 classmngr_add_qt_test(
     NAME NextClassesNavigatorWorkspaceStore
     SOURCES
         tests/next/classes_navigator_workspace_store_tests.cpp
+        src/features/calendar/academic_calendar_schedule.cpp
         src/next/platform/workspace_store_class_editor_actions.cpp
         src/next/platform/workspace_store_classes_navigator_read_actions.cpp
+        src/next/platform/workspace_store_class_analytics_actions.cpp
     LIBRARIES
         ClassMngrNext::Application
         ClassMngrNextWorkspace
@@ -3481,6 +3552,7 @@ classmngr_add_qt_test(
         Qt6::Test
     COMPILE_DEFINITIONS
         CLASSMNGR_CLASSES_NAVIGATOR_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+        CLASSMNGR_SPEAKING_ANALYTICS_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-speaking-evaluation-boundary/generated-large-speaking-evaluation.tps"
 )
 
 # Capture matched legacy and Next My Classes routes at 1024x768 in Fusion for

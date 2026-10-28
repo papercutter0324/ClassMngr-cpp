@@ -23,6 +23,7 @@
 #include "next/platform/workspace_store_my_workspace_overview_read_actions.h"
 #include "next/platform/workspace_store_classes_navigator_read_actions.h"
 #include "next/platform/workspace_store_class_editor_actions.h"
+#include "next/platform/workspace_store_class_analytics_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -1178,6 +1179,13 @@ Application::StartupResult ApplicationBootstrap::start()
                         const Domain::ClassId& classId
                         ) {
                         return Platform::readClassNotesAtPath(databasePath, classId);
+                    };
+                    actions.readClassAnalytics = [](
+                        const QString& databasePath,
+                        const Application::ClassAnalyticsPageReadRequest& request
+                        ) {
+                        return Platform::readClassAnalyticsAtPath(
+                            databasePath, request);
                     };
                     actions.saveClassDetails = [](
                         const QString& databasePath,

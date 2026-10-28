@@ -3,6 +3,7 @@
 #include "domain/config/class_details_catalog.h"
 #include "next/application/classes_list_read_snapshot.h"
 #include "next/application/class_details_validation_policy.h"
+#include "next/ui/selected_class_analytics_model.h"
 
 #include <QColor>
 #include <QColorDialog>
@@ -23,6 +24,7 @@
 #include <QSignalBlocker>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QTableView>
 #include <QTabWidget>
 #include <QTimer>
 #include <QTextEdit>
@@ -219,6 +221,21 @@ QTableWidget* SelectedClassEditor::intensiveSchedule() const noexcept
     return m_intensiveSchedule;
 }
 
+QComboBox* SelectedClassEditor::analyticsEvaluationChoice() const noexcept
+{
+    return m_analyticsEvaluation;
+}
+
+QTableView* SelectedClassEditor::analyticsRankingTable() const noexcept
+{
+    return m_analyticsRankingTable;
+}
+
+QLabel* SelectedClassEditor::analyticsStatusLabel() const noexcept
+{
+    return m_analyticsStatus;
+}
+
 void SelectedClassEditor::ensureUi()
 {
     if (m_sections)
@@ -232,9 +249,13 @@ void SelectedClassEditor::ensureUi()
     m_detailsTab = buildDetailsTab();
     m_coTeacherTab = buildCoTeacherTab();
     m_notesTab = buildNotesTab();
+    m_analyticsTab = new QWidget(this);
+    m_analyticsTab->setObjectName(QStringLiteral("selectedClassAnalyticsTab"));
+    m_analyticsTab->setLayout(new QVBoxLayout(m_analyticsTab));
     m_sections->addTab(m_detailsTab, translated("Class Details and Times"));
     m_sections->addTab(m_coTeacherTab, translated("Co-Teacher"));
     m_sections->addTab(m_notesTab, translated("Notes"));
+    m_sections->addTab(m_analyticsTab, translated("Analytics"));
     layout->addWidget(m_sections, 1);
     connect(m_sections, &QTabWidget::currentChanged, this, [this](const int index) {
         if (m_loading)
@@ -250,7 +271,13 @@ void SelectedClassEditor::ensureUi()
                 return;
             }
         }
+        const int previousIndex = m_previousSectionIndex;
         m_previousSectionIndex = index;
+        if (previousIndex == 3 && index != 3)
+        {
+            clearAnalyticsDisplay();
+            m_analyticsReadAttempted = false;
+        }
         if (index == 1)
         {
             static_cast<void>(loadCoTeacherIfNeeded());
@@ -259,7 +286,24 @@ void SelectedClassEditor::ensureUi()
         {
             static_cast<void>(loadNotesIfNeeded());
         }
+        else if (index == 3)
+        {
+            ensureAnalyticsUi();
+            static_cast<void>(loadAnalyticsIfNeeded());
+        }
     });
+    retranslateUi();
+}
+
+void SelectedClassEditor::ensureAnalyticsUi()
+{
+    if (m_analyticsUiBuilt)
+    {
+        return;
+    }
+    m_analyticsUiBuilt = true;
+    auto* const scroll = buildAnalyticsTab();
+    qobject_cast<QVBoxLayout*>(m_analyticsTab->layout())->addWidget(scroll);
     retranslateUi();
 }
 
@@ -593,6 +637,103 @@ QWidget* SelectedClassEditor::buildNotesTab()
     return body;
 }
 
+QWidget* SelectedClassEditor::buildAnalyticsTab()
+{
+    auto* const scroll = new QScrollArea(m_analyticsTab);
+    scroll->setWidgetResizable(true);
+    scroll->setFrameShape(QFrame::NoFrame);
+    auto* const body = new QWidget(scroll);
+    auto* const layout = new QVBoxLayout(body);
+    layout->setContentsMargins(4, 8, 4, 8);
+    layout->setSpacing(10);
+
+    auto* const headingRow = new QWidget(body);
+    auto* const headingLayout = new QHBoxLayout(headingRow);
+    headingLayout->setContentsMargins(0, 0, 0, 0);
+    auto* const heading = new QLabel(translated("Class Analytics"), headingRow);
+    heading->setObjectName(QStringLiteral("classEditorAnalyticsHeading"));
+    QFont headingFont = heading->font();
+    headingFont.setPointSize(headingFont.pointSize() + 2);
+    headingFont.setBold(true);
+    heading->setFont(headingFont);
+    headingLayout->addWidget(heading);
+    headingLayout->addStretch(1);
+    auto* const evaluationLabel = new QLabel(
+        translated("Evaluation"), headingRow);
+    evaluationLabel->setObjectName(QStringLiteral("classEditorAnalyticsEvaluationLabel"));
+    headingLayout->addWidget(evaluationLabel);
+    m_analyticsEvaluation = new QComboBox(headingRow);
+    m_analyticsEvaluation->setObjectName(
+        QStringLiteral("classEditorAnalyticsEvaluation"));
+    m_analyticsEvaluation->addItem(translated("All"), QString{});
+    m_analyticsEvaluation->addItem(translated("Winter"), QStringLiteral("Winter"));
+    m_analyticsEvaluation->addItem(
+        translated("Speech Contest"), QStringLiteral("Speech Contest"));
+    m_analyticsEvaluation->addItem(translated("Summer"), QStringLiteral("Summer"));
+    m_analyticsEvaluation->addItem(translated("Fall"), QStringLiteral("Fall"));
+    headingLayout->addWidget(m_analyticsEvaluation);
+    layout->addWidget(headingRow);
+
+    m_analyticsStatus = new QLabel(body);
+    m_analyticsStatus->setObjectName(QStringLiteral("classEditorAnalyticsStatus"));
+    m_analyticsStatus->setProperty("role", QStringLiteral("status"));
+    m_analyticsStatus->setWordWrap(true);
+    layout->addWidget(m_analyticsStatus);
+    m_retryAnalyticsButton = new QPushButton(translated("Retry"), body);
+    m_retryAnalyticsButton->setObjectName(
+        QStringLiteral("classEditorRetryAnalytics"));
+    m_retryAnalyticsButton->hide();
+    layout->addWidget(m_retryAnalyticsButton, 0, Qt::AlignRight);
+    m_analyticsEmptyState = new QLabel(
+        translated("No analytics data is available for this class."), body);
+    m_analyticsEmptyState->setObjectName(QStringLiteral("classEditorAnalyticsEmpty"));
+    m_analyticsEmptyState->setAlignment(Qt::AlignCenter);
+    m_analyticsEmptyState->setWordWrap(true);
+    m_analyticsEmptyState->hide();
+    layout->addWidget(m_analyticsEmptyState);
+    m_analyticsSummary = new SelectedClassAnalyticsSummaryWidget(body);
+    layout->addWidget(m_analyticsSummary);
+
+    m_analyticsRankingTable = new QTableView(body);
+    m_analyticsRankingTable->setObjectName(
+        QStringLiteral("classEditorAnalyticsRankingTable"));
+    m_analyticsRankingTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    m_analyticsRankingTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_analyticsRankingTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_analyticsRankingTable->setAlternatingRowColors(true);
+    m_analyticsRankingTable->setWordWrap(false);
+    m_analyticsRankingTable->verticalHeader()->hide();
+    m_analyticsRankingTable->horizontalHeader()->setStretchLastSection(true);
+    m_analyticsRankingModel = new SelectedClassAnalyticsModel(
+        m_analyticsRankingTable);
+    m_analyticsRankingTable->setModel(m_analyticsRankingModel);
+    layout->addWidget(m_analyticsRankingTable, 1);
+    layout->addStretch(1);
+    scroll->setWidget(body);
+
+    connect(m_analyticsEvaluation,
+        qOverload<int>(&QComboBox::currentIndexChanged), this,
+        [this](const int index) {
+            if (m_loading || !m_classId || index < 0)
+            {
+                return;
+            }
+            const QString selected = m_analyticsEvaluation->itemData(index).toString();
+            m_analyticsSelectedEvaluationName = selected.isEmpty()
+                ? std::nullopt
+                : std::optional<std::u16string>(selected.toStdU16String());
+            m_analyticsDefaultSelectionPending = false;
+            readAnalytics(false);
+        });
+    connect(m_retryAnalyticsButton, &QPushButton::clicked, this, [this] {
+        readAnalytics(m_analyticsDefaultSelectionPending);
+    });
+    m_analyticsEvaluation->setEnabled(false);
+    m_analyticsStatus->hide();
+    m_retryAnalyticsButton->hide();
+    return scroll;
+}
+
 void SelectedClassEditor::loadClass(
     const QString& databasePath,
     const Domain::ClassId& classId,
@@ -636,17 +777,27 @@ void SelectedClassEditor::loadClass(
     m_notesLoaded = false;
     m_notesReadAttempted = false;
     m_notesDirty = false;
+    m_analyticsReadAttempted = false;
+    m_analyticsDefaultSelectionPending = true;
+    m_analyticsSelectedEvaluationName.reset();
+    m_analyticsSnapshot.reset();
     m_savedNotes.clear();
     m_savedTimeFillerActivities.clear();
     m_notesSubtitle.clear();
     m_loading = true;
     ensureUi();
     m_sections->setCurrentIndex(0);
+    if (m_analyticsEvaluation)
+    {
+        const QSignalBlocker blocker(m_analyticsEvaluation);
+        m_analyticsEvaluation->setCurrentIndex(0);
+    }
     m_previousSectionIndex = 0;
     m_emptyState->hide();
     m_sections->show();
     m_loading = false;
     clearNotesDisplay();
+    clearAnalyticsDisplay();
     readClassDetails();
     updateDirtyState();
 }
@@ -672,6 +823,10 @@ void SelectedClassEditor::clear()
     m_notesLoaded = false;
     m_notesReadAttempted = false;
     m_notesDirty = false;
+    m_analyticsReadAttempted = false;
+    m_analyticsDefaultSelectionPending = true;
+    m_analyticsSelectedEvaluationName.reset();
+    m_analyticsSnapshot.reset();
     m_savedNotes.clear();
     m_savedTimeFillerActivities.clear();
     m_notesSubtitle.clear();
@@ -705,6 +860,13 @@ void SelectedClassEditor::clear()
         setStatus({}, false);
         setCoTeacherStatus({}, false);
         clearNotesDisplay();
+        clearAnalyticsDisplay();
+        if (m_analyticsEvaluation)
+        {
+            const QSignalBlocker blocker(m_analyticsEvaluation);
+            m_analyticsEvaluation->setCurrentIndex(0);
+            m_analyticsEvaluation->setEnabled(false);
+        }
         if (m_retryDetailsButton)
         {
             m_retryDetailsButton->hide();
@@ -988,6 +1150,135 @@ bool SelectedClassEditor::loadNotesIfNeeded()
         readNotes();
     }
     return m_notesLoaded;
+}
+
+bool SelectedClassEditor::loadAnalyticsIfNeeded()
+{
+    if (!m_analyticsReadAttempted)
+    {
+        readAnalytics(m_analyticsDefaultSelectionPending);
+    }
+    return m_analyticsSnapshot.has_value();
+}
+
+void SelectedClassEditor::readAnalytics(const bool useDefaultSelection)
+{
+    m_analyticsReadAttempted = true;
+    if (!m_classId || !m_databasePath || !m_actions.readAnalytics)
+    {
+        m_analyticsSnapshot.reset();
+        clearAnalyticsDisplay();
+        m_analyticsStatus->setText(translated(
+            "Class Analytics could not be loaded. Retry this section."));
+        m_analyticsStatus->setStyleSheet(QStringLiteral("color: #a32121;"));
+        m_analyticsStatus->show();
+        m_retryAnalyticsButton->show();
+        return;
+    }
+
+    const Application::ClassAnalyticsPageReadRequest request{
+        .classId = *m_classId,
+        .useDefaultSelection = useDefaultSelection,
+        .selectedEvaluationName = m_analyticsSelectedEvaluationName
+    };
+    Application::ClassAnalyticsPageReadResult read = [&] {
+        try
+        {
+            return m_actions.readAnalytics(*m_databasePath, request);
+        }
+        catch (...)
+        {
+            return Application::ClassAnalyticsPageReadResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "Class Analytics could not be loaded.",
+                .recoverable = true
+            });
+        }
+    }();
+    if (!read)
+    {
+        m_analyticsSnapshot.reset();
+        clearAnalyticsDisplay();
+        m_analyticsStatus->setText(errorText(read.error()));
+        m_analyticsStatus->setStyleSheet(QStringLiteral("color: #a32121;"));
+        m_analyticsStatus->show();
+        m_retryAnalyticsButton->show();
+        return;
+    }
+    if (read.value().classId != *m_classId)
+    {
+        m_analyticsSnapshot.reset();
+        clearAnalyticsDisplay();
+        m_analyticsStatus->setText(translated(
+            "Class Analytics returned a different class."));
+        m_analyticsStatus->setStyleSheet(QStringLiteral("color: #a32121;"));
+        m_analyticsStatus->show();
+        m_retryAnalyticsButton->show();
+        return;
+    }
+
+    m_analyticsDefaultSelectionPending = false;
+    m_analyticsSelectedEvaluationName = read.value().selectedEvaluationName;
+    m_analyticsSnapshot = std::move(read.value());
+    const QString selectedName = m_analyticsSelectedEvaluationName
+        ? QString::fromStdU16String(*m_analyticsSelectedEvaluationName)
+        : QString{};
+    const int selectedIndex = m_analyticsEvaluation->findData(selectedName);
+    {
+        const QSignalBlocker blocker(m_analyticsEvaluation);
+        m_analyticsEvaluation->setCurrentIndex(selectedIndex >= 0 ? selectedIndex : 0);
+    }
+    m_analyticsEvaluation->setEnabled(true);
+    m_analyticsStatus->clear();
+    m_analyticsStatus->hide();
+    m_retryAnalyticsButton->hide();
+    renderAnalytics();
+}
+
+void SelectedClassEditor::clearAnalyticsDisplay()
+{
+    m_analyticsSnapshot.reset();
+    if (m_analyticsRankingModel)
+    {
+        m_analyticsRankingModel->setRankings(nullptr);
+    }
+    if (!m_analyticsStatus)
+    {
+        return;
+    }
+    m_analyticsStatus->clear();
+    m_analyticsStatus->hide();
+    m_retryAnalyticsButton->hide();
+    m_analyticsEmptyState->hide();
+    m_analyticsSummary->setDashboard(nullptr);
+    m_analyticsSummary->hide();
+    m_analyticsRankingTable->hide();
+    m_analyticsEvaluation->setEnabled(m_classId.has_value());
+}
+
+void SelectedClassEditor::renderAnalytics()
+{
+    if (!m_analyticsSnapshot)
+    {
+        return;
+    }
+    const Application::ClassAnalyticsDashboard& dashboard =
+        m_analyticsSnapshot->dashboard;
+    const Application::ClassAnalyticsSnapshot& selected =
+        dashboard.selectedSnapshot;
+    m_analyticsEmptyState->setVisible(!selected.hasData);
+    if (!selected.hasData)
+    {
+        m_analyticsRankingModel->setRankings(nullptr);
+        m_analyticsSummary->setDashboard(nullptr);
+        m_analyticsSummary->hide();
+        m_analyticsRankingTable->hide();
+        return;
+    }
+    m_analyticsSummary->setDashboard(&dashboard);
+    m_analyticsSummary->show();
+    m_analyticsRankingTable->show();
+    m_analyticsRankingModel->setRankings(&selected.rankings);
 }
 
 void SelectedClassEditor::readNotes()
@@ -1894,6 +2185,7 @@ void SelectedClassEditor::retranslateUi()
         m_sections->setTabText(0, translated("Class Details and Times"));
         m_sections->setTabText(1, translated("Co-Teacher"));
         m_sections->setTabText(2, translated("Notes"));
+        m_sections->setTabText(3, translated("Analytics"));
     }
     if (m_chooseColor)
     {
@@ -1914,6 +2206,38 @@ void SelectedClassEditor::retranslateUi()
         m_notesEdit->setPlaceholderText(translated("Notes"));
         m_timeFillerActivitiesEdit->setPlaceholderText(
             translated("Time Filler Activities"));
+    }
+    if (m_analyticsEvaluation)
+    {
+        m_analyticsEvaluation->setItemText(0, translated("All"));
+        m_analyticsEvaluation->setItemText(1, translated("Winter"));
+        m_analyticsEvaluation->setItemText(2, translated("Speech Contest"));
+        m_analyticsEvaluation->setItemText(3, translated("Summer"));
+        m_analyticsEvaluation->setItemText(4, translated("Fall"));
+        m_retryAnalyticsButton->setText(translated("Retry"));
+        m_analyticsEmptyState->setText(translated(
+            "No analytics data is available for this class."));
+        if (QLabel* const heading = m_analyticsTab->findChild<QLabel*>(
+                QStringLiteral("classEditorAnalyticsHeading")))
+        {
+            heading->setText(translated("Class Analytics"));
+        }
+        if (QLabel* const evaluationLabel = m_analyticsTab->findChild<QLabel*>(
+                QStringLiteral("classEditorAnalyticsEvaluationLabel")))
+        {
+            evaluationLabel->setText(translated("Evaluation"));
+        }
+        m_analyticsRankingModel->setHeaderLabels({
+            translated("Rank"), translated("English"), translated("Korean"),
+            translated("Average"), translated("Grammar"),
+            translated("Pronunciation"), translated("Fluency"),
+            translated("Manner"), translated("Content"),
+            translated("Overall Effort")
+        });
+        if (m_analyticsSnapshot)
+        {
+            renderAnalytics();
+        }
     }
 }
 

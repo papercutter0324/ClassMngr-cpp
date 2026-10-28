@@ -745,6 +745,7 @@ void ClassesNavigatorPage::buildUi()
     editorActions.readTeacherChoices = m_actions.readClassCoTeacherChoices;
     editorActions.readTeacherDetails = m_actions.readClassCoTeacherTeacherDetails;
     editorActions.readNotes = m_actions.readClassNotes;
+    editorActions.readAnalytics = m_actions.readClassAnalytics;
     editorActions.saveDetails = m_actions.saveClassDetails;
     editorActions.saveCoTeacher = m_actions.saveClassCoTeacher;
     editorActions.saveNotes = m_actions.saveClassNotes;

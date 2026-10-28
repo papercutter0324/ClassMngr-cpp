@@ -9869,6 +9869,31 @@ Version: %2</source>
     <message><source>Teacher Details</source><translation>교사 세부 정보</translation></message>
     <message><source>Connectivity</source><translation>연결 정보</translation></message>
     <message><source>Notes</source><translation>노트</translation></message>
+    <message><source>Analytics</source><translation>분석</translation></message>
+    <message><source>Class Analytics</source><translation>수업 분석</translation></message>
+    <message><source>Evaluation</source><translation>평가</translation></message>
+    <message><source>Winter</source><translation>겨울</translation></message>
+    <message><source>Speech Contest</source><translation>말하기 대회</translation></message>
+    <message><source>Summer</source><translation>여름</translation></message>
+    <message><source>Fall</source><translation>가을</translation></message>
+    <message><source>Class Summary</source><translation>수업 요약</translation></message>
+    <message><source>Class Average</source><translation>수업 평균</translation></message>
+    <message><source>Students Fully Scored</source><translation>전체 평가 학생</translation></message>
+    <message><source>Strongest Area</source><translation>강점 영역</translation></message>
+    <message><source>Focus Area</source><translation>집중 영역</translation></message>
+    <message><source>By Criterion</source><translation>평가 기준별</translation></message>
+    <message><source>Class Shape and Year to Date</source><translation>수업 분포 및 연간 누계</translation></message>
+    <message><source>Student Ranking</source><translation>학생 순위</translation></message>
+    <message><source>Rank</source><translation>순위</translation></message>
+    <message><source>Average</source><translation>평균</translation></message>
+    <message><source>Grammar</source><translation>문법</translation></message>
+    <message><source>Pronunciation</source><translation>발음</translation></message>
+    <message><source>Fluency</source><translation>유창성</translation></message>
+    <message><source>Manner</source><translation>태도</translation></message>
+    <message><source>Content</source><translation>내용</translation></message>
+    <message><source>Overall Effort</source><translation>전반적 노력</translation></message>
+    <message><source>No analytics data is available for this class.</source><translation>이 수업의 분석 데이터가 없습니다.</translation></message>
+    <message><source>No year-to-date evaluations.</source><translation>연간 누계 평가가 없습니다.</translation></message>
     <message><source>Not set</source><translation>설정 안 됨</translation></message>
     <message><source>Korean Keyboard</source><translation>한국어 키보드</translation></message>
     <message><source>Open Korean / English on-screen keyboard</source><translation>한/영 화면 키보드 열기</translation></message>
@@ -10665,6 +10690,32 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Class Details and Times</source><translation>수업 정보 및 시간</translation></message>
     <message><source>Co-Teacher</source><translation>공동 교사</translation></message>
     <message><source>Notes</source><translation>노트</translation></message>
+    <message><source>Analytics</source><translation>분석</translation></message>
+    <message><source>Class Analytics</source><translation>수업 분석</translation></message>
+    <message><source>Evaluation</source><translation>평가</translation></message>
+    <message><source>Winter</source><translation>겨울</translation></message>
+    <message><source>Speech Contest</source><translation>말하기 대회</translation></message>
+    <message><source>Summer</source><translation>여름</translation></message>
+    <message><source>Fall</source><translation>가을</translation></message>
+    <message><source>Class Average</source><translation>수업 평균</translation></message>
+    <message><source>Students Fully Scored</source><translation>전체 평가 학생</translation></message>
+    <message><source>Strongest Area</source><translation>강점 영역</translation></message>
+    <message><source>Strongest Areas</source><translation>강점 영역</translation></message>
+    <message><source>Focus Area</source><translation>집중 영역</translation></message>
+    <message><source>Focus Areas</source><translation>집중 영역</translation></message>
+    <message><source>By Criterion</source><translation>평가 기준별</translation></message>
+    <message><source>Class Shape and Year to Date</source><translation>수업 분포 및 연간 누계</translation></message>
+    <message><source>Evaluation: %1</source><translation>평가: %1</translation></message>
+    <message><source>No analytics data is available for this class.</source><translation>이 수업의 분석 데이터가 없습니다.</translation></message>
+    <message><source>No year-to-date evaluations.</source><translation>연간 누계 평가가 없습니다.</translation></message>
+    <message><source>Rank</source><translation>순위</translation></message>
+    <message><source>Grammar</source><translation>문법</translation></message>
+    <message><source>Pronunciation</source><translation>발음</translation></message>
+    <message><source>Fluency</source><translation>유창성</translation></message>
+    <message><source>Manner</source><translation>태도</translation></message>
+    <message><source>Content</source><translation>내용</translation></message>
+    <message><source>Overall Effort</source><translation>전반적 노력</translation></message>
+    <message><source>Average</source><translation>평균</translation></message>
     <message><source>Class Notes</source><translation>수업 노트</translation></message>
     <message><source>Time Filler Activities</source><translation>자투리 시간 활동</translation></message>
     <message><source>No Teacher</source><translation>교사 없음</translation></message>

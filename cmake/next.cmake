@@ -181,6 +181,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/class_analytics_numeric_policy.h
     src/next/application/class_analytics_ranking_order_policy.h
     src/next/application/class_analytics_dashboard_read_query.h
+    src/next/application/class_analytics_page_read.h
     src/next/application/roster_print_class_info_read_snapshot.h
     src/next/application/roster_print_class_info_read_port.h
     src/next/application/roster_print_class_info_read_query.h
