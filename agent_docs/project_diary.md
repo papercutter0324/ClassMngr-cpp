@@ -2,6 +2,17 @@
 
 ## Decisions and Lessons
 
+### Phase 7A visual and memory evidence — 2026-10-28
+
+Capture Initial Setup with a fresh temporary Legacy profile and a Next page
+whose actions return empty or synthetic values and cannot write. Do not use the
+legacy visible-window capture against a real profile: its Wi-Fi and Zoom
+password fields can render plaintext. For the Windows memory gate, the existing
+Phase 0 Release runner measures Legacy `ClassMngr` only; Phase 7 needs a staged
+Windows x64 Release `ClassMngrNext` process and its own runner/checkpoints.
+Record the measurements without applying the final `<250 MiB` Phase 9 target
+as a Phase 7 threshold.
+
 ### Phase 7 Calendar import staging and ownership — 2026-10-28
 
 Candidate #34 keeps the existing remote URL and environment override while
@@ -11,6 +22,15 @@ path-scoped apply. Tests prove multi-chunk transfer, no cell materialization,
 and release timing, but the four-event fixture does not establish a
 high-event-count memory ceiling. Keep the Next boundary on the narrow shared
 parser target; do not pull broad Legacy UI/Core targets into it.
+
+### Phase 7 roster editor model and lifecycle — 2026-10-28
+
+Candidate #35 uses one active-cell delegate model for both My Classes and
+Testing Classes; testing mode hides evaluation columns. Keep roster reads and
+writes as path-scoped typed WorkspaceStore actions, check custom-column tail
+data before removal, and clear the model when the page suspends after dirty
+state is resolved. Sparse rows retain absolute indexes; do not compact them
+when editing a visible window.
 
 ### Phase 7 Calendar page and QML boundary — 2026-10-28
 

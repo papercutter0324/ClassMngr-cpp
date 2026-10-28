@@ -1,0 +1,139 @@
+{
+  "candidate": 35,
+  "sourceCommit": "9da01020",
+  "scope": "Roster editor presentation evidence",
+  "viewport": {
+    "width": 1024,
+    "height": 768
+  },
+  "comparisonLimitation": "Screenshots support presentation review and do not establish pixel parity.",
+  "standaloneNext": {
+    "sourceManifest": "build/macos-clang-debug/roster-editor-visual-captures/roster_editor_visual_captures.json",
+    "scope": "Next roster editor presentation captures",
+    "modelSchema": "25 resident rows and 156 columns: six base columns plus 150 custom columns",
+    "captures": [
+      {
+        "image": "next_roster_editor_en_US_light.png",
+        "locale": "en_US",
+        "theme": "light",
+        "modelRows": 25,
+        "modelColumns": 156,
+        "editorWidgetCount": 1,
+        "widgetCountWhileActive": 31
+      },
+      {
+        "image": "next_roster_editor_en_US_dark.png",
+        "locale": "en_US",
+        "theme": "dark",
+        "modelRows": 25,
+        "modelColumns": 156,
+        "editorWidgetCount": 1,
+        "widgetCountWhileActive": 31
+      },
+      {
+        "image": "next_roster_editor_ko_KR_light.png",
+        "locale": "ko_KR",
+        "theme": "light",
+        "modelRows": 25,
+        "modelColumns": 156,
+        "editorWidgetCount": 1,
+        "widgetCountWhileActive": 31
+      },
+      {
+        "image": "next_roster_editor_ko_KR_dark.png",
+        "locale": "ko_KR",
+        "theme": "dark",
+        "modelRows": 25,
+        "modelColumns": 156,
+        "editorWidgetCount": 1,
+        "widgetCountWhileActive": 31
+      }
+    ]
+  },
+  "testingClassesRosterPairs": {
+    "sourceManifest": "build/macos-clang-debug/testing-classes-visual-capture/testing_classes_paired_capture.json",
+    "scope": "Roster state only; the other Testing Classes states are excluded.",
+    "fixture": "generated-large-classes-visual.tps",
+    "fixtureRegularClassCount": 96,
+    "seededTestingClassCount": 96,
+    "captures": [
+      {
+        "state": "roster",
+        "locale": "en_US",
+        "theme": "light",
+        "selectedClassId": "3",
+        "sameSelectedClass": true,
+        "legacy": {
+          "image": "testing_classes_roster_en_US_light_legacy.png",
+          "widgetCountWhileActive": 178,
+          "editorWidgetCount": 1
+        },
+        "next": {
+          "image": "testing_classes_roster_en_US_light_next.png",
+          "modeledRows": 25,
+          "dynamicColumns": 9,
+          "editorWidgetCount": 1,
+          "clearedOnSuspension": true
+        }
+      },
+      {
+        "state": "roster",
+        "locale": "en_US",
+        "theme": "dark",
+        "selectedClassId": "3",
+        "sameSelectedClass": true,
+        "legacy": {
+          "image": "testing_classes_roster_en_US_dark_legacy.png",
+          "widgetCountWhileActive": 178,
+          "editorWidgetCount": 1
+        },
+        "next": {
+          "image": "testing_classes_roster_en_US_dark_next.png",
+          "modeledRows": 25,
+          "dynamicColumns": 9,
+          "editorWidgetCount": 1,
+          "clearedOnSuspension": true
+        }
+      },
+      {
+        "state": "roster",
+        "locale": "ko_KR",
+        "theme": "light",
+        "selectedClassId": "3",
+        "sameSelectedClass": true,
+        "legacy": {
+          "image": "testing_classes_roster_ko_KR_light_legacy.png",
+          "widgetCountWhileActive": 178,
+          "editorWidgetCount": 1
+        },
+        "next": {
+          "image": "testing_classes_roster_ko_KR_light_next.png",
+          "modeledRows": 25,
+          "dynamicColumns": 9,
+          "editorWidgetCount": 1,
+          "clearedOnSuspension": true
+        }
+      },
+      {
+        "state": "roster",
+        "locale": "ko_KR",
+        "theme": "dark",
+        "selectedClassId": "3",
+        "sameSelectedClass": true,
+        "legacy": {
+          "image": "testing_classes_roster_ko_KR_dark_legacy.png",
+          "widgetCountWhileActive": 178,
+          "editorWidgetCount": 1
+        },
+        "next": {
+          "image": "testing_classes_roster_ko_KR_dark_next.png",
+          "modeledRows": 25,
+          "dynamicColumns": 9,
+          "editorWidgetCount": 1,
+          "clearedOnSuspension": true
+        }
+      }
+    ]
+  },
+  "memoryLimitation": "The source Testing Classes manifest records whole-process observations; they do not isolate page allocation or establish a memory budget."
+}

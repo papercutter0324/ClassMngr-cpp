@@ -189,26 +189,23 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-28 (candidate #34 accepted; #35 active)
+### Current checkpoint — 2026-10-28 (candidate #35 accepted; #36 active)
 
-Candidate #34, Calendar import, is accepted at `8645d9db`. The Next Preferences
-workflow reuses the row-streaming parser through a narrow shared target and
-applies through the typed use case and path-scoped WorkspaceStore bridge. The
-incremental standard macOS Debug build validated 1,883 source owners; focused
-CTest passed 6/6 and the Calendar page suite passed 26 cases. A 246,017-byte
-workbook arrived in four chunks (maximum 65,536 bytes); assertions cover
-file-backed parsing, no materialized worksheet cells, staging-file removal
-and event-list release before apply, duplicate counts, cancellation, rollback,
-and URL override. Twenty tracked 720×720 captures cover English/Korean,
-Light/Dark, and five import states in the
-[capture package](../docs/qt-rewrite/visual-baseline/next/phase-7/calendar/import/README.md).
-The four-event fixture verifies chunked transfer and representation release,
-not a high-event-count memory ceiling. Legacy loopback tests could not run in
-the sandbox; no full suite, Windows build, or Phase 9 memory-budget acceptance
-is claimed. Candidate #35, Roster editor/student model with model/view and
-compact state, is active. The 7A screenshot/memory evidence and 7A/Phase 7 exit
-gates remain open. Batch 3 stays unpushed through candidate #40; preserve the
-user's unstaged Schedule Import Gateway edits.
+Candidate #35, roster editor and model/view, is accepted at `9da01020`. It adds
+a shared 25-row model/editor to My Classes and Testing Classes, path-scoped
+typed WorkspaceStore actions, active-cell editors, compact row state, sparse
+tail-data checks, validation, failed-save retry, and lifecycle release.
+Focused CTest passed 14/14, including editor, page, manager, adapter, capture,
+and dependency-boundary coverage; the resource inventory check and
+`git diff --check` passed. The capture package contains English/Korean ×
+Light/Dark standalone captures and four paired Legacy/Next Testing Classes
+roster states as presentation evidence, not pixel parity. No full suite, Windows run, Phase 9
+memory-budget acceptance, or cross-platform claim is made. Candidate #36,
+roster imports/transfers, is active. Batch 3 remains unpushed through #40; the
+7A screenshot/memory evidence and 7A/Phase 7 exit gates remain open. The safe
+7A screenshot route uses temporary/synthetic setup state; Windows Release
+memory evidence must measure the staged Next executable because the existing
+Phase 0 runner is Legacy-only. The `<250 MiB` threshold remains a Phase 9 gate.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

@@ -47,8 +47,11 @@ ownership, dependencies, lifecycle, and verification.
     package](../../docs/qt-rewrite/visual-baseline/next/phase-7/calendar/README.md).
 34. **Accepted — Calendar import** (`8645d9db`). See the [Phase 7 progress
     log](08-Phase-7-Progress-Log.md) and [import-state captures](../../docs/qt-rewrite/visual-baseline/next/phase-7/calendar/import/README.md).
-35. **Active — Roster editor/student model with model/view and compact state.**
-36. Roster imports/transfers.
+35. **Accepted — Roster editor/student model with model/view and compact state**
+    (`9da01020`). See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
+    and [roster-editor presentation
+    captures](../../docs/qt-rewrite/visual-baseline/next/phase-7/roster-editor/README.md).
+36. **Active — Roster imports/transfers.**
 37. Roster templates/printing.
 38. Speaking-evaluation core using model/view and compact state.
 39. Evaluation analytics, AI-assisted comments, and batch workflow.

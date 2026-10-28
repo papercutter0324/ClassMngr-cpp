@@ -988,3 +988,21 @@ Entries are preserved in their original document order.
   not a per-import budget or Phase 9 acceptance.
 - No full suite, Windows build, or Phase 9 memory-budget result is claimed. The
   7A screenshot/memory evidence and the 7A/Phase 7 exit gates remain open.
+
+### Candidate #35 — Roster editor/student model accepted (2026-10-28)
+
+- Commit: `9da01020` (`Phase7 - Migrate roster editor and model view`). The
+  shared Next roster editor uses a table model/view and a 25-row resident
+  window; its capture manifest records six base plus 150 custom columns.
+  WorkspaceStore roster actions serve both regular and testing classes.
+  Implementation and independent verification were accepted.
+- Evidence: the [roster-editor
+  package](../../docs/qt-rewrite/visual-baseline/next/phase-7/roster-editor/README.md)
+  contains four standalone Next captures across English/Korean and light/dark,
+  plus four Legacy/Next Testing Classes roster pairs from the 96-class fixture.
+  The paired captures use class ID 3; Next records 25 modeled rows, nine
+  dynamic columns, and roster-editor clearing on suspension. These screenshots
+  are presentation evidence and do not claim pixel parity.
+- Limits: no full-suite, Windows, cross-platform, or Phase 9 memory-budget
+  result is claimed. The 7A screenshot comparison and memory evidence, Windows
+  packaged-Next memory gate, and 7A/Phase 7 exit gates remain open.
