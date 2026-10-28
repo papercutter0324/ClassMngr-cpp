@@ -1,0 +1,523 @@
+{
+    "captureScope": "Legacy export selection, import review, and schedule-conflict feedback paired with the Next route.",
+    "feature": "Class Transfer",
+    "fixture": "/Users/papercutter0324/Git/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps",
+    "fixturePreparation": "Each pair copies the tracked 96-class .tps fixture for source and destination. Teacher 1 and class 1 use catalog-valid sample values. The destination copy retains class 1 regular and intensive schedules and clears schedules for classes 2-96 to make the conflict feedback readable; the exported package contains class 1.",
+    "memoryLimitation": "Process-wide memory snapshots come from one sequential capture process; resident/private values include Qt allocator retention and cumulative font/translation caches, and do not establish a Windows peak budget.",
+    "pairs": [
+        {
+            "conflictFeedback": {
+                "legacy": {
+                    "feedbackText": "Schedule conflicts prevent this import:\n\nRegular schedule: E4 Theseus — Monday 5:00 PM–5:50 PM conflicts with E4 Theseus — Monday 5:00 PM–5:50 PM\nRegular schedule: E4 Theseus — Tuesday 6:00 PM–6:50 PM conflicts with E4 Theseus — Tuesday 6:00 PM–6:50 PM\nRegular schedule: E4 Theseus — Wednesday 3:00 PM–3:50 PM conflicts with E4 Theseus — Wednesday 3:00 PM–3:50 PM\nRegular schedule: E4 Theseus — Thursday 4:00 PM–4:50 PM conflicts with E4 Theseus — Thursday 4:00 PM–4:50 PM\nRegular schedule: E4 Theseus — Friday 5:00 PM–5:50 PM conflicts with E4 Theseus — Friday 5:00 PM–5:50 PM\nRegular schedule: E4 Theseus — Monday 6:00 PM–6:50 PM conflicts with E4 Theseus — Monday 6:00 PM–6:50 PM\nRegular schedule: E4 Theseus — Tuesday 3:00 PM–3:50 PM conflicts with E4 Theseus — Tuesday 3:00 PM–3:50 PM\nRegular schedule: E4 Theseus — Wednesday 4:00 PM–4:50 PM conflicts with E4 Theseus — Wednesday 4:00 PM–4:50 PM\nIntensive schedule: E4 Theseus — Monday 8:00 AM–8:50 AM conflicts with E4 Theseus — Monday 8:00 AM–8:50 AM",
+                    "scheduleConflictDetected": true,
+                    "widgetCount": 5
+                },
+                "next": {
+                    "feedbackText": "Schedule conflicts prevent this import:\n\nRegular schedule: E4 Theseus — Monday 5:00 PM–5:50 PM conflicts with E4 Theseus — Monday 5:00 PM–5:50 PM\nRegular schedule: E4 Theseus — Tuesday 6:00 PM–6:50 PM conflicts with E4 Theseus — Tuesday 6:00 PM–6:50 PM\nRegular schedule: E4 Theseus — Wednesday 3:00 PM–3:50 PM conflicts with E4 Theseus — Wednesday 3:00 PM–3:50 PM\nRegular schedule: E4 Theseus — Thursday 4:00 PM–4:50 PM conflicts with E4 Theseus — Thursday 4:00 PM–4:50 PM\nRegular schedule: E4 Theseus — Friday 5:00 PM–5:50 PM conflicts with E4 Theseus — Friday 5:00 PM–5:50 PM\nRegular schedule: E4 Theseus — Monday 6:00 PM–6:50 PM conflicts with E4 Theseus — Monday 6:00 PM–6:50 PM\nRegular schedule: E4 Theseus — Tuesday 3:00 PM–3:50 PM conflicts with E4 Theseus — Tuesday 3:00 PM–3:50 PM\nRegular schedule: E4 Theseus — Wednesday 4:00 PM–4:50 PM conflicts with E4 Theseus — Wednesday 4:00 PM–4:50 PM\nIntensive schedule: E4 Theseus — Monday 8:00 AM–8:50 AM conflicts with E4 Theseus — Monday 8:00 AM–8:50 AM",
+                    "processMemoryAfterRelease": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:35.942",
+                        "peakWorkingSetBytes": 83050496,
+                        "platform": "macos",
+                        "privateUsageBytes": 32392128,
+                        "privateWorkingSetBytes": 31719424,
+                        "workingSetBytes": 83050496
+                    },
+                    "processMemoryBefore": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:35.881",
+                        "peakWorkingSetBytes": 82493440,
+                        "platform": "macos",
+                        "privateUsageBytes": 32031680,
+                        "privateWorkingSetBytes": 31358976,
+                        "workingSetBytes": 82493440
+                    },
+                    "processMemoryFailedApply": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:35.902",
+                        "peakWorkingSetBytes": 82886656,
+                        "platform": "macos",
+                        "privateUsageBytes": 32228288,
+                        "privateWorkingSetBytes": 31555584,
+                        "workingSetBytes": 82886656
+                    },
+                    "processMemoryReviewed": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:35.896",
+                        "peakWorkingSetBytes": 82624512,
+                        "platform": "macos",
+                        "privateUsageBytes": 32146368,
+                        "privateWorkingSetBytes": 31473664,
+                        "workingSetBytes": 82608128
+                    },
+                    "retainsPackageAfterFailure": true,
+                    "widgetCount": 73
+                }
+            },
+            "exportPicker": {
+                "legacy": {
+                    "classRows": 96,
+                    "selectedClassCount": 1,
+                    "widgetCount": 14
+                },
+                "next": {
+                    "classRows": 96,
+                    "detailEditorCount": 0,
+                    "perClassWidgets": 0,
+                    "selectedClassCount": 1,
+                    "widgetCount": 73
+                }
+            },
+            "fixtureClassCount": 96,
+            "images": {
+                "conflictFeedback": {
+                    "legacy": "en_US_light_legacy_conflict.png",
+                    "next": "en_US_light_next_conflict.png"
+                },
+                "exportPicker": {
+                    "legacy": "en_US_light_legacy_export.png",
+                    "next": "en_US_light_next_export.png"
+                },
+                "importReview": {
+                    "legacy": "en_US_light_legacy_review.png",
+                    "next": "en_US_light_next_review.png"
+                }
+            },
+            "importReview": {
+                "legacy": {
+                    "classResolutionWidgets": 2,
+                    "packageClassRows": 1,
+                    "packageTeacherRows": 1,
+                    "widgetCount": 39
+                },
+                "next": {
+                    "packageClassRows": 1,
+                    "packageTeacherRows": 1,
+                    "processMemoryAfterRelease": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:35.840",
+                        "peakWorkingSetBytes": 80265216,
+                        "platform": "macos",
+                        "privateUsageBytes": 30884800,
+                        "privateWorkingSetBytes": 30212096,
+                        "workingSetBytes": 80265216
+                    },
+                    "processMemoryBefore": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:35.798",
+                        "peakWorkingSetBytes": 79724544,
+                        "platform": "macos",
+                        "privateUsageBytes": 30376896,
+                        "privateWorkingSetBytes": 29704192,
+                        "workingSetBytes": 79724544
+                    },
+                    "processMemoryReviewed": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:35.815",
+                        "peakWorkingSetBytes": 80166912,
+                        "platform": "macos",
+                        "privateUsageBytes": 30819264,
+                        "privateWorkingSetBytes": 30146560,
+                        "workingSetBytes": 80166912
+                    },
+                    "reviewResolutionWidgets": 1,
+                    "widgetCount": 73
+                }
+            },
+            "locale": "en_US",
+            "packageFileBytes": 20407,
+            "packageSha256": "60397cead15c2f8fe78e3772abfeb0846b916365af48ba21ad611b54346b3ac6",
+            "selectedClassIds": [
+                1
+            ],
+            "theme": "light"
+        },
+        {
+            "conflictFeedback": {
+                "legacy": {
+                    "feedbackText": "Schedule conflicts prevent this import:\n\nRegular schedule: E4 Theseus — Monday 5:00 PM–5:50 PM conflicts with E4 Theseus — Monday 5:00 PM–5:50 PM\nRegular schedule: E4 Theseus — Tuesday 6:00 PM–6:50 PM conflicts with E4 Theseus — Tuesday 6:00 PM–6:50 PM\nRegular schedule: E4 Theseus — Wednesday 3:00 PM–3:50 PM conflicts with E4 Theseus — Wednesday 3:00 PM–3:50 PM\nRegular schedule: E4 Theseus — Thursday 4:00 PM–4:50 PM conflicts with E4 Theseus — Thursday 4:00 PM–4:50 PM\nRegular schedule: E4 Theseus — Friday 5:00 PM–5:50 PM conflicts with E4 Theseus — Friday 5:00 PM–5:50 PM\nRegular schedule: E4 Theseus — Monday 6:00 PM–6:50 PM conflicts with E4 Theseus — Monday 6:00 PM–6:50 PM\nRegular schedule: E4 Theseus — Tuesday 3:00 PM–3:50 PM conflicts with E4 Theseus — Tuesday 3:00 PM–3:50 PM\nRegular schedule: E4 Theseus — Wednesday 4:00 PM–4:50 PM conflicts with E4 Theseus — Wednesday 4:00 PM–4:50 PM\nIntensive schedule: E4 Theseus — Monday 8:00 AM–8:50 AM conflicts with E4 Theseus — Monday 8:00 AM–8:50 AM",
+                    "scheduleConflictDetected": true,
+                    "widgetCount": 5
+                },
+                "next": {
+                    "feedbackText": "Schedule conflicts prevent this import:\n\nRegular schedule: E4 Theseus — Monday 5:00 PM–5:50 PM conflicts with E4 Theseus — Monday 5:00 PM–5:50 PM\nRegular schedule: E4 Theseus — Tuesday 6:00 PM–6:50 PM conflicts with E4 Theseus — Tuesday 6:00 PM–6:50 PM\nRegular schedule: E4 Theseus — Wednesday 3:00 PM–3:50 PM conflicts with E4 Theseus — Wednesday 3:00 PM–3:50 PM\nRegular schedule: E4 Theseus — Thursday 4:00 PM–4:50 PM conflicts with E4 Theseus — Thursday 4:00 PM–4:50 PM\nRegular schedule: E4 Theseus — Friday 5:00 PM–5:50 PM conflicts with E4 Theseus — Friday 5:00 PM–5:50 PM\nRegular schedule: E4 Theseus — Monday 6:00 PM–6:50 PM conflicts with E4 Theseus — Monday 6:00 PM–6:50 PM\nRegular schedule: E4 Theseus — Tuesday 3:00 PM–3:50 PM conflicts with E4 Theseus — Tuesday 3:00 PM–3:50 PM\nRegular schedule: E4 Theseus — Wednesday 4:00 PM–4:50 PM conflicts with E4 Theseus — Wednesday 4:00 PM–4:50 PM\nIntensive schedule: E4 Theseus — Monday 8:00 AM–8:50 AM conflicts with E4 Theseus — Monday 8:00 AM–8:50 AM",
+                    "processMemoryAfterRelease": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.197",
+                        "peakWorkingSetBytes": 84066304,
+                        "platform": "macos",
+                        "privateUsageBytes": 32670656,
+                        "privateWorkingSetBytes": 31997952,
+                        "workingSetBytes": 83345408
+                    },
+                    "processMemoryBefore": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.148",
+                        "peakWorkingSetBytes": 84066304,
+                        "platform": "macos",
+                        "privateUsageBytes": 32637888,
+                        "privateWorkingSetBytes": 31965184,
+                        "workingSetBytes": 83312640
+                    },
+                    "processMemoryFailedApply": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.163",
+                        "peakWorkingSetBytes": 84066304,
+                        "platform": "macos",
+                        "privateUsageBytes": 32637888,
+                        "privateWorkingSetBytes": 31965184,
+                        "workingSetBytes": 83312640
+                    },
+                    "processMemoryReviewed": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.161",
+                        "peakWorkingSetBytes": 84066304,
+                        "platform": "macos",
+                        "privateUsageBytes": 32637888,
+                        "privateWorkingSetBytes": 31965184,
+                        "workingSetBytes": 83312640
+                    },
+                    "retainsPackageAfterFailure": true,
+                    "widgetCount": 73
+                }
+            },
+            "exportPicker": {
+                "legacy": {
+                    "classRows": 96,
+                    "selectedClassCount": 1,
+                    "widgetCount": 14
+                },
+                "next": {
+                    "classRows": 96,
+                    "detailEditorCount": 0,
+                    "perClassWidgets": 0,
+                    "selectedClassCount": 1,
+                    "widgetCount": 73
+                }
+            },
+            "fixtureClassCount": 96,
+            "images": {
+                "conflictFeedback": {
+                    "legacy": "en_US_dark_legacy_conflict.png",
+                    "next": "en_US_dark_next_conflict.png"
+                },
+                "exportPicker": {
+                    "legacy": "en_US_dark_legacy_export.png",
+                    "next": "en_US_dark_next_export.png"
+                },
+                "importReview": {
+                    "legacy": "en_US_dark_legacy_review.png",
+                    "next": "en_US_dark_next_review.png"
+                }
+            },
+            "importReview": {
+                "legacy": {
+                    "classResolutionWidgets": 2,
+                    "packageClassRows": 1,
+                    "packageTeacherRows": 1,
+                    "widgetCount": 39
+                },
+                "next": {
+                    "packageClassRows": 1,
+                    "packageTeacherRows": 1,
+                    "processMemoryAfterRelease": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.106",
+                        "peakWorkingSetBytes": 84066304,
+                        "platform": "macos",
+                        "privateUsageBytes": 32605120,
+                        "privateWorkingSetBytes": 31932416,
+                        "workingSetBytes": 83279872
+                    },
+                    "processMemoryBefore": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.069",
+                        "peakWorkingSetBytes": 84066304,
+                        "platform": "macos",
+                        "privateUsageBytes": 32605120,
+                        "privateWorkingSetBytes": 31932416,
+                        "workingSetBytes": 83279872
+                    },
+                    "processMemoryReviewed": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.084",
+                        "peakWorkingSetBytes": 84066304,
+                        "platform": "macos",
+                        "privateUsageBytes": 32605120,
+                        "privateWorkingSetBytes": 31932416,
+                        "workingSetBytes": 83279872
+                    },
+                    "reviewResolutionWidgets": 1,
+                    "widgetCount": 73
+                }
+            },
+            "locale": "en_US",
+            "packageFileBytes": 20407,
+            "packageSha256": "25bbbbced461104b74b2e40fd52738924a5eb608ff92de4d38f079ba6edcb594",
+            "selectedClassIds": [
+                1
+            ],
+            "theme": "dark"
+        },
+        {
+            "conflictFeedback": {
+                "legacy": {
+                    "feedbackText": "일정 충돌로 인해 가져올 수 없습니다:\n\n정규 일정: E4 Theseus — Monday 5:00 PM~5:50 PM이(가) E4 Theseus — Monday 5:00 PM~5:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Tuesday 6:00 PM~6:50 PM이(가) E4 Theseus — Tuesday 6:00 PM~6:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Wednesday 3:00 PM~3:50 PM이(가) E4 Theseus — Wednesday 3:00 PM~3:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Thursday 4:00 PM~4:50 PM이(가) E4 Theseus — Thursday 4:00 PM~4:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Friday 5:00 PM~5:50 PM이(가) E4 Theseus — Friday 5:00 PM~5:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Monday 6:00 PM~6:50 PM이(가) E4 Theseus — Monday 6:00 PM~6:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Tuesday 3:00 PM~3:50 PM이(가) E4 Theseus — Tuesday 3:00 PM~3:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Wednesday 4:00 PM~4:50 PM이(가) E4 Theseus — Wednesday 4:00 PM~4:50 PM과(와) 충돌합니다\n집중 일정: E4 Theseus — Monday 8:00 AM~8:50 AM이(가) E4 Theseus — Monday 8:00 AM~8:50 AM과(와) 충돌합니다",
+                    "scheduleConflictDetected": true,
+                    "widgetCount": 5
+                },
+                "next": {
+                    "feedbackText": "일정 충돌로 인해 가져올 수 없습니다:\n\n정규 일정: E4 Theseus — Monday 5:00 PM~5:50 PM이(가) E4 Theseus — Monday 5:00 PM~5:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Tuesday 6:00 PM~6:50 PM이(가) E4 Theseus — Tuesday 6:00 PM~6:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Wednesday 3:00 PM~3:50 PM이(가) E4 Theseus — Wednesday 3:00 PM~3:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Thursday 4:00 PM~4:50 PM이(가) E4 Theseus — Thursday 4:00 PM~4:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Friday 5:00 PM~5:50 PM이(가) E4 Theseus — Friday 5:00 PM~5:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Monday 6:00 PM~6:50 PM이(가) E4 Theseus — Monday 6:00 PM~6:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Tuesday 3:00 PM~3:50 PM이(가) E4 Theseus — Tuesday 3:00 PM~3:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Wednesday 4:00 PM~4:50 PM이(가) E4 Theseus — Wednesday 4:00 PM~4:50 PM과(와) 충돌합니다\n집중 일정: E4 Theseus — Monday 8:00 AM~8:50 AM이(가) E4 Theseus — Monday 8:00 AM~8:50 AM과(와) 충돌합니다",
+                    "processMemoryAfterRelease": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.484",
+                        "peakWorkingSetBytes": 88211456,
+                        "platform": "macos",
+                        "privateUsageBytes": 34358232,
+                        "privateWorkingSetBytes": 33669120,
+                        "workingSetBytes": 87670784
+                    },
+                    "processMemoryBefore": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.448",
+                        "peakWorkingSetBytes": 88211456,
+                        "platform": "macos",
+                        "privateUsageBytes": 34243544,
+                        "privateWorkingSetBytes": 33554432,
+                        "workingSetBytes": 87556096
+                    },
+                    "processMemoryFailedApply": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.462",
+                        "peakWorkingSetBytes": 88211456,
+                        "platform": "macos",
+                        "privateUsageBytes": 34325464,
+                        "privateWorkingSetBytes": 33636352,
+                        "workingSetBytes": 87638016
+                    },
+                    "processMemoryReviewed": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.459",
+                        "peakWorkingSetBytes": 88211456,
+                        "platform": "macos",
+                        "privateUsageBytes": 34325464,
+                        "privateWorkingSetBytes": 33636352,
+                        "workingSetBytes": 87638016
+                    },
+                    "retainsPackageAfterFailure": true,
+                    "widgetCount": 73
+                }
+            },
+            "exportPicker": {
+                "legacy": {
+                    "classRows": 96,
+                    "selectedClassCount": 1,
+                    "widgetCount": 14
+                },
+                "next": {
+                    "classRows": 96,
+                    "detailEditorCount": 0,
+                    "perClassWidgets": 0,
+                    "selectedClassCount": 1,
+                    "widgetCount": 73
+                }
+            },
+            "fixtureClassCount": 96,
+            "images": {
+                "conflictFeedback": {
+                    "legacy": "ko_KR_light_legacy_conflict.png",
+                    "next": "ko_KR_light_next_conflict.png"
+                },
+                "exportPicker": {
+                    "legacy": "ko_KR_light_legacy_export.png",
+                    "next": "ko_KR_light_next_export.png"
+                },
+                "importReview": {
+                    "legacy": "ko_KR_light_legacy_review.png",
+                    "next": "ko_KR_light_next_review.png"
+                }
+            },
+            "importReview": {
+                "legacy": {
+                    "classResolutionWidgets": 2,
+                    "packageClassRows": 1,
+                    "packageTeacherRows": 1,
+                    "widgetCount": 39
+                },
+                "next": {
+                    "packageClassRows": 1,
+                    "packageTeacherRows": 1,
+                    "processMemoryAfterRelease": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.410",
+                        "peakWorkingSetBytes": 87719936,
+                        "platform": "macos",
+                        "privateUsageBytes": 34145240,
+                        "privateWorkingSetBytes": 33456128,
+                        "workingSetBytes": 87425024
+                    },
+                    "processMemoryBefore": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.369",
+                        "peakWorkingSetBytes": 87719936,
+                        "platform": "macos",
+                        "privateUsageBytes": 33883096,
+                        "privateWorkingSetBytes": 33193984,
+                        "workingSetBytes": 87146496
+                    },
+                    "processMemoryReviewed": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.381",
+                        "peakWorkingSetBytes": 87719936,
+                        "platform": "macos",
+                        "privateUsageBytes": 33965016,
+                        "privateWorkingSetBytes": 33275904,
+                        "workingSetBytes": 87228416
+                    },
+                    "reviewResolutionWidgets": 1,
+                    "widgetCount": 73
+                }
+            },
+            "locale": "ko_KR",
+            "packageFileBytes": 20407,
+            "packageSha256": "71793915779beb5770c3b8a9590350a7b01317c312a806a2d21c4065875b9c0b",
+            "selectedClassIds": [
+                1
+            ],
+            "theme": "light"
+        },
+        {
+            "conflictFeedback": {
+                "legacy": {
+                    "feedbackText": "일정 충돌로 인해 가져올 수 없습니다:\n\n정규 일정: E4 Theseus — Monday 5:00 PM~5:50 PM이(가) E4 Theseus — Monday 5:00 PM~5:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Tuesday 6:00 PM~6:50 PM이(가) E4 Theseus — Tuesday 6:00 PM~6:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Wednesday 3:00 PM~3:50 PM이(가) E4 Theseus — Wednesday 3:00 PM~3:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Thursday 4:00 PM~4:50 PM이(가) E4 Theseus — Thursday 4:00 PM~4:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Friday 5:00 PM~5:50 PM이(가) E4 Theseus — Friday 5:00 PM~5:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Monday 6:00 PM~6:50 PM이(가) E4 Theseus — Monday 6:00 PM~6:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Tuesday 3:00 PM~3:50 PM이(가) E4 Theseus — Tuesday 3:00 PM~3:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Wednesday 4:00 PM~4:50 PM이(가) E4 Theseus — Wednesday 4:00 PM~4:50 PM과(와) 충돌합니다\n집중 일정: E4 Theseus — Monday 8:00 AM~8:50 AM이(가) E4 Theseus — Monday 8:00 AM~8:50 AM과(와) 충돌합니다",
+                    "scheduleConflictDetected": true,
+                    "widgetCount": 5
+                },
+                "next": {
+                    "feedbackText": "일정 충돌로 인해 가져올 수 없습니다:\n\n정규 일정: E4 Theseus — Monday 5:00 PM~5:50 PM이(가) E4 Theseus — Monday 5:00 PM~5:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Tuesday 6:00 PM~6:50 PM이(가) E4 Theseus — Tuesday 6:00 PM~6:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Wednesday 3:00 PM~3:50 PM이(가) E4 Theseus — Wednesday 3:00 PM~3:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Thursday 4:00 PM~4:50 PM이(가) E4 Theseus — Thursday 4:00 PM~4:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Friday 5:00 PM~5:50 PM이(가) E4 Theseus — Friday 5:00 PM~5:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Monday 6:00 PM~6:50 PM이(가) E4 Theseus — Monday 6:00 PM~6:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Tuesday 3:00 PM~3:50 PM이(가) E4 Theseus — Tuesday 3:00 PM~3:50 PM과(와) 충돌합니다\n정규 일정: E4 Theseus — Wednesday 4:00 PM~4:50 PM이(가) E4 Theseus — Wednesday 4:00 PM~4:50 PM과(와) 충돌합니다\n집중 일정: E4 Theseus — Monday 8:00 AM~8:50 AM이(가) E4 Theseus — Monday 8:00 AM~8:50 AM과(와) 충돌합니다",
+                    "processMemoryAfterRelease": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.674",
+                        "peakWorkingSetBytes": 88457216,
+                        "platform": "macos",
+                        "privateUsageBytes": 34407384,
+                        "privateWorkingSetBytes": 33718272,
+                        "workingSetBytes": 87719936
+                    },
+                    "processMemoryBefore": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.638",
+                        "peakWorkingSetBytes": 88457216,
+                        "platform": "macos",
+                        "privateUsageBytes": 34374616,
+                        "privateWorkingSetBytes": 33685504,
+                        "workingSetBytes": 87687168
+                    },
+                    "processMemoryFailedApply": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.651",
+                        "peakWorkingSetBytes": 88457216,
+                        "platform": "macos",
+                        "privateUsageBytes": 34374616,
+                        "privateWorkingSetBytes": 33685504,
+                        "workingSetBytes": 87687168
+                    },
+                    "processMemoryReviewed": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.649",
+                        "peakWorkingSetBytes": 88457216,
+                        "platform": "macos",
+                        "privateUsageBytes": 34374616,
+                        "privateWorkingSetBytes": 33685504,
+                        "workingSetBytes": 87687168
+                    },
+                    "retainsPackageAfterFailure": true,
+                    "widgetCount": 73
+                }
+            },
+            "exportPicker": {
+                "legacy": {
+                    "classRows": 96,
+                    "selectedClassCount": 1,
+                    "widgetCount": 14
+                },
+                "next": {
+                    "classRows": 96,
+                    "detailEditorCount": 0,
+                    "perClassWidgets": 0,
+                    "selectedClassCount": 1,
+                    "widgetCount": 73
+                }
+            },
+            "fixtureClassCount": 96,
+            "images": {
+                "conflictFeedback": {
+                    "legacy": "ko_KR_dark_legacy_conflict.png",
+                    "next": "ko_KR_dark_next_conflict.png"
+                },
+                "exportPicker": {
+                    "legacy": "ko_KR_dark_legacy_export.png",
+                    "next": "ko_KR_dark_next_export.png"
+                },
+                "importReview": {
+                    "legacy": "ko_KR_dark_legacy_review.png",
+                    "next": "ko_KR_dark_next_review.png"
+                }
+            },
+            "importReview": {
+                "legacy": {
+                    "classResolutionWidgets": 2,
+                    "packageClassRows": 1,
+                    "packageTeacherRows": 1,
+                    "widgetCount": 39
+                },
+                "next": {
+                    "packageClassRows": 1,
+                    "packageTeacherRows": 1,
+                    "processMemoryAfterRelease": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.605",
+                        "peakWorkingSetBytes": 88457216,
+                        "platform": "macos",
+                        "privateUsageBytes": 34374616,
+                        "privateWorkingSetBytes": 33685504,
+                        "workingSetBytes": 87670784
+                    },
+                    "processMemoryBefore": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.577",
+                        "peakWorkingSetBytes": 88457216,
+                        "platform": "macos",
+                        "privateUsageBytes": 34374616,
+                        "privateWorkingSetBytes": 33685504,
+                        "workingSetBytes": 87670784
+                    },
+                    "processMemoryReviewed": {
+                        "available": true,
+                        "capturedAt": "2026-10-28T06:50:36.588",
+                        "peakWorkingSetBytes": 88457216,
+                        "platform": "macos",
+                        "privateUsageBytes": 34374616,
+                        "privateWorkingSetBytes": 33685504,
+                        "workingSetBytes": 87670784
+                    },
+                    "reviewResolutionWidgets": 1,
+                    "widgetCount": 73
+                }
+            },
+            "locale": "ko_KR",
+            "packageFileBytes": 20407,
+            "packageSha256": "e2b2f80ee1ad3bcfc55d16e48375d2a25b5251e5cc0b0c6b0ae4c534297683bb",
+            "selectedClassIds": [
+                1
+            ],
+            "theme": "dark"
+        }
+    ],
+    "parityClaim": false,
+    "shellScope": "Legacy export and import surfaces are standalone dialogs; Next is captured inside PageHost. Both use a 1024x768 capture and paired state, but their shell extents differ, so these images do not establish visual parity.",
+    "viewport": {
+        "height": 768,
+        "width": 1024
+    }
+}

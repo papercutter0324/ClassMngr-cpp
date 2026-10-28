@@ -38,9 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-28
-- Current note: 7A.1–7A.15 and candidates #23–28 remain accepted. Batch 3
-  candidate #29, Class transfer, is active. The 7A screenshot comparison and
-  memory evidence remain open, as do the 7A and Phase 7 exit gates. See the
+- Current note: 7A.1–7A.15 and candidates #23–29 remain accepted. Batch 3
+  candidate #30, Schedule display/editing, is active. The 7A screenshot
+  comparison and memory evidence remain open, as do the 7A and Phase 7 exit
+  gates. See the
   progress log for slice evidence and limits.
 
 ### Slice batches
@@ -823,6 +824,37 @@ keep current status in this plan and live batches in the shared tracker.
   the typed Thursday 10:00 tuple and localized display text in pending Next
   states; non-pending Next states have null slot fields. The capture target
   passed 1/1 after this metadata-only correction.
+
+### Candidate #29 — Class Transfer accepted (2026-10-28)
+
+- Commit: `56455a1b`. Next uses path-scoped `WorkspaceStore` actions and typed
+  JSON v1 contracts for teacher/class transfer data (Details, Notes/Time Filler,
+  schedules, roster, and evaluations); destination IDs are remapped. No
+  `ClassTransferProjection` caps were reused.
+- The new proposed file-size contract is inclusive at 16 MiB: exactly
+  16,777,216 bytes is accepted; one byte over is rejected before parse; an
+  oversized export cancels atomically without replacing an existing file.
+  This is a new product contract, not an existing Phase 7 numeric requirement.
+  The historical 1,716,291-byte package passed. A 4,097-class package of
+  2,127,895 bytes parsed, but applying all 4,097 classes was not tested.
+- Verification: the standard build passed for `ClassMngrNext`,
+  `ClassMngrNextClassTransferWorkflowTests`, and
+  `ClassMngrNextClassTransferVisualCapture`. Focused CTest passed 20/21
+  registrations; direct Next workflow QtTest passed 9/9. The one Legacy
+  failure is `ClassTransferTests::importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure`
+  (`Keep local: New Teacher` vs `Keep local: Romanized One`; offscreen aggregate
+  420 passed/1 failed). Its exact evidence and limitation are in the [capture
+  package](../../docs/qt-rewrite/visual-baseline/next/phase-7/class-transfer/README.md).
+  The Legacy test setup/expectation and `class_import_dialog.cpp` were unchanged;
+  it uses an in-memory Legacy package, not the new WorkspaceStore route/codec.
+  No evidence establishes when the failure first appeared.
+- Evidence and limits: the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/class-transfer/README.md)
+  records export/review/conflict states, `parityClaim: false`, and the process
+  memory scope. Legacy standalone dialogs and Next `PageHost` have different
+  shell extents; process snapshots do not establish a page allocation or
+  Windows memory budget. `git diff --check`, inventory `--check`, and route
+  scan passed. No full-suite or Windows result is claimed; the 7A evidence and
+  7A/Phase 7 exit gates remain open.
 
 ## Objective
 
