@@ -11422,4 +11422,243 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>The Calendar source could not be downloaded.</source><translation>캘린더 일정을 다운로드하지 못했습니다.</translation></message>
     <message><source>Calendar import could not be completed.</source><translation>캘린더 일정 가져오기를 완료하지 못했습니다.</translation></message>
  </context>
+<context>
+    <name>NextRosterEditor</name>
+    <message>
+        <source>Roster</source>
+        <translation>명단</translation>
+    </message>
+    <message>
+        <source>English</source>
+        <translation>영어 이름</translation>
+    </message>
+    <message>
+        <source>Korean</source>
+        <translation>한국어 이름</translation>
+    </message>
+    <message>
+        <source>Winter</source>
+        <translation>겨울</translation>
+    </message>
+    <message>
+        <source>Speech Contest</source>
+        <translation>말하기 대회</translation>
+    </message>
+    <message>
+        <source>Summer</source>
+        <translation>여름</translation>
+    </message>
+    <message>
+        <source>Fall</source>
+        <translation>가을</translation>
+    </message>
+    <message>
+        <source>The roster could not be saved. Your draft is still here.</source>
+        <translation>명단을 저장하지 못했습니다. 편집 내용은 그대로 남아 있습니다.</translation>
+    </message>
+    <message>
+        <source>Roster saved.</source>
+        <translation>명단을 저장했습니다.</translation>
+    </message>
+    <message>
+        <source>Discard Roster Changes?</source>
+        <translation>명단 변경 사항을 취소할까요?</translation>
+    </message>
+    <message>
+        <source>Discard all unsaved roster changes?</source>
+        <translation>저장하지 않은 명단 변경 사항을 모두 취소할까요?</translation>
+    </message>
+    <message>
+        <source>Add Column</source>
+        <translation>열 추가</translation>
+    </message>
+    <message>
+        <source>Remove Column</source>
+        <translation>열 삭제</translation>
+    </message>
+    <message>
+        <source>Remove Student</source>
+        <translation>학생 삭제</translation>
+    </message>
+    <message>
+        <source>Move Up</source>
+        <translation>위로 이동</translation>
+    </message>
+    <message>
+        <source>Move Down</source>
+        <translation>아래로 이동</translation>
+    </message>
+    <message>
+        <source>Save Changes</source>
+        <translation>변경 사항 저장</translation>
+    </message>
+    <message>
+        <source>Discard Changes</source>
+        <translation>변경 사항 취소</translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation>다시 시도</translation>
+    </message>
+    <message>
+        <source>Open Korean / English on-screen keyboard</source>
+        <translation>한국어 / 영어 화면 키보드 열기</translation>
+    </message>
+    <message>
+        <source>Korean Keyboard</source>
+        <translation>한국어 키보드</translation>
+    </message>
+    <message>
+        <source>A roster cannot be loaded while no workspace is open.</source>
+        <translation>작업 공간이 열려 있지 않아 명단을 불러올 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The roster could not be loaded. Editing is disabled.</source>
+        <translation>명단을 불러오지 못했습니다. 편집할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>This roster has saved rows after row 25. They remain stored at their original row numbers.</source>
+        <translation>이 명단에는 25행 이후에 저장된 행이 있습니다. 원래 행 번호로 유지됩니다.</translation>
+    </message>
+    <message>
+        <source>Review Korean Names and Save</source>
+        <translation>한국어 이름 확인 후 저장</translation>
+    </message>
+    <message>
+        <source>Column name:</source>
+        <translation>열 이름:</translation>
+    </message>
+    <message>
+        <source>Cannot Add Column</source>
+        <translation>열을 추가할 수 없음</translation>
+    </message>
+    <message>
+        <source>Remove the &quot;%1&quot; column?</source>
+        <translation>&quot;%1&quot; 열을 삭제할까요?</translation>
+    </message>
+    <message>
+        <source>Cannot Remove Column</source>
+        <translation>열을 삭제할 수 없음</translation>
+    </message>
+    <message>
+        <source>Stored rows after row 25 could not be checked. The column was not removed.</source>
+        <translation>25행 이후의 저장된 데이터를 확인할 수 없어 열을 삭제하지 않았습니다.</translation>
+    </message>
+    <message>
+        <source>Remove Column Data After Row 25?</source>
+        <translation>25행 이후의 열 데이터를 삭제할까요?</translation>
+    </message>
+    <message>
+        <source>The &quot;%1&quot; column has stored data after row 25. Removing it will also delete that data.</source>
+        <translation>&quot;%1&quot; 열에는 25행 이후의 저장된 데이터가 있습니다. 열을 삭제하면 해당 데이터도 삭제됩니다.</translation>
+    </message>
+    <message>
+        <source>Remove roster row %1 and move later visible rows up?</source>
+        <translation>명단의 %1행을 삭제하고 이후에 보이는 행을 위로 이동할까요?</translation>
+    </message>
+    <message>
+        <source>Select a populated row before removing a student.</source>
+        <translation>학생을 삭제하기 전에 내용이 있는 행을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Select a populated row before moving it.</source>
+        <translation>행을 이동하기 전에 내용이 있는 행을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Roster validation failed: %1</source>
+        <translation>명단 확인에 실패했습니다: %1</translation>
+    </message>
+    <message>
+        <source>Check Korean Names</source>
+        <translation>한국어 이름 확인</translation>
+    </message>
+    <message>
+        <source>Some Korean names have an unusual syllable count. Save them anyway?</source>
+        <translation>일부 한국어 이름의 음절 수가 일반적인 범위를 벗어납니다. 그래도 저장할까요?</translation>
+    </message>
+    <message>
+        <source>Resolve the highlighted roster cells before saving.</source>
+        <translation>저장하기 전에 강조 표시된 명단 셀을 수정하세요.</translation>
+    </message>
+    <message>
+        <source>This value is longer than the supported limit.</source>
+        <translation>이 값이 허용된 길이보다 깁니다.</translation>
+    </message>
+    <message>
+        <source>English names must be 20 characters or fewer.</source>
+        <translation>영어 이름은 20자 이하여야 합니다.</translation>
+    </message>
+    <message>
+        <source>Use English characters for the English name.</source>
+        <translation>영어 이름에는 영문자를 사용하세요.</translation>
+    </message>
+    <message>
+        <source>The English name contains an unsupported character.</source>
+        <translation>영어 이름에 사용할 수 없는 문자가 있습니다.</translation>
+    </message>
+    <message>
+        <source>Use Korean characters for the Korean name.</source>
+        <translation>한국어 이름에는 한글을 사용하세요.</translation>
+    </message>
+    <message>
+        <source>The Korean name has one syllable. Check that it is correct.</source>
+        <translation>한국어 이름이 한 음절입니다. 올바른지 확인하세요.</translation>
+    </message>
+    <message>
+        <source>The Korean name has five or more syllables. Check that it is correct.</source>
+        <translation>한국어 이름이 다섯 음절 이상입니다. 올바른지 확인하세요.</translation>
+    </message>
+    <message>
+        <source>Check the Korean name length.</source>
+        <translation>한국어 이름의 길이를 확인하세요.</translation>
+    </message>
+    <message>
+        <source>A required roster column is missing.</source>
+        <translation>필수 명단 열이 없습니다.</translation>
+    </message>
+    <message>
+        <source>Column names must be unique.</source>
+        <translation>열 이름은 서로 달라야 합니다.</translation>
+    </message>
+    <message>
+        <source>Roster column widths do not match the columns.</source>
+        <translation>명단 열 너비와 열 개수가 일치하지 않습니다.</translation>
+    </message>
+    <message>
+        <source>The roster contains too many modeled rows.</source>
+        <translation>명단에 편집 가능한 행이 너무 많습니다.</translation>
+    </message>
+    <message>
+        <source>This row contains more cells than roster columns.</source>
+        <translation>이 행의 셀 수가 명단 열 개수보다 많습니다.</translation>
+    </message>
+    <message>
+        <source>Enter both an English and a Korean name for this student.</source>
+        <translation>이 학생의 영어 이름과 한국어 이름을 모두 입력하세요.</translation>
+    </message>
+    <message>
+        <source>This English and Korean name pair is duplicated.</source>
+        <translation>같은 영어 이름과 한국어 이름 조합이 이미 있습니다.</translation>
+    </message>
+    <message>
+        <source>Enter a valid value.</source>
+        <translation>올바른 값을 입력하세요.</translation>
+    </message>
+    <message>
+        <source>Enter a column name.</source>
+        <translation>열 이름을 입력하세요.</translation>
+    </message>
+    <message>
+        <source>That name is reserved for a required roster column.</source>
+        <translation>필수 명단 열에 예약된 이름입니다.</translation>
+    </message>
+    <message>
+        <source>A column with that name already exists.</source>
+        <translation>같은 이름의 열이 이미 있습니다.</translation>
+    </message>
+    <message>
+        <source>The column name is longer than the supported limit.</source>
+        <translation>열 이름이 허용된 길이보다 깁니다.</translation>
+    </message>
+</context>
 </TS>

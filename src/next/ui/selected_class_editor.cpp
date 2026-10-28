@@ -148,6 +148,7 @@ SelectedClassEditor::SelectedClassEditor(
     , m_detailsAutosave(new QTimer(this))
     , m_notesAutosave(new QTimer(this))
 {
+    m_actions.rosterEditor.saveMode = m_saveMode;
     setObjectName(QStringLiteral("selectedClassEditor"));
     auto* const layout = new QVBoxLayout(this);
     layout->setContentsMargins(12, 8, 8, 8);
@@ -178,7 +179,8 @@ SelectedClassEditor::SelectedClassEditor(
 
 bool SelectedClassEditor::hasUnsavedChanges() const noexcept
 {
-    return m_detailsDirty || m_coTeacherDirty || m_notesDirty;
+    return m_detailsDirty || m_coTeacherDirty || m_notesDirty
+        || (m_rosterEditor && m_rosterEditor->hasUnsavedChanges());
 }
 
 bool SelectedClassEditor::isLoaded() const noexcept
@@ -236,6 +238,11 @@ QLabel* SelectedClassEditor::analyticsStatusLabel() const noexcept
     return m_analyticsStatus;
 }
 
+RosterEditorWidget* SelectedClassEditor::rosterEditor() const noexcept
+{
+    return m_rosterEditor;
+}
+
 void SelectedClassEditor::ensureUi()
 {
     if (m_sections)
@@ -252,15 +259,31 @@ void SelectedClassEditor::ensureUi()
     m_analyticsTab = new QWidget(this);
     m_analyticsTab->setObjectName(QStringLiteral("selectedClassAnalyticsTab"));
     m_analyticsTab->setLayout(new QVBoxLayout(m_analyticsTab));
+    m_rosterTab = new QWidget(this);
+    m_rosterTab->setObjectName(QStringLiteral("selectedClassRosterTab"));
+    auto* const rosterLayout = new QVBoxLayout(m_rosterTab);
+    rosterLayout->setContentsMargins(0, 0, 0, 0);
+    m_rosterEditor = new RosterEditorWidget(m_actions.rosterEditor, m_rosterTab);
+    rosterLayout->addWidget(m_rosterEditor);
+    m_rosterEditor->setDirtyChangedCallback([this](const bool) {
+        updateDirtyState();
+    });
     m_sections->addTab(m_detailsTab, translated("Class Details and Times"));
     m_sections->addTab(m_coTeacherTab, translated("Co-Teacher"));
     m_sections->addTab(m_notesTab, translated("Notes"));
     m_sections->addTab(m_analyticsTab, translated("Analytics"));
+    m_sections->addTab(m_rosterTab,
+        QCoreApplication::translate("NextRosterEditor", "Roster"));
     layout->addWidget(m_sections, 1);
     connect(m_sections, &QTabWidget::currentChanged, this, [this](const int index) {
         if (m_loading)
         {
             return;
+        }
+        const int previousIndex = m_previousSectionIndex;
+        if (previousIndex == 4 && index != 4 && m_rosterEditor)
+        {
+            m_rosterEditor->finishEditing();
         }
         if (hasUnsavedChanges())
         {
@@ -271,7 +294,10 @@ void SelectedClassEditor::ensureUi()
                 return;
             }
         }
-        const int previousIndex = m_previousSectionIndex;
+        if (previousIndex == 4 && index != 4 && m_rosterEditor)
+        {
+            m_rosterEditor->clear();
+        }
         m_previousSectionIndex = index;
         if (previousIndex == 3 && index != 3)
         {
@@ -290,6 +316,10 @@ void SelectedClassEditor::ensureUi()
         {
             ensureAnalyticsUi();
             static_cast<void>(loadAnalyticsIfNeeded());
+        }
+        else if (index == 4)
+        {
+            loadRosterIfNeeded();
         }
     });
     retranslateUi();
@@ -796,6 +826,10 @@ void SelectedClassEditor::loadClass(
     m_emptyState->hide();
     m_sections->show();
     m_loading = false;
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->clear();
+    }
     clearNotesDisplay();
     clearAnalyticsDisplay();
     readClassDetails();
@@ -830,6 +864,10 @@ void SelectedClassEditor::clear()
     m_savedNotes.clear();
     m_savedTimeFillerActivities.clear();
     m_notesSubtitle.clear();
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->clear();
+    }
     if (m_sections)
     {
         m_loading = true;
@@ -909,11 +947,29 @@ bool SelectedClassEditor::saveChanges(QString* error)
     {
         return false;
     }
+    if (m_rosterEditor && m_rosterEditor->hasUnsavedChanges()
+        && !m_rosterEditor->saveChanges(true))
+    {
+        if (error)
+        {
+            *error = translated("Roster changes could not be saved.");
+        }
+        return false;
+    }
     return true;
 }
 
 bool SelectedClassEditor::discardChanges(QString* error)
 {
+    if (m_rosterEditor && m_rosterEditor->hasUnsavedChanges()
+        && !m_rosterEditor->discardChanges())
+    {
+        if (error)
+        {
+            *error = translated("Roster changes could not be reloaded.");
+        }
+        return false;
+    }
     if (!m_classId || !m_databasePath)
     {
         m_detailsDirty = false;
@@ -1150,6 +1206,14 @@ bool SelectedClassEditor::loadNotesIfNeeded()
         readNotes();
     }
     return m_notesLoaded;
+}
+
+void SelectedClassEditor::loadRosterIfNeeded()
+{
+    if (m_rosterEditor && m_databasePath && m_classId)
+    {
+        m_rosterEditor->enterClassSection(*m_databasePath, *m_classId);
+    }
 }
 
 bool SelectedClassEditor::loadAnalyticsIfNeeded()
@@ -2186,6 +2250,8 @@ void SelectedClassEditor::retranslateUi()
         m_sections->setTabText(1, translated("Co-Teacher"));
         m_sections->setTabText(2, translated("Notes"));
         m_sections->setTabText(3, translated("Analytics"));
+        m_sections->setTabText(4,
+            QCoreApplication::translate("NextRosterEditor", "Roster"));
     }
     if (m_chooseColor)
     {

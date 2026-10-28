@@ -10,6 +10,7 @@
 #include "next/application/class_notes_save_port.h"
 #include "next/application/save_mode_preferences.h"
 #include "next/domain/domain_types.h"
+#include "next/ui/roster_editor_widget.h"
 
 #include <QString>
 #include <QWidget>
@@ -68,6 +69,7 @@ struct SelectedClassEditorActions final
     std::function<Application::ClassNotesSaveResult(
         const QString&, const Application::ClassNotesSaveRequest&)> saveNotes;
     std::function<UnsavedChangesChoice(const QString&)> resolveUnsavedChanges;
+    RosterEditorActions rosterEditor;
 };
 
 // One resident editor serves the current selection; it never creates a widget
@@ -92,6 +94,7 @@ public:
     [[nodiscard]] QComboBox* analyticsEvaluationChoice() const noexcept;
     [[nodiscard]] QTableView* analyticsRankingTable() const noexcept;
     [[nodiscard]] QLabel* analyticsStatusLabel() const noexcept;
+    [[nodiscard]] RosterEditorWidget* rosterEditor() const noexcept;
 
     void loadClass(
         const QString& databasePath,
@@ -122,6 +125,7 @@ private:
     void readAnalytics(bool useDefaultSelection);
     void renderAnalytics();
     [[nodiscard]] bool loadNotesIfNeeded();
+    void loadRosterIfNeeded();
     void readCoTeacher();
     void readTeacherChoices();
     void readSelectedTeacherDetails();
@@ -165,6 +169,8 @@ private:
     QWidget* m_coTeacherTab = nullptr;
     QWidget* m_notesTab = nullptr;
     QWidget* m_analyticsTab = nullptr;
+    QWidget* m_rosterTab = nullptr;
+    RosterEditorWidget* m_rosterEditor = nullptr;
     QLabel* m_emptyState = nullptr;
     QLabel* m_detailsStatus = nullptr;
     QLabel* m_coTeacherStatus = nullptr;

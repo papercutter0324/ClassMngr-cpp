@@ -10061,4 +10061,243 @@ Version: %2</source>
         <translation>Update room</translation>
     </message>
 </context>
+<context>
+    <name>NextRosterEditor</name>
+    <message>
+        <source>Roster</source>
+        <translation>Roster</translation>
+    </message>
+    <message>
+        <source>English</source>
+        <translation>English</translation>
+    </message>
+    <message>
+        <source>Korean</source>
+        <translation>Korean</translation>
+    </message>
+    <message>
+        <source>Winter</source>
+        <translation>Winter</translation>
+    </message>
+    <message>
+        <source>Speech Contest</source>
+        <translation>Speech Contest</translation>
+    </message>
+    <message>
+        <source>Summer</source>
+        <translation>Summer</translation>
+    </message>
+    <message>
+        <source>Fall</source>
+        <translation>Fall</translation>
+    </message>
+    <message>
+        <source>The roster could not be saved. Your draft is still here.</source>
+        <translation>The roster could not be saved. Your draft is still here.</translation>
+    </message>
+    <message>
+        <source>Roster saved.</source>
+        <translation>Roster saved.</translation>
+    </message>
+    <message>
+        <source>Discard Roster Changes?</source>
+        <translation>Discard Roster Changes?</translation>
+    </message>
+    <message>
+        <source>Discard all unsaved roster changes?</source>
+        <translation>Discard all unsaved roster changes?</translation>
+    </message>
+    <message>
+        <source>Add Column</source>
+        <translation>Add Column</translation>
+    </message>
+    <message>
+        <source>Remove Column</source>
+        <translation>Remove Column</translation>
+    </message>
+    <message>
+        <source>Remove Student</source>
+        <translation>Remove Student</translation>
+    </message>
+    <message>
+        <source>Move Up</source>
+        <translation>Move Up</translation>
+    </message>
+    <message>
+        <source>Move Down</source>
+        <translation>Move Down</translation>
+    </message>
+    <message>
+        <source>Save Changes</source>
+        <translation>Save Changes</translation>
+    </message>
+    <message>
+        <source>Discard Changes</source>
+        <translation>Discard Changes</translation>
+    </message>
+    <message>
+        <source>Retry</source>
+        <translation>Retry</translation>
+    </message>
+    <message>
+        <source>Open Korean / English on-screen keyboard</source>
+        <translation>Open Korean / English on-screen keyboard</translation>
+    </message>
+    <message>
+        <source>Korean Keyboard</source>
+        <translation>Korean Keyboard</translation>
+    </message>
+    <message>
+        <source>A roster cannot be loaded while no workspace is open.</source>
+        <translation>A roster cannot be loaded while no workspace is open.</translation>
+    </message>
+    <message>
+        <source>The roster could not be loaded. Editing is disabled.</source>
+        <translation>The roster could not be loaded. Editing is disabled.</translation>
+    </message>
+    <message>
+        <source>This roster has saved rows after row 25. They remain stored at their original row numbers.</source>
+        <translation>This roster has saved rows after row 25. They remain stored at their original row numbers.</translation>
+    </message>
+    <message>
+        <source>Review Korean Names and Save</source>
+        <translation>Review Korean Names and Save</translation>
+    </message>
+    <message>
+        <source>Column name:</source>
+        <translation>Column name:</translation>
+    </message>
+    <message>
+        <source>Cannot Add Column</source>
+        <translation>Cannot Add Column</translation>
+    </message>
+    <message>
+        <source>Remove the &quot;%1&quot; column?</source>
+        <translation>Remove the &quot;%1&quot; column?</translation>
+    </message>
+    <message>
+        <source>Cannot Remove Column</source>
+        <translation>Cannot Remove Column</translation>
+    </message>
+    <message>
+        <source>Stored rows after row 25 could not be checked. The column was not removed.</source>
+        <translation>Stored rows after row 25 could not be checked. The column was not removed.</translation>
+    </message>
+    <message>
+        <source>Remove Column Data After Row 25?</source>
+        <translation>Remove Column Data After Row 25?</translation>
+    </message>
+    <message>
+        <source>The &quot;%1&quot; column has stored data after row 25. Removing it will also delete that data.</source>
+        <translation>The &quot;%1&quot; column has stored data after row 25. Removing it will also delete that data.</translation>
+    </message>
+    <message>
+        <source>Remove roster row %1 and move later visible rows up?</source>
+        <translation>Remove roster row %1 and move later visible rows up?</translation>
+    </message>
+    <message>
+        <source>Select a populated row before removing a student.</source>
+        <translation>Select a populated row before removing a student.</translation>
+    </message>
+    <message>
+        <source>Select a populated row before moving it.</source>
+        <translation>Select a populated row before moving it.</translation>
+    </message>
+    <message>
+        <source>Roster validation failed: %1</source>
+        <translation>Roster validation failed: %1</translation>
+    </message>
+    <message>
+        <source>Check Korean Names</source>
+        <translation>Check Korean Names</translation>
+    </message>
+    <message>
+        <source>Some Korean names have an unusual syllable count. Save them anyway?</source>
+        <translation>Some Korean names have an unusual syllable count. Save them anyway?</translation>
+    </message>
+    <message>
+        <source>Resolve the highlighted roster cells before saving.</source>
+        <translation>Resolve the highlighted roster cells before saving.</translation>
+    </message>
+    <message>
+        <source>This value is longer than the supported limit.</source>
+        <translation>This value is longer than the supported limit.</translation>
+    </message>
+    <message>
+        <source>English names must be 20 characters or fewer.</source>
+        <translation>English names must be 20 characters or fewer.</translation>
+    </message>
+    <message>
+        <source>Use English characters for the English name.</source>
+        <translation>Use English characters for the English name.</translation>
+    </message>
+    <message>
+        <source>The English name contains an unsupported character.</source>
+        <translation>The English name contains an unsupported character.</translation>
+    </message>
+    <message>
+        <source>Use Korean characters for the Korean name.</source>
+        <translation>Use Korean characters for the Korean name.</translation>
+    </message>
+    <message>
+        <source>The Korean name has one syllable. Check that it is correct.</source>
+        <translation>The Korean name has one syllable. Check that it is correct.</translation>
+    </message>
+    <message>
+        <source>The Korean name has five or more syllables. Check that it is correct.</source>
+        <translation>The Korean name has five or more syllables. Check that it is correct.</translation>
+    </message>
+    <message>
+        <source>Check the Korean name length.</source>
+        <translation>Check the Korean name length.</translation>
+    </message>
+    <message>
+        <source>A required roster column is missing.</source>
+        <translation>A required roster column is missing.</translation>
+    </message>
+    <message>
+        <source>Column names must be unique.</source>
+        <translation>Column names must be unique.</translation>
+    </message>
+    <message>
+        <source>Roster column widths do not match the columns.</source>
+        <translation>Roster column widths do not match the columns.</translation>
+    </message>
+    <message>
+        <source>The roster contains too many modeled rows.</source>
+        <translation>The roster contains too many modeled rows.</translation>
+    </message>
+    <message>
+        <source>This row contains more cells than roster columns.</source>
+        <translation>This row contains more cells than roster columns.</translation>
+    </message>
+    <message>
+        <source>Enter both an English and a Korean name for this student.</source>
+        <translation>Enter both an English and a Korean name for this student.</translation>
+    </message>
+    <message>
+        <source>This English and Korean name pair is duplicated.</source>
+        <translation>This English and Korean name pair is duplicated.</translation>
+    </message>
+    <message>
+        <source>Enter a valid value.</source>
+        <translation>Enter a valid value.</translation>
+    </message>
+    <message>
+        <source>Enter a column name.</source>
+        <translation>Enter a column name.</translation>
+    </message>
+    <message>
+        <source>That name is reserved for a required roster column.</source>
+        <translation>That name is reserved for a required roster column.</translation>
+    </message>
+    <message>
+        <source>A column with that name already exists.</source>
+        <translation>A column with that name already exists.</translation>
+    </message>
+    <message>
+        <source>The column name is longer than the supported limit.</source>
+        <translation>The column name is longer than the supported limit.</translation>
+    </message>
+</context>
 </TS>

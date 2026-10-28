@@ -2,10 +2,14 @@
 #include "core/process_memory_snapshot.h"
 #include "data/database/workspace_store.h"
 #include "features/classes/ui/testing_classes_page.h"
+#include "features/roster/ui/roster_editor_widget.h"
+#include "next/platform/workspace_store_roster_actions.h"
 #include "next/platform/workspace_store_testing_classes_actions.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
+#include "next/ui/roster_editor_widget.h"
+#include "next/ui/roster_table_model.h"
 #include "next/ui/testing_classes_manager_page.h"
 #include "preferences_test_ports.h"
 
@@ -53,6 +57,7 @@ enum class CaptureState
 {
     Details,
     Notes,
+    Roster,
     PendingSlot
 };
 
@@ -62,6 +67,7 @@ enum class CaptureState
     {
     case CaptureState::Details: return QStringLiteral("details");
     case CaptureState::Notes: return QStringLiteral("notes");
+    case CaptureState::Roster: return QStringLiteral("roster");
     case CaptureState::PendingSlot: return QStringLiteral("pending_slot");
     }
     return QStringLiteral("unknown");
@@ -199,7 +205,8 @@ enum class CaptureState
     if (QTabWidget* const tabs = page.findChild<QTabWidget*>(
             QStringLiteral("testingClassesTabs")))
     {
-        tabs->setCurrentIndex(state == CaptureState::Notes ? 2 : 0);
+        tabs->setCurrentIndex(state == CaptureState::Notes ? 2
+            : state == CaptureState::Roster ? 1 : 0);
     }
     page.show();
     QApplication::processEvents();
@@ -216,6 +223,16 @@ enum class CaptureState
         if (!notes || notes->toPlainText() != FixtureNotes)
         {
             if (error) *error = QStringLiteral("Legacy Testing Notes did not load the seeded value.");
+            return false;
+        }
+    }
+    if (state == CaptureState::Roster)
+    {
+        const RosterEditorWidget* const roster =
+            page.findChild<RosterEditorWidget*>();
+        if (!roster)
+        {
+            if (error) *error = QStringLiteral("Legacy Testing Roster editor was not created.");
             return false;
         }
     }
@@ -244,6 +261,8 @@ enum class CaptureState
         {QStringLiteral("widgetCountWhileActive"), activeWidgets},
         {QStringLiteral("editorWidgetCount"), 1},
         {QStringLiteral("sectionIndex"), sectionIndex},
+        {QStringLiteral("rosterEditorCount"),
+            page.findChildren<RosterEditorWidget*>().size()},
         {QStringLiteral("pendingScheduleSlot"), state == CaptureState::PendingSlot
             ? QJsonValue(QStringLiteral("Thursday 10:00; held in page state, no visible label"))
             : QJsonValue(QJsonValue::Null)},
@@ -304,6 +323,10 @@ enum class CaptureState
                 const Application::TestingClassDeleteRequest& request) {
                 return Platform::deleteTestingClassAtPath(path, request);
             };
+            actions.rosterEditor.readRoster = Platform::readRosterWindowAtPath;
+            actions.rosterEditor.saveRoster = Platform::saveRosterAtPath;
+            actions.rosterEditor.columnHasTailData =
+                Platform::rosterColumnHasTailDataAtPath;
             return std::unique_ptr<Ui::Page>(
                 std::make_unique<Ui::TestingClassesManagerPage>(
                     context, std::move(actions)));
@@ -341,6 +364,10 @@ enum class CaptureState
     {
         page->sections()->setCurrentIndex(1);
     }
+    else if (state == CaptureState::Roster)
+    {
+        page->sections()->setCurrentIndex(2);
+    }
     const std::optional<Application::TestingClassPendingScheduleSlot> pendingSlot =
         state == CaptureState::PendingSlot
             ? std::optional<Application::TestingClassPendingScheduleSlot>(
@@ -366,6 +393,13 @@ enum class CaptureState
         && page->notesEdit()->toPlainText() != FixtureNotes)
     {
         if (error) *error = QStringLiteral("Next Testing Notes did not load the seeded value.");
+        return false;
+    }
+    if (state == CaptureState::Roster
+        && (!page->rosterEditor()->isLoaded()
+            || page->rosterEditor()->model()->rowCount() != 25))
+    {
+        if (error) *error = QStringLiteral("Next Testing Roster did not load the 25-row model.");
         return false;
     }
     if (state == CaptureState::PendingSlot
@@ -396,6 +430,7 @@ enum class CaptureState
             && labelText(QStringLiteral("testingClassFontColorLabel")) == QStringLiteral("글자 색상")
             && page->sections()->tabText(0) == QStringLiteral("세부 정보")
             && page->sections()->tabText(1) == QStringLiteral("노트")
+            && page->sections()->tabText(2) == QStringLiteral("명단")
             && page->addButton()->text() == QStringLiteral("수업 추가")
             && page->deleteButton()->text() == QStringLiteral("수업 삭제")
             && page->saveButton()->text() == QStringLiteral("변경 내용 저장")
@@ -430,8 +465,16 @@ enum class CaptureState
     const int activeWidgets = widgetCount(page);
     const int editorCount = page->findChildren<QWidget*>(
         QStringLiteral("testingClassesEditor")).size();
+    const int rosterEditorCount = page->findChildren<QWidget*>(
+        QStringLiteral("testingClassRosterEditor")).size();
     const QString selectedId = page->selectedClassId()
         ? QString::fromStdString(page->selectedClassId()->value()) : QString{};
+    const bool rosterLoadedWhileActive = state == CaptureState::Roster
+        && page->rosterEditor()->isLoaded();
+    const int rosterRowsWhileActive = state == CaptureState::Roster
+        ? page->rosterEditor()->model()->rowCount() : 0;
+    const int rosterColumnsWhileActive = state == CaptureState::Roster
+        ? page->rosterEditor()->model()->columnCount() : 0;
     const bool newClassDraftWhileVisible = page->isNewDraft();
     if (!host.activatePage(QStringLiteral("other")))
     {
@@ -442,6 +485,8 @@ enum class CaptureState
     const ProcessMemorySnapshot suspended = memoryProvider.snapshot();
     const bool clearedOnSuspension = !page->hasLoadedDetails()
         && page->nameEdit()->text().isEmpty();
+    const bool rosterClearedOnSuspension = state != CaptureState::Roster
+        || !page->rosterEditor()->isLoaded();
     *result = {
         {QStringLiteral("route"), QStringLiteral("Next TestingClassesManagerPage")},
         {QStringLiteral("image"), QFileInfo(outputPath).fileName()},
@@ -455,6 +500,12 @@ enum class CaptureState
         {QStringLiteral("selectedEditorWidgetCount"), editorCount},
         {QStringLiteral("selectedEditorDescendantCount"),
             page->editorWidget()->findChildren<QWidget*>().size()},
+        {QStringLiteral("rosterEditorWidgetCount"), rosterEditorCount},
+        {QStringLiteral("rosterEditorLoaded"), rosterLoadedWhileActive},
+        {QStringLiteral("rosterModeledRowCount"), rosterRowsWhileActive},
+        {QStringLiteral("rosterDynamicColumnCount"), rosterColumnsWhileActive},
+        {QStringLiteral("rosterEditorClearedOnSuspension"),
+            rosterClearedOnSuspension},
         {QStringLiteral("koreanLabelsVerified"), koreanLabelsVerified},
         {QStringLiteral("newClassDraft"), newClassDraftWhileVisible},
         {QStringLiteral("pendingScheduleSlot"), pendingScheduleSlotJson(pendingSlot)},
@@ -469,7 +520,8 @@ enum class CaptureState
             {QStringLiteral("suspended"), memoryJson(suspended)}
         }}
     };
-    return editorCount == 1 && clearedOnSuspension;
+    return editorCount == 1 && clearedOnSuspension
+        && rosterClearedOnSuspension;
 }
 
 [[nodiscard]] bool seedFixture(const QString& path, QString* error)
@@ -555,7 +607,8 @@ enum class CaptureState
     }
 
     for (const CaptureState state : {
-            CaptureState::Details, CaptureState::Notes, CaptureState::PendingSlot})
+            CaptureState::Details, CaptureState::Notes,
+            CaptureState::Roster, CaptureState::PendingSlot})
     {
         const QString key = QStringLiteral("%1_%2_%3")
             .arg(stateName(state), locale, theme);
@@ -672,7 +725,7 @@ int main(int argc, char* argv[])
     }
     const QJsonObject manifest{
         {QStringLiteral("scope"), QStringLiteral(
-            "Paired Legacy and Next Testing Classes Details, Notes, and pending-slot entry states")},
+            "Paired Legacy and Next Testing Classes Details, Roster, Notes, and pending-slot entry states")},
         {QStringLiteral("fixture"), QFileInfo(sourceFixture).fileName()},
         {QStringLiteral("fixtureRegularClassCount"), TestingClassCount},
         {QStringLiteral("seededTestingClassCount"), TestingClassCount},

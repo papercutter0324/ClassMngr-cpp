@@ -5,9 +5,12 @@
 #include "domain/models/testing_class.h"
 #include "next/application/testing_class_create.h"
 #include "next/platform/workspace_store_testing_classes_actions.h"
+#include "next/platform/workspace_store_roster_actions.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
+#include "next/ui/roster_editor_widget.h"
+#include "next/ui/roster_table_model.h"
 #include "next/ui/testing_classes_manager_page.h"
 #include "preferences_test_ports.h"
 
@@ -18,9 +21,11 @@
 #include <QLineEdit>
 #include <QListView>
 #include <QPushButton>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QTabWidget>
 #include <QTemporaryDir>
+#include <QTableView>
 #include <QtTest/QtTest>
 
 #include <array>
@@ -200,7 +205,10 @@ struct PageHarness final
         Ui::TestingClassesUnsavedChoice::Cancel;
     bool confirmDeletion = true;
     bool failNextDetailsRead = false;
+    bool failRosterSave = false;
     QString lastDeletionPrompt;
+    int rosterReadCount = 0;
+    std::vector<QString> rosterReadPaths;
 
     [[nodiscard]] bool initialize()
     {
@@ -264,6 +272,28 @@ struct PageHarness final
                     const Application::TestingClassDeleteRequest& request) {
                     return Platform::deleteTestingClassAtPath(activePath, request);
                 };
+                actions.rosterEditor.readRoster = [this](
+                    const QString& activePath,
+                    const Domain::ClassId& classId) {
+                    ++rosterReadCount;
+                    rosterReadPaths.push_back(activePath);
+                    return Platform::readRosterWindowAtPath(activePath, classId);
+                };
+                actions.rosterEditor.saveRoster = [this](
+                    const QString& activePath,
+                    const Application::RosterSaveRequest& request) {
+                    if (failRosterSave)
+                    {
+                        return Domain::Result<void>::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "injected testing roster save failure",
+                            .recoverable = true
+                        });
+                    }
+                    return Platform::saveRosterAtPath(activePath, request);
+                };
+                actions.rosterEditor.columnHasTailData =
+                    Platform::rosterColumnHasTailDataAtPath;
                 actions.resolveUnsavedChanges = [this](const QString&) {
                     return unsavedChoice;
                 };
@@ -336,6 +366,11 @@ private slots:
     void manualAutomaticAndPendingCreateSaveBehavior();
     void visiblePageFailedSaveRetainsDraftAndRetrySucceeds();
     void readRetryAndWorkspaceLifecycleClearSnapshots();
+    void rosterEntryIsLazyUsesTestingModeAndActiveWorkspacePath();
+    void rosterSectionSuspensionReleasesTestingModel();
+    void rosterSelectionAndPageChangesReleaseTestingModel();
+    void rosterSectionExitResolvesDraftBeforeClearingAndReloads();
+    void rosterDirtyChoicesSaveDiscardAndCancelBeforeClassSelection();
     void ninetySixTestingClassesUseOneEditorTree();
 };
 
@@ -894,6 +929,336 @@ readRetryAndWorkspaceLifecycleClearSnapshots()
     QVERIFY(!page->selectedClassId());
     QVERIFY(!page->hasLoadedDetails());
     QCOMPARE(page->model()->classCount(), 0);
+}
+
+void TestingClassesManagerTests::
+rosterEntryIsLazyUsesTestingModeAndActiveWorkspacePath()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("testing-roster.tps"));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(path));
+        QVERIFY(seedTestingClass(store, QStringLiteral("Testing roster")) > 0);
+    }
+
+    PageHarness harness;
+    harness.path = path;
+    QVERIFY(harness.initialize());
+    QVERIFY(harness.activate());
+    Ui::TestingClassesManagerPage* const page = harness.page();
+    QVERIFY(page);
+    QCOMPARE(page->model()->classCount(), 1);
+    QVERIFY(page->selectedClassId());
+    QCOMPARE(harness.rosterReadCount, 0);
+    QVERIFY(!page->rosterEditor()->isLoaded());
+
+    page->sections()->setCurrentIndex(2);
+    QCOMPARE(harness.rosterReadCount, 1);
+    QCOMPARE(harness.rosterReadPaths, (std::vector<QString>{path}));
+    QVERIFY(page->rosterEditor()->isLoaded());
+    QVERIFY(page->rosterEditor()->tableView()->isColumnHidden(2));
+    QVERIFY(!page->rosterEditor()->tableView()->isColumnHidden(0));
+}
+
+void TestingClassesManagerTests::rosterSectionSuspensionReleasesTestingModel()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("testing-section.tps"));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(path));
+        QVERIFY(seedTestingClass(store, QStringLiteral("Testing section")) > 0);
+    }
+
+    PageHarness harness;
+    harness.path = path;
+    QVERIFY(harness.initialize());
+    QVERIFY(harness.activate());
+    auto* const page = harness.page();
+    page->sections()->setCurrentIndex(2);
+    QVERIFY(page->rosterEditor()->isLoaded());
+
+    page->sections()->setCurrentIndex(0);
+    QVERIFY(!page->rosterEditor()->isLoaded());
+    QCOMPARE(page->rosterEditor()->model()->rowCount(), 25);
+    QCOMPARE(page->rosterEditor()->model()->columnCount(), 6);
+}
+
+void TestingClassesManagerTests::rosterSelectionAndPageChangesReleaseTestingModel()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("testing-lifecycle.tps"));
+    int firstId = -1;
+    int secondId = -1;
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(path));
+        firstId = seedTestingClass(store, QStringLiteral("First testing class"));
+        secondId = seedTestingClass(store, QStringLiteral("Second testing class"));
+        QVERIFY(firstId > 0);
+        QVERIFY(secondId > firstId);
+        const auto seedRosterName = [&store](const int classId, const QString& name) {
+            const QStringList columns{
+                QStringLiteral("English"), QStringLiteral("Korean"),
+                QStringLiteral("Winter"), QStringLiteral("Speech Contest"),
+                QStringLiteral("Summer"), QStringLiteral("Fall")};
+            for (int index = 0; index < columns.size(); ++index)
+            {
+                QSqlQuery insertColumn(store.database());
+                insertColumn.prepare(QStringLiteral(
+                    "INSERT INTO roster_columns(class_id,name,position,width) "
+                    "VALUES (?,?,?,120)"));
+                insertColumn.addBindValue(classId);
+                insertColumn.addBindValue(columns.at(index));
+                insertColumn.addBindValue(index);
+                if (!insertColumn.exec()) return false;
+            }
+            QSqlQuery insertCell(store.database());
+            insertCell.prepare(QStringLiteral(
+                "INSERT INTO roster_data(class_id,row_index,col_index,value) "
+                "VALUES (?,0,0,?)"));
+            insertCell.addBindValue(classId);
+            insertCell.addBindValue(name);
+            return insertCell.exec();
+        };
+        QVERIFY(seedRosterName(firstId, QStringLiteral("First roster")));
+        QVERIFY(seedRosterName(secondId, QStringLiteral("Second roster")));
+    }
+
+    PageHarness harness;
+    harness.path = path;
+    QVERIFY(harness.initialize());
+    QVERIFY(harness.activate());
+    auto* const page = harness.page();
+    QCOMPARE(page->selectedClassId()->value(), std::to_string(firstId));
+    page->sections()->setCurrentIndex(2);
+    QVERIFY(page->rosterEditor()->isLoaded());
+    QCOMPARE(harness.rosterReadCount, 1);
+
+    page->classList()->setCurrentIndex(page->model()->indexForClassId(
+        typedClassId(secondId)));
+    QCOMPARE(page->selectedClassId()->value(), std::to_string(secondId));
+    QCOMPARE(harness.rosterReadCount, 2);
+    QVERIFY(page->rosterEditor()->isLoaded());
+    QCOMPARE(page->rosterEditor()->model()->data(
+        page->rosterEditor()->model()->index(0, 0)).toString(),
+        QStringLiteral("Second roster"));
+    QVERIFY(harness.host->activatePage(QStringLiteral("other")));
+    QVERIFY(!page->rosterEditor()->isLoaded());
+}
+
+void TestingClassesManagerTests::rosterSectionExitResolvesDraftBeforeClearingAndReloads()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("testing-roster-section-exit.tps"));
+    int classId = -1;
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(path));
+        classId = seedTestingClass(store, QStringLiteral("Section exit class"));
+        QVERIFY(classId > 0);
+        const QStringList columns{
+            QStringLiteral("English"), QStringLiteral("Korean"),
+            QStringLiteral("Winter"), QStringLiteral("Speech Contest"),
+            QStringLiteral("Summer"), QStringLiteral("Fall")};
+        for (int index = 0; index < columns.size(); ++index)
+        {
+            QSqlQuery insertColumn(store.database());
+            insertColumn.prepare(QStringLiteral(
+                "INSERT INTO roster_columns(class_id,name,position,width) "
+                "VALUES (?,?,?,120)"));
+            insertColumn.addBindValue(classId);
+            insertColumn.addBindValue(columns.at(index));
+            insertColumn.addBindValue(index);
+            QVERIFY2(insertColumn.exec(), qPrintable(insertColumn.lastError().text()));
+        }
+        QSqlQuery insertCell(store.database());
+        insertCell.prepare(QStringLiteral(
+            "INSERT INTO roster_data(class_id,row_index,col_index,value) "
+            "VALUES (?,0,0,?)"));
+        insertCell.addBindValue(classId);
+        insertCell.addBindValue(QStringLiteral("Saved"));
+        QVERIFY2(insertCell.exec(), qPrintable(insertCell.lastError().text()));
+        insertCell.prepare(QStringLiteral(
+            "INSERT INTO roster_data(class_id,row_index,col_index,value) "
+            "VALUES (?,0,1,?)"));
+        insertCell.addBindValue(classId);
+        insertCell.addBindValue(QStringLiteral("\uAE40\uBBFC\uC9C0"));
+        QVERIFY2(insertCell.exec(), qPrintable(insertCell.lastError().text()));
+    }
+
+    PageHarness harness;
+    harness.path = path;
+    harness.saveMode = Application::SaveMode::Manual;
+    QVERIFY(harness.initialize());
+    QVERIFY(harness.activate());
+    auto* const page = harness.page();
+    QCOMPARE(page->selectedClassId()->value(), std::to_string(classId));
+    page->sections()->setCurrentIndex(2);
+    Ui::RosterEditorWidget* const roster = page->rosterEditor();
+    QVERIFY(roster->isLoaded());
+    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
+        QStringLiteral("Saved"));
+
+    const auto setDraft = [roster](const QString& value) {
+        return roster->model()->setData(roster->model()->index(0, 0), value);
+    };
+    QVERIFY(setDraft(QStringLiteral("Cancelled draft")));
+    harness.unsavedChoice = Ui::TestingClassesUnsavedChoice::Cancel;
+    page->sections()->setCurrentIndex(0);
+    QCOMPARE(page->sections()->currentIndex(), 2);
+    QVERIFY(roster->isLoaded());
+    QVERIFY(roster->hasUnsavedChanges());
+    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
+        QStringLiteral("Cancelled Draft"));
+
+    harness.unsavedChoice = Ui::TestingClassesUnsavedChoice::Save;
+    harness.failRosterSave = true;
+    page->sections()->setCurrentIndex(0);
+    QCOMPARE(page->sections()->currentIndex(), 2);
+    QVERIFY(roster->isLoaded());
+    QVERIFY(roster->hasUnsavedChanges());
+    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
+        QStringLiteral("Cancelled Draft"));
+
+    harness.failRosterSave = false;
+    page->sections()->setCurrentIndex(0);
+    QCOMPARE(page->sections()->currentIndex(), 0);
+    QVERIFY(!roster->isLoaded());
+    const auto afterSave = Platform::readRosterWindowAtPath(path, typedClassId(classId));
+    QVERIFY(afterSave);
+    QCOMPARE(afterSave.value().roster.rows[0][0], std::u16string(u"Cancelled Draft"));
+
+    page->sections()->setCurrentIndex(2);
+    QVERIFY(roster->isLoaded());
+    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
+        QStringLiteral("Cancelled Draft"));
+    QVERIFY(setDraft(QStringLiteral("Discarded draft")));
+    harness.unsavedChoice = Ui::TestingClassesUnsavedChoice::Discard;
+    page->sections()->setCurrentIndex(0);
+    QCOMPARE(page->sections()->currentIndex(), 0);
+    QVERIFY(!roster->isLoaded());
+    page->sections()->setCurrentIndex(2);
+    QVERIFY(roster->isLoaded());
+    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
+        QStringLiteral("Cancelled Draft"));
+    QVERIFY(!roster->hasUnsavedChanges());
+    const auto afterDiscard = Platform::readRosterWindowAtPath(path, typedClassId(classId));
+    QVERIFY(afterDiscard);
+    QCOMPARE(afterDiscard.value().roster.rows[0][0], std::u16string(u"Cancelled Draft"));
+}
+
+void TestingClassesManagerTests::
+rosterDirtyChoicesSaveDiscardAndCancelBeforeClassSelection()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("testing-roster-dirty.tps"));
+    int firstId = -1;
+    int secondId = -1;
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(path));
+        firstId = seedTestingClass(store, QStringLiteral("First testing class"));
+        secondId = seedTestingClass(store, QStringLiteral("Second testing class"));
+        const QStringList columns{
+            QStringLiteral("English"), QStringLiteral("Korean"),
+            QStringLiteral("Winter"), QStringLiteral("Speech Contest"),
+            QStringLiteral("Summer"), QStringLiteral("Fall")};
+        const auto seedRoster = [&store, &columns](const int classId,
+            const QString& english) {
+            for (int index = 0; index < columns.size(); ++index)
+            {
+                QSqlQuery insertColumn(store.database());
+                insertColumn.prepare(QStringLiteral(
+                    "INSERT INTO roster_columns(class_id,name,position,width) "
+                    "VALUES (?,?,?,120)"));
+                insertColumn.addBindValue(classId);
+                insertColumn.addBindValue(columns.at(index));
+                insertColumn.addBindValue(index);
+                if (!insertColumn.exec()) return false;
+            }
+            QSqlQuery insertNames(store.database());
+            insertNames.prepare(QStringLiteral(
+                "INSERT INTO roster_data(class_id,row_index,col_index,value) "
+                "VALUES (?,?,?,?)"));
+            insertNames.addBindValue(classId);
+            insertNames.addBindValue(0);
+            insertNames.addBindValue(0);
+            insertNames.addBindValue(english);
+            if (!insertNames.exec()) return false;
+            insertNames.prepare(QStringLiteral(
+                "INSERT INTO roster_data(class_id,row_index,col_index,value) "
+                "VALUES (?,?,?,?)"));
+            insertNames.addBindValue(classId);
+            insertNames.addBindValue(0);
+            insertNames.addBindValue(1);
+            insertNames.addBindValue(QStringLiteral("\uAE40\uBBFC\uC9C0"));
+            return insertNames.exec();
+        };
+        QVERIFY(firstId > 0);
+        QVERIFY(secondId > firstId);
+        QVERIFY(seedRoster(firstId, QStringLiteral("First saved")));
+        QVERIFY(seedRoster(secondId, QStringLiteral("Second saved")));
+    }
+
+    PageHarness harness;
+    harness.path = path;
+    harness.saveMode = Application::SaveMode::Manual;
+    QVERIFY(harness.initialize());
+    QVERIFY(harness.activate());
+    auto* const page = harness.page();
+    QCOMPARE(page->selectedClassId()->value(), std::to_string(firstId));
+    page->sections()->setCurrentIndex(2);
+    QVERIFY(page->rosterEditor()->isLoaded());
+    QCOMPARE(page->rosterEditor()->model()->data(
+        page->rosterEditor()->model()->index(0, 0)).toString(),
+        QStringLiteral("First saved"));
+
+    QVERIFY(page->rosterEditor()->model()->setData(
+        page->rosterEditor()->model()->index(0, 0), QStringLiteral("Cancelled draft")));
+    harness.unsavedChoice = Ui::TestingClassesUnsavedChoice::Cancel;
+    page->classList()->setCurrentIndex(page->model()->indexForClassId(
+        typedClassId(secondId)));
+    QCOMPARE(page->selectedClassId()->value(), std::to_string(firstId));
+    QCOMPARE(page->rosterEditor()->model()->data(
+        page->rosterEditor()->model()->index(0, 0)).toString(),
+        QStringLiteral("Cancelled Draft"));
+    QVERIFY(page->rosterEditor()->hasUnsavedChanges());
+
+    harness.unsavedChoice = Ui::TestingClassesUnsavedChoice::Discard;
+    page->classList()->setCurrentIndex(page->model()->indexForClassId(
+        typedClassId(secondId)));
+    QCOMPARE(page->selectedClassId()->value(), std::to_string(secondId));
+    QVERIFY(!page->rosterEditor()->hasUnsavedChanges());
+    const auto firstAfterDiscard = Platform::readRosterWindowAtPath(
+        path, typedClassId(firstId));
+    QVERIFY(firstAfterDiscard);
+    QCOMPARE(firstAfterDiscard.value().roster.rows[0][0],
+        std::u16string(u"First saved"));
+
+    page->classList()->setCurrentIndex(page->model()->indexForClassId(
+        typedClassId(firstId)));
+    QCOMPARE(page->rosterEditor()->model()->data(
+        page->rosterEditor()->model()->index(0, 0)).toString(),
+        QStringLiteral("First saved"));
+    QVERIFY(page->rosterEditor()->model()->setData(
+        page->rosterEditor()->model()->index(0, 0), QStringLiteral("Saved draft")));
+    harness.unsavedChoice = Ui::TestingClassesUnsavedChoice::Save;
+    page->classList()->setCurrentIndex(page->model()->indexForClassId(
+        typedClassId(secondId)));
+    QCOMPARE(page->selectedClassId()->value(), std::to_string(secondId));
+    const auto firstAfterSave = Platform::readRosterWindowAtPath(
+        path, typedClassId(firstId));
+    QVERIFY(firstAfterSave);
+    QCOMPARE(firstAfterSave.value().roster.rows[0][0],
+        std::u16string(u"Saved Draft"));
+    QVERIFY(!page->rosterEditor()->hasUnsavedChanges());
 }
 
 void TestingClassesManagerTests::ninetySixTestingClassesUseOneEditorTree()

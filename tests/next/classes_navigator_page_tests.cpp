@@ -2,6 +2,8 @@
 #include "next/resources/resource_loader.h"
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/page_host.h"
+#include "next/ui/roster_editor_widget.h"
+#include "next/ui/roster_table_model.h"
 #include "next/ui/selected_class_editor.h"
 #include "preferences_test_ports.h"
 
@@ -38,6 +40,8 @@ Domain::ClassId classId(const int value)
 {
     return *Domain::ClassId::fromString(std::to_string(value));
 }
+
+Application::RosterSnapshot rosterSnapshot(const QString& firstStudent);
 
 Application::ClassesNavigationEntry navigationEntry(
     const int id,
@@ -168,6 +172,11 @@ struct ReadState final
     int notesReadCount = 0;
     int notesSaveCount = 0;
     int analyticsReadCount = 0;
+    int rosterReadCount = 0;
+    std::vector<QString> rosterReadPaths;
+    bool failRosterSave = false;
+    int rosterSaveCount = 0;
+    std::unordered_map<std::string, Application::RosterSnapshot> rosterSnapshots;
     int analyticsRankingCount = 25;
     int coTeacherSaveCount = 0;
     int createCount = 0;
@@ -438,6 +447,39 @@ struct PageFixture final
                             : request.selectedEvaluationName
                     });
                 };
+                actions.rosterEditor.readRoster = [this](
+                    const QString& path,
+                    const Domain::ClassId& classId) {
+                    ++state.rosterReadCount;
+                    state.rosterReadPaths.push_back(path);
+                    const auto found = state.rosterSnapshots.find(classId.value());
+                    Application::RosterSnapshot roster = found
+                        == state.rosterSnapshots.end()
+                        ? rosterSnapshot(QString{}) : found->second;
+                    if (roster.rows.empty())
+                    {
+                        roster = rosterSnapshot(QString{});
+                    }
+                    return Application::RosterWindowReadResult::success({
+                        .roster = std::move(roster),
+                        .hasRowsOutsideWindow = false
+                    });
+                };
+                actions.rosterEditor.saveRoster = [this](
+                    const QString&,
+                    const Application::RosterSaveRequest& request) {
+                    ++state.rosterSaveCount;
+                    if (state.failRosterSave)
+                    {
+                        return Domain::Result<void>::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "injected roster save failure",
+                            .recoverable = true
+                        });
+                    }
+                    state.rosterSnapshots[request.classId.value()] = request.roster;
+                    return Domain::Result<void>::success();
+                };
                 actions.readClassCoTeacher = [this](
                     const QString&,
                     const Domain::ClassId& id
@@ -679,6 +721,42 @@ int widgetCount(const QWidget* root)
     return root ? root->findChildren<QWidget*>().size() + 1 : 0;
 }
 
+int widgetCountExcludingSection(const QWidget* root, const QWidget* excludedSection)
+{
+    if (!root)
+    {
+        return 0;
+    }
+    int count = 1;
+    for (QWidget* const child : root->findChildren<QWidget*>())
+    {
+        if (!excludedSection
+            || (child != excludedSection && !excludedSection->isAncestorOf(child)))
+        {
+            ++count;
+        }
+    }
+    return count;
+}
+
+Application::RosterSnapshot rosterSnapshot(const QString& firstStudent)
+{
+    Application::RosterSnapshot snapshot;
+    snapshot.columns = {
+        u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall"
+    };
+    snapshot.columnWidths.assign(snapshot.columns.size(),
+        Application::RosterSnapshotColumnWidth{120});
+    snapshot.rows.resize(Application::RosterModeledRowCount);
+    for (auto& row : snapshot.rows)
+    {
+        row.resize(snapshot.columns.size());
+    }
+    snapshot.rows.front().front() = firstStudent.toStdU16String();
+    snapshot.rows.front()[1] = QStringLiteral("\uAE40\uBBFC\uC9C0").toStdU16String();
+    return snapshot;
+}
+
 } // namespace
 
 class ClassesNavigatorPageTests final : public QObject
@@ -694,6 +772,10 @@ private slots:
     void remembersSelectionIndependentlyForEachGradeAndAllGroup();
     void distinguishesNoWorkspaceFromEmptyClasses();
     void suspensionClearsProjectionAndHonorsResetPolicies();
+    void rosterEntryIsLazyAndUsesSelectedWorkspacePath();
+    void rosterSectionSuspensionReleasesModel();
+    void rosterSelectionAndPageChangesReleaseLoadedModel();
+    void rosterSectionExitResolvesDraftBeforeClearingAndReloads();
     void ninetySixClassesUseOneCompactModelWithoutClassWidgets();
     void oneSelectedEditorServesNinetySixClassRows();
     void dirtyChoicesGuardClassSwitchAndRetainFailedDrafts();
@@ -1055,6 +1137,159 @@ suspensionClearsProjectionAndHonorsResetPolicies()
     QVERIFY(!monday->isChecked());
 }
 
+void ClassesNavigatorPageTests::rosterEntryIsLazyAndUsesSelectedWorkspacePath()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    fixture.state.classes = classList({{1, QStringLiteral("First")}});
+    fixture.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("First"), QStringLiteral("E4"),
+            QStringLiteral("Theseus"), QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM"))
+    });
+    fixture.state.path = QStringLiteral("ordinary-profile.tps");
+    QVERIFY(fixture.activate());
+    auto* const editor = fixture.page()->selectedClassEditor();
+    QVERIFY(editor);
+    QVERIFY(editor->rosterEditor());
+    QCOMPARE(fixture.state.rosterReadCount, 0);
+    QVERIFY(!editor->rosterEditor()->isLoaded());
+
+    editor->sections()->setCurrentIndex(4);
+    QCOMPARE(fixture.state.rosterReadCount, 1);
+    QCOMPARE(fixture.state.rosterReadPaths,
+        (std::vector<QString>{QStringLiteral("ordinary-profile.tps")}));
+    QVERIFY(editor->rosterEditor()->isLoaded());
+    QCOMPARE(editor->rosterEditor()->model()->rowCount(), 25);
+}
+
+void ClassesNavigatorPageTests::rosterSectionSuspensionReleasesModel()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    fixture.state.classes = classList({{1, QStringLiteral("First")}});
+    fixture.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("First"), QStringLiteral("E4"),
+            QStringLiteral("Theseus"), QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM"))
+    });
+    QVERIFY(fixture.activate());
+    auto* const editor = fixture.page()->selectedClassEditor();
+    editor->sections()->setCurrentIndex(4);
+    QVERIFY(editor->rosterEditor()->isLoaded());
+
+    editor->sections()->setCurrentIndex(0);
+    QVERIFY(!editor->rosterEditor()->isLoaded());
+    QCOMPARE(editor->rosterEditor()->model()->rowCount(), 25);
+    QCOMPARE(editor->rosterEditor()->model()->columnCount(), 6);
+}
+
+void ClassesNavigatorPageTests::rosterSelectionAndPageChangesReleaseLoadedModel()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    fixture.state.classes = classList({
+        {1, QStringLiteral("First")}, {2, QStringLiteral("Second")}
+    });
+    fixture.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("First"), QStringLiteral("E4"),
+            QStringLiteral("Theseus"), QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM")),
+        navigationEntry(2, QStringLiteral("Second"), QStringLiteral("E4"),
+            QStringLiteral("Perseus"), QStringLiteral("Tuesday"),
+            QStringLiteral("10:00 AM"))
+    });
+    QVERIFY(fixture.activate());
+    auto* const page = fixture.page();
+    auto* const editor = page->selectedClassEditor();
+    editor->sections()->setCurrentIndex(4);
+    QVERIFY(editor->rosterEditor()->isLoaded());
+    QCOMPARE(fixture.state.rosterReadCount, 1);
+
+    page->classList()->setCurrentIndex(
+        page->model()->indexForClassId(classId(2)));
+    QCOMPARE(page->selectedClassId()->value(), std::string("2"));
+    QVERIFY(!editor->rosterEditor()->isLoaded());
+    QCOMPARE(editor->rosterEditor()->model()->columnCount(), 6);
+
+    editor->sections()->setCurrentIndex(4);
+    QCOMPARE(fixture.state.rosterReadCount, 2);
+    QVERIFY(editor->rosterEditor()->isLoaded());
+    QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    QVERIFY(!editor->rosterEditor()->isLoaded());
+}
+
+void ClassesNavigatorPageTests::rosterSectionExitResolvesDraftBeforeClearingAndReloads()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    fixture.state.classes = classList({
+        {1, QStringLiteral("First")}, {2, QStringLiteral("Second")}
+    });
+    fixture.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("First"), QStringLiteral("E4"),
+            QStringLiteral("Theseus"), QStringLiteral("Monday"), QStringLiteral("9:00 AM")),
+        navigationEntry(2, QStringLiteral("Second"), QStringLiteral("E4"),
+            QStringLiteral("Perseus"), QStringLiteral("Tuesday"), QStringLiteral("10:00 AM"))
+    });
+    fixture.state.saveMode = Application::SaveMode::Manual;
+    fixture.state.rosterSnapshots.emplace("1", rosterSnapshot(QStringLiteral("Saved")));
+    fixture.state.rosterSnapshots.emplace("2", rosterSnapshot(QStringLiteral("Sibling")));
+    QVERIFY(fixture.activate());
+    auto* const editor = fixture.page()->selectedClassEditor();
+    QVERIFY(editor);
+    QCOMPARE(editor->classId()->value(), std::string("1"));
+
+    editor->sections()->setCurrentIndex(4);
+    Ui::RosterEditorWidget* const roster = editor->rosterEditor();
+    QVERIFY(roster->isLoaded());
+    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
+        QStringLiteral("Saved"));
+
+    const auto setDraft = [roster](const QString& value) {
+        return roster->model()->setData(roster->model()->index(0, 0), value);
+    };
+    QVERIFY(setDraft(QStringLiteral("Cancelled draft")));
+    fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Cancel;
+    editor->sections()->setCurrentIndex(0);
+    QCOMPARE(editor->sections()->currentIndex(), 4);
+    QVERIFY(roster->isLoaded());
+    QVERIFY(roster->hasUnsavedChanges());
+    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
+        QStringLiteral("Cancelled Draft"));
+
+    fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Save;
+    fixture.state.failRosterSave = true;
+    editor->sections()->setCurrentIndex(0);
+    QCOMPARE(editor->sections()->currentIndex(), 4);
+    QVERIFY(roster->isLoaded());
+    QVERIFY(roster->hasUnsavedChanges());
+    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
+        QStringLiteral("Cancelled Draft"));
+
+    fixture.state.failRosterSave = false;
+    editor->sections()->setCurrentIndex(0);
+    QCOMPARE(editor->sections()->currentIndex(), 0);
+    QVERIFY(!roster->isLoaded());
+    QCOMPARE(fixture.state.rosterSaveCount, 2);
+    editor->sections()->setCurrentIndex(4);
+    QVERIFY(roster->isLoaded());
+    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
+        QStringLiteral("Cancelled Draft"));
+
+    QVERIFY(setDraft(QStringLiteral("Discarded draft")));
+    fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Discard;
+    editor->sections()->setCurrentIndex(0);
+    QCOMPARE(editor->sections()->currentIndex(), 0);
+    QVERIFY(!roster->isLoaded());
+    QCOMPARE(fixture.state.rosterSaveCount, 2);
+    editor->sections()->setCurrentIndex(4);
+    QVERIFY(roster->isLoaded());
+    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
+        QStringLiteral("Cancelled Draft"));
+    QVERIFY(!roster->hasUnsavedChanges());
+}
+
 void ClassesNavigatorPageTests::
 ninetySixClassesUseOneCompactModelWithoutClassWidgets()
 {
@@ -1087,7 +1322,11 @@ ninetySixClassesUseOneCompactModelWithoutClassWidgets()
     QCOMPARE(page->model()->gradeGroupCount(), 1);
     QCOMPARE(page->gradeTabs()->count(), 2);
     QCOMPARE(page->classList()->model()->rowCount(), 96);
-    QVERIFY(widgetCount(page) < 250);
+    const int nonRosterWidgetCount = widgetCountExcludingSection(page,
+        page->selectedClassEditor()->sections()->widget(4));
+    QVERIFY2(nonRosterWidgetCount < 250,
+        qPrintable(QStringLiteral("non-roster widget count was %1")
+            .arg(nonRosterWidgetCount)));
     QCOMPARE(page->findChildren<QWidget*>(QStringLiteral("selectedClassEditor")).size(), 1);
     int classWidgetCount = 0;
     for (QWidget* widget : page->findChildren<QWidget*>())
@@ -1124,7 +1363,11 @@ void ClassesNavigatorPageTests::oneSelectedEditorServesNinetySixClassRows()
         QStringLiteral("selectedClassEditor"));
     QCOMPARE(editors.size(), 1);
     QVERIFY(page->selectedClassEditor()->isLoaded());
-    QVERIFY(widgetCount(page) < 250);
+    const int nonRosterWidgetCount = widgetCountExcludingSection(page,
+        page->selectedClassEditor()->sections()->widget(4));
+    QVERIFY2(nonRosterWidgetCount < 250,
+        qPrintable(QStringLiteral("non-roster widget count was %1")
+            .arg(nonRosterWidgetCount)));
     for (QWidget* const widget : page->findChildren<QWidget*>())
     {
         QVERIFY(!widget->property("class_id").isValid());
@@ -1750,7 +1993,7 @@ analyticsLoadsOnlySelectedClassAndUsesOneRankingModel()
     QVERIFY(editor);
     QCOMPARE(page->model()->classCount(), 96);
     QVERIFY(editor->sections());
-    QCOMPARE(editor->sections()->count(), 4);
+    QCOMPARE(editor->sections()->count(), 5);
     editor->sections()->setCurrentIndex(3);
     const int reusableEditorWidgetCount = widgetCount(editor);
     QCOMPARE(fixture.state.analyticsReadCount, 1);

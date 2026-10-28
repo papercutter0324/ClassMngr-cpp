@@ -750,6 +750,8 @@ void ClassesNavigatorPage::buildUi()
     editorActions.saveCoTeacher = m_actions.saveClassCoTeacher;
     editorActions.saveNotes = m_actions.saveClassNotes;
     editorActions.resolveUnsavedChanges = m_actions.resolveUnsavedChanges;
+    editorActions.rosterEditor = m_actions.rosterEditor;
+    editorActions.rosterEditor.saveMode = m_actions.saveMode;
     m_selectedClassEditor = new SelectedClassEditor(
         std::move(editorActions), m_contentSplitter);
     m_contentSplitter->addWidget(m_classListPane);

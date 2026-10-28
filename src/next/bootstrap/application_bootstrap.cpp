@@ -23,6 +23,7 @@
 #include "next/platform/workspace_store_my_workspace_overview_read_actions.h"
 #include "next/platform/workspace_store_classes_navigator_read_actions.h"
 #include "next/platform/workspace_store_class_editor_actions.h"
+#include "next/platform/workspace_store_roster_actions.h"
 #include "next/platform/workspace_store_class_analytics_actions.h"
 #include "next/platform/workspace_store_testing_classes_actions.h"
 #include "next/platform/workspace_store_class_transfer_actions.h"
@@ -1319,6 +1320,27 @@ Application::StartupResult ApplicationBootstrap::start()
                         ) {
                         return Platform::saveClassNotesAtPath(databasePath, request);
                     };
+                    actions.rosterEditor.saveMode = actions.saveMode;
+                    actions.rosterEditor.readRoster = [](
+                        const QString& databasePath,
+                        const Domain::ClassId& classId
+                        ) {
+                        return Platform::readRosterWindowAtPath(databasePath, classId);
+                    };
+                    actions.rosterEditor.saveRoster = [](
+                        const QString& databasePath,
+                        const Application::RosterSaveRequest& request
+                        ) {
+                        return Platform::saveRosterAtPath(databasePath, request);
+                    };
+                    actions.rosterEditor.columnHasTailData = [](
+                        const QString& databasePath,
+                        const Domain::ClassId& classId,
+                        const std::u16string& columnName
+                        ) {
+                        return Platform::rosterColumnHasTailDataAtPath(
+                            databasePath, classId, columnName);
+                    };
                     actions.createClass = [](
                         const QString& databasePath
                         ) {
@@ -1346,6 +1368,24 @@ Application::StartupResult ApplicationBootstrap::start()
                         Ui::TestingClassesManagerPageActions actions;
                         actions.saveMode =
                             Platform::SettingsManagerSaveModePreferencesPort().read();
+                        actions.rosterEditor.saveMode = actions.saveMode;
+                        actions.rosterEditor.readRoster = [](
+                            const QString& databasePath,
+                            const Domain::ClassId& classId) {
+                            return Platform::readRosterWindowAtPath(databasePath, classId);
+                        };
+                        actions.rosterEditor.saveRoster = [](
+                            const QString& databasePath,
+                            const Application::RosterSaveRequest& request) {
+                            return Platform::saveRosterAtPath(databasePath, request);
+                        };
+                        actions.rosterEditor.columnHasTailData = [](
+                            const QString& databasePath,
+                            const Domain::ClassId& classId,
+                            const std::u16string& columnName) {
+                            return Platform::rosterColumnHasTailDataAtPath(
+                                databasePath, classId, columnName);
+                        };
                         actions.activeWorkspacePath = [this]()
                             -> std::optional<QString> {
                             if (!m_applicationRuntime)

@@ -69,6 +69,7 @@ struct ClassesNavigatorPageActions final
         saveClassCoTeacher;
     std::function<Application::ClassNotesSaveResult(
         const QString&, const Application::ClassNotesSaveRequest&)> saveClassNotes;
+    RosterEditorActions rosterEditor;
     std::function<Application::ClassCreateResult(const QString&)> createClass;
     std::function<Application::ClassDeleteResult(
         const QString&, const Application::ClassDeleteRequest&)> deleteClass;

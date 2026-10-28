@@ -8,6 +8,7 @@
 #include "next/application/testing_class_details_update.h"
 #include "next/application/testing_teacher_choices_read_query.h"
 #include "next/ui/page.h"
+#include "next/ui/roster_editor_widget.h"
 #include "next/ui/testing_classes_model.h"
 
 #include <QColor>
@@ -59,6 +60,7 @@ struct TestingClassesManagerPageActions final
     std::function<TestingClassesUnsavedChoice(const QString&)>
         resolveUnsavedChanges;
     std::function<bool(const QString&)> confirmDelete;
+    RosterEditorActions rosterEditor;
 };
 
 // A small, model-backed testing-class manager with one reusable editor.
@@ -87,6 +89,7 @@ public:
     [[nodiscard]] QPushButton* deleteButton() const noexcept;
     [[nodiscard]] QPushButton* saveButton() const noexcept;
     [[nodiscard]] QPushButton* retryButton() const noexcept;
+    [[nodiscard]] RosterEditorWidget* rosterEditor() const noexcept;
     [[nodiscard]] QLabel* statusLabel() const noexcept;
     [[nodiscard]] QLabel* pendingSlotLabel() const noexcept;
     [[nodiscard]] const std::optional<Domain::ClassId>& selectedClassId() const noexcept;
@@ -118,9 +121,11 @@ private:
         std::optional<Application::TestingClassPendingScheduleSlot> slot = {}
         );
     [[nodiscard]] bool loadClass(const Domain::ClassId& classId);
+    void loadRosterIfNeeded();
     void selectRow(const std::optional<Domain::ClassId>& classId);
     void handleSelectionChange(const QModelIndex& current);
     [[nodiscard]] bool resolveDraft(const QString& reason);
+    [[nodiscard]] bool resolveRosterChangesBeforeLeaving();
     void markDirty();
     void scheduleAutomaticSave();
     void updateLevelChoices(const QString& selected = {});
@@ -153,6 +158,7 @@ private:
     QLineEdit* m_classColorEdit = nullptr;
     QLineEdit* m_fontColorEdit = nullptr;
     QPlainTextEdit* m_notesEdit = nullptr;
+    RosterEditorWidget* m_rosterEditor = nullptr;
     QLabel* m_classColorPreview = nullptr;
     QLabel* m_fontColorPreview = nullptr;
     QLabel* m_pageTitle = nullptr;
@@ -179,6 +185,7 @@ private:
         m_requestedPendingSlot;
     std::optional<Domain::ClassId> m_previousClassIdForDraft;
     std::optional<QString> m_workspaceIdentity;
+    int m_previousSectionIndex = 0;
     QString m_lastError;
     bool m_isNewDraft = false;
     bool m_dirty = false;

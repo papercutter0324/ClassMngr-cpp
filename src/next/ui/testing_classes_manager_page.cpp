@@ -116,6 +116,11 @@ TestingClassesModel* TestingClassesManagerPage::model() const noexcept
     return m_model;
 }
 
+RosterEditorWidget* TestingClassesManagerPage::rosterEditor() const noexcept
+{
+    return m_rosterEditor;
+}
+
 QListView* TestingClassesManagerPage::classList() const noexcept
 {
     return m_classList;
@@ -249,6 +254,10 @@ void TestingClassesManagerPage::onSuspending() noexcept
     m_pendingSlot.reset();
     m_isNewDraft = false;
     m_previousClassIdForDraft.reset();
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->clear();
+    }
     m_loading = true;
     m_nameEdit->clear();
     m_gradeChoice->setCurrentIndex(-1);
@@ -265,13 +274,14 @@ void TestingClassesManagerPage::onSuspending() noexcept
 
 bool TestingClassesManagerPage::hasUnsavedChanges() const noexcept
 {
-    return m_dirty;
+    return m_dirty || (m_rosterEditor && m_rosterEditor->hasUnsavedChanges());
 }
 
 PageOperationResult<void> TestingClassesManagerPage::saveChanges()
 {
     m_autosaveTimer->stop();
-    if (!m_dirty)
+    const bool rosterDirty = m_rosterEditor && m_rosterEditor->hasUnsavedChanges();
+    if (!m_dirty && !rosterDirty)
     {
         return {};
     }
@@ -283,7 +293,7 @@ PageOperationResult<void> TestingClassesManagerPage::saveChanges()
         return std::unexpected(PageOperationError{message});
     }
     QString validationError;
-    if (!validateEditor(&validationError))
+    if (m_dirty && !validateEditor(&validationError))
     {
         setStatus(validationError, true);
         return std::unexpected(PageOperationError{validationError});
@@ -326,29 +336,46 @@ PageOperationResult<void> TestingClassesManagerPage::saveChanges()
         return {};
     }
 
-    if (!m_selectedClassId || !m_actions.updateDetails)
+    if (!m_selectedClassId)
     {
         const QString message = managerText("Testing class details cannot be saved.");
         setStatus(message, true);
         return std::unexpected(PageOperationError{message});
     }
-    const Application::TestingClassDetailsUpdateResult saved =
-        m_actions.updateDetails(*path, detailsRequest());
-    if (!saved)
+    if (m_dirty)
     {
-        const QString message = operationMessage(saved.error());
+        if (!m_actions.updateDetails)
+        {
+            const QString message = managerText("Testing class details cannot be saved.");
+            setStatus(message, true);
+            return std::unexpected(PageOperationError{message});
+        }
+        const Application::TestingClassDetailsUpdateResult saved =
+            m_actions.updateDetails(*path, detailsRequest());
+        if (!saved)
+        {
+            const QString message = operationMessage(saved.error());
+            setStatus(message, true);
+            return std::unexpected(PageOperationError{message});
+        }
+        m_dirty = false;
+        setHasUnsavedChanges(hasUnsavedChanges());
+    }
+
+    if (rosterDirty && m_rosterEditor && !m_rosterEditor->saveChanges(true))
+    {
+        const QString message = managerText("The testing class roster could not be saved.");
         setStatus(message, true);
         return std::unexpected(PageOperationError{message});
     }
 
-    m_dirty = false;
-    setHasUnsavedChanges(false);
-    if (!refreshFromStore())
+    if (m_dirty == false && !refreshFromStore())
     {
         setStatus(managerText("Testing class saved, but the list could not be refreshed."), true);
     }
     else
     {
+        setHasUnsavedChanges(hasUnsavedChanges());
         setStatus(managerText("Testing class saved."), false);
     }
     updateActions();
@@ -358,6 +385,13 @@ PageOperationResult<void> TestingClassesManagerPage::saveChanges()
 PageOperationResult<void> TestingClassesManagerPage::discardChanges()
 {
     m_autosaveTimer->stop();
+    if (m_rosterEditor && m_rosterEditor->hasUnsavedChanges()
+        && !m_rosterEditor->discardChanges())
+    {
+        const QString message = managerText("Testing class roster changes could not be reloaded.");
+        setStatus(message, true);
+        return std::unexpected(PageOperationError{message});
+    }
     m_dirty = false;
     setHasUnsavedChanges(false);
     if (m_isNewDraft)
@@ -606,8 +640,21 @@ void TestingClassesManagerPage::buildUi()
     m_notesEdit->setObjectName(QStringLiteral("testingClassNotes"));
     notesLayout->addWidget(m_notesEdit, 1);
 
+    auto* rosterTab = new QWidget(m_sections);
+    auto* rosterLayout = new QVBoxLayout(rosterTab);
+    rosterLayout->setContentsMargins(0, 0, 0, 0);
+    m_actions.rosterEditor.saveMode = m_saveMode;
+    m_rosterEditor = new RosterEditorWidget(m_actions.rosterEditor, rosterTab);
+    m_rosterEditor->setObjectName(QStringLiteral("testingClassRosterEditor"));
+    rosterLayout->addWidget(m_rosterEditor);
+    m_rosterEditor->setDirtyChangedCallback([this](const bool) {
+        setHasUnsavedChanges(hasUnsavedChanges());
+        updateActions();
+    });
+
     m_sections->addTab(detailsTab, QString{});
     m_sections->addTab(notesTab, QString{});
+    m_sections->addTab(rosterTab, QString{});
     editorLayout->addWidget(m_sections, 1);
     splitter->addWidget(listPane);
     splitter->addWidget(m_editorWidget);
@@ -634,6 +681,33 @@ void TestingClassesManagerPage::buildUi()
         [this](const QModelIndex& current, const QModelIndex&) {
             handleSelectionChange(current);
         });
+    connect(m_sections, &QTabWidget::currentChanged, this, [this](const int index) {
+        if (m_loading)
+        {
+            return;
+        }
+        const int previousIndex = m_previousSectionIndex;
+        if (previousIndex == 2 && index != 2 && m_rosterEditor)
+        {
+            m_rosterEditor->finishEditing();
+        }
+        if (previousIndex == 2 && index != 2
+            && !resolveRosterChangesBeforeLeaving())
+        {
+            const QSignalBlocker blocker(m_sections);
+            m_sections->setCurrentIndex(previousIndex);
+            return;
+        }
+        if (previousIndex == 2 && index != 2 && m_rosterEditor)
+        {
+            m_rosterEditor->clear();
+        }
+        m_previousSectionIndex = index;
+        if (index == 2)
+        {
+            loadRosterIfNeeded();
+        }
+    });
     connect(m_addButton, &QPushButton::clicked, this,
         [this] { addClass(); });
     connect(m_deleteButton, &QPushButton::clicked, this,
@@ -641,7 +715,7 @@ void TestingClassesManagerPage::buildUi()
     connect(m_saveButton, &QPushButton::clicked, this,
         [this] { static_cast<void>(saveChanges()); });
     connect(m_retryButton, &QPushButton::clicked, this, [this] {
-        if (m_dirty)
+        if (m_dirty || (m_rosterEditor && m_rosterEditor->hasUnsavedChanges()))
         {
             static_cast<void>(saveChanges());
         }
@@ -714,6 +788,8 @@ void TestingClassesManagerPage::retranslateUi()
     m_fontColorLabel->setText(managerText("Font Color"));
     m_sections->setTabText(0, managerText("Details"));
     m_sections->setTabText(1, managerText("Notes"));
+    m_sections->setTabText(2,
+        QCoreApplication::translate("NextRosterEditor", "Roster"));
     m_addButton->setText(managerText("Add Class"));
     m_deleteButton->setText(managerText("Delete Class"));
     m_saveButton->setText(managerText("Save Changes"));
@@ -763,6 +839,10 @@ void TestingClassesManagerPage::clearEditor()
     m_isNewDraft = false;
     m_dirty = false;
     setHasUnsavedChanges(false);
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->clear();
+    }
     m_nameEdit->clear();
     m_gradeChoice->setCurrentIndex(-1);
     m_levelChoice->clear();
@@ -789,6 +869,10 @@ void TestingClassesManagerPage::beginNewClass(
     m_pendingSlot = std::move(slot);
     m_dirty = false;
     setHasUnsavedChanges(false);
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->clear();
+    }
     m_loading = true;
     m_classList->clearSelection();
     m_nameEdit->setText(QStringLiteral("Testing Class"));
@@ -836,6 +920,12 @@ bool TestingClassesManagerPage::loadClass(const Domain::ClassId& classId)
         return false;
     }
 
+    const bool selectedClassChanged = m_selectedClassId != classId;
+    if (selectedClassChanged && m_rosterEditor)
+    {
+        m_rosterEditor->clear();
+    }
+
     const Application::TestingClassDetailsSnapshot& details = loaded.value();
     m_loading = true;
     m_selectedClassId = classId;
@@ -877,7 +967,20 @@ bool TestingClassesManagerPage::loadClass(const Domain::ClassId& classId)
         ? managerText("Teacher choices could not be loaded. Retry to update choices.")
         : QString{}, m_teacherChoicesUnavailable);
     updateActions();
+    if (m_sections->currentIndex() == 2)
+    {
+        loadRosterIfNeeded();
+    }
     return true;
+}
+
+void TestingClassesManagerPage::loadRosterIfNeeded()
+{
+    const auto path = activePath();
+    if (path && m_selectedClassId && !m_isNewDraft && m_rosterEditor)
+    {
+        m_rosterEditor->enterClassSection(*path, *m_selectedClassId, true);
+    }
 }
 
 void TestingClassesManagerPage::selectRow(
@@ -927,7 +1030,7 @@ void TestingClassesManagerPage::handleSelectionChange(
 
 bool TestingClassesManagerPage::resolveDraft(const QString& reason)
 {
-    if (!m_dirty)
+    if (!m_dirty && !(m_rosterEditor && m_rosterEditor->hasUnsavedChanges()))
     {
         return true;
     }
@@ -939,6 +1042,40 @@ bool TestingClassesManagerPage::resolveDraft(const QString& reason)
         return static_cast<bool>(saveChanges());
     case TestingClassesUnsavedChoice::Discard:
         return static_cast<bool>(discardChanges());
+    case TestingClassesUnsavedChoice::Cancel:
+        return false;
+    }
+    return false;
+}
+
+bool TestingClassesManagerPage::resolveRosterChangesBeforeLeaving()
+{
+    if (!m_rosterEditor || !m_rosterEditor->hasUnsavedChanges())
+    {
+        return true;
+    }
+
+    const QString reason = managerText("switching testing class sections");
+    const TestingClassesUnsavedChoice choice = m_actions.resolveUnsavedChanges
+        ? m_actions.resolveUnsavedChanges(reason)
+        : askUnsavedChanges(reason);
+    switch (choice)
+    {
+    case TestingClassesUnsavedChoice::Save:
+        if (m_rosterEditor->saveChanges(true))
+        {
+            return true;
+        }
+        setStatus(managerText("The testing class roster could not be saved."), true);
+        return false;
+    case TestingClassesUnsavedChoice::Discard:
+        if (m_rosterEditor->discardChanges())
+        {
+            return true;
+        }
+        setStatus(managerText(
+            "Testing class roster changes could not be reloaded."), true);
+        return false;
     case TestingClassesUnsavedChoice::Cancel:
         return false;
     }
@@ -1056,11 +1193,17 @@ void TestingClassesManagerPage::updateActions()
     const bool hasWorkspace = activePath().has_value();
     QString ignored;
     const bool valid = validateEditor(&ignored);
-    m_saveButton->setEnabled(hasWorkspace && m_dirty && valid);
+    m_saveButton->setEnabled(hasWorkspace && (m_dirty
+        || (m_rosterEditor && m_rosterEditor->hasUnsavedChanges())) && valid);
     m_addButton->setEnabled(hasWorkspace);
     m_deleteButton->setEnabled(hasWorkspace && m_selectedClassId.has_value());
     m_classList->setEnabled(hasWorkspace && m_model->classCount() > 0);
     m_editorWidget->setEnabled(hasWorkspace);
+    if (m_sections)
+    {
+        m_sections->setTabEnabled(2, hasWorkspace
+            && m_selectedClassId.has_value() && !m_isNewDraft);
+    }
 }
 
 std::optional<QString> TestingClassesManagerPage::activePath() const

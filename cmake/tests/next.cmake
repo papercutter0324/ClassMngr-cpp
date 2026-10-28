@@ -3268,10 +3268,13 @@ add_executable(ClassMngrNextClassesNavigatorPageTests
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
     src/next/ui/selected_class_analytics_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
 )
 target_compile_features(ClassMngrNextClassesNavigatorPageTests
     PRIVATE
@@ -3321,11 +3324,15 @@ set_tests_properties(ClassMngrNextClassesNavigatorPageTests
 add_executable(ClassMngrNextTestingClassesManagerTests
     tests/next/testing_classes_manager_tests.cpp
     src/next/platform/workspace_store_testing_classes_actions.cpp
+    src/next/platform/workspace_store_roster_actions.cpp
     src/next/ui/testing_classes_manager_page.cpp
     src/next/ui/testing_classes_model.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
 )
 target_compile_features(ClassMngrNextTestingClassesManagerTests
     PRIVATE
@@ -3372,6 +3379,67 @@ add_test(
 set_tests_properties(ClassMngrNextTestingClassesManagerTests
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Verify the shared Next roster editor against path-scoped WorkspaceStore
+# actions and injected read/save failures.
+add_executable(ClassMngrNextRosterEditorTests
+    tests/next/roster_editor_tests.cpp
+    src/next/platform/workspace_store_roster_actions.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
+)
+target_compile_features(ClassMngrNextRosterEditorTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextRosterEditorTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextRosterEditorTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextRosterEditorTests
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNextWorkspaceDomain
+        ClassMngrScheduleImportParser
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextRosterEditorTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextRosterEditorTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextRosterEditorTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextRosterEditorTests
+    COMMAND ClassMngrNextRosterEditorTests
+)
+set_tests_properties(ClassMngrNextRosterEditorTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+qt_add_resources(ClassMngrNextRosterEditorTests
+    roster_editor_test_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
 )
 
 # Exercise the WorkspaceStore-backed Class Transfer page, including JSON
@@ -3499,11 +3567,15 @@ add_executable(ClassMngrNextTestingClassesVisualCapture
     tests/next/testing_classes_visual_capture.cpp
     src/core/process_memory_snapshot.cpp
     src/next/platform/workspace_store_testing_classes_actions.cpp
+    src/next/platform/workspace_store_roster_actions.cpp
     src/next/ui/testing_classes_manager_page.cpp
     src/next/ui/testing_classes_model.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
 )
 target_compile_features(ClassMngrNextTestingClassesVisualCapture
     PRIVATE
