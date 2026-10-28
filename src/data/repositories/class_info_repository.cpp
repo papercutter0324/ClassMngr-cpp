@@ -2102,11 +2102,24 @@ ClassInfoRepository::loadClassCoTeacherPageDetails(const int classId)
 RepositoryResult<ClassCoTeacherPageDetailsReadOutcome>
 ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
 {
+    return loadBoundedClassCoTeacherPageDetailsDetailed(
+        classId,
+        std::numeric_limits<int>::max(),
+        std::numeric_limits<int>::max());
+}
+
+RepositoryResult<ClassCoTeacherPageDetailsReadOutcome>
+ClassInfoRepository::loadBoundedClassCoTeacherPageDetailsDetailed(
+    const int classId,
+    const int maximumRows,
+    const int maximumScheduleTokenLength
+    )
+{
     ++m_classPageDetailsReadMetrics.callCount;
-    if (classId <= 0)
+    if (classId <= 0 || maximumRows <= 0 || maximumScheduleTokenLength < 0)
     {
         return repositoryFailure(
-            QObject::tr("Loading class information failed: invalid class id %1.")
+            QObject::tr("Loading class information failed: invalid class id or read bound for %1.")
                 .arg(classId),
             RepositoryErrorCode::InvalidInput
             );
@@ -2180,12 +2193,39 @@ ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
 
     QSqlQuery regularScheduleQuery(m_database);
     regularScheduleQuery.prepare(R"(
-        SELECT day, start_time
-        FROM class_times
-        WHERE class_id = ?
-        ORDER BY id
+        WITH limits AS (
+            SELECT ? AS max_token_length, ? AS max_token_bytes
+        ), schedule_rows AS (
+            SELECT day, start_time
+            FROM class_times
+            WHERE class_id = ?
+            ORDER BY id
+            LIMIT ?
+        ), sized_rows AS (
+            SELECT schedule_rows.*,
+                   length(COALESCE(day, '')) AS day_length,
+                   length(COALESCE(start_time, '')) AS start_length,
+                   length(CAST(COALESCE(day, '') AS BLOB)) AS day_bytes,
+                   length(CAST(COALESCE(start_time, '') AS BLOB)) AS start_bytes
+            FROM schedule_rows
+        )
+        SELECT CASE WHEN day_length <= limits.max_token_length
+                          AND day_bytes <= limits.max_token_bytes
+                    THEN day ELSE NULL END AS day,
+               CASE WHEN start_length <= limits.max_token_length
+                          AND start_bytes <= limits.max_token_bytes
+                    THEN start_time ELSE NULL END AS start_time,
+               (day_length > limits.max_token_length
+                OR start_length > limits.max_token_length
+                OR day_bytes > limits.max_token_bytes
+                OR start_bytes > limits.max_token_bytes) AS token_exceeds_bound
+        FROM sized_rows CROSS JOIN limits
     )");
+    regularScheduleQuery.addBindValue(maximumScheduleTokenLength);
+    regularScheduleQuery.addBindValue(
+        static_cast<qint64>(maximumScheduleTokenLength) * 4);
     regularScheduleQuery.addBindValue(classId);
+    regularScheduleQuery.addBindValue(static_cast<qint64>(maximumRows) + 1);
     ++m_classPageDetailsReadMetrics.regularScheduleStatementCount;
     const auto loadedRegularSchedule = SqlQueryUtils::executePrepared(
         regularScheduleQuery,
@@ -2197,11 +2237,32 @@ ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
         return repositoryFailure(loadedRegularSchedule.error().userMessage());
     }
 
+    bool regularScheduleLimitExceeded = false;
+    bool scheduleTokenLimitExceeded = false;
     while (regularScheduleQuery.next())
     {
+        if (regularScheduleQuery.value(
+                QStringLiteral("token_exceeds_bound")).toBool())
+        {
+            scheduleTokenLimitExceeded = true;
+            continue;
+        }
+        const QString day = regularScheduleQuery.value("day").toString();
+        const QString startTime = regularScheduleQuery.value("start_time").toString();
+        if (day.size() > maximumScheduleTokenLength
+            || startTime.size() > maximumScheduleTokenLength)
+        {
+            scheduleTokenLimitExceeded = true;
+            continue;
+        }
+        if (record.regularTimes.size() >= maximumRows)
+        {
+            regularScheduleLimitExceeded = true;
+            continue;
+        }
         record.regularTimes.append({
-            regularScheduleQuery.value("day").toString(),
-            regularScheduleQuery.value("start_time").toString()
+            day,
+            startTime
         });
     }
 
@@ -2217,7 +2278,9 @@ ClassInfoRepository::loadClassCoTeacherPageDetailsDetailed(const int classId)
 
     return ClassCoTeacherPageDetailsReadOutcome{
         std::move(record),
-        parentMissing
+        parentMissing,
+        regularScheduleLimitExceeded,
+        scheduleTokenLimitExceeded
     };
 }
 
@@ -2380,6 +2443,18 @@ ClassInfoRepository::loadClassDetailsPageRecord(const int classId)
 RepositoryResult<ClassDetailsPageReadOutcome>
 ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
 {
+    return loadBoundedClassDetailsPageRecordDetailed(
+        classId, std::numeric_limits<int>::max(),
+        std::numeric_limits<int>::max());
+}
+
+RepositoryResult<ClassDetailsPageReadOutcome>
+ClassInfoRepository::loadBoundedClassDetailsPageRecordDetailed(
+    const int classId,
+    const int maximumRowsPerSource,
+    const int maximumScheduleTokenLength
+    )
+{
     ++m_classDetailsPageReadMetrics.callCount;
     if (classId <= 0)
     {
@@ -2388,6 +2463,12 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
                 .arg(classId),
             RepositoryErrorCode::InvalidInput
             );
+    }
+    if (maximumRowsPerSource <= 0 || maximumScheduleTokenLength < 0)
+    {
+        return repositoryFailure(
+            QObject::tr("Loading class information failed: the schedule row bound must be positive."),
+            RepositoryErrorCode::InvalidInput);
     }
 
     const QString identity = QObject::tr("class id %1").arg(classId);
@@ -2473,18 +2554,55 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
 
     QSqlQuery scheduleQuery(m_database);
     const QString scheduleStatement = QStringLiteral(R"(
-        SELECT schedule_type, id, day, start_time, end_time
-        FROM (
+        WITH limits AS (
+            SELECT ? AS max_token_length, ? AS max_token_bytes
+        ),
+        regular_rows AS (
             SELECT 0 AS schedule_type, id, day, start_time, end_time
             FROM class_times
             WHERE class_id = ?
-
-            UNION ALL
-
+            ORDER BY id
+            LIMIT ?
+        ),
+        intensive_rows AS (
             SELECT 1 AS schedule_type, id, day, start_time, end_time
             FROM class_intensive_times
             WHERE class_id = ?
+            ORDER BY id
+            LIMIT ?
+        ),
+        schedule_rows AS (
+            SELECT * FROM regular_rows
+            UNION ALL
+            SELECT * FROM intensive_rows
+        ),
+        sized_rows AS (
+            SELECT schedule_rows.*,
+                   length(COALESCE(day, '')) AS day_length,
+                   length(COALESCE(start_time, '')) AS start_length,
+                   length(COALESCE(end_time, '')) AS end_length,
+                   length(CAST(COALESCE(day, '') AS BLOB)) AS day_bytes,
+                   length(CAST(COALESCE(start_time, '') AS BLOB)) AS start_bytes,
+                   length(CAST(COALESCE(end_time, '') AS BLOB)) AS end_bytes
+            FROM schedule_rows
         )
+        SELECT schedule_type, id,
+               CASE WHEN day_length <= limits.max_token_length
+                          AND day_bytes <= limits.max_token_bytes
+                    THEN day ELSE NULL END AS day,
+               CASE WHEN start_length <= limits.max_token_length
+                          AND start_bytes <= limits.max_token_bytes
+                    THEN start_time ELSE NULL END AS start_time,
+               CASE WHEN end_length <= limits.max_token_length
+                          AND end_bytes <= limits.max_token_bytes
+                    THEN end_time ELSE NULL END AS end_time,
+               (day_length > limits.max_token_length
+                OR start_length > limits.max_token_length
+                OR end_length > limits.max_token_length
+                OR day_bytes > limits.max_token_bytes
+                OR start_bytes > limits.max_token_bytes
+                OR end_bytes > limits.max_token_bytes) AS token_exceeds_bound
+        FROM sized_rows CROSS JOIN limits
         ORDER BY schedule_type, id
     )");
     ++m_classDetailsPageReadMetrics.scheduleStatementCount;
@@ -2513,8 +2631,12 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
             );
         return repositoryFailure(scheduleErrorMessage(error));
     }
+    scheduleQuery.addBindValue(maximumScheduleTokenLength);
+    scheduleQuery.addBindValue(static_cast<qint64>(maximumScheduleTokenLength) * 4);
     scheduleQuery.addBindValue(classId);
+    scheduleQuery.addBindValue(static_cast<qint64>(maximumRowsPerSource) + 1);
     scheduleQuery.addBindValue(classId);
+    scheduleQuery.addBindValue(static_cast<qint64>(maximumRowsPerSource) + 1);
     const auto loadedSchedules = SqlQueryUtils::executePrepared(
         scheduleQuery,
         QObject::tr("Loading regular class times"),
@@ -2525,19 +2647,48 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
         return repositoryFailure(scheduleErrorMessage(loadedSchedules.error()));
     }
 
+    bool regularScheduleLimitExceeded = false;
+    bool intensiveScheduleLimitExceeded = false;
+    bool scheduleTokenLimitExceeded = false;
     while (scheduleQuery.next())
     {
+        if (scheduleQuery.value(QStringLiteral("token_exceeds_bound")).toBool())
+        {
+            scheduleTokenLimitExceeded = true;
+            continue;
+        }
         ClassTime time;
         time.day = scheduleQuery.value("day").toString();
         time.startTime = scheduleQuery.value("start_time").toString();
         time.endTime = scheduleQuery.value("end_time").toString();
+        if (time.day.size() > maximumScheduleTokenLength
+            || time.startTime.size() > maximumScheduleTokenLength
+            || time.endTime.size() > maximumScheduleTokenLength)
+        {
+            scheduleTokenLimitExceeded = true;
+            continue;
+        }
         if (scheduleQuery.value("schedule_type").toInt() == 0)
         {
-            record.regularTimes.append(time);
+            if (record.regularTimes.size() >= maximumRowsPerSource)
+            {
+                regularScheduleLimitExceeded = true;
+            }
+            else
+            {
+                record.regularTimes.append(time);
+            }
         }
         else
         {
-            record.intensiveTimes.append(time);
+            if (record.intensiveTimes.size() >= maximumRowsPerSource)
+            {
+                intensiveScheduleLimitExceeded = true;
+            }
+            else
+            {
+                record.intensiveTimes.append(time);
+            }
         }
     }
 
@@ -2554,7 +2705,10 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
 
     return ClassDetailsPageReadOutcome{
         std::move(record),
-        parentMissing
+        parentMissing,
+        regularScheduleLimitExceeded,
+        intensiveScheduleLimitExceeded,
+        scheduleTokenLimitExceeded
     };
 }
 

@@ -12,7 +12,10 @@
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QListView>
+#include <QMessageBox>
+#include <QPushButton>
 #include <QSignalBlocker>
+#include <QSplitter>
 #include <QTabBar>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -181,6 +184,21 @@ bool ClassesNavigatorPage::isActive() const noexcept
     return m_active;
 }
 
+QPushButton* ClassesNavigatorPage::addClassButton() const noexcept
+{
+    return m_addClassButton;
+}
+
+QPushButton* ClassesNavigatorPage::deleteClassButton() const noexcept
+{
+    return m_deleteClassButton;
+}
+
+SelectedClassEditor* ClassesNavigatorPage::selectedClassEditor() const noexcept
+{
+    return m_selectedClassEditor;
+}
+
 PageOperationResult<void> ClassesNavigatorPage::onActivating()
 {
     m_active = true;
@@ -226,16 +244,56 @@ void ClassesNavigatorPage::onSuspending() noexcept
     {
         discardSelectionState();
         m_preferredGroupKey.clear();
+        notifyActiveClassSelection();
     }
 
     m_model->clear();
     m_classes = {};
     m_navigation.reset();
+    clearSelectedClassEditor();
     m_weekendAvailable = false;
     m_active = false;
     m_status = Status::Ready;
     updateStatus();
     updateControls();
+}
+
+bool ClassesNavigatorPage::hasUnsavedChanges() const noexcept
+{
+    return m_selectedClassEditor
+        && m_selectedClassEditor->hasUnsavedChanges();
+}
+
+PageOperationResult<void> ClassesNavigatorPage::saveChanges()
+{
+    if (!m_selectedClassEditor)
+    {
+        return {};
+    }
+    QString error;
+    if (!m_selectedClassEditor->saveChanges(&error))
+    {
+        return std::unexpected(PageOperationError{
+            error.isEmpty() ? translated("Class changes could not be saved.") : error
+        });
+    }
+    return {};
+}
+
+PageOperationResult<void> ClassesNavigatorPage::discardChanges()
+{
+    if (!m_selectedClassEditor)
+    {
+        return {};
+    }
+    QString error;
+    if (!m_selectedClassEditor->discardChanges(&error))
+    {
+        return std::unexpected(PageOperationError{
+            error.isEmpty() ? translated("Class changes could not be reloaded.") : error
+        });
+    }
+    return {};
 }
 
 bool ClassesNavigatorPage::refreshFromStore()
@@ -266,8 +324,10 @@ bool ClassesNavigatorPage::refreshFromStore()
     if (m_workspaceIdentity && *m_workspaceIdentity != identity)
     {
         discardSelectionState();
+        notifyActiveClassSelection();
         discardDayFilterState();
         m_preferredGroupKey.clear();
+        clearSelectedClassEditor();
         m_classes = {};
         m_navigation.reset();
         m_model->clear();
@@ -358,6 +418,9 @@ bool ClassesNavigatorPage::refreshFromStore()
         m_classes = {};
         m_navigation.reset();
         m_model->clear();
+        m_selectedClassId.reset();
+        clearSelectedClassEditor();
+        notifyActiveClassSelection();
         m_weekendAvailable = false;
         m_lastError = errorMessage(loaded.error());
         m_status = Status::ListError;
@@ -372,6 +435,9 @@ bool ClassesNavigatorPage::refreshFromStore()
         m_classes = {};
         m_navigation.reset();
         m_model->clear();
+        m_selectedClassId.reset();
+        clearSelectedClassEditor();
+        notifyActiveClassSelection();
         m_weekendAvailable = false;
         m_lastError = invalidListError;
         m_status = Status::ListError;
@@ -463,7 +529,23 @@ bool ClassesNavigatorPage::refreshFromStore()
             );
     }
 
-    const std::optional<Domain::ClassId> preferredClass = m_selectedClassId;
+    std::optional<Domain::ClassId> preferredClass = m_selectedClassId;
+    if (m_actions.activeClassSelection)
+    {
+        try
+        {
+            const auto sharedSelection = m_actions.activeClassSelection();
+            if (sharedSelection && containsId(m_classes, *sharedSelection))
+            {
+                preferredClass = sharedSelection;
+            }
+        }
+        catch (...)
+        {
+            // A failed in-memory selection read leaves the navigator's own
+            // preferred class intact.
+        }
+    }
     const QString preferredGroup = m_preferredGroupKey;
     rebuildProjection(preferredClass, preferredGroup);
 
@@ -494,6 +576,8 @@ void ClassesNavigatorPage::clearForWorkspaceChange()
     m_navigation.reset();
     m_workspaceIdentity.reset();
     m_selectedClassId.reset();
+    clearSelectedClassEditor();
+    notifyActiveClassSelection();
     m_selectedByGroup.clear();
     m_preferredGroupKey.clear();
     m_filter.selectedDayKeys.clear();
@@ -513,6 +597,8 @@ void ClassesNavigatorPage::clearForClosedWorkspace()
     m_navigation.reset();
     m_workspaceIdentity.reset();
     m_selectedClassId.reset();
+    clearSelectedClassEditor();
+    notifyActiveClassSelection();
     m_selectedByGroup.clear();
     m_preferredGroupKey.clear();
     m_filter.selectedDayKeys.clear();
@@ -618,14 +704,47 @@ void ClassesNavigatorPage::buildUi()
     m_gradeTabs->setDrawBase(false);
     m_layout->addWidget(m_gradeTabs);
 
-    m_classList = new QListView(this);
+    m_contentSplitter = new QSplitter(Qt::Horizontal, this);
+    m_contentSplitter->setObjectName(QStringLiteral("classesNavigatorContentSplitter"));
+    m_classListPane = new QWidget(m_contentSplitter);
+    auto* const listPaneLayout = new QVBoxLayout(m_classListPane);
+    listPaneLayout->setContentsMargins(0, 0, 0, 0);
+    auto* const classActions = new QHBoxLayout();
+    m_addClassButton = new QPushButton(translated("Add Class"), m_classListPane);
+    m_addClassButton->setObjectName(QStringLiteral("classesNavigatorAddClass"));
+    m_deleteClassButton = new QPushButton(translated("Delete Class"), m_classListPane);
+    m_deleteClassButton->setObjectName(QStringLiteral("classesNavigatorDeleteClass"));
+    classActions->addWidget(m_addClassButton);
+    classActions->addWidget(m_deleteClassButton);
+    listPaneLayout->addLayout(classActions);
+
+    m_classList = new QListView(m_classListPane);
     m_classList->setObjectName(QStringLiteral("classesNavigatorClassList"));
     m_classList->setModel(m_model);
     m_classList->setSelectionMode(QAbstractItemView::SingleSelection);
     m_classList->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_classList->setUniformItemSizes(true);
     m_classList->setWordWrap(false);
-    m_layout->addWidget(m_classList, 1);
+    listPaneLayout->addWidget(m_classList, 1);
+    listPaneLayout->setStretch(1, 1);
+
+    SelectedClassEditorActions editorActions;
+    editorActions.saveMode = m_actions.saveMode;
+    editorActions.readDetails = m_actions.readClassDetails;
+    editorActions.readCoTeacher = m_actions.readClassCoTeacher;
+    editorActions.readTeacherChoices = m_actions.readClassCoTeacherChoices;
+    editorActions.readTeacherDetails = m_actions.readClassCoTeacherTeacherDetails;
+    editorActions.saveDetails = m_actions.saveClassDetails;
+    editorActions.saveCoTeacher = m_actions.saveClassCoTeacher;
+    editorActions.resolveUnsavedChanges = m_actions.resolveUnsavedChanges;
+    m_selectedClassEditor = new SelectedClassEditor(
+        std::move(editorActions), m_contentSplitter);
+    m_contentSplitter->addWidget(m_classListPane);
+    m_contentSplitter->addWidget(m_selectedClassEditor);
+    m_contentSplitter->setStretchFactor(0, 0);
+    m_contentSplitter->setStretchFactor(1, 1);
+    m_contentSplitter->setSizes({300, 700});
+    m_layout->addWidget(m_contentSplitter, 1);
 
     connect(m_gradeTabs, &QTabBar::currentChanged, this, [this](const int index) {
         if (m_rebuilding || index < 0)
@@ -664,6 +783,10 @@ void ClassesNavigatorPage::buildUi()
     connect(m_retryButton, &QToolButton::clicked, this, [this] {
         static_cast<void>(refreshFromStore());
     });
+    connect(m_addClassButton, &QPushButton::clicked, this,
+        [this] { addClass(); });
+    connect(m_deleteClassButton, &QPushButton::clicked, this,
+        [this] { deleteSelectedClass(); });
 
     retranslateUi();
     updateStatus();
@@ -691,6 +814,8 @@ void ClassesNavigatorPage::retranslateUi()
         }
     }
     m_retryButton->setText(translated("Retry"));
+    m_addClassButton->setText(translated("Add Class"));
+    m_deleteClassButton->setText(translated("Delete Class"));
     for (int index = 0; index < 6; ++index)
     {
         m_dayButtons[index]->setText(
@@ -806,6 +931,8 @@ void ClassesNavigatorPage::rebuildProjection(
         m_classList->selectionModel()->clearSelection();
     }
     m_rebuilding = false;
+    notifyActiveClassSelection();
+    loadSelectedClassEditor();
     updateControls();
 }
 
@@ -813,6 +940,19 @@ void ClassesNavigatorPage::activateGroup(const QString& groupKey)
 {
     if (groupKey.isEmpty() || groupKey == m_model->currentGroup())
     {
+        return;
+    }
+    if (!prepareForSelectionChange(translated("changing class group")))
+    {
+        const QSignalBlocker blocker(m_gradeTabs);
+        for (int index = 0; index < m_gradeTabs->count(); ++index)
+        {
+            if (m_gradeTabs->tabData(index).toString() == m_model->currentGroup())
+            {
+                m_gradeTabs->setCurrentIndex(index);
+                break;
+            }
+        }
         return;
     }
     rememberSelectedClass();
@@ -829,6 +969,28 @@ void ClassesNavigatorPage::activateGroup(const QString& groupKey)
 
 void ClassesNavigatorPage::selectClass(const Domain::ClassId& classId)
 {
+    if (m_selectedClassId == classId)
+    {
+        return;
+    }
+    if (!prepareForSelectionChange(translated("changing the selected class")))
+    {
+        const QSignalBlocker blocker(m_classList->selectionModel());
+        if (m_selectedClassId)
+        {
+            const QModelIndex oldIndex = m_model->indexForClassId(*m_selectedClassId);
+            m_classList->setCurrentIndex(oldIndex);
+            m_classList->selectionModel()->select(
+                oldIndex,
+                QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        }
+        else
+        {
+            m_classList->setCurrentIndex({});
+            m_classList->selectionModel()->clearSelection();
+        }
+        return;
+    }
     const QModelIndex index = m_model->indexForClassId(classId);
     if (!index.isValid())
     {
@@ -836,11 +998,207 @@ void ClassesNavigatorPage::selectClass(const Domain::ClassId& classId)
     }
     m_selectedClassId = classId;
     rememberSelectedClass();
+    notifyActiveClassSelection();
+    loadSelectedClassEditor();
     m_classList->setCurrentIndex(index);
     m_classList->selectionModel()->select(
         index,
         QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows
         );
+}
+
+bool ClassesNavigatorPage::prepareForSelectionChange(const QString& reason)
+{
+    return !m_selectedClassEditor
+        || m_selectedClassEditor->resolveUnsavedChanges(reason);
+}
+
+void ClassesNavigatorPage::notifyActiveClassSelection()
+{
+    if (!m_actions.setActiveClassSelection)
+    {
+        return;
+    }
+    try
+    {
+        m_actions.setActiveClassSelection(m_selectedClassId);
+    }
+    catch (...)
+    {
+        // Selection persistence is in-memory; a callback failure must not
+        // invalidate the list selection or the already loaded editor.
+    }
+}
+
+void ClassesNavigatorPage::loadSelectedClassEditor()
+{
+    if (!m_selectedClassEditor)
+    {
+        return;
+    }
+    if (!m_selectedClassId)
+    {
+        m_selectedClassEditor->clear();
+        return;
+    }
+    const auto path = activePath();
+    if (!path || path->trimmed().isEmpty())
+    {
+        m_selectedClassEditor->clear();
+        return;
+    }
+    m_selectedClassEditor->loadClass(*path, *m_selectedClassId);
+}
+
+void ClassesNavigatorPage::clearSelectedClassEditor()
+{
+    if (m_selectedClassEditor)
+    {
+        m_selectedClassEditor->clear();
+    }
+}
+
+void ClassesNavigatorPage::addClass()
+{
+    const auto path = activePath();
+    if (!path || path->trimmed().isEmpty() || !m_actions.createClass)
+    {
+        m_lastError = translated("A class cannot be created while no workspace is open.");
+        m_status = Status::ActionError;
+        updateStatus();
+        return;
+    }
+    if (!prepareForSelectionChange(translated("adding a class")))
+    {
+        return;
+    }
+    Application::ClassCreateResult created = [&] {
+        try
+        {
+            return m_actions.createClass(*path);
+        }
+        catch (...)
+        {
+            return Application::ClassCreateResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "The class could not be created.",
+                .recoverable = true
+            });
+        }
+    }();
+    if (!created)
+    {
+        m_lastError = errorMessage(created.error());
+        m_status = Status::ActionError;
+        updateStatus();
+        return;
+    }
+    static_cast<void>(refreshFromStore());
+    if (containsId(m_classes, created.value()))
+    {
+        if (m_model->indexForClassId(created.value()).isValid())
+        {
+            selectClass(created.value());
+        }
+        else
+        {
+            // A new class has no schedule yet, so an Active Schedule filter
+            // hides it from the list. Keep the filter and select its Details
+            // editor directly so the user can populate the class.
+            m_selectedClassId = created.value();
+            rememberSelectedClass();
+            notifyActiveClassSelection();
+            loadSelectedClassEditor();
+            const QSignalBlocker selectionSignals(m_classList->selectionModel());
+            m_classList->setCurrentIndex({});
+            m_classList->selectionModel()->clearSelection();
+            updateControls();
+        }
+    }
+}
+
+void ClassesNavigatorPage::deleteSelectedClass()
+{
+    if (!m_selectedClassId)
+    {
+        return;
+    }
+    QString className = m_model->labelForClassId(*m_selectedClassId);
+    if (className.isEmpty())
+    {
+        className = QString::fromStdString(m_selectedClassId->value());
+    }
+    bool confirmed = false;
+    if (m_actions.confirmDeleteClass)
+    {
+        confirmed = m_actions.confirmDeleteClass(className);
+    }
+    else
+    {
+        confirmed = QMessageBox::question(
+            this,
+            translated("Delete Class"),
+            translated("Delete %1? This cannot be undone.").arg(className),
+            QMessageBox::Yes | QMessageBox::No,
+            QMessageBox::No) == QMessageBox::Yes;
+    }
+    if (!confirmed)
+    {
+        return;
+    }
+    if (!prepareForSelectionChange(translated("deleting this class")))
+    {
+        return;
+    }
+    const auto path = activePath();
+    if (!path || path->trimmed().isEmpty() || !m_actions.deleteClass)
+    {
+        m_lastError = translated("The selected class cannot be deleted right now.");
+        m_status = Status::ActionError;
+        updateStatus();
+        return;
+    }
+    Application::ClassDeleteResult deleted = [&] {
+        try
+        {
+            return m_actions.deleteClass(*path, {
+                .classId = *m_selectedClassId
+            });
+        }
+        catch (...)
+        {
+            return Application::ClassDeleteResult::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "The class could not be deleted.",
+                .recoverable = true
+            });
+        }
+    }();
+    if (!deleted)
+    {
+        m_lastError = errorMessage(deleted.error());
+        m_status = Status::ActionError;
+        updateStatus();
+        return;
+    }
+    const Domain::ClassId removedId = *m_selectedClassId;
+    for (auto iterator = m_selectedByGroup.begin();
+         iterator != m_selectedByGroup.end();)
+    {
+        if (iterator->second == removedId)
+        {
+            iterator = m_selectedByGroup.erase(iterator);
+        }
+        else
+        {
+            ++iterator;
+        }
+    }
+    m_selectedClassId.reset();
+    notifyActiveClassSelection();
+    clearSelectedClassEditor();
+    m_lastError.clear();
+    static_cast<void>(refreshFromStore());
 }
 
 void ClassesNavigatorPage::applyFilter()
@@ -872,6 +1230,15 @@ void ClassesNavigatorPage::handleScheduleSourceChanged(const int index)
         : Application::ClassDayScheduleSource::Regular;
     if (scope == m_filter.scheduleSource)
     {
+        return;
+    }
+    if (!prepareForSelectionChange(translated("changing the class filter")))
+    {
+        const QSignalBlocker blocker(m_scheduleSource);
+        m_scheduleSource->setCurrentIndex(m_scheduleSource->findData(
+            m_filter.scheduleSource == Application::ClassDayScheduleSource::Intensive
+                ? static_cast<int>(Application::ScheduleDisplayMode::Intensive)
+                : static_cast<int>(Application::ScheduleDisplayMode::Regular)));
         return;
     }
     if (const auto path = activePath(); path && m_actions.saveScheduleMode)
@@ -915,6 +1282,15 @@ void ClassesNavigatorPage::handleVisibilityScopeChanged(const int index)
     {
         return;
     }
+    if (!prepareForSelectionChange(translated("changing the class filter")))
+    {
+        const QSignalBlocker blocker(m_visibilityScope);
+        m_visibilityScope->setCurrentIndex(m_visibilityScope->findData(
+            m_filter.visibilityScope == Application::ClassDayVisibilityScope::AllClasses
+                ? static_cast<int>(Application::ClassVisibilityScope::AllClasses)
+                : static_cast<int>(Application::ClassVisibilityScope::ActiveSchedule)));
+        return;
+    }
     if (const auto path = activePath(); path && m_actions.saveVisibilityScope)
     {
         const auto saved = m_actions.saveVisibilityScope(*path, requested);
@@ -947,6 +1323,24 @@ void ClassesNavigatorPage::handleDayFilterChanged(
 {
     if (key == QStringLiteral("weekend") && !m_weekendAvailable)
     {
+        return;
+    }
+    if (!prepareForSelectionChange(translated("changing the class filter")))
+    {
+        for (int index = 0; index < 6; ++index)
+        {
+            if (dayKeys()[static_cast<std::size_t>(index)] == key)
+            {
+                const QSignalBlocker blocker(m_dayButtons[index]);
+                const std::string selectedKey = key.toStdString();
+                const bool wasEnabled = std::find(
+                    m_filter.selectedDayKeys.begin(),
+                    m_filter.selectedDayKeys.end(), selectedKey)
+                    != m_filter.selectedDayKeys.end();
+                m_dayButtons[index]->setChecked(wasEnabled);
+                break;
+            }
+        }
         return;
     }
     const auto found = std::find(
@@ -991,6 +1385,9 @@ void ClassesNavigatorPage::updateStatus()
     case Status::PreferenceError:
         message = translated("A navigation preference could not be saved.");
         break;
+    case Status::ActionError:
+        message = m_lastError;
+        break;
     case Status::NoMatches:
         message = translated("No classes match the selected filters.");
         break;
@@ -1023,6 +1420,9 @@ void ClassesNavigatorPage::updateControls()
     m_scheduleSource->setEnabled(hasWorkspace);
     m_visibilityScope->setEnabled(hasWorkspace);
     m_classList->setEnabled(listReady && m_model->rowCount() > 0);
+    m_addClassButton->setEnabled(hasWorkspace);
+    m_deleteClassButton->setEnabled(
+        listReady && m_selectedClassId.has_value());
     m_gradeTabs->setVisible(!m_model->groups().empty());
     m_gradeTabs->setEnabled(listReady && m_model->groups().size() > 1);
     for (int index = 0; index < 5; ++index)

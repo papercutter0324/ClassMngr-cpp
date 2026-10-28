@@ -10660,6 +10660,66 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>A navigation preference could not be saved.</source><translation>탐색 설정을 저장하지 못했습니다.</translation></message>
     <message><source>No classes match the selected filters.</source><translation>선택한 필터와 일치하는 수업이 없습니다.</translation></message>
     <message><source>Workspace changed. Retry to load Classes.</source><translation>작업 공간이 변경되었습니다. 수업을 불러오려면 다시 시도하세요.</translation></message>
+    <message><source>Add Class</source><translation>수업 추가</translation></message>
+    <message><source>Delete Class</source><translation>수업 삭제</translation></message>
+    <message><source>Class Details and Times</source><translation>수업 정보 및 시간</translation></message>
+    <message><source>Co-Teacher</source><translation>공동 교사</translation></message>
+    <message><source>Select a class to edit its details.</source><translation>수업을 선택해 정보를 수정하세요.</translation></message>
+    <message><source>Class Details</source><translation>수업 정보</translation></message>
+    <message><source>Grade</source><translation>학년</translation></message>
+    <message><source>Level</source><translation>레벨</translation></message>
+    <message><source>Reading Book</source><translation>리딩 교재</translation></message>
+    <message><source>Essay Book</source><translation>에세이 교재</translation></message>
+    <message><source>Class Color</source><translation>수업 색상</translation></message>
+    <message><source>Choose Color</source><translation>색상 선택</translation></message>
+    <message><source>Choose Class Color</source><translation>수업 색상 선택</translation></message>
+    <message><source>Font Color</source><translation>글자 색상</translation></message>
+    <message><source>Teacher</source><translation>담당 교사</translation></message>
+    <message><source># of Students</source><translation>학생 수</translation></message>
+    <message><source>Regular Schedule</source><translation>정규 일정</translation></message>
+    <message><source>Intensive Schedule</source><translation>집중 일정</translation></message>
+    <message><source>Day</source><translation>요일</translation></message>
+    <message><source>Start</source><translation>시작</translation></message>
+    <message><source>End</source><translation>종료</translation></message>
+    <message><source>Add Time</source><translation>시간 추가</translation></message>
+    <message><source>Remove Time</source><translation>시간 삭제</translation></message>
+    <message><source>Save Details</source><translation>정보 저장</translation></message>
+    <message><source>Save Changes</source><translation>변경 내용 저장</translation></message>
+    <message><source>English</source><translation>영어</translation></message>
+    <message><source>Korean</source><translation>한국어</translation></message>
+    <message><source>Name</source><translation>이름</translation></message>
+    <message><source>Teacher Details</source><translation>교사 정보</translation></message>
+    <message><source>Room</source><translation>교실</translation></message>
+    <message><source>Internet Type</source><translation>인터넷 유형</translation></message>
+    <message><source>WiFi Name</source><translation>WiFi 이름</translation></message>
+    <message><source>WiFi Password</source><translation>WiFi 비밀번호</translation></message>
+    <message><source>Projection Type</source><translation>프로젝션 유형</translation></message>
+    <message><source>Zoom ID</source><translation>Zoom ID</translation></message>
+    <message><source>Zoom Password</source><translation>Zoom 비밀번호</translation></message>
+    <message><source>Unassigned</source><translation>미배정</translation></message>
+    <message><source>Unavailable</source><translation>사용할 수 없음</translation></message>
+    <message><source>Unavailable (%1)</source><translation>사용할 수 없음 (%1)</translation></message>
+    <message><source>Class details could not be loaded. Retry this section.</source><translation>수업 정보를 불러오지 못했습니다. 이 섹션에서 다시 시도하세요.</translation></message>
+    <message><source>Co-Teacher details could not be loaded.</source><translation>공동 교사 정보를 불러오지 못했습니다.</translation></message>
+    <message><source>Teacher choices could not be loaded.</source><translation>교사 선택 항목을 불러오지 못했습니다.</translation></message>
+    <message><source>Class details have %1 validation error(s).</source><translation>수업 정보에 유효성 오류가 %1개 있습니다.</translation></message>
+    <message><source>The class schedule conflicts with %1.</source><translation>수업 일정이 %1 수업과 겹칩니다.</translation></message>
+    <message><source>Class details saved.</source><translation>수업 정보를 저장했습니다.</translation></message>
+    <message><source>The class details cannot be saved right now.</source><translation>현재 수업 정보를 저장할 수 없습니다.</translation></message>
+    <message><source>The Co-Teacher assignment cannot be saved right now.</source><translation>현재 공동 교사 배정을 저장할 수 없습니다.</translation></message>
+    <message><source>The selected teacher identifier is invalid.</source><translation>선택한 교사 식별자가 올바르지 않습니다.</translation></message>
+    <message><source>The saved Co-Teacher assignment could not be confirmed.</source><translation>저장된 공동 교사 배정을 확인할 수 없습니다.</translation></message>
+    <message><source>Class details returned a different class.</source><translation>수업 정보에서 다른 수업 식별자가 반환되었습니다.</translation></message>
+    <message><source>Unsaved Changes</source><translation>저장하지 않은 변경 내용</translation></message>
+    <message><source>Save changes before %1?</source><translation>%1 전에 변경 내용을 저장하시겠습니까?</translation></message>
+    <message><source>Save</source><translation>저장</translation></message>
+    <message><source>Discard</source><translation>취소</translation></message>
+    <message><source>Cancel</source><translation>닫기</translation></message>
+    <message><source>Delete %1? This cannot be undone.</source><translation>%1 수업을 삭제하시겠습니까? 실행 취소할 수 없습니다.</translation></message>
+    <message><source>A class cannot be created while no workspace is open.</source><translation>작업 공간을 열지 않으면 수업을 추가할 수 없습니다.</translation></message>
+    <message><source>The selected class cannot be deleted right now.</source><translation>현재 선택한 수업을 삭제할 수 없습니다.</translation></message>
+    <message><source>Class changes could not be saved.</source><translation>수업 변경 내용을 저장하지 못했습니다.</translation></message>
+    <message><source>Class changes could not be reloaded.</source><translation>수업 변경 내용을 다시 불러오지 못했습니다.</translation></message>
 </context>
 <context>
     <name>NextMyClassesPage</name>

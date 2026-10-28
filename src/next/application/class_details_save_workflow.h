@@ -40,6 +40,7 @@ struct ClassDetailsSaveWorkflowConflict final
 
 enum class ClassDetailsSaveWorkflowStage
 {
+    BoundedInput,
     ValidationContext,
     RegularConflicts,
     IntensiveConflicts,

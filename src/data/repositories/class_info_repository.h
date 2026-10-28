@@ -162,6 +162,8 @@ struct ClassCoTeacherPageDetailsReadOutcome final
 {
     ClassCoTeacherPageDetailsReadRecord record;
     bool parentMissing = false;
+    bool regularScheduleLimitExceeded = false;
+    bool scheduleTokenLimitExceeded = false;
 };
 
 struct ClassNotesPageReadRecord final
@@ -199,6 +201,9 @@ struct ClassDetailsPageReadOutcome final
 {
     ClassDetailsPageReadRecord record;
     bool parentMissing = false;
+    bool regularScheduleLimitExceeded = false;
+    bool intensiveScheduleLimitExceeded = false;
+    bool scheduleTokenLimitExceeded = false;
 };
 
 struct ClassCoTeacherAssignmentValidationSnapshotReadRecord final
@@ -570,6 +575,12 @@ public:
     // record-returning API keeps its successful defaults for unknown IDs.
     [[nodiscard]] RepositoryResult<ClassCoTeacherPageDetailsReadOutcome>
         loadClassCoTeacherPageDetailsDetailed(int classId);
+    [[nodiscard]] RepositoryResult<ClassCoTeacherPageDetailsReadOutcome>
+        loadBoundedClassCoTeacherPageDetailsDetailed(
+            int classId,
+            int maximumRows,
+            int maximumScheduleTokenLength
+            );
     [[nodiscard]] RepositoryResult<ClassNotesPageReadRecord> loadClassNotesPageRecord(
         int classId
         );
@@ -581,6 +592,12 @@ public:
         loadClassDetailsPageRecord(int classId);
     [[nodiscard]] RepositoryResult<ClassDetailsPageReadOutcome>
         loadClassDetailsPageRecordDetailed(int classId);
+    [[nodiscard]] RepositoryResult<ClassDetailsPageReadOutcome>
+        loadBoundedClassDetailsPageRecordDetailed(
+            int classId,
+            int maximumRowsPerSource,
+            int maximumScheduleTokenLength
+            );
     [[nodiscard]] RepositoryResult<ScheduleEditorClassInfoReadRecord>
         loadScheduleEditorClassInfoRecord(int classId);
     // Typed callers can distinguish an absent class parent while the legacy

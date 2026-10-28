@@ -3238,6 +3238,7 @@ add_executable(ClassMngrNextClassesNavigatorPageTests
     tests/next/classes_navigator_page_tests.cpp
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
+    src/next/ui/selected_class_editor.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
@@ -3292,6 +3293,7 @@ add_executable(ClassMngrNextClassesNavigatorVisualCapture
     src/core/process_memory_snapshot.cpp
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
+    src/next/ui/selected_class_editor.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
@@ -3339,12 +3341,74 @@ set_tests_properties(ClassMngrNextClassesNavigatorVisualCapture
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
+# Capture paired legacy and Next Details/Times and Co-Teacher pages with one
+# selected class from the tracked 96-class fixture, including process memory.
+add_executable(ClassMngrNextClassesDetailsCoTeacherVisualCapture
+    tests/next/classes_details_coteacher_visual_capture.cpp
+    src/next/platform/workspace_store_class_editor_actions.cpp
+    src/next/platform/workspace_store_classes_navigator_read_actions.cpp
+    src/next/ui/classes_navigator_page.cpp
+    src/next/ui/classes_navigator_model.cpp
+    src/next/ui/selected_class_editor.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextClassesDetailsCoTeacherVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextClassesDetailsCoTeacherVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextClassesDetailsCoTeacherVisualCapture
+    PRIVATE
+        CLASSMNGR_CLASSES_NAVIGATOR_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextClassesDetailsCoTeacherVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextClassesDetailsCoTeacherVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextClassesDetailsCoTeacherVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextClassesDetailsCoTeacherVisualCapture
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextClassesDetailsCoTeacherVisualCapture
+    COMMAND ClassMngrNextClassesDetailsCoTeacherVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/classes-details-coteacher-visual-capture"
+)
+set_tests_properties(ClassMngrNextClassesDetailsCoTeacherVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Exercise the standalone path-scoped Classes reads, input limits, identity
 # checks, and navigator setting persistence against a real WorkspaceStore.
 classmngr_add_qt_test(
     NAME NextClassesNavigatorWorkspaceStore
     SOURCES
         tests/next/classes_navigator_workspace_store_tests.cpp
+        src/next/platform/workspace_store_class_editor_actions.cpp
         src/next/platform/workspace_store_classes_navigator_read_actions.cpp
     LIBRARIES
         ClassMngrNext::Application

@@ -1,8 +1,10 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
+#include "domain/models/class_info.h"
 #include "next/application/classes_list_read_snapshot.h"
 #include "next/application/classes_navigation_snapshot.h"
+#include "next/platform/workspace_store_class_editor_actions.h"
 #include "next/platform/workspace_store_classes_navigator_read_actions.h"
 
 #include <QFile>
@@ -96,7 +98,634 @@ private slots:
     void repositoryNavigationRejectsScheduleOverflowAndIdentityChanges();
     void repositoryNavigationKeepsSchedulesUnderClassInfoParents();
     void repositoryReadFailuresRemainTyped();
+    void classEditorPathActionsPersistDetailsAndCoTeacherTransactionally();
+    void classEditorDetailsEnforceFourteenRowsPerScheduleSource();
+    void classCoTeacherReadsEnforceRowAndTextBounds();
 };
+
+void ClassesNavigatorWorkspaceStoreTests::
+classEditorDetailsEnforceFourteenRowsPerScheduleSource()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("editor-schedule-bound.tps"));
+    int numericClassId = 0;
+    {
+        WorkspaceStore store;
+        QVERIFY2(store.open(path), "temporary workspace should be created");
+        const auto created = store.classRepository()->createClass(
+            QStringLiteral("Bounded details"));
+        QVERIFY(created);
+        numericClassId = created.value();
+        ClassInfo details;
+        details.classId = numericClassId;
+        details.classGrade = QStringLiteral("E4");
+        details.classLevel = QStringLiteral("Theseus");
+        details.readingBook = QStringLiteral("Reading Explorer 1");
+        details.essayBook = QStringLiteral("4A");
+        details.classColor = QStringLiteral("#ABCDEF");
+        details.fontColor = QStringLiteral("#000000");
+        for (int row = 0; row < 14; ++row)
+        {
+            const QString start = QStringLiteral("%1:00 AM").arg(row + 1);
+            const QString end = QStringLiteral("%1:50 AM").arg(row + 1);
+            details.classTimes.push_back({row == 0
+                    ? QString(64, QLatin1Char('R')) : QStringLiteral("Monday"), start, end});
+            details.intensiveTimes.push_back({row == 0
+                    ? QString(64, QLatin1Char('I')) : QStringLiteral("Tuesday"), start, end});
+        }
+        const RepositoryStatus saved = store.classInfoRepository()
+            ->saveClassDetailsDetailed(details, -1);
+        QVERIFY(saved.has_value());
+    }
+
+    const auto classId = Domain::ClassId::fromString(std::to_string(numericClassId));
+    QVERIFY(classId.has_value());
+    const auto exact = Platform::readClassDetailsAtPath(path, *classId);
+    QVERIFY(exact);
+    QVERIFY(exact.value().classFields);
+    QCOMPARE(exact.value().classFields.value().regularSchedule.size(), std::size_t(14));
+    QCOMPARE(exact.value().classFields.value().intensiveSchedule.size(), std::size_t(14));
+    const auto exactCoTeacher = Platform::readClassCoTeacherAtPath(path, *classId);
+    QVERIFY(exactCoTeacher);
+    QVERIFY(exactCoTeacher.value().classFields);
+    QCOMPARE(exactCoTeacher.value().classFields.value().regularSchedule.size(),
+        std::size_t(14));
+
+    const auto overTokenSave = [&classId, &path](
+        const bool regular
+        ) {
+        Application::ClassDetailsValidationInput input;
+        input.classId = *classId;
+        const Application::ClassDetailsScheduleValidationRow row{
+            std::u16string(65, u'X'), u"9:00 AM", u"9:50 AM"};
+        (regular ? input.regularTimes : input.intensiveTimes).push_back(row);
+        const auto result = Platform::saveClassDetailsAtPath(path, {
+            .input = std::move(input),
+            .saveRegularTimes = true,
+            .saveIntensiveTimes = true
+        });
+        const auto* const failure =
+            std::get_if<Application::ClassDetailsSaveWorkflowFailure>(&result);
+        return failure && failure->stage
+            == Application::ClassDetailsSaveWorkflowStage::BoundedInput;
+    };
+    QVERIFY(overTokenSave(true));
+    QVERIFY(overTokenSave(false));
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery updateRegular(store.database());
+        QVERIFY(updateRegular.prepare(QStringLiteral(
+            "UPDATE class_times SET day = ? WHERE id = "
+            "(SELECT id FROM class_times WHERE class_id = ? ORDER BY id LIMIT 1)")));
+        updateRegular.addBindValue(QString(65, QLatin1Char('R')));
+        updateRegular.addBindValue(numericClassId);
+        QVERIFY2(updateRegular.exec(), qPrintable(updateRegular.lastError().text()));
+    }
+    const auto regularTokenOverflow = Platform::readClassDetailsAtPath(path, *classId);
+    QVERIFY(!regularTokenOverflow);
+    QCOMPARE(regularTokenOverflow.error().code, Domain::ErrorCode::Validation);
+    const auto regularCoTeacherTokenOverflow =
+        Platform::readClassCoTeacherAtPath(path, *classId);
+    QVERIFY(!regularCoTeacherTokenOverflow);
+    QCOMPARE(regularCoTeacherTokenOverflow.error().code, Domain::ErrorCode::Validation);
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery restoreRegular(store.database());
+        QVERIFY(restoreRegular.prepare(QStringLiteral(
+            "UPDATE class_times SET day = ? WHERE id = "
+            "(SELECT id FROM class_times WHERE class_id = ? ORDER BY id LIMIT 1)")));
+        restoreRegular.addBindValue(QString(64, QLatin1Char('R')));
+        restoreRegular.addBindValue(numericClassId);
+        QVERIFY2(restoreRegular.exec(), qPrintable(restoreRegular.lastError().text()));
+        QSqlQuery updateIntensive(store.database());
+        QVERIFY(updateIntensive.prepare(QStringLiteral(
+            "UPDATE class_intensive_times SET day = ? WHERE id = "
+            "(SELECT id FROM class_intensive_times WHERE class_id = ? ORDER BY id LIMIT 1)")));
+        updateIntensive.addBindValue(QString(65, QLatin1Char('I')));
+        updateIntensive.addBindValue(numericClassId);
+        QVERIFY2(updateIntensive.exec(), qPrintable(updateIntensive.lastError().text()));
+    }
+    const auto intensiveTokenOverflow = Platform::readClassDetailsAtPath(path, *classId);
+    QVERIFY(!intensiveTokenOverflow);
+    QCOMPARE(intensiveTokenOverflow.error().code, Domain::ErrorCode::Validation);
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery restoreIntensive(store.database());
+        QVERIFY(restoreIntensive.prepare(QStringLiteral(
+            "UPDATE class_intensive_times SET day = ? WHERE id = "
+            "(SELECT id FROM class_intensive_times WHERE class_id = ? ORDER BY id LIMIT 1)")));
+        restoreIntensive.addBindValue(QString(64, QLatin1Char('I')));
+        restoreIntensive.addBindValue(numericClassId);
+        QVERIFY2(restoreIntensive.exec(), qPrintable(restoreIntensive.lastError().text()));
+    }
+
+    Application::ClassDetailsValidationInput tooMany;
+    tooMany.classId = *classId;
+    tooMany.regularTimes.resize(15);
+    Application::ClassDetailsSaveWorkflowRequest request{
+        .input = tooMany,
+        .saveRegularTimes = true,
+        .saveIntensiveTimes = true
+    };
+    auto overSave = Platform::saveClassDetailsAtPath(path, request);
+    auto* boundedFailure = std::get_if<Application::ClassDetailsSaveWorkflowFailure>(
+        &overSave);
+    QVERIFY(boundedFailure);
+    QCOMPARE(boundedFailure->stage,
+        Application::ClassDetailsSaveWorkflowStage::BoundedInput);
+    request.input.regularTimes.clear();
+    request.input.intensiveTimes.resize(15);
+    overSave = Platform::saveClassDetailsAtPath(path, request);
+    boundedFailure = std::get_if<Application::ClassDetailsSaveWorkflowFailure>(
+        &overSave);
+    QVERIFY(boundedFailure);
+    QCOMPARE(boundedFailure->stage,
+        Application::ClassDetailsSaveWorkflowStage::BoundedInput);
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery insertRegular(store.database());
+        QVERIFY(insertRegular.prepare(QStringLiteral(
+            "INSERT INTO class_times(class_id, day, start_time, end_time) "
+            "VALUES(?, 'Wednesday', '6:00 AM', '6:50 AM')")));
+        insertRegular.addBindValue(numericClassId);
+        QVERIFY2(insertRegular.exec(), qPrintable(insertRegular.lastError().text()));
+    }
+    const auto regularOverflow = Platform::readClassDetailsAtPath(path, *classId);
+    QVERIFY(!regularOverflow);
+    QCOMPARE(regularOverflow.error().code, Domain::ErrorCode::Validation);
+    const auto regularCoTeacherOverflow = Platform::readClassCoTeacherAtPath(path, *classId);
+    QVERIFY(!regularCoTeacherOverflow);
+    QCOMPARE(regularCoTeacherOverflow.error().code, Domain::ErrorCode::Validation);
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery removeRegular(store.database());
+        QVERIFY(removeRegular.prepare(QStringLiteral(
+            "DELETE FROM class_times WHERE class_id = ? AND day = 'Wednesday'")));
+        removeRegular.addBindValue(numericClassId);
+        QVERIFY2(removeRegular.exec(), qPrintable(removeRegular.lastError().text()));
+        QSqlQuery insertIntensive(store.database());
+        QVERIFY(insertIntensive.prepare(QStringLiteral(
+            "INSERT INTO class_intensive_times(class_id, day, start_time, end_time) "
+            "VALUES(?, 'Wednesday', '6:00 AM', '6:50 AM')")));
+        insertIntensive.addBindValue(numericClassId);
+        QVERIFY2(insertIntensive.exec(), qPrintable(insertIntensive.lastError().text()));
+    }
+    const auto intensiveOverflow = Platform::readClassDetailsAtPath(path, *classId);
+    QVERIFY(!intensiveOverflow);
+    QCOMPARE(intensiveOverflow.error().code, Domain::ErrorCode::Validation);
+}
+
+void ClassesNavigatorWorkspaceStoreTests::
+classCoTeacherReadsEnforceRowAndTextBounds()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("teacher-bound.tps"));
+    {
+        WorkspaceStore store;
+        QVERIFY2(store.open(path), "temporary workspace should be created");
+        QSqlQuery insert(store.database());
+        QVERIFY(insert.prepare(QStringLiteral(
+            "INSERT INTO teachers(teacher_kr, teacher_en) VALUES('교사', ?)")));
+        for (int index = 0; index < 4096; ++index)
+        {
+            insert.bindValue(0, QStringLiteral("Teacher %1").arg(index));
+            QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+        }
+    }
+    const auto exactRows = Platform::readClassCoTeacherChoicesAtPath(path);
+    QVERIFY(exactRows);
+    QCOMPARE(exactRows.value().teachers.size(), std::size_t(4096));
+    QVERIFY(std::all_of(exactRows.value().teachers.cbegin(),
+        exactRows.value().teachers.cend(), [](const auto& teacher) {
+            return teacher.roomNumber.empty() && teacher.wifiPassword.empty()
+                && teacher.zoomPassword.empty();
+        }));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery insert(store.database());
+        QVERIFY(insert.exec(QStringLiteral(
+            "INSERT INTO teachers(teacher_kr, teacher_en) "
+            "VALUES('교사', 'Teacher overflow')")));
+    }
+    const auto overRows = Platform::readClassCoTeacherChoicesAtPath(path);
+    QVERIFY(!overRows);
+    QCOMPARE(overRows.error().code, Domain::ErrorCode::Validation);
+
+    qint64 selectedId = 0;
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery clear(store.database());
+        QVERIFY(clear.exec(QStringLiteral("DELETE FROM teachers")));
+        QSqlQuery insert(store.database());
+        QVERIFY(insert.prepare(QStringLiteral(
+            "INSERT INTO teachers(teacher_kr, teacher_en, room_number, wifi_name, "
+            "wifi_password, internet_type, zoom_id, zoom_password, projection_type) "
+            "VALUES('', ?, 'Room A', 'WiFi A', 'pass', 'WiFi', 'zoom', 'zoom-pass', 'HDMI')")));
+        insert.addBindValue(QString(static_cast<qsizetype>(4096), QLatin1Char('A')));
+        QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+        QSqlQuery find(store.database());
+        QVERIFY(find.exec(QStringLiteral("SELECT id FROM teachers LIMIT 1")));
+        QVERIFY(find.next());
+        bool idOk = false;
+        selectedId = find.value(0).toLongLong(&idOk);
+        QVERIFY(idOk && selectedId > 0);
+    }
+    const auto exactText = Platform::readClassCoTeacherChoicesAtPath(path);
+    QVERIFY(exactText);
+    QCOMPARE(exactText.value().teachers.size(), std::size_t(1));
+    const auto teacherId = Domain::TeacherId::fromString(std::to_string(selectedId));
+    QVERIFY(teacherId.has_value());
+    const auto profile = Platform::readClassCoTeacherTeacherDetailsAtPath(
+        path, *teacherId);
+    QVERIFY(profile);
+    QCOMPARE(profile.value().roomNumber, std::u16string(u"Room A"));
+    QCOMPARE(profile.value().wifiPassword, std::u16string(u"pass"));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery update(store.database());
+        QVERIFY(update.prepare(QStringLiteral(
+            "UPDATE teachers SET wifi_password = ? WHERE id = ?")));
+        update.addBindValue(QString(static_cast<qsizetype>(16384), QLatin1Char('P')));
+        update.addBindValue(selectedId);
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    }
+    const auto exactProfileBound = Platform::readClassCoTeacherTeacherDetailsAtPath(
+        path, *teacherId);
+    QVERIFY(exactProfileBound);
+    QCOMPARE(exactProfileBound.value().wifiPassword.size(), std::size_t(16384));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery update(store.database());
+        QVERIFY(update.prepare(QStringLiteral(
+            "UPDATE teachers SET wifi_password = ? WHERE id = ?")));
+        update.addBindValue(QString(static_cast<qsizetype>(16385), QLatin1Char('P')));
+        update.addBindValue(selectedId);
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    }
+    const auto oversizedProfile = Platform::readClassCoTeacherTeacherDetailsAtPath(
+        path, *teacherId);
+    QVERIFY(!oversizedProfile);
+    QCOMPARE(oversizedProfile.error().code, Domain::ErrorCode::Validation);
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery clear(store.database());
+        QVERIFY(clear.exec(QStringLiteral("DELETE FROM teachers")));
+        QSqlQuery insert(store.database());
+        QVERIFY(insert.prepare(QStringLiteral(
+            "INSERT INTO teachers(teacher_kr, teacher_en) VALUES('', ?)")));
+        const QString exactAggregateName(2048, QLatin1Char('A'));
+        for (int index = 0; index < 2048; ++index)
+        {
+            insert.bindValue(0, exactAggregateName);
+            QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+        }
+    }
+    const auto exactAggregate = Platform::readClassCoTeacherChoicesAtPath(path);
+    QVERIFY(exactAggregate);
+    QCOMPARE(exactAggregate.value().teachers.size(), std::size_t(2048));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery update(store.database());
+        QVERIFY(update.prepare(QStringLiteral(
+            "UPDATE teachers SET teacher_en = ? WHERE id = "
+            "(SELECT id FROM teachers ORDER BY id LIMIT 1)")));
+        update.addBindValue(QString(2049, QLatin1Char('A')));
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    }
+    const auto overAggregate = Platform::readClassCoTeacherChoicesAtPath(path);
+    QVERIFY(!overAggregate);
+    QCOMPARE(overAggregate.error().code, Domain::ErrorCode::Validation);
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery clear(store.database());
+        QVERIFY(clear.exec(QStringLiteral("DELETE FROM teachers")));
+        QSqlQuery insert(store.database());
+        QVERIFY(insert.prepare(QStringLiteral(
+            "INSERT INTO teachers(teacher_kr, teacher_en) VALUES('', ?)")));
+        insert.addBindValue(QString(4096, QLatin1Char('A')));
+        QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
+        QSqlQuery find(store.database());
+        QVERIFY(find.exec(QStringLiteral("SELECT id FROM teachers LIMIT 1")));
+        QVERIFY(find.next());
+        selectedId = find.value(0).toLongLong();
+    }
+    const auto exactField = Platform::readClassCoTeacherChoicesAtPath(path);
+    QVERIFY(exactField);
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery update(store.database());
+        QVERIFY(update.prepare(QStringLiteral("UPDATE teachers SET teacher_en = ?")));
+        update.addBindValue(QString(4097, QLatin1Char('A')));
+        QVERIFY2(update.exec(), qPrintable(update.lastError().text()));
+    }
+    const auto overField = Platform::readClassCoTeacherChoicesAtPath(path);
+    QVERIFY(!overField);
+    QCOMPARE(overField.error().code, Domain::ErrorCode::Validation);
+}
+
+void ClassesNavigatorWorkspaceStoreTests::
+classEditorPathActionsPersistDetailsAndCoTeacherTransactionally()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString path = directory.filePath(QStringLiteral("class-editor.tps"));
+    constexpr qint64 initialTeacherId = 2'147'483'648LL;
+    constexpr qint64 coTeacherId = 2'147'483'649LL;
+    int numericClassId = 0;
+    {
+        WorkspaceStore store;
+        QVERIFY2(store.open(path), "temporary workspace should be created");
+        ClassRepository* const classes = store.classRepository();
+        ClassInfoRepository* const classInfo = store.classInfoRepository();
+        QVERIFY(classes);
+        QVERIFY(classInfo);
+        const auto created = classes->createClass(QStringLiteral("Editor acceptance"));
+        QVERIFY(created);
+        numericClassId = created.value();
+        QVERIFY(numericClassId > 0);
+
+        QSqlQuery teachers(store.database());
+        QVERIFY(teachers.prepare(QStringLiteral(
+            "INSERT INTO teachers (id, teacher_kr, teacher_en, "
+            "preferred_romanization, preferred_name, room_number, birthday, "
+            "phone_number, wifi_name, wifi_password, internet_type, zoom_id, "
+            "zoom_password, projection_type, notes) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")));
+        const auto insertTeacher = [&teachers](
+            const qint64 id,
+            const QString& korean,
+            const QString& english,
+            const QString& room
+            )
+        {
+            teachers.bindValue(0, id);
+            teachers.bindValue(1, korean);
+            teachers.bindValue(2, english);
+            teachers.bindValue(3, english);
+            teachers.bindValue(4, english);
+            teachers.bindValue(5, room);
+            teachers.bindValue(6, QString{});
+            teachers.bindValue(7, QString{});
+            teachers.bindValue(8, QStringLiteral("classroom-wifi"));
+            teachers.bindValue(9, QStringLiteral("wifi-secret"));
+            teachers.bindValue(10, QStringLiteral("WiFi"));
+            teachers.bindValue(11, QStringLiteral("zoom-%1").arg(id));
+            teachers.bindValue(12, QStringLiteral("zoom-secret"));
+            teachers.bindValue(13, QStringLiteral("HDMI"));
+            teachers.bindValue(14, QString{});
+            return teachers.exec();
+        };
+        QVERIFY2(insertTeacher(initialTeacherId, QStringLiteral("담당 교사"),
+                    QStringLiteral("Main Teacher"), QStringLiteral("Room A")),
+            qPrintable(teachers.lastError().text()));
+        QVERIFY2(insertTeacher(coTeacherId, QStringLiteral("공동 교사"),
+                    QStringLiteral("Co Teacher"), QStringLiteral("Room B")),
+            qPrintable(teachers.lastError().text()));
+
+        ClassInfo details;
+        details.classId = numericClassId;
+        details.classGrade = QStringLiteral("E4");
+        details.classLevel = QStringLiteral("Theseus");
+        details.readingBook = QStringLiteral("Reading Explorer 1");
+        details.essayBook = QStringLiteral("4A");
+        details.classColor = QStringLiteral("#ABCDEF");
+        details.fontColor = QStringLiteral("#000000");
+        details.notes = QStringLiteral("preserve notes");
+        details.timeFillerActivities = QStringLiteral("preserve filler activities");
+        details.classTimes = {{
+            QStringLiteral("Monday"), QStringLiteral("8:00 AM"), QStringLiteral("8:50 AM")
+        }};
+        details.intensiveTimes = {{
+            QStringLiteral("Tuesday"), QStringLiteral("9:00 AM"), QStringLiteral("9:50 AM")
+        }};
+        const RepositoryStatus seeded = classInfo->saveClassDetailsDetailed(
+            details, initialTeacherId);
+        QVERIFY(seeded.has_value());
+        teachers.finish();
+        store.close();
+    }
+
+    const auto classId = Domain::ClassId::fromString(std::to_string(numericClassId));
+    QVERIFY(classId.has_value());
+    const auto initialRead = Platform::readClassDetailsAtPath(path, *classId);
+    QVERIFY(initialRead);
+    QVERIFY(initialRead.value().classFields);
+    QCOMPARE(initialRead.value().classFields.value().classGrade, std::string("E4"));
+    QCOMPARE(initialRead.value().teacherDisplayName.value(), std::string("Main Teacher"));
+    QCOMPARE(initialRead.value().studentCount.value().rawValue(), 0);
+
+    const auto choices = Platform::readClassCoTeacherChoicesAtPath(path);
+    if (!choices)
+    {
+        qWarning() << "co-teacher choices error:"
+            << QString::fromStdString(choices.error().message);
+    }
+    QVERIFY(choices);
+    QVERIFY(std::any_of(choices.value().teachers.cbegin(), choices.value().teachers.cend(),
+        [](const auto& teacher) {
+            return teacher.teacherId.value() == "2147483649"
+                && teacher.teacherEn == u"Co Teacher"
+                && teacher.roomNumber.empty() && teacher.wifiPassword.empty()
+                && teacher.zoomPassword.empty();
+        }));
+    const auto initialTeacherDomainId = Domain::TeacherId::fromString("2147483648");
+    QVERIFY(initialTeacherDomainId.has_value());
+    const auto initialTeacherDetails = Platform::readClassCoTeacherTeacherDetailsAtPath(
+        path, *initialTeacherDomainId);
+    QVERIFY(initialTeacherDetails);
+    QCOMPARE(initialTeacherDetails.value().roomNumber, std::u16string(u"Room A"));
+    QCOMPARE(initialTeacherDetails.value().wifiPassword, std::u16string(u"wifi-secret"));
+
+    Application::ClassDetailsValidationInput input;
+    input.classId = *classId;
+    input.classGrade = u"E5";
+    input.classLevel = u"Artemis";
+    input.readingBook = u"Reading Explorer 2";
+    input.essayBook = u"5A";
+    input.classColor = u"#123456";
+    input.fontColor = u"#FFFFFF";
+    input.regularTimes = {{u"Wednesday", u"4:00 PM", u"4:50 PM"}};
+    input.intensiveTimes = {{u"Thursday", u"5:00 PM", u"5:50 PM"}};
+    Application::ClassDetailsSaveWorkflowRequest request{
+        .input = input,
+        .saveRegularTimes = true,
+        .saveIntensiveTimes = true
+    };
+    const auto detailsSaved = Platform::saveClassDetailsAtPath(path, request);
+    QVERIFY(std::holds_alternative<Application::ClassDetailsSaveWorkflowSuccess>(
+        detailsSaved));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        ClassInfoRepository* const repository = store.classInfoRepository();
+        QVERIFY(repository);
+        const auto saved = repository->loadClassDetailsSaveInfo(numericClassId);
+        QVERIFY(saved);
+        QCOMPARE(saved->teacherId, initialTeacherId);
+        QCOMPARE(saved->info.notes, QStringLiteral("preserve notes"));
+        QCOMPARE(saved->info.timeFillerActivities,
+            QStringLiteral("preserve filler activities"));
+        QCOMPARE(saved->info.classGrade, QStringLiteral("E5"));
+        QCOMPARE(saved->info.classColor, QStringLiteral("#123456"));
+        QCOMPARE(saved->info.classTimes.size(), 1);
+        QCOMPARE(saved->info.classTimes.front().day, QStringLiteral("Wednesday"));
+        QCOMPARE(saved->info.intensiveTimes.size(), 1);
+        QCOMPARE(saved->info.intensiveTimes.front().day, QStringLiteral("Thursday"));
+    }
+
+    int conflictClassId = 0;
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        const auto created = store.classRepository()->createClass(
+            QStringLiteral("Schedule conflict"));
+        QVERIFY(created);
+        conflictClassId = created.value();
+        ClassInfo conflictDetails;
+        conflictDetails.classId = conflictClassId;
+        conflictDetails.classGrade = QStringLiteral("E5");
+        conflictDetails.classLevel = QStringLiteral("Artemis");
+        conflictDetails.readingBook = QStringLiteral("Reading Explorer 2");
+        conflictDetails.essayBook = QStringLiteral("5A");
+        conflictDetails.classColor = QStringLiteral("#ABCDEF");
+        conflictDetails.fontColor = QStringLiteral("#000000");
+        const RepositoryStatus seededConflict =
+            store.classInfoRepository()->saveClassDetailsDetailed(
+                conflictDetails, -1);
+        QVERIFY(seededConflict.has_value());
+        QSqlQuery insertConflict(store.database());
+        QVERIFY(insertConflict.prepare(QStringLiteral(
+            "INSERT INTO class_times(class_id, day, start_time, end_time) "
+            "VALUES(?, 'Wednesday', '4:00 PM', '4:50 PM')")));
+        insertConflict.addBindValue(conflictClassId);
+        QVERIFY2(insertConflict.exec(), qPrintable(insertConflict.lastError().text()));
+    }
+    Application::ClassDetailsSaveWorkflowRequest conflictingRequest = request;
+    conflictingRequest.input.classColor = u"#112233";
+    const auto scheduleConflict = Platform::saveClassDetailsAtPath(
+        path, conflictingRequest);
+    const auto* const conflict =
+        std::get_if<Application::ClassDetailsSaveWorkflowConflict>(
+            &scheduleConflict);
+    QVERIFY(conflict);
+    QVERIFY(!conflict->conflicts.empty());
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        const auto unchanged = store.classInfoRepository()->loadClassDetailsSaveInfo(
+            numericClassId);
+        QVERIFY(unchanged);
+        QCOMPARE(unchanged->info.classColor, QStringLiteral("#123456"));
+    }
+
+    const auto assignment = Platform::assignClassCoTeacherAtPath(path, {
+        .classId = *classId,
+        .teacherId = Domain::TeacherId::fromString(std::to_string(coTeacherId))
+    });
+    QVERIFY(assignment);
+    const auto coTeacherRead = Platform::readClassCoTeacherAtPath(path, *classId);
+    QVERIFY(coTeacherRead);
+    QVERIFY(coTeacherRead.value().classFields);
+    QCOMPARE(coTeacherRead.value().classFields.value().selectedTeacherId->value(),
+        std::string("2147483649"));
+    QCOMPARE(QString::fromStdU16String(coTeacherRead.value().teacherDisplayName.value()),
+        QStringLiteral("Co Teacher"));
+    const auto afterAssignmentDetails = Platform::readClassDetailsAtPath(path, *classId);
+    QVERIFY(afterAssignmentDetails);
+    QCOMPARE(afterAssignmentDetails.value().teacherDisplayName.value(),
+        std::string("Co Teacher"));
+
+    // A schedule-row failure happens inside the repository transaction. The
+    // field update and schedule replacement must roll back together, while a
+    // later retry succeeds and keeps the latest Co-Teacher assignment.
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QSqlQuery trigger(store.database());
+        QVERIFY2(trigger.exec(QStringLiteral(
+            "CREATE TRIGGER reject_editor_schedule BEFORE INSERT ON class_times "
+            "WHEN NEW.class_id = %1 BEGIN SELECT RAISE(ABORT, 'forced write failure'); END"
+        ).arg(numericClassId)), qPrintable(trigger.lastError().text()));
+    }
+    input.classGrade = u"E4";
+    input.classLevel = u"Theseus";
+    input.readingBook = u"Reading Explorer 1";
+    input.essayBook = u"4A";
+    input.classColor = u"#654321";
+    input.fontColor = u"#FFFFFF";
+    input.regularTimes = {{u"Friday", u"6:00 PM", u"6:50 PM"}};
+    request.input = input;
+    const auto failedSave = Platform::saveClassDetailsAtPath(path, request);
+    const auto* const workflowFailure =
+        std::get_if<Application::ClassDetailsSaveWorkflowFailure>(&failedSave);
+    QVERIFY(workflowFailure);
+    QCOMPARE(workflowFailure->stage, Application::ClassDetailsSaveWorkflowStage::Save);
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        ClassInfoRepository* const repository = store.classInfoRepository();
+        QVERIFY(repository);
+        const auto afterFailure = repository->loadClassDetailsSaveInfo(numericClassId);
+        QVERIFY(afterFailure);
+        QCOMPARE(afterFailure->teacherId, coTeacherId);
+        QCOMPARE(afterFailure->info.classGrade, QStringLiteral("E5"));
+        QCOMPARE(afterFailure->info.classColor, QStringLiteral("#123456"));
+        QCOMPARE(afterFailure->info.notes, QStringLiteral("preserve notes"));
+        QCOMPARE(afterFailure->info.classTimes.front().day, QStringLiteral("Wednesday"));
+        QSqlQuery dropTrigger(store.database());
+        QVERIFY2(dropTrigger.exec(QStringLiteral("DROP TRIGGER reject_editor_schedule")),
+            qPrintable(dropTrigger.lastError().text()));
+    }
+    const auto retry = Platform::saveClassDetailsAtPath(path, request);
+    QVERIFY(std::holds_alternative<Application::ClassDetailsSaveWorkflowSuccess>(retry));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        const auto saved = store.classInfoRepository()->loadClassDetailsSaveInfo(
+            numericClassId);
+        QVERIFY(saved);
+        QCOMPARE(saved->teacherId, coTeacherId);
+        QCOMPARE(saved->info.notes, QStringLiteral("preserve notes"));
+        QCOMPARE(saved->info.classTimes.front().day, QStringLiteral("Friday"));
+    }
+
+    const auto listBeforeAdd = Platform::readClassesNavigatorListAtPath(path);
+    QVERIFY(listBeforeAdd);
+    const auto added = Platform::createClassAtPath(path);
+    QVERIFY(added);
+    const Domain::ClassId addedId = added.value();
+    const auto listAfterAdd = Platform::readClassesNavigatorListAtPath(path);
+    QVERIFY(listAfterAdd);
+    QVERIFY(std::any_of(listAfterAdd.value().classes.cbegin(), listAfterAdd.value().classes.cend(),
+        [&addedId](const auto& classroom) { return classroom.classId == addedId; }));
+    QVERIFY(listAfterAdd.value().classes.size() > listBeforeAdd.value().classes.size());
+    QVERIFY(Platform::deleteClassAtPath(path, {.classId = addedId}));
+    const auto listAfterDelete = Platform::readClassesNavigatorListAtPath(path);
+    QVERIFY(listAfterDelete);
+    QCOMPARE(listAfterDelete.value().classes.size(), listBeforeAdd.value().classes.size());
+    QVERIFY(std::none_of(listAfterDelete.value().classes.cbegin(), listAfterDelete.value().classes.cend(),
+        [&addedId](const auto& classroom) { return classroom.classId == addedId; }));
+}
 
 void ClassesNavigatorWorkspaceStoreTests::
 readsBoundedListAndOrderedNavigationSummaries()

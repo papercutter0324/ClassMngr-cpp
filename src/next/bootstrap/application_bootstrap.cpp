@@ -22,6 +22,7 @@
 #include "next/platform/workspace_store_gateway.h"
 #include "next/platform/workspace_store_my_workspace_overview_read_actions.h"
 #include "next/platform/workspace_store_classes_navigator_read_actions.h"
+#include "next/platform/workspace_store_class_editor_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -1030,6 +1031,8 @@ Application::StartupResult ApplicationBootstrap::start()
                 m_shell->pageHost().registerPage(classesNavigatorPageDescriptor(
                     [this] {
                     Ui::ClassesNavigatorPageActions actions;
+                    actions.saveMode =
+                        Platform::SettingsManagerSaveModePreferencesPort().read();
                     actions.activeWorkspacePath = [this]()
                         -> std::optional<QString> {
                         if (!m_applicationRuntime)
@@ -1110,6 +1113,90 @@ Application::StartupResult ApplicationBootstrap::start()
                             databasePath,
                             scope
                             );
+                    };
+                    actions.activeClassSelection = [this]()
+                        -> std::optional<Domain::ClassId> {
+                        if (!m_applicationRuntime)
+                        {
+                            return std::nullopt;
+                        }
+                        const auto snapshot =
+                            m_applicationRuntime->selectionState().snapshot();
+                        const Domain::ClassId* const classId = snapshot.classId();
+                        return classId
+                            ? std::optional<Domain::ClassId>(*classId)
+                            : std::nullopt;
+                    };
+                    actions.setActiveClassSelection = [this](
+                        const std::optional<Domain::ClassId>& classId
+                        ) {
+                        if (!m_applicationRuntime)
+                        {
+                            return;
+                        }
+                        Application::SelectionState& selection =
+                            m_applicationRuntime->selectionState();
+                        if (classId)
+                        {
+                            selection.setSelection(*classId);
+                        }
+                        else if (selection.snapshot().kind()
+                            == Application::SelectionKind::Class)
+                        {
+                            selection.clear();
+                        }
+                    };
+                    actions.readClassDetails = [](
+                        const QString& databasePath,
+                        const Domain::ClassId& classId
+                        ) {
+                        return Platform::readClassDetailsAtPath(
+                            databasePath, classId);
+                    };
+                    actions.readClassCoTeacher = [](
+                        const QString& databasePath,
+                        const Domain::ClassId& classId
+                        ) {
+                        return Platform::readClassCoTeacherAtPath(
+                            databasePath, classId);
+                    };
+                    actions.readClassCoTeacherChoices = [](
+                        const QString& databasePath
+                        ) {
+                        return Platform::readClassCoTeacherChoicesAtPath(
+                            databasePath);
+                    };
+                    actions.readClassCoTeacherTeacherDetails = [](
+                        const QString& databasePath,
+                        const Domain::TeacherId& teacherId
+                        ) {
+                        return Platform::readClassCoTeacherTeacherDetailsAtPath(
+                            databasePath, teacherId);
+                    };
+                    actions.saveClassDetails = [](
+                        const QString& databasePath,
+                        const Application::ClassDetailsSaveWorkflowRequest& request
+                        ) {
+                        return Platform::saveClassDetailsAtPath(
+                            databasePath, request);
+                    };
+                    actions.saveClassCoTeacher = [](
+                        const QString& databasePath,
+                        const Application::ClassCoTeacherAssignmentRequest& request
+                        ) {
+                        return Platform::assignClassCoTeacherAtPath(
+                            databasePath, request);
+                    };
+                    actions.createClass = [](
+                        const QString& databasePath
+                        ) {
+                        return Platform::createClassAtPath(databasePath);
+                    };
+                    actions.deleteClass = [](
+                        const QString& databasePath,
+                        const Application::ClassDeleteRequest& request
+                        ) {
+                        return Platform::deleteClassAtPath(databasePath, request);
                     };
                     return actions;
                 }));

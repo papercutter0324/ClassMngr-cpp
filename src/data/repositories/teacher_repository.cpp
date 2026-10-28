@@ -2197,27 +2197,114 @@ RepositoryResult<QList<ClassCoTeacherTeacherChoiceReadRecord>>
 TeacherRepository::loadClassCoTeacherTeacherChoiceRecords()
 {
     QList<ClassCoTeacherTeacherChoiceReadRecord> teachers;
-
     QSqlQuery query(m_database);
     const auto executed = SqlQueryUtils::execute(
         query,
         QStringLiteral(R"(
-            SELECT
-                id,
-                teacher_kr,
-                teacher_en,
-                room_number,
-                internet_type,
-                wifi_name,
-                wifi_password,
-                projection_type,
-                zoom_id,
-                zoom_password
+            SELECT id, teacher_kr, teacher_en, room_number, internet_type,
+                   wifi_name, wifi_password, projection_type, zoom_id,
+                   zoom_password
             FROM teachers
             ORDER BY teacher_en
         )"),
-        QObject::tr("Loading teachers")
-        );
+        QObject::tr("Loading teachers"));
+    if (!executed)
+    {
+        return repositoryUnexpected(executed.error().userMessage());
+    }
+    while (query.next())
+    {
+        bool teacherIdOk = false;
+        const qint64 teacherId = query.value(QStringLiteral("id"))
+            .toLongLong(&teacherIdOk);
+        if (!teacherIdOk || teacherId <= 0)
+        {
+            return repositoryUnexpected(
+                QObject::tr("A co-teacher has an invalid identifier."),
+                RepositoryErrorCode::Validation);
+        }
+        teachers.append({
+            teacherId,
+            query.value(QStringLiteral("teacher_kr")).toString(),
+            query.value(QStringLiteral("teacher_en")).toString(),
+            query.value(QStringLiteral("room_number")).toString(),
+            query.value(QStringLiteral("internet_type")).toString(),
+            query.value(QStringLiteral("wifi_name")).toString(),
+            query.value(QStringLiteral("wifi_password")).toString(),
+            query.value(QStringLiteral("projection_type")).toString(),
+            query.value(QStringLiteral("zoom_id")).toString(),
+            query.value(QStringLiteral("zoom_password")).toString()
+        });
+    }
+    if (query.lastError().isValid())
+    {
+        return repositoryUnexpected(query.lastError().text());
+    }
+    return teachers;
+}
+
+RepositoryResult<QList<ClassCoTeacherTeacherChoiceReadRecord>>
+TeacherRepository::loadBoundedClassCoTeacherTeacherChoiceRecords(
+    const int maximumRows,
+    const int maximumNameBytes,
+    const qint64 maximumTotalNameBytes
+    )
+{
+    if (maximumRows <= 0 || maximumNameBytes <= 0
+        || maximumTotalNameBytes <= 0)
+    {
+        return repositoryUnexpected(
+            QObject::tr("The co-teacher choice row bound must be positive."),
+            RepositoryErrorCode::Validation);
+    }
+    QList<ClassCoTeacherTeacherChoiceReadRecord> teachers;
+
+    QSqlQuery query(m_database);
+    const bool prepared = query.prepare(QStringLiteral(R"(
+        WITH limited_names AS (
+            SELECT id, teacher_kr, teacher_en,
+                   length(CAST(COALESCE(teacher_kr, '') AS BLOB)) AS kr_bytes,
+                   length(CAST(COALESCE(teacher_en, '') AS BLOB)) AS en_bytes
+            FROM teachers
+            ORDER BY teacher_en, id
+            LIMIT ?
+        ),
+        sized_names AS (
+            SELECT *,
+                   SUM(kr_bytes + en_bytes) OVER (
+                       ORDER BY teacher_en, id
+                       ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+                   ) AS total_name_bytes
+            FROM limited_names
+        )
+        SELECT id,
+               CASE WHEN kr_bytes <= ? AND en_bytes <= ?
+                          AND total_name_bytes <= ?
+                    THEN teacher_kr ELSE NULL END AS teacher_kr,
+               CASE WHEN kr_bytes <= ? AND en_bytes <= ?
+                          AND total_name_bytes <= ?
+                    THEN teacher_en ELSE NULL END AS teacher_en,
+               (kr_bytes > ? OR en_bytes > ? OR total_name_bytes > ?)
+                    AS text_exceeds_bound
+        FROM sized_names
+        ORDER BY teacher_en, id
+    )"));
+    if (!prepared)
+    {
+        return repositoryUnexpected(query.lastError().text());
+    }
+    query.addBindValue(maximumRows);
+    for (int copy = 0; copy < 2; ++copy)
+    {
+        query.addBindValue(maximumNameBytes);
+        query.addBindValue(maximumNameBytes);
+        query.addBindValue(maximumTotalNameBytes);
+    }
+    query.addBindValue(maximumNameBytes);
+    query.addBindValue(maximumNameBytes);
+    query.addBindValue(maximumTotalNameBytes);
+    const auto executed = SqlQueryUtils::executePrepared(
+        query, QObject::tr("Loading teachers"));
     if (!executed)
     {
         return repositoryUnexpected(executed.error().userMessage());
@@ -2236,17 +2323,13 @@ TeacherRepository::loadClassCoTeacherTeacherChoiceRecords()
                 );
         }
 
+        const bool textExceedsBound = query.value(
+            QStringLiteral("text_exceeds_bound")).toBool();
         teachers.append({
-            teacherId,
-            query.value(QStringLiteral("teacher_kr")).toString(),
-            query.value(QStringLiteral("teacher_en")).toString(),
-            query.value(QStringLiteral("room_number")).toString(),
-            query.value(QStringLiteral("internet_type")).toString(),
-            query.value(QStringLiteral("wifi_name")).toString(),
-            query.value(QStringLiteral("wifi_password")).toString(),
-            query.value(QStringLiteral("projection_type")).toString(),
-            query.value(QStringLiteral("zoom_id")).toString(),
-            query.value(QStringLiteral("zoom_password")).toString()
+            .teacherId = teacherId,
+            .teacherKr = query.value(QStringLiteral("teacher_kr")).toString(),
+            .teacherEn = query.value(QStringLiteral("teacher_en")).toString(),
+            .textExceedsBound = textExceedsBound
         });
     }
 
@@ -2256,6 +2339,136 @@ TeacherRepository::loadClassCoTeacherTeacherChoiceRecords()
     }
 
     return teachers;
+}
+
+RepositoryResult<ClassCoTeacherTeacherProfileReadRecord>
+TeacherRepository::loadBoundedClassCoTeacherTeacherProfile(
+    const qint64 teacherId,
+    const int maximumFieldBytes,
+    const qint64 maximumTotalBytes
+    )
+{
+    if (teacherId <= 0 || maximumFieldBytes <= 0 || maximumTotalBytes <= 0)
+    {
+        return repositoryUnexpected(
+            QObject::tr("The co-teacher profile bounds and identifier must be positive."),
+            RepositoryErrorCode::Validation);
+    }
+    QSqlQuery query(m_database);
+    const bool prepared = query.prepare(QStringLiteral(R"(
+        WITH profile AS (
+            SELECT id, room_number, internet_type, wifi_name, wifi_password,
+                   projection_type, zoom_id, zoom_password,
+                   length(CAST(COALESCE(room_number, '') AS BLOB)) AS room_bytes,
+                   length(CAST(COALESCE(internet_type, '') AS BLOB)) AS internet_bytes,
+                   length(CAST(COALESCE(wifi_name, '') AS BLOB)) AS wifi_name_bytes,
+                   length(CAST(COALESCE(wifi_password, '') AS BLOB)) AS wifi_password_bytes,
+                   length(CAST(COALESCE(projection_type, '') AS BLOB)) AS projection_bytes,
+                   length(CAST(COALESCE(zoom_id, '') AS BLOB)) AS zoom_id_bytes,
+                   length(CAST(COALESCE(zoom_password, '') AS BLOB)) AS zoom_password_bytes,
+                   length(CAST(COALESCE(room_number, '') AS BLOB))
+                     + length(CAST(COALESCE(internet_type, '') AS BLOB))
+                     + length(CAST(COALESCE(wifi_name, '') AS BLOB))
+                     + length(CAST(COALESCE(wifi_password, '') AS BLOB))
+                     + length(CAST(COALESCE(projection_type, '') AS BLOB))
+                     + length(CAST(COALESCE(zoom_id, '') AS BLOB))
+                     + length(CAST(COALESCE(zoom_password, '') AS BLOB))
+                       AS total_bytes
+            FROM teachers
+            WHERE id = ?
+        )
+        SELECT id,
+               CASE WHEN room_bytes <= ? AND internet_bytes <= ?
+                          AND wifi_name_bytes <= ? AND wifi_password_bytes <= ?
+                          AND projection_bytes <= ? AND zoom_id_bytes <= ?
+                          AND zoom_password_bytes <= ? AND total_bytes <= ?
+                    THEN room_number ELSE NULL END AS room_number,
+               CASE WHEN room_bytes <= ? AND internet_bytes <= ?
+                          AND wifi_name_bytes <= ? AND wifi_password_bytes <= ?
+                          AND projection_bytes <= ? AND zoom_id_bytes <= ?
+                          AND zoom_password_bytes <= ? AND total_bytes <= ?
+                    THEN internet_type ELSE NULL END AS internet_type,
+               CASE WHEN room_bytes <= ? AND internet_bytes <= ?
+                          AND wifi_name_bytes <= ? AND wifi_password_bytes <= ?
+                          AND projection_bytes <= ? AND zoom_id_bytes <= ?
+                          AND zoom_password_bytes <= ? AND total_bytes <= ?
+                    THEN wifi_name ELSE NULL END AS wifi_name,
+               CASE WHEN room_bytes <= ? AND internet_bytes <= ?
+                          AND wifi_name_bytes <= ? AND wifi_password_bytes <= ?
+                          AND projection_bytes <= ? AND zoom_id_bytes <= ?
+                          AND zoom_password_bytes <= ? AND total_bytes <= ?
+                    THEN wifi_password ELSE NULL END AS wifi_password,
+               CASE WHEN room_bytes <= ? AND internet_bytes <= ?
+                          AND wifi_name_bytes <= ? AND wifi_password_bytes <= ?
+                          AND projection_bytes <= ? AND zoom_id_bytes <= ?
+                          AND zoom_password_bytes <= ? AND total_bytes <= ?
+                    THEN projection_type ELSE NULL END AS projection_type,
+               CASE WHEN room_bytes <= ? AND internet_bytes <= ?
+                          AND wifi_name_bytes <= ? AND wifi_password_bytes <= ?
+                          AND projection_bytes <= ? AND zoom_id_bytes <= ?
+                          AND zoom_password_bytes <= ? AND total_bytes <= ?
+                    THEN zoom_id ELSE NULL END AS zoom_id,
+               CASE WHEN room_bytes <= ? AND internet_bytes <= ?
+                          AND wifi_name_bytes <= ? AND wifi_password_bytes <= ?
+                          AND projection_bytes <= ? AND zoom_id_bytes <= ?
+                          AND zoom_password_bytes <= ? AND total_bytes <= ?
+                    THEN zoom_password ELSE NULL END AS zoom_password,
+               (room_bytes > ? OR internet_bytes > ? OR wifi_name_bytes > ?
+                OR wifi_password_bytes > ? OR projection_bytes > ?
+                OR zoom_id_bytes > ? OR zoom_password_bytes > ?
+                OR total_bytes > ?) AS text_exceeds_bound
+        FROM profile
+    )"));
+    if (!prepared)
+    {
+        return repositoryUnexpected(query.lastError().text());
+    }
+    query.addBindValue(teacherId);
+    for (int field = 0; field < 7; ++field)
+    {
+        for (int copy = 0; copy < 7; ++copy)
+        {
+            query.addBindValue(maximumFieldBytes);
+        }
+        query.addBindValue(maximumTotalBytes);
+    }
+    for (int copy = 0; copy < 7; ++copy)
+    {
+        query.addBindValue(maximumFieldBytes);
+    }
+    query.addBindValue(maximumTotalBytes);
+    const auto executed = SqlQueryUtils::executePrepared(
+        query, QObject::tr("Loading co-teacher details"));
+    if (!executed)
+    {
+        return repositoryUnexpected(executed.error().userMessage());
+    }
+    if (!query.next())
+    {
+        return repositoryUnexpected(
+            QObject::tr("The selected co-teacher could not be found."),
+            RepositoryErrorCode::NotFound);
+    }
+    bool teacherIdOk = false;
+    const qint64 returnedTeacherId = query.value(QStringLiteral("id"))
+        .toLongLong(&teacherIdOk);
+    if (!teacherIdOk || returnedTeacherId != teacherId)
+    {
+        return repositoryUnexpected(
+            QObject::tr("The selected co-teacher has an invalid identifier."),
+            RepositoryErrorCode::Validation);
+    }
+    return ClassCoTeacherTeacherProfileReadRecord{
+        .teacherId = returnedTeacherId,
+        .roomNumber = query.value(QStringLiteral("room_number")).toString(),
+        .internetType = query.value(QStringLiteral("internet_type")).toString(),
+        .wifiName = query.value(QStringLiteral("wifi_name")).toString(),
+        .wifiPassword = query.value(QStringLiteral("wifi_password")).toString(),
+        .projectionType = query.value(QStringLiteral("projection_type")).toString(),
+        .zoomId = query.value(QStringLiteral("zoom_id")).toString(),
+        .zoomPassword = query.value(QStringLiteral("zoom_password")).toString(),
+        .textExceedsBound = query.value(QStringLiteral("text_exceeds_bound")).toBool()
+    };
 }
 
 RepositoryResult<QList<KoreanTeacherBirthdayDirectoryReadRecord>>

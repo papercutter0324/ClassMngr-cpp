@@ -67,6 +67,20 @@ struct ClassCoTeacherTeacherChoiceReadRecord final
     QString projectionType;
     QString zoomId;
     QString zoomPassword;
+    bool textExceedsBound = false;
+};
+
+struct ClassCoTeacherTeacherProfileReadRecord final
+{
+    qint64 teacherId = -1;
+    QString roomNumber;
+    QString internetType;
+    QString wifiName;
+    QString wifiPassword;
+    QString projectionType;
+    QString zoomId;
+    QString zoomPassword;
+    bool textExceedsBound = false;
 };
 
 struct KoreanTeacherBirthdayDirectoryReadRecord final
@@ -322,6 +336,18 @@ public:
         loadTestingTeacherChoiceRecords();
     [[nodiscard]] RepositoryResult<QList<ClassCoTeacherTeacherChoiceReadRecord>>
         loadClassCoTeacherTeacherChoiceRecords();
+    [[nodiscard]] RepositoryResult<QList<ClassCoTeacherTeacherChoiceReadRecord>>
+        loadBoundedClassCoTeacherTeacherChoiceRecords(
+            int maximumRows,
+            int maximumNameBytes,
+            qint64 maximumTotalNameBytes
+            );
+    [[nodiscard]] RepositoryResult<ClassCoTeacherTeacherProfileReadRecord>
+        loadBoundedClassCoTeacherTeacherProfile(
+            qint64 teacherId,
+            int maximumFieldBytes,
+            qint64 maximumTotalBytes
+            );
     [[nodiscard]] RepositoryResult<QList<KoreanTeacherBirthdayDirectoryReadRecord>>
         loadKoreanTeacherBirthdayDirectoryRecords();
 
