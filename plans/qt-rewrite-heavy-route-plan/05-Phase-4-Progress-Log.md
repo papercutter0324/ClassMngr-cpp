@@ -1,5 +1,8 @@
 # Phase 4 Progress Log
 
+Implementation, verification, and gate history is recorded here. The Phase 4
+plan retains current status, requirements, and product decisions.
+
 ## Batch 1 — F1464–F1468 — pushed 2026-10-25
 
 Batch 1 was pushed from branch `Qt-Rewrite` to `origin` after F1468 passed its
@@ -19,9 +22,239 @@ Commits in the pushed batch:
 - F1467 — `153b85fb7b6314baf145ddd3f9584926111049d2`
 - F1468 — `eb473fab89410e6dc5f5527d872b56f150f7f6fd`
 
-Per-slice implementation and verification evidence is recorded in the
-[Phase 4 plan](05-Phase-4-Resource-Loader-and-Packaging.md). Windows and Linux
-resource staging remain for F1483; Batch 1 packaging was host-staged on macOS.
+Detailed acceptance records for F1464–F1468 follow. Windows and Linux
+resource staging remained for F1483; Batch 1 packaging was host-staged on
+macOS.
+
+## F1464 — Effective-resource inventory — independently verified — 2026-10-25
+
+The reproducible inventory records 229 tracked paths under `resources/` and
+the two Calendar QML sources, for 231 unique records. The 226
+`resources/assets` files total 65,707,627 exact bytes; all tracked resources
+total 65,708,813 bytes including three Windows templates. The separate Calendar
+QML inputs total 35,154 bytes. Each record carries a stable ID, source path,
+byte count and SHA-256, v2 packaging disposition, optional owner, tier and
+lifetime fields, streamability status, and installed/resident measurement
+method. It separates `documents.json` metadata from 51 document bodies,
+records the absent `roster-designs` payload, and excludes the Office lock
+artifact from v2 as transient. The legacy documents RCC currently includes
+that 165-byte artifact.
+
+The independent Tester confirmed tracked-path completeness, hashes, unique
+IDs, disposition counts, document/QML separation, and non-fabricated size
+reporting. The four focused utility tests and generator `--check` passed. No
+runtime build was needed for this inventory-only slice. Installed and decoded
+sizes remain unknown pending the v2 package/runtime. At F1464, `dyb.png` had
+no identified production feature caller; F1482 later recorded it as
+`excluded_v2` without inventing a v2 feature owner. No installed pack overrides
+were found in the application-owned data directory. F1464 was committed as
+`473e8325b9f98069c8396291d057a398a9683ebe`.
+
+## F1465 — Offline baseline resource baker — independently verified — 2026-10-25
+
+The offline baker consumes the pinned F1464 inventory, verifies every source
+path, type, length, and SHA-256, copies the 191 direct runtime resources, and
+records the seven generated runtime inputs separately. It also records 31
+build-only inputs and two v2 exclusions without copying them. The deterministic
+manifest includes the inventory hash and resource/QML tree identities. Existing
+output is checked against expected provenance derived from the inventory and
+verified sources; a tampered output and edited self-asserting manifest are
+refused and preserved. Unknown `resource_kind` values are rejected.
+
+The 14 focused utility tests passed. Independent verification baked the
+committed inventory twice to temporary directories; manifests and output trees
+were byte-identical, and every direct output matched its inventoried source.
+Temporary mutation checks confirmed refusal without replacement. This slice
+does not yet install the tree or change CMake, release packaging, or runtime
+loading. F1465 was committed as
+`3423e1de05f129d407004192565a79f06e572579`.
+
+## F1466 — Generated resource catalog — independently verified — 2026-10-25
+
+The deterministic catalog generator projects the F1464 inventory and F1465
+bake manifest into 198 runtime records: 191 direct files and seven generated
+outputs (five translations and two Calendar QML components). Direct records
+retain inventory IDs, types/categories, loading fields, and verified source
+and baked hashes. Generated records carry explicit output names and locations
+without fabricated output sizes or hashes. Catalog metadata remains separate
+from the 51 on-demand document bodies; build-only inputs and v2 exclusions are
+omitted.
+
+The independent Tester ran the focused nine-test suite and twice generated a
+fresh bake/catalog pair. Both 198-record catalogs were byte-identical, all
+191 direct files matched their inventory source, and all generated output
+records remained size/hash unknown. CMake source review confirmed the Calendar
+QML module's URI and `/qt/qml` resource prefix. No CMake build or installed
+package was exercised. F1467 must install file resources and preserve the
+separate Qt-resource location for Calendar components; catalog generation
+alone does not establish package presence. F1466 was committed as
+`b10e60e854f21e67ed3b3653b8c8b608c7588345`.
+
+## F1467 — Deterministic installed-tree packaging — independently verified — 2026-10-25
+
+The new `ClassMngrNextResources` install component packages the catalog,
+191 baked direct resources, and five generated translations at the F1466
+catalog paths. It is excluded from the default install so the legacy release
+continues to contain only its existing application and RCC packs. The two
+Calendar components are embedded at their `qrc:/qt/qml/ClassMngr/Calendar/`
+keys without adding QtQml/Quick linkage to the QtCore-only Next executable.
+The selected roots are Windows `${CMAKE_INSTALL_BINDIR}/resources`, macOS
+`ClassMngr.app/Contents/Resources`, and Linux
+`${CMAKE_INSTALL_DATADIR}/ClassMngr` (normally `share/ClassMngr`).
+
+Independent macOS verification built `ClassMngrNextResourcePackage`, staged
+the component, and audited 197 files: 191 hashes, five generated QMs, two QML
+keys, and no provenance manifest. A separate default install contained no v2
+assets/catalog and retained all six legacy RCC packs. The Calendar resource
+key and Next launch CTests passed 2/2; all 30 focused Phase 4 Python tests
+passed. The generated macOS install rules and staged package were verified;
+Windows and Linux paths were source-reviewed only and remain for the
+cross-platform gate. Optional Qt deployment warnings about local database
+drivers did not prevent the default install.
+
+F1467 was committed as `153b85fb7b6314baf145ddd3f9584926111049d2`.
+
+## F1468 — Typed resource loader — independently verified — 2026-10-25
+
+The new `src/next/resources/` boundary loads known catalog IDs from an
+explicitly injected catalog and resource root. It validates record types,
+locations, relative paths and file extensions; package files are confined to
+the canonical root and checked against catalog byte counts and SHA-256 values.
+Calendar components remain `qrc:` resources. Catalog initialization reads no
+document bodies. Text, JSON, images, fonts, stylesheets, translations, and
+file-backed streams return owning values or RAII handles. The source-ownership
+manifest and `ClassMngrNextResources` owner record preserve the exact-one-owner
+check.
+
+The independent macOS review configured the Debug preset and confirmed
+ownership for 1,618 handwritten files. The focused loader build succeeded and
+`ClassMngrNextResourceLoaderTests`, `ClassMngrNextCalendarResourceKeysTests`,
+and `ClassMngrNextLaunch` passed 3/3. After the test was strengthened to verify
+same-size SHA-256 corruption, translation removal, and stream closure, the
+loader target rebuilt and its CTest passed 1/1. Temporary probes also verified
+same-size PDF corruption and translation move/release. Windows and Linux builds
+were not run; the Windows descriptor-to-native-handle assertion is
+source-reviewed and awaits host execution. `clang-format` was unavailable.
+
+F1474 adds `DocumentContentResourcePort` as an independent loader-owned
+boundary in `src/next/platform/`, using `ResourceLoader` from
+`src/next/resources/`; the legacy `NavigationController` remains on
+`LegacyDocumentContentResourcePort` until consumer migration because the v2
+Resources component is excluded from the default legacy install. Batch 1 is
+pushed, with the receipt in the [Phase 4 progress log](05-Phase-4-Progress-Log.md).
+
+## F1469 — Resolve installed resource root — independently verified — 2026-10-25
+
+`ResourceRootResolver` returns the resource root and catalog path selected by
+the platform install layout. It starts from the executable directory, uses
+only the CMake-provided relative root, canonicalizes the selected directory,
+and fails when the selected root or catalog is absent. It does not search the
+working directory, source tree, environment, or alternate roots. CMake selects
+`../Resources` for macOS bundles, `resources` beside the Windows executable,
+and a Linux relative path derived from the executable install directory and
+`${CMAKE_INSTALL_DATADIR}/ClassMngr`.
+
+The independent macOS run rebuilt the resolver, loader, Calendar-resource, and
+Next launch targets and passed their CTests 4/4. Resolver tests cover the
+configured layout, missing root/catalog, an unrelated current-directory
+resource tree, and relocation. Configure-time ownership validation passed for
+1,620 handwritten sources. Windows and Linux were source-reviewed but not
+host-built or staged. Install-time `--prefix` overrides with mixed absolute
+and relative Linux install directories were not tested; the standard preset
+uses relative install directories. The resolver remains an API without a Next
+runtime caller while the shell is resource-free; F1480 checks launched
+relocation. F1469 is accepted and committed as `d282e7f1`; F1470 is accepted.
+
+## F1470 — Explicit resource scopes — independently verified — 2026-10-25
+
+Every loader method now requires a `ResourceRequest` with one of the four
+resource lifetimes: Startup, Page, Feature, or Operation. Request factories
+reject unknown scope kinds and empty owner labels. Each result is a
+move-only `ScopedResource<T>` that retains the scope value with its owned text,
+JSON, image, font, stylesheet, translation, or file stream. Moving or
+destroying the handle preserves the owner metadata and releases any contained
+RAII resource normally. The implementation adds no global scope registry,
+cache, diagnostics singleton, startup wiring, or legacy adapter change.
+
+Independent macOS verification rebuilt the loader, root resolver, Calendar
+resource-key, and Next launch targets; their CTests passed 4/4. Tests cover all
+four scope kinds, blank-owner rejection, move construction and assignment,
+font deregistration, translation removal, and stream-handle closure. The full
+suite and Windows/Linux builds were not run. The Next shell remains unwired to
+the loader until the later runtime verification slices. F1470 is accepted and
+committed; F1471 follows.
+
+## F1471 — Byte-budgeted resource cache — accepted — 2026-10-25
+
+`ResourceCache` has an explicit positive byte capacity, deterministic LRU
+eviction, and per-instance state. `ResourceLoader` accepts an injected cache;
+there is no global cache. It retains decoded text, JSON, and images only.
+Document bodies, streams, fonts, and translations bypass it. Values over the
+budget are skipped without evicting unrelated entries. A cache hit returns a
+new scoped handle for the current request while retaining the insertion owner
+in cache metadata. Loader-local input buffers are released after each load.
+
+The cache enforces its budget in **accounted payload bytes**, which excludes
+map/list, allocator, and Qt object overhead. Text is weighted by UTF-16 payload
+bytes, images by decoded pixel bytes, and JSON by compact UTF-8 serialization
+bytes. The JSON value is a deterministic budget weight, not a measurement of
+`QJsonDocument`'s internal allocation. Every load reads and verifies the
+packaged bytes and catalog SHA-256 before a cache lookup, including cache hits;
+a hit avoids decoding but still performs file I/O and hashing.
+
+Independent macOS verification rebuilt the loader and root-resolver test
+targets; `ClassMngrNextResourceLoaderTests` and
+`ClassMngrNextResourceRootResolverTests` passed 2/2. Tests cover positive
+capacity, accounted-byte limits, deterministic LRU recency, text/JSON/image
+oversize skipping without unrelated eviction, per-cache isolation, image and
+JSON cache hits with the current request scope, insertion-owner metadata,
+cache-hit SHA-256 failure after a same-size source mutation, and font,
+translation, stream, and document-body bypass. Windows and Linux were not run.
+F1471 is accepted and committed as `8ca1ddc5`.
+
+## F1472 — Per-loader resource diagnostics — accepted — 2026-10-25
+
+Each `ResourceLoader` can receive an explicit `ResourceDiagnosticsSink`.
+Every logical loader operation emits one `ResourceDiagnostic`, including
+failures; stylesheet delegation does not emit a duplicate. Events carry the
+resource ID and current scope, monotonic elapsed time across the full call,
+catalog source bytes, optional decoded payload bytes, outcome/error, cache-hit
+state, and cache-entry, aggregate, and capacity accounted bytes when a cache
+is available. Text, JSON, and image byte weights follow F1471. Fonts,
+translations, and streams have no decoded-size measurement, and streams are
+not read just to calculate one.
+
+The sink is per loader and called synchronously after cache metrics are
+snapshotted and outside the cache lock. Concurrent calls on one loader may
+invoke it concurrently, so sink implementations must be thread-safe. Sink
+exceptions are swallowed and cannot replace loader results. This adds no
+process-wide singleton or startup/legacy wiring.
+
+The macOS loader and root-resolver targets built with ownership validation for
+1,625 handwritten sources; both focused CTests passed 2/2, and
+`git diff --check` passed. Tests cover cache miss/hit and current-owner
+reporting, source/decoded sizes and cache metrics, SHA-256 failure events, type
+mismatch, stream reporting without body sizing, UTF-16 text and image weights,
+font/translation events, sink isolation and exception handling, and stylesheet
+event cardinality. Windows, Linux, and the full suite were not run. F1472 is
+accepted and committed as `9ce7e35c`.
+
+## F1473 — Load document catalog metadata — accepted — 2026-10-25
+
+`ResourceDocumentCatalogPort` loads only `document.catalog-metadata` through
+`loadJson` with Startup owner `DocumentCatalogMetadata`. It parses schema v1
+into the bounded `DocumentCatalogProjection`, preserving seven folders, 30
+documents, localized/default names, ordering, print/export flags, and
+references. It is not wired to Next startup. The isolated-package test stages
+only the generated catalog manifest and `documents.json`, with all document
+bodies absent; it confirms one successful Startup diagnostic for the metadata
+ID and no body request.
+
+Independent macOS verification built `ClassMngrNextResourceDocumentCatalogTests`
+incrementally (up to date; objects newer than sources), passed its focused
+CTest 1/1, reviewed CMake ownership/dependency inclusion, and passed
+`git diff --check`. Windows/Linux and malformed-metadata/error branches were
+not verified; the full suite was not run. F1473 is committed as `2084cb4f`.
 
 ## F1474 — Loader-owned document content handles — accepted — 2026-10-25
 

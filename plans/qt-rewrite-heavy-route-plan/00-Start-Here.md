@@ -15,12 +15,10 @@
   tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
-  does not reopen that declaration. Phase 1 is complete. Its 2026-09-19 closure update records passing hosted
-  baseline jobs for Windows x64 and macOS universal, the Phase 1 Build Quality
-  and Dialog policy workflows, and packaged Release workflows. Linux x64 and
-  Windows ARM64 also passed as informational jobs; they were not required for
-  closure. See the [Phase 1 plan](02-Phase-1-Build-System-and-Repository-Structure.md)
-  for the run evidence.
+  does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
+  for baseline history. Phase 1 is Complete; see its
+  [plan](02-Phase-1-Build-System-and-Repository-Structure.md) and
+  [progress log](02-Phase-1-Progress-Log.md) for gate and run evidence.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no
   external/legacy packs mounted or downloaded (with F1467 Calendar QML
   resources compiled in), and Windows startup memory below 250 MiB
@@ -36,7 +34,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — 7A.1–7A.15 and #23–29 accepted; Batch 3 candidate #30 active | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — candidate #30 active | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |
@@ -46,19 +44,17 @@
 
 Statuses are intentionally conservative. A phase is not In progress until its work has started in the repository, and it is not Complete until its exit gate has passed.
 
+Phase 4–7 implementation, verification, and exit-gate history is in the
+[Phase 4 progress log](05-Phase-4-Progress-Log.md),
+[Phase 5 progress log](06-Phase-5-Progress-Log.md),
+[Phase 6 progress log](07-Phase-6-Progress-Log.md), and
+[Phase 7 progress log](08-Phase-7-Progress-Log.md).
+
 ## Phase 2 completion
 
-Phase 2 is Complete. Gate 1 and Gate 2 satisfy their exit criteria. The
-incremental 169-target audit built 168/169 targets; 167/170 selected
-registrations passed and three failed. One pre-existing Schedule Import test
-failed to compile, and the three failing tests retain stale expectations that
-teacher ID `2147483648` is invalid. These stale tests were not changed. The full
-suite was not run, and this audit is not exhaustive. Separately passing Domain
-and Workspace acceptance targets and the inspected source boundary satisfy the
-literal testability criterion. The [Phase 2 plan](03-Phase-2-Domain-Model-and-Application-Contracts.md)
-and [progress log](03-Phase-2-Progress-Log.md) contain exact evidence and
-bounded parity results. F629’s post-change Windows x64 requalification remains
-separate from Phase 2.
+Phase 2 is Complete; Gates 1 and 2 passed. F629's post-change Windows x64
+requalification remains separate. See the [Phase 2 progress log](03-Phase-2-Progress-Log.md)
+for the audit results, evidence, and limitations.
 
 ## Phase notes, slice batches, and progress logs
 
@@ -148,95 +144,7 @@ Use the standardized prefix `Phase# - ` for commits related to this rewrite, rep
 
 Update `agent_docs/latest_session_work.md` only when a handoff is expressly requested by the user.
 
-## Phase 0 update - 2026-09-15
-
-- What changed: started the Phase 0 evidence set at commit `75755460`; added
-  static source archaeology, feature preservation, file compatibility, resource
-  ownership, baseline, and risk documents under `docs/qt-rewrite/`.
-- What remains: capture visual references, create representative file fixtures,
-  run a fresh packaged Release baseline on every target platform, and complete
-  startup/resource tracing.
-- Evidence: `ctest --test-dir build/windows-x64-debug -N` currently enumerates
-  66 tests, but that build tree contains stale cache options and is not treated
-  as authoritative. A clean Phase 0 build directory is being established.
-- Risk: historical baseline artifacts describe an older source snapshot and
-  must not be used as the rewrite's acceptance baseline.
-
-## Product contract update - 2026-09-16
-
-- The document catalog may load startup metadata, but PDFs displayed through
-  QtPdf are loaded only when the user requests them.
-- The active viewer session owns the loaded document and must close/release it
-  when the document is replaced, the viewer is closed, or the page is left or
-  released. Generated and print-output PDFs remain operation-scoped.
-- Phase 0 records the startup-negative, on-demand-open, and release-memory
-  evidence still required; later phases now carry the same lifecycle contract.
-
-## Phase 1 update - 2026-09-18
-
-- Phase 0 is complete at commit `f8bb5954`: the combined Windows x64 and macOS
-  universal 24-route exit gate passed, and the user confirmed the visual review.
-- Phase 1 slices 1.1-1.3 establish the parallel Qt Core-only `ClassMngrNext`
-  bootstrap, source-free layer/feature boundaries, and per-target dependencies
-  measured from Ninja data. The legacy runtime retains its full Qt module set.
-- A fresh Ninja/MSVC Debug configuration built both executables in 351 steps;
-  `ClassMngrNextLaunch` passed 1/1. The `ClassMngrDomain` compile command has
-  only QtCore/QtGui include paths, with no Widgets, Sql, or Network paths.
-- `ninja -t commands ClassMngr.exe` confirms the full legacy Qt link set,
-  including `Qt6::QuickControls2`. `ClassMngrSharedPolicyTests` built after
-  importing VS DevCmd, and its targeted CTest passed 1/1; `ClassMngrNext.exe`
-  launched with exit code 0.
-- Slice 1.4 completed: explicit source manifests and configure-time ownership
-  checks cover production, executable, QML, and test sources. A clean Windows
-  Ninja/MSVC Debug configure reported 653 handwritten files; the build passed
-  for `ClassMngr`, `ClassMngrNext`, and five affected test targets. Six
-  targeted CTests passed.
-- Slice 1.5 adds the compile database, v2-scoped format/tidy CI, configure-time
-  gates, module/resource/package reports and checks, packaged Release workflow
-  integration, and a startup/memory-labeled CTest entry point. Local resource
-  checks passed for six generated RCCs and seven runtime IDs; the staged
-  package report passed. Cross-platform CI and local clang tools were not run.
-- Slice 1.6 adds PR-triggered Debug validation for Windows x64, Windows ARM64,
-  macOS universal, and Linux. ARM64 cross-builds on x64 without execution;
-  existing platform packaging workflows remain the Packaged Release paths.
-  Independent static review passed. On a clean snapshot at `6f2f5fb0`, local
-  Windows x64 Debug configure/build and CTest passed 66/66, including the v2
-  launch and startup performance tests. The local VS 2026/MSVC 19.51 + Qt 6.12
-  Windows x64 Release packaged-installer path also succeeded, but is
-  supplemental because the exact VS2022 configure failed: no VS2022 instance
-  is installed.
-- Hosted workflow results have now been queried on source commit `57f5dff6`:
-  the official Windows x64 Debug job passed 66/66, and the macOS Debug job
-  failed after the hosted runner lost communication with GitHub. The user saw
-  `ClassMngrUpdaterTests` running, but no log or test report confirms it as the
-  cause. The Windows and macOS Packaged Release runs passed. The local Windows
-  x64 Debug pass of 66/66 on `4dbe3ca7` using VS 2026/MSVC 19.51 remains
-  independent passing evidence. Phase 1 Build Quality still needs a hosted
-  run. Linux and Windows ARM64 are unofficial, deferred builds; their tests
-  and native launch are not Phase 1 blockers. Phase 1 remains open for the
-  official Windows/macOS checks and quality workflow. No later phase is
-  complete.
-
 ## Important context
-
-### Local Windows x64 Debug build timing (2026-09-28)
-
-- Configuring and generating the `windows-x64-debug` preset in the existing
-  `build/windows-x64-debug` tree took 4m25s (192.8s configuring and 72.7s
-  generating).
-- Building `ClassMngr` and `ClassMngrNext` with
-  `cmake --build --preset windows-x64-debug --target ClassMngr ClassMngrNext`
-  succeeded in 12m17.5s. This is a local reference from a partially built
-  tree, not a clean-build guarantee. The toolchain was Visual Studio 18 / MSBuild
-  18.10.1 with Qt 6.12.0.
-- The default preset also builds test executables. That full build did not
-  complete: `ClassMngrNextPlatformApplicationServicesWorkspacePortTests`
-  failed to compile because it used the forward-declared `SettingsService`.
-  CTest was not run.
-- During that full build, `cmake/production_sources.cmake` changed and caused
-  another configure/generate pass lasting 10m30s (449.0s configuring and
-  181.2s generating). Treat that extra pass as a source-change interruption,
-  not normal build overhead.
 
 This plan is based on the current Qt-Rewrite source tree. Existing plan documents in the branch are intentionally ignored and do not define scope or architecture.
 

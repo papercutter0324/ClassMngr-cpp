@@ -13,9 +13,13 @@ Entries are preserved in their original document order.
   baselines, and record startup/resource traces.
 - Evidence: source snapshot `75755460`; raw resource inventory is 226 files
   totaling 65,729,685 bytes; source/test inventory and the current CTest
-  enumeration are recorded in the evidence documents.
+  enumeration are recorded in the evidence documents. The existing
+  `ctest --test-dir build/windows-x64-debug -N` enumeration reported 66 tests,
+  but that tree had stale cache options and was not treated as authoritative.
 - Risk: existing build directories include stale configuration from an earlier
   tree, so they are excluded from acceptance evidence until reconfigured.
+  Historical baseline artifacts also describe an older source snapshot and
+  are not valid acceptance evidence.
 ## Progress update - 2026-09-15 (fixture and clean build)
 
 - What changed: replaced the deleted historical `Testing-copy.tps` dependency
@@ -34,6 +38,16 @@ Entries are preserved in their original document order.
   baselines on Windows x64 and macOS universal.
 - Risk: Qt 6.12 QML import scanning makes clean configuration slow, and the
   older Visual Studio build directory still loops during regeneration.
+## Product contract update - 2026-09-16
+
+- The document catalog may load startup metadata, but PDFs displayed through
+  QtPdf are loaded only when the user requests them.
+- The active viewer session owns the loaded document and must close/release it
+  when the document is replaced, the viewer is closed, or the page is left or
+  released. Generated and print-output PDFs remain operation-scoped.
+- Phase 0 records the startup-negative, on-demand-open, and release-memory
+  evidence still required; later phases now carry the same lifecycle contract.
+
 ## Progress update - 2026-09-16 (visual capture harness)
 
 - What changed: added the in-process `--startup-visual-capture-output` mode.

@@ -1,0 +1,337 @@
+# Phase 6 Progress Log
+
+Historical progress entries moved from [07-Phase-6-Shared-UI-Rewrite.md](07-Phase-6-Shared-UI-Rewrite.md).
+Entries are preserved in their original document order.
+
+### F1514 — complete — 2026-10-26
+
+`PageDescriptor` now carries validated stable identity, label, optional icon
+resource ID, required permission IDs, factory, resource policy, and initial-data
+policy. `PageHost` retains and exposes descriptors without constructing pages;
+the Next bootstrap registers its placeholder through this API. The old
+string/factory registration path was removed, and the focused lifecycle and
+failure tests now use descriptors. Permission and policy values remain
+metadata; their enforcement belongs to navigation/application slices.
+
+The incremental macOS Debug build of `ClassMngrNextPageHostTests` and
+`ClassMngrNextBootstrapTests` passed. Focused CTest passed 2/2, and
+`git diff --check` passed. No full suite or cross-platform build ran.
+
+### F1515 — complete — 2026-10-26
+
+`PageHost` now tracks `Declared`, `Created`, `Activated`, `Suspended`, and
+`Released` states and exposes state queries plus transition notifications.
+Creation remains lazy; `Created` is observed during the activation attempt,
+before `onActivating()`. Reentrant host mutations from transition observers are
+rejected. Failed target activation cleans up the target and records `Released`
+while preserving the previous active page. Released descriptors remain
+registered and can be recreated.
+
+Independent review caught a test-fixture lifetime error that caused a
+`SIGTRAP`: a retained probe page outlived its stack-owned probe. The fixture now
+destroys the host before the probes and explicitly releases the final page.
+The incremental macOS Debug build passed; both focused CTests passed 2/2, the
+PageHost CTest passed ten consecutive Executor runs and one independent run,
+and `git diff --check` passed. No full suite or cross-platform build ran.
+
+### F1516 — complete — 2026-10-26
+
+`NavigationModel` now uses ordered group and page nodes; page leaves reference
+`PageId` and obtain labels, icons, and permission requirements from
+`PageDescriptor`. Workspace visibility and explicit permission grants are
+separate. The initial placeholder route is `campus_information` with a closed
+workspace and `my_workspace` with an open workspace. The shell commits location,
+selection, and page-ID history only after guard approval and successful
+`PageHost` activation. Back/forward, branch truncation, rejected navigation,
+and activation-failure rollback are covered.
+
+The shell loads a descriptor-supplied icon through `ResourceLoader`; current
+legacy routes remain icon-free because the existing sidebar defines no node
+icons. Useful Links retains its seven static labels as inert placeholders; URL
+actions, dynamic document nodes, dynamic teacher rows, and feature loading are
+deferred to later migration slices. Missing icon resources currently render no
+icon; this failure path was reviewed but not separately induced in a test.
+
+The incremental macOS Debug build covered the navigation, PageHost, and
+bootstrap targets. Focused CTest passed 3/3, and `git diff --check` passed.
+No full suite or cross-platform build ran.
+
+### F1517 — complete — 2026-10-26
+
+The application-layer `CommandBus` now provides synchronous typed handler
+registration and dispatch keyed by C++ command type. It reports missing,
+duplicate, invalid-handler, and unavailable bus errors separately from the
+handler's unchanged `Domain::Result<void>`. Availability is queried and
+rechecked on dispatch; checked state and NavigationModel remain outside the
+bus. The bus and focused test target have no Qt Widgets dependency.
+
+Independent macOS Debug build and CTest passed for
+`ClassMngrNextCommandBusTests` and `ClassMngrNextApplicationRuntimeTests` (2/2).
+Coverage includes availability changing between query and dispatch, with the
+handler kept uncalled. `git diff --check` passed. No full suite or
+cross-platform build ran.
+
+### F1518 — complete — 2026-10-26
+
+Back/Forward enabled state now derives from both history position and current
+visibility/permission of each history target. The shell presents the model's
+value state and refreshes it after navigation or access-context changes. An
+inaccessible target disables the action; a rejected history move preserves
+the current/selected route, history, and active page. This covers existing
+shell navigation controls; feature menu/action migration remains later work.
+
+Independent incremental macOS Debug build and CTest passed for Navigation,
+PageHost, and Bootstrap (3/3); `git diff --check` passed. No full suite or
+cross-platform build ran.
+
+### F1519 — complete — 2026-10-26
+
+Added a Qt-free `UserPromptPort` with typed message, confirmation,
+unsaved-change, and named-action values. Accepted, declined, dismissed,
+Save/Discard/Cancel, and stable action IDs are semantic responses; presenter
+failures remain separate `Domain::Result` errors. A Next Qt presenter maps the
+contracts to dialogs and preserves default/Escape behavior, while a separate
+automation API exposes stable prompt IDs and value-only snapshots/commands.
+Legacy prompt callers and their workflow adapters remain unchanged.
+
+Independent macOS Debug build covered the prompt contract, presenter, Next
+application, Bootstrap, Navigation, and PageHost targets. Focused CTest passed
+5/5; coverage includes destructive styling independent from semantic outcome,
+Escape mapping, dismissal, unsaved-change choices, named-action IDs, default
+actions, and automation snapshots/capture. `git diff --check` passed. No full
+suite, cross-platform build, or native window-manager presentation test ran.
+
+### F1520 — complete — 2026-10-26
+
+Added a Qt-free `FileDialogPort` for opening one or many files, saving, and
+selecting a directory, plus a Qt presenter that owns widgets, path conversion,
+normalization, platform policy, and per-purpose directory persistence. Requests
+use UTF-8 values and reuse the existing purpose and preferences port. Initial
+directory precedence remains explicit request, remembered directory, then
+Documents (Pictures for signature images), with home fallback. The presenter
+preserves filters, suggested filename, default suffix, overwrite policy,
+optional open-after-save checkbox, and each operation's standard Open/Save/
+Choose Directory accept and platform keyboard behavior. Cancellation is a
+successful empty selection. Preference-write failures accompany accepted
+selections as nonfatal warning values.
+
+Independent macOS Debug build covered the Next application, both file-dialog
+test targets, and the QSettings directory-preferences adapter target. Focused
+CTest passed 3/3; tests cover current-directory precedence/fallbacks, UTF-8,
+filters, selection and cancellation, save options, normalization, persistence
+timing, and warning-plus-selection. The adapter target remains independently
+covered. `git diff --check` passed. Native OS panels and window-manager keyboard
+behavior were not exercised in this offscreen environment; the presenter tests
+verify platform routing and Qt dialog policy flags.
+
+### F1521 — complete — 2026-10-26
+
+Added a Qt-free `NotificationPort` with UTF-8 message text and typed
+Information/Warning/Error severity, plus a transient Qt presenter owned by the
+Next shell. The hidden-when-idle QStatusBar shows one notice at a time, replaces
+an active notice, clears explicitly, and expires after a finite five-second
+default. Warning and error messages receive translated severity labels. The
+service has no action/history/persistence layer; prompts remain responsible
+for choices and acknowledgment, and job models continue to own progress.
+No feature callers were migrated.
+
+Independent macOS Debug build covered the Next app, notification contract and
+presenter, Navigation, and Bootstrap targets. Focused CTest passed 4/4, and
+the presenter suite passed five repeated runs. Coverage includes idle
+visibility, severity, expiry, replacement, explicit clear, presenter/shell
+destruction, invalid requests, and wrong-thread failures. `git diff --check`
+passed. Native display and window-manager behavior were not tested.
+
+### F1522 — complete — 2026-10-26
+
+Added a Qt-free `PreferencesModel` around the existing validated
+`UserPreferencesState`, with distinct read, in-memory apply, and whole-snapshot
+persist ports. It tracks dirty state, skips writes when clean, retains dirty
+state after write failure for retry, and notifies subscribers with copies of
+the committed snapshot. Failed reads/writes preserve model state. Changed
+`apply`/`load`/`persist` operations during synchronous observer delivery return
+`Conflict`; an identical apply remains a no-op. Subscription changes during
+delivery are safe, and observer exceptions are rethrown after remaining
+observers receive the committed value. No storage adapters, theme presenters,
+or feature consumers were changed; those remain F1523/F1524 work.
+
+Independent macOS Debug build and focused CTest covered the new Preferences
+Model test and existing User Preferences state test (2/2). Coverage includes
+load/apply/persist separation, failure atomicity and retry, dirty-state
+handling, observer ordering, reentrancy, subscription lifecycle, and exception
+visibility. The new Application target remains Qt-free. `git diff --check`
+passed. No full suite or cross-platform build ran.
+
+### F1523 — complete — 2026-10-26
+
+Added a Next `ThemePresenter` that applies the existing packaged light/dark
+QSS, explicitly maps semantic and persisted theme enums, and retains the active
+stylesheet resource until the prior application stylesheet is restored. Startup
+applies the stored preference without rewriting it. Live preference changes
+load the candidate style, persist first through the existing one-field theme
+port, and install the style only after persistence succeeds. Failed resource
+loads or writes leave the installed style unchanged. No palette or QSS changes
+were made, and the legacy theme controller/service remains unchanged.
+
+SystemDefault resolves `Dark` to the dark stylesheet and all other/unknown
+schemes to light when applied. It does not track later OS color-scheme changes,
+matching the current Next startup behavior; live legacy parity for this case
+remains a later appearance decision.
+
+Independent incremental macOS Debug build and focused CTest covered the theme
+presenter, Bootstrap, and existing SettingsManager theme preference adapter
+(3/3). Tests cover enum mapping, startup without writes, scheme fallback,
+resource-load/write failures, persistence ordering, no-op behavior, and
+stylesheet restoration. `git diff --check` passed. No full suite,
+cross-platform build, or screenshot comparison ran; appearance evidence remains
+F1527.
+
+### F1524 — complete — 2026-10-26
+
+Added validated `FontSize` to `UserPreferencesState`, a Qt-free aggregate
+snapshot adapter over the existing typed preference ports, and a
+SettingsManager composition for complete startup reads and sequential writes.
+The Next bootstrap now loads one `PreferencesModel` for startup language,
+theme, and font selection; `ApplicationShell` and `PageHost` pass that same
+model through `PageContext` for future page actions. `ThemePresenter` stages
+the candidate QSS so observers see a style matching the committed preference,
+and restores the old style when persistence fails. Startup font selection
+preserves the current locale-dependent font family and size rules and restores
+the prior application font during teardown.
+
+Snapshot writes are sequential and non-atomic: an error stops later writes,
+leaves earlier writes in place, and keeps the model dirty so a full-snapshot
+retry can repair storage. The existing teacher and PowerPoint writers return
+`void`, so their write success cannot be checked. Global window/splitter state
+remains deferred because the keys have no active callers; current workspace
+campus data and per-dialog geometry remain separate. Legacy preference
+controllers and feature consumers were not migrated.
+
+Independent incremental macOS Debug build covered `ClassMngrNext` and the
+Bootstrap, ThemePresenter, PageHost, Navigation, PreferencesModel,
+ApplicationUserPreferences, PreferencesSnapshotAdapter, FontSizePresenter,
+and SettingsManagerPreferencesPort tests. Focused CTest passed 9/9. Coverage
+includes full-state round trips, partial-write/retry, startup preference
+selection, shared page context, font restoration, theme rollback, observer
+visibility, and stylesheet resource lifetime. `git diff --check` passed. No
+full suite, cross-platform build, or appearance screenshots ran; screenshots
+and shell appearance checks remain F1527.
+
+### F1525 — complete — 2026-10-26
+
+Added the shared header-only `EditableTextTableModel<Row>` for rectangular
+editable text rows. It centralizes Qt model roles, headers, editability,
+checked cell updates, row insertion/removal, and reset notifications while
+leaving feature row metadata and persistence outside the shared primitive.
+Staff Directory now uses this model base for its existing 5/6-column schemas.
+Its persisted IDs, feature queries, save/import rules, native-teacher position
+delegate, and dirty/reload state remain in the feature page. Text and combo
+editors are still created only for the active cell, and table/model/delegate
+ownership remains page-scoped.
+
+The model directly retains supplied row values; it has no paging or backing-
+data memory cap. The boundedness evidence here is Qt widget/editor allocation:
+the 96-row check confirms widget count remains fixed and no index widgets are
+created. Model tests also cover 5/6 columns, display/edit roles, headers,
+invalid requests, edit signals, insertion/removal, reset generations, and row
+release. The page test covers clear/reload, active-editor disposal, and page
+recreation. The existing import refresh-failure test continues to pass.
+
+Independent incremental macOS Debug build covered the new model test, Staff
+Directory page test, teacher-import refresh test, and both directory read/save
+parity suites. Focused CTest passed 7/7. CMake validated ownership of 1,694
+handwritten files, and `git diff --check` passed. A broader CTest selection
+also failed in `wizardSuccessTranscript` with macOS
+`NSBundle initWithURL: nil URL argument`; that test path is outside the changed
+model/view code and is not part of the focused acceptance result. No full suite,
+cross-platform build, or screenshot comparison ran; appearance evidence remains
+F1527.
+
+### F1526 — complete — 2026-10-26
+
+Accepted the existing Staff Directory as Phase 6's representative model/view
+table. Both directory variants use `QTableView` with 6- and 5-column schemas;
+the 96-row test confirms widget count does not grow with rows/cells and no
+`QTableWidget` or per-cell index widgets are created. Existing editor tests
+show text and native-position combo editors are created only for active cells.
+F1525's clear/recreation test verifies active-editor disposal and page-owned
+model/delegate release. Import refresh failure continues to lock stale rows
+until a successful reload. Sorting remains disabled and headers remain
+non-clickable/non-movable, preserving current behavior.
+
+Independent incremental macOS Debug build covered
+`ClassMngrStaffDirectoryPageTests` and
+`ClassMngrTeacherImportUiApplyParityTests`. Focused CTest passed 2/2 for the
+Staff Directory page suite and isolated
+`TeacherImportUiApplyParityF1285DirectoryReloadFailure` regression. This gate
+proves bounded Qt widget/editor allocation for the representative table; it
+does not prove bounded backing-row memory or complete Staff Directory feature
+migration. The latter remains Phase 7C, and packaged Release memory measurement
+remains Phase 9. No full suite or cross-platform build ran.
+
+Paired Batch 2 discovery found F1528, a bounded review-window model, to satisfy
+the remaining Phase 6 §6.7 shared-primitive requirement. Window/splitter keys
+remain intact and their lifecycle behavior remains deferred under the F1524
+decision because there are no active callers.
+
+### F1527 — complete — 2026-10-26
+
+Captured and reviewed the Next placeholder shell in English and Korean under
+Light and Dark themes at 1024×720 and 1× scale. The baselines and manifest are
+in `docs/qt-rewrite/visual-baseline/next/phase-6/f1527/`. The review exposed
+missing Korean translation contexts for navigation labels, shell actions, and
+placeholder text; those Next contexts are now explicit. It also exposed a
+clipped English placeholder description and a tree missing the legacy
+sidebar's 2px solid, 8px-radius frame. The description now uses available
+content width, and the tree uses the existing theme border colors and frame
+dimensions. Typography, margins, spacing, palette, and selection colors remain
+unchanged.
+
+The appearance assertions cover translated page and group labels, selected
+route/item, focus, placeholder text fit, icon absence, disabled initial
+Back/Forward actions, theme stylesheet, and frame width. Independent
+incremental macOS Debug build and focused CTest passed 4/4 across Bootstrap,
+ThemePresenter, Navigation, and PageHost. `git diff --check`, the resource
+inventory check, four-capture manifest checks, and CMake ownership validation
+for 1,694 handwritten files passed. No full suite, native-window capture,
+cross-platform build, or cross-platform visual parity was claimed.
+
+### F1528 — complete — 2026-10-26
+
+Added opt-in bounded review windows to `EditableTextTableModel<Row>`. The
+windowed path keeps only the resident rows, exposes a wide logical offset and
+total-row count, and reports the active resident capacity. The first valid
+window establishes a fixed capacity for that windowed lifetime; a different
+capacity is rejected before reset or mutation. `setRows()` explicitly returns
+the model to unwindowed mode, so existing full-row consumers can retain their
+behavior. Insert/remove remain available when unwindowed and are rejected
+while windowed. Replacing a window resets indexes and releases the prior row
+generation. Feature code still owns fetching/provisioning each window and
+persisting the complete source.
+
+Staff Directory remains unwindowed because its save path iterates `rowCount()`
+and reads every `rowAt()`. The focused model test attaches a real `QTableView`
+and visits all 257 windows for a synthetic 16,387-row logical source with a
+64-row capacity. It verifies the resident cap, logical metadata including
+valid values above `INT_MAX`, rejected input/capacity changes preserving the
+active generation and indexes, and release after replacement. The existing
+Staff Directory page regression was rerun.
+
+Independent incremental macOS Debug build covered
+`ClassMngrEditableTextTableModelTests` and
+`ClassMngrStaffDirectoryPageTests`; focused CTest passed 2/2. CMake ownership
+validation passed for 1,694 handwritten files, and `git diff --check` passed.
+No full suite, cross-platform build, or packaged memory measurement ran; the
+packaged Release memory gate remains Phase 9.
+
+### Phase 6 exit gate — passed — 2026-10-26
+
+The shell navigation gate is covered by lazy page registration and lifecycle,
+workspace/permission-aware navigation and history actions, and the F1527
+English/Korean Light/Dark appearance baselines. Tests verify labels, intentional
+icon absence, initial Back/Forward state, selected route/item and focus without
+constructing unrelated pages. Staff Directory is the representative large
+model/view consumer with bounded widget/editor creation. F1528 adds bounded
+resident model rows and in-place window replacement for large logical sources.
+No further Phase 6 candidates were found. Full Staff Directory feature
+migration remains Phase 7C; visual parity remains in Phase 7/10.
