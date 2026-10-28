@@ -25,8 +25,10 @@ ownership, dependencies, lifecycle, and verification.
 26. **Accepted — Class notes and time filler** (`833e9074`). See the [Phase 7
     progress log](08-Phase-7-Feature-Migration.md#progress-log) and [capture
     package](../../docs/qt-rewrite/visual-baseline/next/phase-7/class-notes/README.md).
-27. **Active — Class analytics and speaking-evaluation defaults.**
-28. Testing classes and blocks.
+27. **Accepted — Class analytics and speaking-evaluation defaults** (`8f38ae44`).
+    See the [Phase 7 progress log](08-Phase-7-Feature-Migration.md#progress-log)
+    and [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/class-analytics/README.md).
+28. **Active — Testing classes and blocks.**
 29. Class transfer.
 30. Schedule display/editing with model/view and compact state.
 31. Schedule workbook import/review/apply; separate from #19 teacher import.

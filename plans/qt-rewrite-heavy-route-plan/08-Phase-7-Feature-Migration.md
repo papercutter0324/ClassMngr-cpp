@@ -38,10 +38,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-28
-- Current note: 7A.1–7A.15 and candidates #23–26 remain accepted. Batch 3
-  candidate #27, Class analytics and speaking-evaluation defaults, is active.
-  The 7A screenshot comparison and
-  memory evidence remain open, as do the 7A and Phase 7 exit gates. See the
+- Current note: 7A.1–7A.15 and candidates #23–27 remain accepted. Batch 3
+  candidate #28, Testing classes and blocks, is active. The 7A screenshot
+  comparison and memory evidence remain open, as do the 7A and Phase 7 exit
+  gates. See the
   progress log for slice evidence and limits.
 
 ### Slice batches
@@ -761,6 +761,33 @@ keep current status in this plan and live batches in the shared tracker.
   Legacy and Next layouts differ, so no visual-parity result is claimed. The
   7A screenshot/memory evidence and 7A/Phase 7 exit gates remain open. No full
   suite, Windows, or memory-budget result is claimed.
+
+### Candidate #27 — Class Analytics and speaking-evaluation defaults accepted (2026-10-28)
+
+- Commit: `8f38ae44`. Next adds the Class Analytics dashboard through the
+  path-scoped `WorkspaceStore` and typed
+  `ClassAnalyticsDashboardReadQuery`; the shared
+  `classes_navigation_evaluation_default_policy` semantics remain intact.
+  Legacy Speaking Evaluation already consumes that preference and stays in
+  candidate #38 scope.
+- Term mapping is explicit and the 2200 cutoff is removed. A local parser is
+  retained because no shared Next parser exists and a Calendar dependency would
+  cross module boundaries. This duplicates Calendar interpretation and
+  requires parity coverage; future Next consumers should extract a shared
+  pure parser.
+- Verification: affected targets built; focused CTest passed 28/28 and the
+  WorkspaceStore Qt suite passed 23/23. Legacy-comparison tests cover custom
+  term boundaries, elementary/middle profiles, dates through 2201, missing
+  profiles, and invalid week counts/weekdays. Existing path tests cover
+  populated/empty defaults, previous-term fallback, Spring-to-Speech Contest,
+  explicit retention, and malformed JSON. `git diff --check`, resource
+  inventory `--check`, and source/dependency boundary scans passed.
+- Evidence and limits: the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/class-analytics/README.md)
+  documents the All/Winter matrix, content, lifecycle, counts, and whole-process
+  memory scope. Legacy and Next shells differ, so the captures do not establish
+  visual parity; memory snapshots do not establish a budget. The 7A evidence
+  and 7A/Phase 7 exit gates remain open. No full-suite or Windows result is
+  claimed.
 
 ## Objective
 
