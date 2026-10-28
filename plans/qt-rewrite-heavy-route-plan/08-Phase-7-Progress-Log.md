@@ -880,3 +880,34 @@ Entries are preserved in their original document order.
   rows. Whole-process memory samples do not establish a parser or process
   memory budget. The 7A screenshot/memory evidence and 7A/Phase 7 exit gates
   remain open.
+
+### Candidate #32 — Testing assignments and Schedule output/printing accepted (2026-10-28)
+
+- Commit: `51faa658`. Testing assignments use direct path-scoped
+  `WorkspaceStore` actions; Cancel and the manager handoff do not write.
+  Update/replace/remove, transaction failure/retry, stale path, successful
+  reload, and visible error behavior are covered. Schedule output uses a
+  shared value-only print document and renderer, with resolved fonts supplied
+  at the Legacy and Next boundaries. A4, 300 DPI, half-inch content margin,
+  styles/themes/Excel, orientation, and existing print controls remain intact.
+- Architecture: `ClassMngrQtPdfPrint`, `ClassMngrSchedulePrint`, and
+  `ClassMngrNextScheduleOutput` reuse Qt PDF/print preview. The Next allowlist
+  adds only the narrow output target and excludes `ClassMngrFeatures`,
+  `ClassMngrUiShared`, and `ClassMngrCore`. This keeps the slice's output
+  boundary explicit; Phase 8 still owns platform and external printer/PDF
+  adapter isolation. Qt PDF and printer objects remain operation-scoped.
+- Verification: a fresh `build/macos-clang-debug` configure/build passed and
+  validated one explicit owner for 1,867 handwritten source files. The
+  original focused CTest batch passed 16/16 and the repair delta 5/5;
+  `ClassMngrSchedulePrintPdfTests` passed 10/10, and the Schedule Import
+  integration target passed. Source ownership/dependency boundary,
+  resource inventory `--check`, and `git diff --check` passed. The PDF failure
+  test returns Failed and creates no file for a missing parent directory.
+- Evidence and limits: the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/schedule-testing-output/README.md)
+  and manifest reference 21 existing images across English/Korean and
+  light/dark, with no clipping; they document states and do not claim pixel
+  parity. PDF content checks normalize whitespace while preserving ordered
+  content and punctuation. Print-dialog cancellation was tested with faked
+  UI results, not physical hardware. No full suite, Windows, physical-printer,
+  or memory-budget result is claimed. The 7A screenshot/memory evidence and
+  7A/Phase 7 exit gates remain open.

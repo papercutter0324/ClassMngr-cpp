@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 7 — Feature Migration.
-Current deployment: `phase7-feature-migration-20261026`. Route: Heavy.
+Current deployment: `phase7-migration-20261028`. Route: Heavy.
 Phases 0–6 are Complete; Phase 7 is in progress. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;
@@ -24,9 +24,9 @@ and [Start Here](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md).
 
 ## Goal
 
-Complete Phase 7 feature migration, beginning with the user-visible 7A
-profile-bootstrap path and its transaction-safe persistence, cancellation,
-recovery, and acceptance evidence.
+Complete Phase 7 feature migration, preserving supported workflows and
+workspace compatibility, verifying the required behavior and exit gates,
+committing each accepted slice, and pushing each completed batch.
 
 ## Overall Progress
 
@@ -189,32 +189,22 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-27 (7A.8 committed; 7A.9 active)
+### Current checkpoint — 2026-10-28 (candidate #32 accepted; #33 active)
 
-### Current checkpoint — 2026-10-27 (7A.8 committed; 7A.9 active)
+Candidate #32, testing assignments and Schedule output/printing, is accepted at
+`51faa658`. The shared value-only print document and narrow Qt PDF/print
+targets preserve the existing preview and output controls without linking
+`ClassMngrNext` to broad Legacy targets. Focused CTest passed 16/16, the PDF
+suite passed 10/10, and the repair-delta CTest passed 5/5. The independent
+Tester verified source ownership, the Next dependency boundary, path-scoped
+assignment behavior, PDF geometry/content, and the 21-image capture manifest.
+No full suite, Windows build, physical-printer run, or pixel-parity claim is
+recorded. The 7A screenshot/memory evidence and 7A/Phase 7 exit gates remain
+open. Batch 3 stays unpushed through candidate #40; preserve the user's
+unstaged Schedule Import Gateway edits.
 
-Phase 7 is in progress on the Heavy route. Slices 7A.1 through 7A.8 are
-committed at `d49f34fe`, `1f9b30bf`, `01aaf3d7`, `8bee6dbb`, `932fdfb2`,
-`97d45d3d`, `a83b7280`, and `95c1243a`. Slice 7A.8 adds normal Next profile
-creation/replacement separate from Initial Setup. The File menu action and New
-shortcut use `WorkspaceCreationLifecycle` with a direct WorkspaceStore
-adapter, preserve `.tps` path normalization, create an empty schema-v6
-workspace, and write recent history only after success. Failed replacement
-preserves/restores the prior workspace when safe; recovery-copy cleanup failure
-leaves the new profile active and exposes the retained recovery path.
-
-Independent focused verification passed 7/7 CTests; the new-flow QtTest passed
-14/14. Tests cover dialog cancel/path policy, same-path replacement, failed
-create restoration, active close failure, failed partial-workspace close,
-cleanup failure, history-write failure, and setup/recovery guards. CMake
-ownership validated 1,732 files. Resource inventory check passed after a
-metadata-only refresh; all 187 direct resource hashes match the generated
-manifest. `git diff --check` and the dependency-boundary test passed. Recovery
-name collision, failed partial-file cleanup/move, failed original restoration,
-and failed prior-workspace reopen remain untested. No full suite, Windows,
-package, screenshot, QWizard-parity, or peak-memory check ran. Those gates
-remain open. Candidate #9, existing `.tps` open, is active; Batch 1 remains
-un-pushed.
+The following checkpoint records are historical; canonical current state is
+in the Phase 7 plan, progress log, and slice-batch tracker.
 
 ### Historical checkpoint - 2026-10-20 (Batch488 pushed; F1169 accepted/in progress; F629 open)
 
@@ -602,10 +592,11 @@ user's response to the exact-payload approval request.
 
 ## Next Milestone
 
-Phase 3 is complete. Phase 4 remains Not started; resume it only when directed.
-The Phase 3 closure evidence and its documented limits are in the
-[Phase 3 plan](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Persistence-Rewrite.md)
-and [progress log](../plans/qt-rewrite-heavy-route-plan/04-Phase-3-Progress-Log.md).
+Complete Batch 3 through candidate #40, push it, and continue the remaining
+Phase 7 slices. Start next-batch discovery when candidate #39 starts. Do not
+declare Phase 7 complete until the 7A and Phase 7 exit gates pass; see the
+[Phase 7 plan](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Feature-Migration.md)
+and [progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).
 
 ## Current Phase 2 position - 2026-09-26
 

@@ -2,6 +2,17 @@
 
 ## Decisions and Lessons
 
+### Phase 7 Schedule output target boundary — 2026-10-28
+
+Candidate #32 must retain the existing PDF preview and printer controls while
+keeping `ClassMngrNext` independent of broad `ClassMngrFeatures`,
+`ClassMngrUiShared`, and `ClassMngrCore` targets. Reuse the existing Qt print
+behavior through narrow source-owner targets; share one value-only Schedule
+document and pass resolved fonts at the Legacy and Next boundaries. Keep this
+limited to the Schedule output dependency closure. Phase 8 still owns the
+generic platform adapter interfaces, broader output handling, and PDF viewer
+session lifecycle.
+
 - When splitting a wizard across feature slices, keep the first step's valid
   state as an explicit typed draft and delay persistence until the next
   step's required inputs are present. Reuse one neutral catalog source across
