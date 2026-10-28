@@ -67,6 +67,38 @@ enum class CaptureState
     return QStringLiteral("unknown");
 }
 
+[[nodiscard]] QJsonValue pendingScheduleSlotJson(
+    const std::optional<Application::TestingClassPendingScheduleSlot>& slot
+    )
+{
+    if (!slot)
+    {
+        return QJsonValue(QJsonValue::Null);
+    }
+
+    QString weekday;
+    switch (slot->weekday)
+    {
+    case Domain::Weekday::Monday: weekday = QStringLiteral("Monday"); break;
+    case Domain::Weekday::Tuesday: weekday = QStringLiteral("Tuesday"); break;
+    case Domain::Weekday::Wednesday: weekday = QStringLiteral("Wednesday"); break;
+    case Domain::Weekday::Thursday: weekday = QStringLiteral("Thursday"); break;
+    case Domain::Weekday::Friday: weekday = QStringLiteral("Friday"); break;
+    case Domain::Weekday::Saturday: weekday = QStringLiteral("Saturday"); break;
+    case Domain::Weekday::Sunday: weekday = QStringLiteral("Sunday"); break;
+    }
+
+    const int startMinute = slot->startMinute.rawValue();
+    const QString startTime = QStringLiteral("%1:%2")
+        .arg(startMinute / 60, 2, 10, QLatin1Char('0'))
+        .arg(startMinute % 60, 2, 10, QLatin1Char('0'));
+    return QJsonObject{
+        {QStringLiteral("weekday"), weekday},
+        {QStringLiteral("startMinute"), startMinute},
+        {QStringLiteral("startTime"), startTime}
+    };
+}
+
 [[nodiscard]] QPalette themePalette(const QString& theme)
 {
     QPalette palette;
@@ -309,13 +341,17 @@ enum class CaptureState
     {
         page->sections()->setCurrentIndex(1);
     }
-    else if (state == CaptureState::PendingSlot)
+    const std::optional<Application::TestingClassPendingScheduleSlot> pendingSlot =
+        state == CaptureState::PendingSlot
+            ? std::optional<Application::TestingClassPendingScheduleSlot>(
+                Application::TestingClassPendingScheduleSlot{
+                    .weekday = Domain::Weekday::Thursday,
+                    .startMinute = PendingStartMinute
+                })
+            : std::nullopt;
+    if (pendingSlot)
     {
-        page->openNewClassForPendingSlot(
-            Application::TestingClassPendingScheduleSlot{
-                .weekday = Domain::Weekday::Thursday,
-                .startMinute = PendingStartMinute
-            });
+        page->openNewClassForPendingSlot(pendingSlot);
     }
     host.resize(Viewport);
     host.show();
@@ -338,6 +374,8 @@ enum class CaptureState
         if (error) *error = QStringLiteral("Next pending slot context is not visible.");
         return false;
     }
+    const QString pendingSlotDisplayText = state == CaptureState::PendingSlot
+        ? page->pendingSlotLabel()->text() : QString{};
     bool koreanLabelsVerified = false;
     if (QLocale().name().startsWith(QStringLiteral("ko")))
     {
@@ -394,6 +432,7 @@ enum class CaptureState
         QStringLiteral("testingClassesEditor")).size();
     const QString selectedId = page->selectedClassId()
         ? QString::fromStdString(page->selectedClassId()->value()) : QString{};
+    const bool newClassDraftWhileVisible = page->isNewDraft();
     if (!host.activatePage(QStringLiteral("other")))
     {
         if (error) *error = QStringLiteral("Next page did not suspend after capture.");
@@ -417,10 +456,10 @@ enum class CaptureState
         {QStringLiteral("selectedEditorDescendantCount"),
             page->editorWidget()->findChildren<QWidget*>().size()},
         {QStringLiteral("koreanLabelsVerified"), koreanLabelsVerified},
-        {QStringLiteral("newClassDraft"), page->isNewDraft()},
-        {QStringLiteral("pendingScheduleSlot"), state == CaptureState::PendingSlot
-            ? QJsonValue(page->pendingSlotLabel()->text())
-            : QJsonValue(QJsonValue::Null)},
+        {QStringLiteral("newClassDraft"), newClassDraftWhileVisible},
+        {QStringLiteral("pendingScheduleSlot"), pendingScheduleSlotJson(pendingSlot)},
+        {QStringLiteral("pendingScheduleSlotDisplayText"), pendingSlotDisplayText.isEmpty()
+            ? QJsonValue(QJsonValue::Null) : QJsonValue(pendingSlotDisplayText)},
         {QStringLiteral("detailsSnapshotClearedOnSuspension"), clearedOnSuspension},
         {QStringLiteral("memoryProcessWide"), QJsonObject{
             {QStringLiteral("scope"), QStringLiteral(
