@@ -1,11 +1,13 @@
 #include "next/ui/schedule_page.h"
 #include "next/ui/schedule_intensive_cell_layout.h"
+#include "next/ui/schedule_import_workflow_dialog.h"
 
 #include "next/application/schedule_slot_state_save_use_case.h"
 
 #include <QAbstractItemView>
 #include <QAbstractTextDocumentLayout>
 #include <QApplication>
+#include <QAction>
 #include <QButtonGroup>
 #include <QCheckBox>
 #include <QColor>
@@ -391,11 +393,13 @@ PageOperationResult<void> SchedulePage::onActivating()
 void SchedulePage::onSuspending() noexcept
 {
     m_pageActive = false;
+    closeScheduleImport();
     clearRetainedState(false);
 }
 
 void SchedulePage::clearForWorkspaceChange()
 {
+    closeScheduleImport();
     clearRetainedState(true);
     m_workspaceIdentity.clear();
     setStatus(pageText("Schedule data is not loaded."));
@@ -403,6 +407,7 @@ void SchedulePage::clearForWorkspaceChange()
 
 void SchedulePage::clearForClosedWorkspace()
 {
+    closeScheduleImport();
     clearRetainedState(true);
     m_workspaceIdentity.clear();
     setStatus(pageText("No Teacher Profile is open."));
@@ -513,6 +518,11 @@ QLabel* SchedulePage::statusLabel() const noexcept
     return m_status;
 }
 
+ScheduleImportWorkflowDialog* SchedulePage::importDialog() const noexcept
+{
+    return m_importDialog;
+}
+
 SchedulePageVisualMetrics SchedulePage::visualMetrics() const
 {
     SchedulePageVisualMetrics metrics;
@@ -593,6 +603,15 @@ void SchedulePage::buildUi()
     m_preferencesMenu = new QMenu(m_preferencesButton);
     m_preferencesButton->setMenu(m_preferencesMenu);
     modes->addWidget(m_preferencesButton);
+    m_importAction = new QAction(m_preferencesMenu);
+    m_importAction->setObjectName(QStringLiteral("nextScheduleImportAction"));
+    m_importAction->setProperty(
+        "translationSource", QStringLiteral("Import Schedule"));
+    m_preferencesMenu->addAction(m_importAction);
+    m_preferencesMenu->addSeparator();
+    connect(m_importAction, &QAction::triggered, this, [this] {
+        startScheduleImport();
+    });
     root->addLayout(modes);
 
     const std::array<const char*, 5> preferenceNames{
@@ -707,6 +726,10 @@ void SchedulePage::retranslateUi()
         {
             checkBox->setText(text);
         }
+        else if (auto* const action = qobject_cast<QAction*>(object))
+        {
+            action->setText(text);
+        }
     }
     updateTestingBanner();
     if (m_model)
@@ -719,6 +742,7 @@ void SchedulePage::retranslateUi()
 
 void SchedulePage::clearRetainedState(const bool clearIdentity)
 {
+    closeScheduleImport();
     m_model->clear();
     m_lastError.clear();
     if (clearIdentity)
@@ -777,10 +801,98 @@ void SchedulePage::setControlsEnabled(const bool enabled)
     }
     if (m_preferencesButton)
     {
-        m_preferencesButton->setEnabled(enabled);
+        m_preferencesButton->setEnabled(enabled || !activePath().isEmpty());
+    }
+    if (m_importAction)
+    {
+        m_importAction->setEnabled(!activePath().isEmpty()
+                                   && m_importDialog.isNull());
     }
     m_table->setEnabled(enabled);
     m_retry->setEnabled(!activePath().isEmpty());
+}
+
+void SchedulePage::startScheduleImport()
+{
+    if (m_importDialog || !m_pageActive)
+    {
+        return;
+    }
+    const QString path = activePath();
+    const QString identity = workspaceIdentity();
+    if (path.isEmpty() || identity.isEmpty())
+    {
+        setStatus(pageText("No Teacher Profile is open."), true);
+        return;
+    }
+
+    ScheduleImportWorkflowActions actions;
+    actions.chooseWorkbook = m_actions.chooseScheduleImportWorkbook;
+    actions.parseWorkbook = m_actions.parseScheduleImportWorkbook;
+    actions.parseTimeoutMilliseconds = m_actions.scheduleImportTimeoutMilliseconds;
+    actions.activeWorkspacePath = [this] { return activePath(); };
+    actions.workspaceIdentity = [this] { return workspaceIdentity(); };
+    actions.readImportState = m_actions.readScheduleImportState;
+    actions.applyImport = m_actions.applyScheduleImport;
+    actions.importApplied = [this](const auto& summary) {
+        handleScheduleImportApplied(summary);
+    };
+
+    auto* const dialog = new ScheduleImportWorkflowDialog(
+        std::move(actions), path, identity, this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setWindowModality(Qt::NonModal);
+    m_importDialog = dialog;
+    connect(dialog, &QDialog::finished, this, [this, dialog] {
+        if (m_importDialog == dialog)
+        {
+            m_importDialog = nullptr;
+            if (m_importAction)
+            {
+                m_importAction->setEnabled(!activePath().isEmpty());
+            }
+        }
+    });
+    dialog->open();
+    if (m_importAction)
+    {
+        m_importAction->setEnabled(false);
+    }
+}
+
+void SchedulePage::closeScheduleImport() noexcept
+{
+    if (!m_importDialog)
+    {
+        return;
+    }
+    QPointer<ScheduleImportWorkflowDialog> dialog = m_importDialog;
+    m_importDialog = nullptr;
+    if (dialog)
+    {
+        dialog->reject();
+        dialog->deleteLater();
+    }
+}
+
+void SchedulePage::handleScheduleImportApplied(
+    const Application::ScheduleImportApplySummary& summary
+    )
+{
+    if (!reload())
+    {
+        return;
+    }
+    const QString message = pageText(
+        "Schedule import completed: %1 teachers created, %2 room updates, "
+        "%3 classes created, %4 classes updated, %5 skipped, %6 schedules cleared.")
+        .arg(summary.teachersCreated.rawValue())
+        .arg(summary.teachersUpdated.rawValue())
+        .arg(summary.classesCreated.rawValue())
+        .arg(summary.classesUpdated.rawValue())
+        .arg(summary.classesSkipped.rawValue())
+        .arg(summary.schedulesCleared.rawValue());
+    setStatus(message);
 }
 
 void SchedulePage::selectMode(const Application::ScheduleDisplayMode mode)

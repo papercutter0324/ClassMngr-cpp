@@ -1,0 +1,1623 @@
+{
+    "captureScenes": [
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "en-light-small-source.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                20,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                313,
+                483,
+                109,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSourcePage",
+            "visibleStageIndex": 0,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "en-light-small-selection.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                20,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                252,
+                483,
+                170,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "scheduleBlockChoiceBounds": [
+                105,
+                87,
+                294,
+                23
+            ],
+            "selectedScheduleBlock": "Alice",
+            "selectedWorksheet": "Current",
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSelectionPage",
+            "visibleStageIndex": 1,
+            "width": 436,
+            "workbook": "schedule_review.xlsx",
+            "worksheetChoiceBounds": [
+                105,
+                58,
+                294,
+                23
+            ]
+        },
+        {
+            "classReviewRows": 3,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "en-light-small-review.png",
+            "previewModelRows": 3,
+            "previewViewportBounds": [
+                1,
+                20,
+                254,
+                152
+            ],
+            "previewVisibleRows": 3,
+            "primaryButtonBounds": [
+                678,
+                763,
+                108,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 3,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "classReviewRows": 3,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "failureStatus": "Writing imported class times failed: capture retry failure Unable to fetch row (database error 1811)",
+            "height": 800,
+            "image": "en-light-small-failure-retry.png",
+            "previewModelRows": 3,
+            "previewViewportBounds": [
+                1,
+                20,
+                254,
+                152
+            ],
+            "previewVisibleRows": 3,
+            "primaryButtonBounds": [
+                678,
+                763,
+                108,
+                25
+            ],
+            "retryAttempts": 2,
+            "retryEnabled": true,
+            "retrySucceeded": true,
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 3,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 768,
+            "image": "en-light-small-success-handoff.png",
+            "pageHostHeight": 768,
+            "pageHostWidth": 1024,
+            "scheduleRows": 6,
+            "sourceClassCount": 3,
+            "status": "Schedule import completed: 3 teachers created, 0 room updates, 3 classes created, 0 classes updated, 0 skipped, 0 schedules cleared.",
+            "viewport": "Schedule page host after apply and refresh",
+            "width": 1024
+        },
+        {
+            "classReviewRows": 20,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "en-light-large-applicable-review.png",
+            "parserWideStressBlocks": 5,
+            "parserWideStressCandidates": 96,
+            "previewModelRows": 20,
+            "previewViewportBounds": [
+                1,
+                20,
+                236,
+                152
+            ],
+            "previewVisibleRows": 6,
+            "primaryButtonBounds": [
+                678,
+                763,
+                108,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "selectedBlockCandidates": 20,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 5,
+            "verifiedAppliedCandidates": 20,
+            "verifiedPersistedClassRows": 20,
+            "verifiedPersistedScheduleRows": 30,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "generated-large-schedule-import-applicable.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "en-light-large-source.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                20,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                313,
+                483,
+                109,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSourcePage",
+            "visibleStageIndex": 0,
+            "width": 436,
+            "workbookCandidates": 96
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "en-light-large-selection.png",
+            "parseMilliseconds": 53,
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                20,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                252,
+                483,
+                170,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "scheduleBlockChoiceBounds": [
+                105,
+                87,
+                294,
+                23
+            ],
+            "scheduleBlocks": 5,
+            "selectedBlockCandidates": 20,
+            "selectedScheduleBlock": "김선생",
+            "selectedWorksheet": "Large Import",
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSelectionPage",
+            "visibleStageIndex": 1,
+            "width": 436,
+            "workbookCandidates": 96,
+            "worksheetChoiceBounds": [
+                105,
+                58,
+                294,
+                23
+            ]
+        },
+        {
+            "classReviewRows": 20,
+            "conflictStatus": "The proposed schedule contains an overlap.",
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "en-light-large-conflict.png",
+            "memoryAfterDialogClose": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:57.764",
+                "peakWorkingSetBytes": 88948736,
+                "platform": "macos",
+                "privateUsageBytes": 39732136,
+                "privateWorkingSetBytes": 39075840,
+                "workingSetBytes": 88948736
+            },
+            "memoryAfterParse": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:57.722",
+                "peakWorkingSetBytes": 88850432,
+                "platform": "macos",
+                "privateUsageBytes": 39650216,
+                "privateWorkingSetBytes": 38993920,
+                "workingSetBytes": 88850432
+            },
+            "memoryAfterReview": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:57.741",
+                "peakWorkingSetBytes": 88883200,
+                "platform": "macos",
+                "privateUsageBytes": 39682984,
+                "privateWorkingSetBytes": 39026688,
+                "workingSetBytes": 88883200
+            },
+            "memoryBeforeParse": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:57.668",
+                "peakWorkingSetBytes": 88621056,
+                "platform": "macos",
+                "privateUsageBytes": 39420840,
+                "privateWorkingSetBytes": 38764544,
+                "workingSetBytes": 88621056
+            },
+            "parseMilliseconds": 53,
+            "previewModelRows": 20,
+            "previewViewportBounds": [
+                1,
+                20,
+                236,
+                152
+            ],
+            "previewVisibleRows": 6,
+            "primaryButtonBounds": [
+                678,
+                763,
+                108,
+                25
+            ],
+            "releasedClassRows": 0,
+            "releasedPreviewRows": 0,
+            "releasedSheetChoices": 0,
+            "releasedSourcePath": true,
+            "releasedTeacherRows": 0,
+            "releasedUserChoices": 0,
+            "reviewWidgetCount": 128,
+            "scheduleBlocks": 5,
+            "selectedBlockCandidates": 20,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 5,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbookCandidates": 96
+        },
+        {
+            "candidateCount": 2,
+            "classReviewRows": 2,
+            "conflictStatus": "The proposed schedule contains an overlap.",
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "en-light-matched-conflict.png",
+            "previewModelRows": 2,
+            "previewViewportBounds": [
+                1,
+                20,
+                254,
+                152
+            ],
+            "previewVisibleRows": 2,
+            "primaryButtonBounds": [
+                678,
+                763,
+                108,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 2,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_overlap_conflict.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "en-dark-small-source.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                20,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                313,
+                483,
+                109,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSourcePage",
+            "visibleStageIndex": 0,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "en-dark-small-selection.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                20,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                252,
+                483,
+                170,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "scheduleBlockChoiceBounds": [
+                105,
+                87,
+                294,
+                23
+            ],
+            "selectedScheduleBlock": "Alice",
+            "selectedWorksheet": "Current",
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSelectionPage",
+            "visibleStageIndex": 1,
+            "width": 436,
+            "workbook": "schedule_review.xlsx",
+            "worksheetChoiceBounds": [
+                105,
+                58,
+                294,
+                23
+            ]
+        },
+        {
+            "classReviewRows": 3,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "en-dark-small-review.png",
+            "previewModelRows": 3,
+            "previewViewportBounds": [
+                1,
+                20,
+                254,
+                152
+            ],
+            "previewVisibleRows": 3,
+            "primaryButtonBounds": [
+                678,
+                763,
+                108,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 3,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "classReviewRows": 3,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "failureStatus": "Writing imported class times failed: capture retry failure Unable to fetch row (database error 1811)",
+            "height": 800,
+            "image": "en-dark-small-failure-retry.png",
+            "previewModelRows": 3,
+            "previewViewportBounds": [
+                1,
+                20,
+                254,
+                152
+            ],
+            "previewVisibleRows": 3,
+            "primaryButtonBounds": [
+                678,
+                763,
+                108,
+                25
+            ],
+            "retryAttempts": 2,
+            "retryEnabled": true,
+            "retrySucceeded": true,
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 3,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 768,
+            "image": "en-dark-small-success-handoff.png",
+            "pageHostHeight": 768,
+            "pageHostWidth": 1024,
+            "scheduleRows": 6,
+            "sourceClassCount": 3,
+            "status": "Schedule import completed: 3 teachers created, 0 room updates, 3 classes created, 0 classes updated, 0 skipped, 0 schedules cleared.",
+            "viewport": "Schedule page host after apply and refresh",
+            "width": 1024
+        },
+        {
+            "classReviewRows": 20,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "en-dark-large-applicable-review.png",
+            "parserWideStressBlocks": 5,
+            "parserWideStressCandidates": 96,
+            "previewModelRows": 20,
+            "previewViewportBounds": [
+                1,
+                20,
+                236,
+                152
+            ],
+            "previewVisibleRows": 6,
+            "primaryButtonBounds": [
+                678,
+                763,
+                108,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "selectedBlockCandidates": 20,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 5,
+            "verifiedAppliedCandidates": 20,
+            "verifiedPersistedClassRows": 20,
+            "verifiedPersistedScheduleRows": 30,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "generated-large-schedule-import-applicable.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "en-dark-large-source.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                20,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                313,
+                483,
+                109,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSourcePage",
+            "visibleStageIndex": 0,
+            "width": 436,
+            "workbookCandidates": 96
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "en-dark-large-selection.png",
+            "parseMilliseconds": 55,
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                20,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                252,
+                483,
+                170,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "scheduleBlockChoiceBounds": [
+                105,
+                87,
+                294,
+                23
+            ],
+            "scheduleBlocks": 5,
+            "selectedBlockCandidates": 20,
+            "selectedScheduleBlock": "김선생",
+            "selectedWorksheet": "Large Import",
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSelectionPage",
+            "visibleStageIndex": 1,
+            "width": 436,
+            "workbookCandidates": 96,
+            "worksheetChoiceBounds": [
+                105,
+                58,
+                294,
+                23
+            ]
+        },
+        {
+            "classReviewRows": 20,
+            "conflictStatus": "The proposed schedule contains an overlap.",
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "en-dark-large-conflict.png",
+            "memoryAfterDialogClose": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:58.210",
+                "peakWorkingSetBytes": 89931776,
+                "platform": "macos",
+                "privateUsageBytes": 40682408,
+                "privateWorkingSetBytes": 40026112,
+                "workingSetBytes": 89915392
+            },
+            "memoryAfterParse": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:58.169",
+                "peakWorkingSetBytes": 89915392,
+                "platform": "macos",
+                "privateUsageBytes": 40666024,
+                "privateWorkingSetBytes": 40009728,
+                "workingSetBytes": 89899008
+            },
+            "memoryAfterReview": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:58.187",
+                "peakWorkingSetBytes": 89915392,
+                "platform": "macos",
+                "privateUsageBytes": 40682408,
+                "privateWorkingSetBytes": 40026112,
+                "workingSetBytes": 89915392
+            },
+            "memoryBeforeParse": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:58.114",
+                "peakWorkingSetBytes": 89899008,
+                "platform": "macos",
+                "privateUsageBytes": 40666024,
+                "privateWorkingSetBytes": 40009728,
+                "workingSetBytes": 89899008
+            },
+            "parseMilliseconds": 55,
+            "previewModelRows": 20,
+            "previewViewportBounds": [
+                1,
+                20,
+                236,
+                152
+            ],
+            "previewVisibleRows": 6,
+            "primaryButtonBounds": [
+                678,
+                763,
+                108,
+                25
+            ],
+            "releasedClassRows": 0,
+            "releasedPreviewRows": 0,
+            "releasedSheetChoices": 0,
+            "releasedSourcePath": true,
+            "releasedTeacherRows": 0,
+            "releasedUserChoices": 0,
+            "reviewWidgetCount": 128,
+            "scheduleBlocks": 5,
+            "selectedBlockCandidates": 20,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 5,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbookCandidates": 96
+        },
+        {
+            "candidateCount": 2,
+            "classReviewRows": 2,
+            "conflictStatus": "The proposed schedule contains an overlap.",
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "en-dark-matched-conflict.png",
+            "previewModelRows": 2,
+            "previewViewportBounds": [
+                1,
+                20,
+                254,
+                152
+            ],
+            "previewVisibleRows": 2,
+            "primaryButtonBounds": [
+                678,
+                763,
+                108,
+                25
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                31,
+                280,
+                23
+            ],
+            "teacherReviewRows": 2,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_overlap_conflict.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "ko-light-small-source.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                17,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                335,
+                486,
+                87,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSourcePage",
+            "visibleStageIndex": 0,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "ko-light-small-selection.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                17,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                325,
+                486,
+                97,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "scheduleBlockChoiceBounds": [
+                60,
+                80,
+                339,
+                23
+            ],
+            "selectedScheduleBlock": "Alice",
+            "selectedWorksheet": "Current",
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSelectionPage",
+            "visibleStageIndex": 1,
+            "width": 436,
+            "workbook": "schedule_review.xlsx",
+            "worksheetChoiceBounds": [
+                60,
+                51,
+                339,
+                23
+            ]
+        },
+        {
+            "classReviewRows": 3,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "ko-light-small-review.png",
+            "previewModelRows": 3,
+            "previewViewportBounds": [
+                1,
+                17,
+                254,
+                152
+            ],
+            "previewVisibleRows": 3,
+            "primaryButtonBounds": [
+                706,
+                766,
+                80,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 3,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "classReviewRows": 3,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "failureStatus": "가져온 수업 시간 저장 중 failed: capture retry failure Unable to fetch row (database error 1811)",
+            "height": 800,
+            "image": "ko-light-small-failure-retry.png",
+            "previewModelRows": 3,
+            "previewViewportBounds": [
+                1,
+                17,
+                254,
+                152
+            ],
+            "previewVisibleRows": 3,
+            "primaryButtonBounds": [
+                706,
+                766,
+                80,
+                22
+            ],
+            "retryAttempts": 2,
+            "retryEnabled": true,
+            "retrySucceeded": true,
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 3,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 768,
+            "image": "ko-light-small-success-handoff.png",
+            "pageHostHeight": 768,
+            "pageHostWidth": 1024,
+            "scheduleRows": 6,
+            "sourceClassCount": 3,
+            "status": "일정 가져오기가 완료되었습니다: 교사 3명 생성, 강의실 0개 업데이트, 수업 3개 생성, 수업 0개 업데이트, 0개 건너뜀, 일정 0개 삭제.",
+            "viewport": "Schedule page host after apply and refresh",
+            "width": 1024
+        },
+        {
+            "classReviewRows": 20,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "ko-light-large-applicable-review.png",
+            "parserWideStressBlocks": 5,
+            "parserWideStressCandidates": 96,
+            "previewModelRows": 20,
+            "previewViewportBounds": [
+                1,
+                17,
+                236,
+                152
+            ],
+            "previewVisibleRows": 6,
+            "primaryButtonBounds": [
+                706,
+                766,
+                80,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "selectedBlockCandidates": 20,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 5,
+            "verifiedAppliedCandidates": 20,
+            "verifiedPersistedClassRows": 20,
+            "verifiedPersistedScheduleRows": 30,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "generated-large-schedule-import-applicable.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "ko-light-large-source.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                17,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                335,
+                486,
+                87,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSourcePage",
+            "visibleStageIndex": 0,
+            "width": 436,
+            "workbookCandidates": 96
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "ko-light-large-selection.png",
+            "parseMilliseconds": 53,
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                17,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                325,
+                486,
+                97,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "scheduleBlockChoiceBounds": [
+                60,
+                80,
+                339,
+                23
+            ],
+            "scheduleBlocks": 5,
+            "selectedBlockCandidates": 20,
+            "selectedScheduleBlock": "김선생",
+            "selectedWorksheet": "Large Import",
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSelectionPage",
+            "visibleStageIndex": 1,
+            "width": 436,
+            "workbookCandidates": 96,
+            "worksheetChoiceBounds": [
+                60,
+                51,
+                339,
+                23
+            ]
+        },
+        {
+            "classReviewRows": 20,
+            "conflictStatus": "제안된 일정이 서로 겹칩니다.",
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "ko-light-large-conflict.png",
+            "memoryAfterDialogClose": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:58.657",
+                "peakWorkingSetBytes": 91160576,
+                "platform": "macos",
+                "privateUsageBytes": 41649064,
+                "privateWorkingSetBytes": 40992768,
+                "workingSetBytes": 91144192
+            },
+            "memoryAfterParse": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:58.615",
+                "peakWorkingSetBytes": 91127808,
+                "platform": "macos",
+                "privateUsageBytes": 41632680,
+                "privateWorkingSetBytes": 40976384,
+                "workingSetBytes": 91127808
+            },
+            "memoryAfterReview": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:58.634",
+                "peakWorkingSetBytes": 91144192,
+                "platform": "macos",
+                "privateUsageBytes": 41649064,
+                "privateWorkingSetBytes": 40992768,
+                "workingSetBytes": 91144192
+            },
+            "memoryBeforeParse": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:58.561",
+                "peakWorkingSetBytes": 90963968,
+                "platform": "macos",
+                "privateUsageBytes": 41468840,
+                "privateWorkingSetBytes": 40812544,
+                "workingSetBytes": 90963968
+            },
+            "parseMilliseconds": 53,
+            "previewModelRows": 20,
+            "previewViewportBounds": [
+                1,
+                17,
+                236,
+                152
+            ],
+            "previewVisibleRows": 6,
+            "primaryButtonBounds": [
+                706,
+                766,
+                80,
+                22
+            ],
+            "releasedClassRows": 0,
+            "releasedPreviewRows": 0,
+            "releasedSheetChoices": 0,
+            "releasedSourcePath": true,
+            "releasedTeacherRows": 0,
+            "releasedUserChoices": 0,
+            "reviewWidgetCount": 128,
+            "scheduleBlocks": 5,
+            "selectedBlockCandidates": 20,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 5,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbookCandidates": 96
+        },
+        {
+            "candidateCount": 2,
+            "classReviewRows": 2,
+            "conflictStatus": "제안된 일정이 서로 겹칩니다.",
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "ko-light-matched-conflict.png",
+            "previewModelRows": 2,
+            "previewViewportBounds": [
+                1,
+                17,
+                254,
+                152
+            ],
+            "previewVisibleRows": 2,
+            "primaryButtonBounds": [
+                706,
+                766,
+                80,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 2,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_overlap_conflict.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "ko-dark-small-source.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                17,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                335,
+                486,
+                87,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSourcePage",
+            "visibleStageIndex": 0,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "ko-dark-small-selection.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                17,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                325,
+                486,
+                97,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "scheduleBlockChoiceBounds": [
+                60,
+                80,
+                339,
+                23
+            ],
+            "selectedScheduleBlock": "Alice",
+            "selectedWorksheet": "Current",
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSelectionPage",
+            "visibleStageIndex": 1,
+            "width": 436,
+            "workbook": "schedule_review.xlsx",
+            "worksheetChoiceBounds": [
+                60,
+                51,
+                339,
+                23
+            ]
+        },
+        {
+            "classReviewRows": 3,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "ko-dark-small-review.png",
+            "previewModelRows": 3,
+            "previewViewportBounds": [
+                1,
+                17,
+                254,
+                152
+            ],
+            "previewVisibleRows": 3,
+            "primaryButtonBounds": [
+                706,
+                766,
+                80,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 3,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "classReviewRows": 3,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "failureStatus": "가져온 수업 시간 저장 중 failed: capture retry failure Unable to fetch row (database error 1811)",
+            "height": 800,
+            "image": "ko-dark-small-failure-retry.png",
+            "previewModelRows": 3,
+            "previewViewportBounds": [
+                1,
+                17,
+                254,
+                152
+            ],
+            "previewVisibleRows": 3,
+            "primaryButtonBounds": [
+                706,
+                766,
+                80,
+                22
+            ],
+            "retryAttempts": 2,
+            "retryEnabled": true,
+            "retrySucceeded": true,
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 3,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 768,
+            "image": "ko-dark-small-success-handoff.png",
+            "pageHostHeight": 768,
+            "pageHostWidth": 1024,
+            "scheduleRows": 6,
+            "sourceClassCount": 3,
+            "status": "일정 가져오기가 완료되었습니다: 교사 3명 생성, 강의실 0개 업데이트, 수업 3개 생성, 수업 0개 업데이트, 0개 건너뜀, 일정 0개 삭제.",
+            "viewport": "Schedule page host after apply and refresh",
+            "width": 1024
+        },
+        {
+            "classReviewRows": 20,
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "ko-dark-large-applicable-review.png",
+            "parserWideStressBlocks": 5,
+            "parserWideStressCandidates": 96,
+            "previewModelRows": 20,
+            "previewViewportBounds": [
+                1,
+                17,
+                236,
+                152
+            ],
+            "previewVisibleRows": 6,
+            "primaryButtonBounds": [
+                706,
+                766,
+                80,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "selectedBlockCandidates": 20,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 5,
+            "verifiedAppliedCandidates": 20,
+            "verifiedPersistedClassRows": 20,
+            "verifiedPersistedScheduleRows": 30,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "generated-large-schedule-import-applicable.xlsx"
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "ko-dark-large-source.png",
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                17,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                335,
+                486,
+                87,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSourcePage",
+            "visibleStageIndex": 0,
+            "width": 436,
+            "workbookCandidates": 96
+        },
+        {
+            "classReviewRows": 0,
+            "dialogHeight": 520,
+            "dialogWidth": 436,
+            "height": 520,
+            "image": "ko-dark-large-selection.png",
+            "parseMilliseconds": 54,
+            "previewModelRows": 0,
+            "previewViewportBounds": [
+                1,
+                17,
+                46,
+                152
+            ],
+            "previewVisibleRows": 0,
+            "primaryButtonBounds": [
+                325,
+                486,
+                97,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "scheduleBlockChoiceBounds": [
+                60,
+                80,
+                339,
+                23
+            ],
+            "scheduleBlocks": 5,
+            "selectedBlockCandidates": 20,
+            "selectedScheduleBlock": "김선생",
+            "selectedWorksheet": "Large Import",
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 0,
+            "visibleStage": "nextScheduleImportSelectionPage",
+            "visibleStageIndex": 1,
+            "width": 436,
+            "workbookCandidates": 96,
+            "worksheetChoiceBounds": [
+                60,
+                51,
+                339,
+                23
+            ]
+        },
+        {
+            "classReviewRows": 20,
+            "conflictStatus": "제안된 일정이 서로 겹칩니다.",
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "ko-dark-large-conflict.png",
+            "memoryAfterDialogClose": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:59.094",
+                "peakWorkingSetBytes": 92028928,
+                "platform": "macos",
+                "privateUsageBytes": 41599912,
+                "privateWorkingSetBytes": 40943616,
+                "workingSetBytes": 92012544
+            },
+            "memoryAfterParse": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:59.054",
+                "peakWorkingSetBytes": 92028928,
+                "platform": "macos",
+                "privateUsageBytes": 41599912,
+                "privateWorkingSetBytes": 40943616,
+                "workingSetBytes": 92012544
+            },
+            "memoryAfterReview": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:59.072",
+                "peakWorkingSetBytes": 92028928,
+                "platform": "macos",
+                "privateUsageBytes": 41599912,
+                "privateWorkingSetBytes": 40943616,
+                "workingSetBytes": 92012544
+            },
+            "memoryBeforeParse": {
+                "available": true,
+                "capturedAt": "2026-10-28T12:39:58.999",
+                "peakWorkingSetBytes": 92012544,
+                "platform": "macos",
+                "privateUsageBytes": 41599912,
+                "privateWorkingSetBytes": 40943616,
+                "workingSetBytes": 92012544
+            },
+            "parseMilliseconds": 54,
+            "previewModelRows": 20,
+            "previewViewportBounds": [
+                1,
+                17,
+                236,
+                152
+            ],
+            "previewVisibleRows": 6,
+            "primaryButtonBounds": [
+                706,
+                766,
+                80,
+                22
+            ],
+            "releasedClassRows": 0,
+            "releasedPreviewRows": 0,
+            "releasedSheetChoices": 0,
+            "releasedSourcePath": true,
+            "releasedTeacherRows": 0,
+            "releasedUserChoices": 0,
+            "reviewWidgetCount": 128,
+            "scheduleBlocks": 5,
+            "selectedBlockCandidates": 20,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 5,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbookCandidates": 96
+        },
+        {
+            "candidateCount": 2,
+            "classReviewRows": 2,
+            "conflictStatus": "제안된 일정이 서로 겹칩니다.",
+            "dialogHeight": 800,
+            "dialogWidth": 800,
+            "height": 800,
+            "image": "ko-dark-matched-conflict.png",
+            "previewModelRows": 2,
+            "previewViewportBounds": [
+                1,
+                17,
+                254,
+                152
+            ],
+            "previewVisibleRows": 2,
+            "primaryButtonBounds": [
+                706,
+                766,
+                80,
+                22
+            ],
+            "reviewWidgetCount": 128,
+            "sourcePathBounds": [
+                12,
+                30,
+                280,
+                23
+            ],
+            "teacherReviewRows": 2,
+            "visibleStage": "nextScheduleImportReviewPage",
+            "visibleStageIndex": 2,
+            "width": 800,
+            "workbook": "schedule_overlap_conflict.xlsx"
+        }
+    ],
+    "captureViewport": "Dialog scenes use QDialog::grab at QT_SCALE_FACTOR=1 and QT_QPA_PLATFORM=offscreen. The small-success-handoff scene captures the refreshed Schedule PageHost at 1024x768.",
+    "largeDataInterpretation": "The parser stress workbook contains 96 candidates across five schedule blocks; its selected conflict block contains 20 model rows. A separate non-overlapping 20-candidate block is applied to a real .tps store and persisted counts are recorded. No 96-row apply is claimed.",
+    "legacyReferenceScope": "Legacy source, selected sheet/block, and small review use the same small workbook as Next; overlap conflict uses the same fixture in English/Korean and light/dark. The 96-candidate stress capture is Next-specific.",
+    "legacyReferences": [
+        "legacy-en-light-small-source.png",
+        "legacy-en-light-small-selection.png",
+        "legacy-en-light-small-review.png",
+        "legacy-en-light-overlap-conflict.png",
+        "legacy-en-dark-small-source.png",
+        "legacy-en-dark-small-selection.png",
+        "legacy-en-dark-small-review.png",
+        "legacy-en-dark-overlap-conflict.png",
+        "legacy-ko-light-small-source.png",
+        "legacy-ko-light-small-selection.png",
+        "legacy-ko-light-small-review.png",
+        "legacy-ko-light-overlap-conflict.png",
+        "legacy-ko-dark-small-source.png",
+        "legacy-ko-dark-small-selection.png",
+        "legacy-ko-dark-small-review.png",
+        "legacy-ko-dark-overlap-conflict.png"
+    ],
+    "memoryScope": "Samples cover the whole test process on this host, including Qt, the page host, current workflow, and runtime caches. They do not attribute bytes to the parser or prove a process memory budget.",
+    "nextCoverage": [
+        "English/light",
+        "English/dark",
+        "Korean/light",
+        "Korean/dark"
+    ],
+    "parityClaim": false,
+    "taskId": "phase7-c31-schedule-workbook-import-20261028",
+    "visualDifferences": "Shared workflow states are captured with Fusion and explicit light/dark palettes. Legacy and Next source/selection dialogs are 436x520; review/conflict dialogs are 800x800. Next's narrow candidate preview clips part of a meeting time until horizontal scrolling; its overlap status is generic and does not identify the conflicting pair, while Legacy shows the conflicting class details. Legacy Korean retains some English fallback strings. The images compare state and content, not pixel parity."
+}

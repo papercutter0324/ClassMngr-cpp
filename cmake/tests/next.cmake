@@ -7113,6 +7113,9 @@ add_executable(ClassMngrNextSchedulePageTests
     src/next/platform/workspace_store_schedule_actions.cpp
     src/next/platform/workspace_store_class_editor_actions.cpp
     src/next/ui/schedule_page.cpp
+    src/next/ui/schedule_import_workflow_dialog.cpp
+    src/next/ui/schedule_import_review_models.cpp
+    src/next/ui/schedule_import_request_mapper.cpp
     src/next/ui/schedule_page_model.cpp
     src/next/ui/schedule_page_slot_policy_bridge.cpp
     src/next/ui/page_host.cpp
@@ -7142,6 +7145,8 @@ target_link_libraries(ClassMngrNextSchedulePageTests
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore
         ClassMngrScheduleImportRules
+        ClassMngrScheduleImportParser
+        Qt6::Concurrent
         Qt6::Sql
         Qt6::Test
         Qt6::Widgets
@@ -7161,6 +7166,71 @@ set_tests_properties(ClassMngrNextSchedulePageTests
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
+# Exercise the regular Next Schedule page's complete normal-workspace import
+# route against real .tps stores and .xlsx fixtures. The setup import target
+# remains a separate lifecycle regression test.
+add_executable(ClassMngrNextNormalScheduleImportIntegrationTests
+    tests/next/normal_schedule_import_integration_tests.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/platform/workspace_store_schedule_actions.cpp
+    src/next/platform/workspace_store_schedule_import_actions.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+    src/next/ui/schedule_page.cpp
+    src/next/ui/schedule_page_model.cpp
+    src/next/ui/schedule_page_slot_policy_bridge.cpp
+    src/next/ui/schedule_import_workflow_dialog.cpp
+    src/next/ui/schedule_import_review_models.cpp
+    src/next/ui/schedule_import_request_mapper.cpp
+)
+target_compile_features(ClassMngrNextNormalScheduleImportIntegrationTests
+    PRIVATE cxx_std_23
+)
+target_include_directories(ClassMngrNextNormalScheduleImportIntegrationTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextNormalScheduleImportIntegrationTests
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextNormalScheduleImportIntegrationTests
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        ClassMngrScheduleImportParser
+        ClassMngrScheduleImportRules
+        Qt6::Concurrent
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextNormalScheduleImportIntegrationTests
+    PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextNormalScheduleImportIntegrationTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextNormalScheduleImportIntegrationTests
+    COMMAND ClassMngrNextNormalScheduleImportIntegrationTests
+)
+add_dependencies(ClassMngrNextNormalScheduleImportIntegrationTests
+    ClassMngrNextResourcePackage
+    ClassMngrNextTranslationOutputs
+)
+set_tests_properties(ClassMngrNextNormalScheduleImportIntegrationTests
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Capture matched Legacy/Next Schedule modes across English/Korean and
 # light/dark, plus the 96-class regular and intensive source fixture.
 add_executable(ClassMngrNextScheduleVisualCapture
@@ -7168,6 +7238,9 @@ add_executable(ClassMngrNextScheduleVisualCapture
     src/core/process_memory_snapshot.cpp
     src/next/platform/workspace_store_schedule_actions.cpp
     src/next/ui/schedule_page.cpp
+    src/next/ui/schedule_import_workflow_dialog.cpp
+    src/next/ui/schedule_import_review_models.cpp
+    src/next/ui/schedule_import_request_mapper.cpp
     src/next/ui/schedule_page_model.cpp
     src/next/ui/schedule_page_slot_policy_bridge.cpp
     src/next/ui/page_host.cpp
@@ -7196,7 +7269,9 @@ target_link_libraries(ClassMngrNextScheduleVisualCapture
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore
+        ClassMngrScheduleImportParser
         ClassMngrScheduleImportRules
+        Qt6::Concurrent
         Qt6::Sql
         Qt6::Widgets
 )

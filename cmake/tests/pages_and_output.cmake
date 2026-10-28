@@ -1948,6 +1948,7 @@ qt_add_executable(ClassMngrScheduleImportDialogTests
     target_compile_definitions(ClassMngrScheduleImportDialogTests
         PRIVATE
             CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+            CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
     )
 
     target_link_libraries(ClassMngrScheduleImportDialogTests
@@ -1973,6 +1974,9 @@ qt_add_executable(ClassMngrScheduleImportDialogTests
         ClassMngrScheduleImportDialogTests
         PROPERTIES
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+    add_dependencies(ClassMngrScheduleImportDialogTests
+        ClassMngrNextTranslationOutputs
     )
 
 qt_add_executable(ClassMngrSubPrepPageTests

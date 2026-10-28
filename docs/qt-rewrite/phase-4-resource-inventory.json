@@ -3,10 +3,13 @@
   "title": "Phase 4 effective resource inventory",
   "source_snapshot": {
     "tracked_source_tree_ids": {
-      "resources": "3b775d309e5fd39117922fc8cf9eaddd2b86e76f",
+      "resources": "fbcf554bc5777841bcc90477bd2f1b0eee97a0c8",
       "calendar_qml": "b75d01f27817b205ad63deca347be0506e3b9796"
     },
     "tracked_input_worktree_changes": [
+      "resources/assets/translations/ClassMngr_en_AU.ts",
+      "resources/assets/translations/ClassMngr_en_CA.ts",
+      "resources/assets/translations/ClassMngr_en_GB.ts",
       "resources/assets/translations/ClassMngr_en_US.ts",
       "resources/assets/translations/ClassMngr_ko_KR.ts"
     ],
@@ -17,8 +20,8 @@
     "tracked_files_under_resources_assets": 226,
     "tracked_files_under_resources_windows": 3,
     "tracked_calendar_qml_sources_outside_resources": 2,
-    "resource_asset_source_bytes_exact": 65845792,
-    "all_tracked_resources_source_bytes_exact": 65846978,
+    "resource_asset_source_bytes_exact": 65906618,
+    "all_tracked_resources_source_bytes_exact": 65907804,
     "calendar_qml_source_bytes_exact": 35154,
     "disposition_record_counts": {
       "build_only_excluded": 31,
@@ -65,7 +68,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 1870477
+        "source_bytes": 1931303
       }
     },
     "resource_categories": {
@@ -115,7 +118,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 1870477
+        "source_bytes": 1931303
       }
     }
   },
@@ -6159,8 +6162,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 343847,
-        "sha256": "f6d84d621f2235a97dfa2c71ffdc755cad4fac26e808d5edfabcf9296a3eb5b4"
+        "bytes": 355876,
+        "sha256": "c3b1b9dbeca92a13e4736268b020fbd476bdffcb197e443c3593ffcbc10e72ef"
       },
       "installed_size": {
         "bytes": null,
@@ -6191,8 +6194,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 343438,
-        "sha256": "fbda5f133c82535bae0a3f48fe95a49a01b4ef6f01bf9d336e1734e09e98b592"
+        "bytes": 355467,
+        "sha256": "dd721fc2295bb859d06f3f11824a26e325b1cc427507088c0c1358279a3c7b28"
       },
       "installed_size": {
         "bytes": null,
@@ -6223,8 +6226,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 343847,
-        "sha256": "b1cc12563dee933710d55c099af6b66cc1c613dfb7fd868cc98365a18ba9773e"
+        "bytes": 355876,
+        "sha256": "dbce02d8dc8ea1d6773162a6355886159154d53d760a79faed21974ca7f2aaaa"
       },
       "installed_size": {
         "bytes": null,
@@ -6255,8 +6258,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 370538,
-        "sha256": "85485967e293919b671b5dcfbc154ae3960a1f10ff2ef6e5dfbca62a81fe4dde"
+        "bytes": 382567,
+        "sha256": "ddff0daabbc75a2fbdeedcda357578786cf540d2a377f5468a4bda833988700c"
       },
       "installed_size": {
         "bytes": null,
@@ -6287,8 +6290,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 468807,
-        "sha256": "5e9ebd0f0063f911b228ee9ce4aa3fd3514b910f3aa50d51d0c5fd7f5e5bae22"
+        "bytes": 481517,
+        "sha256": "2089764994ca1c9e889ddfc4cdc8d976b2209df1fe01ae4745875e01093028db"
       },
       "installed_size": {
         "bytes": null,

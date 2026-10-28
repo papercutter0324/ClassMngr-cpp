@@ -439,7 +439,8 @@ void SchedulePageTests::controlsPersistModesPreferencesAndTestingDisplay()
         QStringLiteral("nextSchedulePreferences"));
     QVERIFY(preferencesButton);
     QVERIFY(preferencesButton->menu());
-    QCOMPARE(preferencesButton->menu()->actions().size(), 5);
+    QCOMPARE(preferencesButton->menu()->actions().size(), 7);
+    QVERIFY(page->findChild<QAction*>(QStringLiteral("nextScheduleImportAction")));
     for (int index = 0; index < 5; ++index)
     {
         QVERIFY(page->preferenceCheckBox(index));

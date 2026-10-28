@@ -27,6 +27,7 @@
 #include "next/platform/workspace_store_testing_classes_actions.h"
 #include "next/platform/workspace_store_class_transfer_actions.h"
 #include "next/platform/workspace_store_schedule_actions.h"
+#include "next/platform/workspace_store_schedule_import_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -1710,6 +1711,20 @@ Application::StartupResult ApplicationBootstrap::start()
                         const QString& path,
                         const Application::ScheduleSlotStateSaveRequest& request) {
                         return Platform::saveScheduleSlotStateAtPath(path, request);
+                    };
+                    actions.scheduleImportTimeoutMilliseconds = [] {
+                        const Platform::SettingsManagerExcelImportTimeoutPort
+                            timeoutPreferences;
+                        return timeoutPreferences.read().normalizedSeconds() * 1000;
+                    };
+                    actions.readScheduleImportState = [](
+                        const QString& path) {
+                        return Platform::readScheduleImportStateAtPath(path);
+                    };
+                    actions.applyScheduleImport = [](
+                        const QString& path,
+                        const Application::ScheduleImportApplyRequest& request) {
+                        return Platform::applyScheduleImportAtPath(path, request);
                     };
                     actions.openClassDetails = [this](
                         const Domain::ClassId& classId) {

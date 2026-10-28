@@ -1,0 +1,130 @@
+{
+    "captureScope": "Legacy source, selected sheet/block, and review use the same small workbook as Next; overlap conflict uses the same fixture. The 96-candidate stress capture is Next-specific.",
+    "scenes": [
+        {
+            "height": 520,
+            "image": "en-light-small-source.png",
+            "widgetCount": 39,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 520,
+            "image": "en-light-small-selection.png",
+            "selectedScheduleBlock": "Alice",
+            "selectedWorksheet": "Current",
+            "widgetCount": 39,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 800,
+            "image": "en-light-small-review.png",
+            "widgetCount": 120,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 800,
+            "image": "en-light-overlap-conflict.png",
+            "reviewStatus": "The proposed schedule has a conflict: E4 Hercules overlaps E4 Theseus on Monday (4:30pm - 5:25pm and 4:00pm - 4:55pm).",
+            "widgetCount": 103,
+            "width": 800,
+            "workbook": "schedule_overlap_conflict.xlsx"
+        },
+        {
+            "height": 520,
+            "image": "en-dark-small-source.png",
+            "widgetCount": 39,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 520,
+            "image": "en-dark-small-selection.png",
+            "selectedScheduleBlock": "Alice",
+            "selectedWorksheet": "Current",
+            "widgetCount": 39,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 800,
+            "image": "en-dark-small-review.png",
+            "widgetCount": 120,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 800,
+            "image": "en-dark-overlap-conflict.png",
+            "reviewStatus": "The proposed schedule has a conflict: E4 Hercules overlaps E4 Theseus on Monday (4:30pm - 5:25pm and 4:00pm - 4:55pm).",
+            "widgetCount": 103,
+            "width": 800,
+            "workbook": "schedule_overlap_conflict.xlsx"
+        },
+        {
+            "height": 520,
+            "image": "ko-light-small-source.png",
+            "widgetCount": 39,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 520,
+            "image": "ko-light-small-selection.png",
+            "selectedScheduleBlock": "Alice",
+            "selectedWorksheet": "Current",
+            "widgetCount": 39,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 800,
+            "image": "ko-light-small-review.png",
+            "widgetCount": 120,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 800,
+            "image": "ko-light-overlap-conflict.png",
+            "reviewStatus": "적용 예정 일정에 충돌이 있습니다: E4 Hercules overlaps E4 Theseus on 월요일 (4:30pm - 5:25pm and 4:00pm - 4:55pm).",
+            "widgetCount": 103,
+            "width": 800,
+            "workbook": "schedule_overlap_conflict.xlsx"
+        },
+        {
+            "height": 520,
+            "image": "ko-dark-small-source.png",
+            "widgetCount": 39,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 520,
+            "image": "ko-dark-small-selection.png",
+            "selectedScheduleBlock": "Alice",
+            "selectedWorksheet": "Current",
+            "widgetCount": 39,
+            "width": 436,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 800,
+            "image": "ko-dark-small-review.png",
+            "widgetCount": 120,
+            "width": 800,
+            "workbook": "schedule_review.xlsx"
+        },
+        {
+            "height": 800,
+            "image": "ko-dark-overlap-conflict.png",
+            "reviewStatus": "적용 예정 일정에 충돌이 있습니다: E4 Hercules overlaps E4 Theseus on 월요일 (4:30pm - 5:25pm and 4:00pm - 4:55pm).",
+            "widgetCount": 103,
+            "width": 800,
+            "workbook": "schedule_overlap_conflict.xlsx"
+        }
+    ],
+    "taskId": "phase7-c31-schedule-workbook-import-20261028"
+}

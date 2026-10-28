@@ -32,6 +32,7 @@
 #include <QEvent>
 #include <QFile>
 #include <QFileInfo>
+#include <QImage>
 #include <QFont>
 #include <QFontDatabase>
 #include <QFrame>
@@ -39,6 +40,7 @@
 #include <QHeaderView>
 #include <QLabel>
 #include <QLayout>
+#include <QLocale>
 #include <QMessageBox>
 #include <QPalette>
 #include <QProgressBar>
@@ -47,6 +49,9 @@
 #include <QDir>
 #include <QPixmap>
 #include <QPushButton>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QRadioButton>
 #include <QRegularExpression>
 #include <QScrollArea>
@@ -65,6 +70,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWheelEvent>
+#include <QStyleFactory>
+#include <QTranslator>
 #include <QtTest>
 
 #include <algorithm>
@@ -104,6 +111,7 @@ class ScheduleImportDialogTests : public QObject
 
 private slots:
     void cleanup();
+    void captureScheduleImportVisualEvidenceWhenConfigured();
     void selectsHighestContrastFontColor();
     void requiresFileAndScheduleKind();
     void reportsAsyncWorkbookFailure();
@@ -781,15 +789,11 @@ bool loadSourceSelections(
         dialog->findChild<QProgressBar*>(
             QStringLiteral("scheduleImportProgressBar")
             );
-    auto* sourceStatus =
-        dialog->findChild<QLabel*>(
-            QStringLiteral("scheduleImportSourceStatus")
-            );
     auto* users =
         dialog->findChild<QComboBox*>(
             QStringLiteral("scheduleImportUserCombo")
             );
-    if (!normal || !next || !sheets || !progress || !sourceStatus || !users)
+    if (!normal || !next || !sheets || !progress || !users)
     {
         return false;
     }
@@ -846,9 +850,7 @@ bool loadSourceSelections(
         }
 
         if (
-            sourceStatus->text()
-                == QStringLiteral("Workbook and worksheet are valid.")
-            && sheets->currentIndex() >= 0
+            sheets->currentIndex() >= 0
             && sheets->currentData().toInt() >= 0
             && users->isVisible()
             && users->currentIndex() >= 0
@@ -883,6 +885,230 @@ void ScheduleImportDialogTests::cleanup()
 {
     ScheduleWidgetTestStubs::reset();
     DialogServices::setUserPromptServiceForTesting(nullptr);
+}
+
+void ScheduleImportDialogTests::captureScheduleImportVisualEvidenceWhenConfigured()
+{
+    const QString outputPath = qEnvironmentVariable(
+        "CLASSMNGR_SCHEDULE_IMPORT_LEGACY_CAPTURE_DIR").trimmed();
+    if (outputPath.isEmpty())
+    {
+        return;
+    }
+    QVERIFY(QDir().mkpath(outputPath));
+    auto* const application = qApp;
+    QVERIFY(application);
+    application->setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
+
+    const QString sourceRoot = QStringLiteral(CLASSMNGR_SOURCE_DIR);
+    const QString smallWorkbook = QDir(sourceRoot).filePath(
+        QStringLiteral("tests/fixtures/imports/schedule_review.xlsx"));
+    const QString overlapWorkbook = QDir(sourceRoot).filePath(
+        QStringLiteral("tests/fixtures/imports/schedule_overlap_conflict.xlsx"));
+    QVERIFY(QFileInfo::exists(smallWorkbook));
+    QVERIFY(QFileInfo::exists(overlapWorkbook));
+
+    QJsonArray scenes;
+    const auto saveScene = [&](QWidget& widget, const QString& prefix,
+                               const QString& scene, QJsonObject metrics) {
+        QCoreApplication::processEvents();
+        const QImage image = widget.grab().toImage();
+        const QString fileName = prefix + QLatin1Char('-') + scene
+            + QStringLiteral(".png");
+        const QString path = QDir(outputPath).filePath(fileName);
+        if (image.isNull() || !image.save(path, "PNG"))
+        {
+            return false;
+        }
+        metrics.insert(QStringLiteral("image"), fileName);
+        metrics.insert(QStringLiteral("width"), image.width());
+        metrics.insert(QStringLiteral("height"), image.height());
+        metrics.insert(QStringLiteral("widgetCount"),
+                       widget.findChildren<QWidget*>().size() + 1);
+        scenes.append(metrics);
+        return true;
+    };
+
+    for (const QString& locale : {QStringLiteral("en"), QStringLiteral("ko")})
+    {
+        const QString catalog = locale == QStringLiteral("ko")
+            ? QStringLiteral("ClassMngr_ko_KR.qm")
+            : QStringLiteral("ClassMngr_en_US.qm");
+        QTranslator translator;
+        const QString translationPath = QDir(QStringLiteral(
+            CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY)).filePath(catalog);
+        QVERIFY2(translator.load(translationPath), qPrintable(translationPath));
+        QLocale::setDefault(locale == QStringLiteral("ko")
+            ? QLocale(QLocale::Korean, QLocale::SouthKorea)
+            : QLocale(QLocale::English, QLocale::UnitedStates));
+        QVERIFY(application->installTranslator(&translator));
+
+        for (const QString& theme : {QStringLiteral("light"), QStringLiteral("dark")})
+        {
+            QPalette palette;
+            const bool dark = theme == QStringLiteral("dark");
+            palette.setColor(QPalette::Window,
+                QColor(dark ? QStringLiteral("#25282c") : QStringLiteral("#f7f8fa")));
+            palette.setColor(QPalette::WindowText,
+                QColor(dark ? QStringLiteral("#e6e8eb") : QStringLiteral("#232629")));
+            palette.setColor(QPalette::Base,
+                QColor(dark ? QStringLiteral("#191b1d") : QStringLiteral("#ffffff")));
+            palette.setColor(QPalette::AlternateBase,
+                QColor(dark ? QStringLiteral("#2b2e31") : QStringLiteral("#f2f4f7")));
+            palette.setColor(QPalette::Text,
+                QColor(dark ? QStringLiteral("#e6e8eb") : QStringLiteral("#232629")));
+            palette.setColor(QPalette::Button,
+                QColor(dark ? QStringLiteral("#2f3235") : QStringLiteral("#f4f5f7")));
+            palette.setColor(QPalette::ButtonText,
+                QColor(dark ? QStringLiteral("#e6e8eb") : QStringLiteral("#232629")));
+            palette.setColor(QPalette::Highlight, QColor(QStringLiteral("#3a70be")));
+            palette.setColor(QPalette::HighlightedText, Qt::white);
+            application->setPalette(palette);
+            const QString prefix = locale + QLatin1Char('-') + theme;
+
+            ApplicationServices sourceServices;
+            ScheduleImportDialog source(&sourceServices);
+            source.setFilePath(smallWorkbook);
+            source.show();
+            QVERIFY(saveScene(source, prefix, QStringLiteral("small-source"),
+                {{QStringLiteral("workbook"), QStringLiteral("schedule_review.xlsx")}}));
+            QVERIFY(loadSourceSelections(&source));
+            auto* sourceSheet = source.findChild<QComboBox*>(
+                QStringLiteral("scheduleImportSheetCombo"));
+            auto* sourceUser = source.findChild<QComboBox*>(
+                QStringLiteral("scheduleImportUserCombo"));
+            QVERIFY(sourceSheet);
+            QVERIFY(sourceUser);
+            QVERIFY(saveScene(source, prefix, QStringLiteral("small-selection"),
+                {{QStringLiteral("selectedWorksheet"), sourceSheet->currentText()},
+                 {QStringLiteral("selectedScheduleBlock"), sourceUser->currentText()},
+                 {QStringLiteral("workbook"), QStringLiteral("schedule_review.xlsx")}}));
+            source.reject();
+            QCoreApplication::processEvents();
+
+            ApplicationServices reviewServices;
+            const auto profile = openScheduleImportReviewProfile(reviewServices);
+            QVERIFY(profile);
+            saveSettingOrFail(reviewServices.dataService(),
+                QStringLiteral("myInfo/name"), QStringLiteral("Alice"));
+            ScheduleImportDialog reviewSource(&reviewServices);
+            reviewSource.setFilePath(smallWorkbook);
+            reviewSource.show();
+            QVERIFY(loadSourceSelections(&reviewSource));
+            auto* next = reviewSource.findChild<QPushButton*>(
+                QStringLiteral("scheduleImportNextButton"));
+            QVERIFY(next);
+            next->click();
+            auto* review = reviewSource.findChild<ScheduleImportReviewDialog*>();
+            QTRY_VERIFY(review);
+            QTRY_VERIFY(review->isVisible());
+            QVERIFY(saveScene(*review, prefix, QStringLiteral("small-review"),
+                {{QStringLiteral("workbook"), QStringLiteral("schedule_review.xlsx")}}));
+            reviewSource.reject();
+            QCoreApplication::processEvents();
+
+            QFile overlapFile(overlapWorkbook);
+            QVERIFY(overlapFile.open(QIODevice::ReadOnly));
+            const auto parsed = parseScheduleImportWorkbook(
+                overlapFile.readAll(), ScheduleImportKind::Normal);
+            QVERIFY(parsed.has_value());
+            QVERIFY(!parsed->sheets.isEmpty());
+            QVERIFY(!parsed->sheets.first().users.isEmpty());
+            ApplicationServices conflictServices;
+            const auto conflictProfile =
+                openEmptyScheduleImportReviewProfile(conflictServices);
+            QVERIFY(conflictProfile);
+            ScheduleImportReviewRequest request;
+            request.kind = ScheduleImportKind::Normal;
+            request.user = parsed->sheets.first().users.first();
+            ScheduleImportReviewDialog conflictReview(&conflictServices,
+                std::move(request));
+            QVERIFY(conflictReview.prepare());
+            conflictReview.show();
+            QTRY_VERIFY(conflictReview.findChild<QMessageBox*>(
+                QStringLiteral("scheduleImportConflictWarning")));
+            conflictReview.findChild<QMessageBox*>(
+                QStringLiteral("scheduleImportConflictWarning"))->accept();
+            auto* conflictTabs = conflictReview.findChild<QTabWidget*>(
+                QStringLiteral("scheduleImportResolutionTabs"));
+            auto* teacherScroll = conflictReview.findChild<QScrollArea*>(
+                QStringLiteral("scheduleImportTeacherScrollArea"));
+            auto* classScroll = conflictReview.findChild<QScrollArea*>(
+                QStringLiteral("scheduleImportClassScrollArea"));
+            QVERIFY(conflictTabs);
+            QVERIFY(teacherScroll);
+            QVERIFY(classScroll);
+            conflictTabs->setCurrentWidget(teacherScroll);
+            QCoreApplication::processEvents();
+            const auto teacherActions = conflictReview.findChildren<QComboBox*>(
+                     QRegularExpression(QStringLiteral(
+                         "^scheduleImportTeacherAction_")));
+            QVERIFY(!teacherActions.isEmpty());
+            for (QComboBox* action : teacherActions)
+            {
+                const int createIndex = action->findData(
+                    static_cast<int>(ScheduleImportTeacherAction::Create),
+                    Qt::UserRole);
+                if (createIndex >= 0)
+                {
+                    action->setCurrentIndex(createIndex);
+                }
+                else
+                {
+                    int resolvedIndex = -1;
+                    for (int index = 0; index < action->count(); ++index)
+                    {
+                        if (action->itemData(index, Qt::UserRole).toInt() >= 0)
+                        {
+                            resolvedIndex = index;
+                            break;
+                        }
+                    }
+                    QVERIFY(resolvedIndex >= 0);
+                    action->setCurrentIndex(resolvedIndex);
+                }
+            }
+            conflictTabs->setCurrentWidget(classScroll);
+            QCoreApplication::processEvents();
+            const auto classActions = conflictReview.findChildren<QComboBox*>(
+                     QRegularExpression(QStringLiteral(
+                         "^scheduleImportClassAction_")));
+            QVERIFY(!classActions.isEmpty());
+            for (QComboBox* action : classActions)
+            {
+                const int createIndex = action->findData(
+                    static_cast<int>(ScheduleImportClassAction::CreateNew),
+                    Qt::UserRole);
+                QVERIFY(createIndex >= 0);
+                action->setCurrentIndex(createIndex);
+            }
+            QCoreApplication::processEvents();
+            QVERIFY(saveScene(conflictReview, prefix,
+                QStringLiteral("overlap-conflict"),
+                {{QStringLiteral("workbook"),
+                    QStringLiteral("schedule_overlap_conflict.xlsx")},
+                 {QStringLiteral("reviewStatus"),
+                    conflictReview.findChild<QLabel*>(
+                        QStringLiteral("scheduleImportReviewStatus"))
+                        ? conflictReview.findChild<QLabel*>(
+                            QStringLiteral("scheduleImportReviewStatus"))->text()
+                        : QString()}}));
+
+        }
+        QVERIFY(application->removeTranslator(&translator));
+    }
+
+    QFile manifest(QDir(outputPath).filePath(QStringLiteral("manifest.json")));
+    QVERIFY(manifest.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    const QJsonDocument document(QJsonObject{
+        {QStringLiteral("taskId"), QStringLiteral(
+            "phase7-c31-schedule-workbook-import-20261028")},
+        {QStringLiteral("captureScope"), QStringLiteral(
+            "Legacy source, selected sheet/block, and review use the same small workbook as Next; overlap conflict uses the same fixture. The 96-candidate stress capture is Next-specific.")},
+        {QStringLiteral("scenes"), scenes}
+    });
+    const QByteArray json = document.toJson(QJsonDocument::Indented);
+    QCOMPARE(manifest.write(json), json.size());
 }
 
 void ScheduleImportDialogTests::selectsHighestContrastFontColor()

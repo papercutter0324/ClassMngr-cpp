@@ -6715,6 +6715,14 @@ My Information name was updated.</source>
     <message><source>Schedule display mode could not be saved.</source><translation>시간표 표시 모드를 저장하지 못했습니다.</translation></message>
     <message><source>Schedule display preferences could not be saved.</source><translation>시간표 표시 설정을 저장하지 못했습니다.</translation></message>
     <message><source>The selected schedule slot is invalid.</source><translation>선택한 시간표 슬롯이 올바르지 않습니다.</translation></message>
+    <message>
+        <source>Import Schedule</source>
+        <translation>일정 가져오기</translation>
+    </message>
+    <message>
+        <source>Schedule import completed: %1 teachers created, %2 room updates, %3 classes created, %4 classes updated, %5 skipped, %6 schedules cleared.</source>
+        <translation>일정 가져오기가 완료되었습니다: 교사 %1명 생성, 강의실 %2개 업데이트, 수업 %3개 생성, 수업 %4개 업데이트, %5개 건너뜀, 일정 %6개 삭제.</translation>
+    </message>
 </context>
 <context>
     <name>SchedulePrintDialog</name>
@@ -10955,5 +10963,319 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
 <context>
     <name>ClassTransferJsonCodec</name>
     <message><source>The class package exceeds the 16 MiB file limit.</source><translation>수업 패키지 파일이 16MiB 제한을 초과합니다.</translation></message>
+</context>
+<context>
+    <name>ScheduleImportWorkflowDialog</name>
+    <message>
+        <source>Apply schedule</source>
+        <translation>일정 적용</translation>
+    </message>
+    <message>
+        <source>Applying schedule…</source>
+        <translation>일정을 적용하는 중…</translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation>뒤로</translation>
+    </message>
+    <message>
+        <source>Browse…</source>
+        <translation>찾아보기…</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>취소</translation>
+    </message>
+    <message>
+        <source>Choose a spreadsheet</source>
+        <translation>스프레드시트를 선택하세요</translation>
+    </message>
+    <message>
+        <source>Choose a workbook and schedule type.</source>
+        <translation>통합 문서와 일정 유형을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Choose an .xlsx workbook.</source>
+        <translation>.xlsx 통합 문서를 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Excel workbooks (*.xlsx)</source>
+        <translation>Excel 통합 문서 (*.xlsx)</translation>
+    </message>
+    <message>
+        <source>Existing intensive schedule</source>
+        <translation>기존 집중 일정</translation>
+    </message>
+    <message>
+        <source>Import Schedule</source>
+        <translation>일정 가져오기</translation>
+    </message>
+    <message>
+        <source>Intensive</source>
+        <translation>집중</translation>
+    </message>
+    <message>
+        <source>Read workbook</source>
+        <translation>통합 문서 읽기</translation>
+    </message>
+    <message>
+        <source>Reading the workbook…</source>
+        <translation>통합 문서를 읽는 중…</translation>
+    </message>
+    <message>
+        <source>Ready to read the workbook.</source>
+        <translation>통합 문서를 읽을 준비가 되었습니다.</translation>
+    </message>
+    <message>
+        <source>Regular</source>
+        <translation>정규</translation>
+    </message>
+    <message>
+        <source>Replace absent classes</source>
+        <translation>없는 수업을 대체</translation>
+    </message>
+    <message>
+        <source>Review schedule for %1</source>
+        <translation>%1의 일정 검토</translation>
+    </message>
+    <message>
+        <source>Review selected schedule</source>
+        <translation>선택한 일정 검토</translation>
+    </message>
+    <message>
+        <source>Schedule block</source>
+        <translation>일정 블록</translation>
+    </message>
+    <message>
+        <source>Schedule import actions are unavailable.</source>
+        <translation>일정 가져오기 작업을 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Schedule preview</source>
+        <translation>일정 미리 보기</translation>
+    </message>
+    <message>
+        <source>Schedule type</source>
+        <translation>일정 유형</translation>
+    </message>
+    <message>
+        <source>Select a schedule block to continue.</source>
+        <translation>계속하려면 일정 블록을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Select the schedule block to review.</source>
+        <translation>검토할 일정 블록을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>The current schedule could not be loaded.</source>
+        <translation>현재 일정을 불러오지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>The schedule could not be imported.</source>
+        <translation>일정을 가져오지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>The selected workbook is unavailable.</source>
+        <translation>선택한 통합 문서를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The workbook contained no schedule data.</source>
+        <translation>통합 문서에 일정 데이터가 없습니다.</translation>
+    </message>
+    <message>
+        <source>The workbook could not be read.</source>
+        <translation>통합 문서를 읽을 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The workbook has no visible worksheets.</source>
+        <translation>통합 문서에 표시 가능한 워크시트가 없습니다.</translation>
+    </message>
+    <message>
+        <source>Update existing; keep absent classes</source>
+        <translation>기존 항목 업데이트, 없는 수업 유지</translation>
+    </message>
+    <message>
+        <source>Workbook diagnostics</source>
+        <translation>통합 문서 진단</translation>
+    </message>
+    <message>
+        <source>Workbook loaded: %1 visible sheets, %2 schedule blocks, %3 classes.</source>
+        <translation>통합 문서를 불러왔습니다: 표시 가능한 워크시트 %1개, 일정 블록 %2개, 수업 %3개.</translation>
+    </message>
+    <message>
+        <source>Worksheet</source>
+        <translation>워크시트</translation>
+    </message>
+    <message>
+        <source>Choose a visible worksheet and the schedule block to review.</source>
+        <translation>표시 가능한 워크시트와 검토할 일정 블록을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Schedule type changed. Read the workbook again.</source>
+        <translation>일정 유형이 변경되었습니다. 통합 문서를 다시 읽으세요.</translation>
+    </message>
+    <message>
+        <source>The workbook changed before it could be read. Choose it again.</source>
+        <translation>읽기 전에 통합 문서가 변경되었습니다. 다시 선택하세요.</translation>
+    </message>
+    <message>
+        <source>The workbook changed while it was being read. Choose it again.</source>
+        <translation>읽는 동안 통합 문서가 변경되었습니다. 다시 선택하세요.</translation>
+    </message>
+    <message>
+        <source>This worksheet has no recognized schedule blocks.</source>
+        <translation>이 워크시트에는 인식된 일정 블록이 없습니다.</translation>
+    </message>
+    <message>
+        <source>Acknowledge the workbook diagnostics before applying.</source>
+        <translation>적용하기 전에 통합 문서 진단을 확인하세요.</translation>
+    </message>
+    <message>
+        <source>Proposed: %1 teachers created, %2 room updates, %3 teachers skipped; %4 classes created, %5 updated, %6 skipped; %7 schedules cleared; %8 diagnostic cells ignored.</source>
+        <translation>제안: 교사 %1명 생성, 강의실 %2개 업데이트, 교사 %3명 건너뜀; 수업 %4개 생성, %5개 업데이트, %6개 건너뜀; 일정 %7개 삭제, 진단 셀 %8개 무시.</translation>
+    </message>
+    <message>
+        <source>The active profile changed. Close this import and start again.</source>
+        <translation>활성 프로필이 변경되었습니다. 이 가져오기를 닫고 다시 시작하세요.</translation>
+    </message>
+    <message>
+        <source>The workbook changed after it was read. Read it again before applying.</source>
+        <translation>읽은 후 통합 문서가 변경되었습니다. 적용하기 전에 다시 읽으세요.</translation>
+    </message>
+    <message>
+        <source>Loading the workbook timed out after %1 seconds. Try again or increase the timeout in Preferences.</source>
+        <translation>%1초 후 파일 읽기 시간이 초과되었습니다. 다시 시도하거나 환경 설정에서 제한 시간을 늘리세요.</translation>
+    </message>
+</context>
+<context>
+    <name>ScheduleImportReview</name>
+    <message>
+        <source>Action</source>
+        <translation>작업</translation>
+    </message>
+    <message>
+        <source>All required review choices are complete.</source>
+        <translation>필수 검토 선택이 완료되었습니다.</translation>
+    </message>
+    <message>
+        <source>Choose a class…</source>
+        <translation>수업 선택…</translation>
+    </message>
+    <message>
+        <source>Choose a room…</source>
+        <translation>강의실 선택…</translation>
+    </message>
+    <message>
+        <source>Choose a teacher…</source>
+        <translation>교사 선택…</translation>
+    </message>
+    <message>
+        <source>Choose an action…</source>
+        <translation>작업 선택…</translation>
+    </message>
+    <message>
+        <source>Choose an available class match.</source>
+        <translation>사용 가능한 수업 일치를 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Choose an available teacher match.</source>
+        <translation>사용 가능한 교사 일치를 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Choose an imported room for each room update.</source>
+        <translation>각 강의실 업데이트에 사용할 가져온 강의실을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Class</source>
+        <translation>수업</translation>
+    </message>
+    <message>
+        <source>Classes</source>
+        <translation>수업</translation>
+    </message>
+    <message>
+        <source>Create new</source>
+        <translation>새로 만들기</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>생성</translation>
+    </message>
+    <message>
+        <source>Existing matches</source>
+        <translation>기존 일치 항목</translation>
+    </message>
+    <message>
+        <source>Imported class</source>
+        <translation>가져온 수업</translation>
+    </message>
+    <message>
+        <source>Imported room</source>
+        <translation>가져온 강의실</translation>
+    </message>
+    <message>
+        <source>Invalid</source>
+        <translation>잘못됨</translation>
+    </message>
+    <message>
+        <source>Korean teachers</source>
+        <translation>한국인 교사</translation>
+    </message>
+    <message>
+        <source>Meeting times</source>
+        <translation>수업 시간</translation>
+    </message>
+    <message>
+        <source>No existing match</source>
+        <translation>일치하는 기존 항목 없음</translation>
+    </message>
+    <message>
+        <source>Resolve the required teacher and class choices.</source>
+        <translation>교사 및 수업의 필수 선택을 해결하세요.</translation>
+    </message>
+    <message>
+        <source>Reuse</source>
+        <translation>재사용</translation>
+    </message>
+    <message>
+        <source>Review the selected class targets.</source>
+        <translation>선택한 수업 대상을 검토하세요.</translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <translation>건너뛰기</translation>
+    </message>
+    <message>
+        <source>Target class</source>
+        <translation>대상 수업</translation>
+    </message>
+    <message>
+        <source>Target teacher</source>
+        <translation>대상 교사</translation>
+    </message>
+    <message>
+        <source>Teacher</source>
+        <translation>교사</translation>
+    </message>
+    <message>
+        <source>The proposed schedule contains an invalid time.</source>
+        <translation>제안된 일정에 잘못된 시간이 있습니다.</translation>
+    </message>
+    <message>
+        <source>The proposed schedule contains an overlap.</source>
+        <translation>제안된 일정이 서로 겹칩니다.</translation>
+    </message>
+    <message>
+        <source>The review choices are invalid.</source>
+        <translation>검토 선택이 올바르지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Update existing</source>
+        <translation>기존 항목 업데이트</translation>
+    </message>
+    <message>
+        <source>Update room</source>
+        <translation>강의실 업데이트</translation>
+    </message>
 </context>
 </TS>

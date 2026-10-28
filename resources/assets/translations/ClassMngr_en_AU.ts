@@ -6616,6 +6616,14 @@ My Information name was updated.</source>
         <source>Generated from registered classes and their meeting times.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Import Schedule</source>
+        <translation>Import Schedule</translation>
+    </message>
+    <message>
+        <source>Schedule import completed: %1 teachers created, %2 room updates, %3 classes created, %4 classes updated, %5 skipped, %6 schedules cleared.</source>
+        <translation>Schedule import completed: %1 teachers created, %2 room updates, %3 classes created, %4 classes updated, %5 skipped, %6 schedules cleared.</translation>
+    </message>
 </context>
 <context>
     <name>SchedulePrintDialog</name>
@@ -9738,5 +9746,319 @@ Version: %2</source>
     <message><source>Delete Teacher</source><translation>Delete Teacher</translation></message>
     <message><source>Delete %1?</source><translation>Delete %1?</translation></message>
     <message><source>New Teacher</source><translation>New Teacher</translation></message>
+</context>
+<context>
+    <name>ScheduleImportWorkflowDialog</name>
+    <message>
+        <source>Apply schedule</source>
+        <translation>Apply schedule</translation>
+    </message>
+    <message>
+        <source>Applying schedule…</source>
+        <translation>Applying schedule…</translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation>Back</translation>
+    </message>
+    <message>
+        <source>Browse…</source>
+        <translation>Browse…</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <source>Choose a spreadsheet</source>
+        <translation>Choose a spreadsheet</translation>
+    </message>
+    <message>
+        <source>Choose a workbook and schedule type.</source>
+        <translation>Choose a workbook and schedule type.</translation>
+    </message>
+    <message>
+        <source>Choose an .xlsx workbook.</source>
+        <translation>Choose an .xlsx workbook.</translation>
+    </message>
+    <message>
+        <source>Excel workbooks (*.xlsx)</source>
+        <translation>Excel workbooks (*.xlsx)</translation>
+    </message>
+    <message>
+        <source>Existing intensive schedule</source>
+        <translation>Existing intensive schedule</translation>
+    </message>
+    <message>
+        <source>Import Schedule</source>
+        <translation>Import Schedule</translation>
+    </message>
+    <message>
+        <source>Intensive</source>
+        <translation>Intensive</translation>
+    </message>
+    <message>
+        <source>Read workbook</source>
+        <translation>Read workbook</translation>
+    </message>
+    <message>
+        <source>Reading the workbook…</source>
+        <translation>Reading the workbook…</translation>
+    </message>
+    <message>
+        <source>Ready to read the workbook.</source>
+        <translation>Ready to read the workbook.</translation>
+    </message>
+    <message>
+        <source>Regular</source>
+        <translation>Regular</translation>
+    </message>
+    <message>
+        <source>Replace absent classes</source>
+        <translation>Replace absent classes</translation>
+    </message>
+    <message>
+        <source>Review schedule for %1</source>
+        <translation>Review schedule for %1</translation>
+    </message>
+    <message>
+        <source>Review selected schedule</source>
+        <translation>Review selected schedule</translation>
+    </message>
+    <message>
+        <source>Schedule block</source>
+        <translation>Schedule block</translation>
+    </message>
+    <message>
+        <source>Schedule import actions are unavailable.</source>
+        <translation>Schedule import actions are unavailable.</translation>
+    </message>
+    <message>
+        <source>Schedule preview</source>
+        <translation>Schedule preview</translation>
+    </message>
+    <message>
+        <source>Schedule type</source>
+        <translation>Schedule type</translation>
+    </message>
+    <message>
+        <source>Select a schedule block to continue.</source>
+        <translation>Select a schedule block to continue.</translation>
+    </message>
+    <message>
+        <source>Select the schedule block to review.</source>
+        <translation>Select the schedule block to review.</translation>
+    </message>
+    <message>
+        <source>The current schedule could not be loaded.</source>
+        <translation>The current schedule could not be loaded.</translation>
+    </message>
+    <message>
+        <source>The schedule could not be imported.</source>
+        <translation>The schedule could not be imported.</translation>
+    </message>
+    <message>
+        <source>The selected workbook is unavailable.</source>
+        <translation>The selected workbook is unavailable.</translation>
+    </message>
+    <message>
+        <source>The workbook contained no schedule data.</source>
+        <translation>The workbook contained no schedule data.</translation>
+    </message>
+    <message>
+        <source>The workbook could not be read.</source>
+        <translation>The workbook could not be read.</translation>
+    </message>
+    <message>
+        <source>The workbook has no visible worksheets.</source>
+        <translation>The workbook has no visible worksheets.</translation>
+    </message>
+    <message>
+        <source>Update existing; keep absent classes</source>
+        <translation>Update existing; keep absent classes</translation>
+    </message>
+    <message>
+        <source>Workbook diagnostics</source>
+        <translation>Workbook diagnostics</translation>
+    </message>
+    <message>
+        <source>Workbook loaded: %1 visible sheets, %2 schedule blocks, %3 classes.</source>
+        <translation>Workbook loaded: %1 visible sheets, %2 schedule blocks, %3 classes.</translation>
+    </message>
+    <message>
+        <source>Worksheet</source>
+        <translation>Worksheet</translation>
+    </message>
+    <message>
+        <source>Choose a visible worksheet and the schedule block to review.</source>
+        <translation>Choose a visible worksheet and the schedule block to review.</translation>
+    </message>
+    <message>
+        <source>Schedule type changed. Read the workbook again.</source>
+        <translation>Schedule type changed. Read the workbook again.</translation>
+    </message>
+    <message>
+        <source>The workbook changed before it could be read. Choose it again.</source>
+        <translation>The workbook changed before it could be read. Choose it again.</translation>
+    </message>
+    <message>
+        <source>The workbook changed while it was being read. Choose it again.</source>
+        <translation>The workbook changed while it was being read. Choose it again.</translation>
+    </message>
+    <message>
+        <source>This worksheet has no recognized schedule blocks.</source>
+        <translation>This worksheet has no recognized schedule blocks.</translation>
+    </message>
+    <message>
+        <source>Acknowledge the workbook diagnostics before applying.</source>
+        <translation>Acknowledge the workbook diagnostics before applying.</translation>
+    </message>
+    <message>
+        <source>Proposed: %1 teachers created, %2 room updates, %3 teachers skipped; %4 classes created, %5 updated, %6 skipped; %7 schedules cleared; %8 diagnostic cells ignored.</source>
+        <translation>Proposed: %1 teachers created, %2 room updates, %3 teachers skipped; %4 classes created, %5 updated, %6 skipped; %7 schedules cleared; %8 diagnostic cells ignored.</translation>
+    </message>
+    <message>
+        <source>The active profile changed. Close this import and start again.</source>
+        <translation>The active profile changed. Close this import and start again.</translation>
+    </message>
+    <message>
+        <source>The workbook changed after it was read. Read it again before applying.</source>
+        <translation>The workbook changed after it was read. Read it again before applying.</translation>
+    </message>
+    <message>
+        <source>Loading the workbook timed out after %1 seconds. Try again or increase the timeout in Preferences.</source>
+        <translation>Loading the workbook timed out after %1 seconds. Try again or increase the timeout in Preferences.</translation>
+    </message>
+</context>
+<context>
+    <name>ScheduleImportReview</name>
+    <message>
+        <source>Action</source>
+        <translation>Action</translation>
+    </message>
+    <message>
+        <source>All required review choices are complete.</source>
+        <translation>All required review choices are complete.</translation>
+    </message>
+    <message>
+        <source>Choose a class…</source>
+        <translation>Choose a class…</translation>
+    </message>
+    <message>
+        <source>Choose a room…</source>
+        <translation>Choose a room…</translation>
+    </message>
+    <message>
+        <source>Choose a teacher…</source>
+        <translation>Choose a teacher…</translation>
+    </message>
+    <message>
+        <source>Choose an action…</source>
+        <translation>Choose an action…</translation>
+    </message>
+    <message>
+        <source>Choose an available class match.</source>
+        <translation>Choose an available class match.</translation>
+    </message>
+    <message>
+        <source>Choose an available teacher match.</source>
+        <translation>Choose an available teacher match.</translation>
+    </message>
+    <message>
+        <source>Choose an imported room for each room update.</source>
+        <translation>Choose an imported room for each room update.</translation>
+    </message>
+    <message>
+        <source>Class</source>
+        <translation>Class</translation>
+    </message>
+    <message>
+        <source>Classes</source>
+        <translation>Classes</translation>
+    </message>
+    <message>
+        <source>Create new</source>
+        <translation>Create new</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Create</translation>
+    </message>
+    <message>
+        <source>Existing matches</source>
+        <translation>Existing matches</translation>
+    </message>
+    <message>
+        <source>Imported class</source>
+        <translation>Imported class</translation>
+    </message>
+    <message>
+        <source>Imported room</source>
+        <translation>Imported room</translation>
+    </message>
+    <message>
+        <source>Invalid</source>
+        <translation>Invalid</translation>
+    </message>
+    <message>
+        <source>Korean teachers</source>
+        <translation>Korean teachers</translation>
+    </message>
+    <message>
+        <source>Meeting times</source>
+        <translation>Meeting times</translation>
+    </message>
+    <message>
+        <source>No existing match</source>
+        <translation>No existing match</translation>
+    </message>
+    <message>
+        <source>Resolve the required teacher and class choices.</source>
+        <translation>Resolve the required teacher and class choices.</translation>
+    </message>
+    <message>
+        <source>Reuse</source>
+        <translation>Reuse</translation>
+    </message>
+    <message>
+        <source>Review the selected class targets.</source>
+        <translation>Review the selected class targets.</translation>
+    </message>
+    <message>
+        <source>Skip</source>
+        <translation>Skip</translation>
+    </message>
+    <message>
+        <source>Target class</source>
+        <translation>Target class</translation>
+    </message>
+    <message>
+        <source>Target teacher</source>
+        <translation>Target teacher</translation>
+    </message>
+    <message>
+        <source>Teacher</source>
+        <translation>Teacher</translation>
+    </message>
+    <message>
+        <source>The proposed schedule contains an invalid time.</source>
+        <translation>The proposed schedule contains an invalid time.</translation>
+    </message>
+    <message>
+        <source>The proposed schedule contains an overlap.</source>
+        <translation>The proposed schedule contains an overlap.</translation>
+    </message>
+    <message>
+        <source>The review choices are invalid.</source>
+        <translation>The review choices are invalid.</translation>
+    </message>
+    <message>
+        <source>Update existing</source>
+        <translation>Update existing</translation>
+    </message>
+    <message>
+        <source>Update room</source>
+        <translation>Update room</translation>
+    </message>
 </context>
 </TS>
