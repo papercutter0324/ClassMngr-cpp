@@ -946,3 +946,45 @@ Entries are preserved in their original document order.
   leave. Whole-process memory values are observational only, not a page budget
   or Phase 9 acceptance. No clean build, full suite, Windows build, or Phase 9
   memory budget ran. No production changes after the commit are pending.
+
+### Candidate #34 — Calendar import accepted (2026-10-28)
+
+- Commit: `8645d9db` (`Phase7 - Add Calendar import to Next`). Next reuses the
+  row-streaming parser through the narrow shared
+  `ClassMngrCalendarImportParser` target and applies the typed import use case
+  through a path-scoped `WorkspaceStore` bridge. The existing remote URL and
+  environment override, direct apply counts, and narrow Next dependency
+  boundary remain. There is no local-file picker, per-row review, or Cancel
+  button; page suspension, service destruction, and path changes cancel with
+  cleanup and no writes.
+- Verification: incremental `build/macos-clang-debug` configure/build validated
+  one owner for 1,883 handwritten sources. Focused CTest passed 6/6:
+  `ClassMngrCalendarImportTests`,
+  `ClassMngrNextApplicationCalendarEventImportUseCaseTests`,
+  `ClassMngrNextCalendarPageTests`,
+  `ClassMngrNextCalendarWorkspaceStoreActionsTests`,
+  `ClassMngrNextPlatformCalendarEventImportCampusCodeQueryTests`, and
+  `NextStartupWorkspaceDependencyBoundary`; the page suite passed 26 cases.
+  The Legacy golden parser selector passed. Legacy loopback parity cases were
+  not run because `QTcpServer::listen(LocalHost, 0)` is unavailable in this
+  sandbox. Next integration uses injected in-process transport and covers
+  duplicate counts (3 imported/2 skipped; repeat 0/5), malformed/transport/
+  staging failures, cancellation and cleanup on suspension/path change and
+  destruction, query failure, atomic rollback, refresh behavior, and the URL
+  environment override. Resource inventory `--check` and `git diff --check`
+  passed.
+- Memory and visual evidence: the deterministic 246,017-byte XLSX arrives in
+  four chunks (maximum 65,536 bytes). Tests assert file-backed parsing, zero
+  materialized worksheet cells, staging removal before signature query/apply,
+  and zero retained parser events at apply. The four-event fixture verifies
+  transfer and representation release, not a high-event-count memory ceiling.
+  The [import capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/calendar/import/README.md)
+  contains 20 Preferences/import-state images for English/Korean × Light/Dark
+  and Preferences/Loading/Success/Error/Canceled states. No clipping was
+  observed; success screenshots show 4 imported/1 skipped while integration
+  verifies 3/2 with a pre-existing duplicate. Korean prefixes are translated;
+  detailed parser errors remain English as in Legacy. Captures are presentation
+  evidence, not pixel-parity evidence. Whole-process metrics are observational,
+  not a per-import budget or Phase 9 acceptance.
+- No full suite, Windows build, or Phase 9 memory-budget result is claimed. The
+  7A screenshot/memory evidence and the 7A/Phase 7 exit gates remain open.

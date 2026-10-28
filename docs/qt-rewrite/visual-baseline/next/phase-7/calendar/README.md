@@ -9,6 +9,14 @@ Light/Dark. The manifests list the fixture and image states:
 - [Next manifest](next/calendar-captures.json)
 - [Legacy manifest](legacy/legacy-calendar-captures.json)
 
+## Candidate #34 — Calendar import
+
+[Import-state captures](import/README.md) add 20 Preferences and import-state
+images at 720×720, covering English/Korean × Light/Dark and Preferences,
+Loading, Success, Error, and Canceled. The original four #33 Calendar page
+images remain in `next/` and are not duplicated. These captures are
+presentation evidence, not pixel-parity evidence.
+
 ## Deterministic fixture
 
 Both pages show October 2026, Monday-first, with Upcoming scope set to This

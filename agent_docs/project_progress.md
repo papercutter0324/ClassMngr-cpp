@@ -189,22 +189,26 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-28 (candidate #33 accepted; #34 active)
+### Current checkpoint — 2026-10-28 (candidate #34 accepted; #35 active)
 
-Candidate #33, Calendar events, preferences, and month grid, is accepted at
-`21f2d98c`. The lazy Next Calendar page uses typed actions and a WorkspaceStore
-path bridge behind the narrow `ClassMngrNextCalendarUi` target; its QML grid
-loads only bounded active ranges and releases on page leave. Event-type
-filters affect Upcoming Events only, and the grid retains all otherwise-visible
-types. Focused CTest passed 3/3 after the parity repair; the page QtTest passed
-20/20. Configure validated 1,879 source owners and the strict Next dependency
-boundary passed. Twelve 1280×920 captures cover English/Korean and Light/Dark;
-the [capture package](../docs/qt-rewrite/visual-baseline/next/phase-7/calendar/README.md)
-records the qualitative comparisons and limits. Calendar import is candidate
-#34. No full suite, Windows build, or Phase 9 memory-budget acceptance is
-claimed. The 7A screenshot/memory evidence and 7A/Phase 7 exit gates remain
-open. Batch 3 stays unpushed through candidate #40; preserve the user's
-unstaged Schedule Import Gateway edits.
+Candidate #34, Calendar import, is accepted at `8645d9db`. The Next Preferences
+workflow reuses the row-streaming parser through a narrow shared target and
+applies through the typed use case and path-scoped WorkspaceStore bridge. The
+incremental standard macOS Debug build validated 1,883 source owners; focused
+CTest passed 6/6 and the Calendar page suite passed 26 cases. A 246,017-byte
+workbook arrived in four chunks (maximum 65,536 bytes); assertions cover
+file-backed parsing, no materialized worksheet cells, staging-file removal
+and event-list release before apply, duplicate counts, cancellation, rollback,
+and URL override. Twenty tracked 720×720 captures cover English/Korean,
+Light/Dark, and five import states in the
+[capture package](../docs/qt-rewrite/visual-baseline/next/phase-7/calendar/import/README.md).
+The four-event fixture verifies chunked transfer and representation release,
+not a high-event-count memory ceiling. Legacy loopback tests could not run in
+the sandbox; no full suite, Windows build, or Phase 9 memory-budget acceptance
+is claimed. Candidate #35, Roster editor/student model with model/view and
+compact state, is active. The 7A screenshot/memory evidence and 7A/Phase 7 exit
+gates remain open. Batch 3 stays unpushed through candidate #40; preserve the
+user's unstaged Schedule Import Gateway edits.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

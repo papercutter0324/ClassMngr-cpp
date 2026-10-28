@@ -38,12 +38,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-28
-- Current note: Candidate #33, Calendar events, preferences, and month grid,
-  is accepted; candidate #34, Calendar import, is active. Batch 3 continues
-  through #40; begin next-batch discovery when #39 starts. The 7A screenshot
-  comparison and memory evidence remain open; the 7A and Phase 7 exit gates
-  are not yet passed. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
-  for evidence and limits.
+- Current note: Candidate #34, Calendar import, is accepted; candidate #35,
+  Roster editor/student model, is active. Batch 3 continues through #40; begin
+  next-batch discovery when #39 starts. The 7A screenshot comparison and
+  memory evidence remain open; the 7A and Phase 7 exit gates are not yet
+  passed. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md) for
+  evidence and limits.
 
 ### Slice batches
 

@@ -2,6 +2,16 @@
 
 ## Decisions and Lessons
 
+### Phase 7 Calendar import staging and ownership — 2026-10-28
+
+Candidate #34 keeps the existing remote URL and environment override while
+staging bounded network chunks to a temporary file for row-streaming parsing.
+Release the staged file and parser event projection before the typed,
+path-scoped apply. Tests prove multi-chunk transfer, no cell materialization,
+and release timing, but the four-event fixture does not establish a
+high-event-count memory ceiling. Keep the Next boundary on the narrow shared
+parser target; do not pull broad Legacy UI/Core targets into it.
+
 ### Phase 7 Calendar page and QML boundary — 2026-10-28
 
 Candidate #33 extends the narrow `ClassMngrNextCalendarUi` source owner with a

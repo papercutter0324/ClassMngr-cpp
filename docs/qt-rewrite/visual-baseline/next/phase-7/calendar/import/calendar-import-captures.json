@@ -1,0 +1,76 @@
+{
+  "candidate": 34,
+  "sourceManifest": "build/macos-clang-debug/calendar-captures/calendar-captures.json",
+  "captureSelector": "ClassMngrNextCalendarPageTests captureEnglishAndKoreanLightAndDark",
+  "coverage": {
+    "languages": [
+      "English",
+      "Korean"
+    ],
+    "themes": [
+      "Light",
+      "Dark"
+    ],
+    "states": [
+      "Preferences",
+      "Loading",
+      "Success",
+      "Error",
+      "Canceled"
+    ],
+    "dimensions": {
+      "width": 720,
+      "height": 720
+    }
+  },
+  "captures": {
+    "en-dark": {
+      "language": "English",
+      "theme": "Dark",
+      "images": {
+        "preferences": "calendar-preferences-en-dark.png",
+        "loading": "calendar-import-loading-en-dark.png",
+        "success": "calendar-import-success-en-dark.png",
+        "error": "calendar-import-error-en-dark.png",
+        "canceled": "calendar-import-canceled-en-dark.png"
+      }
+    },
+    "en-light": {
+      "language": "English",
+      "theme": "Light",
+      "images": {
+        "preferences": "calendar-preferences-en-light.png",
+        "loading": "calendar-import-loading-en-light.png",
+        "success": "calendar-import-success-en-light.png",
+        "error": "calendar-import-error-en-light.png",
+        "canceled": "calendar-import-canceled-en-light.png"
+      }
+    },
+    "ko-dark": {
+      "language": "Korean",
+      "theme": "Dark",
+      "images": {
+        "preferences": "calendar-preferences-ko-dark.png",
+        "loading": "calendar-import-loading-ko-dark.png",
+        "success": "calendar-import-success-ko-dark.png",
+        "error": "calendar-import-error-ko-dark.png",
+        "canceled": "calendar-import-canceled-ko-dark.png"
+      }
+    },
+    "ko-light": {
+      "language": "Korean",
+      "theme": "Light",
+      "images": {
+        "preferences": "calendar-preferences-ko-light.png",
+        "loading": "calendar-import-loading-ko-light.png",
+        "success": "calendar-import-success-ko-light.png",
+        "error": "calendar-import-error-ko-light.png",
+        "canceled": "calendar-import-canceled-ko-light.png"
+      }
+    }
+  },
+  "limits": [
+    "Presentation evidence, not pixel-parity evidence.",
+    "Whole-process memory observations are not a per-import budget or Phase 9 acceptance."
+  ]
+}
