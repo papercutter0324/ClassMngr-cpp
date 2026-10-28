@@ -38,11 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.15 remain accepted. Candidate #22, My Classes with
-  compact summaries and one selected detail, is accepted at `f7a3d81c`; Batch 3
-  candidate #23, My Schedule and workspace event summary, is active. The 7A
-  screenshot comparison and memory measurement remain open, as do the 7A and
-  Phase 7 exit gates. See the progress log for slice evidence and limits.
+- Current note: 7A.1–7A.15 remain accepted. Candidate #23, My Schedule and
+  workspace event summary, is accepted; Batch 3 candidate #24, Classes
+  list/navigation, is active. The 7A screenshot comparison and memory
+  measurement remain open, as do the 7A and Phase 7 exit gates. See the
+  progress log for slice evidence and limits.
 
 ### Slice batches
 
@@ -635,6 +635,42 @@ keep current status in this plan and live batches in the shared tracker.
   allocations or a memory budget. The 7A screenshot comparison and memory
   remediation and the 7A/Phase 7 exit gates remain open. Candidate #23, My
   Schedule and workspace event summary, is active.
+
+### Candidate #23 — My Schedule and workspace event summary accepted (2026-10-27)
+
+- Result: Next My Schedule is a read-only regular-schedule table; Calendar is a
+  read-only Next 10 upcoming-event table with date, time, title, and type. My
+  Schedule remains initially selected. Details, Schedule, and Events load only
+  on their tabs. Leaving a tab, suspending the page, or replacing/closing the
+  workspace clears the projections; re-entry reloads current data. Candidate
+  #23 does not add birthday or daily-dismissal behavior from #20.
+- Visual evidence: 13 captures from the standard
+  `build/macos-clang-debug/my-workspace-visual-capture/` output use Fusion at
+  1024×768: four legacy schedule surfaces, four Next schedule surfaces, four
+  Next upcoming-event surfaces across English/Korean and light/dark, plus one
+  96-class Next schedule. Legacy schedule is a weekly grid with Regular,
+  Intensive, Testing, and Import controls; Next shows a read-only table. The
+  Korean Next schedule displays “월요일” while the canonical store value stays
+  `Monday`. The legacy Calendar surface was not captured because constructing
+  its Upcoming Events panel constructs the deferred `QQuickWidget` month grid;
+  the Next upcoming-event capture is surface-only, so Calendar parity remains
+  open. See the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/my-schedule-workspace-events/README.md).
+- Model/lifecycle evidence: Next owns two table model/views and 125 widgets.
+  Captures show six representative regular-schedule rows, 10 upcoming events,
+  and 96 rows in the scale scenario. After suspension, schedule and event rows
+  are zero; Personal Details read count is zero in schedule/event captures.
+- Verification: the independent Tester built with
+  `cmake --build build/macos-clang-debug --target ClassMngrNextMyWorkspacePageTests ClassMngrNextMyWorkspaceVisualCapture ClassMngrNext -j 6`.
+  The CTest selection
+  `ClassMngrNextMyWorkspacePageTests|ClassMngrNextMyWorkspaceVisualCapture|ClassMngrMyWorkspacePageTests|NextStartupWorkspaceDependencyBoundary|ClassMngrCalendarEventRepositoryTests`
+  passed 5/5. Resource inventory `--check` and `git diff --check` passed.
+- Limits: manifest memory readings are process-wide snapshots accumulated in
+  one process, not per-page allocations or a budget. Full schedule editing,
+  intensive/testing schedules, import, and output remain for #30–32; Calendar
+  editing, filters, preferences, month grid, and full visual parity remain for
+  #33–34. No full suite, Windows run, or final Phase 7 exit gate was verified.
+  The 7A screenshot comparison and memory evidence and 7A/Phase 7 exit gates
+  remain open. Candidate #24, Classes list/navigation, is active.
 
 ## Objective
 

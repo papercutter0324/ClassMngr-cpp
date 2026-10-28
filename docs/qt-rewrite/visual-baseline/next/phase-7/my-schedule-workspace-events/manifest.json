@@ -1,0 +1,576 @@
+{
+    "captures": [
+        {
+            "activeSurfaceRowCount": 6,
+            "activeTabIndex": 1,
+            "firstScheduleDayLabel": "Monday",
+            "height": 768,
+            "image": "next_schedule_en_US_light.png",
+            "locale": "en_US",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.540",
+                    "peakWorkingSetBytes": 84869120,
+                    "platform": "macos",
+                    "privateUsageBytes": 32408464,
+                    "privateWorkingSetBytes": 31768576,
+                    "workingSetBytes": 84869120
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.410",
+                    "peakWorkingSetBytes": 38338560,
+                    "platform": "macos",
+                    "privateUsageBytes": 10715856,
+                    "privateWorkingSetBytes": 10207232,
+                    "workingSetBytes": 38338560
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.541",
+                    "peakWorkingSetBytes": 84885504,
+                    "platform": "macos",
+                    "privateUsageBytes": 32408464,
+                    "privateWorkingSetBytes": 31768576,
+                    "workingSetBytes": 84869120
+                }
+            },
+            "ownedTableModelViewCount": 2,
+            "personalDetailsReadCount": 0,
+            "route": "next_schedule",
+            "scheduleRowsAfterSuspension": 0,
+            "theme": "light",
+            "upcomingEventRowsAfterSuspension": 0,
+            "widgetCount": 125,
+            "width": 1024
+        },
+        {
+            "height": 768,
+            "image": "legacy_schedule_en_US_light.png",
+            "locale": "en_US",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.657",
+                    "peakWorkingSetBytes": 91979776,
+                    "platform": "macos",
+                    "privateUsageBytes": 33637264,
+                    "privateWorkingSetBytes": 32997376,
+                    "workingSetBytes": 91979776
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.542",
+                    "peakWorkingSetBytes": 84901888,
+                    "platform": "macos",
+                    "privateUsageBytes": 32408464,
+                    "privateWorkingSetBytes": 31768576,
+                    "workingSetBytes": 84901888
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.658",
+                    "peakWorkingSetBytes": 92078080,
+                    "platform": "macos",
+                    "privateUsageBytes": 33637264,
+                    "privateWorkingSetBytes": 32997376,
+                    "workingSetBytes": 92078080
+                }
+            },
+            "route": "legacy_schedule",
+            "scheduleModelRowCount": 13,
+            "scheduleTableCellWidgetCount": 0,
+            "scheduleTableRowCount": 13,
+            "theme": "light",
+            "widgetCount": 81,
+            "width": 1024
+        },
+        {
+            "activeSurfaceRowCount": 10,
+            "activeTabIndex": 2,
+            "height": 768,
+            "image": "next_upcoming_events_en_US_light.png",
+            "locale": "en_US",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.698",
+                    "peakWorkingSetBytes": 94453760,
+                    "platform": "macos",
+                    "privateUsageBytes": 35816336,
+                    "privateWorkingSetBytes": 35176448,
+                    "workingSetBytes": 94453760
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.659",
+                    "peakWorkingSetBytes": 92110848,
+                    "platform": "macos",
+                    "privateUsageBytes": 33637264,
+                    "privateWorkingSetBytes": 32997376,
+                    "workingSetBytes": 92110848
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.698",
+                    "peakWorkingSetBytes": 94486528,
+                    "platform": "macos",
+                    "privateUsageBytes": 35849104,
+                    "privateWorkingSetBytes": 35209216,
+                    "workingSetBytes": 94486528
+                }
+            },
+            "ownedTableModelViewCount": 2,
+            "personalDetailsReadCount": 0,
+            "route": "next_upcoming_events",
+            "scheduleRowsAfterSuspension": 0,
+            "theme": "light",
+            "upcomingEventRowsAfterSuspension": 0,
+            "widgetCount": 125,
+            "width": 1024
+        },
+        {
+            "activeSurfaceRowCount": 6,
+            "activeTabIndex": 1,
+            "firstScheduleDayLabel": "Monday",
+            "height": 768,
+            "image": "next_schedule_en_US_dark.png",
+            "locale": "en_US",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.724",
+                    "peakWorkingSetBytes": 94601216,
+                    "platform": "macos",
+                    "privateUsageBytes": 35963792,
+                    "privateWorkingSetBytes": 35323904,
+                    "workingSetBytes": 94601216
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.699",
+                    "peakWorkingSetBytes": 94519296,
+                    "platform": "macos",
+                    "privateUsageBytes": 35881872,
+                    "privateWorkingSetBytes": 35241984,
+                    "workingSetBytes": 94519296
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.725",
+                    "peakWorkingSetBytes": 94617600,
+                    "platform": "macos",
+                    "privateUsageBytes": 35963792,
+                    "privateWorkingSetBytes": 35323904,
+                    "workingSetBytes": 94601216
+                }
+            },
+            "ownedTableModelViewCount": 2,
+            "personalDetailsReadCount": 0,
+            "route": "next_schedule",
+            "scheduleRowsAfterSuspension": 0,
+            "theme": "dark",
+            "upcomingEventRowsAfterSuspension": 0,
+            "widgetCount": 125,
+            "width": 1024
+        },
+        {
+            "height": 768,
+            "image": "legacy_schedule_en_US_dark.png",
+            "locale": "en_US",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.747",
+                    "peakWorkingSetBytes": 95420416,
+                    "platform": "macos",
+                    "privateUsageBytes": 36029328,
+                    "privateWorkingSetBytes": 35389440,
+                    "workingSetBytes": 94666752
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.726",
+                    "peakWorkingSetBytes": 94617600,
+                    "platform": "macos",
+                    "privateUsageBytes": 35963792,
+                    "privateWorkingSetBytes": 35323904,
+                    "workingSetBytes": 94601216
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.748",
+                    "peakWorkingSetBytes": 95420416,
+                    "platform": "macos",
+                    "privateUsageBytes": 36029328,
+                    "privateWorkingSetBytes": 35389440,
+                    "workingSetBytes": 94666752
+                }
+            },
+            "route": "legacy_schedule",
+            "scheduleModelRowCount": 13,
+            "scheduleTableCellWidgetCount": 0,
+            "scheduleTableRowCount": 13,
+            "theme": "dark",
+            "widgetCount": 81,
+            "width": 1024
+        },
+        {
+            "activeSurfaceRowCount": 10,
+            "activeTabIndex": 2,
+            "height": 768,
+            "image": "next_upcoming_events_en_US_dark.png",
+            "locale": "en_US",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.779",
+                    "peakWorkingSetBytes": 95420416,
+                    "platform": "macos",
+                    "privateUsageBytes": 36029328,
+                    "privateWorkingSetBytes": 35389440,
+                    "workingSetBytes": 94666752
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.748",
+                    "peakWorkingSetBytes": 95420416,
+                    "platform": "macos",
+                    "privateUsageBytes": 36029328,
+                    "privateWorkingSetBytes": 35389440,
+                    "workingSetBytes": 94666752
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.779",
+                    "peakWorkingSetBytes": 95420416,
+                    "platform": "macos",
+                    "privateUsageBytes": 36029328,
+                    "privateWorkingSetBytes": 35389440,
+                    "workingSetBytes": 94666752
+                }
+            },
+            "ownedTableModelViewCount": 2,
+            "personalDetailsReadCount": 0,
+            "route": "next_upcoming_events",
+            "scheduleRowsAfterSuspension": 0,
+            "theme": "dark",
+            "upcomingEventRowsAfterSuspension": 0,
+            "widgetCount": 125,
+            "width": 1024
+        },
+        {
+            "activeSurfaceRowCount": 6,
+            "activeTabIndex": 1,
+            "firstScheduleDayLabel": "월요일",
+            "height": 768,
+            "image": "next_schedule_ko_KR_light.png",
+            "locale": "ko_KR",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.823",
+                    "peakWorkingSetBytes": 98795520,
+                    "platform": "macos",
+                    "privateUsageBytes": 37635008,
+                    "privateWorkingSetBytes": 36962304,
+                    "workingSetBytes": 98795520
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.780",
+                    "peakWorkingSetBytes": 95420416,
+                    "platform": "macos",
+                    "privateUsageBytes": 36029328,
+                    "privateWorkingSetBytes": 35389440,
+                    "workingSetBytes": 94715904
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.823",
+                    "peakWorkingSetBytes": 98811904,
+                    "platform": "macos",
+                    "privateUsageBytes": 37635008,
+                    "privateWorkingSetBytes": 36962304,
+                    "workingSetBytes": 98795520
+                }
+            },
+            "ownedTableModelViewCount": 2,
+            "personalDetailsReadCount": 0,
+            "route": "next_schedule",
+            "scheduleRowsAfterSuspension": 0,
+            "theme": "light",
+            "upcomingEventRowsAfterSuspension": 0,
+            "widgetCount": 125,
+            "width": 1024
+        },
+        {
+            "height": 768,
+            "image": "legacy_schedule_ko_KR_light.png",
+            "locale": "ko_KR",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.849",
+                    "peakWorkingSetBytes": 100417536,
+                    "platform": "macos",
+                    "privateUsageBytes": 38749144,
+                    "privateWorkingSetBytes": 38060032,
+                    "workingSetBytes": 100417536
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.824",
+                    "peakWorkingSetBytes": 98811904,
+                    "platform": "macos",
+                    "privateUsageBytes": 37635008,
+                    "privateWorkingSetBytes": 36962304,
+                    "workingSetBytes": 98795520
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.850",
+                    "peakWorkingSetBytes": 100433920,
+                    "platform": "macos",
+                    "privateUsageBytes": 38749144,
+                    "privateWorkingSetBytes": 38060032,
+                    "workingSetBytes": 100417536
+                }
+            },
+            "route": "legacy_schedule",
+            "scheduleModelRowCount": 13,
+            "scheduleTableCellWidgetCount": 0,
+            "scheduleTableRowCount": 13,
+            "theme": "light",
+            "widgetCount": 81,
+            "width": 1024
+        },
+        {
+            "activeSurfaceRowCount": 10,
+            "activeTabIndex": 2,
+            "height": 768,
+            "image": "next_upcoming_events_ko_KR_light.png",
+            "locale": "ko_KR",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.880",
+                    "peakWorkingSetBytes": 100499456,
+                    "platform": "macos",
+                    "privateUsageBytes": 38831064,
+                    "privateWorkingSetBytes": 38141952,
+                    "workingSetBytes": 100499456
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.851",
+                    "peakWorkingSetBytes": 100433920,
+                    "platform": "macos",
+                    "privateUsageBytes": 38749144,
+                    "privateWorkingSetBytes": 38060032,
+                    "workingSetBytes": 100417536
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.880",
+                    "peakWorkingSetBytes": 100515840,
+                    "platform": "macos",
+                    "privateUsageBytes": 38831064,
+                    "privateWorkingSetBytes": 38141952,
+                    "workingSetBytes": 100499456
+                }
+            },
+            "ownedTableModelViewCount": 2,
+            "personalDetailsReadCount": 0,
+            "route": "next_upcoming_events",
+            "scheduleRowsAfterSuspension": 0,
+            "theme": "light",
+            "upcomingEventRowsAfterSuspension": 0,
+            "widgetCount": 125,
+            "width": 1024
+        },
+        {
+            "activeSurfaceRowCount": 6,
+            "activeTabIndex": 1,
+            "firstScheduleDayLabel": "월요일",
+            "height": 768,
+            "image": "next_schedule_ko_KR_dark.png",
+            "locale": "ko_KR",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.905",
+                    "peakWorkingSetBytes": 100515840,
+                    "platform": "macos",
+                    "privateUsageBytes": 38847448,
+                    "privateWorkingSetBytes": 38158336,
+                    "workingSetBytes": 100515840
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.881",
+                    "peakWorkingSetBytes": 100515840,
+                    "platform": "macos",
+                    "privateUsageBytes": 38831064,
+                    "privateWorkingSetBytes": 38141952,
+                    "workingSetBytes": 100368384
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.905",
+                    "peakWorkingSetBytes": 100532224,
+                    "platform": "macos",
+                    "privateUsageBytes": 38847448,
+                    "privateWorkingSetBytes": 38158336,
+                    "workingSetBytes": 100515840
+                }
+            },
+            "ownedTableModelViewCount": 2,
+            "personalDetailsReadCount": 0,
+            "route": "next_schedule",
+            "scheduleRowsAfterSuspension": 0,
+            "theme": "dark",
+            "upcomingEventRowsAfterSuspension": 0,
+            "widgetCount": 125,
+            "width": 1024
+        },
+        {
+            "height": 768,
+            "image": "legacy_schedule_ko_KR_dark.png",
+            "locale": "ko_KR",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.927",
+                    "peakWorkingSetBytes": 101302272,
+                    "platform": "macos",
+                    "privateUsageBytes": 38847448,
+                    "privateWorkingSetBytes": 38158336,
+                    "workingSetBytes": 100515840
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.906",
+                    "peakWorkingSetBytes": 100532224,
+                    "platform": "macos",
+                    "privateUsageBytes": 38847448,
+                    "privateWorkingSetBytes": 38158336,
+                    "workingSetBytes": 100515840
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.928",
+                    "peakWorkingSetBytes": 101302272,
+                    "platform": "macos",
+                    "privateUsageBytes": 38847448,
+                    "privateWorkingSetBytes": 38158336,
+                    "workingSetBytes": 100515840
+                }
+            },
+            "route": "legacy_schedule",
+            "scheduleModelRowCount": 13,
+            "scheduleTableCellWidgetCount": 0,
+            "scheduleTableRowCount": 13,
+            "theme": "dark",
+            "widgetCount": 81,
+            "width": 1024
+        },
+        {
+            "activeSurfaceRowCount": 10,
+            "activeTabIndex": 2,
+            "height": 768,
+            "image": "next_upcoming_events_ko_KR_dark.png",
+            "locale": "ko_KR",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.957",
+                    "peakWorkingSetBytes": 101302272,
+                    "platform": "macos",
+                    "privateUsageBytes": 38847448,
+                    "privateWorkingSetBytes": 38158336,
+                    "workingSetBytes": 100515840
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.928",
+                    "peakWorkingSetBytes": 101302272,
+                    "platform": "macos",
+                    "privateUsageBytes": 38847448,
+                    "privateWorkingSetBytes": 38158336,
+                    "workingSetBytes": 100515840
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:39.957",
+                    "peakWorkingSetBytes": 101302272,
+                    "platform": "macos",
+                    "privateUsageBytes": 38847448,
+                    "privateWorkingSetBytes": 38158336,
+                    "workingSetBytes": 100515840
+                }
+            },
+            "ownedTableModelViewCount": 2,
+            "personalDetailsReadCount": 0,
+            "route": "next_upcoming_events",
+            "scheduleRowsAfterSuspension": 0,
+            "theme": "dark",
+            "upcomingEventRowsAfterSuspension": 0,
+            "widgetCount": 125,
+            "width": 1024
+        },
+        {
+            "activeSurfaceRowCount": 96,
+            "activeTabIndex": 1,
+            "firstScheduleDayLabel": "Monday",
+            "height": 768,
+            "image": "next_schedule_96_classes_en_US_light.png",
+            "locale": "en_US",
+            "memoryProcessWide": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:40.100",
+                    "peakWorkingSetBytes": 101302272,
+                    "platform": "macos",
+                    "privateUsageBytes": 39470040,
+                    "privateWorkingSetBytes": 38780928,
+                    "workingSetBytes": 100974592
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:40.057",
+                    "peakWorkingSetBytes": 101302272,
+                    "platform": "macos",
+                    "privateUsageBytes": 39388120,
+                    "privateWorkingSetBytes": 38699008,
+                    "workingSetBytes": 100892672
+                },
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-27T23:20:40.101",
+                    "peakWorkingSetBytes": 101302272,
+                    "platform": "macos",
+                    "privateUsageBytes": 39470040,
+                    "privateWorkingSetBytes": 38780928,
+                    "workingSetBytes": 100974592
+                }
+            },
+            "ownedTableModelViewCount": 2,
+            "personalDetailsReadCount": 0,
+            "route": "next_schedule",
+            "scaleScenario": "96 classes",
+            "scheduleRowsAfterSuspension": 0,
+            "theme": "light",
+            "upcomingEventRowsAfterSuspension": 0,
+            "widgetCount": 125,
+            "width": 1024
+        }
+    ],
+    "legacyCalendarCaptured": false,
+    "legacyCalendarReason": "The legacy Calendar page constructs its QQuickWidget month grid while building the Upcoming Events panel. The Next events capture is therefore surface-only; full Calendar comparison remains for the Calendar migration slice.",
+    "memoryScope": "Process-wide snapshots; differences include the full Qt application, workspace stores, repositories, translations, widgets, and allocator behavior.",
+    "scenarioCount": 13,
+    "style": "Fusion",
+    "viewport": "1024x768"
+}
