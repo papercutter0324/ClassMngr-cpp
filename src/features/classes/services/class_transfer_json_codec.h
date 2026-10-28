@@ -7,6 +7,9 @@
 #include <QJsonObject>
 #include <QString>
 
+inline constexpr qint64 kClassTransferMaximumEncodedFileBytes =
+    16LL * 1024LL * 1024LL;
+
 class ClassTransferJsonCodec
 {
 public:

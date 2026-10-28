@@ -869,6 +869,7 @@ target_link_libraries(ClassMngrNext
     PRIVATE
         Qt6::Widgets
         ClassMngrNext::Application
+        ClassMngrClassTransferSupport
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNextDocumentCatalog
@@ -885,10 +886,11 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
     message(FATAL_ERROR
         "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, "
-        "ClassMngrNext::Application, ClassMngrNext::Resources, "
+        "ClassMngrNext::Application, ClassMngrClassTransferSupport, "
+        "ClassMngrNext::Resources, "
         "ClassMngrNextWorkspace, ClassMngrNextDocumentCatalog, "
         "ClassMngrNextStartupUpdates, ClassMngrTeacherImportParser, "
         "ClassMngrScheduleImportParser, "

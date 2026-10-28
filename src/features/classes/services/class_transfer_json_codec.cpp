@@ -1622,6 +1622,14 @@ Status ClassTransferJsonCodec::saveFile(
     const QByteArray bytes =
         QJsonDocument(toJson(package)).toJson(QJsonDocument::Indented);
 
+    if (bytes.size() > kClassTransferMaximumEncodedFileBytes)
+    {
+        file.cancelWriting();
+        return std::unexpected(
+            QObject::tr("The class package exceeds the 16 MiB file limit.")
+            );
+    }
+
     if (file.write(bytes) != bytes.size())
     {
         file.cancelWriting();
@@ -1665,6 +1673,14 @@ Status ClassTransferJsonCodec::saveFile(
     const QByteArray bytes =
         QJsonDocument(toJson(package)).toJson(QJsonDocument::Indented);
 
+    if (bytes.size() > kClassTransferMaximumEncodedFileBytes)
+    {
+        file.cancelWriting();
+        return std::unexpected(
+            QObject::tr("The class package exceeds the 16 MiB file limit.")
+            );
+    }
+
     if (file.write(bytes) != bytes.size())
     {
         file.cancelWriting();
@@ -1700,6 +1716,13 @@ Result<ClassTransferPackage> ClassTransferJsonCodec::loadFile(
     }
 
     const qint64 fileSize = file.size();
+    if (fileSize > kClassTransferMaximumEncodedFileBytes)
+    {
+        return std::unexpected(
+            QObject::tr("The class package exceeds the 16 MiB file limit.")
+            );
+    }
+
     if (fileSize > 0
         && fileSize <= std::numeric_limits<qsizetype>::max())
     {

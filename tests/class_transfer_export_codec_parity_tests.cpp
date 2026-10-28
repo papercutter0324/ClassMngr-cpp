@@ -8,6 +8,7 @@
 #define CLASSMNGR_TYPED_EXPORT 1
 #endif
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QSqlError>
@@ -121,6 +122,8 @@ private slots:
     void failurePrecedence_data();
     void failurePrecedence();
     void fileErrorsRetainTheirMessages();
+    void encodedFileLimitAcceptsExactAndRejectsOneOverOnLoad();
+    void encodedFileLimitBoundsTypedExportAndPreservesDestination();
 };
 void ClassTransferExportCodecParityTests::completeExportPreservesSchemaOrderAndEveryPayload()
 {
@@ -255,6 +258,109 @@ void ClassTransferExportCodecParityTests::fileErrorsRetainTheirMessages()
     Fixture fixture; QVERIFY(fixture.open());
     auto result = exportJson(fixture.services, fixture.ids, fixture.directory.path());
     QVERIFY(!result); QVERIFY(result.error().startsWith(QStringLiteral("Unable to open the class package for writing:\n")));
+}
+
+void ClassTransferExportCodecParityTests::encodedFileLimitAcceptsExactAndRejectsOneOverOnLoad()
+{
+    Fixture fixture; QVERIFY(fixture.open());
+    const auto package = fixture.services.dataService()
+        ->databaseSession()->classTransferRepository()->buildPackage({fixture.ids.first()});
+    QVERIFY(package);
+    QByteArray bytes = QJsonDocument(ClassTransferJsonCodec::toJson(*package))
+        .toJson(QJsonDocument::Indented);
+    QVERIFY(bytes.size() < kClassTransferMaximumEncodedFileBytes);
+    bytes.append(QByteArray(
+        static_cast<qsizetype>(kClassTransferMaximumEncodedFileBytes - bytes.size()),
+        ' '));
+    QCOMPARE(bytes.size(), kClassTransferMaximumEncodedFileBytes);
+
+    const QString exactPath = fixture.directory.filePath(QStringLiteral("exact-limit.json"));
+    QFile exactFile(exactPath); QVERIFY(exactFile.open(QIODevice::WriteOnly));
+    QCOMPARE(exactFile.write(bytes), bytes.size());
+    exactFile.close();
+    const auto exactPackage = ClassTransferJsonCodec::loadFile(exactPath);
+    QVERIFY2(exactPackage, exactPackage ? "" : qPrintable(exactPackage.error()));
+
+    const QString overPath = fixture.directory.filePath(QStringLiteral("over-limit.json"));
+    QFile overFile(overPath); QVERIFY(overFile.open(QIODevice::WriteOnly));
+    QCOMPARE(overFile.write(bytes), bytes.size());
+    QCOMPARE(overFile.write(" ", 1), qint64(1));
+    overFile.close();
+    const auto overPackage = ClassTransferJsonCodec::loadFile(overPath);
+    QVERIFY(!overPackage);
+    QVERIFY(overPackage.error().contains(QStringLiteral("16 MiB")));
+}
+
+void ClassTransferExportCodecParityTests::encodedFileLimitBoundsTypedExportAndPreservesDestination()
+{
+#ifdef CLASSMNGR_TYPED_EXPORT
+    Fixture fixture; QVERIFY(fixture.open());
+    auto legacyPackage = fixture.services.dataService()
+        ->databaseSession()->classTransferRepository()->buildPackage(
+            {fixture.ids.first()});
+    QVERIFY(legacyPackage);
+    legacyPackage->classes.front().info.notes.clear();
+    QByteArray legacyEncoded = QJsonDocument(
+        ClassTransferJsonCodec::toJson(*legacyPackage))
+        .toJson(QJsonDocument::Indented);
+    QVERIFY(legacyEncoded.size() < kClassTransferMaximumEncodedFileBytes);
+    legacyPackage->classes.front().info.notes = QString(
+        static_cast<qsizetype>(kClassTransferMaximumEncodedFileBytes
+            - legacyEncoded.size()), QLatin1Char('x'));
+    const QString legacyExactPath = fixture.directory.filePath(
+        QStringLiteral("legacy-exact.json"));
+    const auto legacyExactSave = ClassTransferJsonCodec::saveFile(
+        legacyExactPath, *legacyPackage);
+    QVERIFY2(legacyExactSave, legacyExactSave ? "" : qPrintable(legacyExactSave.error()));
+    QCOMPARE(QFileInfo(legacyExactPath).size(), kClassTransferMaximumEncodedFileBytes);
+    legacyPackage->classes.front().info.notes.append(QLatin1Char('x'));
+    const QString legacyOverPath = fixture.directory.filePath(
+        QStringLiteral("legacy-over.json"));
+    QFile legacyDestination(legacyOverPath);
+    QVERIFY(legacyDestination.open(QIODevice::WriteOnly));
+    QCOMPARE(legacyDestination.write("legacy destination preserved", 28), qint64(28));
+    legacyDestination.close();
+    const auto legacyOverSave = ClassTransferJsonCodec::saveFile(
+        legacyOverPath, *legacyPackage);
+    QVERIFY(!legacyOverSave);
+    QVERIFY(legacyOverSave.error().contains(QStringLiteral("16 MiB")));
+    QVERIFY(legacyDestination.open(QIODevice::ReadOnly));
+    QCOMPARE(legacyDestination.readAll(), QByteArray("legacy destination preserved", 28));
+
+    using namespace ClassMngr::Next;
+    Application::ClassTransferExportRequest request;
+    request.classIds.push_back(*Domain::ClassId::fromString(
+        std::to_string(fixture.ids.first())));
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(
+        fixture.services);
+    auto packageResult = Application::ClassTransferExportQuery(port).execute(request);
+    QVERIFY(packageResult);
+    auto package = std::move(packageResult.value());
+    QByteArray encoded = QJsonDocument(ClassTransferJsonCodec::toJson(package))
+        .toJson(QJsonDocument::Indented);
+    QVERIFY(encoded.size() < kClassTransferMaximumEncodedFileBytes);
+    const qsizetype padding = static_cast<qsizetype>(
+        kClassTransferMaximumEncodedFileBytes - encoded.size());
+    package.classes.front().info.notes.append(
+        static_cast<std::size_t>(padding), u'x');
+    const QString exactPath = fixture.directory.filePath(QStringLiteral("typed-exact.json"));
+    const auto exactSave = ClassTransferJsonCodec::saveFile(exactPath, package);
+    QVERIFY2(exactSave, exactSave ? "" : qPrintable(exactSave.error()));
+    QCOMPARE(QFileInfo(exactPath).size(), kClassTransferMaximumEncodedFileBytes);
+
+    package.classes.front().info.notes.push_back(u'x');
+    const QString overPath = fixture.directory.filePath(QStringLiteral("typed-over.json"));
+    QFile destination(overPath); QVERIFY(destination.open(QIODevice::WriteOnly));
+    QCOMPARE(destination.write("destination-preserved", 21), qint64(21));
+    destination.close();
+    const auto overSave = ClassTransferJsonCodec::saveFile(overPath, package);
+    QVERIFY(!overSave);
+    QVERIFY(overSave.error().contains(QStringLiteral("16 MiB")));
+    QVERIFY(destination.open(QIODevice::ReadOnly));
+    QCOMPARE(destination.readAll(), QByteArray("destination-preserved", 21));
+#else
+    QSKIP("The typed class transfer export adapter is not part of this target.");
+#endif
 }
 QTEST_MAIN(ClassTransferExportCodecParityTests)
 #include "class_transfer_export_codec_parity_tests.moc"

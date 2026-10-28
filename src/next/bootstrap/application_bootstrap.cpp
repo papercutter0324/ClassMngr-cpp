@@ -25,6 +25,7 @@
 #include "next/platform/workspace_store_class_editor_actions.h"
 #include "next/platform/workspace_store_class_analytics_actions.h"
 #include "next/platform/workspace_store_testing_classes_actions.h"
+#include "next/platform/workspace_store_class_transfer_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -43,6 +44,7 @@
 #include "next/ui/my_classes_page.h"
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/testing_classes_manager_page.h"
+#include "next/ui/class_transfer_workflow_page.h"
 #include "next/ui/qt_file_dialog_presenter.h"
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
@@ -59,6 +61,7 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
+#include <QDir>
 #include <QJsonObject>
 #include <QLocale>
 #include <QStringList>
@@ -371,6 +374,30 @@ loadWorkspaceCampusChoices(
     };
 }
 
+[[nodiscard]] Ui::PageDescriptor classTransferWorkflowPageDescriptor(
+    std::function<Ui::ClassTransferWorkflowPageActions()> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(QStringLiteral("class_transfer")),
+        .label = navigationLabel("Class Transfer"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::ClassTransferWorkflowPage>(
+                    context, actionsFactory());
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)};
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+}
+
 [[nodiscard]] Ui::PageDescriptor myWorkspacePageDescriptor(
     std::function<Ui::MyWorkspacePageActions(const Ui::PageContext&)> actionsFactory
     )
@@ -512,6 +539,7 @@ loadWorkspaceCampusChoices(
         NavigationNode::page(pageId(QStringLiteral("my_workspace")), workspace),
         NavigationNode::page(pageId(QStringLiteral("my_classes")), workspace),
         NavigationNode::page(pageId(QStringLiteral("classes")), workspace),
+        NavigationNode::page(pageId(QStringLiteral("class_transfer")), workspace),
         NavigationNode::page(pageId(QStringLiteral("sub_prep")), workspace),
         NavigationNode::group(
             QStringLiteral("co_teachers"),
@@ -1327,6 +1355,162 @@ Application::StartupResult ApplicationBootstrap::start()
                             const Application::TestingClassDeleteRequest& request) {
                             return Platform::deleteTestingClassAtPath(
                                 databasePath, request);
+                        };
+                        return actions;
+                    }));
+            if (!registration)
+            {
+                initialPageFailure = registration.error().message;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const Ui::PageHostResult<void> registration =
+                m_shell->pageHost().registerPage(
+                    classTransferWorkflowPageDescriptor([this] {
+                        Ui::ClassTransferWorkflowPageActions actions;
+                        actions.activeWorkspacePath = [this]()
+                            -> std::optional<QString> {
+                            if (!m_applicationRuntime)
+                            {
+                                return std::nullopt;
+                            }
+                            const auto session = m_applicationRuntime
+                                ->workspaceState().snapshot().session();
+                            if (!session)
+                            {
+                                return std::nullopt;
+                            }
+                            const std::string& path = session->location().value();
+                            return QString::fromUtf8(path.data(),
+                                static_cast<qsizetype>(path.size()));
+                        };
+                        actions.chooseImportFile = [this]()
+                            -> Domain::Result<std::optional<QString>> {
+                            if (!m_shell)
+                            {
+                                return Domain::Result<std::optional<QString>>::failure({
+                                    .code = Domain::ErrorCode::Technical,
+                                    .message = "The class transfer file picker is unavailable.",
+                                    .recoverable = false
+                                });
+                            }
+                            Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+                                directoryPreferences;
+                            Ui::QtFileDialogPresenter fileDialog(
+                                directoryPreferences, m_shell.get());
+                            const auto selected = fileDialog.openOneFile({
+                                .purpose = Application::FileDialogPurpose::ClassTransfer,
+                                .title = QCoreApplication::translate(
+                                    "ClassTransferWorkflowPage", "Import Classes" )
+                                    .toUtf8().toStdString(),
+                                .nameFilters = {"JSON Files (*.json)"}
+                            });
+                            if (!selected)
+                            {
+                                return Domain::Result<std::optional<QString>>::failure(
+                                    selected.error());
+                            }
+                            if (!selected.value().selection)
+                            {
+                                return Domain::Result<std::optional<QString>>::success(
+                                    std::nullopt);
+                            }
+                            const std::string& path =
+                                selected.value().selection->value();
+                            return Domain::Result<std::optional<QString>>::success(
+                                QString::fromUtf8(path.data(),
+                                    static_cast<qsizetype>(path.size())));
+                        };
+                        actions.chooseExportFile = [this]()
+                            -> Domain::Result<std::optional<QString>> {
+                            if (!m_shell)
+                            {
+                                return Domain::Result<std::optional<QString>>::failure({
+                                    .code = Domain::ErrorCode::Technical,
+                                    .message = "The class transfer file picker is unavailable.",
+                                    .recoverable = false
+                                });
+                            }
+                            Application::FileDialogPath initialDirectory;
+                            if (m_applicationRuntime)
+                            {
+                                const auto session = m_applicationRuntime
+                                    ->workspaceState().snapshot().session();
+                                if (session)
+                                {
+                                    const std::string& activePath =
+                                        session->location().value();
+                                    const QString directory = QFileInfo(
+                                        QString::fromUtf8(activePath.data(),
+                                            static_cast<qsizetype>(activePath.size())))
+                                        .absolutePath();
+                                    initialDirectory = Application::FileDialogPath(
+                                        directory.toUtf8().toStdString());
+                                }
+                            }
+                            Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+                                directoryPreferences;
+                            Ui::QtFileDialogPresenter fileDialog(
+                                directoryPreferences, m_shell.get());
+                            const auto selected = fileDialog.saveFile({
+                                .purpose = Application::FileDialogPurpose::ClassTransfer,
+                                .title = QCoreApplication::translate(
+                                    "ClassTransferWorkflowPage", "Export Classes")
+                                    .toUtf8().toStdString(),
+                                .initialDirectory = std::move(initialDirectory),
+                                .suggestedFileName = "Classes",
+                                .nameFilters = {"JSON Files (*.json)"},
+                                .defaultSuffix = "json"
+                            });
+                            if (!selected)
+                            {
+                                return Domain::Result<std::optional<QString>>::failure(
+                                    selected.error());
+                            }
+                            if (!selected.value().selection)
+                            {
+                                return Domain::Result<std::optional<QString>>::success(
+                                    std::nullopt);
+                            }
+                            const std::string& path = selected.value().selection->path.value();
+                            return Domain::Result<std::optional<QString>>::success(
+                                QString::fromUtf8(path.data(),
+                                    static_cast<qsizetype>(path.size())));
+                        };
+                        actions.readClasses = [](
+                            const QString& databasePath) {
+                            return Platform::readClassTransferClassesAtPath(
+                                databasePath);
+                        };
+                        actions.exportClasses = [](
+                            const QString& databasePath,
+                            const Application::ClassTransferExportRequest& request) {
+                            return Platform::exportClassTransferAtPath(
+                                databasePath, request);
+                        };
+                        actions.previewImport = [](
+                            const QString& databasePath,
+                            const Application::ClassTransferPreviewRequest& request) {
+                            return Platform::previewClassTransferAtPath(
+                                databasePath, request);
+                        };
+                        actions.applyImport = [](
+                            const QString& databasePath,
+                            Application::ClassTransferApplyCommand command) {
+                            return Platform::applyClassTransferAtPath(
+                                databasePath, std::move(command));
+                        };
+                        actions.selectImportedClass = [this](
+                            const Domain::ClassId& classId) {
+                            if (!m_applicationRuntime || !m_shell)
+                            {
+                                return;
+                            }
+                            m_applicationRuntime->selectionState().setSelection(classId);
+                            static_cast<void>(m_shell->navigateTo(
+                                pageId(QStringLiteral("classes"))));
                         };
                         return actions;
                     }));
@@ -4644,6 +4828,16 @@ void ApplicationBootstrap::clearMyClassesPageForWorkspaceChange()
             static_cast<void>(page->onActivating());
         }
     }
+    if (auto* const page = dynamic_cast<Ui::ClassTransferWorkflowPage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("class_transfer"))))
+    {
+        page->clearForWorkspaceChange();
+        if (m_shell->pageHost().activePageKey()
+            == std::optional<QString>(QStringLiteral("class_transfer")))
+        {
+            static_cast<void>(page->onActivating());
+        }
+    }
 }
 
 void ApplicationBootstrap::clearMyClassesPageForClosedWorkspace()
@@ -4664,6 +4858,11 @@ void ApplicationBootstrap::clearMyClassesPageForClosedWorkspace()
     }
     if (auto* const page = dynamic_cast<Ui::TestingClassesManagerPage*>(
             m_shell->pageHost().pageInstance(QStringLiteral("testing_classes"))))
+    {
+        page->clearForClosedWorkspace();
+    }
+    if (auto* const page = dynamic_cast<Ui::ClassTransferWorkflowPage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("class_transfer"))))
     {
         page->clearForClosedWorkspace();
     }

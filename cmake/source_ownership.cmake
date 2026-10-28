@@ -69,6 +69,13 @@ function(classmngr_check_source_ownership)
         ${CLASSMNGR_ON_SCREEN_KEYBOARD_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrFeatures ${CLASSMNGR_FEATURES_SOURCES})
+    _classmngr_record_manifest(ClassMngrClassTransferSupport
+        "src/features/classes/services/class_transfer_json_codec.cpp"
+        "src/features/classes/services/class_transfer_json_codec.h"
+        "src/features/classes/config/class_info_config.cpp"
+        "src/core/utils/colorutils.cpp"
+        "src/core/utils/file_name_utils.cpp"
+    )
     _classmngr_record_manifest(ClassMngrSignature ${CLASSMNGR_SIGNATURE_SOURCES})
     _classmngr_record_manifest(ClassMngrAppServices ${CLASSMNGR_APP_SERVICES_SOURCES})
     _classmngr_record_source_owner(ClassMngr "${CLASSMNGR_MAIN_SOURCE}")

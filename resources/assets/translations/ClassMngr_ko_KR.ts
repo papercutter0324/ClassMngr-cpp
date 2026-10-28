@@ -9935,6 +9935,7 @@ Version: %2</source>
     <message><source>My Workspace</source><translation>내 작업 공간</translation></message>
     <message><source>My Classes</source><translation>내 수업</translation></message>
     <message><source>Classes</source><translation>수업</translation></message>
+    <message><source>Class Transfer</source><translation>수업 전송</translation></message>
     <message><source>Testing Classes</source><translation>테스트 수업</translation></message>
     <message><source>Sub Prep</source><translation>대체 수업 준비</translation></message>
     <message><source>Co-Teachers</source><translation>공동 교사</translation></message>
@@ -10884,5 +10885,57 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Fri</source><translation>금</translation></message>
     <message><source>Sat</source><translation>토</translation></message>
     <message><source>Sun</source><translation>일</translation></message>
+</context>
+<context>
+    <name>ClassTransferWorkflowPage</name>
+    <message><source>Class Transfer</source><translation>수업 전송</translation></message>
+    <message><source>Import Classes</source><translation>수업 가져오기</translation></message>
+    <message><source>Export Classes</source><translation>수업 내보내기</translation></message>
+    <message><source>Export selected classes to a JSON package or review a package before importing.</source><translation>선택한 수업을 JSON 패키지로 내보내거나 가져오기 전에 패키지를 검토하세요.</translation></message>
+    <message><source>Export Selected Classes</source><translation>선택한 수업 내보내기</translation></message>
+    <message><source>Import JSON Package</source><translation>JSON 패키지 가져오기</translation></message>
+    <message><source>Refresh Matches</source><translation>일치 항목 새로 고침</translation></message>
+    <message><source>Apply Import</source><translation>가져오기 적용</translation></message>
+    <message><source>Cancel Review</source><translation>검토 취소</translation></message>
+    <message><source>Classes</source><translation>수업</translation></message>
+    <message><source>Teachers</source><translation>교사</translation></message>
+    <message><source>Package class</source><translation>패키지 수업</translation></message>
+    <message><source>Package teacher</source><translation>패키지 교사</translation></message>
+    <message><source>Matches</source><translation>일치 항목</translation></message>
+    <message><source>Resolution</source><translation>처리 방법</translation></message>
+    <message><source>%1 possible match(es)</source><translation>일치 후보 %1개</translation></message>
+    <message><source>Choose a resolution…</source><translation>처리 방법 선택…</translation></message>
+    <message><source>Create new class</source><translation>새 수업 만들기</translation></message>
+    <message><source>Create another class</source><translation>수업 추가로 만들기</translation></message>
+    <message><source>Replace class %1</source><translation>수업 %1 바꾸기</translation></message>
+    <message><source>Skip</source><translation>건너뛰기</translation></message>
+    <message><source>Create new teacher</source><translation>새 교사 만들기</translation></message>
+    <message><source>Keep local teacher %1</source><translation>기존 교사 %1 유지</translation></message>
+    <message><source>Replace local teacher %1</source><translation>기존 교사 %1 바꾸기</translation></message>
+    <message><source>Class %1</source><translation>수업 %1</translation></message>
+    <message><source>Select at least one class to export.</source><translation>내보낼 수업을 하나 이상 선택하세요.</translation></message>
+    <message><source>The export file picker is unavailable.</source><translation>내보내기 파일 선택기를 사용할 수 없습니다.</translation></message>
+    <message><source>The import file picker is unavailable.</source><translation>가져오기 파일 선택기를 사용할 수 없습니다.</translation></message>
+    <message><source>Export cancelled.</source><translation>내보내기를 취소했습니다.</translation></message>
+    <message><source>Import cancelled.</source><translation>가져오기를 취소했습니다.</translation></message>
+    <message><source>The active workspace is unavailable.</source><translation>활성 작업 공간을 사용할 수 없습니다.</translation></message>
+    <message><source>Exported %1 class(es) to %2.</source><translation>수업 %1개를 %2에 내보냈습니다.</translation></message>
+    <message><source>Select an export path.</source><translation>내보낼 경로를 선택하세요.</translation></message>
+    <message><source>The workspace changed. Select classes again before exporting.</source><translation>작업 공간이 변경되었습니다. 내보낼 수업을 다시 선택하세요.</translation></message>
+    <message><source>Open a workspace to use Class Transfer.</source><translation>수업 전송을 사용하려면 작업 공간을 여세요.</translation></message>
+    <message><source>Loaded %1 classes for transfer.</source><translation>전송할 수업 %1개를 불러왔습니다.</translation></message>
+    <message><source>Load a package before refreshing matches.</source><translation>일치 항목을 새로 고치려면 패키지를 불러오세요.</translation></message>
+    <message><source>%1 class(es), %2 teacher(s); select a row to choose its action.</source><translation>수업 %1개, 교사 %2명입니다. 행을 선택해 처리 방법을 고르세요.</translation></message>
+    <message><source>Package matches are ready for review.</source><translation>패키지 일치 항목을 검토할 수 있습니다.</translation></message>
+    <message><source>Resolve every required class and teacher choice before applying.</source><translation>적용하기 전에 필요한 모든 수업 및 교사 처리 방법을 선택하세요.</translation></message>
+    <message><source>The workspace changed. Load the package again to review it.</source><translation>작업 공간이 변경되었습니다. 다시 패키지를 불러와 검토하세요.</translation></message>
+    <message><source>The active workspace changed. Load the package again before continuing.</source><translation>활성 작업 공간이 변경되었습니다. 계속하기 전에 패키지를 다시 불러오세요.</translation></message>
+    <message><source>Import complete: %1 created, %2 replaced, %3 skipped.</source><translation>가져오기가 완료되었습니다. 새로 만들기 %1개, 바꾸기 %2개, 건너뛰기 %3개입니다.</translation></message>
+    <message><source>Package review cancelled.</source><translation>패키지 검토를 취소했습니다.</translation></message>
+    <message><source>No workspace is open.</source><translation>열린 작업 공간이 없습니다.</translation></message>
+</context>
+<context>
+    <name>ClassTransferJsonCodec</name>
+    <message><source>The class package exceeds the 16 MiB file limit.</source><translation>수업 패키지 파일이 16MiB 제한을 초과합니다.</translation></message>
 </context>
 </TS>

@@ -24,6 +24,7 @@ target_compile_definitions(ClassMngrNextBootstrapTests
 )
 target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
+        ClassMngrClassTransferSupport
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
@@ -192,6 +193,7 @@ target_compile_definitions(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegra
 )
 target_link_libraries(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
     PRIVATE
+        ClassMngrClassTransferSupport
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
@@ -3342,6 +3344,125 @@ add_test(
     COMMAND ClassMngrNextTestingClassesManagerTests
 )
 set_tests_properties(ClassMngrNextTestingClassesManagerTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Exercise the WorkspaceStore-backed Class Transfer page, including JSON
+# export/import, review lifecycle, and rollback against temporary .tps files.
+add_executable(ClassMngrNextClassTransferWorkflowTests
+    tests/next/class_transfer_workflow_tests.cpp
+    src/next/platform/workspace_store_class_transfer_actions.cpp
+    src/next/platform/workspace_store_classes_navigator_read_actions.cpp
+    src/next/ui/class_transfer_workflow_page.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextClassTransferWorkflowTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextClassTransferWorkflowTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextClassTransferWorkflowTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_CLASS_TRANSFER_LARGE_PACKAGE_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-class-transfer-boundary/generated-large-class-transfer.json"
+)
+target_link_libraries(ClassMngrNextClassTransferWorkflowTests
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextClassTransferWorkflowTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextClassTransferWorkflowTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextClassTransferWorkflowTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextClassTransferWorkflowTests
+    COMMAND ClassMngrNextClassTransferWorkflowTests
+)
+set_tests_properties(ClassMngrNextClassTransferWorkflowTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Capture paired Legacy and Next Class Transfer export/review/conflict states
+# using one package and two copies of the same tracked 96-class workspace.
+add_executable(ClassMngrNextClassTransferVisualCapture
+    tests/next/class_transfer_visual_capture.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/platform/workspace_store_class_transfer_actions.cpp
+    src/next/platform/workspace_store_classes_navigator_read_actions.cpp
+    src/next/ui/class_transfer_workflow_page.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextClassTransferVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextClassTransferVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextClassTransferVisualCapture
+    PRIVATE
+        CLASSMNGR_CLASS_TRANSFER_WORKSPACE_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TRANSLATION_ROOT="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextClassTransferVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrClassTransferSupport
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextClassTransferVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextClassTransferVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextClassTransferVisualCapture
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextClassTransferVisualCapture
+    COMMAND ClassMngrNextClassTransferVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/class-transfer-visual-capture"
+)
+set_tests_properties(ClassMngrNextClassTransferVisualCapture
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )

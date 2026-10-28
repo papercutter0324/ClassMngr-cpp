@@ -244,6 +244,31 @@ classmngr_add_production_objects(
         Qt6::Widgets
         ZLIB::ZLIB
 )
+add_library(ClassMngrClassTransferSupport STATIC
+    "${PROJECT_SOURCE_DIR}/src/features/classes/services/class_transfer_json_codec.cpp"
+    "${PROJECT_SOURCE_DIR}/src/features/classes/services/class_transfer_json_codec.h"
+    "${PROJECT_SOURCE_DIR}/src/features/classes/config/class_info_config.cpp"
+    "${PROJECT_SOURCE_DIR}/src/core/utils/colorutils.cpp"
+    "${PROJECT_SOURCE_DIR}/src/core/utils/file_name_utils.cpp"
+)
+target_compile_features(ClassMngrClassTransferSupport
+    PUBLIC
+        cxx_std_23
+)
+target_include_directories(ClassMngrClassTransferSupport
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrClassTransferSupport
+    PUBLIC
+        ClassMngrBuildSettings
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrClassTransferSupport
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 classmngr_add_production_objects(
     TARGET ClassMngrAppServices
     SOURCES ${CLASSMNGR_APP_SERVICES_SOURCES}
@@ -312,6 +337,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrBuildSettings
         ClassMngrSignature
         ClassMngrWorkspaceStore
+        ClassMngrClassTransferSupport
         ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser
         ${_classmngr_legacy_runtime_dependencies}
@@ -366,6 +392,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrBuildSettings
             ClassMngrSignature
             ClassMngrWorkspaceStore
+            ClassMngrClassTransferSupport
             ClassMngrTeacherImportParser
             ClassMngrScheduleImportParser
             ${_classmngr_legacy_runtime_dependencies}
