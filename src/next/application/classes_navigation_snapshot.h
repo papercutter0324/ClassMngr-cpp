@@ -1,9 +1,12 @@
 #pragma once
 
 #include "next/application/positive_decimal_id_validation.h"
+#include "next/application/classes_list_read_snapshot.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <set>
 #include <string>
 #include <utility>
@@ -118,6 +121,14 @@ public:
         const ClassesNavigationSnapshotReadPort& port
         )
     {
+        if (query.classes.size() > kClassesNavigationMaximumClasses)
+        {
+            return failure(
+                Domain::ErrorCode::Validation,
+                "A classes navigation request exceeds its bounded class limit."
+                );
+        }
+
         std::set<std::string> classIds;
         for (const ClassesNavigationClass& source : query.classes)
         {
@@ -134,6 +145,14 @@ public:
                 return failure(
                     Domain::ErrorCode::InvalidInput,
                     "Class IDs must be unique."
+                    );
+            }
+
+            if (source.className.size() > kClassesNavigationMaximumTextLength)
+            {
+                return failure(
+                    Domain::ErrorCode::Validation,
+                    "A classes navigation request contains an unbounded class name."
                     );
             }
         }
@@ -168,6 +187,42 @@ public:
                 return failure(
                     Domain::ErrorCode::Validation,
                     "A classes navigation read changed class identity or order."
+                    );
+            }
+
+            if (!returned.details)
+            {
+                continue;
+            }
+
+            const ClassesNavigationDetails& details = returned.details.value();
+            const auto boundedText = [](const std::u16string& value) {
+                return value.size() <= kClassesNavigationMaximumTextLength;
+            };
+            const auto boundedSchedule = [&boundedText](
+                const std::vector<ClassesNavigationScheduleRow>& rows
+                ) {
+                return rows.size() <= kClassesNavigationMaximumScheduleRows
+                    && std::all_of(rows.begin(), rows.end(),
+                        [&boundedText](const auto& row) {
+                            return row.day.size()
+                                    <= kClassesNavigationMaximumScheduleTokenLength
+                                && row.startTime.size()
+                                    <= kClassesNavigationMaximumScheduleTokenLength
+                                && row.endTime.size()
+                                    <= kClassesNavigationMaximumScheduleTokenLength;
+                        });
+            };
+            if (!boundedText(details.grade)
+                || !boundedText(details.level)
+                || !boundedText(details.teacherEnglishName)
+                || !boundedText(details.teacherKoreanName)
+                || !boundedSchedule(details.regularSchedule)
+                || !boundedSchedule(details.intensiveSchedule))
+            {
+                return failure(
+                    Domain::ErrorCode::Validation,
+                    "A classes navigation entry exceeds its bounded summary limits."
                     );
             }
         }

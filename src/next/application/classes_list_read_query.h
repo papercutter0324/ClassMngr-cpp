@@ -28,10 +28,26 @@ public:
             return ClassesListReadResult::failure(source.error());
         }
 
+        if (source.value().classes.size() > kClassesNavigationMaximumClasses)
+        {
+            return failure(
+                Domain::ErrorCode::Validation,
+                "The classes list exceeds its bounded class limit."
+                );
+        }
+
         std::unordered_set<std::string> seenClassIds;
         seenClassIds.reserve(source.value().classes.size());
         for (const ClassesListEntry& classroom : source.value().classes)
         {
+            if (classroom.className.size() > kClassesNavigationMaximumTextLength)
+            {
+                return failure(
+                    Domain::ErrorCode::Validation,
+                    "The classes list contains an unbounded class name."
+                    );
+            }
+
             if (!isCanonicalPositiveDecimalId(classroom.classId.value()))
             {
                 return failure(

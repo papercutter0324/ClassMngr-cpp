@@ -21,6 +21,7 @@
 #include "next/platform/resource_document_catalog_port.h"
 #include "next/platform/workspace_store_gateway.h"
 #include "next/platform/workspace_store_my_workspace_overview_read_actions.h"
+#include "next/platform/workspace_store_classes_navigator_read_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -37,6 +38,7 @@
 #include "next/ui/placeholder_page.h"
 #include "next/ui/my_workspace_page.h"
 #include "next/ui/my_classes_page.h"
+#include "next/ui/classes_navigator_page.h"
 #include "next/ui/qt_file_dialog_presenter.h"
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
@@ -301,7 +303,6 @@ loadWorkspaceCampusChoices(
 [[nodiscard]] std::vector<Ui::PageDescriptor> placeholderPageDescriptors()
 {
     return {
-        placeholderDescriptor(QStringLiteral("classes"), navigationLabel("Classes")),
         placeholderDescriptor(QStringLiteral("sub_prep"), navigationLabel("Sub Prep")),
         placeholderDescriptor(
             QStringLiteral("campus_information"), navigationLabel("Information")
@@ -312,6 +313,33 @@ loadWorkspaceCampusChoices(
         placeholderDescriptor(QStringLiteral("campus_address"), navigationLabel("Address")),
         placeholderDescriptor(QStringLiteral("campus_housing"), navigationLabel("Housing")),
         placeholderDescriptor(QStringLiteral("campus_map"), navigationLabel("Maps"))
+    };
+}
+
+[[nodiscard]] Ui::PageDescriptor classesNavigatorPageDescriptor(
+    std::function<Ui::ClassesNavigatorPageActions()> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(QStringLiteral("classes")),
+        .label = navigationLabel("Classes"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::ClassesNavigatorPage>(
+                    context,
+                    actionsFactory()
+                    );
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)
+            };
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
     };
 }
 
@@ -993,6 +1021,101 @@ Application::StartupResult ApplicationBootstrap::start()
             {
                 initialPageFailure = registration.error().message;
                 break;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const Ui::PageHostResult<void> registration =
+                m_shell->pageHost().registerPage(classesNavigatorPageDescriptor(
+                    [this] {
+                    Ui::ClassesNavigatorPageActions actions;
+                    actions.activeWorkspacePath = [this]()
+                        -> std::optional<QString> {
+                        if (!m_applicationRuntime)
+                        {
+                            return std::nullopt;
+                        }
+                        const auto session =
+                            m_applicationRuntime->workspaceState().snapshot().session();
+                        if (!session)
+                        {
+                            return std::nullopt;
+                        }
+                        const std::string& path = session->location().value();
+                        return QString::fromUtf8(
+                            path.data(),
+                            static_cast<qsizetype>(path.size())
+                            );
+                    };
+                    actions.workspaceIdentity = [this] {
+                        if (!m_applicationRuntime)
+                        {
+                            return QString{};
+                        }
+                        const auto session =
+                            m_applicationRuntime->workspaceState().snapshot().session();
+                        if (!session)
+                        {
+                            return QString{};
+                        }
+                        const std::string& workspaceId =
+                            session->workspaceId().value();
+                        const std::string& path = session->location().value();
+                        return QString::fromUtf8(
+                            workspaceId.data(),
+                            static_cast<qsizetype>(workspaceId.size())
+                            ) + QLatin1Char('|') + QString::fromUtf8(
+                                path.data(),
+                                static_cast<qsizetype>(path.size())
+                                );
+                    };
+                    actions.readClasses = [](
+                        const QString& databasePath
+                        ) {
+                        return Platform::readClassesNavigatorListAtPath(
+                            databasePath
+                            );
+                    };
+                    actions.readNavigation = [](
+                        const QString& databasePath,
+                        const Application::ClassesNavigationSnapshotQuery& query
+                        ) {
+                        return Platform::readClassesNavigatorNavigationAtPath(
+                            databasePath,
+                            query
+                            );
+                    };
+                    actions.readPreferences = [](
+                        const QString& databasePath
+                        ) {
+                        return Platform::readClassesNavigatorPreferencesAtPath(
+                            databasePath
+                            );
+                    };
+                    actions.saveScheduleMode = [](
+                        const QString& databasePath,
+                        const Application::ScheduleDisplayMode mode
+                        ) {
+                        return Platform::saveClassesNavigatorScheduleModeAtPath(
+                            databasePath,
+                            mode
+                            );
+                    };
+                    actions.saveVisibilityScope = [](
+                        const QString& databasePath,
+                        const Application::ClassVisibilityScope scope
+                        ) {
+                        return Platform::saveClassesNavigatorVisibilityAtPath(
+                            databasePath,
+                            scope
+                            );
+                    };
+                    return actions;
+                }));
+            if (!registration)
+            {
+                initialPageFailure = registration.error().message;
             }
         }
 
@@ -4284,6 +4407,16 @@ void ApplicationBootstrap::clearMyClassesPageForWorkspaceChange()
             static_cast<void>(page->onActivating());
         }
     }
+    if (auto* const page = dynamic_cast<Ui::ClassesNavigatorPage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("classes"))))
+    {
+        page->clearForWorkspaceChange();
+        if (m_shell->pageHost().activePageKey()
+            == std::optional<QString>(QStringLiteral("classes")))
+        {
+            static_cast<void>(page->onActivating());
+        }
+    }
 }
 
 void ApplicationBootstrap::clearMyClassesPageForClosedWorkspace()
@@ -4294,6 +4427,11 @@ void ApplicationBootstrap::clearMyClassesPageForClosedWorkspace()
     }
     if (auto* const page = dynamic_cast<Ui::MyClassesPage*>(
             m_shell->pageHost().pageInstance(QStringLiteral("my_classes"))))
+    {
+        page->clearForClosedWorkspace();
+    }
+    if (auto* const page = dynamic_cast<Ui::ClassesNavigatorPage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("classes"))))
     {
         page->clearForClosedWorkspace();
     }

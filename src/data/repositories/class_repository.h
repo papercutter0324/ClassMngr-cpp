@@ -32,6 +32,13 @@ public:
         );
 
     [[nodiscard]] RepositoryResult<QList<Classroom>> getClasses();
+    // Bounded ordered ID/name projection for compact navigation surfaces.
+    // Uses a one-row lookahead and rejects over-limit or unbounded names.
+    [[nodiscard]] RepositoryResult<QList<Classroom>>
+        getBoundedClassesForNavigation(
+            int maximumClassCount,
+            int maximumNameLength
+            );
 
     [[nodiscard]] RepositoryResult<Classroom> getClassById(
         int classId

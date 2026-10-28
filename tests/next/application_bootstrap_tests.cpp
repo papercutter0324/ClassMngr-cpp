@@ -13,6 +13,7 @@
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
+#include "next/ui/classes_navigator_page.h"
 #include "next/ui/initial_page.h"
 #include "next/ui/my_classes_page.h"
 #include "next/ui/page_host.h"
@@ -141,6 +142,8 @@ private slots:
     void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
     void openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess();
     void myClassesReloadsRealWorkspaceDataWhenProfileIsReplacedWhileActive();
+    void classesNavigatorClearsAndReloadsWhenWorkspaceIsReplacedWhileActive();
+    void classesNavigatorClearsWhenWorkspaceIsClosedWhileActive();
     void openActionDoesNotBypassPendingOrUnreadableSetupRecovery();
     void interruptedProfileRecoveryMenuActionOpensCopyOnlyAfterSuccessfulOpen();
     void recentFilesMenuRefreshesOrderedEscapedPathsAndEmptyState();
@@ -1996,6 +1999,24 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         ++navigationItem;
     }
     QCOMPARE(usefulPlaceholderCount, std::size_t(7));
+
+    const auto classesPageId = Ui::PageId::fromString(QStringLiteral("classes"));
+    QVERIFY(classesPageId.has_value());
+    const auto classesDescriptor = pageHost.pageDescriptor(*classesPageId);
+    QVERIFY(classesDescriptor.has_value());
+    QCOMPARE(classesDescriptor->resourcePolicy, Ui::PageResourcePolicy::PageScoped);
+    QCOMPARE(classesDescriptor->initialDataPolicy, Ui::PageInitialDataPolicy::None);
+    QVERIFY(!pageHost.hasPageInstance(QStringLiteral("classes")));
+    QVERIFY(pageHost.activatePage(QStringLiteral("classes")));
+    auto* const classesPage = dynamic_cast<Ui::ClassesNavigatorPage*>(
+        pageHost.pageInstance(QStringLiteral("classes"))
+        );
+    QVERIFY(classesPage);
+    QVERIFY(classesPage->isActive());
+    QCOMPARE(classesPage->findChild<QLabel*>(QStringLiteral("classesNavigatorStatus"))
+                 ->text(),
+             QStringLiteral("No Teacher Profile is open."));
+    QVERIFY(!dynamic_cast<Ui::PlaceholderPage*>(classesPage));
 
     application.setStyleSheet(previousStyleSheet);
 }
@@ -5333,6 +5354,236 @@ myClassesReloadsRealWorkspaceDataWhenProfileIsReplacedWhileActive()
     QVERIFY(!page->findChild<QPlainTextEdit*>(
         QStringLiteral("myClassesTeacherNotes"))->toPlainText().contains(
             QStringLiteral("Store A")));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+classesNavigatorClearsAndReloadsWhenWorkspaceIsReplacedWhileActive()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString firstPath = temporaryDirectory.filePath(
+        QStringLiteral("classes-navigator-first.tps"));
+    const QString secondPath = temporaryDirectory.filePath(
+        QStringLiteral("classes-navigator-second.tps"));
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 firstPath, QStringLiteral("representative_startup.sql"),
+                 &fixtureError), qPrintable(fixtureError));
+    QVERIFY2(createWorkspaceWithFixture(
+                 secondPath, QStringLiteral("representative_startup.sql"),
+                 &fixtureError), qPrintable(fixtureError));
+    QVERIFY(executeWorkspaceSql(firstPath, QStringLiteral(
+        "UPDATE class_info SET class_level='First Workspace Level' "
+        "WHERE class_id=1")));
+    QVERIFY(executeWorkspaceSql(secondPath, QStringLiteral(
+        "UPDATE class_info SET class_level='Replacement Level' "
+        "WHERE class_id=2")));
+    QVERIFY(executeWorkspaceSql(secondPath, QStringLiteral(
+        "INSERT INTO testing_classes(class_id, room) VALUES(1, 'Navigator test room')")));
+
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        secondPath.toUtf8().toStdString());
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), firstPath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    seams.openProfileFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            fileDialogProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(bootstrap.shell()->pageHost().activatePage(
+        QStringLiteral("classes")));
+    auto* const page = dynamic_cast<Ui::ClassesNavigatorPage*>(
+        bootstrap.shell()->pageHost().pageInstance(QStringLiteral("classes")));
+    QVERIFY(page);
+    QVERIFY(page->isActive());
+    QCOMPARE(page->model()->classCount(), 8);
+
+    const Domain::ClassId selectedInFirstWorkspace =
+        *Domain::ClassId::fromString("1");
+    const QModelIndex firstSelection =
+        page->model()->indexForClassId(selectedInFirstWorkspace);
+    QVERIFY(firstSelection.isValid());
+    page->classList()->selectionModel()->setCurrentIndex(
+        firstSelection,
+        QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows
+        );
+    QCOMPARE(page->selectedClassId(),
+        std::optional<Domain::ClassId>(selectedInFirstWorkspace));
+    QVERIFY(page->model()->labelForClassId(selectedInFirstWorkspace).contains(
+        QStringLiteral("First Workspace Level")));
+
+    bool observedClearedProjection = false;
+    bool observedReplacementProjection = false;
+    QObject::connect(page->model(), &QAbstractItemModel::modelReset, page, [&] {
+        if (page->model()->classCount() == 0 && !page->selectedClassId())
+        {
+            observedClearedProjection = true;
+        }
+        const auto replacementClass = Domain::ClassId::fromString("2");
+        if (replacementClass
+            && page->model()->classCount() == 7
+            && page->model()->labelForClassId(*replacementClass).contains(
+                QStringLiteral("Replacement Level")))
+        {
+            observedReplacementProjection = true;
+        }
+    });
+
+    QAction* const openAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextOpenTeacherProfile"));
+    QVERIFY(openAction);
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 1);
+    QCOMPARE(bootstrap.shell()->pageHost().activePageKey(),
+        std::optional<QString>(QStringLiteral("classes")));
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+        std::optional<Application::WorkspaceLocation>(
+            Application::WorkspaceLocation(
+                QFileInfo(secondPath).canonicalFilePath()
+                    .toUtf8().toStdString())));
+    QVERIFY(observedClearedProjection);
+    QVERIFY(observedReplacementProjection);
+    QCOMPARE(page->model()->classCount(), 7);
+    QVERIFY(!page->model()->indexForClassId(selectedInFirstWorkspace).isValid());
+    QVERIFY(page->selectedClassId().has_value());
+    QVERIFY(*page->selectedClassId() != selectedInFirstWorkspace);
+    const Domain::ClassId replacementClass = *Domain::ClassId::fromString("2");
+    QVERIFY(page->model()->labelForClassId(replacementClass).contains(
+        QStringLiteral("Replacement Level")));
+
+    QVERIFY(bootstrap.shell()->pageHost().activatePage(
+        QStringLiteral("my_workspace")));
+    QVERIFY(!page->isActive());
+    QCOMPARE(page->model()->classCount(), 0);
+    QVERIFY(bootstrap.shell()->pageHost().activatePage(
+        QStringLiteral("classes")));
+    QVERIFY(page->isActive());
+    QCOMPARE(page->model()->classCount(), 7);
+    QVERIFY(!page->model()->indexForClassId(selectedInFirstWorkspace).isValid());
+    QVERIFY(page->model()->labelForClassId(replacementClass).contains(
+        QStringLiteral("Replacement Level")));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+classesNavigatorClearsWhenWorkspaceIsClosedWhileActive()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("classes-navigator-close.tps"));
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 profilePath, QStringLiteral("representative_startup.sql"),
+                 &fixtureError), qPrintable(fixtureError));
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), profilePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QVERIFY(bootstrap.shell()->pageHost().activatePage(
+        QStringLiteral("classes")));
+    auto* const page = dynamic_cast<Ui::ClassesNavigatorPage*>(
+        bootstrap.shell()->pageHost().pageInstance(QStringLiteral("classes")));
+    QVERIFY(page);
+    QVERIFY(page->isActive());
+    QCOMPARE(page->model()->classCount(), 8);
+    QVERIFY(page->selectedClassId().has_value());
+
+    bool observedClearedProjection = false;
+    QObject::connect(page->model(), &QAbstractItemModel::modelReset, page, [&] {
+        if (page->model()->classCount() == 0 && !page->selectedClassId())
+        {
+            observedClearedProjection = true;
+        }
+    });
+    QAction* const closeAction = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextCloseWorkspace"));
+    QVERIFY(closeAction);
+    QVERIFY(closeAction->isEnabled());
+    closeAction->trigger();
+
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+        Application::WorkspaceLifecycleState::Closed);
+    QCOMPARE(bootstrap.shell()->navigationModel()->currentPageId()->value(),
+        QStringLiteral("initial_setup"));
+    QVERIFY(observedClearedProjection);
+    QCOMPARE(page->model()->classCount(), 0);
+    QVERIFY(!page->selectedClassId().has_value());
+    QVERIFY(!page->isActive());
+
+    QVERIFY(bootstrap.shell()->pageHost().activatePage(
+        QStringLiteral("classes")));
+    QVERIFY(page->isActive());
+    QCOMPARE(page->model()->classCount(), 0);
+    QVERIFY(!page->selectedClassId().has_value());
+    QCOMPARE(page->findChild<QLabel*>(QStringLiteral("classesNavigatorStatus"))
+                 ->text(),
+        QStringLiteral("No Teacher Profile is open."));
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);

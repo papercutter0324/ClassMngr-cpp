@@ -3232,6 +3232,131 @@ set_tests_properties(ClassMngrNextMyClassesPageTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
+# Exercise the bounded Next Classes navigator model/page independently from
+# the legacy classes page and detail editor features.
+add_executable(ClassMngrNextClassesNavigatorPageTests
+    tests/next/classes_navigator_page_tests.cpp
+    src/next/ui/classes_navigator_page.cpp
+    src/next/ui/classes_navigator_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextClassesNavigatorPageTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextClassesNavigatorPageTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextClassesNavigatorPageTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextClassesNavigatorPageTests
+    PRIVATE
+        ClassMngrNext::Resources
+        ClassMngrScheduleImportRules
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextClassesNavigatorPageTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextClassesNavigatorPageTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextClassesNavigatorPageTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextClassesNavigatorPageTests
+    COMMAND ClassMngrNextClassesNavigatorPageTests
+)
+set_tests_properties(ClassMngrNextClassesNavigatorPageTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Capture English/Korean and light/dark navigator states, including a compact
+# synthetic 96-class case and its bounded-query/widget manifest.
+add_executable(ClassMngrNextClassesNavigatorVisualCapture
+    tests/next/classes_navigator_visual_capture.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/ui/classes_navigator_page.cpp
+    src/next/ui/classes_navigator_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextClassesNavigatorVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextClassesNavigatorVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextClassesNavigatorVisualCapture
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextClassesNavigatorVisualCapture
+    PRIVATE
+        ClassMngrNext::Resources
+        ClassMngrScheduleImportRules
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextClassesNavigatorVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextClassesNavigatorVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextClassesNavigatorVisualCapture
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextClassesNavigatorVisualCapture
+    COMMAND ClassMngrNextClassesNavigatorVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/classes-navigator-visual-capture"
+)
+set_tests_properties(ClassMngrNextClassesNavigatorVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Exercise the standalone path-scoped Classes reads, input limits, identity
+# checks, and navigator setting persistence against a real WorkspaceStore.
+classmngr_add_qt_test(
+    NAME NextClassesNavigatorWorkspaceStore
+    SOURCES
+        tests/next/classes_navigator_workspace_store_tests.cpp
+        src/next/platform/workspace_store_classes_navigator_read_actions.cpp
+    LIBRARIES
+        ClassMngrNext::Application
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Test
+    COMPILE_DEFINITIONS
+        CLASSMNGR_CLASSES_NAVIGATOR_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+)
+
 # Capture matched legacy and Next My Classes routes at 1024x768 in Fusion for
 # both supported locales and themes. The JSON manifest includes bounded model,
 # widget, lifecycle, and process-wide memory observations.

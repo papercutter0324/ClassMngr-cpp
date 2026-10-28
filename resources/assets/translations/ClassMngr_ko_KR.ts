@@ -10631,6 +10631,37 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>There are no upcoming events.</source><translation>예정된 행사가 없습니다.</translation></message>
 </context>
 <context>
+    <name>NextClassesPage</name>
+    <message><source>Classes</source><translation>수업</translation></message>
+    <message><source>All</source><translation>전체</translation></message>
+    <message><source>Other</source><translation>기타</translation></message>
+    <message><source>Class %1</source><translation>수업 %1</translation></message>
+    <message><source>No time</source><translation>시간 정보 없음</translation></message>
+    <message><source>Int</source><translation>집중</translation></message>
+    <message><source>Sat</source><translation>토</translation></message>
+    <message><source>Sun</source><translation>일</translation></message>
+    <message><source>Schedule</source><translation>일정</translation></message>
+    <message><source>Regular</source><translation>정규 일정</translation></message>
+    <message><source>Intensive</source><translation>집중 일정</translation></message>
+    <message><source>Visibility</source><translation>표시 범위</translation></message>
+    <message><source>All Classes</source><translation>모든 수업</translation></message>
+    <message><source>Active Schedule</source><translation>활성 일정</translation></message>
+    <message><source>Mon</source><translation>월</translation></message>
+    <message><source>Tues</source><translation>화</translation></message>
+    <message><source>Wed</source><translation>수</translation></message>
+    <message><source>Thurs</source><translation>목</translation></message>
+    <message><source>Fri</source><translation>금</translation></message>
+    <message><source>Weekend</source><translation>주말</translation></message>
+    <message><source>Retry</source><translation>다시 시도</translation></message>
+    <message><source>No Teacher Profile is open.</source><translation>열린 교사 프로필이 없습니다.</translation></message>
+    <message><source>No classes available.</source><translation>사용 가능한 수업이 없습니다.</translation></message>
+    <message><source>The class list could not be loaded. Retry this page.</source><translation>수업 목록을 불러오지 못했습니다. 이 페이지에서 다시 시도하세요.</translation></message>
+    <message><source>Navigation details are unavailable. Showing class names. Retry to load details.</source><translation>탐색 정보를 사용할 수 없습니다. 수업 이름을 표시합니다. 정보를 불러오려면 다시 시도하세요.</translation></message>
+    <message><source>A navigation preference could not be saved.</source><translation>탐색 설정을 저장하지 못했습니다.</translation></message>
+    <message><source>No classes match the selected filters.</source><translation>선택한 필터와 일치하는 수업이 없습니다.</translation></message>
+    <message><source>Workspace changed. Retry to load Classes.</source><translation>작업 공간이 변경되었습니다. 수업을 불러오려면 다시 시도하세요.</translation></message>
+</context>
+<context>
     <name>NextMyClassesPage</name>
     <message><source>Class Information</source><translation>수업 정보</translation></message>
     <message><source>Review teacher, class, and roster details.</source><translation>교사, 수업 및 명단 세부 정보를 검토하세요.</translation></message>

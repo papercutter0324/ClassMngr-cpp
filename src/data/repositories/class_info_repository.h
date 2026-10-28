@@ -83,6 +83,26 @@ struct ClassNavigationParentAwareReadRecord final
     ClassNavigationReadRecord details;
 };
 
+struct ClassNavigationBoundedReadLimits final
+{
+    int maximumClassCount = 0;
+    int maximumTextLength = 0;
+    int maximumScheduleRowsPerSourceAndClass = 0;
+    int maximumScheduleTokenLength = 0;
+};
+
+struct ClassNavigationBoundedReadRequestEntry final
+{
+    int classId = -1;
+    QString className;
+};
+
+struct ClassNavigationBoundedReadRecord final
+{
+    QString className;
+    ClassNavigationReadRecord details;
+};
+
 struct ClassSubtitleReadRecord final
 {
     int classId = -1;
@@ -613,6 +633,13 @@ public:
 
     [[nodiscard]] RepositoryResult<QList<ClassNavigationReadRecord>>
         loadClassesNavigationRecords(const QList<int>& classIds);
+    // Bounded parent-aware navigation projection. Request identity and order
+    // are checked against the ordered class-list query before summaries load.
+    [[nodiscard]] RepositoryResult<QList<ClassNavigationBoundedReadRecord>>
+        loadBoundedClassesNavigationRecords(
+            const QList<ClassNavigationBoundedReadRequestEntry>& requestedClasses,
+            const ClassNavigationBoundedReadLimits& limits
+            );
     // Parent-aware typed route for Next navigation. The legacy reader above
     // intentionally retains its orphan/default behavior for Class Transfer.
     [[nodiscard]] RepositoryResult<QList<ClassNavigationParentAwareReadRecord>>

@@ -5091,6 +5091,361 @@ ClassInfoRepository::loadClassesNavigationRecordsWithParentProvenance(
     return records;
 }
 
+RepositoryResult<QList<ClassNavigationBoundedReadRecord>>
+ClassInfoRepository::loadBoundedClassesNavigationRecords(
+    const QList<ClassNavigationBoundedReadRequestEntry>& requestedClasses,
+    const ClassNavigationBoundedReadLimits& limits
+    )
+{
+    if (limits.maximumClassCount <= 0
+        || limits.maximumClassCount == std::numeric_limits<int>::max()
+        || limits.maximumTextLength < 0
+        || limits.maximumScheduleRowsPerSourceAndClass < 0
+        || limits.maximumScheduleTokenLength < 0)
+    {
+        return repositoryFailure(
+            QObject::tr(
+                "Loading bounded classes navigation failed: invalid read limits."
+                ),
+            RepositoryErrorCode::InvalidInput
+            );
+    }
+    if (requestedClasses.size() > limits.maximumClassCount)
+    {
+        return repositoryFailure(
+            QObject::tr(
+                "Loading bounded classes navigation failed: the request exceeds its class limit."
+                ),
+            RepositoryErrorCode::Validation
+            );
+    }
+    if (requestedClasses.isEmpty())
+    {
+        return QList<ClassNavigationBoundedReadRecord>{};
+    }
+
+    QSet<int> seenClassIds;
+    QStringList requestedValues;
+    requestedValues.reserve(requestedClasses.size());
+    for (qsizetype index = 0; index < requestedClasses.size(); ++index)
+    {
+        const auto& requested = requestedClasses[index];
+        if (requested.classId <= 0 || seenClassIds.contains(requested.classId))
+        {
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading bounded classes navigation failed: class identifiers must be positive and unique."
+                    ),
+                RepositoryErrorCode::InvalidInput
+                );
+        }
+        if (requested.className.size() > limits.maximumTextLength)
+        {
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading bounded classes navigation failed: a requested class name exceeds its text limit."
+                    ),
+                RepositoryErrorCode::Validation
+                );
+        }
+
+        seenClassIds.insert(requested.classId);
+        requestedValues.append(QStringLiteral("(%1, %2)")
+            .arg(requested.classId)
+            .arg(index));
+    }
+
+    const QString requestedValuesSql =
+        requestedValues.join(QStringLiteral(", "));
+    QList<ClassNavigationBoundedReadRecord> records;
+    records.reserve(requestedClasses.size());
+    QHash<int, qsizetype> indexByClassId;
+    indexByClassId.reserve(requestedClasses.size());
+
+    QSqlQuery metadataQuery(m_database);
+    metadataQuery.setForwardOnly(true);
+    metadataQuery.prepare(QStringLiteral(R"(
+        SELECT c.id AS class_id,
+               c.name AS class_name,
+               ci.class_id AS class_info_class_id,
+               ci.teacher_id,
+               ci.class_grade,
+               ci.class_level,
+               t.teacher_en,
+               t.teacher_kr
+        FROM classes c
+        LEFT JOIN testing_classes tc
+            ON tc.class_id = c.id
+        LEFT JOIN class_info ci
+            ON ci.class_id = c.id
+        LEFT JOIN teachers t
+            ON t.id = ci.teacher_id
+        WHERE tc.class_id IS NULL
+        ORDER BY c.name, c.id
+        LIMIT ?
+    )"));
+    metadataQuery.addBindValue(limits.maximumClassCount + 1);
+    const auto loadedMetadata = SqlQueryUtils::executePrepared(
+        metadataQuery,
+        QObject::tr("Loading bounded classes navigation metadata")
+        );
+    if (!loadedMetadata)
+    {
+        return repositoryFailure(loadedMetadata.error().userMessage());
+    }
+
+    qsizetype metadataIndex = 0;
+    while (metadataQuery.next())
+    {
+        if (metadataIndex >= requestedClasses.size())
+        {
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading bounded classes navigation failed: the class list exceeds its limit or changed during the read."
+                    ),
+                RepositoryErrorCode::Validation
+                );
+        }
+
+        const auto parsedClassId = persistedClassId(
+            metadataQuery.value(QStringLiteral("class_id")),
+            QObject::tr(
+                "Loading bounded classes navigation failed: the database returned an invalid class identifier."
+                )
+            );
+        if (!parsedClassId)
+        {
+            return repositoryFailure(parsedClassId.error());
+        }
+        const QString className =
+            metadataQuery.value(QStringLiteral("class_name")).toString();
+        const auto& requested = requestedClasses[metadataIndex];
+        if (className.size() > limits.maximumTextLength
+            || requested.classId != *parsedClassId
+            || requested.className != className)
+        {
+            return repositoryFailure(
+                QObject::tr(
+                    "Loading bounded classes navigation failed: class identity or order changed during the read."
+                    ),
+                RepositoryErrorCode::Validation
+                );
+        }
+
+        ClassNavigationBoundedReadRecord result;
+        result.className = className;
+        ClassNavigationReadRecord& details = result.details;
+        details.classId = *parsedClassId;
+        details.hasClassInfo = !metadataQuery.value(
+            QStringLiteral("class_info_class_id")).isNull();
+        if (details.hasClassInfo)
+        {
+            const QVariant teacherId =
+                metadataQuery.value(QStringLiteral("teacher_id"));
+            if (!teacherId.isNull())
+            {
+                bool teacherIdValid = false;
+                const qint64 parsedTeacherId =
+                    teacherId.toString().toLongLong(&teacherIdValid);
+                if (!teacherIdValid)
+                {
+                    return repositoryFailure(
+                        QObject::tr(
+                            "Loading bounded classes navigation failed: a teacher identifier is invalid."
+                            ),
+                        RepositoryErrorCode::Validation
+                        );
+                }
+                details.teacherId = parsedTeacherId;
+            }
+            details.grade = metadataQuery.value(
+                QStringLiteral("class_grade")).toString();
+            details.level = metadataQuery.value(
+                QStringLiteral("class_level")).toString();
+            details.teacherEnglishName = metadataQuery.value(
+                QStringLiteral("teacher_en")).toString();
+            details.teacherKoreanName = metadataQuery.value(
+                QStringLiteral("teacher_kr")).toString();
+            if (details.grade.size() > limits.maximumTextLength
+                || details.level.size() > limits.maximumTextLength
+                || details.teacherEnglishName.size() > limits.maximumTextLength
+                || details.teacherKoreanName.size() > limits.maximumTextLength)
+            {
+                return repositoryFailure(
+                    QObject::tr(
+                        "Loading bounded classes navigation failed: summary text exceeds its limit."
+                        ),
+                    RepositoryErrorCode::Validation
+                    );
+            }
+        }
+
+        indexByClassId.insert(details.classId, records.size());
+        records.append(std::move(result));
+        ++metadataIndex;
+    }
+    if (metadataQuery.lastError().isValid())
+    {
+        return repositoryFailure(metadataQuery.lastError().text());
+    }
+    if (metadataIndex != requestedClasses.size())
+    {
+        return repositoryFailure(
+            QObject::tr(
+                "Loading bounded classes navigation failed: the class list changed during the read."
+                ),
+            RepositoryErrorCode::Validation
+            );
+    }
+
+    const auto loadTimes = [this,
+                            &records,
+                            &indexByClassId,
+                            &requestedValuesSql,
+                            &limits,
+                            &requestedClasses](
+        const QString& table,
+        const QString& action,
+        const bool intensive
+        ) -> RepositoryStatus
+    {
+        QSqlQuery timesQuery(m_database);
+        timesQuery.setForwardOnly(true);
+        timesQuery.prepare(QStringLiteral(R"(
+            WITH requested(class_id, ordinal) AS (
+                VALUES %1
+            )
+            SELECT schedule.class_id,
+                   schedule.day,
+                   schedule.start_time,
+                   schedule.end_time
+            FROM requested
+            INNER JOIN classes parent
+                ON parent.id = requested.class_id
+            INNER JOIN class_info info
+                ON info.class_id = parent.id
+            INNER JOIN %2 schedule
+                ON schedule.class_id = parent.id
+            LEFT JOIN testing_classes tc
+                ON tc.class_id = parent.id
+            WHERE tc.class_id IS NULL
+            ORDER BY requested.ordinal, schedule.id
+            LIMIT ?
+        )").arg(requestedValuesSql, table));
+        const qint64 totalLimit =
+            static_cast<qint64>(requestedClasses.size())
+                * static_cast<qint64>(
+                    limits.maximumScheduleRowsPerSourceAndClass)
+            + 1;
+        timesQuery.addBindValue(totalLimit);
+        const auto loadedTimes = SqlQueryUtils::executePrepared(
+            timesQuery,
+            action
+            );
+        if (!loadedTimes)
+        {
+            return repositoryFailure(loadedTimes.error().userMessage());
+        }
+
+        QHash<int, int> rowsByClass;
+        rowsByClass.reserve(requestedClasses.size());
+        while (timesQuery.next())
+        {
+            const auto parsedClassId = persistedClassId(
+                timesQuery.value(QStringLiteral("class_id")),
+                QObject::tr(
+                    "Loading bounded classes navigation failed: the database returned an invalid schedule class identifier."
+                    )
+                );
+            if (!parsedClassId)
+            {
+                return repositoryFailure(parsedClassId.error());
+            }
+            const auto found = indexByClassId.constFind(*parsedClassId);
+            if (found == indexByClassId.cend())
+            {
+                return repositoryFailure(
+                    QObject::tr(
+                        "Loading bounded classes navigation failed: schedule class identity changed during the read."
+                        ),
+                    RepositoryErrorCode::Validation
+                    );
+            }
+            ClassNavigationReadRecord& details = records[*found].details;
+            if (!details.hasClassInfo)
+            {
+                return repositoryFailure(
+                    QObject::tr(
+                        "Loading bounded classes navigation failed: schedule rows require class information."
+                        ),
+                    RepositoryErrorCode::Validation
+                    );
+            }
+            const int rows = rowsByClass.value(*parsedClassId) + 1;
+            rowsByClass.insert(*parsedClassId, rows);
+            if (rows > limits.maximumScheduleRowsPerSourceAndClass)
+            {
+                return repositoryFailure(
+                    QObject::tr(
+                        "Loading bounded classes navigation failed: a class schedule exceeds its per-source row limit."
+                        ),
+                    RepositoryErrorCode::Validation
+                    );
+            }
+
+            ClassTime time;
+            time.day = timesQuery.value(QStringLiteral("day")).toString();
+            time.startTime = timesQuery.value(
+                QStringLiteral("start_time")).toString();
+            time.endTime = timesQuery.value(
+                QStringLiteral("end_time")).toString();
+            if (time.day.size() > limits.maximumScheduleTokenLength
+                || time.startTime.size() > limits.maximumScheduleTokenLength
+                || time.endTime.size() > limits.maximumScheduleTokenLength)
+            {
+                return repositoryFailure(
+                    QObject::tr(
+                        "Loading bounded classes navigation failed: a schedule token exceeds its limit."
+                        ),
+                    RepositoryErrorCode::Validation
+                    );
+            }
+            if (intensive)
+            {
+                details.intensiveTimes.append(std::move(time));
+            }
+            else
+            {
+                details.regularTimes.append(std::move(time));
+            }
+        }
+        if (timesQuery.lastError().isValid())
+        {
+            return repositoryFailure(timesQuery.lastError().text());
+        }
+        return {};
+    };
+
+    if (const RepositoryStatus loadedRegular = loadTimes(
+            QStringLiteral("class_times"),
+            QObject::tr("Loading bounded regular classes navigation schedules"),
+            false
+            ); !loadedRegular)
+    {
+        return repositoryFailure(loadedRegular.error());
+    }
+    if (const RepositoryStatus loadedIntensive = loadTimes(
+            QStringLiteral("class_intensive_times"),
+            QObject::tr("Loading bounded intensive classes navigation schedules"),
+            true
+            ); !loadedIntensive)
+    {
+        return repositoryFailure(loadedIntensive.error());
+    }
+
+    return records;
+}
+
 const ClassesNavigationReadMetrics&
 ClassInfoRepository::classesNavigationReadMetrics() const noexcept
 {

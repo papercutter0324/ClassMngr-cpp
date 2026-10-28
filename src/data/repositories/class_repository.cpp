@@ -168,6 +168,100 @@ RepositoryResult<QList<Classroom>> ClassRepository::getClasses()
     return classes;
 }
 
+RepositoryResult<QList<Classroom>>
+ClassRepository::getBoundedClassesForNavigation(
+    const int maximumClassCount,
+    const int maximumNameLength
+    )
+{
+    if (maximumClassCount <= 0
+        || maximumClassCount == std::numeric_limits<int>::max()
+        || maximumNameLength < 0)
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr("Loading classes navigation failed: invalid read bounds.")
+        });
+    }
+
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    query.prepare(QStringLiteral(R"(
+        SELECT c.id, c.name
+        FROM classes c
+        LEFT JOIN testing_classes tc
+        ON tc.class_id = c.id
+        WHERE tc.class_id IS NULL
+        ORDER BY c.name, c.id
+        LIMIT ?
+    )"));
+    query.addBindValue(maximumClassCount + 1);
+
+    const auto executed = SqlQueryUtils::executePrepared(
+        query,
+        QObject::tr("Loading bounded classes navigation")
+        );
+    if (!executed)
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            executed.error().userMessage()
+        });
+    }
+
+    QList<Classroom> classes;
+    classes.reserve(maximumClassCount);
+    while (query.next())
+    {
+        if (classes.size() >= maximumClassCount)
+        {
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Loading classes navigation failed: the class list exceeds its bounded row limit."
+                    )
+            });
+        }
+
+        bool classIdOk = false;
+        const qlonglong storedClassId = query.value(0).toLongLong(&classIdOk);
+        if (!classIdOk
+            || storedClassId <= 0
+            || storedClassId > std::numeric_limits<int>::max())
+        {
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Loading classes navigation failed: stored class id %1 is outside the supported positive integer range."
+                    ).arg(query.value(0).toString())
+            });
+        }
+
+        const QString className = query.value(1).toString();
+        if (className.size() > maximumNameLength)
+        {
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Loading classes navigation failed: a stored class name exceeds its bounded text limit."
+                    )
+            });
+        }
+
+        classes.append(Classroom{className, static_cast<int>(storedClassId)});
+    }
+
+    if (query.lastError().isValid())
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::Technical,
+            query.lastError().text()
+        });
+    }
+
+    return classes;
+}
+
 RepositoryResult<Classroom> ClassRepository::getClassById(
     int classId
     )
