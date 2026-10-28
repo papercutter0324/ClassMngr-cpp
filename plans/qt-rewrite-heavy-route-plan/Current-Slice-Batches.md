@@ -34,8 +34,10 @@ ownership, dependencies, lifecycle, and verification.
 29. **Accepted — Class Transfer** (`56455a1b`). See the [Phase 7 progress
     log](08-Phase-7-Feature-Migration.md#progress-log) and [capture
     package](../../docs/qt-rewrite/visual-baseline/next/phase-7/class-transfer/README.md).
-30. **Active — Schedule display/editing with model/view and compact state.**
-31. Schedule workbook import/review/apply; separate from #19 teacher import.
+30. **Accepted — Schedule display/editing** (`894a11ec`). See the [Phase 7
+    progress log](08-Phase-7-Progress-Log.md) and [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/schedule-display-editing/README.md).
+31. **Active — Schedule workbook import/review/apply**; separate from #19
+    teacher import.
 32. Testing assignments and schedule output/printing.
 33. Calendar events, preferences, and month grid.
 34. Calendar import.

@@ -801,3 +801,44 @@ Entries are preserved in their original document order.
   Windows memory budget. `git diff --check`, inventory `--check`, and route
   scan passed. No full-suite or Windows result is claimed; the 7A evidence and
   7A/Phase 7 exit gates remain open.
+
+### Candidate #30 — Schedule display/editing accepted (2026-10-28)
+
+- Commit: `894a11ec`. Next adds standalone weekly Schedule display/editing
+  through path-scoped `WorkspaceStore` actions and typed app actions, using one
+  `QTableView`, model, and delegate with compact resident state. Regular,
+  Intensive, and Testing modes, display preferences, and empty-slot state are
+  persisted. Class navigation reuses Class Details and returns a refreshed
+  schedule. Failed preference, mode, or slot saves remain visible and restore
+  the prior state. Candidate #31 import/review/apply and #32 testing-assignment
+  mutation/output/printing remain deferred.
+- Workspace isolation was verified with two `.tps` files sharing IDs and an
+  identical slot key; mode, preferences, and slot state remained separate.
+  Replacement, suspension, re-entry, and close clear or reload projections.
+  The Next path has no Gateway, `DataService`, Legacy widget, or
+  `ApplicationServices` Schedule-port dependency.
+- Verification: incremental macOS build in `build/macos-clang-debug` passed
+  for the application, Bootstrap, new WorkspaceStore action/page/capture
+  targets, and relevant schedule/Class Details regressions. Focused CTest
+  passed 25/25. Resource inventory `--check` and `git diff --check` passed.
+  No full suite or Windows build is claimed; `build/windows-x64-debug` was
+  unavailable.
+- Evidence and limits: the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/schedule-display-editing/README.md)
+  contains 32 PNGs (16 Legacy/Next pairs) at 1024×768, covering all modes in
+  English/Korean × light/dark plus 96-class Regular/Intensive and wrapped-label
+  Intensive states. Measured toolbar/grid geometry, row heights, rows, cells,
+  and entries match across pairs. Legacy and Next each report 549 Testing
+  entries; the focused pair shows the canonical Monday 17:00 assignment. Six
+  Next Intensive captures keep all 15/15 grade and level lines visible;
+  256-character teacher/room values are elided in its 60 px rows while
+  remaining in accessible text and tooltips. Legacy wraps or clips those
+  labels. `pixelParityClaim:false` remains accurate due toolbar actions
+  (Preferences versus Legacy Import/Testing Classes), overflow-scrollbar, glyph,
+  and compact Intensive typography differences.
+  The large fixture reports Next Regular at 7 rows/49 cells/768 entries and
+  Intensive at 13 rows/91 cells/15 entries, with one table view and no
+  per-entry widgets. Suspension releases retained rows, cells, entries, and
+  source classes to zero. Active whole-process macOS snapshots span about
+  107–135 MB working set and 54–75 MB private usage; they do not measure page
+  allocation or establish a Windows memory budget. The 7A screenshot/memory
+  evidence and the 7A/Phase 7 exit gates remain open.
