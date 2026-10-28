@@ -10,10 +10,11 @@ ownership, dependencies, lifecycle, and verification.
 21. **Accepted — My Details and Signature** (`060aca5c`). See the [Phase 7
     progress log](08-Phase-7-Feature-Migration.md#progress-log) and [capture
     package](../../docs/qt-rewrite/visual-baseline/next/phase-7/my-details-signature/README.md).
-22. **Active — My Classes** with compact summaries and one selected detail; use
-    model/view and compact resident state.
-23. My Schedule and workspace event summary; exclude #20 birthdays and daily
-    dismissal.
+22. **Accepted — My Classes** (`f7a3d81c`). See its [Phase 7 progress
+    log](08-Phase-7-Feature-Migration.md#progress-log) and [capture
+    package](../../docs/qt-rewrite/visual-baseline/next/phase-7/my-classes/README.md).
+23. **Active — My Schedule and workspace event summary**; exclude #20
+    birthdays and daily dismissal.
 24. Classes list/navigation.
 25. Class details, create/edit, and co-teachers.
 26. Class notes.

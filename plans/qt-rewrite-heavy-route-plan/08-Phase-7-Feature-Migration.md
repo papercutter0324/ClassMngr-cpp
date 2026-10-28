@@ -38,11 +38,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-27
-- Current note: 7A.1–7A.15 remain accepted. Candidate #21, My Details and
-  Signature, is accepted at `060aca5c`; Batch 3 candidate #22, My Classes with
-  compact summaries and one selected detail, is active. The 7A screenshot
-  comparison and memory measurement remain open, as do the 7A and Phase 7 exit
-  gates. See the progress log for slice evidence and limits.
+- Current note: 7A.1–7A.15 remain accepted. Candidate #22, My Classes with
+  compact summaries and one selected detail, is accepted at `f7a3d81c`; Batch 3
+  candidate #23, My Schedule and workspace event summary, is active. The 7A
+  screenshot comparison and memory measurement remain open, as do the 7A and
+  Phase 7 exit gates. See the progress log for slice evidence and limits.
 
 ### Slice batches
 
@@ -596,6 +596,45 @@ keep current status in this plan and live batches in the shared tracker.
   exact debounce timing assertion, full suite, or Windows run was verified.
   The 7A screenshot comparison and memory evidence and 7A/Phase 7 exit gates
   remain open. Candidate #22, My Classes, is active.
+
+### Candidate #22 — My Classes accepted (2026-10-27)
+
+- Commit: `f7a3d81c`. The page uses one compact summary model and one selected
+  class detail panel. On the tracked 96-class fixture, the Next capture reports
+  96 summary rows, one list view/model, one selected detail panel, and one
+  requested class in each class, class-info, and roster detail read; suspension
+  releases details and clears the summary rows. The manifest records 69 active
+  Next page widgets
+  and 321 legacy page widgets, including 96 legacy class widget shells.
+- Visual review: Main and Tester accepted the matched 1024×768 Fusion/offscreen
+  captures in English/Korean and light/dark. Grade/class navigation and the
+  full-width teacher-first stacked details match the legacy composition.
+  Visible differences are Next's bold/plain field presentation versus legacy
+  outlined read-only controls, tighter selector spacing, and more schedule text
+  visible in Next because the legacy one-line control clips it. Korean Next
+  localizes the room label to “교실.” See the
+  [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/my-classes/README.md).
+- Verification: build command was
+  `cmake --build build/macos-clang-debug --target ClassMngrNextMyClassesPageTests ClassMngrNextMyClassesVisualCapture ClassMngrNextBootstrapTests --parallel 8`.
+  Five focused CTests passed 5/5: `ClassMngrMyClassesPageTests`,
+  `ClassMngrMyClassesPageTeacherDisplayParityTests`,
+  `ClassMngrMyClassesPageSummaryParityTests`,
+  `ClassMngrNextMyClassesPageTests`, and
+  `ClassMngrNextMyClassesVisualCapture`. The targeted real-store A-to-B
+  replacement passed in `ClassMngrNextBootstrapTests`, slot
+  `myClassesReloadsRealWorkspaceDataWhenProfileIsReplacedWhileActive`;
+  `NextStartupWorkspaceDependencyBoundary` passed 1/1. Resource inventory
+  `--check` and `git diff --check` passed.
+- Limits: the full `ClassMngrNextBootstrapTests` run had 66 passes and one
+  failure at the status-message assertion in
+  `recentRestoreRemembersDirectoryWhenHistorySaveFails`. It uses a recording
+  gateway; this candidate does not change that path, and its baseline is
+  unverified. English/light private-working-set samples were 9.56 → 27.69 →
+  31.05 MiB for legacy and 31.14 → 33.67 → 33.75 MiB for Next across sequential
+  before/active/suspended captures. These are process-wide samples, not page
+  allocations or a memory budget. The 7A screenshot comparison and memory
+  remediation and the 7A/Phase 7 exit gates remain open. Candidate #23, My
+  Schedule and workspace event summary, is active.
 
 ## Objective
 

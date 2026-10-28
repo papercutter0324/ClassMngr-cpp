@@ -1,0 +1,381 @@
+{
+    "captures": [
+        {
+            "legacy": {
+                "classWidgetShellCount": 96,
+                "gradeTabCount": 4,
+                "height": 768,
+                "image": "legacy_en_US_light.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:26.905",
+                        "peakWorkingSetBytes": 83673088,
+                        "platform": "macos",
+                        "privateUsageBytes": 29688744,
+                        "privateWorkingSetBytes": 29032448,
+                        "workingSetBytes": 83673088
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:26.507",
+                        "peakWorkingSetBytes": 36012032,
+                        "platform": "macos",
+                        "privateUsageBytes": 10535632,
+                        "privateWorkingSetBytes": 10027008,
+                        "workingSetBytes": 36012032
+                    },
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:26.919",
+                        "peakWorkingSetBytes": 87326720,
+                        "platform": "macos",
+                        "privateUsageBytes": 33211304,
+                        "privateWorkingSetBytes": 32555008,
+                        "workingSetBytes": 87326720
+                    }
+                },
+                "page": "legacy",
+                "summaryListReadCount": 1,
+                "visibleClassTabCount": 24,
+                "widgetCountAfterFeatureRelease": 280,
+                "widgetCountWhileActive": 321,
+                "width": 1024
+            },
+            "locale": "en_US",
+            "next": {
+                "activeGradeSummaryCount": 24,
+                "classListViewCount": 1,
+                "gradeTabCount": 4,
+                "height": 768,
+                "image": "next_en_US_light.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.019",
+                        "peakWorkingSetBytes": 90783744,
+                        "platform": "macos",
+                        "privateUsageBytes": 35963816,
+                        "privateWorkingSetBytes": 35307520,
+                        "workingSetBytes": 90783744
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:26.921",
+                        "peakWorkingSetBytes": 87474176,
+                        "platform": "macos",
+                        "privateUsageBytes": 33309608,
+                        "privateWorkingSetBytes": 32653312,
+                        "workingSetBytes": 87474176
+                    },
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.032",
+                        "peakWorkingSetBytes": 90882048,
+                        "platform": "macos",
+                        "privateUsageBytes": 36045736,
+                        "privateWorkingSetBytes": 35389440,
+                        "workingSetBytes": 90882048
+                    }
+                },
+                "page": "next",
+                "releasedAfterSuspension": true,
+                "selectedDetailInfoReadClassCount": 1,
+                "selectedDetailPanelCount": 1,
+                "selectedDetailReadClassCount": 1,
+                "selectedDetailRosterCountReadClassCount": 1,
+                "summaryModelCount": 1,
+                "summaryRowCountAfterSuspension": 0,
+                "summaryRowCountWhileActive": 96,
+                "widgetCountWhileActive": 69,
+                "width": 1024
+            },
+            "theme": "light"
+        },
+        {
+            "legacy": {
+                "classWidgetShellCount": 96,
+                "gradeTabCount": 4,
+                "height": 768,
+                "image": "legacy_en_US_dark.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.252",
+                        "peakWorkingSetBytes": 92241920,
+                        "platform": "macos",
+                        "privateUsageBytes": 36766632,
+                        "privateWorkingSetBytes": 36110336,
+                        "workingSetBytes": 91619328
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.034",
+                        "peakWorkingSetBytes": 91455488,
+                        "platform": "macos",
+                        "privateUsageBytes": 36602792,
+                        "privateWorkingSetBytes": 35946496,
+                        "workingSetBytes": 91455488
+                    },
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.265",
+                        "peakWorkingSetBytes": 92241920,
+                        "platform": "macos",
+                        "privateUsageBytes": 36766632,
+                        "privateWorkingSetBytes": 36110336,
+                        "workingSetBytes": 91619328
+                    }
+                },
+                "page": "legacy",
+                "summaryListReadCount": 1,
+                "visibleClassTabCount": 24,
+                "widgetCountAfterFeatureRelease": 280,
+                "widgetCountWhileActive": 321,
+                "width": 1024
+            },
+            "locale": "en_US",
+            "next": {
+                "activeGradeSummaryCount": 24,
+                "classListViewCount": 1,
+                "gradeTabCount": 4,
+                "height": 768,
+                "image": "next_en_US_dark.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.359",
+                        "peakWorkingSetBytes": 92241920,
+                        "platform": "macos",
+                        "privateUsageBytes": 36815784,
+                        "privateWorkingSetBytes": 36159488,
+                        "workingSetBytes": 91668480
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.266",
+                        "peakWorkingSetBytes": 92241920,
+                        "platform": "macos",
+                        "privateUsageBytes": 36766632,
+                        "privateWorkingSetBytes": 36110336,
+                        "workingSetBytes": 91619328
+                    },
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.372",
+                        "peakWorkingSetBytes": 92241920,
+                        "platform": "macos",
+                        "privateUsageBytes": 36815784,
+                        "privateWorkingSetBytes": 36159488,
+                        "workingSetBytes": 91668480
+                    }
+                },
+                "page": "next",
+                "releasedAfterSuspension": true,
+                "selectedDetailInfoReadClassCount": 1,
+                "selectedDetailPanelCount": 1,
+                "selectedDetailReadClassCount": 1,
+                "selectedDetailRosterCountReadClassCount": 1,
+                "summaryModelCount": 1,
+                "summaryRowCountAfterSuspension": 0,
+                "summaryRowCountWhileActive": 96,
+                "widgetCountWhileActive": 69,
+                "width": 1024
+            },
+            "theme": "dark"
+        },
+        {
+            "legacy": {
+                "classWidgetShellCount": 96,
+                "gradeTabCount": 4,
+                "height": 768,
+                "image": "legacy_ko_KR_light.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.613",
+                        "peakWorkingSetBytes": 96419840,
+                        "platform": "macos",
+                        "privateUsageBytes": 38306752,
+                        "privateWorkingSetBytes": 37634048,
+                        "workingSetBytes": 96419840
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.374",
+                        "peakWorkingSetBytes": 92241920,
+                        "platform": "macos",
+                        "privateUsageBytes": 36815784,
+                        "privateWorkingSetBytes": 36159488,
+                        "workingSetBytes": 91717632
+                    },
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.626",
+                        "peakWorkingSetBytes": 96452608,
+                        "platform": "macos",
+                        "privateUsageBytes": 38339520,
+                        "privateWorkingSetBytes": 37666816,
+                        "workingSetBytes": 96452608
+                    }
+                },
+                "page": "legacy",
+                "summaryListReadCount": 1,
+                "visibleClassTabCount": 24,
+                "widgetCountAfterFeatureRelease": 280,
+                "widgetCountWhileActive": 321,
+                "width": 1024
+            },
+            "locale": "ko_KR",
+            "next": {
+                "activeGradeSummaryCount": 24,
+                "classListViewCount": 1,
+                "gradeTabCount": 4,
+                "height": 768,
+                "image": "next_ko_KR_light.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.726",
+                        "peakWorkingSetBytes": 96813056,
+                        "platform": "macos",
+                        "privateUsageBytes": 38650816,
+                        "privateWorkingSetBytes": 37978112,
+                        "workingSetBytes": 96813056
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.628",
+                        "peakWorkingSetBytes": 96468992,
+                        "platform": "macos",
+                        "privateUsageBytes": 38339520,
+                        "privateWorkingSetBytes": 37666816,
+                        "workingSetBytes": 96452608
+                    },
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.741",
+                        "peakWorkingSetBytes": 96829440,
+                        "platform": "macos",
+                        "privateUsageBytes": 38650816,
+                        "privateWorkingSetBytes": 37978112,
+                        "workingSetBytes": 96813056
+                    }
+                },
+                "page": "next",
+                "releasedAfterSuspension": true,
+                "selectedDetailInfoReadClassCount": 1,
+                "selectedDetailPanelCount": 1,
+                "selectedDetailReadClassCount": 1,
+                "selectedDetailRosterCountReadClassCount": 1,
+                "summaryModelCount": 1,
+                "summaryRowCountAfterSuspension": 0,
+                "summaryRowCountWhileActive": 96,
+                "widgetCountWhileActive": 69,
+                "width": 1024
+            },
+            "theme": "light"
+        },
+        {
+            "legacy": {
+                "classWidgetShellCount": 96,
+                "gradeTabCount": 4,
+                "height": 768,
+                "image": "legacy_ko_KR_dark.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.973",
+                        "peakWorkingSetBytes": 97599488,
+                        "platform": "macos",
+                        "privateUsageBytes": 38765504,
+                        "privateWorkingSetBytes": 38092800,
+                        "workingSetBytes": 96878592
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.743",
+                        "peakWorkingSetBytes": 96829440,
+                        "platform": "macos",
+                        "privateUsageBytes": 38732736,
+                        "privateWorkingSetBytes": 38060032,
+                        "workingSetBytes": 96796672
+                    },
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.987",
+                        "peakWorkingSetBytes": 97599488,
+                        "platform": "macos",
+                        "privateUsageBytes": 38765504,
+                        "privateWorkingSetBytes": 38092800,
+                        "workingSetBytes": 96878592
+                    }
+                },
+                "page": "legacy",
+                "summaryListReadCount": 1,
+                "visibleClassTabCount": 24,
+                "widgetCountAfterFeatureRelease": 280,
+                "widgetCountWhileActive": 321,
+                "width": 1024
+            },
+            "locale": "ko_KR",
+            "next": {
+                "activeGradeSummaryCount": 24,
+                "classListViewCount": 1,
+                "gradeTabCount": 4,
+                "height": 768,
+                "image": "next_ko_KR_dark.png",
+                "memoryProcessWide": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:28.084",
+                        "peakWorkingSetBytes": 97599488,
+                        "platform": "macos",
+                        "privateUsageBytes": 38765504,
+                        "privateWorkingSetBytes": 38092800,
+                        "workingSetBytes": 96927744
+                    },
+                    "before": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:27.988",
+                        "peakWorkingSetBytes": 97599488,
+                        "platform": "macos",
+                        "privateUsageBytes": 38765504,
+                        "privateWorkingSetBytes": 38092800,
+                        "workingSetBytes": 96878592
+                    },
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-27T22:16:28.097",
+                        "peakWorkingSetBytes": 97599488,
+                        "platform": "macos",
+                        "privateUsageBytes": 38765504,
+                        "privateWorkingSetBytes": 38092800,
+                        "workingSetBytes": 96927744
+                    }
+                },
+                "page": "next",
+                "releasedAfterSuspension": true,
+                "selectedDetailInfoReadClassCount": 1,
+                "selectedDetailPanelCount": 1,
+                "selectedDetailReadClassCount": 1,
+                "selectedDetailRosterCountReadClassCount": 1,
+                "summaryModelCount": 1,
+                "summaryRowCountAfterSuspension": 0,
+                "summaryRowCountWhileActive": 96,
+                "widgetCountWhileActive": 69,
+                "width": 1024
+            },
+            "theme": "dark"
+        }
+    ],
+    "fixture": "tracked 96-class large-classes visual fixture",
+    "memoryScope": "Process-wide samples; not per-page allocation measurements",
+    "platform": "offscreen",
+    "purpose": "Matched legacy and Next My Classes page captures",
+    "style": "Fusion",
+    "viewport": {
+        "height": 768,
+        "width": 1024
+    }
+}
