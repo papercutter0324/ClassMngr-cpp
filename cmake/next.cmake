@@ -720,6 +720,35 @@ set_target_properties(ClassMngrNextWorkspace
         POSITION_INDEPENDENT_CODE ON
 )
 
+# Keep Schedule's preview/output closure available to Next without linking the
+# broad legacy feature, shared UI, or Core targets.
+add_library(ClassMngrNextScheduleOutput STATIC
+    ${CLASSMNGR_NEXT_SCHEDULE_OUTPUT_SOURCES}
+)
+target_compile_features(ClassMngrNextScheduleOutput
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextScheduleOutput
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextScheduleOutput
+    PRIVATE
+        ClassMngrBuildSettings
+        ClassMngrNext::Application
+        ClassMngrSchedulePrint
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextScheduleOutput
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+
 # Startup catalog metadata is consumed by ClassMngrNext without the broader
 # Platform umbrella, which also owns network-facing adapters.
 add_library(ClassMngrNextDocumentCatalog STATIC
@@ -819,6 +848,12 @@ classmngr_next_assert_dependencies(ClassMngrNextDocumentCatalog
     ClassMngrNext::Application
     ClassMngrNext::Resources
 )
+classmngr_next_assert_dependencies(ClassMngrNextScheduleOutput
+    "$<LINK_ONLY:ClassMngrBuildSettings>"
+    "$<LINK_ONLY:ClassMngrNext::Application>"
+    "$<LINK_ONLY:ClassMngrSchedulePrint>"
+    "$<LINK_ONLY:Qt6::Widgets>"
+)
 classmngr_next_assert_dependencies(ClassMngrNextUiShared
     ClassMngrNext::Application
     ClassMngrNext::Resources
@@ -873,6 +908,7 @@ target_link_libraries(ClassMngrNext
         ClassMngrClassTransferSupport
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
+        ClassMngrNextScheduleOutput
         ClassMngrNextDocumentCatalog
         ClassMngrNextStartupUpdates
         ClassMngrTeacherImportParser
@@ -887,12 +923,13 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
     message(FATAL_ERROR
         "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, "
         "ClassMngrNext::Application, ClassMngrClassTransferSupport, "
         "ClassMngrNext::Resources, "
-        "ClassMngrNextWorkspace, ClassMngrNextDocumentCatalog, "
+        "ClassMngrNextWorkspace, ClassMngrNextScheduleOutput, "
+        "ClassMngrNextDocumentCatalog, "
         "ClassMngrNextStartupUpdates, ClassMngrTeacherImportParser, "
         "ClassMngrScheduleImportParser, "
         "Qt6::Concurrent, and Qt6::Network; found "

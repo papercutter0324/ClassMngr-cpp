@@ -1,0 +1,174 @@
+{
+    "assignmentEditorsAndOutputOptions": [
+        {
+            "height": 222,
+            "image": "legacy_assignment_en_US_light.png",
+            "locale": "en_US",
+            "route": "Legacy editor",
+            "theme": "light",
+            "width": 420
+        },
+        {
+            "height": 196,
+            "image": "next_assignment_en_US_light.png",
+            "locale": "en_US",
+            "route": "Next editor",
+            "theme": "light",
+            "width": 420
+        },
+        {
+            "height": 270,
+            "image": "next_output_options_en_US_light.png",
+            "locale": "en_US",
+            "route": "Next output options",
+            "theme": "light",
+            "width": 289
+        },
+        {
+            "height": 226,
+            "image": "legacy_assignment_en_US_dark.png",
+            "locale": "en_US",
+            "route": "Legacy editor",
+            "theme": "dark",
+            "width": 420
+        },
+        {
+            "height": 200,
+            "image": "next_assignment_en_US_dark.png",
+            "locale": "en_US",
+            "route": "Next editor",
+            "theme": "dark",
+            "width": 420
+        },
+        {
+            "height": 270,
+            "image": "next_output_options_en_US_dark.png",
+            "locale": "en_US",
+            "route": "Next output options",
+            "theme": "dark",
+            "width": 289
+        },
+        {
+            "height": 216,
+            "image": "legacy_assignment_ko_KR_light.png",
+            "locale": "ko_KR",
+            "route": "Legacy editor",
+            "theme": "light",
+            "width": 420
+        },
+        {
+            "height": 190,
+            "image": "next_assignment_ko_KR_light.png",
+            "locale": "ko_KR",
+            "route": "Next editor",
+            "theme": "light",
+            "width": 420
+        },
+        {
+            "height": 270,
+            "image": "next_output_options_ko_KR_light.png",
+            "locale": "ko_KR",
+            "route": "Next output options",
+            "theme": "light",
+            "width": 229
+        },
+        {
+            "height": 220,
+            "image": "legacy_assignment_ko_KR_dark.png",
+            "locale": "ko_KR",
+            "route": "Legacy editor",
+            "theme": "dark",
+            "width": 420
+        },
+        {
+            "height": 194,
+            "image": "next_assignment_ko_KR_dark.png",
+            "locale": "ko_KR",
+            "route": "Next editor",
+            "theme": "dark",
+            "width": 420
+        },
+        {
+            "height": 270,
+            "image": "next_output_options_ko_KR_dark.png",
+            "locale": "ko_KR",
+            "route": "Next output options",
+            "theme": "dark",
+            "width": 229
+        }
+    ],
+    "dialogViewport": "Native dialog bounds captured with Qt Fusion and explicit light/dark application palettes",
+    "managerHandoffPendingSlotEvidence": [
+        {
+            "image": "../testing-classes/testing_classes_pending_slot_en_US_light_legacy.png",
+            "locale": "en_US",
+            "route": "legacy",
+            "theme": "light"
+        },
+        {
+            "image": "../testing-classes/testing_classes_pending_slot_en_US_light_next.png",
+            "locale": "en_US",
+            "route": "next",
+            "theme": "light"
+        },
+        {
+            "image": "../testing-classes/testing_classes_pending_slot_en_US_dark_legacy.png",
+            "locale": "en_US",
+            "route": "legacy",
+            "theme": "dark"
+        },
+        {
+            "image": "../testing-classes/testing_classes_pending_slot_en_US_dark_next.png",
+            "locale": "en_US",
+            "route": "next",
+            "theme": "dark"
+        },
+        {
+            "image": "../testing-classes/testing_classes_pending_slot_ko_KR_light_legacy.png",
+            "locale": "ko_KR",
+            "route": "legacy",
+            "theme": "light"
+        },
+        {
+            "image": "../testing-classes/testing_classes_pending_slot_ko_KR_light_next.png",
+            "locale": "ko_KR",
+            "route": "next",
+            "theme": "light"
+        },
+        {
+            "image": "../testing-classes/testing_classes_pending_slot_ko_KR_dark_legacy.png",
+            "locale": "ko_KR",
+            "route": "legacy",
+            "theme": "dark"
+        },
+        {
+            "image": "../testing-classes/testing_classes_pending_slot_ko_KR_dark_next.png",
+            "locale": "ko_KR",
+            "route": "next",
+            "theme": "dark"
+        }
+    ],
+    "memoryAndLifetime": "The output request and PDF operation are local values; the PDF writer/document are destroyed before returning, and the temporary PDF is removed with QTemporaryDir. Dialog captures do not estimate allocation or memory budgets.",
+    "representativePdf": {
+        "contentsChecked": [
+            "OralTesting",
+            "Library",
+            "WritingLab",
+            "M2",
+            "Mixed(All)"
+        ],
+        "image": "representative_testing_output_pdf.png",
+        "pageCount": 1,
+        "pageHeightPoints": 595,
+        "pageWidthPoints": 842,
+        "pdfLifetime": "Saved under QTemporaryDir and removed when capture operation returns.",
+        "renderedImageHeight": 1240,
+        "renderedImageWidth": 1754
+    },
+    "taskId": "phase7-c32-testing-assignments-output-20261028",
+    "visualDifferences": [
+        "Legacy assignment editing uses the shared DialogShell and shows Essay Block; Next uses a plain QDialog and labels the remove action Essay Block.",
+        "The Legacy manager retains the pending weekday/start internally while Next shows the pending slot; see the paired #28 captures.",
+        "Qt native widget and glyph rasterization differs between the two editor implementations; no pixel-parity claim is made."
+    ]
+}

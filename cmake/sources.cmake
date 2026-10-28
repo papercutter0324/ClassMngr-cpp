@@ -123,6 +123,33 @@ classmngr_add_production_objects(
     LIBRARIES
         Qt6::Core
 )
+add_library(ClassMngrQtPdfPrint STATIC
+    $<TARGET_OBJECTS:ClassMngrSettings>
+    ${CLASSMNGR_QT_PDF_PRINT_SOURCES}
+)
+target_compile_features(ClassMngrQtPdfPrint
+    PUBLIC cxx_std_23
+)
+target_include_directories(ClassMngrQtPdfPrint
+    PUBLIC "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrQtPdfPrint
+    PUBLIC
+        ClassMngrBuildSettings
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Pdf
+        Qt6::PrintSupport
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrQtPdfPrint
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 add_library(ClassMngrWorkspaceStore STATIC
     ${CLASSMNGR_WORKSPACE_STORE_SOURCES}
 )
@@ -175,6 +202,23 @@ target_link_libraries(ClassMngrScheduleImportRules
         Qt6::Core
 )
 set_target_properties(ClassMngrScheduleImportRules
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+add_library(ClassMngrSchedulePrint STATIC
+    ${CLASSMNGR_SCHEDULE_PRINT_SOURCES}
+)
+target_link_libraries(ClassMngrSchedulePrint
+    PUBLIC
+        ClassMngrBuildSettings
+        ClassMngrQtPdfPrint
+        ClassMngrScheduleImportRules
+        Qt6::Gui
+        Qt6::Pdf
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrSchedulePrint
     PROPERTIES
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
@@ -323,7 +367,6 @@ add_library(ClassMngrRuntime STATIC
     $<TARGET_OBJECTS:ClassMngrStudentName>
     $<TARGET_OBJECTS:ClassMngrCore>
     $<TARGET_OBJECTS:ClassMngrUpdater>
-    $<TARGET_OBJECTS:ClassMngrSettings>
     $<TARGET_OBJECTS:ClassMngrData>
     $<TARGET_OBJECTS:ClassMngrDomain>
     $<TARGET_OBJECTS:ClassMngrUiShared>
@@ -340,6 +383,8 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrClassTransferSupport
         ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser
+        ClassMngrSchedulePrint
+        ClassMngrQtPdfPrint
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
         ClassMngrSQLiteSnapshot
@@ -378,7 +423,6 @@ if(APPLE AND BUILD_TESTING)
         $<TARGET_OBJECTS:ClassMngrStudentName>
         $<TARGET_OBJECTS:ClassMngrCore>
         $<TARGET_OBJECTS:ClassMngrUpdater>
-        $<TARGET_OBJECTS:ClassMngrSettings>
         $<TARGET_OBJECTS:ClassMngrData>
         $<TARGET_OBJECTS:ClassMngrDomain>
         $<TARGET_OBJECTS:ClassMngrUiShared>
@@ -395,6 +439,8 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrClassTransferSupport
             ClassMngrTeacherImportParser
             ClassMngrScheduleImportParser
+            ClassMngrSchedulePrint
+            ClassMngrQtPdfPrint
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE
             ClassMngrSQLiteSnapshot

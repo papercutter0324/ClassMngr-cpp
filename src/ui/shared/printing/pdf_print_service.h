@@ -4,6 +4,7 @@
 
 #include <QPageLayout>
 #include <QPageSize>
+#include <QFont>
 #include <QString>
 #include <QStringList>
 
@@ -30,6 +31,7 @@ struct Request
     bool fitToPageByDefault = false;
     std::optional<QPageSize::PageSizeId> preferredPageSize;
     bool lockPreferredPageSize = false;
+    QFont uiFont;
 };
 
 struct BatchRequest

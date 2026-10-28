@@ -5,6 +5,7 @@
 #include <QEvent>
 #include <QFileInfo>
 #include <QLineEdit>
+#include <QApplication>
 
 #include <utility>
 
@@ -17,7 +18,8 @@ PdfPrintDialog::PdfPrintDialog(
     QPageLayout::Orientation pageOrientation,
     bool fitToPageByDefault,
     std::optional<QPageSize::PageSizeId> preferredPageSize,
-    bool lockPreferredPageSize
+    bool lockPreferredPageSize,
+    QFont uiFont
     )
     : DialogShell(QStringLiteral("pdfPrint"), parent)
     , m_document(document)
@@ -27,6 +29,7 @@ PdfPrintDialog::PdfPrintDialog(
     , m_fitToPageByDefault(fitToPageByDefault)
     , m_preferredPageSize(preferredPageSize)
     , m_lockPreferredPageSize(lockPreferredPageSize)
+    , m_uiFont(uiFont.family().isEmpty() ? QApplication::font() : std::move(uiFont))
     , m_renderFunction(std::move(renderFunction))
     , m_printResult{
           PdfPrintService::Status::Canceled,

@@ -4,6 +4,7 @@
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QList>
+#include <QFont>
 #include <QPageLayout>
 #include <QPageSize>
 #include <QPrinter>
@@ -49,7 +50,8 @@ public:
         QPageLayout::Orientation pageOrientation = QPageLayout::Portrait,
         bool fitToPageByDefault = false,
         std::optional<QPageSize::PageSizeId> preferredPageSize = std::nullopt,
-        bool lockPreferredPageSize = false
+        bool lockPreferredPageSize = false,
+        QFont uiFont = QFont()
         );
 
     [[nodiscard]] PdfPrintService::Result printResult() const;
@@ -102,6 +104,7 @@ private:
     bool m_fitToPageByDefault = false;
     std::optional<QPageSize::PageSizeId> m_preferredPageSize;
     bool m_lockPreferredPageSize = false;
+    QFont m_uiFont;
     PdfPrintDialogSupport::RenderFunction m_renderFunction;
     PdfPrintService::Result m_printResult;
     QPrinter m_printer;

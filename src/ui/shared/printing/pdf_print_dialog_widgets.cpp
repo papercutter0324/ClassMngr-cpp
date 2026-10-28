@@ -1,9 +1,6 @@
 #include "ui/shared/printing/pdf_print_dialog.h"
 
-#include "core/fontmanager.h"
 #include "ui/shared/printing/pdf_print_dialog_internal.h"
-#include "ui/shared/styles/role_style_registry.h"
-#include "ui/shared/styles/roles.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
 #include <QCheckBox>
@@ -17,14 +14,56 @@
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QSizePolicy>
+#include <QStyle>
 #include <QSpinBox>
 #include <QVBoxLayout>
 
 namespace
 {
+constexpr int StandardUiBasePointSize =
+#ifdef Q_OS_MACOS
+    15;
+#else
+    14;
+#endif
+
+QFont fontAtPointSize(
+    QFont font,
+    int pointSize,
+    QFont::Weight weight
+    )
+{
+    const int basePointSize = font.pointSize() > 0
+        ? font.pointSize()
+        : StandardUiBasePointSize;
+    font.setPointSize(qMax(1, pointSize + basePointSize - StandardUiBasePointSize));
+    font.setWeight(weight);
+    return font;
+}
+
+void applyInputStyle(
+    QWidget* widget,
+    const QFont& uiFont
+    )
+{
+    if (!widget)
+    {
+        return;
+    }
+    widget->setProperty("role", QStringLiteral("input"));
+    widget->setFont(fontAtPointSize(uiFont, 10, QFont::Normal));
+    if (widget->style())
+    {
+        widget->style()->unpolish(widget);
+        widget->style()->polish(widget);
+    }
+    widget->update();
+}
+
 QLabel* createOptionLabel(
     const QString& text,
-    QWidget* parent
+    QWidget* parent,
+    const QFont& uiFont
     )
 {
     auto* label =
@@ -35,12 +74,7 @@ QLabel* createOptionLabel(
     label->setObjectName(
         QStringLiteral("pageSubtitle")
         );
-    label->setFont(
-        FontManager::getUiFont(
-            10,
-            QFont::Medium
-            )
-        );
+    label->setFont(fontAtPointSize(uiFont, 10, QFont::Medium));
     return label;
 }
 
@@ -101,36 +135,26 @@ void PdfPrintDialog::buildUi()
     titleLabel->setObjectName(
         QStringLiteral("pageTitle")
         );
-    titleLabel->setFont(
-        FontManager::getUiFont(
-            16,
-            QFont::DemiBold
-            )
-        );
+    titleLabel->setFont(fontAtPointSize(m_uiFont, 16, QFont::DemiBold));
     optionsLayout->addWidget(titleLabel);
     optionsLayout->addSpacing(14);
 
     m_printerCombo =
         new QComboBox(optionsPanel);
-    RoleStyleRegistry::apply(
-        m_printerCombo,
-        UiRoles::Input
-        );
+    applyInputStyle(m_printerCombo, m_uiFont);
     addOptionWidget(
         optionsLayout,
         createOptionLabel(
             tr("Printer"),
-            optionsPanel
+            optionsPanel,
+            m_uiFont
             ),
         m_printerCombo
         );
 
     m_pagesCombo =
         new QComboBox(optionsPanel);
-    RoleStyleRegistry::apply(
-        m_pagesCombo,
-        UiRoles::Input
-        );
+    applyInputStyle(m_pagesCombo, m_uiFont);
     m_pagesCombo->addItem(
         tr("All"),
         PageRangeAll
@@ -142,7 +166,8 @@ void PdfPrintDialog::buildUi()
     optionsLayout->addWidget(
         createOptionLabel(
             tr("Pages"),
-            optionsPanel
+            optionsPanel,
+            m_uiFont
             )
         );
     optionsLayout->addWidget(m_pagesCombo);
@@ -152,10 +177,7 @@ void PdfPrintDialog::buildUi()
             customPagesSample(),
             optionsPanel
             );
-    RoleStyleRegistry::apply(
-        m_customPagesEdit,
-        UiRoles::Input
-        );
+    applyInputStyle(m_customPagesEdit, m_uiFont);
     m_customPagesEdit->installEventFilter(this);
     m_customPagesEdit->setVisible(false);
     optionsLayout->addWidget(m_customPagesEdit);
@@ -163,10 +185,7 @@ void PdfPrintDialog::buildUi()
 
     m_copiesSpin =
         new QSpinBox(optionsPanel);
-    RoleStyleRegistry::apply(
-        m_copiesSpin,
-        UiRoles::Input
-        );
+    applyInputStyle(m_copiesSpin, m_uiFont);
     m_copiesSpin->setRange(
         1,
         999
@@ -176,17 +195,15 @@ void PdfPrintDialog::buildUi()
         optionsLayout,
         createOptionLabel(
             tr("Copies"),
-            optionsPanel
+            optionsPanel,
+            m_uiFont
             ),
         m_copiesSpin
         );
 
     m_colorCombo =
         new QComboBox(optionsPanel);
-    RoleStyleRegistry::apply(
-        m_colorCombo,
-        UiRoles::Input
-        );
+    applyInputStyle(m_colorCombo, m_uiFont);
     m_colorCombo->addItem(
         tr("Color"),
         ColorModeColor
@@ -199,17 +216,15 @@ void PdfPrintDialog::buildUi()
         optionsLayout,
         createOptionLabel(
             tr("Color"),
-            optionsPanel
+            optionsPanel,
+            m_uiFont
             ),
         m_colorCombo
         );
 
     m_paperSizeCombo =
         new QComboBox(optionsPanel);
-    RoleStyleRegistry::apply(
-        m_paperSizeCombo,
-        UiRoles::Input
-        );
+    applyInputStyle(m_paperSizeCombo, m_uiFont);
     m_paperSizeCombo->addItem(
         QStringLiteral("A4"),
         static_cast<int>(QPageSize::A4)
@@ -243,7 +258,8 @@ void PdfPrintDialog::buildUi()
         optionsLayout,
         createOptionLabel(
             tr("Paper Size"),
-            optionsPanel
+            optionsPanel,
+            m_uiFont
             ),
         m_paperSizeCombo
         );

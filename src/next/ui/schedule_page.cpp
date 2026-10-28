@@ -1,6 +1,9 @@
 #include "next/ui/schedule_page.h"
 #include "next/ui/schedule_intensive_cell_layout.h"
 #include "next/ui/schedule_import_workflow_dialog.h"
+#include "next/ui/schedule_output_dialog.h"
+#include "next/ui/schedule_print_projection.h"
+#include "next/ui/schedule_testing_assignment_dialog.h"
 
 #include "next/application/schedule_slot_state_save_use_case.h"
 
@@ -15,6 +18,7 @@
 #include <QEvent>
 #include <QFrame>
 #include <QFont>
+#include <QStringList>
 #include <QHeaderView>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -22,6 +26,7 @@
 #include <QPainter>
 #include <QPolygon>
 #include <QPushButton>
+#include <QTime>
 #include <QSignalBlocker>
 #include <QStyle>
 #include <QStyledItemDelegate>
@@ -518,6 +523,11 @@ QLabel* SchedulePage::statusLabel() const noexcept
     return m_status;
 }
 
+QAction* SchedulePage::scheduleOutputAction() const noexcept
+{
+    return m_scheduleOutputAction;
+}
+
 ScheduleImportWorkflowDialog* SchedulePage::importDialog() const noexcept
 {
     return m_importDialog;
@@ -612,6 +622,15 @@ void SchedulePage::buildUi()
     connect(m_importAction, &QAction::triggered, this, [this] {
         startScheduleImport();
     });
+    m_scheduleOutputAction = new QAction(m_preferencesMenu);
+    m_scheduleOutputAction->setObjectName(
+        QStringLiteral("nextScheduleOutputAction"));
+    m_scheduleOutputAction->setProperty(
+        "translationSource", QStringLiteral("Print Schedule…"));
+    m_preferencesMenu->addAction(m_scheduleOutputAction);
+    connect(m_scheduleOutputAction, &QAction::triggered,
+        this, &SchedulePage::startScheduleOutput);
+    m_preferencesMenu->addSeparator();
     root->addLayout(modes);
 
     const std::array<const char*, 5> preferenceNames{
@@ -808,6 +827,10 @@ void SchedulePage::setControlsEnabled(const bool enabled)
         m_importAction->setEnabled(!activePath().isEmpty()
                                    && m_importDialog.isNull());
     }
+    if (m_scheduleOutputAction)
+    {
+        m_scheduleOutputAction->setEnabled(enabled && !activePath().isEmpty());
+    }
     m_table->setEnabled(enabled);
     m_retry->setEnabled(!activePath().isEmpty());
 }
@@ -962,6 +985,19 @@ void SchedulePage::handleCellClicked(const int row, const int column)
     {
         return;
     }
+    const bool testingMode = m_model->displayMode()
+        == Application::ScheduleDisplayMode::Testing;
+    const bool assignedTestingClass = !cell->entries.empty()
+        && cell->entries.front().testingClass;
+    const bool hasTestingAssignment = cell->plainTestingAssignment
+        || assignedTestingClass;
+    if (testingMode && (hasTestingAssignment
+        || (cell->entries.empty()
+            && cell->state == Application::ScheduleSlotState::Essay)))
+    {
+        openTestingAssignment(*cell);
+        return;
+    }
     if (!cell->entries.empty())
     {
         if (!cell->entries.front().testingClass && m_actions.openClassDetails)
@@ -996,6 +1032,223 @@ void SchedulePage::handleCellClicked(const int row, const int column)
         return;
     }
     static_cast<void>(reload());
+}
+
+void SchedulePage::openTestingAssignment(const SchedulePageCell& cell)
+{
+    const QString path = activePath();
+    const QString identity = workspaceIdentity();
+    if (path.isEmpty() || !m_actions.readTestingClassChoices
+        || !m_actions.saveTestingAssignment)
+    {
+        setStatus(pageText("Testing assignment actions are unavailable."), true);
+        return;
+    }
+
+    const auto choices = m_actions.readTestingClassChoices(path);
+    if (!choices)
+    {
+        m_lastError = operationMessage(choices.error());
+        setStatus(m_lastError, true);
+        return;
+    }
+
+    const bool hasExistingAssignment = cell.plainTestingAssignment
+        || (!cell.entries.empty() && cell.entries.front().testingClass);
+    const QString existingRoom = cell.plainTestingAssignment
+        ? cell.testingRoom : QString{};
+    const std::optional<Domain::ClassId> existingClassId =
+        !cell.entries.empty() && cell.entries.front().testingClass
+            ? std::optional<Domain::ClassId>(cell.entries.front().classId)
+            : std::nullopt;
+    ScheduleTestingAssignmentDialog dialog(
+        choices.value(), hasExistingAssignment, existingRoom,
+        existingClassId, this);
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+
+    if (path != activePath() || identity != workspaceIdentity())
+    {
+        setStatus(pageText("Workspace changed while editing the schedule."), true);
+        return;
+    }
+
+    const auto weekday = weekdayFor(cell.day);
+    const QTime start(cell.startMinute / 60, cell.startMinute % 60);
+    if (!weekday || !start.isValid())
+    {
+        setStatus(pageText("The selected schedule slot is invalid."), true);
+        return;
+    }
+    const QString startTime = start.toString(QStringLiteral("HH:mm"));
+
+    if (dialog.selectedAction()
+        == ScheduleTestingAssignmentDialog::Action::ManageTestingClasses)
+    {
+        if (!m_actions.openTestingClasses)
+        {
+            setStatus(pageText("Testing Classes are unavailable."), true);
+            return;
+        }
+        const auto domainWeekday = static_cast<Domain::Weekday>(*weekday);
+        m_actions.openTestingClasses({
+            .weekday = domainWeekday,
+            .startMinute = Domain::ScheduleTime::StartMinute(cell.startMinute)
+        });
+        return;
+    }
+
+    Application::ScheduleTestingAssignmentSaveRequest request{
+        .day = cell.day.toStdU16String(),
+        .startTime = startTime.toStdU16String(),
+        .replaceExisting = hasExistingAssignment
+    };
+    switch (dialog.selectedAction())
+    {
+    case ScheduleTestingAssignmentDialog::Action::SavePlainTesting:
+        request.mutation =
+            Application::ScheduleTestingAssignmentMutation::SavePlainTesting;
+        request.room = dialog.room().toStdU16String();
+        break;
+    case ScheduleTestingAssignmentDialog::Action::AssignTestingClass:
+        request.mutation =
+            Application::ScheduleTestingAssignmentMutation::AssignTestingClass;
+        request.classId = dialog.selectedClassId();
+        break;
+    case ScheduleTestingAssignmentDialog::Action::RemoveAssignment:
+        request.mutation =
+            Application::ScheduleTestingAssignmentMutation::RemoveAssignment;
+        break;
+    case ScheduleTestingAssignmentDialog::Action::ManageTestingClasses:
+        return;
+    }
+
+    const auto saved = m_actions.saveTestingAssignment(path, request);
+    if (!saved)
+    {
+        m_lastError = operationMessage(saved.error());
+        setStatus(m_lastError, true);
+        return;
+    }
+    static_cast<void>(reload());
+}
+
+void SchedulePage::startScheduleOutput()
+{
+    const QString path = activePath();
+    const QString identity = workspaceIdentity();
+    if (path.isEmpty())
+    {
+        setStatus(pageText("No Teacher Profile is open."), true);
+        return;
+    }
+
+    ScheduleOutputDialog dialog(m_actions.chooseSchedulePdfPath, this);
+    if (dialog.exec() != QDialog::Accepted)
+    {
+        return;
+    }
+    if (path != activePath() || identity != workspaceIdentity())
+    {
+        setStatus(pageText("Workspace changed while preparing schedule output."), true);
+        return;
+    }
+    if (!m_actions.performScheduleOutput
+        || !m_actions.readScheduleOutputProfileName)
+    {
+        setStatus(pageText("Schedule output actions are unavailable."), true);
+        return;
+    }
+
+    QString profileName;
+    const auto loadedName = m_actions.readScheduleOutputProfileName(path);
+    if (!loadedName)
+    {
+        m_lastError = operationMessage(loadedName.error());
+        setStatus(m_lastError, true);
+        return;
+    }
+    profileName = QString::fromUtf8(
+        loadedName.value().data(),
+        static_cast<qsizetype>(loadedName.value().size()));
+
+    const Theme currentTheme = QApplication::palette()
+        .color(QPalette::Window).lightness() < 128
+            ? Theme::Dark : Theme::Light;
+    QFont englishFont = QApplication::font();
+    const QStringList registeredFamilies = englishFont.families();
+    const QString fallbackFamily = englishFont.family();
+    const auto familyContaining = [&registeredFamilies, &fallbackFamily](
+        const QString& fragment) {
+        for (const QString& family : registeredFamilies)
+        {
+            if (family.contains(fragment, Qt::CaseInsensitive))
+            {
+                return family;
+            }
+        }
+        return registeredFamilies.isEmpty()
+            ? fallbackFamily
+            : registeredFamilies.first();
+    };
+    QStringList englishFamilies{
+        familyContaining(QStringLiteral("Inter")),
+        familyContaining(QStringLiteral("Pretendard"))
+    };
+    englishFamilies.removeDuplicates();
+    englishFont.setFamilies(englishFamilies);
+    const bool koreanGlobalFont = !registeredFamilies.isEmpty()
+        && registeredFamilies.first().contains(
+            QStringLiteral("Pretendard"), Qt::CaseInsensitive);
+#ifdef Q_OS_MACOS
+    constexpr int StandardEnglishPointSize = 15;
+#else
+    constexpr int StandardEnglishPointSize = 14;
+#endif
+    const int englishPointSize = QApplication::font().pointSize()
+        - (koreanGlobalFont ? 1 : 0);
+    englishFont.setPointSize(englishPointSize > 0
+        ? englishPointSize : StandardEnglishPointSize);
+    QFont koreanFont = englishFont;
+    QStringList koreanFamilies{
+        familyContaining(QStringLiteral("Pretendard")),
+        familyContaining(QStringLiteral("Inter"))
+    };
+    koreanFamilies.removeDuplicates();
+    koreanFont.setFamilies(koreanFamilies);
+    koreanFont.setPointSize(englishFont.pointSize() + 1);
+    ScheduleOutputRequest request{
+        .document = schedulePrintDocument(*m_model),
+        .kind = dialog.selectedKind(),
+        .style = dialog.selectedStyle(),
+        .currentTheme = currentTheme,
+        .englishFont = std::move(englishFont),
+        .koreanFont = std::move(koreanFont),
+        .profileName = std::move(profileName),
+        .showEnglishNames = m_model->preferences().showEnglishNames,
+        .orientation = dialog.selectedOrientation(),
+        .documentPath = dialog.selectedPath()
+    };
+    const ScheduleOutputResult result =
+        m_actions.performScheduleOutput(std::move(request), this);
+    switch (result.status)
+    {
+    case ScheduleOutputResult::Status::Sent:
+        m_lastError.clear();
+        setStatus(result.message.isEmpty()
+            ? pageText("Schedule output completed.") : result.message);
+        break;
+    case ScheduleOutputResult::Status::Canceled:
+        break;
+    case ScheduleOutputResult::Status::Failed:
+        m_lastError = result.message.isEmpty()
+            ? pageText("Schedule output could not be completed.")
+            : result.message;
+        setStatus(m_lastError, true);
+        break;
+    }
 }
 
 QString SchedulePage::activePath() const

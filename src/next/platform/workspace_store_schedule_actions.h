@@ -2,6 +2,8 @@
 
 #include "next/application/schedule_page_read.h"
 #include "next/application/schedule_slot_state_save.h"
+#include "next/application/schedule_testing_assignment_save.h"
+#include "next/application/personal_display_name_preferences.h"
 
 #include <QString>
 
@@ -30,5 +32,14 @@ saveScheduleDisplayModeAtPath(
     const QString& databasePath,
     const Application::ScheduleSlotStateSaveRequest& request
     );
+
+[[nodiscard]] Application::ScheduleTestingAssignmentSaveResult
+saveScheduleTestingAssignmentAtPath(
+    const QString& databasePath,
+    const Application::ScheduleTestingAssignmentSaveRequest& request
+    );
+
+[[nodiscard]] Application::PersonalDisplayNamePreferencesReadResult
+readScheduleOutputProfileNameAtPath(const QString& databasePath);
 
 } // namespace ClassMngr::Next::Platform

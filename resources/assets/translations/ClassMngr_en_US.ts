@@ -6648,6 +6648,14 @@ My Information name was updated.</source>
         <source>Schedule import completed: %1 teachers created, %2 room updates, %3 classes created, %4 classes updated, %5 skipped, %6 schedules cleared.</source>
         <translation>Schedule import completed: %1 teachers created, %2 room updates, %3 classes created, %4 classes updated, %5 skipped, %6 schedules cleared.</translation>
     </message>
+    <message><source>Print Schedule…</source><translation>Print Schedule…</translation></message>
+    <message><source>Testing assignment actions are unavailable.</source><translation>Testing assignment actions are unavailable.</translation></message>
+    <message><source>Workspace changed while editing the schedule.</source><translation>Workspace changed while editing the schedule.</translation></message>
+    <message><source>Testing Classes are unavailable.</source><translation>Testing Classes are unavailable.</translation></message>
+    <message><source>Schedule output actions are unavailable.</source><translation>Schedule output actions are unavailable.</translation></message>
+    <message><source>Workspace changed while preparing schedule output.</source><translation>Workspace changed while preparing schedule output.</translation></message>
+    <message><source>Schedule output completed.</source><translation>Schedule output completed.</translation></message>
+    <message><source>Schedule output could not be completed.</source><translation>Schedule output could not be completed.</translation></message>
 </context>
 <context>
     <name>SchedulePrintDialog</name>
@@ -6723,6 +6731,39 @@ My Information name was updated.</source>
         <source>Print</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>ClassMngr::Next::Ui::ScheduleOutputDialog</name>
+    <message><source>Schedule Output</source><translation>Schedule Output</translation></message>
+    <message><source>Style</source><translation>Style</translation></message>
+    <message><source>Current Appearance</source><translation>Current Appearance</translation></message>
+    <message><source>Light</source><translation>Light</translation></message>
+    <message><source>Dark</source><translation>Dark</translation></message>
+    <message><source>Excel</source><translation>Excel</translation></message>
+    <message><source>Orientation</source><translation>Orientation</translation></message>
+    <message><source>Landscape</source><translation>Landscape</translation></message>
+    <message><source>Portrait</source><translation>Portrait</translation></message>
+    <message><source>Print</source><translation>Print</translation></message>
+    <message><source>Cancel</source><translation>Cancel</translation></message>
+    <message><source>Save As PDF…</source><translation>Save As PDF…</translation></message>
+    <message><source>Save Schedule As</source><translation>Save Schedule As</translation></message>
+</context>
+<context>
+    <name>ClassMngr::Next::Ui::ScheduleTestingAssignmentDialog</name>
+    <message><source>Add Testing Assignment</source><translation>Add Testing Assignment</translation></message>
+    <message><source>Edit Testing Assignment</source><translation>Edit Testing Assignment</translation></message>
+    <message><source>Assignment Type</source><translation>Assignment Type</translation></message>
+    <message><source>Oral Testing Block</source><translation>Oral Testing Block</translation></message>
+    <message><source>Testing Class</source><translation>Testing Class</translation></message>
+    <message><source>Essay Block</source><translation>Essay Block</translation></message>
+    <message><source>Room</source><translation>Room</translation></message>
+    <message><source>Optional for an Oral Testing block</source><translation>Optional for an Oral Testing block</translation></message>
+    <message><source>%1 — %2 %3 — Room %4</source><translation>%1 — %2 %3 — Room %4</translation></message>
+    <message><source>Save</source><translation>Save</translation></message>
+    <message><source>Cancel</source><translation>Cancel</translation></message>
+    <message><source>Manage Testing Classes</source><translation>Manage Testing Classes</translation></message>
+    <message><source>Testing Assignment</source><translation>Testing Assignment</translation></message>
+    <message><source>Choose a testing class or manage your classes.</source><translation>Choose a testing class or manage your classes.</translation></message>
 </context>
 <context>
     <name>ScheduleSettingsDialog</name>
@@ -8813,7 +8854,7 @@ Version: %2</source>
     <message>
         <location line="+3"/>
         <source>Room</source>
-        <translation type="unfinished">Room</translation>
+        <translation>Room</translation>
     </message>
 </context>
 <context>
@@ -9058,28 +9099,28 @@ Version: %2</source>
     <message>
         <location filename="../../../src/features/schedule/ui/testing_assignment_dialog.cpp" line="+38"/>
         <source>Edit Testing Assignment</source>
-        <translation type="unfinished"></translation>
+        <translation>Edit Testing Assignment</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Add Testing Assignment</source>
-        <translation type="unfinished"></translation>
+        <translation>Add Testing Assignment</translation>
     </message>
     <message>
         <location line="+64"/>
         <source>Assignment Type</source>
-        <translation type="unfinished"></translation>
+        <translation>Assignment Type</translation>
     </message>
     <message>
         <location line="+13"/>
         <location line="+31"/>
         <source>Testing Class</source>
-        <translation type="unfinished"></translation>
+        <translation>Testing Class</translation>
     </message>
     <message>
         <location line="-27"/>
         <source>Essay Block</source>
-        <translation type="unfinished"></translation>
+        <translation>Essay Block</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -9089,47 +9130,47 @@ Version: %2</source>
     <message>
         <location line="+41"/>
         <source>Manage Classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Manage Classes</translation>
     </message>
     <message>
         <location line="+110"/>
         <source>Choose a testing class or manage your classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Choose a testing class or manage your classes.</translation>
     </message>
     <message>
         <location line="-165"/>
         <source>Oral Testing Block</source>
-        <translation type="unfinished"></translation>
+        <translation>Oral Testing Block</translation>
     </message>
     <message>
         <location line="+23"/>
         <source>Optional for an Oral Testing block</source>
-        <translation type="unfinished"></translation>
+        <translation>Optional for an Oral Testing block</translation>
     </message>
     <message>
         <location line="+46"/>
         <source>Save</source>
-        <translation type="unfinished">Save</translation>
+        <translation>Save</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Cancel</source>
-        <translation type="unfinished">Cancel</translation>
+        <translation>Cancel</translation>
     </message>
     <message>
         <location line="+50"/>
         <source>Testing Classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Testing Classes</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>%1 — %2 %3 — Room %4</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 — %2 %3 — Room %4</translation>
     </message>
     <message>
         <location line="+35"/>
         <source>Testing Assignment</source>
-        <translation type="unfinished"></translation>
+        <translation>Testing Assignment</translation>
     </message>
 </context>
 <context>

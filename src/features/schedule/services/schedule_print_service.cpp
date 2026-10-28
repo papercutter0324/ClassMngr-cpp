@@ -1,6 +1,5 @@
 #include "schedule_print_service.h"
 
-#include "core/fontmanager.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -159,20 +158,20 @@ PrintPalette paletteFor(
 }
 
 QString englishLine(
-    const ScheduleEntry& entry,
+    const Entry& entry,
     bool compact
     )
 {
     QStringList parts;
 
-    if (!entry.classGrade.trimmed().isEmpty())
+    if (!entry.grade.trimmed().isEmpty())
     {
-        parts.append(entry.classGrade.trimmed());
+        parts.append(entry.grade.trimmed());
     }
 
-    if (!entry.classLevel.trimmed().isEmpty())
+    if (!entry.level.trimmed().isEmpty())
     {
-        parts.append(entry.classLevel.trimmed());
+        parts.append(entry.level.trimmed());
     }
 
     return parts.join(
@@ -180,6 +179,21 @@ QString englishLine(
             ? QStringLiteral("-")
             : QStringLiteral(" - ")
         );
+}
+
+QString teacherRoomLine(
+    const Entry& entry,
+    const bool showEnglishNames
+    )
+{
+    const QString preferred = (showEnglishNames
+        ? entry.teacherPreferredName
+        : entry.teacherKoreanName).trimmed();
+    const QString fallback = entry.teacherEnglishName.trimmed();
+    const QString teacher = !preferred.isEmpty()
+        ? preferred
+        : (fallback.isEmpty() ? entry.teacherKoreanName.trimmed() : fallback);
+    return QStringLiteral("%1 %2").arg(teacher, entry.room.trimmed()).simplified();
 }
 
 QString excelDayLabel(
@@ -241,7 +255,7 @@ QString excelTimeLabel(
 }
 
 QColor classColor(
-    const ScheduleEntry& entry
+    const Entry& entry
     )
 {
     const QColor color(entry.classColor);
@@ -252,7 +266,7 @@ QColor classColor(
 }
 
 QColor fontColor(
-    const ScheduleEntry& entry
+    const Entry& entry
     )
 {
     const QColor color(entry.fontColor);
@@ -372,31 +386,15 @@ QRectF schedulePdfContentRect(
         );
 }
 
-QFont printUiFont(
+QFont printFont(
+    const QFont& baseFont,
     int pixelSize,
     int weight = QFont::Normal
     )
 {
-    QFont font =
-        FontManager::getUiFont(
-            -1,
-            weight
-            );
+    QFont font = baseFont;
     font.setPixelSize(pixelSize);
-    return font;
-}
-
-QFont printKoreanFont(
-    int pixelSize,
-    int weight = QFont::Normal
-    )
-{
-    QFont font =
-        FontManager::getKoreanFont(
-            -1,
-            weight
-            );
-    font.setPixelSize(pixelSize);
+    font.setWeight(static_cast<QFont::Weight>(weight));
     return font;
 }
 
@@ -428,7 +426,9 @@ void drawCenteredText(
 void drawEntry(
     QPainter& painter,
     const QRectF& rect,
-    const ScheduleEntry& entry,
+    const Entry& entry,
+    const QFont& englishBaseFont,
+    const QFont& koreanBaseFont,
     bool excel,
     bool showEnglishNames
     )
@@ -439,12 +439,14 @@ void drawEntry(
         );
 
     QFont koreanFont =
-        printKoreanFont(
+        printFont(
+            koreanBaseFont,
             excel ? 15 : 13,
             QFont::DemiBold
             );
     QFont englishFont =
-        printUiFont(
+        printFont(
+            englishBaseFont,
             excel ? 13 : 12,
             excel ? QFont::Bold : QFont::Normal
             );
@@ -457,7 +459,7 @@ void drawEntry(
             -CellPadding
             );
 
-    if (entry.kind == ScheduleEntryKind::TestingClass)
+    if (entry.testingClass)
     {
         const QString details =
             englishLine(
@@ -465,9 +467,10 @@ void drawEntry(
                 excel
                 );
         const QString room =
-            entry.roomNumber.trimmed();
+            entry.room.trimmed();
         QFont nameFont =
-            printUiFont(
+            printFont(
+                englishBaseFont,
                 excel ? 14 : 13,
                 QFont::Bold
                 );
@@ -484,7 +487,8 @@ void drawEntry(
             );
 
         painter.setFont(
-            printUiFont(
+            printFont(
+                englishBaseFont,
                 excel ? 12 : 11,
                 QFont::DemiBold
                 )
@@ -501,7 +505,8 @@ void drawEntry(
             );
 
         painter.setFont(
-            printKoreanFont(
+            printFont(
+                koreanBaseFont,
                 excel ? 11 : 10,
                 QFont::Normal
                 )
@@ -532,7 +537,7 @@ void drawEntry(
             20.0
             ),
         Qt::AlignCenter | Qt::TextWordWrap,
-        scheduleTeacherRoomLine(
+        teacherRoomLine(
             entry,
             showEnglishNames
             )
@@ -583,8 +588,10 @@ void drawCellFrame(
 void drawScheduleCell(
     QPainter& painter,
     const QRectF& rect,
-    const ScheduleCellView& cell,
+    const Cell& cell,
     const PrintPalette& palette,
+    const QFont& englishBaseFont,
+    const QFont& koreanBaseFont,
     bool showEnglishNames
     )
 {
@@ -603,13 +610,14 @@ void drawScheduleCell(
                 painter,
                 rect,
                 cell.entries.first(),
+                englishBaseFont,
+                koreanBaseFont,
                 palette.excel,
                 showEnglishNames
                 );
 
             if (
-                cell.entries.first().kind
-                    == ScheduleEntryKind::TestingClass
+                cell.entries.first().testingClass
                 )
             {
                 painter.setPen(Qt::NoPen);
@@ -641,13 +649,15 @@ void drawScheduleCell(
                         segmentHeight
                         ),
                     cell.entries.at(index),
+                    englishBaseFont,
+                    koreanBaseFont,
                     palette.excel,
                     showEnglishNames
                     );
             }
         }
     }
-    else if (cell.slotState == scheduleEssaySlotState())
+    else if (cell.slotState == SlotState::Essay)
     {
         painter.fillRect(
             rect,
@@ -657,14 +667,15 @@ void drawScheduleCell(
             painter,
             rect,
             QStringLiteral("ESSAY"),
-            printUiFont(
+            printFont(
+                englishBaseFont,
                 palette.excel ? 17 : 18,
                 QFont::Bold
                 ),
             Qt::black
             );
     }
-    else if (cell.slotState == scheduleLunchSlotState())
+    else if (cell.slotState == SlotState::Lunch)
     {
         painter.fillRect(
             rect,
@@ -674,14 +685,15 @@ void drawScheduleCell(
             painter,
             rect,
             QStringLiteral("Lunch"),
-            printUiFont(
+            printFont(
+                englishBaseFont,
                 palette.excel ? 15 : 18,
                 QFont::Bold
                 ),
             Qt::black
             );
     }
-    else if (cell.slotState == scheduleTestingSlotState())
+    else if (cell.slotState == SlotState::Testing)
     {
         painter.fillRect(
             rect,
@@ -702,7 +714,8 @@ void drawScheduleCell(
             painter,
             rect,
             text,
-            printUiFont(
+            printFont(
+                englishBaseFont,
                 palette.excel ? 14 : 15,
                 QFont::Bold
                 ),
@@ -741,8 +754,9 @@ void drawScheduleCell(
 void drawFooter(
     QPainter& painter,
     const QRectF& tableRect,
-    const ScheduleViewModel& model,
+    const Document& model,
     const PrintPalette& palette,
+    const QFont& englishBaseFont,
     qreal y
     )
 {
@@ -817,7 +831,8 @@ void drawFooter(
             FooterHeight
             ),
         QString::number(model.summary.essayBlocks),
-        printUiFont(
+        printFont(
+            englishBaseFont,
             16,
             QFont::Bold
             ),
@@ -839,7 +854,8 @@ void drawFooter(
             FooterHeight
             ),
         QString::number(model.summary.scheduledBlocks),
-        printUiFont(
+        printFont(
+            englishBaseFont,
             16,
             QFont::Bold
             ),
@@ -850,11 +866,13 @@ void drawFooter(
 
 void paintSchedule(
     QPainter& painter,
-    const ScheduleViewModel& model,
+    const Document& model,
     const SchedulePrintStyle style,
     const Theme currentTheme,
     const QString& userName,
     bool showEnglishNames,
+    const QFont& englishBaseFont,
+    const QFont& koreanBaseFont,
     const QRectF& bounds
     )
 {
@@ -932,7 +950,8 @@ void paintSchedule(
         painter,
         rect,
         leftHeader,
-        printUiFont(
+        printFont(
+            englishBaseFont,
             palette.excel ? 17 : 14,
             QFont::Bold
             ),
@@ -964,7 +983,8 @@ void paintSchedule(
             palette.excel
                 ? excelDayLabel(model.days.at(dayIndex))
                 : model.days.at(dayIndex),
-            printUiFont(
+            printFont(
+                englishBaseFont,
                 palette.excel ? 17 : 14,
                 QFont::Bold
                 ),
@@ -995,7 +1015,8 @@ void paintSchedule(
             painter,
             rect,
             QStringLiteral("No registered class meeting times available."),
-            printUiFont(
+            printFont(
+                englishBaseFont,
                 15,
                 QFont::DemiBold
                 ),
@@ -1011,7 +1032,7 @@ void paintSchedule(
     {
         for (int rowIndex = 0; rowIndex < model.rows.size(); ++rowIndex)
         {
-            const ScheduleRowView& row =
+            const Row& row =
                 model.rows.at(rowIndex);
             const qreal y =
                 HeaderHeight + (rowIndex * RowHeight);
@@ -1058,7 +1079,8 @@ void paintSchedule(
                 palette.excel
                     ? excelTimeLabel(row.timeRangeLabel)
                     : row.timeRangeLabel,
-                printUiFont(
+                printFont(
+                    englishBaseFont,
                     palette.excel ? 15 : 13,
                     QFont::DemiBold
                     ),
@@ -1085,6 +1107,8 @@ void paintSchedule(
                     rect,
                     row.cells.at(dayIndex),
                     palette,
+                    englishBaseFont,
+                    koreanBaseFont,
                     showEnglishNames
                     );
             }
@@ -1098,6 +1122,7 @@ void paintSchedule(
             tableRect,
             model,
             palette,
+            englishBaseFont,
             HeaderHeight + (rowCount * RowHeight)
             );
     }
@@ -1167,11 +1192,13 @@ Result saveSchedulePdf(
 
     paintSchedule(
         painter,
-        request.model,
+        request.document,
         request.style,
         request.currentTheme,
         request.userName,
         request.showEnglishNames,
+        request.englishFont,
+        request.koreanFont,
         printableRect
         );
 
@@ -1245,7 +1272,8 @@ Result printSchedule(
                 request.pageOrientation,
                 false,
                 SchedulePdfPageSize,
-                true
+                true,
+                request.englishFont
             }
             );
 

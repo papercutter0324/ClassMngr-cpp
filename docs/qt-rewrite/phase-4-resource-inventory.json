@@ -3,13 +3,10 @@
   "title": "Phase 4 effective resource inventory",
   "source_snapshot": {
     "tracked_source_tree_ids": {
-      "resources": "fbcf554bc5777841bcc90477bd2f1b0eee97a0c8",
+      "resources": "1435947b67bc976fdfd14567a1cc3035001168cc",
       "calendar_qml": "b75d01f27817b205ad63deca347be0506e3b9796"
     },
     "tracked_input_worktree_changes": [
-      "resources/assets/translations/ClassMngr_en_AU.ts",
-      "resources/assets/translations/ClassMngr_en_CA.ts",
-      "resources/assets/translations/ClassMngr_en_GB.ts",
       "resources/assets/translations/ClassMngr_en_US.ts",
       "resources/assets/translations/ClassMngr_ko_KR.ts"
     ],
@@ -20,8 +17,8 @@
     "tracked_files_under_resources_assets": 226,
     "tracked_files_under_resources_windows": 3,
     "tracked_calendar_qml_sources_outside_resources": 2,
-    "resource_asset_source_bytes_exact": 65906618,
-    "all_tracked_resources_source_bytes_exact": 65907804,
+    "resource_asset_source_bytes_exact": 65914594,
+    "all_tracked_resources_source_bytes_exact": 65915780,
     "calendar_qml_source_bytes_exact": 35154,
     "disposition_record_counts": {
       "build_only_excluded": 31,
@@ -68,7 +65,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 1931303
+        "source_bytes": 1939279
       }
     },
     "resource_categories": {
@@ -118,7 +115,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 1931303
+        "source_bytes": 1939279
       }
     }
   },
@@ -6258,8 +6255,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 382567,
-        "sha256": "ddff0daabbc75a2fbdeedcda357578786cf540d2a377f5468a4bda833988700c"
+        "bytes": 386447,
+        "sha256": "1d2ac3dfcc73ecb513e277846e189448a13df455ea1b9683b0db5e1fd07d6b68"
       },
       "installed_size": {
         "bytes": null,
@@ -6290,8 +6287,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 481517,
-        "sha256": "2089764994ca1c9e889ddfc4cdc8d976b2209df1fe01ae4745875e01093028db"
+        "bytes": 485613,
+        "sha256": "3423e38141c4f4d12110511db8a453629c2d4811f53852fba49c0a94c2445f50"
       },
       "installed_size": {
         "bytes": null,

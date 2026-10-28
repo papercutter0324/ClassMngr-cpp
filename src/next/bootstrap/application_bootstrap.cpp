@@ -27,6 +27,7 @@
 #include "next/platform/workspace_store_testing_classes_actions.h"
 #include "next/platform/workspace_store_class_transfer_actions.h"
 #include "next/platform/workspace_store_schedule_actions.h"
+#include "next/platform/qt_schedule_output_adapter.h"
 #include "next/platform/workspace_store_schedule_import_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
@@ -44,6 +45,7 @@
 #include "next/ui/placeholder_page.h"
 #include "next/ui/my_workspace_page.h"
 #include "next/ui/schedule_page.h"
+#include "next/ui/schedule_output_request.h"
 #include "next/ui/my_classes_page.h"
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/testing_classes_manager_page.h"
@@ -1711,6 +1713,68 @@ Application::StartupResult ApplicationBootstrap::start()
                         const QString& path,
                         const Application::ScheduleSlotStateSaveRequest& request) {
                         return Platform::saveScheduleSlotStateAtPath(path, request);
+                    };
+                    actions.readTestingClassChoices = [](
+                        const QString& path) {
+                        return Platform::readTestingClassesAtPath(path);
+                    };
+                    actions.saveTestingAssignment = [](
+                        const QString& path,
+                        const Application::ScheduleTestingAssignmentSaveRequest& request) {
+                        return Platform::saveScheduleTestingAssignmentAtPath(
+                            path, request);
+                    };
+                    actions.readScheduleOutputProfileName = [](
+                        const QString& path) {
+                        return Platform::readScheduleOutputProfileNameAtPath(path);
+                    };
+                    actions.chooseSchedulePdfPath = [](
+                        QWidget* parent) -> std::optional<QString> {
+                        if (!parent)
+                        {
+                            return std::nullopt;
+                        }
+                        Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+                            directoryPreferences;
+                        Ui::QtFileDialogPresenter fileDialog(
+                            directoryPreferences, parent);
+                        const auto selected = fileDialog.saveFile({
+                            .purpose = Application::FileDialogPurpose::ExportReport,
+                            .title = QCoreApplication::translate(
+                                "ScheduleOutputDialog", "Save Schedule As")
+                                .toUtf8().toStdString(),
+                            .suggestedFileName = "Schedule.pdf",
+                            .nameFilters = {"PDF Documents (*.pdf)"},
+                            .defaultSuffix = "pdf"
+                        });
+                        if (!selected || !selected.value().selection)
+                        {
+                            return std::nullopt;
+                        }
+                        const std::string& value =
+                            selected.value().selection->path.value();
+                        return QString::fromUtf8(
+                            value.data(), static_cast<qsizetype>(value.size()));
+                    };
+                    actions.performScheduleOutput = [](
+                        Ui::ScheduleOutputRequest request,
+                        QWidget* parent) {
+                        return Platform::performScheduleOutput(
+                            std::move(request), parent);
+                    };
+                    actions.openTestingClasses = [this](
+                        const Application::TestingClassPendingScheduleSlot& slot) {
+                        if (!m_shell || !m_shell->navigateTo(
+                                pageId(QStringLiteral("testing_classes"))))
+                        {
+                            return;
+                        }
+                        if (auto* const page = dynamic_cast<Ui::TestingClassesManagerPage*>(
+                                m_shell->pageHost().pageInstance(
+                                    QStringLiteral("testing_classes"))))
+                        {
+                            page->openNewClassForPendingSlot(slot);
+                        }
                     };
                     actions.scheduleImportTimeoutMilliseconds = [] {
                         const Platform::SettingsManagerExcelImportTimeoutPort

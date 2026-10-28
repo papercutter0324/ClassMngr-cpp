@@ -6,6 +6,8 @@
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/testing_block_repository.h"
 #include "next/application/schedule_slot_state_save_use_case.h"
+#include "next/application/schedule_testing_assignment_save_use_case.h"
+#include "next/application/positive_decimal_id_validation.h"
 #include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
@@ -608,6 +610,115 @@ private:
     WorkspaceStore* m_store = nullptr;
 };
 
+class WorkspaceStoreScheduleTestingAssignmentSavePort final
+    : public ScheduleTestingAssignmentSavePort
+{
+public:
+    explicit WorkspaceStoreScheduleTestingAssignmentSavePort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
+    {
+    }
+
+    [[nodiscard]] ScheduleTestingAssignmentSaveResult saveTestingAssignment(
+        const ScheduleTestingAssignmentSaveRequest& request
+        ) const override
+    {
+        if (!m_store || !m_store->isOpen())
+        {
+            return ScheduleTestingAssignmentSaveResult::failure(operationError(
+                Domain::ErrorCode::NotFound,
+                "The selected workspace is unavailable for Schedule.", true));
+        }
+        TestingBlockRepository* const repository =
+            m_store->testingBlockRepository();
+        if (!repository)
+        {
+            return ScheduleTestingAssignmentSaveResult::failure(operationError(
+                Domain::ErrorCode::NotFound,
+                "The selected workspace has no testing assignment repository.",
+                true));
+        }
+
+        const QString day = QString::fromStdU16String(request.day);
+        const QString startTime = QString::fromStdU16String(request.startTime);
+        RepositoryStatus saved;
+        try
+        {
+            switch (request.mutation)
+            {
+            case ScheduleTestingAssignmentMutation::RemoveAssignment:
+                saved = repository->deleteTestingAssignment(day, startTime);
+                break;
+            case ScheduleTestingAssignmentMutation::SavePlainTesting:
+                saved = repository->saveTestingBlock(
+                    day, startTime, QString::fromStdU16String(request.room),
+                    request.replaceExisting);
+                break;
+            case ScheduleTestingAssignmentMutation::AssignTestingClass:
+            {
+                const auto parsedId = request.classId
+                    ? parseCanonicalPositiveDecimalId(request.classId->value())
+                    : std::nullopt;
+                if (!parsedId)
+                {
+                    return ScheduleTestingAssignmentSaveResult::failure(
+                        operationError(Domain::ErrorCode::InvalidInput,
+                            "A valid testing class is required.", true));
+                }
+                saved = repository->assignTestingClass(
+                    day, startTime, *parsedId, request.replaceExisting);
+                break;
+            }
+            }
+        }
+        catch (const std::exception&)
+        {
+            return ScheduleTestingAssignmentSaveResult::failure(
+                operationError(Domain::ErrorCode::Technical,
+                    "The testing assignment could not be saved.", false));
+        }
+        catch (...)
+        {
+            return ScheduleTestingAssignmentSaveResult::failure(
+                operationError(Domain::ErrorCode::Technical,
+                    "The testing assignment could not be saved.", false));
+        }
+        return saved
+            ? ScheduleTestingAssignmentSaveResult::success()
+            : ScheduleTestingAssignmentSaveResult::failure(
+                repositoryError(saved.error()));
+    }
+
+private:
+    WorkspaceStore* m_store = nullptr;
+};
+
+[[nodiscard]] bool weekdayCaseInsensitiveEquals(
+    const std::u16string_view left,
+    const std::u16string_view right
+    ) noexcept
+{
+    if (left.size() != right.size())
+    {
+        return false;
+    }
+    for (std::size_t index = 0; index < left.size(); ++index)
+    {
+        const auto lower = [](const char16_t value) {
+            return value >= u'A' && value <= u'Z'
+                ? static_cast<char16_t>(value + (u'a' - u'A'))
+                : value;
+        };
+        if (lower(left[index]) != lower(right[index]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 [[nodiscard]] Domain::Result<void> saveSettings(
     WorkspaceStore& store,
     const QVariantMap& settings
@@ -753,6 +864,71 @@ ScheduleSlotStateSaveResult saveScheduleSlotStateAtPath(
     return saved
         ? ScheduleSlotStateSaveResult::success()
         : ScheduleSlotStateSaveResult::failure(repositoryError(saved.error()));
+}
+
+Application::ScheduleTestingAssignmentSaveResult
+saveScheduleTestingAssignmentAtPath(
+    const QString& databasePath,
+    const Application::ScheduleTestingAssignmentSaveRequest& request
+    )
+{
+    WorkspaceStore store;
+    const RepositoryStatus opened = store.openExisting(databasePath);
+    if (!opened)
+    {
+        return openFailure<
+            Application::ScheduleTestingAssignmentSaveResult>(opened.error());
+    }
+    const WorkspaceStoreScheduleTestingAssignmentSavePort port(store);
+    return Application::ScheduleTestingAssignmentSaveUseCase::execute(
+        request, port, weekdayCaseInsensitiveEquals);
+}
+
+Application::PersonalDisplayNamePreferencesReadResult
+readScheduleOutputProfileNameAtPath(const QString& databasePath)
+{
+    using Result = Application::PersonalDisplayNamePreferencesReadResult;
+    WorkspaceStore store;
+    const RepositoryStatus opened = store.openExisting(databasePath);
+    if (!opened)
+    {
+        return openFailure<Result>(opened.error());
+    }
+    SettingsRepository* const repository = store.settingsRepository();
+    if (!repository)
+    {
+        return Result::failure(operationError(
+            Domain::ErrorCode::NotFound,
+            "The selected workspace has no profile settings repository.", true));
+    }
+    try
+    {
+        const auto loaded = repository->loadSetting(
+            QStringLiteral("myInfo/name"));
+        if (!loaded)
+        {
+            return Result::failure(repositoryError(loaded.error()));
+        }
+        if (!loaded->isValid())
+        {
+            return Result::success({});
+        }
+        const QByteArray name = loaded->toString().toUtf8();
+        return Result::success(std::string(
+            name.constData(), static_cast<std::size_t>(name.size())));
+    }
+    catch (const std::exception&)
+    {
+        return Result::failure(operationError(
+            Domain::ErrorCode::Technical,
+            "The profile name could not be loaded for Schedule output.", false));
+    }
+    catch (...)
+    {
+        return Result::failure(operationError(
+            Domain::ErrorCode::Technical,
+            "The profile name could not be loaded for Schedule output.", false));
+    }
 }
 
 } // namespace ClassMngr::Next::Platform

@@ -1,28 +1,41 @@
 #include "data/database/workspace_store.h"
+#include "data/repositories/testing_class_repository.h"
+#include "data/repositories/settings_repository.h"
+#include "domain/models/testing_class.h"
 #include "next/application/class_details_save_workflow.h"
 #include "next/application/schedule_slot_state_save.h"
+#include "next/application/schedule_testing_assignment_save.h"
 #include "next/platform/workspace_store_class_editor_actions.h"
 #include "next/platform/workspace_store_schedule_actions.h"
+#include "next/platform/workspace_store_testing_classes_actions.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
 #include "next/ui/schedule_page.h"
+#include "next/ui/schedule_output_dialog.h"
+#include "next/ui/schedule_testing_assignment_dialog.h"
+#include "next/ui/testing_classes_manager_page.h"
 #include "preferences_test_ports.h"
 #include "sql_script_runner.h"
 
 #include <QApplication>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QDialog>
 #include <QDir>
 #include <QEvent>
 #include <QFile>
 #include <QLabel>
+#include <QLineEdit>
 #include <QMenu>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTableView>
 #include <QToolButton>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QTranslator>
 #include <QtTest/QtTest>
 
@@ -215,8 +228,27 @@ struct PageFixture final
     bool forcePreferencesSaveFailure = false;
     bool forceModeSaveFailure = false;
     bool forceSlotSaveFailure = false;
+    bool forceTestingChoicesReadFailure = false;
+    bool forceTestingAssignmentSaveFailure = false;
     bool classSaveSucceeded = false;
+    int testingChoicesReadCount = 0;
+    int testingAssignmentSaveCount = 0;
+    int scheduleOutputCount = 0;
+    int savePathChooserCount = 0;
+    QString lastTestingAssignmentPath;
+    std::optional<Application::ScheduleTestingAssignmentSaveRequest>
+        lastTestingAssignmentRequest;
+    Application::ScheduleTestingClassChoicesSnapshot testingClassChoices;
+    std::optional<Application::TestingClassPendingScheduleSlot>
+        requestedTestingClassSlot;
+    std::optional<QString> chosenOutputPath;
+    std::optional<Ui::ScheduleOutputRequest> lastScheduleOutputRequest;
+    Ui::ScheduleOutputResult scheduleOutputResult{
+        Ui::ScheduleOutputResult::Status::Sent,
+        QStringLiteral("Fake output sent.")
+    };
     Ui::SchedulePage* schedule = nullptr;
+    Ui::TestingClassesManagerPage* testingClasses = nullptr;
     ClassDetailsRoutePage* detailsRoute = nullptr;
 
     bool initialize(const QString& initialPath)
@@ -300,6 +332,65 @@ struct PageFixture final
                     return Platform::saveScheduleSlotStateAtPath(
                         databasePath, request);
                 };
+                actions.readTestingClassChoices = [this](
+                    const QString&) {
+                    ++testingChoicesReadCount;
+                    if (forceTestingChoicesReadFailure)
+                    {
+                        return Application::ScheduleTestingClassChoicesReadResult::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "testing class choice read failed",
+                            .recoverable = true
+                        });
+                    }
+                    return Application::ScheduleTestingClassChoicesReadResult::success(
+                        testingClassChoices);
+                };
+                actions.saveTestingAssignment = [this](
+                    const QString& databasePath,
+                    const Application::ScheduleTestingAssignmentSaveRequest& request) {
+                    ++testingAssignmentSaveCount;
+                    lastTestingAssignmentPath = databasePath;
+                    lastTestingAssignmentRequest = request;
+                    if (forceTestingAssignmentSaveFailure)
+                    {
+                        return Application::ScheduleTestingAssignmentSaveResult::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "testing assignment save failed",
+                            .recoverable = true
+                        });
+                    }
+                    return Platform::saveScheduleTestingAssignmentAtPath(
+                        databasePath, request);
+                };
+                actions.readScheduleOutputProfileName = [](
+                    const QString& databasePath) {
+                    return Platform::readScheduleOutputProfileNameAtPath(
+                        databasePath);
+                };
+                actions.chooseSchedulePdfPath = [this](QWidget*) {
+                    ++savePathChooserCount;
+                    return chosenOutputPath;
+                };
+                actions.performScheduleOutput = [this](
+                    Ui::ScheduleOutputRequest request, QWidget*) {
+                    ++scheduleOutputCount;
+                    lastScheduleOutputRequest = std::move(request);
+                    return scheduleOutputResult;
+                };
+                actions.openTestingClasses = [this](
+                    const Application::TestingClassPendingScheduleSlot& slot) {
+                    requestedTestingClassSlot = slot;
+                    if (host->activatePage(QStringLiteral("testing_classes")))
+                    {
+                        testingClasses = dynamic_cast<Ui::TestingClassesManagerPage*>(
+                            host->pageInstance(QStringLiteral("testing_classes")));
+                        if (testingClasses)
+                        {
+                            testingClasses->openNewClassForPendingSlot(slot);
+                        }
+                    }
+                };
                 actions.openClassDetails = [this](const Domain::ClassId& id) {
                     selectedClass = id;
                     static_cast<void>(host->activatePage(QStringLiteral("classes")));
@@ -359,9 +450,31 @@ struct PageFixture final
                     std::make_unique<OtherPage>(context));
             }
         };
+        Ui::PageDescriptor testingClassesDescriptor{
+            .id = *Ui::PageId::fromString(QStringLiteral("testing_classes")),
+            .label = QStringLiteral("Testing Classes"),
+            .factory = [this](const Ui::PageContext& context)
+                -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+                Ui::TestingClassesManagerPageActions actions;
+                actions.workspaceIdentity = [this] { return identity; };
+                actions.activeWorkspacePath = [this]()
+                    -> std::optional<QString> {
+                    return path.isEmpty() ? std::nullopt
+                                          : std::optional<QString>(path);
+                };
+                actions.readClasses = [](const QString&) {
+                    return Application::ScheduleTestingClassChoicesReadResult::success({});
+                };
+                auto page = std::make_unique<Ui::TestingClassesManagerPage>(
+                    context, std::move(actions));
+                testingClasses = page.get();
+                return std::unique_ptr<Ui::Page>(std::move(page));
+            }
+        };
         if (!host->registerPage(std::move(scheduleDescriptor))
             || !host->registerPage(std::move(classesDescriptor))
-            || !host->registerPage(std::move(otherDescriptor)))
+            || !host->registerPage(std::move(otherDescriptor))
+            || !host->registerPage(std::move(testingClassesDescriptor)))
         {
             return false;
         }
@@ -404,6 +517,66 @@ QString createTemporaryWorkspace(QTemporaryDir& directory,
     return createScheduleFixture(path, teacherName, &error) ? path : QString{};
 }
 
+bool runAssignmentDialog(
+    PageFixture& fixture,
+    const QModelIndex& index,
+    const std::function<void(Ui::ScheduleTestingAssignmentDialog*)>& interact)
+{
+    bool dialogSeen = false;
+    QTimer dialogPoll;
+    dialogPoll.setInterval(10);
+    QObject::connect(&dialogPoll, &QTimer::timeout, qApp, [&] {
+        auto* const dialog = qobject_cast<Ui::ScheduleTestingAssignmentDialog*>(
+            QApplication::activeModalWidget());
+        if (dialog)
+        {
+            dialogPoll.stop();
+            dialogSeen = true;
+            interact(dialog);
+            if (dialog->isVisible())
+            {
+                dialog->reject();
+            }
+        }
+    });
+    dialogPoll.start();
+    const bool clicked = fixture.clickCell(index);
+    dialogPoll.stop();
+    return clicked && dialogSeen;
+}
+
+bool runOutputDialog(
+    Ui::SchedulePage* page,
+    const std::function<void(Ui::ScheduleOutputDialog*)>& interact)
+{
+    if (!page || !page->scheduleOutputAction())
+    {
+        return false;
+    }
+    bool dialogSeen = false;
+    QTimer dialogPoll;
+    dialogPoll.setInterval(10);
+    QObject::connect(&dialogPoll, &QTimer::timeout, qApp, [&] {
+        auto* const dialog = qobject_cast<Ui::ScheduleOutputDialog*>(
+            QApplication::activeModalWidget());
+        if (dialog)
+        {
+            dialogPoll.stop();
+            dialogSeen = true;
+            interact(dialog);
+            if (dialog->isVisible())
+            {
+                dialog->reject();
+            }
+        }
+    });
+    dialogPoll.start();
+    page->scheduleOutputAction()->trigger();
+    QApplication::processEvents();
+    dialogPoll.stop();
+    return dialogSeen;
+}
+
 } // namespace
 
 class SchedulePageTests final : public QObject
@@ -416,6 +589,8 @@ private slots:
     void modelCellEntryLimitIsVisibleAndRejectsPartialProjection();
     void slotCyclesPersistDeleteDefaultsAndShowFailures();
     void classSelectionRoutesToClassDetailsAndSaveRefreshesSchedule();
+    void testingAssignmentCancelHandoffFailureRetryAndReload();
+    void scheduleOutputDialogUsesCurrentProjectionAndReleasesOperations();
     void retryReplacementSuspendReentryAndCloseReleaseRows();
     void languageChangeRetranslatesScheduleControls();
 };
@@ -439,8 +614,9 @@ void SchedulePageTests::controlsPersistModesPreferencesAndTestingDisplay()
         QStringLiteral("nextSchedulePreferences"));
     QVERIFY(preferencesButton);
     QVERIFY(preferencesButton->menu());
-    QCOMPARE(preferencesButton->menu()->actions().size(), 7);
+    QCOMPARE(preferencesButton->menu()->actions().size(), 9);
     QVERIFY(page->findChild<QAction*>(QStringLiteral("nextScheduleImportAction")));
+    QVERIFY(page->scheduleOutputAction());
     for (int index = 0; index < 5; ++index)
     {
         QVERIFY(page->preferenceCheckBox(index));
@@ -755,6 +931,399 @@ void SchedulePageTests::classSelectionRoutesToClassDetailsAndSaveRefreshesSchedu
             });
     });
     QVERIFY(updatedCell.has_value());
+}
+
+void SchedulePageTests::testingAssignmentCancelHandoffFailureRetryAndReload()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString path = createTemporaryWorkspace(
+        temporary, QStringLiteral("testing-assignment-ui.tps"),
+        QStringLiteral("Assignment Teacher"));
+    const QString secondPath = createTemporaryWorkspace(
+        temporary, QStringLiteral("testing-assignment-next.tps"),
+        QStringLiteral("Other Assignment Teacher"));
+    QVERIFY(!path.isEmpty());
+    QVERIFY(!secondPath.isEmpty());
+
+    int testingClassId = -1;
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        TestingClass testingClass;
+        testingClass.name = QStringLiteral("Writing Lab");
+        testingClass.grade = QStringLiteral("M2");
+        testingClass.level = QStringLiteral("Mixed (All)");
+        testingClass.room = QStringLiteral("Library");
+        const auto created = store.testingClassRepository()->createTestingClass(
+            testingClass);
+        QVERIFY(created);
+        testingClassId = created.value();
+    }
+    QVERIFY(testingClassId > 0);
+
+    PageFixture fixture;
+    fixture.testingClassChoices.choices.push_back({
+        .classId = classId(testingClassId),
+        .name = u"Writing Lab",
+        .grade = u"M2",
+        .level = u"Mixed (All)",
+        .room = u"Library"
+    });
+    QVERIFY(fixture.initialize(path));
+    Ui::SchedulePage* const page = fixture.schedule;
+    QVERIFY(page);
+    QTest::mouseClick(page->modeButton(Application::ScheduleDisplayMode::Testing),
+                      Qt::LeftButton);
+    QApplication::processEvents();
+
+    auto testingSlot = findCell(page->model(), [](const Ui::SchedulePageCell& cell) {
+        return cell.day == QStringLiteral("Monday")
+            && cell.startMinute == 17 * 60
+            && cell.plainTestingAssignment;
+    });
+    QVERIFY(testingSlot);
+    const int initialSaveCount = fixture.testingAssignmentSaveCount;
+    QVERIFY(runAssignmentDialog(fixture, *testingSlot, [](auto* dialog) {
+        QVERIFY(dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextTestingAssignmentCancel")));
+        dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextTestingAssignmentCancel"))->click();
+    }));
+    QCOMPARE(fixture.testingAssignmentSaveCount, initialSaveCount);
+    auto loaded = Platform::readSchedulePageAtPath(path);
+    QVERIFY(loaded);
+    auto findAssignment = [](const Application::SchedulePageReadSnapshot& value) {
+        return std::find_if(value.testingAssignments.rows.begin(),
+            value.testingAssignments.rows.end(), [](const auto& row) {
+                return row.assignmentKey.day() == u"Monday"
+                    && row.assignmentKey.startTime() == u"17:00";
+            });
+    };
+    auto savedAssignment = findAssignment(loaded.value());
+    QVERIFY(savedAssignment != loaded.value().testingAssignments.rows.end());
+    QCOMPARE(QString::fromStdU16String(savedAssignment->room),
+             QStringLiteral("Testing Room"));
+
+    QVERIFY(runAssignmentDialog(fixture, *testingSlot, [](auto* dialog) {
+        auto* const mode = dialog->template findChild<QComboBox*>(
+            QStringLiteral("nextTestingAssignmentMode"));
+        auto* const room = dialog->template findChild<QLineEdit*>(
+            QStringLiteral("nextTestingAssignmentRoom"));
+        QVERIFY(mode);
+        QVERIFY(room);
+        room->setText(QStringLiteral("Uncommitted Assignment Draft"));
+        mode->setCurrentIndex(1);
+        auto* const manage = dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextTestingAssignmentManageClasses"));
+        QVERIFY(manage && manage->isVisible());
+        manage->click();
+    }));
+    QCOMPARE(fixture.testingAssignmentSaveCount, initialSaveCount);
+    const auto classesBeforeHandoff = Platform::readTestingClassesAtPath(path);
+    QVERIFY(classesBeforeHandoff);
+    QVERIFY(fixture.requestedTestingClassSlot);
+    QCOMPARE(fixture.requestedTestingClassSlot->weekday, Domain::Weekday::Monday);
+    QCOMPARE(fixture.requestedTestingClassSlot->startMinute.rawValue(), 17 * 60);
+    QVERIFY(fixture.host->activePageKey()
+        == std::optional<QString>(QStringLiteral("testing_classes")));
+    QVERIFY(fixture.testingClasses);
+    QVERIFY(fixture.testingClasses->isNewDraft());
+    QVERIFY(fixture.testingClasses->pendingSlotLabel());
+    QCOMPARE(fixture.testingClasses->pendingSlotLabel()->text(),
+             QStringLiteral("New class for Monday at 17:00"));
+    loaded = Platform::readSchedulePageAtPath(path);
+    QVERIFY(loaded);
+    savedAssignment = findAssignment(loaded.value());
+    QVERIFY(savedAssignment != loaded.value().testingAssignments.rows.end());
+    QCOMPARE(QString::fromStdU16String(savedAssignment->room),
+             QStringLiteral("Testing Room"));
+    const auto classesAfterHandoff = Platform::readTestingClassesAtPath(path);
+    QVERIFY(classesAfterHandoff);
+    QVERIFY(classesAfterHandoff.value() == classesBeforeHandoff.value());
+    QVERIFY(fixture.host->activatePage(QStringLiteral("schedule")));
+    QApplication::processEvents();
+    testingSlot = findCell(page->model(), [](const Ui::SchedulePageCell& cell) {
+        return cell.day == QStringLiteral("Monday")
+            && cell.startMinute == 17 * 60
+            && cell.plainTestingAssignment;
+    });
+    QVERIFY(testingSlot);
+
+    fixture.forceTestingAssignmentSaveFailure = true;
+    QVERIFY(runAssignmentDialog(fixture, *testingSlot, [](auto* dialog) {
+        auto* const room = dialog->template findChild<QLineEdit*>(
+            QStringLiteral("nextTestingAssignmentRoom"));
+        QVERIFY(room);
+        room->setText(QStringLiteral("Failed Save Draft"));
+        dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextTestingAssignmentSave"))->click();
+    }));
+    QCOMPARE(fixture.testingAssignmentSaveCount, initialSaveCount + 1);
+    QCOMPARE(fixture.lastTestingAssignmentPath, path);
+    QVERIFY(fixture.lastTestingAssignmentRequest);
+    QCOMPARE(fixture.lastTestingAssignmentRequest->replaceExisting, true);
+    QVERIFY(page->statusLabel()->property("error").toBool());
+    QVERIFY(page->statusLabel()->text().contains(
+        QStringLiteral("testing assignment save failed")));
+    const auto* preserved = page->model()->cellAt(
+        testingSlot->row(), testingSlot->column());
+    QVERIFY(preserved && preserved->plainTestingAssignment);
+    QCOMPARE(preserved->testingRoom, QStringLiteral("Testing Room"));
+    loaded = Platform::readSchedulePageAtPath(path);
+    QVERIFY(loaded);
+    savedAssignment = findAssignment(loaded.value());
+    QVERIFY(savedAssignment != loaded.value().testingAssignments.rows.end());
+    QCOMPARE(QString::fromStdU16String(savedAssignment->room),
+             QStringLiteral("Testing Room"));
+
+    fixture.forceTestingAssignmentSaveFailure = false;
+    QVERIFY(runAssignmentDialog(fixture, *testingSlot, [](auto* dialog) {
+        auto* const room = dialog->template findChild<QLineEdit*>(
+            QStringLiteral("nextTestingAssignmentRoom"));
+        QVERIFY(room);
+        room->setText(QStringLiteral("Updated Room"));
+        dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextTestingAssignmentSave"))->click();
+    }));
+    QCOMPARE(fixture.testingAssignmentSaveCount, initialSaveCount + 2);
+    QVERIFY(fixture.lastTestingAssignmentRequest);
+    QCOMPARE(fixture.lastTestingAssignmentRequest->mutation,
+             Application::ScheduleTestingAssignmentMutation::SavePlainTesting);
+    const auto* reloadedPlain = page->model()->cellAt(
+        testingSlot->row(), testingSlot->column());
+    QVERIFY(reloadedPlain && reloadedPlain->plainTestingAssignment);
+    QCOMPARE(reloadedPlain->testingRoom, QStringLiteral("Updated Room"));
+
+    testingSlot = findCell(page->model(), [](const Ui::SchedulePageCell& cell) {
+        return cell.day == QStringLiteral("Monday")
+            && cell.startMinute == 17 * 60
+            && cell.plainTestingAssignment;
+    });
+    QVERIFY(testingSlot);
+    QVERIFY(runAssignmentDialog(fixture, *testingSlot, [testingClassId](auto* dialog) {
+        auto* const mode = dialog->template findChild<QComboBox*>(
+            QStringLiteral("nextTestingAssignmentMode"));
+        auto* const classes = dialog->template findChild<QComboBox*>(
+            QStringLiteral("nextTestingAssignmentClass"));
+        QVERIFY(mode && classes);
+        mode->setCurrentIndex(1);
+        QCOMPARE(classes->count(), 1);
+        QCOMPARE(classes->currentData().toString(), QString::number(testingClassId));
+        dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextTestingAssignmentSave"))->click();
+    }));
+    QCOMPARE(fixture.testingAssignmentSaveCount, initialSaveCount + 3);
+    QVERIFY(fixture.lastTestingAssignmentRequest->classId);
+    QCOMPARE(fixture.lastTestingAssignmentRequest->classId->value(),
+             std::to_string(testingClassId));
+    const auto* reloadedClass = page->model()->cellAt(
+        testingSlot->row(), testingSlot->column());
+    QVERIFY(reloadedClass && !reloadedClass->entries.empty());
+    QVERIFY(reloadedClass->entries.front().testingClass);
+    QCOMPARE(reloadedClass->entries.front().className,
+             QStringLiteral("Writing Lab"));
+
+    testingSlot = findCell(page->model(), [](const Ui::SchedulePageCell& cell) {
+        return cell.day == QStringLiteral("Monday")
+            && cell.startMinute == 17 * 60
+            && !cell.entries.empty()
+            && cell.entries.front().testingClass;
+    });
+    QVERIFY(testingSlot);
+    QVERIFY(runAssignmentDialog(fixture, *testingSlot, [](auto* dialog) {
+        auto* const mode = dialog->template findChild<QComboBox*>(
+            QStringLiteral("nextTestingAssignmentMode"));
+        QVERIFY(mode);
+        mode->setCurrentIndex(2);
+        dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextTestingAssignmentSave"))->click();
+    }));
+    QCOMPARE(fixture.testingAssignmentSaveCount, initialSaveCount + 4);
+    QCOMPARE(fixture.lastTestingAssignmentRequest->mutation,
+        Application::ScheduleTestingAssignmentMutation::RemoveAssignment);
+    const auto removedSlot = findCell(page->model(), [](const Ui::SchedulePageCell& cell) {
+        return cell.day == QStringLiteral("Monday")
+            && cell.startMinute == 17 * 60
+            && !cell.plainTestingAssignment;
+    });
+    QVERIFY(removedSlot);
+    const auto* removed = page->model()->cellAt(
+        removedSlot->row(), removedSlot->column());
+    QVERIFY(removed && !removed->plainTestingAssignment);
+    QVERIFY(std::none_of(removed->entries.begin(), removed->entries.end(),
+        [](const auto& entry) { return entry.testingClass; }));
+    loaded = Platform::readSchedulePageAtPath(path);
+    QVERIFY(loaded);
+    QVERIFY(findAssignment(loaded.value())
+        == loaded.value().testingAssignments.rows.end());
+
+    const Application::ScheduleTestingAssignmentSaveRequest seedAgain{
+        .mutation = Application::ScheduleTestingAssignmentMutation::SavePlainTesting,
+        .day = u"Monday",
+        .startTime = u"17:00",
+        .room = u"Stale Check"
+    };
+    QVERIFY(Platform::saveScheduleTestingAssignmentAtPath(path, seedAgain));
+    QVERIFY(page->reload());
+    testingSlot = findCell(page->model(), [](const Ui::SchedulePageCell& cell) {
+        return cell.day == QStringLiteral("Monday")
+            && cell.startMinute == 17 * 60
+            && cell.plainTestingAssignment;
+    });
+    QVERIFY(testingSlot);
+    const int beforeStaleSave = fixture.testingAssignmentSaveCount;
+    QVERIFY(runAssignmentDialog(fixture, *testingSlot, [&fixture, &secondPath](auto* dialog) {
+        auto* const room = dialog->template findChild<QLineEdit*>(
+            QStringLiteral("nextTestingAssignmentRoom"));
+        QVERIFY(room);
+        room->setText(QStringLiteral("Must Not Write"));
+        fixture.path = secondPath;
+        fixture.identity = QStringLiteral("same-workspace-id|") + secondPath;
+        dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextTestingAssignmentSave"))->click();
+    }));
+    QCOMPARE(fixture.testingAssignmentSaveCount, beforeStaleSave);
+    QVERIFY(page->statusLabel()->property("error").toBool());
+    fixture.path = path;
+    fixture.identity = QStringLiteral("same-workspace-id|") + path;
+    loaded = Platform::readSchedulePageAtPath(path);
+    QVERIFY(loaded);
+    savedAssignment = findAssignment(loaded.value());
+    QVERIFY(savedAssignment != loaded.value().testingAssignments.rows.end());
+    QCOMPARE(QString::fromStdU16String(savedAssignment->room),
+             QStringLiteral("Stale Check"));
+    const auto unchangedSecondWorkspace =
+        Platform::readSchedulePageAtPath(secondPath);
+    QVERIFY(unchangedSecondWorkspace);
+    const auto unchangedSecondAssignment = findAssignment(
+        unchangedSecondWorkspace.value());
+    QVERIFY(unchangedSecondAssignment
+        != unchangedSecondWorkspace.value().testingAssignments.rows.end());
+    QCOMPARE(QString::fromStdU16String(unchangedSecondAssignment->room),
+             QStringLiteral("Testing Room"));
+}
+
+void SchedulePageTests::scheduleOutputDialogUsesCurrentProjectionAndReleasesOperations()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString path = createTemporaryWorkspace(
+        temporary, QStringLiteral("schedule-output-ui.tps"),
+        QStringLiteral("Output Teacher"));
+    QVERIFY(!path.isEmpty());
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        QVERIFY(store.settingsRepository()->saveSetting(
+            QStringLiteral("myInfo/name"), QStringLiteral("Profile Teacher")));
+    }
+    QVERIFY(Platform::saveScheduleDisplayPreferencesAtPath(path, {
+        .showEnglishNames = true
+    }));
+    QVERIFY(Platform::saveScheduleDisplayModeAtPath(
+        path, Application::ScheduleDisplayMode::Testing));
+
+    PageFixture fixture;
+    fixture.chosenOutputPath = temporary.filePath(QStringLiteral("schedule-output"));
+    QVERIFY(fixture.initialize(path));
+    Ui::SchedulePage* const page = fixture.schedule;
+    QVERIFY(page);
+    QCOMPARE(page->model()->displayMode(), Application::ScheduleDisplayMode::Testing);
+    QVERIFY(page->preferenceCheckBox(1)->isChecked());
+
+    const int outputCountBeforeCancel = fixture.scheduleOutputCount;
+    fixture.chosenOutputPath.reset();
+    QVERIFY(runOutputDialog(page, [&fixture](auto* dialog) {
+        auto* const saveAs = dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextScheduleOutputSaveAs"));
+        QVERIFY(saveAs);
+        saveAs->click();
+        QCOMPARE(QApplication::activeModalWidget(), dialog);
+        auto* const cancel = dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextScheduleOutputCancel"));
+        QVERIFY(cancel);
+        cancel->click();
+    }));
+    QCOMPARE(fixture.savePathChooserCount, 1);
+    QCOMPARE(fixture.scheduleOutputCount, outputCountBeforeCancel);
+
+    fixture.chosenOutputPath = temporary.filePath(QStringLiteral("schedule-output"));
+    fixture.scheduleOutputResult = {
+        Ui::ScheduleOutputResult::Status::Sent,
+        QStringLiteral("Fake PDF created.")
+    };
+    QVERIFY(runOutputDialog(page, [&fixture](auto* dialog) {
+        dialog->template findChild<QRadioButton*>(
+            QStringLiteral("nextScheduleOutputExcel"))->setChecked(true);
+        dialog->template findChild<QRadioButton*>(
+            QStringLiteral("nextScheduleOutputPortrait"))->setChecked(true);
+        dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextScheduleOutputSaveAs"))->click();
+    }));
+    QCOMPARE(fixture.scheduleOutputCount, outputCountBeforeCancel + 1);
+    QVERIFY(fixture.lastScheduleOutputRequest);
+    const Ui::ScheduleOutputRequest& output = *fixture.lastScheduleOutputRequest;
+    QCOMPARE(output.kind, Ui::ScheduleOutputKind::SaveAsPdf);
+    QCOMPARE(output.style, SchedulePrintStyle::Excel);
+    QCOMPARE(output.orientation, QPageLayout::Portrait);
+    QCOMPARE(output.documentPath,
+             temporary.filePath(QStringLiteral("schedule-output.pdf")));
+    QCOMPARE(output.profileName, QStringLiteral("Profile Teacher"));
+    QVERIFY(output.showEnglishNames);
+    const Theme expectedTheme = QApplication::palette()
+        .color(QPalette::Window).lightness() < 128 ? Theme::Dark : Theme::Light;
+    QCOMPARE(output.currentTheme, expectedTheme);
+    QVERIFY(output.document.days.contains(QStringLiteral("Monday")));
+    const auto outputRow = std::find_if(output.document.rows.begin(),
+        output.document.rows.end(), [](const auto& row) {
+            return row.timeLabel == QStringLiteral("17:00");
+        });
+    QVERIFY(outputRow != output.document.rows.end());
+    const auto mondayCell = std::find_if(outputRow->cells.begin(),
+        outputRow->cells.end(), [](const auto& cell) {
+            return cell.day == QStringLiteral("Monday");
+        });
+    QVERIFY(mondayCell != outputRow->cells.end());
+    QCOMPARE(mondayCell->slotState, SchedulePrintService::SlotState::Testing);
+    QCOMPARE(mondayCell->testingRoom, QStringLiteral("Testing Room"));
+
+    fixture.scheduleOutputResult = {
+        Ui::ScheduleOutputResult::Status::Canceled, {}};
+    QVERIFY(runOutputDialog(page, [](auto* dialog) {
+        dialog->template findChild<QRadioButton*>(
+            QStringLiteral("nextScheduleOutputCurrentAppearance"))->setChecked(true);
+        dialog->template findChild<QRadioButton*>(
+            QStringLiteral("nextScheduleOutputLandscape"))->setChecked(true);
+        dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextScheduleOutputPrint"))->click();
+    }));
+    QCOMPARE(fixture.scheduleOutputCount, outputCountBeforeCancel + 2);
+    QVERIFY(fixture.lastScheduleOutputRequest);
+    QCOMPARE(fixture.lastScheduleOutputRequest->kind,
+             Ui::ScheduleOutputKind::Print);
+    QCOMPARE(fixture.lastScheduleOutputRequest->documentPath, QString{});
+    QVERIFY(!page->statusLabel()->property("error").toBool());
+
+    fixture.scheduleOutputResult = {
+        Ui::ScheduleOutputResult::Status::Failed,
+        QStringLiteral("unwritable output path")
+    };
+    fixture.chosenOutputPath = QStringLiteral("/invalid/output.pdf");
+    QVERIFY(runOutputDialog(page, [&fixture](auto* dialog) {
+        dialog->template findChild<QPushButton*>(
+            QStringLiteral("nextScheduleOutputSaveAs"))->click();
+    }));
+    QCOMPARE(fixture.scheduleOutputCount, outputCountBeforeCancel + 3);
+    QVERIFY(page->statusLabel()->property("error").toBool());
+    QVERIFY(page->statusLabel()->text().contains(
+        QStringLiteral("unwritable output path")));
+    QCOMPARE(page->visualMetrics().model.sourceClassCount, 96);
+
+    fixture.suspendSchedule();
+    QCOMPARE(page->visualMetrics().model.rowCount, 0);
+    QCOMPARE(page->visualMetrics().model.cellCount, 0);
+    QCOMPARE(page->visualMetrics().model.entryCount, 0);
 }
 
 void SchedulePageTests::retryReplacementSuspendReentryAndCloseReleaseRows()

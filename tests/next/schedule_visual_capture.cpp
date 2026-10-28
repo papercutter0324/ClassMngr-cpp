@@ -3,20 +3,26 @@
 #include "core/process_memory_snapshot.h"
 #include "data/database/workspace_store.h"
 #include "features/schedule/ui/schedule_widget.h"
+#include "features/schedule/services/schedule_print_service.h"
+#include "features/schedule/ui/testing_assignment_dialog.h"
 #include "next/platform/workspace_store_schedule_actions.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
 #include "next/ui/schedule_intensive_cell_layout.h"
+#include "next/ui/schedule_output_dialog.h"
 #include "next/ui/schedule_page.h"
+#include "next/ui/schedule_testing_assignment_dialog.h"
 #include "preferences_test_ports.h"
 #include "sql_script_runner.h"
 
 #include <QApplication>
 #include <QAbstractItemView>
+#include <QComboBox>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFont>
 #include <QFontMetrics>
 #include <QHeaderView>
 #include <QImage>
@@ -24,9 +30,12 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLocale>
+#include <QPageLayout>
 #include <QPalette>
 #include <QPainter>
+#include <QPdfDocument>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QRegion>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -120,6 +129,323 @@ int maximumRowHeight(const QTableView& table)
         maximum = std::max(maximum, table.rowHeight(row));
     }
     return maximum;
+}
+
+class CaptureTestingClassChoicesPort final
+    : public Application::ScheduleTestingClassChoicesReadPort
+{
+public:
+    Application::ScheduleTestingClassChoicesReadResult readTestingClassChoices(
+        const Application::ScheduleTestingClassChoicesReadQuery&
+        ) const override
+    {
+        Application::ScheduleTestingClassChoicesSnapshot result;
+        const auto classId = Next::Domain::ClassId::fromString("701");
+        if (classId)
+        {
+            result.choices.push_back({
+                .classId = *classId,
+                .name = u"Writing Lab",
+                .grade = u"M2",
+                .level = u"Mixed (All)",
+                .room = u"Library"
+            });
+        }
+        return Application::ScheduleTestingClassChoicesReadResult::success(
+            std::move(result));
+    }
+};
+
+bool saveDialogCapture(
+    QDialog& dialog,
+    const QString& path,
+    QJsonObject* state,
+    QString* error
+    )
+{
+    dialog.show();
+    QApplication::processEvents();
+    const QImage image = dialog.grab().toImage();
+    dialog.hide();
+    if (image.isNull() || !image.save(path, "PNG"))
+    {
+        *error = QStringLiteral("Could not capture dialog: %1")
+            .arg(QFileInfo(path).fileName());
+        return false;
+    }
+    *state = {
+        {QStringLiteral("image"), QFileInfo(path).fileName()},
+        {QStringLiteral("width"), image.width()},
+        {QStringLiteral("height"), image.height()}
+    };
+    return true;
+}
+
+QString compactOutputText(QString text)
+{
+    text.remove(QRegularExpression(QStringLiteral("\\s+")));
+    return text;
+}
+
+bool captureScheduleTestingOutputEvidence(
+    QApplication& application,
+    const QString& outputDirectory,
+    const QString& translationDirectory,
+    const QString& stylesheetDirectory,
+    QString* error
+    )
+{
+    if (!QDir().mkpath(outputDirectory))
+    {
+        *error = QStringLiteral("Could not create Schedule output capture directory.");
+        return false;
+    }
+
+    CaptureTestingClassChoicesPort choicesPort;
+    const Application::ScheduleTestingClassChoicesSnapshot choices =
+        choicesPort.readTestingClassChoices({}).value();
+    QJsonArray dialogCaptures;
+    for (const QString& locale : {QStringLiteral("en_US"), QStringLiteral("ko_KR")})
+    {
+        for (const QString& theme : {QStringLiteral("light"), QStringLiteral("dark")})
+        {
+            QLocale::setDefault(QLocale(locale));
+            application.setPalette(themePalette(theme));
+            application.setStyleSheet(readText(QDir(stylesheetDirectory)
+                .filePath(theme + QStringLiteral(".qss"))));
+
+            std::unique_ptr<QTranslator> translator;
+            if (locale == QStringLiteral("ko_KR"))
+            {
+                translator = std::make_unique<QTranslator>();
+                if (!translator->load(QDir(translationDirectory).filePath(
+                        QStringLiteral("ClassMngr_ko_KR.qm")))
+                    || !application.installTranslator(translator.get()))
+                {
+                    *error = QStringLiteral("Could not install Korean Schedule output translation.");
+                    return false;
+                }
+            }
+
+            QComboBox* legacyMode = nullptr;
+            TestingAssignmentDialog legacyDialog(
+                choicesPort,
+                nullptr
+                );
+            legacyMode = legacyDialog.findChild<QComboBox*>(
+                QStringLiteral("testingAssignmentModeCombo"));
+            if (!legacyMode)
+            {
+                *error = QStringLiteral("Legacy assignment editor mode control was not found.");
+                return false;
+            }
+            legacyMode->setCurrentIndex(1);
+            const QString legacyPath = QDir(outputDirectory).filePath(
+                QStringLiteral("legacy_assignment_%1_%2.png").arg(locale, theme));
+            QJsonObject legacyCapture;
+            if (!saveDialogCapture(legacyDialog, legacyPath, &legacyCapture, error))
+            {
+                return false;
+            }
+            legacyCapture.insert(QStringLiteral("route"), QStringLiteral("Legacy editor"));
+            legacyCapture.insert(QStringLiteral("locale"), locale);
+            legacyCapture.insert(QStringLiteral("theme"), theme);
+            dialogCaptures.append(legacyCapture);
+
+            Ui::ScheduleTestingAssignmentDialog nextDialog(
+                choices,
+                false,
+                QString(),
+                std::nullopt
+                );
+            QComboBox* const nextMode = nextDialog.findChild<QComboBox*>(
+                QStringLiteral("nextTestingAssignmentMode"));
+            if (!nextMode)
+            {
+                *error = QStringLiteral("Next assignment editor mode control was not found.");
+                return false;
+            }
+            nextMode->setCurrentIndex(1);
+            const QString nextPath = QDir(outputDirectory).filePath(
+                QStringLiteral("next_assignment_%1_%2.png").arg(locale, theme));
+            QJsonObject nextCapture;
+            if (!saveDialogCapture(nextDialog, nextPath, &nextCapture, error))
+            {
+                return false;
+            }
+            nextCapture.insert(QStringLiteral("route"), QStringLiteral("Next editor"));
+            nextCapture.insert(QStringLiteral("locale"), locale);
+            nextCapture.insert(QStringLiteral("theme"), theme);
+            dialogCaptures.append(nextCapture);
+
+            Ui::ScheduleOutputDialog outputDialog(
+                [](QWidget*) -> std::optional<QString> { return std::nullopt; });
+            const QString outputPath = QDir(outputDirectory).filePath(
+                QStringLiteral("next_output_options_%1_%2.png").arg(locale, theme));
+            QJsonObject outputCapture;
+            if (!saveDialogCapture(outputDialog, outputPath, &outputCapture, error))
+            {
+                return false;
+            }
+            outputCapture.insert(QStringLiteral("route"), QStringLiteral("Next output options"));
+            outputCapture.insert(QStringLiteral("locale"), locale);
+            outputCapture.insert(QStringLiteral("theme"), theme);
+            dialogCaptures.append(outputCapture);
+
+            if (translator)
+            {
+                application.removeTranslator(translator.get());
+            }
+        }
+    }
+
+    QTemporaryDir temporaryDirectory;
+    if (!temporaryDirectory.isValid())
+    {
+        *error = QStringLiteral("Could not create temporary Schedule PDF capture directory.");
+        return false;
+    }
+    SchedulePrintService::Request request;
+    request.document.days = {QStringLiteral("Monday"), QStringLiteral("Tuesday")};
+    request.document.summary = {.essayBlocks = 1, .scheduledBlocks = 2};
+    SchedulePrintService::Row row;
+    row.timeLabel = QStringLiteral("17:00");
+    row.timeRangeLabel = QStringLiteral("5:00 - 5:50");
+    SchedulePrintService::Cell oral;
+    oral.day = request.document.days.at(0);
+    oral.timeLabel = row.timeLabel;
+    oral.slotState = SchedulePrintService::SlotState::Testing;
+    oral.testingRoom = QStringLiteral("Library");
+    SchedulePrintService::Cell classCard;
+    classCard.day = request.document.days.at(1);
+    classCard.timeLabel = row.timeLabel;
+    classCard.entries.append({
+        .className = QStringLiteral("Writing Lab"),
+        .teacherKoreanName = QStringLiteral("한 선생님"),
+        .teacherEnglishName = QStringLiteral("Ms Han"),
+        .teacherPreferredName = QStringLiteral("Han"),
+        .room = QStringLiteral("Library"),
+        .grade = QStringLiteral("M2"),
+        .level = QStringLiteral("Mixed (All)"),
+        .classColor = QStringLiteral("#C9D8A6"),
+        .fontColor = QStringLiteral("#000000"),
+        .testingClass = true
+    });
+    row.cells = {oral, classCard};
+    request.document.rows.append(row);
+    request.style = SchedulePrintStyle::LightTheme;
+    request.currentTheme = Theme::Dark;
+    request.englishFont = QFont(QStringLiteral("Inter"));
+    request.koreanFont = QFont(QStringLiteral("Pretendard"));
+    request.userName = QStringLiteral("Warren");
+    request.showEnglishNames = true;
+    request.pageOrientation = QPageLayout::Landscape;
+
+    const QString pdfPath = temporaryDirectory.filePath(
+        QStringLiteral("schedule-testing-output.pdf"));
+    const auto pdfResult = SchedulePrintService::saveSchedulePdf(request, pdfPath);
+    if (pdfResult.status != SchedulePrintService::Status::Sent)
+    {
+        *error = QStringLiteral("Could not generate representative Schedule PDF: %1")
+            .arg(pdfResult.message);
+        return false;
+    }
+    QPdfDocument pdf;
+    if (pdf.load(pdfPath) != QPdfDocument::Error::None || pdf.pageCount() != 1)
+    {
+        *error = QStringLiteral("Could not read representative Schedule PDF.");
+        return false;
+    }
+    const QString pdfText = compactOutputText(pdf.getAllText(0).text());
+    const QStringList expectedText{
+        QStringLiteral("OralTesting"),
+        QStringLiteral("Library"),
+        QStringLiteral("WritingLab"),
+        QStringLiteral("M2"),
+        QStringLiteral("Mixed(All)")
+    };
+    for (const QString& expected : expectedText)
+    {
+        if (!pdfText.contains(expected))
+        {
+            *error = QStringLiteral("Representative PDF is missing output content: %1")
+                .arg(expected);
+            return false;
+        }
+    }
+    const QSizeF pageSize = pdf.pagePointSize(0);
+    const QSize imageSize(
+        qRound(pageSize.width() * 150.0 / 72.0),
+        qRound(pageSize.height() * 150.0 / 72.0));
+    const QImage pdfImage = pdf.render(0, imageSize);
+    const QString pdfImagePath = QDir(outputDirectory).filePath(
+        QStringLiteral("representative_testing_output_pdf.png"));
+    if (pdfImage.isNull() || !pdfImage.save(pdfImagePath, "PNG"))
+    {
+        *error = QStringLiteral("Could not save representative Schedule PDF image.");
+        return false;
+    }
+
+    QJsonArray handoffImages;
+    const QString handoffDirectory = QDir(outputDirectory).absoluteFilePath(
+        QStringLiteral("../testing-classes"));
+    for (const QString& locale : {QStringLiteral("en_US"), QStringLiteral("ko_KR")})
+    {
+        for (const QString& theme : {QStringLiteral("light"), QStringLiteral("dark")})
+        {
+            for (const QString& route : {QStringLiteral("legacy"), QStringLiteral("next")})
+            {
+                const QString fileName = QStringLiteral(
+                    "testing_classes_pending_slot_%1_%2_%3.png")
+                    .arg(locale, theme, route);
+                if (!QFileInfo::exists(QDir(handoffDirectory).filePath(fileName)))
+                {
+                    *error = QStringLiteral("Existing #28 handoff capture is missing: %1")
+                        .arg(fileName);
+                    return false;
+                }
+                handoffImages.append(QJsonObject{
+                    {QStringLiteral("image"), QStringLiteral("../testing-classes/") + fileName},
+                    {QStringLiteral("route"), route},
+                    {QStringLiteral("locale"), locale},
+                    {QStringLiteral("theme"), theme}
+                });
+            }
+        }
+    }
+
+    const QJsonObject manifest{
+        {QStringLiteral("taskId"), QStringLiteral("phase7-c32-testing-assignments-output-20261028")},
+        {QStringLiteral("dialogViewport"), QStringLiteral("Native dialog bounds captured with Qt Fusion and explicit light/dark application palettes")},
+        {QStringLiteral("assignmentEditorsAndOutputOptions"), dialogCaptures},
+        {QStringLiteral("managerHandoffPendingSlotEvidence"), handoffImages},
+        {QStringLiteral("representativePdf"), QJsonObject{
+            {QStringLiteral("image"), QFileInfo(pdfImagePath).fileName()},
+            {QStringLiteral("pageCount"), pdf.pageCount()},
+            {QStringLiteral("pageWidthPoints"), pageSize.width()},
+            {QStringLiteral("pageHeightPoints"), pageSize.height()},
+            {QStringLiteral("renderedImageWidth"), pdfImage.width()},
+            {QStringLiteral("renderedImageHeight"), pdfImage.height()},
+            {QStringLiteral("contentsChecked"), QJsonArray::fromStringList(expectedText)},
+            {QStringLiteral("pdfLifetime"), QStringLiteral("Saved under QTemporaryDir and removed when capture operation returns.")}
+        }},
+        {QStringLiteral("visualDifferences"), QJsonArray{
+            QStringLiteral("Legacy assignment editing uses the shared DialogShell and shows Essay Block; Next uses a plain QDialog and labels the remove action Essay Block."),
+            QStringLiteral("The Legacy manager retains the pending weekday/start internally while Next shows the pending slot; see the paired #28 captures."),
+            QStringLiteral("Qt native widget and glyph rasterization differs between the two editor implementations; no pixel-parity claim is made.")
+        }},
+        {QStringLiteral("memoryAndLifetime"), QStringLiteral("The output request and PDF operation are local values; the PDF writer/document are destroyed before returning, and the temporary PDF is removed with QTemporaryDir. Dialog captures do not estimate allocation or memory budgets.")}
+    };
+    QFile manifestFile(QDir(outputDirectory).filePath(
+        QStringLiteral("schedule_testing_output_manifest.json")));
+    if (!manifestFile.open(QIODevice::WriteOnly | QIODevice::Truncate)
+        || manifestFile.write(QJsonDocument(manifest).toJson(
+            QJsonDocument::Indented)) < 0)
+    {
+        *error = QStringLiteral("Could not write Schedule Testing/output capture manifest.");
+        return false;
+    }
+    return true;
 }
 
 QString modeName(const Application::ScheduleDisplayMode mode)
@@ -929,9 +1255,29 @@ int main(int argc, char* argv[])
 {
     QApplication application(argc, argv);
     QApplication::setStyle(QStringLiteral("Fusion"));
+    if (argc == 3
+        && QString::fromLocal8Bit(argv[1]) == QStringLiteral("--c32"))
+    {
+        const QString resourceRoot = QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_ROOT);
+        const QString outputDirectory = QString::fromLocal8Bit(argv[2]);
+        QString error;
+        if (!captureScheduleTestingOutputEvidence(
+                application,
+                outputDirectory,
+                QStringLiteral(CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY),
+                QDir(resourceRoot).filePath(QStringLiteral("assets/styles")),
+                &error))
+        {
+            qCritical().noquote() << error;
+            return 1;
+        }
+        qInfo().noquote() << "Wrote Schedule Testing/output captures to"
+                          << outputDirectory;
+        return 0;
+    }
     if (argc != 2)
     {
-        qCritical("Usage: ClassMngrNextScheduleVisualCapture OUTPUT_DIR");
+        qCritical("Usage: ClassMngrNextScheduleVisualCapture OUTPUT_DIR | --c32 OUTPUT_DIR");
         return 2;
     }
     const QString outputDirectory = QString::fromLocal8Bit(argv[1]);

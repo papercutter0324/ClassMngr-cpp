@@ -1,13 +1,16 @@
 #include "features/schedule/services/schedule_print_service.h"
-#include "features/schedule/ui/schedule_view_model.h"
+#include "features/schedule/ui/schedule_print_document_adapter.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QtTest>
 
 #include <QColor>
+#include <QFileInfo>
+#include <QFont>
 #include <QImage>
 #include <QPageSize>
 #include <QPdfDocument>
+#include <QRegularExpression>
 #include <QRect>
 #include <QTemporaryDir>
 
@@ -38,10 +41,10 @@ constexpr qreal HeaderHeight = 52.0;
 constexpr qreal RowHeight = 58.0;
 constexpr qreal FooterHeight = 52.0;
 
-ScheduleViewModel emptyScheduleModel()
+SchedulePrintService::Document emptyScheduleDocument()
 {
-    ScheduleViewModel model;
-    model.days = {
+    SchedulePrintService::Document document;
+    document.days = {
         QStringLiteral("Monday"),
         QStringLiteral("Tuesday"),
         QStringLiteral("Wednesday"),
@@ -52,27 +55,26 @@ ScheduleViewModel emptyScheduleModel()
     for (const QString& timeLabel :
          { QStringLiteral("09:00"), QStringLiteral("10:00") })
     {
-        ScheduleRowView row;
+        SchedulePrintService::Row row;
         row.timeLabel = timeLabel;
         row.timeRangeLabel =
             timeLabel == QStringLiteral("09:00")
                 ? QStringLiteral("9:00 -\n9:50")
                 : QStringLiteral("10:00 -\n10:50");
 
-        for (const QString& day : model.days)
+        for (const QString& day : document.days)
         {
-            ScheduleCellView cell;
+            SchedulePrintService::Cell cell;
             cell.day = day;
             cell.timeLabel = timeLabel;
-            cell.defaultSlotState = scheduleEmptySlotState();
-            cell.slotState = scheduleEmptySlotState();
+            cell.slotState = SchedulePrintService::SlotState::Empty;
             row.cells.append(cell);
         }
 
-        model.rows.append(row);
+        document.rows.append(row);
     }
 
-    return model;
+    return document;
 }
 
 SchedulePrintService::Request requestFor(
@@ -82,12 +84,21 @@ SchedulePrintService::Request requestFor(
     )
 {
     SchedulePrintService::Request request;
-    request.model = emptyScheduleModel();
+    request.document = emptyScheduleDocument();
     request.style = style;
     request.currentTheme = currentTheme;
+    request.englishFont.setFamily(QStringLiteral("Arial"));
+    request.koreanFont.setFamily(QStringLiteral("Pretendard"));
     request.userName = QStringLiteral("Warren");
     request.pageOrientation = orientation;
     return request;
+}
+
+QString compactPdfText(const QString& text)
+{
+    QString compact = text;
+    compact.remove(QRegularExpression(QStringLiteral("\\s+")));
+    return compact;
 }
 
 QString savePdf(
@@ -238,7 +249,7 @@ QRectF scheduleContentRect(
 
 QRectF scheduleTargetRect(
     const QImage& image,
-    const ScheduleViewModel& model,
+    const SchedulePrintService::Document& model,
     bool excel
     )
 {
@@ -276,7 +287,7 @@ QPoint scaledSchedulePoint(
     const QRectF& targetRect,
     qreal sourceX,
     qreal sourceY,
-    const ScheduleViewModel& model
+    const SchedulePrintService::Document& model
     )
 {
     const qreal sourceWidth =
@@ -293,7 +304,7 @@ QPoint scaledSchedulePoint(
 QRect scaledScheduleRect(
     const QRectF& targetRect,
     const QRectF& sourceRect,
-    const ScheduleViewModel& model
+    const SchedulePrintService::Document& model
     )
 {
     const qreal sourceWidth =
@@ -342,13 +353,73 @@ class SchedulePrintPdfTests : public QObject
     Q_OBJECT
 
 private slots:
+    void legacyAdapterConvertsToValueDocument();
     void generatedPdfUsesA4Orientation();
+    void savePdfFailsWithoutCreatingFileForMissingParent();
     void contentStaysInsideHalfInchMargins();
     void themedEmptyCellsAndOffTableAreaStayWhite();
     void excelTimeBackgroundRequiresAnExactValid24HourLabel();
     void rendersTestingCellAndRoom();
     void rendersTestingClassCardInformation();
 };
+
+void SchedulePrintPdfTests::legacyAdapterConvertsToValueDocument()
+{
+    ScheduleViewModel legacy;
+    legacy.days = {QStringLiteral("Monday"), QStringLiteral("Tuesday")};
+    legacy.summary.essayBlocks = 4;
+    legacy.summary.scheduledBlocks = 9;
+    ScheduleRowView row;
+    row.timeLabel = QStringLiteral("16:00");
+    row.timeRangeLabel = QStringLiteral("4:00 - 4:50 PM");
+    ScheduleCellView testingClassCell;
+    testingClassCell.day = QStringLiteral("Monday");
+    testingClassCell.timeLabel = row.timeLabel;
+    testingClassCell.slotState = scheduleTestingSlotState();
+    testingClassCell.testingClassAssignment = true;
+    ScheduleEntry entry;
+    entry.kind = ScheduleEntryKind::TestingClass;
+    entry.className = QStringLiteral("Writing Lab");
+    entry.teacherKr = QStringLiteral("김선생");
+    entry.teacherEn = QStringLiteral("Ms Han");
+    entry.teacherPreferredName = QStringLiteral("Sam");
+    entry.roomNumber = QStringLiteral("Library");
+    entry.classGrade = QStringLiteral("M2");
+    entry.classLevel = QStringLiteral("Mixed (All)");
+    entry.classColor = QStringLiteral("#C9D8A6");
+    entry.fontColor = QStringLiteral("#102030");
+    testingClassCell.entries.append(entry);
+    ScheduleCellView legacyPlainCell;
+    legacyPlainCell.day = QStringLiteral("Tuesday");
+    legacyPlainCell.timeLabel = row.timeLabel;
+    legacyPlainCell.slotState = scheduleTestingSlotState();
+    legacyPlainCell.testingRoom = QStringLiteral("Room 7");
+    row.cells = {testingClassCell, legacyPlainCell};
+    legacy.rows.append(row);
+
+    const SchedulePrintService::Document document =
+        schedulePrintDocumentFromLegacyModel(legacy);
+    QCOMPARE(document.days, legacy.days);
+    QCOMPARE(document.summary.essayBlocks, 4);
+    QCOMPARE(document.summary.scheduledBlocks, 9);
+    QCOMPARE(document.rows.size(), 1);
+    QCOMPARE(document.rows.first().timeLabel, QStringLiteral("16:00"));
+    QCOMPARE(document.rows.first().cells.size(), 2);
+    const auto& classCell = document.rows.first().cells.first();
+    QCOMPARE(classCell.slotState, SchedulePrintService::SlotState::Testing);
+    QCOMPARE(classCell.entries.size(), 1);
+    QCOMPARE(classCell.entries.first().className, QStringLiteral("Writing Lab"));
+    QCOMPARE(classCell.entries.first().teacherKoreanName, QStringLiteral("김선생"));
+    QCOMPARE(classCell.entries.first().teacherEnglishName, QStringLiteral("Ms Han"));
+    QCOMPARE(classCell.entries.first().teacherPreferredName, QStringLiteral("Sam"));
+    QCOMPARE(classCell.entries.first().room, QStringLiteral("Library"));
+    QCOMPARE(classCell.entries.first().grade, QStringLiteral("M2"));
+    QCOMPARE(classCell.entries.first().level, QStringLiteral("Mixed (All)"));
+    QVERIFY(classCell.entries.first().testingClass);
+    const auto& plainCell = document.rows.first().cells.at(1);
+    QCOMPARE(plainCell.testingRoom, QStringLiteral("Room 7"));
+    QCOMPARE(plainCell.slotState, SchedulePrintService::SlotState::Testing);
+}
 
 void SchedulePrintPdfTests::generatedPdfUsesA4Orientation()
 {
@@ -398,6 +469,27 @@ void SchedulePrintPdfTests::generatedPdfUsesA4Orientation()
             std::abs(pageSize.height() - expectedSize.height()) < 1.0
             );
     }
+}
+
+void SchedulePrintPdfTests::savePdfFailsWithoutCreatingFileForMissingParent()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SchedulePrintService::Request request =
+        requestFor(
+            SchedulePrintStyle::LightTheme,
+            QPageLayout::Landscape
+            );
+    const QString path = temporaryDirectory.filePath(
+        QStringLiteral("missing-parent/schedule.pdf"));
+    QVERIFY(!QFileInfo::exists(path));
+
+    const SchedulePrintService::Result result =
+        SchedulePrintService::saveSchedulePdf(request, path);
+
+    QCOMPARE(result.status, SchedulePrintService::Status::Failed);
+    QVERIFY(!QFileInfo::exists(path));
 }
 
 void SchedulePrintPdfTests::contentStaysInsideHalfInchMargins()
@@ -453,10 +545,9 @@ void SchedulePrintPdfTests::rendersTestingCellAndRoom()
             SchedulePrintStyle::LightTheme,
             QPageLayout::Landscape
             );
-    ScheduleCellView& cell =
-        request.model.rows.first().cells.first();
-    cell.slotState =
-        scheduleTestingSlotState();
+    SchedulePrintService::Cell& cell =
+        request.document.rows.first().cells.first();
+    cell.slotState = SchedulePrintService::SlotState::Testing;
     cell.testingRoom =
         QStringLiteral("Library");
 
@@ -470,13 +561,16 @@ void SchedulePrintPdfTests::rendersTestingCellAndRoom()
 
     QPdfDocument document;
     loadDocument(document, path);
+    const QString pdfText = compactPdfText(document.getAllText(0).text());
+    QVERIFY(pdfText.contains(QStringLiteral("OralTesting")));
+    QVERIFY(pdfText.contains(QStringLiteral("Library")));
     const QImage image =
         renderFirstPage(document);
     QVERIFY(!image.isNull());
     const QRectF targetRect =
         scheduleTargetRect(
             image,
-            request.model,
+            request.document,
             false
             );
     const QPoint testingCenter =
@@ -484,14 +578,14 @@ void SchedulePrintPdfTests::rendersTestingCellAndRoom()
             targetRect,
             TimeColumnWidth + (DayColumnWidth / 2.0),
             HeaderHeight + (RowHeight / 2.0),
-            request.model
+            request.document
             );
     const QPoint markerPoint =
         scaledSchedulePoint(
             targetRect,
             TimeColumnWidth + DayColumnWidth - 5.0,
             HeaderHeight + 5.0,
-            request.model
+            request.document
             );
 
     const QColor centerColor =
@@ -512,20 +606,18 @@ void SchedulePrintPdfTests::rendersTestingClassCardInformation()
             SchedulePrintStyle::LightTheme,
             QPageLayout::Landscape
             );
-    ScheduleCellView& cell =
-        request.model.rows.first().cells.first();
-    cell.testingClassAssignment = true;
+    SchedulePrintService::Cell& cell =
+        request.document.rows.first().cells.first();
 
-    ScheduleEntry entry;
-    entry.kind = ScheduleEntryKind::TestingClass;
-    entry.classId = 42;
+    SchedulePrintService::Entry entry;
     entry.className = QStringLiteral("Writing Lab");
-    entry.classGrade = QStringLiteral("M2");
-    entry.classLevel = QStringLiteral("Mixed (All)");
-    entry.teacherEn = QStringLiteral("Ms Han");
-    entry.roomNumber = QStringLiteral("Library");
+    entry.grade = QStringLiteral("M2");
+    entry.level = QStringLiteral("Mixed (All)");
+    entry.teacherEnglishName = QStringLiteral("Ms Han");
+    entry.room = QStringLiteral("Library");
     entry.classColor = QStringLiteral("#C9D8A6");
     entry.fontColor = QStringLiteral("#000000");
+    entry.testingClass = true;
     cell.entries = {entry};
 
     const QString path =
@@ -538,6 +630,11 @@ void SchedulePrintPdfTests::rendersTestingClassCardInformation()
 
     QPdfDocument document;
     loadDocument(document, path);
+    const QString pdfText = compactPdfText(document.getAllText(0).text());
+    QVERIFY(pdfText.contains(QStringLiteral("WritingLab")));
+    QVERIFY(pdfText.contains(QStringLiteral("M2")));
+    QVERIFY(pdfText.contains(QStringLiteral("Mixed(All)")));
+    QVERIFY(pdfText.contains(QStringLiteral("Library")));
     const QImage image =
         renderFirstPage(document);
     QVERIFY(!image.isNull());
@@ -545,7 +642,7 @@ void SchedulePrintPdfTests::rendersTestingClassCardInformation()
     const QRectF targetRect =
         scheduleTargetRect(
             image,
-            request.model,
+            request.document,
             false
             );
     const QPoint markerPoint =
@@ -553,7 +650,7 @@ void SchedulePrintPdfTests::rendersTestingClassCardInformation()
             targetRect,
             TimeColumnWidth + DayColumnWidth - 5.0,
             HeaderHeight + 5.0,
-            request.model
+            request.document
             );
     const QColor markerColor =
         image.pixelColor(markerPoint);
@@ -570,7 +667,7 @@ void SchedulePrintPdfTests::rendersTestingClassCardInformation()
                 DayColumnWidth,
                 RowHeight
                 ),
-            request.model
+            request.document
             );
     cardRect.adjust(
         cardRect.width() / 12,
@@ -655,7 +752,7 @@ void SchedulePrintPdfTests::themedEmptyCellsAndOffTableAreaStayWhite()
         const QRectF targetRect =
             scheduleTargetRect(
                 image,
-                request.model,
+                request.document,
                 request.style == SchedulePrintStyle::Excel
                 );
 
@@ -664,7 +761,7 @@ void SchedulePrintPdfTests::themedEmptyCellsAndOffTableAreaStayWhite()
                 targetRect,
                 TimeColumnWidth + 10.0,
                 10.0,
-                request.model
+                request.document
                 );
         const QColor headerColor =
             image.pixelColor(headerPoint);
@@ -677,7 +774,7 @@ void SchedulePrintPdfTests::themedEmptyCellsAndOffTableAreaStayWhite()
                     targetRect,
                     10.0,
                     HeaderHeight + (RowHeight / 2.0),
-                    request.model
+                    request.document
                     );
             QCOMPARE(
                 image.pixelColor(timePoint),
@@ -691,7 +788,7 @@ void SchedulePrintPdfTests::themedEmptyCellsAndOffTableAreaStayWhite()
                     HeaderHeight
                         + RowHeight
                         + (RowHeight / 2.0),
-                    request.model
+                    request.document
                     );
             QCOMPARE(
                 image.pixelColor(alternatingTimePoint),
@@ -720,7 +817,7 @@ void SchedulePrintPdfTests::themedEmptyCellsAndOffTableAreaStayWhite()
                 targetRect,
                 TimeColumnWidth + (DayColumnWidth / 2.0),
                 HeaderHeight + (RowHeight / 2.0),
-                request.model
+                request.document
                 );
         QVERIFY(
             isWhitePixel(
@@ -762,17 +859,17 @@ void SchedulePrintPdfTests::excelTimeBackgroundRequiresAnExactValid24HourLabel()
             QPageLayout::Landscape
             );
 
-    ScheduleRowView paddedEvenHour =
-        request.model.rows.at(1);
+    SchedulePrintService::Row paddedEvenHour =
+        request.document.rows.at(1);
     paddedEvenHour.timeLabel =
         QStringLiteral("10:00 ");
-    request.model.rows.append(paddedEvenHour);
+    request.document.rows.append(paddedEvenHour);
 
-    ScheduleRowView malformedLabel =
-        request.model.rows.at(1);
+    SchedulePrintService::Row malformedLabel =
+        request.document.rows.at(1);
     malformedLabel.timeLabel =
         QStringLiteral("not-a-time");
-    request.model.rows.append(malformedLabel);
+    request.document.rows.append(malformedLabel);
 
     const QString path =
         savePdf(
@@ -791,7 +888,7 @@ void SchedulePrintPdfTests::excelTimeBackgroundRequiresAnExactValid24HourLabel()
     const QRectF targetRect =
         scheduleTargetRect(
             image,
-            request.model,
+            request.document,
             true
             );
     const auto timeCellColor =
@@ -804,7 +901,7 @@ void SchedulePrintPdfTests::excelTimeBackgroundRequiresAnExactValid24HourLabel()
                     HeaderHeight
                         + (rowIndex * RowHeight)
                         + (RowHeight / 2.0),
-                    request.model
+                    request.document
                     );
             return image.pixelColor(point);
         };

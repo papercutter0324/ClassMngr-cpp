@@ -6723,6 +6723,14 @@ My Information name was updated.</source>
         <source>Schedule import completed: %1 teachers created, %2 room updates, %3 classes created, %4 classes updated, %5 skipped, %6 schedules cleared.</source>
         <translation>일정 가져오기가 완료되었습니다: 교사 %1명 생성, 강의실 %2개 업데이트, 수업 %3개 생성, 수업 %4개 업데이트, %5개 건너뜀, 일정 %6개 삭제.</translation>
     </message>
+    <message><source>Print Schedule…</source><translation>시간표 인쇄…</translation></message>
+    <message><source>Testing assignment actions are unavailable.</source><translation>테스트 일정 작업을 사용할 수 없습니다.</translation></message>
+    <message><source>Workspace changed while editing the schedule.</source><translation>시간표를 편집하는 동안 작업 공간이 변경되었습니다.</translation></message>
+    <message><source>Testing Classes are unavailable.</source><translation>테스트 수업을 사용할 수 없습니다.</translation></message>
+    <message><source>Schedule output actions are unavailable.</source><translation>시간표 출력 작업을 사용할 수 없습니다.</translation></message>
+    <message><source>Workspace changed while preparing schedule output.</source><translation>시간표 출력을 준비하는 동안 작업 공간이 변경되었습니다.</translation></message>
+    <message><source>Schedule output completed.</source><translation>시간표 출력을 완료했습니다.</translation></message>
+    <message><source>Schedule output could not be completed.</source><translation>시간표 출력을 완료하지 못했습니다.</translation></message>
 </context>
 <context>
     <name>SchedulePrintDialog</name>
@@ -6798,6 +6806,39 @@ My Information name was updated.</source>
         <source>Print</source>
         <translation>인쇄</translation>
     </message>
+</context>
+<context>
+    <name>ClassMngr::Next::Ui::ScheduleOutputDialog</name>
+    <message><source>Schedule Output</source><translation>시간표 출력</translation></message>
+    <message><source>Style</source><translation>스타일</translation></message>
+    <message><source>Current Appearance</source><translation>현재 모양</translation></message>
+    <message><source>Light</source><translation>밝게</translation></message>
+    <message><source>Dark</source><translation>어둡게</translation></message>
+    <message><source>Excel</source><translation>Excel</translation></message>
+    <message><source>Orientation</source><translation>방향</translation></message>
+    <message><source>Landscape</source><translation>가로</translation></message>
+    <message><source>Portrait</source><translation>세로</translation></message>
+    <message><source>Print</source><translation>인쇄</translation></message>
+    <message><source>Cancel</source><translation>취소</translation></message>
+    <message><source>Save As PDF…</source><translation>PDF로 저장…</translation></message>
+    <message><source>Save Schedule As</source><translation>다른 이름으로 시간표 저장</translation></message>
+</context>
+<context>
+    <name>ClassMngr::Next::Ui::ScheduleTestingAssignmentDialog</name>
+    <message><source>Add Testing Assignment</source><translation>테스트 일정 추가</translation></message>
+    <message><source>Edit Testing Assignment</source><translation>테스트 일정 편집</translation></message>
+    <message><source>Assignment Type</source><translation>일정 유형</translation></message>
+    <message><source>Oral Testing Block</source><translation>구술 시험 시간</translation></message>
+    <message><source>Testing Class</source><translation>테스트 수업</translation></message>
+    <message><source>Essay Block</source><translation>에세이 시간</translation></message>
+    <message><source>Room</source><translation>강의실</translation></message>
+    <message><source>Optional for an Oral Testing block</source><translation>구술 시험 시간에는 선택 사항입니다</translation></message>
+    <message><source>%1 — %2 %3 — Room %4</source><translation>%1 — %2 %3 — 강의실 %4</translation></message>
+    <message><source>Save</source><translation>저장</translation></message>
+    <message><source>Cancel</source><translation>취소</translation></message>
+    <message><source>Manage Testing Classes</source><translation>테스트 수업 관리</translation></message>
+    <message><source>Testing Assignment</source><translation>테스트 일정</translation></message>
+    <message><source>Choose a testing class or manage your classes.</source><translation>테스트 수업을 선택하거나 수업을 관리하세요.</translation></message>
 </context>
 <context>
     <name>ScheduleSettingsDialog</name>
@@ -9180,23 +9221,23 @@ Version: %2</source>
     <message>
         <location filename="../../../src/features/schedule/ui/testing_assignment_dialog.cpp" line="+38"/>
         <source>Edit Testing Assignment</source>
-        <translation type="unfinished"></translation>
+        <translation>테스트 일정 편집</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Add Testing Assignment</source>
-        <translation type="unfinished"></translation>
+        <translation>테스트 일정 추가</translation>
     </message>
     <message>
         <location line="+64"/>
         <source>Assignment Type</source>
-        <translation type="unfinished"></translation>
+        <translation>일정 유형</translation>
     </message>
     <message>
         <location line="+13"/>
         <location line="+31"/>
         <source>Testing Class</source>
-        <translation type="unfinished"></translation>
+        <translation>테스트 수업</translation>
     </message>
     <message>
         <location line="-27"/>
@@ -9206,17 +9247,17 @@ Version: %2</source>
     <message>
         <location line="+6"/>
         <source>Room</source>
-        <translation type="unfinished">교실</translation>
+        <translation>강의실</translation>
     </message>
     <message>
         <location line="+41"/>
         <source>Manage Classes</source>
-        <translation type="unfinished"></translation>
+        <translation>테스트 수업 관리</translation>
     </message>
     <message>
         <location line="+110"/>
         <source>Choose a testing class or manage your classes.</source>
-        <translation type="unfinished"></translation>
+        <translation>테스트 수업을 선택하거나 수업을 관리하세요.</translation>
     </message>
     <message>
         <location line="-165"/>
@@ -9231,27 +9272,27 @@ Version: %2</source>
     <message>
         <location line="+46"/>
         <source>Save</source>
-        <translation type="unfinished">저장</translation>
+        <translation>저장</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
+        <translation>취소</translation>
     </message>
     <message>
         <location line="+50"/>
         <source>Testing Classes</source>
-        <translation type="unfinished"></translation>
+        <translation>테스트 수업</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>%1 — %2 %3 — Room %4</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 — %2 %3 — 강의실 %4</translation>
     </message>
     <message>
         <location line="+35"/>
         <source>Testing Assignment</source>
-        <translation type="unfinished"></translation>
+        <translation>테스트 일정</translation>
     </message>
 </context>
 <context>

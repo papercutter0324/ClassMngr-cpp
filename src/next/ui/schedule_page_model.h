@@ -83,6 +83,7 @@ public:
         int row,
         int tableColumn) const noexcept;
     [[nodiscard]] const SchedulePageRow* rowAt(int row) const noexcept;
+    [[nodiscard]] const QStringList& days() const noexcept;
     [[nodiscard]] Application::ScheduleDisplayMode displayMode() const noexcept;
     [[nodiscard]] const Application::ScheduleDisplayPreferences& preferences()
         const noexcept;

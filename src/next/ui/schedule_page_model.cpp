@@ -388,6 +388,11 @@ const SchedulePageRow* SchedulePageModel::rowAt(const int row) const noexcept
         : &m_rows[static_cast<std::size_t>(row)];
 }
 
+const QStringList& SchedulePageModel::days() const noexcept
+{
+    return m_days;
+}
+
 Application::ScheduleDisplayMode SchedulePageModel::displayMode() const noexcept
 {
     return m_snapshot.displayMode;

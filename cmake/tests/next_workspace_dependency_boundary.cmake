@@ -13,6 +13,12 @@ foreach(_line IN LISTS _report_lines)
         set(_updater_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_LINKS=(.*)$")
         set(_next_workspace_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_SCHEDULE_OUTPUT_LINKS=(.*)$")
+        set(_next_schedule_output_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_SCHEDULE_OUTPUT_SOURCES=(.*)$")
+        set(_next_schedule_output_sources "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_SCHEDULE_OUTPUT_TYPE=(.*)$")
+        set(_next_schedule_output_type "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^WORKSPACE_STORE_LINKS=(.*)$")
         set(_workspace_store_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_SOURCES=(.*)$")
@@ -39,11 +45,34 @@ foreach(_line IN LISTS _report_lines)
 endforeach()
 
 set(_expected_next_links
-    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextDocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
+    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextDocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
 )
 if(NOT _next_links STREQUAL _expected_next_links)
     message(FATAL_ERROR
         "Unexpected direct ClassMngrNext dependencies: [${_next_links}]"
+    )
+endif()
+
+set(_expected_next_schedule_output_links
+    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrSchedulePrint|Qt6::Widgets"
+)
+if(NOT _next_schedule_output_links STREQUAL _expected_next_schedule_output_links)
+    message(FATAL_ERROR
+        "Unexpected direct ClassMngrNextScheduleOutput dependencies: "
+        "[${_next_schedule_output_links}]"
+    )
+endif()
+if(NOT _next_schedule_output_sources MATCHES
+   "qt_schedule_output_adapter\\.cpp")
+    message(FATAL_ERROR
+        "The narrow Next Schedule output target does not own its Qt adapter: "
+        "[${_next_schedule_output_sources}]"
+    )
+endif()
+if(NOT _next_schedule_output_type STREQUAL "STATIC_LIBRARY")
+    message(FATAL_ERROR
+        "ClassMngrNextScheduleOutput must remain a static library: "
+        "[${_next_schedule_output_type}]"
     )
 endif()
 

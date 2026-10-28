@@ -484,7 +484,8 @@ Result printPdfDocumentWithCustomPreview(
         request.pageOrientation,
         request.fitToPageByDefault,
         request.preferredPageSize,
-        request.lockPreferredPageSize
+        request.lockPreferredPageSize,
+        request.uiFont
         );
 
     if (dialog.exec() != QDialog::Accepted)

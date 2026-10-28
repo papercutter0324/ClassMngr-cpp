@@ -47,6 +47,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrCore ${CLASSMNGR_CORE_SOURCES})
     _classmngr_record_manifest(ClassMngrUpdater ${CLASSMNGR_UPDATER_SOURCES})
     _classmngr_record_manifest(ClassMngrSettings ${CLASSMNGR_SETTINGS_SOURCES})
+    _classmngr_record_manifest(ClassMngrQtPdfPrint
+        ${CLASSMNGR_QT_PDF_PRINT_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrWorkspaceStore
         ${CLASSMNGR_WORKSPACE_STORE_SOURCES}
     )
@@ -58,6 +61,9 @@ function(classmngr_check_source_ownership)
     )
     _classmngr_record_manifest(ClassMngrScheduleImportRules
         ${CLASSMNGR_SCHEDULE_IMPORT_RULES_SOURCES}
+    )
+    _classmngr_record_manifest(ClassMngrSchedulePrint
+        ${CLASSMNGR_SCHEDULE_PRINT_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrScheduleImportParser
         ${CLASSMNGR_SCHEDULE_IMPORT_PARSER_SOURCES}
@@ -91,6 +97,9 @@ function(classmngr_check_source_ownership)
     )
     _classmngr_record_manifest(ClassMngrNextWorkspace
         ${CLASSMNGR_NEXT_WORKSPACE_SOURCES}
+    )
+    _classmngr_record_manifest(ClassMngrNextScheduleOutput
+        ${CLASSMNGR_NEXT_SCHEDULE_OUTPUT_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrNextDomain
         ${CLASSMNGR_NEXT_DOMAIN_SOURCES}

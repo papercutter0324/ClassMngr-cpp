@@ -274,8 +274,6 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/constants/options.h"
     "src/ui/shared/dialogs/about_dialog.cpp"
     "src/ui/shared/dialogs/about_dialog.h"
-    "src/ui/shared/dialogs/dialog_shell.cpp"
-    "src/ui/shared/dialogs/dialog_shell.h"
     "src/ui/shared/dialogs/file_dialog_service.cpp"
     "src/ui/shared/dialogs/file_dialog_service.h"
     "src/ui/shared/dialogs/license_dialog.cpp"
@@ -310,15 +308,6 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/pages/pdf_viewer_page_zoom.cpp"
     "src/ui/shared/pages/scrollable_page_body.cpp"
     "src/ui/shared/pages/scrollable_page_body.h"
-    "src/ui/shared/printing/pdf_print_dialog.cpp"
-    "src/ui/shared/printing/pdf_print_dialog.h"
-    "src/ui/shared/printing/pdf_print_dialog_internal.h"
-    "src/ui/shared/printing/pdf_print_dialog_pages.cpp"
-    "src/ui/shared/printing/pdf_print_dialog_printer.cpp"
-    "src/ui/shared/printing/pdf_print_dialog_printing.cpp"
-    "src/ui/shared/printing/pdf_print_dialog_widgets.cpp"
-    "src/ui/shared/printing/pdf_print_service.cpp"
-    "src/ui/shared/printing/pdf_print_service.h"
     "src/ui/shared/state/ai_comment_options.cpp"
     "src/ui/shared/state/ai_comment_options.h"
     "src/ui/shared/state/option_state.h"
@@ -513,8 +502,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/schedule/services/schedule_import_review_model.h"
     "src/features/schedule/services/schedule_output_controller.cpp"
     "src/features/schedule/services/schedule_output_controller.h"
-    "src/features/schedule/services/schedule_print_service.cpp"
-    "src/features/schedule/services/schedule_print_service.h"
     "src/features/schedule/ui/schedule_builder.cpp"
     "src/features/schedule/ui/schedule_builder.h"
     "src/features/schedule/ui/schedule_cell_hit_test.cpp"
@@ -542,7 +529,8 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/schedule/ui/schedule_page.h"
     "src/features/schedule/ui/schedule_print_dialog.cpp"
     "src/features/schedule/ui/schedule_print_dialog.h"
-    "src/features/schedule/ui/schedule_print_style.h"
+    "src/features/schedule/ui/schedule_print_document_adapter.cpp"
+    "src/features/schedule/ui/schedule_print_document_adapter.h"
     "src/features/schedule/ui/schedule_table_renderer.cpp"
     "src/features/schedule/ui/schedule_table_renderer.h"
     "src/features/schedule/ui/schedule_time_formatter.cpp"
@@ -721,6 +709,34 @@ set_source_files_properties(${CLASSMNGR_FEATURE_SOURCE_FRAGMENTS}
 )
 list(APPEND CLASSMNGR_FEATURES_SOURCES ${CLASSMNGR_FEATURE_SOURCE_FRAGMENTS})
 
+# Keep the printer preview and its shared dialog shell available to both
+# runtimes without pulling the rest of the legacy UI shared object set.
+set(CLASSMNGR_QT_PDF_PRINT_SOURCES
+    "src/ui/shared/dialogs/dialog_shell.cpp"
+    "src/ui/shared/dialogs/dialog_shell.h"
+    "src/ui/shared/printing/pdf_print_dialog.cpp"
+    "src/ui/shared/printing/pdf_print_dialog.h"
+    "src/ui/shared/printing/pdf_print_dialog_internal.h"
+    "src/ui/shared/printing/pdf_print_dialog_pages.cpp"
+    "src/ui/shared/printing/pdf_print_dialog_printer.cpp"
+    "src/ui/shared/printing/pdf_print_dialog_printing.cpp"
+    "src/ui/shared/printing/pdf_print_dialog_widgets.cpp"
+    "src/ui/shared/printing/pdf_print_service.cpp"
+    "src/ui/shared/printing/pdf_print_service.h"
+)
+
+set(CLASSMNGR_SCHEDULE_PRINT_SOURCES
+    "src/features/schedule/services/schedule_print_service.cpp"
+    "src/features/schedule/services/schedule_print_service.h"
+    "src/features/schedule/services/schedule_print_document.h"
+    "src/features/schedule/ui/schedule_print_style.h"
+)
+
+set(CLASSMNGR_NEXT_SCHEDULE_OUTPUT_SOURCES
+    "src/next/platform/qt_schedule_output_adapter.cpp"
+    "src/next/platform/qt_schedule_output_adapter.h"
+)
+
 set(CLASSMNGR_MAIN_SOURCE "src/main.cpp")
 set(CLASSMNGR_NEXT_MAIN_SOURCE "src/next/main.cpp")
 set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
@@ -738,6 +754,13 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/my_workspace_page.h"
     "src/next/ui/schedule_page.cpp"
     "src/next/ui/schedule_page.h"
+    "src/next/ui/schedule_print_projection.cpp"
+    "src/next/ui/schedule_print_projection.h"
+    "src/next/ui/schedule_output_dialog.cpp"
+    "src/next/ui/schedule_output_dialog.h"
+    "src/next/ui/schedule_output_request.h"
+    "src/next/ui/schedule_testing_assignment_dialog.cpp"
+    "src/next/ui/schedule_testing_assignment_dialog.h"
     "src/next/ui/schedule_import_workflow_dialog.cpp"
     "src/next/ui/schedule_import_workflow_dialog.h"
     "src/next/ui/schedule_import_review_models.cpp"

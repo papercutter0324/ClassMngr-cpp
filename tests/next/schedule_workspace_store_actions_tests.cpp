@@ -2,8 +2,12 @@
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/intensive_slot_state_repository.h"
 #include "data/repositories/settings_repository.h"
+#include "data/repositories/testing_class_repository.h"
+#include "domain/models/testing_class.h"
 #include "next/application/schedule_slot_state_save.h"
+#include "next/application/schedule_testing_assignment_save.h"
 #include "next/platform/workspace_store_schedule_actions.h"
+#include "next/platform/workspace_store_testing_classes_actions.h"
 #include "sql_script_runner.h"
 
 #include <QFile>
@@ -12,7 +16,9 @@
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
+#include <algorithm>
 #include <string>
+#include <optional>
 
 using namespace ClassMngr::Next;
 
@@ -37,6 +43,39 @@ QString createWorkspace(QTemporaryDir& directory, const QString& name)
     return fixture.open(QIODevice::ReadOnly)
         && executeSql(store, QString::fromUtf8(fixture.readAll()))
         ? path : QString{};
+}
+
+int createTestingClass(WorkspaceStore& store, const QString& name)
+{
+    TestingClassRepository* const repository = store.testingClassRepository();
+    if (!repository)
+    {
+        return -1;
+    }
+    TestingClass testingClass;
+    testingClass.name = name;
+    testingClass.grade = QStringLiteral("M2");
+    testingClass.level = QStringLiteral("Mixed (All)");
+    testingClass.room = QStringLiteral("Room 9");
+    const auto created = repository->createTestingClass(testingClass);
+    return created ? created.value() : -1;
+}
+
+const Application::ScheduleTestingAssignmentReadRow* assignmentAt(
+    const Application::SchedulePageReadSnapshot& snapshot,
+    const QString& day,
+    const QString& startTime)
+{
+    const auto found = std::find_if(
+        snapshot.testingAssignments.rows.begin(),
+        snapshot.testingAssignments.rows.end(),
+        [&](const Application::ScheduleTestingAssignmentReadRow& row) {
+            return QString::fromStdU16String(row.assignmentKey.day()) == day
+                && QString::fromStdU16String(row.assignmentKey.startTime())
+                    == startTime;
+        });
+    return found == snapshot.testingAssignments.rows.end()
+        ? nullptr : &*found;
 }
 
 std::size_t countRows(const Application::ScheduleBuilderSourceSnapshot& source,
@@ -86,6 +125,7 @@ class ScheduleWorkspaceStoreActionsTests final : public QObject
 
 private slots:
     void exactPathsIsolateIdenticalIdsPreferencesModesAndSlotKeys();
+    void testingAssignmentsArePathScopedTransactionalAndRetryable();
     void failuresAndOversizedSourceAreReturnedAsErrors();
 };
 
@@ -185,6 +225,219 @@ void ScheduleWorkspaceStoreActionsTests::exactPathsIsolateIdenticalIdsPreference
     QVERIFY(!hasState(afterDefault.value().slotStates,
                       QStringLiteral("Monday"), QStringLiteral("20:00"),
                       QStringLiteral("lunch")));
+}
+
+void ScheduleWorkspaceStoreActionsTests::
+testingAssignmentsArePathScopedTransactionalAndRetryable()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString firstPath = createWorkspace(
+        temporary, QStringLiteral("assignments-first.tps"));
+    const QString secondPath = createWorkspace(
+        temporary, QStringLiteral("assignments-second.tps"));
+    QVERIFY(!firstPath.isEmpty());
+    QVERIFY(!secondPath.isEmpty());
+
+    int firstClassId = -1;
+    int replacementClassId = -1;
+    int overlappingClassId = -1;
+    {
+        WorkspaceStore firstStore;
+        WorkspaceStore secondStore;
+        QVERIFY(firstStore.openExisting(firstPath));
+        QVERIFY(secondStore.openExisting(secondPath));
+        firstClassId = createTestingClass(
+            firstStore, QStringLiteral("First testing class"));
+        replacementClassId = createTestingClass(
+            firstStore, QStringLiteral("Replacement testing class"));
+        overlappingClassId = createTestingClass(
+            secondStore, QStringLiteral("Second workspace class"));
+        QVERIFY(firstClassId > 0);
+        QVERIFY(replacementClassId > firstClassId);
+        QCOMPARE(overlappingClassId, firstClassId);
+        QVERIFY(firstStore.settingsRepository()->saveSetting(
+            QStringLiteral("myInfo/name"), QStringLiteral("First Profile")));
+        QVERIFY(secondStore.settingsRepository()->saveSetting(
+            QStringLiteral("myInfo/name"), QStringLiteral("Second Profile")));
+    }
+
+    using Mutation = Application::ScheduleTestingAssignmentMutation;
+    const auto firstChoices = Platform::readTestingClassesAtPath(firstPath);
+    const auto secondChoices = Platform::readTestingClassesAtPath(secondPath);
+    QVERIFY(firstChoices);
+    QVERIFY(secondChoices);
+    const auto choiceById = [](const auto& choices, const int id) {
+        return std::find_if(choices.choices.begin(), choices.choices.end(),
+            [id](const auto& choice) {
+                return choice.classId.value() == std::to_string(id);
+            });
+    };
+    const auto firstChoice = choiceById(firstChoices.value(), firstClassId);
+    const auto secondChoice = choiceById(secondChoices.value(), overlappingClassId);
+    QVERIFY(firstChoice != firstChoices.value().choices.end());
+    QVERIFY(secondChoice != secondChoices.value().choices.end());
+    QCOMPARE(QString::fromStdU16String(firstChoice->name),
+             QStringLiteral("First testing class"));
+    QCOMPARE(QString::fromStdU16String(secondChoice->name),
+             QStringLiteral("Second workspace class"));
+
+    const auto firstPlain = Application::ScheduleTestingAssignmentSaveRequest{
+        .mutation = Mutation::SavePlainTesting,
+        .day = u"Monday",
+        .startTime = u"16:00"
+    };
+    QVERIFY(Platform::saveScheduleTestingAssignmentAtPath(firstPath, firstPlain));
+    auto secondPlain = firstPlain;
+    secondPlain.room = u"Room B";
+    QVERIFY(Platform::saveScheduleTestingAssignmentAtPath(secondPath, secondPlain));
+
+    auto firstRead = Platform::readSchedulePageAtPath(firstPath);
+    auto secondRead = Platform::readSchedulePageAtPath(secondPath);
+    QVERIFY(firstRead);
+    QVERIFY(secondRead);
+    const auto* firstAssignment = assignmentAt(
+        firstRead.value(), QStringLiteral("Monday"), QStringLiteral("16:00"));
+    const auto* secondAssignment = assignmentAt(
+        secondRead.value(), QStringLiteral("Monday"), QStringLiteral("16:00"));
+    QVERIFY(firstAssignment);
+    QVERIFY(secondAssignment);
+    QCOMPARE(QString::fromStdU16String(firstAssignment->room), QString{});
+    QCOMPARE(QString::fromStdU16String(secondAssignment->room),
+             QStringLiteral("Room B"));
+
+    auto editedPlain = firstPlain;
+    editedPlain.room = u"Room A";
+    editedPlain.replaceExisting = true;
+    QVERIFY(Platform::saveScheduleTestingAssignmentAtPath(firstPath, editedPlain));
+    auto classAssignment = Application::ScheduleTestingAssignmentSaveRequest{
+        .mutation = Mutation::AssignTestingClass,
+        .day = u"Monday",
+        .startTime = u"16:00",
+        .classId = Domain::ClassId::fromString(std::to_string(firstClassId)),
+        .replaceExisting = true
+    };
+    QVERIFY(classAssignment.classId);
+    QVERIFY(Platform::saveScheduleTestingAssignmentAtPath(firstPath, classAssignment));
+    classAssignment.classId = Domain::ClassId::fromString(
+        std::to_string(replacementClassId));
+    QVERIFY(Platform::saveScheduleTestingAssignmentAtPath(firstPath, classAssignment));
+
+    firstRead = Platform::readSchedulePageAtPath(firstPath);
+    secondRead = Platform::readSchedulePageAtPath(secondPath);
+    QVERIFY(firstRead);
+    QVERIFY(secondRead);
+    firstAssignment = assignmentAt(
+        firstRead.value(), QStringLiteral("Monday"), QStringLiteral("16:00"));
+    secondAssignment = assignmentAt(
+        secondRead.value(), QStringLiteral("Monday"), QStringLiteral("16:00"));
+    QVERIFY(firstAssignment);
+    QVERIFY(secondAssignment);
+    QCOMPARE(firstAssignment->classId.value(), std::to_string(replacementClassId));
+    QVERIFY(firstAssignment->specialClass);
+    QCOMPARE(QString::fromStdU16String(firstAssignment->specialClass->name),
+             QStringLiteral("Replacement testing class"));
+    QCOMPARE(QString::fromStdU16String(secondAssignment->room),
+             QStringLiteral("Room B"));
+    QCOMPARE(secondAssignment->classId.value(), std::string("-1"));
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(firstPath));
+        QSqlQuery failReplacement(store.database());
+        QVERIFY2(failReplacement.exec(QStringLiteral(R"(
+            CREATE TRIGGER fail_testing_assignment_replacement
+            BEFORE UPDATE ON schedule_testing_blocks
+            WHEN NEW.day = 'Monday' AND NEW.start_time = '16:00'
+            BEGIN SELECT RAISE(ABORT, 'forced assignment transaction failure'); END
+        )")), qPrintable(failReplacement.lastError().text()));
+    }
+    classAssignment.classId = Domain::ClassId::fromString(
+        std::to_string(firstClassId));
+    const auto failedReplacement =
+        Platform::saveScheduleTestingAssignmentAtPath(firstPath, classAssignment);
+    QVERIFY(!failedReplacement);
+    firstRead = Platform::readSchedulePageAtPath(firstPath);
+    QVERIFY(firstRead);
+    firstAssignment = assignmentAt(
+        firstRead.value(), QStringLiteral("Monday"), QStringLiteral("16:00"));
+    QVERIFY(firstAssignment);
+    QCOMPARE(firstAssignment->classId.value(), std::to_string(replacementClassId));
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(firstPath));
+        QSqlQuery removeTrigger(store.database());
+        QVERIFY2(removeTrigger.exec(QStringLiteral(
+            "DROP TRIGGER fail_testing_assignment_replacement")),
+            qPrintable(removeTrigger.lastError().text()));
+    }
+    QVERIFY(Platform::saveScheduleTestingAssignmentAtPath(firstPath, classAssignment));
+
+    const Application::ScheduleTestingAssignmentSaveRequest removeAssignment{
+        .mutation = Mutation::RemoveAssignment,
+        .day = u"Monday",
+        .startTime = u"16:00"
+    };
+    QVERIFY(Platform::saveScheduleTestingAssignmentAtPath(
+        firstPath, removeAssignment));
+    firstRead = Platform::readSchedulePageAtPath(firstPath);
+    QVERIFY(firstRead);
+    QVERIFY(!assignmentAt(firstRead.value(), QStringLiteral("Monday"),
+                          QStringLiteral("16:00")));
+
+    const Application::ScheduleTestingAssignmentSaveRequest retryAssignment{
+        .mutation = Mutation::AssignTestingClass,
+        .day = u"Tuesday",
+        .startTime = u"17:00",
+        .classId = Domain::ClassId::fromString(std::to_string(firstClassId))
+    };
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(firstPath));
+        QSqlQuery failInsert(store.database());
+        QVERIFY2(failInsert.exec(QStringLiteral(R"(
+            CREATE TRIGGER fail_testing_assignment_insert
+            BEFORE INSERT ON schedule_testing_blocks
+            WHEN NEW.day = 'Tuesday' AND NEW.start_time = '17:00'
+            BEGIN SELECT RAISE(ABORT, 'forced assignment insert failure'); END
+        )")), qPrintable(failInsert.lastError().text()));
+    }
+    QVERIFY(!Platform::saveScheduleTestingAssignmentAtPath(
+        firstPath, retryAssignment));
+    firstRead = Platform::readSchedulePageAtPath(firstPath);
+    QVERIFY(firstRead);
+    QVERIFY(!assignmentAt(firstRead.value(), QStringLiteral("Tuesday"),
+                          QStringLiteral("17:00")));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(firstPath));
+        QSqlQuery removeTrigger(store.database());
+        QVERIFY2(removeTrigger.exec(QStringLiteral(
+            "DROP TRIGGER fail_testing_assignment_insert")),
+            qPrintable(removeTrigger.lastError().text()));
+    }
+    QVERIFY(Platform::saveScheduleTestingAssignmentAtPath(
+        firstPath, retryAssignment));
+    firstRead = Platform::readSchedulePageAtPath(firstPath);
+    QVERIFY(firstRead);
+    const auto* retried = assignmentAt(
+        firstRead.value(), QStringLiteral("Tuesday"), QStringLiteral("17:00"));
+    QVERIFY(retried);
+    QCOMPARE(retried->classId.value(), std::to_string(firstClassId));
+
+    const auto firstProfile = Platform::readScheduleOutputProfileNameAtPath(firstPath);
+    const auto secondProfile = Platform::readScheduleOutputProfileNameAtPath(secondPath);
+    QVERIFY(firstProfile);
+    QVERIFY(secondProfile);
+    QCOMPARE(QString::fromStdString(firstProfile.value()),
+             QStringLiteral("First Profile"));
+    QCOMPARE(QString::fromStdString(secondProfile.value()),
+             QStringLiteral("Second Profile"));
+    QVERIFY(!Platform::saveScheduleTestingAssignmentAtPath(
+        temporary.filePath(QStringLiteral("missing.tps")), firstPlain));
+    QVERIFY(!Platform::readScheduleOutputProfileNameAtPath(
+        temporary.filePath(QStringLiteral("missing.tps"))));
 }
 
 void ScheduleWorkspaceStoreActionsTests::failuresAndOversizedSourceAreReturnedAsErrors()

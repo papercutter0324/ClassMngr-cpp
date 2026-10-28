@@ -6,6 +6,11 @@
 #include "next/application/schedule_slot_state_save.h"
 #include "next/application/schedule_import_apply_request.h"
 #include "next/application/schedule_import_state_snapshot.h"
+#include "next/application/schedule_testing_assignment_save.h"
+#include "next/application/schedule_testing_class_choices_query.h"
+#include "next/application/testing_class_create.h"
+#include "next/application/personal_display_name_preferences.h"
+#include "next/ui/schedule_output_request.h"
 #include "next/ui/page.h"
 #include "next/ui/schedule_page_model.h"
 
@@ -46,6 +51,20 @@ struct SchedulePageActions final
         const QString&,
         const Application::ScheduleSlotStateSaveRequest&)>
         saveSlotState;
+    std::function<Application::ScheduleTestingClassChoicesReadResult(
+        const QString&)> readTestingClassChoices;
+    std::function<Application::ScheduleTestingAssignmentSaveResult(
+        const QString&,
+        const Application::ScheduleTestingAssignmentSaveRequest&)>
+        saveTestingAssignment;
+    std::function<Application::PersonalDisplayNamePreferencesReadResult(
+        const QString&)> readScheduleOutputProfileName;
+    std::function<std::optional<QString>(QWidget*)> chooseSchedulePdfPath;
+    std::function<ScheduleOutputResult(ScheduleOutputRequest, QWidget*)>
+        performScheduleOutput;
+    std::function<void(
+        const Application::TestingClassPendingScheduleSlot&)>
+        openTestingClasses;
     std::function<QString(QWidget*)> chooseScheduleImportWorkbook;
     std::function<Result<ScheduleImportWorkbook>(QIODevice&, ScheduleImportKind)>
         parseScheduleImportWorkbook;
@@ -88,6 +107,7 @@ public:
     [[nodiscard]] QCheckBox* preferenceCheckBox(int index) const noexcept;
     [[nodiscard]] QPushButton* retryButton() const noexcept;
     [[nodiscard]] QLabel* statusLabel() const noexcept;
+    [[nodiscard]] QAction* scheduleOutputAction() const noexcept;
     [[nodiscard]] class ScheduleImportWorkflowDialog* importDialog() const noexcept;
     [[nodiscard]] SchedulePageVisualMetrics visualMetrics() const;
 
@@ -104,6 +124,8 @@ private:
     void handleModeChanged(Application::ScheduleDisplayMode mode);
     void handlePreferenceChanged();
     void handleCellClicked(int row, int column);
+    void openTestingAssignment(const SchedulePageCell& cell);
+    void startScheduleOutput();
     [[nodiscard]] QString activePath() const;
     [[nodiscard]] QString workspaceIdentity() const;
     [[nodiscard]] Application::ScheduleDisplayPreferences
@@ -127,6 +149,7 @@ private:
     QToolButton* m_preferencesButton = nullptr;
     QMenu* m_preferencesMenu = nullptr;
     QAction* m_importAction = nullptr;
+    QAction* m_scheduleOutputAction = nullptr;
     QPointer<class ScheduleImportWorkflowDialog> m_importDialog;
     QPushButton* m_modeButtons[3]{};
     QCheckBox* m_preferenceCheckBoxes[5]{};

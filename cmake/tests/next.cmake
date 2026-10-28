@@ -1201,6 +1201,18 @@ get_target_property(_classmngr_next_workspace_links
     ClassMngrNextWorkspace
     LINK_LIBRARIES
 )
+get_target_property(_classmngr_next_schedule_output_links
+    ClassMngrNextScheduleOutput
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_next_schedule_output_sources
+    ClassMngrNextScheduleOutput
+    SOURCES
+)
+get_target_property(_classmngr_next_schedule_output_type
+    ClassMngrNextScheduleOutput
+    TYPE
+)
 get_target_property(_classmngr_workspace_store_links
     ClassMngrWorkspaceStore
     LINK_LIBRARIES
@@ -1250,6 +1262,9 @@ foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_next_startup_update_links
         _classmngr_updater_links
         _classmngr_next_workspace_links
+        _classmngr_next_schedule_output_links
+        _classmngr_next_schedule_output_sources
+        _classmngr_next_schedule_output_type
         _classmngr_workspace_store_links
         _classmngr_next_workspace_sources
         _classmngr_next_workspace_type
@@ -1273,6 +1288,9 @@ file(WRITE "${_classmngr_next_boundary_report}"
     "NEXT_STARTUP_UPDATE_LINKS=${_classmngr_next_startup_update_links}\n"
     "UPDATER_LINKS=${_classmngr_updater_links}\n"
     "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
+    "NEXT_SCHEDULE_OUTPUT_LINKS=${_classmngr_next_schedule_output_links}\n"
+    "NEXT_SCHEDULE_OUTPUT_SOURCES=${_classmngr_next_schedule_output_sources}\n"
+    "NEXT_SCHEDULE_OUTPUT_TYPE=${_classmngr_next_schedule_output_type}\n"
     "WORKSPACE_STORE_LINKS=${_classmngr_workspace_store_links}\n"
     "NEXT_WORKSPACE_SOURCES=${_classmngr_next_workspace_sources}\n"
     "NEXT_WORKSPACE_TYPE=${_classmngr_next_workspace_type}\n"
@@ -3320,7 +3338,6 @@ target_link_libraries(ClassMngrNextTestingClassesManagerTests
         ClassMngrNext::Application
         ClassMngrNext::Resources
         ClassMngrScheduleImportParser
-        ClassMngrScheduleImportRules
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore
         Qt6::Sql
@@ -3501,7 +3518,6 @@ target_link_libraries(ClassMngrNextTestingClassesVisualCapture
         ClassMngrNext::Application
         ClassMngrNext::Resources
         ClassMngrScheduleImportParser
-        ClassMngrScheduleImportRules
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore
         Qt6::Sql
@@ -7074,6 +7090,7 @@ add_test(NAME ClassMngrNextPreferencesSnapshotAdapterTests COMMAND ClassMngrNext
 add_executable(ClassMngrNextScheduleWorkspaceStoreActionsTests
     tests/next/schedule_workspace_store_actions_tests.cpp
     src/next/platform/workspace_store_schedule_actions.cpp
+    src/next/platform/workspace_store_testing_classes_actions.cpp
 )
 target_compile_features(ClassMngrNextScheduleWorkspaceStoreActionsTests
     PRIVATE cxx_std_23
@@ -7111,13 +7128,19 @@ add_executable(ClassMngrNextSchedulePageTests
     tests/next/schedule_page_tests.cpp
     tests/next/sql_script_runner.h
     src/next/platform/workspace_store_schedule_actions.cpp
+    src/next/platform/workspace_store_testing_classes_actions.cpp
     src/next/platform/workspace_store_class_editor_actions.cpp
     src/next/ui/schedule_page.cpp
+    src/next/ui/schedule_print_projection.cpp
+    src/next/ui/schedule_output_dialog.cpp
+    src/next/ui/schedule_testing_assignment_dialog.cpp
     src/next/ui/schedule_import_workflow_dialog.cpp
     src/next/ui/schedule_import_review_models.cpp
     src/next/ui/schedule_import_request_mapper.cpp
     src/next/ui/schedule_page_model.cpp
     src/next/ui/schedule_page_slot_policy_bridge.cpp
+    src/next/ui/testing_classes_manager_page.cpp
+    src/next/ui/testing_classes_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
@@ -7144,7 +7167,6 @@ target_link_libraries(ClassMngrNextSchedulePageTests
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore
-        ClassMngrScheduleImportRules
         ClassMngrScheduleImportParser
         Qt6::Concurrent
         Qt6::Sql
@@ -7178,6 +7200,9 @@ add_executable(ClassMngrNextNormalScheduleImportIntegrationTests
     src/next/ui/page.h
     src/next/ui/page_host.h
     src/next/ui/schedule_page.cpp
+    src/next/ui/schedule_print_projection.cpp
+    src/next/ui/schedule_output_dialog.cpp
+    src/next/ui/schedule_testing_assignment_dialog.cpp
     src/next/ui/schedule_page_model.cpp
     src/next/ui/schedule_page_slot_policy_bridge.cpp
     src/next/ui/schedule_import_workflow_dialog.cpp
@@ -7207,7 +7232,6 @@ target_link_libraries(ClassMngrNextNormalScheduleImportIntegrationTests
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore
         ClassMngrScheduleImportParser
-        ClassMngrScheduleImportRules
         Qt6::Concurrent
         Qt6::Sql
         Qt6::Test
@@ -7238,6 +7262,9 @@ add_executable(ClassMngrNextScheduleVisualCapture
     src/core/process_memory_snapshot.cpp
     src/next/platform/workspace_store_schedule_actions.cpp
     src/next/ui/schedule_page.cpp
+    src/next/ui/schedule_print_projection.cpp
+    src/next/ui/schedule_output_dialog.cpp
+    src/next/ui/schedule_testing_assignment_dialog.cpp
     src/next/ui/schedule_import_workflow_dialog.cpp
     src/next/ui/schedule_import_review_models.cpp
     src/next/ui/schedule_import_request_mapper.cpp
@@ -7270,7 +7297,6 @@ target_link_libraries(ClassMngrNextScheduleVisualCapture
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore
         ClassMngrScheduleImportParser
-        ClassMngrScheduleImportRules
         Qt6::Concurrent
         Qt6::Sql
         Qt6::Widgets
@@ -7281,7 +7307,18 @@ set_target_properties(ClassMngrNextScheduleVisualCapture
 set_property(TARGET ClassMngrNextScheduleVisualCapture
     PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
 )
-add_dependencies(ClassMngrNextScheduleVisualCapture ClassMngrNextResourcePackage)
+qt_add_resources(ClassMngrNextScheduleVisualCapture
+    schedule_visual_capture_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
+)
+add_dependencies(ClassMngrNextScheduleVisualCapture
+    ClassMngrNextResourcePackage
+    ClassMngrNextTranslationOutputs
+)
 add_test(
     NAME ClassMngrNextScheduleVisualCapture
     COMMAND ClassMngrNextScheduleVisualCapture

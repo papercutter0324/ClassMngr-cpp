@@ -1,11 +1,12 @@
 #pragma once
 
 #include "domain/models/document_output_result.h"
+#include "features/schedule/services/schedule_print_document.h"
 #include "features/schedule/ui/schedule_print_style.h"
-#include "features/schedule/ui/schedule_view_model.h"
 #include "ui/shared/constants/options.h"
 
 #include <QPageLayout>
+#include <QFont>
 #include <QString>
 
 class QWidget;
@@ -18,9 +19,11 @@ using Result = DocumentOutputResult;
 struct Request
 {
     QWidget* parent = nullptr;
-    ScheduleViewModel model;
+    Document document;
     SchedulePrintStyle style = SchedulePrintStyle::CurrentAppearance;
     Theme currentTheme = Theme::Dark;
+    QFont englishFont;
+    QFont koreanFont;
     QString userName;
     bool showEnglishNames = false;
     QPageLayout::Orientation pageOrientation = QPageLayout::Landscape;

@@ -2,8 +2,10 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
+#include "core/fontmanager.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/ui/schedule_print_dialog.h"
+#include "features/schedule/ui/schedule_print_document_adapter.h"
 #include "next/platform/application_services_personal_display_name_preferences_port.h"
 
 #include <QDialog>
@@ -34,11 +36,13 @@ void ScheduleOutputController::execute(
 
     SchedulePrintService::Request request;
     request.parent = parent;
-    request.model = model;
+    request.document = schedulePrintDocumentFromLegacyModel(model);
     request.showEnglishNames = showEnglishNames;
     request.style = dialog.selectedStyle();
     request.pageOrientation = dialog.selectedOrientation();
     request.currentTheme = currentTheme;
+    request.englishFont = FontManager::getUiFont();
+    request.koreanFont = FontManager::getKoreanFont();
     if (services)
     {
         ClassMngr::Next::Platform::
