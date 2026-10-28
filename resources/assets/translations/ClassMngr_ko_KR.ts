@@ -11411,5 +11411,15 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Saving this year will replace custom schedules for later years. Continue?</source><translation>이 연도 일정을 저장하면 이후 연도의 사용자 지정 일정이 바뀝니다. 계속할까요?</translation></message>
     <message><source>The academic schedule could not be saved. Your edits are still available.</source><translation>학기 일정을 저장하지 못했습니다. 편집 내용은 계속 사용할 수 있습니다.</translation></message>
     <message><source>An event color could not be saved. Your edits are still available.</source><translation>일정 색상을 저장하지 못했습니다. 편집 내용은 계속 사용할 수 있습니다.</translation></message>
+    <message><source>Import Calendar Events</source><translation>캘린더 일정 가져오기</translation></message>
+    <message><source>Importing events...</source><translation>일정을 가져오는 중...</translation></message>
+    <message><source>Imported %1 event(s). Skipped %2 existing or ignored item(s).</source><translation>%1개 일정을 가져왔습니다. 기존 항목 또는 무시된 항목 %2개를 건너뛰었습니다.</translation></message>
+    <message><source>Calendar import failed: %1</source><translation>캘린더 일정 가져오기에 실패했습니다: %1</translation></message>
+    <message><source>Calendar import was canceled.</source><translation>캘린더 일정 가져오기가 취소되었습니다.</translation></message>
+    <message><source>Open a workspace before importing Calendar events.</source><translation>캘린더 일정을 가져오기 전에 작업 공간을 여세요.</translation></message>
+    <message><source>The Calendar import source URL is invalid.</source><translation>캘린더 일정 가져오기 URL이 올바르지 않습니다.</translation></message>
+    <message><source>The downloaded spreadsheet could not be staged.</source><translation>다운로드한 스프레드시트를 준비하지 못했습니다.</translation></message>
+    <message><source>The Calendar source could not be downloaded.</source><translation>캘린더 일정을 다운로드하지 못했습니다.</translation></message>
+    <message><source>Calendar import could not be completed.</source><translation>캘린더 일정 가져오기를 완료하지 못했습니다.</translation></message>
  </context>
 </TS>

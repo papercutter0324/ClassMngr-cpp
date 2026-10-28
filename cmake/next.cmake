@@ -774,6 +774,8 @@ target_link_libraries(ClassMngrNextCalendarUi
         ClassMngrBuildSettings
         ClassMngrWorkspaceStore
         Qt6::Concurrent
+        ClassMngrCalendarImportParser
+        Qt6::Network
 )
 set_target_properties(ClassMngrNextCalendarUi
     PROPERTIES
@@ -908,6 +910,8 @@ classmngr_next_assert_dependencies(ClassMngrNextCalendarUi
     "$<LINK_ONLY:ClassMngrBuildSettings>"
     "$<LINK_ONLY:ClassMngrWorkspaceStore>"
     "$<LINK_ONLY:Qt6::Concurrent>"
+    "$<LINK_ONLY:ClassMngrCalendarImportParser>"
+    "$<LINK_ONLY:Qt6::Network>"
 )
 classmngr_next_assert_dependencies(ClassMngrNextUiShared
     ClassMngrNext::Application

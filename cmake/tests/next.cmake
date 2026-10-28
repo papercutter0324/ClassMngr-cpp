@@ -1208,6 +1208,10 @@ get_target_property(_classmngr_next_schedule_output_links
     ClassMngrNextScheduleOutput
     LINK_LIBRARIES
 )
+get_target_property(_classmngr_next_calendar_ui_dependencies
+    ClassMngrNextCalendarUi
+    INTERFACE_LINK_LIBRARIES
+)
 get_target_property(_classmngr_next_schedule_output_sources
     ClassMngrNextScheduleOutput
     SOURCES
@@ -1266,6 +1270,7 @@ foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_updater_links
         _classmngr_next_workspace_links
         _classmngr_next_schedule_output_links
+        _classmngr_next_calendar_ui_dependencies
         _classmngr_next_schedule_output_sources
         _classmngr_next_schedule_output_type
         _classmngr_workspace_store_links
@@ -1292,6 +1297,7 @@ file(WRITE "${_classmngr_next_boundary_report}"
     "UPDATER_LINKS=${_classmngr_updater_links}\n"
     "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
     "NEXT_SCHEDULE_OUTPUT_LINKS=${_classmngr_next_schedule_output_links}\n"
+    "NEXT_CALENDAR_UI_DEPENDENCIES=${_classmngr_next_calendar_ui_dependencies}\n"
     "NEXT_SCHEDULE_OUTPUT_SOURCES=${_classmngr_next_schedule_output_sources}\n"
     "NEXT_SCHEDULE_OUTPUT_TYPE=${_classmngr_next_schedule_output_type}\n"
     "WORKSPACE_STORE_LINKS=${_classmngr_workspace_store_links}\n"
@@ -7378,6 +7384,7 @@ target_link_libraries(ClassMngrNextCalendarPageTests
         ClassMngrScheduleImportParser
         ClassMngrWorkspaceStore
         Qt6::Concurrent
+        Qt6::Network
         Qt6::Sql
         Qt6::Test
         Qt6::Widgets

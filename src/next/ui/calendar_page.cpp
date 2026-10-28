@@ -7,6 +7,7 @@
 #include "next/platform/application_services_academic_calendar_schedule_preferences_port.h"
 #include "next/platform/application_services_calendar_first_day_of_week_preferences_port.h"
 #include "next/ui/calendar_event_dialog.h"
+#include "next/ui/calendar_event_import_service.h"
 #include "next/ui/calendar_preferences_dialog.h"
 
 #include "data/database/workspace_store.h"
@@ -159,6 +160,70 @@ CalendarPage::CalendarPage(
 {
     setObjectName(QStringLiteral("nextCalendarPage"));
     buildShell();
+    m_calendarImportService = new NextCalendarEventImportService(
+        [this] { return activeWorkspacePath(); },
+        [this] { return calendarImportCampusCodes(); },
+        m_actions.calendarImportSourceUrl,
+        m_actions.calendarImportTemporaryFileTemplate,
+        m_actions.calendarImportNetworkAccessManagerFactory,
+        this);
+    connect(m_calendarImportService,
+        &NextCalendarEventImportService::importingChanged,
+        this,
+        [this](const bool importing)
+        {
+            if (importing && m_status)
+            {
+                m_status->setText(QCoreApplication::translate(
+                    "CalendarPreferencesDialog", "Importing events..."));
+                m_status->show();
+            }
+        });
+    connect(m_calendarImportService,
+        &NextCalendarEventImportService::importFinished,
+        this,
+        [this](const int importedCount, const int skippedCount)
+        {
+            if (m_status)
+            {
+                m_status->setText(QCoreApplication::translate(
+                    "CalendarPreferencesDialog",
+                    "Imported %1 event(s). Skipped %2 existing or ignored item(s).")
+                    .arg(importedCount)
+                    .arg(skippedCount));
+                m_status->show();
+            }
+            if (importedCount > 0 && m_cache)
+            {
+                m_cache->invalidate();
+                updateRetentionAndQueries();
+            }
+        });
+    connect(m_calendarImportService,
+        &NextCalendarEventImportService::importFailed,
+        this,
+        [this](const QString& message)
+        {
+            if (m_status)
+            {
+                m_status->setText(QCoreApplication::translate(
+                    "CalendarPreferencesDialog", "Calendar import failed: %1")
+                    .arg(message));
+                m_status->show();
+            }
+        });
+    connect(m_calendarImportService,
+        &NextCalendarEventImportService::importCanceled,
+        this,
+        [this]
+        {
+            if (m_status)
+            {
+                m_status->setText(QCoreApplication::translate(
+                    "CalendarPreferencesDialog", "Calendar import was canceled."));
+                m_status->show();
+            }
+        });
 }
 
 void CalendarPage::buildShell()
@@ -233,6 +298,10 @@ PageOperationResult<void> CalendarPage::onActivating()
 
 void CalendarPage::onSuspending() noexcept
 {
+    if (m_calendarImportService)
+    {
+        m_calendarImportService->cancel();
+    }
     releaseCalendarContent();
 }
 
@@ -442,6 +511,10 @@ void CalendarPage::reloadWorkspaceState()
     const QString path = activeWorkspacePath();
     if (path != m_workspacePath)
     {
+        if (m_calendarImportService)
+        {
+            m_calendarImportService->cancel();
+        }
         if (m_workspaceStore)
         {
             m_workspaceStore->close();
@@ -793,6 +866,7 @@ void CalendarPage::openCalendarPreferences()
     actions.deleteAllEvents = m_actions.deleteAllEvents;
     actions.readEventTypeColor = m_actions.readEventTypeColor;
     actions.saveEventTypeColor = m_actions.saveEventTypeColor;
+    actions.calendarImportService = m_calendarImportService;
     actions.preferencesChanged = [this](const bool eventsChanged)
     {
         if (eventsChanged && m_cache)
@@ -1038,6 +1112,31 @@ QString CalendarPage::activeWorkspacePath() const
     return m_actions.activeWorkspacePath
         ? m_actions.activeWorkspacePath()
         : QString();
+}
+
+QStringList CalendarPage::calendarImportCampusCodes() const
+{
+    QStringList codes;
+    if (!m_actions.readCampusDirectory)
+    {
+        return codes;
+    }
+    for (const Application::CalendarPageCampusMetadata& campus :
+         m_actions.readCampusDirectory())
+    {
+        if (!campus.campusCode.has_value())
+        {
+            continue;
+        }
+        const std::string& value = campus.campusCode->value();
+        const QString code = QString::fromUtf8(
+            value.data(), static_cast<qsizetype>(value.size())).trimmed();
+        if (!code.isEmpty() && !codes.contains(code, Qt::CaseInsensitive))
+        {
+            codes.append(code);
+        }
+    }
+    return codes;
 }
 
 Application::CalendarEventEditDraft CalendarPage::draftFromSummary(

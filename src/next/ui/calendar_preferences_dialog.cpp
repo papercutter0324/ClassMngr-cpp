@@ -2,6 +2,7 @@
 
 #include "features/calendar/ui/academic_calendar_provider.h"
 #include "next/application/academic_year_schedule_policy.h"
+#include "next/ui/calendar_event_import_service.h"
 
 #include <QCoreApplication>
 #include <QCheckBox>
@@ -127,7 +128,73 @@ CalendarPreferencesDialog::CalendarPreferencesDialog(
         m_firstDay->addItem(dayLabels.at(static_cast<std::size_t>(day)), day);
     }
     optionsLayout->addRow(preferencesDialogText("First day of week"), m_firstDay);
+    m_importEvents = new QPushButton(
+        preferencesDialogText("Import Calendar Events"), options);
+    m_importEvents->setObjectName(QStringLiteral("calendarImportEvents"));
+    m_importStatus = new QLabel(options);
+    m_importStatus->setObjectName(QStringLiteral("calendarImportStatus"));
+    m_importStatus->setWordWrap(true);
+    m_importStatus->hide();
+    optionsLayout->addRow(m_importEvents);
+    optionsLayout->addRow(m_importStatus);
     outer->addWidget(options);
+
+    if (m_actions.calendarImportService)
+    {
+        NextCalendarEventImportService* const service =
+            m_actions.calendarImportService;
+        connect(m_importEvents, &QPushButton::clicked, this, [this, service]
+        {
+            service->start(m_databasePath);
+        });
+        connect(service, &NextCalendarEventImportService::importingChanged,
+            this, [this](const bool importing)
+            {
+                m_importEvents->setEnabled(!importing);
+                if (importing)
+                {
+                    m_importStatus->setText(
+                        preferencesDialogText("Importing events..."));
+                    m_importStatus->show();
+                }
+            });
+        connect(service, &NextCalendarEventImportService::importFinished,
+            this, [this](const int importedCount, const int skippedCount)
+            {
+                m_importStatus->setText(
+                    preferencesDialogText(
+                        "Imported %1 event(s). Skipped %2 existing or ignored item(s).")
+                        .arg(importedCount)
+                        .arg(skippedCount));
+                m_importStatus->show();
+            });
+        connect(service, &NextCalendarEventImportService::importFailed,
+            this, [this](const QString& message)
+            {
+                m_importStatus->setText(
+                    preferencesDialogText("Calendar import failed: %1")
+                        .arg(message));
+                m_importStatus->show();
+            });
+        connect(service, &NextCalendarEventImportService::importCanceled,
+            this, [this]
+            {
+                m_importStatus->setText(
+                    preferencesDialogText("Calendar import was canceled."));
+                m_importStatus->show();
+            });
+        if (service->isImporting())
+        {
+            m_importEvents->setEnabled(false);
+            m_importStatus->setText(
+                preferencesDialogText("Importing events..."));
+            m_importStatus->show();
+        }
+    }
+    else
+    {
+        m_importEvents->setEnabled(false);
+    }
 
     auto* colors = new QGroupBox(preferencesDialogText("Event Colors"), this);
     auto* colorsLayout = new QGridLayout(colors);

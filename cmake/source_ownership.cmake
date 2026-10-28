@@ -56,6 +56,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrWorkbookReader
         ${CLASSMNGR_WORKBOOK_READER_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrCalendarImportParser
+        ${CLASSMNGR_CALENDAR_IMPORT_PARSER_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrTeacherImportParser
         ${CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES}
     )

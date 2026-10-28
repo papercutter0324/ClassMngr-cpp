@@ -29,6 +29,8 @@ class QEvent;
 class QLabel;
 class QListWidget;
 class QListWidgetItem;
+class QNetworkAccessManager;
+class QObject;
 class QPushButton;
 class QQuickWidget;
 class QWidget;
@@ -39,6 +41,8 @@ class WorkspaceStore;
 
 namespace ClassMngr::Next::Ui
 {
+
+class NextCalendarEventImportService;
 
 struct CalendarPageActions final
 {
@@ -76,6 +80,12 @@ struct CalendarPageActions final
         const QString&,
         Domain::CalendarEventType,
         const std::string&)> saveEventTypeColor;
+    // Test seams for deterministic transport and staged-file coverage.
+    // Production leaves these overrides empty.
+    QString calendarImportSourceUrl;
+    QString calendarImportTemporaryFileTemplate;
+    std::function<QNetworkAccessManager*(QObject*)>
+        calendarImportNetworkAccessManagerFactory;
 };
 
 struct CalendarPageRuntimeMetrics final
@@ -150,6 +160,7 @@ private:
     [[nodiscard]] CalendarEventCache::DateRange visibleGridRange() const;
     [[nodiscard]] CalendarEventCache::DateRange upcomingRange() const;
     [[nodiscard]] QString activeWorkspacePath() const;
+    [[nodiscard]] QStringList calendarImportCampusCodes() const;
     [[nodiscard]] Application::CalendarEventEditDraft draftFromSummary(
         const Application::CalendarEventSummary& summary
         ) const;
@@ -168,6 +179,7 @@ private:
     CalendarEventCache* m_cache = nullptr;
     CalendarEventModel* m_model = nullptr;
     WorkspaceStore* m_workspaceStore = nullptr;
+    NextCalendarEventImportService* m_calendarImportService = nullptr;
     AcademicCalendarProvider* m_academicProvider = nullptr;
     QString m_workspacePath;
     QStringList m_currentCampusCodes;

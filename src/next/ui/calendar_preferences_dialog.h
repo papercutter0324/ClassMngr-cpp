@@ -23,6 +23,8 @@ class AcademicCalendarProvider;
 namespace ClassMngr::Next::Ui
 {
 
+class NextCalendarEventImportService;
+
 struct CalendarPreferencesActions final
 {
     std::function<Application::CalendarEventDisplayPreferencesResult(
@@ -39,6 +41,7 @@ struct CalendarPreferencesActions final
         const QString&,
         Domain::CalendarEventType,
         const std::string&)> saveEventTypeColor;
+    NextCalendarEventImportService* calendarImportService = nullptr;
     std::function<void(bool)> preferencesChanged;
 };
 
@@ -73,6 +76,8 @@ private:
     QPushButton* m_colorButtons[6]{};
     QPushButton* m_restoreSchedule = nullptr;
     QPushButton* m_resetEvents = nullptr;
+    QPushButton* m_importEvents = nullptr;
+    QLabel* m_importStatus = nullptr;
     QLabel* m_error = nullptr;
     Application::CalendarEventDisplayPreferences m_displayPreferences;
     std::array<AcademicYearSchedule, 2> m_schedules;

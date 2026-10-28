@@ -25,6 +25,7 @@ struct CalendarWorkbookReadCounts
 {
     int worksheetCount = 0;
     int cellCount = 0;
+    int materializedWorksheetCellCount = 0;
     int mergedRangeCount = 0;
     int sharedStringCount = 0;
     int styleCount = 0;

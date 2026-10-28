@@ -10333,4 +10333,17 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
         <translation>Update room</translation>
     </message>
 </context>
+<context>
+    <name>CalendarPreferencesDialog</name>
+    <message><source>Import Calendar Events</source><translation>Import Calendar Events</translation></message>
+    <message><source>Importing events...</source><translation>Importing events...</translation></message>
+    <message><source>Imported %1 event(s). Skipped %2 existing or ignored item(s).</source><translation>Imported %1 event(s). Skipped %2 existing or ignored item(s).</translation></message>
+    <message><source>Calendar import failed: %1</source><translation>Calendar import failed: %1</translation></message>
+    <message><source>Calendar import was canceled.</source><translation>Calendar import was canceled.</translation></message>
+    <message><source>Open a workspace before importing Calendar events.</source><translation>Open a workspace before importing Calendar events.</translation></message>
+    <message><source>The Calendar import source URL is invalid.</source><translation>The Calendar import source URL is invalid.</translation></message>
+    <message><source>The downloaded spreadsheet could not be staged.</source><translation>The downloaded spreadsheet could not be staged.</translation></message>
+    <message><source>The Calendar source could not be downloaded.</source><translation>The Calendar source could not be downloaded.</translation></message>
+    <message><source>Calendar import could not be completed.</source><translation>Calendar import could not be completed.</translation></message>
+</context>
 </TS>

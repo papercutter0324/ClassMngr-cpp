@@ -1047,6 +1047,8 @@ static ParsedCalendarImport parseCalendarEventsFromWorkbookSource(
             )
         {
             ++counts.worksheetCount;
+            counts.materializedWorksheetCellCount +=
+                static_cast<int>(worksheet.cells.size());
             if (!firstWorksheet)
             {
                 const bool discovered = discoveryPass(

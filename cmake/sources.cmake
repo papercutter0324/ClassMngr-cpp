@@ -179,6 +179,27 @@ set_target_properties(ClassMngrWorkbookReader
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
 )
+add_library(ClassMngrCalendarImportParser STATIC
+    ${CLASSMNGR_CALENDAR_IMPORT_PARSER_SOURCES}
+)
+target_compile_features(ClassMngrCalendarImportParser
+    PUBLIC
+        cxx_std_23
+)
+target_include_directories(ClassMngrCalendarImportParser
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrCalendarImportParser
+    PUBLIC
+        ClassMngrWorkbookReader
+        Qt6::Core
+)
+set_target_properties(ClassMngrCalendarImportParser
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 add_library(ClassMngrTeacherImportParser STATIC
     ${CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES}
 )
@@ -380,6 +401,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrBuildSettings
         ClassMngrSignature
         ClassMngrWorkspaceStore
+        ClassMngrCalendarImportParser
         ClassMngrClassTransferSupport
         ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser
@@ -436,6 +458,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrBuildSettings
             ClassMngrSignature
             ClassMngrWorkspaceStore
+            ClassMngrCalendarImportParser
             ClassMngrClassTransferSupport
             ClassMngrTeacherImportParser
             ClassMngrScheduleImportParser

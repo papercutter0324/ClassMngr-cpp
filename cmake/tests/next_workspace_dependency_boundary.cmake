@@ -15,6 +15,8 @@ foreach(_line IN LISTS _report_lines)
         set(_next_workspace_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_SCHEDULE_OUTPUT_LINKS=(.*)$")
         set(_next_schedule_output_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_CALENDAR_UI_DEPENDENCIES=(.*)$")
+        set(_next_calendar_ui_dependencies "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_SCHEDULE_OUTPUT_SOURCES=(.*)$")
         set(_next_schedule_output_sources "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_SCHEDULE_OUTPUT_TYPE=(.*)$")
@@ -73,6 +75,16 @@ if(NOT _next_schedule_output_type STREQUAL "STATIC_LIBRARY")
     message(FATAL_ERROR
         "ClassMngrNextScheduleOutput must remain a static library: "
         "[${_next_schedule_output_type}]"
+    )
+endif()
+
+set(_expected_next_calendar_ui_dependencies
+    "ClassMngrNext::Calendar|Qt6::Widgets|Qt6::Qml|Qt6::Quick|Qt6::QuickWidgets|$<LINK_ONLY:ClassMngrBuildSettings>|$<LINK_ONLY:ClassMngrWorkspaceStore>|$<LINK_ONLY:Qt6::Concurrent>|$<LINK_ONLY:ClassMngrCalendarImportParser>|$<LINK_ONLY:Qt6::Network>"
+)
+if(NOT _next_calendar_ui_dependencies STREQUAL _expected_next_calendar_ui_dependencies)
+    message(FATAL_ERROR
+        "Unexpected narrow Next Calendar UI dependencies: "
+        "[${_next_calendar_ui_dependencies}]"
     )
 endif()
 

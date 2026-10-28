@@ -74,6 +74,7 @@ set(_classmngr_qt_module_report_targets
     ClassMngrOnScreenKeyboard
     ClassMngrFeatures
     ClassMngrAppServices
+    ClassMngrCalendarImportParser
 )
 
 set(_classmngr_qt_module_report

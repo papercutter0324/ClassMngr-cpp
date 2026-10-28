@@ -184,8 +184,6 @@ qt_add_executable(ClassMngrClassTransferTests
     qt_add_executable(ClassMngrCalendarImportTests
         tests/calendar_import_tests.cpp
         src/features/calendar/calendar_event_campus_filter.cpp
-        src/features/calendar/academic_calendar_event_parser.cpp
-        src/features/calendar/calendar_workbook_reader.cpp
     )
 
     target_compile_features(ClassMngrCalendarImportTests
@@ -202,7 +200,7 @@ qt_add_executable(ClassMngrClassTransferTests
         PRIVATE
             Qt6::Core
             Qt6::Test
-            ZLIB::ZLIB
+            ClassMngrCalendarImportParser
     )
 
     add_test(

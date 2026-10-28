@@ -132,6 +132,14 @@ set(CLASSMNGR_WORKBOOK_READER_SOURCES
     "src/features/calendar/calendar_workbook_reader.h"
 )
 
+# The Calendar import rules are shared by Legacy and Next. Keep their owner
+# narrow so Next can use the row-streaming device parser without linking the
+# broad Legacy Features object library.
+set(CLASSMNGR_CALENDAR_IMPORT_PARSER_SOURCES
+    "src/features/calendar/academic_calendar_event_parser.cpp"
+    "src/features/calendar/academic_calendar_event_parser.h"
+)
+
 # Legacy teacher import and the Next setup workflow share this parser target.
 set(CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES
     "src/features/teacher/import/sectioned_contact_list_template.cpp"
@@ -375,8 +383,6 @@ set(CLASSMNGR_ON_SCREEN_KEYBOARD_SOURCES
 )
 
 set(CLASSMNGR_FEATURES_SOURCES
-    "src/features/calendar/academic_calendar_event_parser.cpp"
-    "src/features/calendar/academic_calendar_event_parser.h"
     "src/features/calendar/calendar_event_import_service.cpp"
     "src/features/calendar/calendar_event_import_service.h"
     "src/features/calendar/calendar_settings_keys.h"
@@ -744,10 +750,14 @@ set(CLASSMNGR_NEXT_CALENDAR_UI_SOURCES
     "src/features/calendar/ui/calendar_event_model.h"
     "src/next/platform/workspace_store_calendar_actions.cpp"
     "src/next/platform/workspace_store_calendar_actions.h"
+    "src/next/platform/workspace_store_calendar_import_actions.cpp"
+    "src/next/platform/workspace_store_calendar_import_actions.h"
     "src/next/platform/calendar_page_resource_campus_directory_query_adapter.cpp"
     "src/next/platform/calendar_page_resource_campus_directory_query_adapter.h"
     "src/next/ui/calendar_event_dialog.cpp"
     "src/next/ui/calendar_event_dialog.h"
+    "src/next/ui/calendar_event_import_service.cpp"
+    "src/next/ui/calendar_event_import_service.h"
     "src/next/ui/calendar_page.cpp"
     "src/next/ui/calendar_page.h"
     "src/next/ui/calendar_preferences_dialog.cpp"

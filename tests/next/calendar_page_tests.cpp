@@ -1,16 +1,19 @@
 #include "core/process_memory_snapshot.h"
 #include "data/database/workspace_store.h"
 #include "features/calendar/academic_calendar_schedule.h"
+#include "features/calendar/ui/academic_calendar_provider.h"
 #include "features/calendar/ui/calendar_event_model.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
 #include "next/platform/calendar_page_resource_campus_directory_query_adapter.h"
+#include "next/platform/workspace_store_calendar_actions.h"
 #include "next/platform/application_services_academic_calendar_schedule_preferences_port.h"
 #include "next/platform/application_services_calendar_first_day_of_week_preferences_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
 #include "next/application/calendar_event_save_use_case.h"
 #include "next/ui/calendar_event_dialog.h"
+#include "next/ui/calendar_event_import_service.h"
 #include "next/ui/calendar_page.h"
 #include "next/ui/calendar_preferences_dialog.h"
 #include "next/ui/page_host.h"
@@ -35,7 +38,12 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMessageBox>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QPalette>
+#include <QPointer>
+#include <QSignalSpy>
 #include <QPushButton>
 #include <QQuickItem>
 #include <QQuickWidget>
@@ -44,8 +52,10 @@
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTranslator>
+#include <QSqlQuery>
 #include <QtTest/QtTest>
 
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <string>
@@ -63,6 +73,222 @@ public:
     using Ui::Page::Page;
 };
 
+class CalendarImportTestReply final : public QNetworkReply
+{
+public:
+    CalendarImportTestReply(
+        const QNetworkAccessManager::Operation operation,
+        const QNetworkRequest& request,
+        QObject* parent
+        )
+        : QNetworkReply(parent)
+    {
+        setOperation(operation);
+        setRequest(request);
+        setUrl(request.url());
+        setAttribute(QNetworkRequest::HttpStatusCodeAttribute, 200);
+        setOpenMode(QIODevice::ReadOnly | QIODevice::Unbuffered);
+    }
+
+    void sendBody(const QByteArray& body)
+    {
+        constexpr qsizetype ChunkSize = 64 * 1024;
+        qsizetype offset = 0;
+        while (offset < body.size())
+        {
+            const qsizetype count = qMin(ChunkSize, body.size() - offset);
+            m_readBuffer.append(body.constData() + offset, count);
+            offset += count;
+            emit readyRead();
+        }
+        complete();
+    }
+
+    void failRemote()
+    {
+        if (isFinished())
+        {
+            return;
+        }
+        setError(QNetworkReply::RemoteHostClosedError,
+            QStringLiteral("Injected Calendar import transport failure"));
+        complete();
+    }
+
+    void abort() override
+    {
+        if (isFinished())
+        {
+            return;
+        }
+        setError(QNetworkReply::OperationCanceledError,
+            QStringLiteral("Operation canceled"));
+        complete();
+    }
+
+    [[nodiscard]] qint64 bytesAvailable() const override
+    {
+        return m_readBuffer.size() + QNetworkReply::bytesAvailable();
+    }
+
+protected:
+    [[nodiscard]] qint64 readData(char* data, const qint64 maxSize) override
+    {
+        const qint64 count = qMin(maxSize, static_cast<qint64>(m_readBuffer.size()));
+        if (count <= 0)
+        {
+            return -1;
+        }
+        std::memcpy(data, m_readBuffer.constData(), static_cast<std::size_t>(count));
+        m_readBuffer.remove(0, static_cast<qsizetype>(count));
+        return count;
+    }
+
+private:
+    void complete()
+    {
+        if (isFinished())
+        {
+            return;
+        }
+        setFinished(true);
+        emit finished();
+    }
+
+    QByteArray m_readBuffer;
+};
+
+struct CalendarImportTestState final
+{
+    QByteArray body;
+    QStringList requestedUrls;
+    QList<QPointer<CalendarImportTestReply>> pendingReplies;
+    bool holdResponses = false;
+    bool closeWithoutResponse = false;
+    int requestCount = 0;
+};
+
+class CalendarImportTestNetworkAccessManager final : public QNetworkAccessManager
+{
+public:
+    CalendarImportTestNetworkAccessManager(
+        std::shared_ptr<CalendarImportTestState> state,
+        QObject* parent
+        )
+        : QNetworkAccessManager(parent),
+          m_state(std::move(state))
+    {
+    }
+
+protected:
+    QNetworkReply* createRequest(
+        const Operation operation,
+        const QNetworkRequest& request,
+        QIODevice* outgoingData = nullptr
+        ) override
+    {
+        Q_UNUSED(outgoingData);
+        auto* const reply = new CalendarImportTestReply(operation, request, this);
+        ++m_state->requestCount;
+        m_state->requestedUrls.append(request.url().toString());
+        if (m_state->holdResponses)
+        {
+            m_state->pendingReplies.append(reply);
+        }
+        else
+        {
+            const auto state = m_state;
+            QTimer::singleShot(0, reply, [state, reply]
+            {
+                respond(state, reply);
+            });
+        }
+        return reply;
+    }
+
+public:
+    static void respondForTest(
+        const std::shared_ptr<CalendarImportTestState>& state,
+        CalendarImportTestReply* reply
+        )
+    {
+        respond(state, reply);
+    }
+
+private:
+    static void respond(
+        const std::shared_ptr<CalendarImportTestState>& state,
+        CalendarImportTestReply* reply
+        )
+    {
+        if (!reply || reply->isFinished())
+        {
+            return;
+        }
+        if (state->closeWithoutResponse)
+        {
+            reply->failRemote();
+            return;
+        }
+        reply->sendBody(state->body);
+    }
+
+    std::shared_ptr<CalendarImportTestState> m_state;
+};
+
+class CalendarImportTestTransport final
+{
+public:
+    explicit CalendarImportTestTransport(QByteArray body)
+        : m_state(std::make_shared<CalendarImportTestState>())
+    {
+        m_state->body = std::move(body);
+    }
+
+    [[nodiscard]] QString url() const
+    {
+        return QStringLiteral("http://calendar-import.test/calendar.xlsx");
+    }
+
+    [[nodiscard]] std::function<QNetworkAccessManager*(QObject*)>
+    networkAccessManagerFactory() const
+    {
+        const auto state = m_state;
+        return [state](QObject* parent)
+        {
+            return new CalendarImportTestNetworkAccessManager(state, parent);
+        };
+    }
+
+    void holdResponses(const bool hold) { m_state->holdResponses = hold; }
+    void closeWithoutResponse(const bool close)
+    {
+        m_state->closeWithoutResponse = close;
+    }
+    void setBody(QByteArray body) { m_state->body = std::move(body); }
+    [[nodiscard]] int requestCount() const { return m_state->requestCount; }
+    [[nodiscard]] QString lastRequestedUrl() const
+    {
+        return m_state->requestedUrls.isEmpty()
+            ? QString{}
+            : m_state->requestedUrls.constLast();
+    }
+
+    void respondToHeldRequests()
+    {
+        const auto pending = std::move(m_state->pendingReplies);
+        m_state->pendingReplies.clear();
+        for (const QPointer<CalendarImportTestReply>& reply : pending)
+        {
+            CalendarImportTestNetworkAccessManager::respondForTest(
+                m_state, reply.data());
+        }
+    }
+
+private:
+    std::shared_ptr<CalendarImportTestState> m_state;
+};
+
 class CalendarPageFixture final
 {
 public:
@@ -74,6 +300,10 @@ public:
     QTemporaryDir temporaryDirectory;
     QString initializationError;
     QString path;
+    QString calendarImportSourceUrl;
+    QString calendarImportTemporaryFileTemplate;
+    std::function<QNetworkAccessManager*(QObject*)>
+        calendarImportNetworkAccessManagerFactory;
     std::string holidayColorOverride;
     Ui::CalendarPage* page = nullptr;
     bool lazyBeforeActivation = false;
@@ -185,6 +415,11 @@ public:
 
         Ui::CalendarPageActions actions;
         actions.activeWorkspacePath = [this] { return path; };
+        actions.calendarImportSourceUrl = calendarImportSourceUrl;
+        actions.calendarImportTemporaryFileTemplate =
+            calendarImportTemporaryFileTemplate;
+        actions.calendarImportNetworkAccessManagerFactory =
+            calendarImportNetworkAccessManagerFactory;
         actions.readEvent = [this](
             const QString&,
             const Domain::CalendarEventId& id)
@@ -427,6 +662,13 @@ private slots:
     void savingPreferencesUsesTypedActions();
     void calendarResetRequiresConfirmation();
     void campusDirectoryReadsTypedNextCatalogResources();
+    void calendarImportUsesStreamingTypedPathApplyAndRefreshesOnlyOnWrites();
+    void calendarImportUsesEnvironmentSourceUrlOverride();
+    void calendarImportMalformedAndTransportFailuresAreRecoverable();
+    void calendarImportSuspensionAndPathChangeCancelBeforeApply();
+    void calendarImportServiceDestructionCleansStagingWithoutWrites();
+    void calendarImportQueryFailureIsVisibleAndWritesNothing();
+    void calendarImportBatchSaveFailureRollsBackAllRows();
     void captureEnglishAndKoreanLightAndDark();
 };
 
@@ -1374,8 +1616,555 @@ void CalendarPageTests::campusDirectoryReadsTypedNextCatalogResources()
     QVERIFY(hasCampusCode);
 }
 
+void CalendarPageTests::calendarImportUsesStreamingTypedPathApplyAndRefreshesOnlyOnWrites()
+{
+    QFile fixtureFile(QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral(
+            "/tests/fixtures/imports/calendar_import_streaming_2026_large.xlsx"));
+    QVERIFY(fixtureFile.open(QIODevice::ReadOnly));
+    const QByteArray workbook = fixtureFile.readAll();
+    QCOMPARE(workbook.size(), qsizetype(246017));
+    QVERIFY(workbook.size() > 128 * 1024);
+
+    CalendarImportTestTransport server(workbook);
+    QTemporaryDir stagedFiles;
+    QVERIFY(stagedFiles.isValid());
+
+    CalendarPageFixture fixture;
+    fixture.calendarImportSourceUrl = server.url();
+    fixture.calendarImportTemporaryFileTemplate = stagedFiles.filePath(
+        QStringLiteral("calendar-import-XXXXXX.xlsx"));
+    fixture.calendarImportNetworkAccessManagerFactory =
+        server.networkAccessManagerFactory();
+    QVERIFY2(fixture.initialize(true), qPrintable(fixture.initializationError));
+    QTRY_VERIFY_WITH_TIMEOUT(
+        !fixture.page->runtimeMetrics().cacheLoading, 5000);
+
+    const auto existing = Platform::saveCalendarEventAtPath(
+        fixture.path,
+        Application::CalendarEventSaveInput{
+            .title = "Red Day",
+            .startDate = "2026-07-04",
+            .endDate = "2026-07-04",
+            .allDay = true,
+            .eventType = "Holiday",
+            .timeStatus = Domain::CalendarEventTimeStatus::Timed
+        });
+    QVERIFY(existing);
+
+    auto* const service = fixture.page->findChild<Ui::NextCalendarEventImportService*>(
+        QStringLiteral("nextCalendarEventImportService"));
+    QVERIFY(service);
+    Ui::CalendarPreferencesActions actions;
+    actions.calendarImportService = service;
+    Ui::CalendarPreferencesDialog preferences(
+        fixture.path, nullptr, std::move(actions));
+    preferences.show();
+    auto* const importButton = preferences.findChild<QPushButton*>(
+        QStringLiteral("calendarImportEvents"));
+    auto* const importStatus = preferences.findChild<QLabel*>(
+        QStringLiteral("calendarImportStatus"));
+    QVERIFY(importButton);
+    QVERIFY(importStatus);
+
+    QSignalSpy importedSpy(service,
+        &Ui::NextCalendarEventImportService::importFinished);
+    QSignalSpy failedSpy(service,
+        &Ui::NextCalendarEventImportService::importFailed);
+    QSignalSpy cacheChangedSpy(fixture.page->eventCache(),
+        &CalendarEventCache::cacheChanged);
+    QVERIFY(importedSpy.isValid());
+    QVERIFY(failedSpy.isValid());
+
+    QTest::mouseClick(importButton, Qt::LeftButton);
+    QVERIFY(service->isImporting());
+    QCOMPARE(importButton->isEnabled(), false);
+    QCOMPARE(importStatus->text(), QStringLiteral("Importing events..."));
+    QTRY_COMPARE_WITH_TIMEOUT(importedSpy.size(), 1, 5000);
+    QCOMPARE(failedSpy.size(), 0);
+    QCOMPARE(importedSpy.first().at(0).toInt(), 3);
+    QCOMPARE(importedSpy.first().at(1).toInt(), 2);
+    QCOMPARE(importStatus->text(),
+        QStringLiteral("Imported 3 event(s). Skipped 2 existing or ignored item(s)."));
+    QCOMPARE(importButton->isEnabled(), true);
+    QTRY_VERIFY_WITH_TIMEOUT(!fixture.page->runtimeMetrics().cacheLoading, 5000);
+    QVERIFY(cacheChangedSpy.size() >= 1);
+
+    const auto firstMetrics = service->runtimeMetrics();
+    QVERIFY(firstMetrics.usedDeviceParser);
+    QVERIFY(firstMetrics.streamedWorksheetCellCount > 0);
+    QCOMPARE(firstMetrics.materializedWorksheetCellCount, 0);
+    QCOMPARE(firstMetrics.parsedEventCount, 4);
+    QCOMPARE(firstMetrics.typedCandidateCountAtApply, 4);
+    QCOMPARE(firstMetrics.legacyEventCountAtApply, 0);
+    QVERIFY(firstMetrics.stagedWorkbookReleasedBeforeApply);
+    QVERIFY(firstMetrics.stagedWorkbookRemovedAtTerminal);
+    QCOMPARE(firstMetrics.downloadedBytes, workbook.size());
+    QCOMPARE(firstMetrics.transferChunkCount,
+        static_cast<int>((workbook.size() + (64 * 1024 - 1)) / (64 * 1024)));
+    QCOMPARE(firstMetrics.transferChunkCount, 4);
+    QVERIFY(firstMetrics.transferChunkCount >= 3);
+    QCOMPARE(firstMetrics.largestTransferChunkBytes, qint64(64 * 1024));
+    QVERIFY(QDir(stagedFiles.path()).entryList(
+        QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+
+    cacheChangedSpy.clear();
+    QTest::mouseClick(importButton, Qt::LeftButton);
+    QTRY_COMPARE_WITH_TIMEOUT(importedSpy.size(), 2, 5000);
+    QCOMPARE(failedSpy.size(), 0);
+    QCOMPARE(importedSpy.last().at(0).toInt(), 0);
+    QCOMPARE(importedSpy.last().at(1).toInt(), 5);
+    QCOMPARE(importStatus->text(),
+        QStringLiteral("Imported 0 event(s). Skipped 5 existing or ignored item(s)."));
+    QCOMPARE(cacheChangedSpy.size(), 0);
+    QCOMPARE(server.requestCount(), 2);
+
+    WorkspaceStore verifyStore;
+    QVERIFY(verifyStore.openExisting(fixture.path));
+    const auto persisted = verifyStore.calendarEventRepository()
+        ->loadCalendarEventsInRange(QDate(2026, 7, 1), QDate(2026, 7, 31));
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 4);
+    QCOMPARE(persisted->at(0).title, QStringLiteral("New Semester"));
+    QCOMPARE(persisted->at(1).title, QStringLiteral("Board Meeting"));
+    QCOMPARE(persisted->at(2).title, QStringLiteral("Red Day"));
+    QCOMPARE(persisted->at(3).title, QStringLiteral("DYB Workshop"));
+}
+
+void CalendarPageTests::calendarImportUsesEnvironmentSourceUrlOverride()
+{
+    struct EnvironmentRestore final
+    {
+        bool wasSet = false;
+        QByteArray previousValue;
+
+        ~EnvironmentRestore()
+        {
+            if (wasSet)
+            {
+                qputenv("CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL", previousValue);
+            }
+            else
+            {
+                qunsetenv("CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL");
+            }
+        }
+    };
+    const EnvironmentRestore restore{
+        qEnvironmentVariableIsSet("CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL"),
+        qgetenv("CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL")
+    };
+    const QByteArray overrideUrl = QByteArrayLiteral(
+        "https://configured.example/calendar/import.xlsx?batch=phase7-c34");
+    QVERIFY(qputenv("CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL", overrideUrl));
+
+    QFile fixtureFile(QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral("/tests/fixtures/imports/calendar_import_parity_2026.xlsx"));
+    QVERIFY(fixtureFile.open(QIODevice::ReadOnly));
+    const QByteArray workbook = fixtureFile.readAll();
+    QVERIFY(!workbook.isEmpty());
+    CalendarImportTestTransport transport(workbook);
+    QTemporaryDir stagedFiles;
+    QVERIFY(stagedFiles.isValid());
+
+    CalendarPageFixture fixture;
+    fixture.calendarImportTemporaryFileTemplate = stagedFiles.filePath(
+        QStringLiteral("calendar-import-XXXXXX.xlsx"));
+    fixture.calendarImportNetworkAccessManagerFactory =
+        transport.networkAccessManagerFactory();
+    QVERIFY2(fixture.initialize(true), qPrintable(fixture.initializationError));
+    auto* const service = fixture.page->findChild<
+        Ui::NextCalendarEventImportService*>(
+            QStringLiteral("nextCalendarEventImportService"));
+    QVERIFY(service);
+    Ui::CalendarPreferencesActions actions;
+    actions.calendarImportService = service;
+    Ui::CalendarPreferencesDialog preferences(
+        fixture.path, nullptr, std::move(actions));
+    preferences.show();
+    auto* const importButton = preferences.findChild<QPushButton*>(
+        QStringLiteral("calendarImportEvents"));
+    auto* const importStatus = preferences.findChild<QLabel*>(
+        QStringLiteral("calendarImportStatus"));
+    QVERIFY(importButton);
+    QVERIFY(importStatus);
+    QSignalSpy importedSpy(service,
+        &Ui::NextCalendarEventImportService::importFinished);
+    QVERIFY(importedSpy.isValid());
+
+    QTest::mouseClick(importButton, Qt::LeftButton);
+    QTRY_COMPARE_WITH_TIMEOUT(importedSpy.size(), 1, 5000);
+    QCOMPARE(transport.requestCount(), 1);
+    QCOMPARE(transport.lastRequestedUrl(), QString::fromUtf8(overrideUrl));
+    QCOMPARE(importedSpy.first().at(0).toInt(), 4);
+    QCOMPARE(importedSpy.first().at(1).toInt(), 1);
+    QVERIFY(importStatus->text().startsWith(QStringLiteral("Imported 4")));
+    QVERIFY(service->runtimeMetrics().stagedWorkbookReleasedBeforeApply);
+    QVERIFY(QDir(stagedFiles.path()).entryList(
+        QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+}
+
+void CalendarPageTests::calendarImportMalformedAndTransportFailuresAreRecoverable()
+{
+    for (const int failureKind : {0, 1, 2})
+    {
+        QByteArray responseBody = QByteArrayLiteral("not an XLSX workbook");
+        CalendarImportTestTransport server(responseBody);
+        if (failureKind == 1)
+        {
+            server.closeWithoutResponse(true);
+        }
+        QTemporaryDir stagedFiles;
+        QVERIFY(stagedFiles.isValid());
+
+        CalendarPageFixture fixture;
+        fixture.calendarImportSourceUrl = server.url();
+        fixture.calendarImportTemporaryFileTemplate = failureKind == 2
+            ? stagedFiles.filePath(QStringLiteral(
+                "missing/calendar-import-XXXXXX.xlsx"))
+            : stagedFiles.filePath(QStringLiteral("calendar-import-XXXXXX.xlsx"));
+        fixture.calendarImportNetworkAccessManagerFactory =
+            server.networkAccessManagerFactory();
+        QVERIFY2(fixture.initialize(true), qPrintable(fixture.initializationError));
+        auto* const service = fixture.page->findChild<Ui::NextCalendarEventImportService*>(
+            QStringLiteral("nextCalendarEventImportService"));
+        QVERIFY(service);
+        Ui::CalendarPreferencesActions actions;
+        actions.calendarImportService = service;
+        Ui::CalendarPreferencesDialog preferences(
+            fixture.path, nullptr, std::move(actions));
+        preferences.show();
+        auto* const importButton = preferences.findChild<QPushButton*>(
+            QStringLiteral("calendarImportEvents"));
+        auto* const importStatus = preferences.findChild<QLabel*>(
+            QStringLiteral("calendarImportStatus"));
+        QVERIFY(importButton);
+        QVERIFY(importStatus);
+        QSignalSpy failedSpy(service,
+            &Ui::NextCalendarEventImportService::importFailed);
+        QVERIFY(failedSpy.isValid());
+
+        QTest::mouseClick(importButton, Qt::LeftButton);
+        QTRY_COMPARE_WITH_TIMEOUT(failedSpy.size(), 1, 5000);
+        QVERIFY(importStatus->text().startsWith(
+            QStringLiteral("Calendar import failed: ")));
+        QVERIFY(!service->isImporting());
+        QVERIFY(service->runtimeMetrics().stagedWorkbookRemovedAtTerminal);
+        if (failureKind == 2)
+        {
+            QCOMPARE(server.requestCount(), 0);
+        }
+        QVERIFY(QDir(stagedFiles.path()).entryList(
+            QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+
+        WorkspaceStore verifyStore;
+        QVERIFY(verifyStore.openExisting(fixture.path));
+        const auto persisted = verifyStore.calendarEventRepository()
+            ->loadCalendarEventsInRange(QDate(2026, 7, 1), QDate(2026, 7, 31));
+        QVERIFY(persisted);
+        QVERIFY(persisted->isEmpty());
+    }
+}
+
+void CalendarPageTests::calendarImportSuspensionAndPathChangeCancelBeforeApply()
+{
+    QFile fixtureFile(QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral("/tests/fixtures/imports/calendar_import_parity_2026.xlsx"));
+    QVERIFY(fixtureFile.open(QIODevice::ReadOnly));
+    const QByteArray workbook = fixtureFile.readAll();
+    QVERIFY(!workbook.isEmpty());
+
+    {
+        CalendarImportTestTransport server(workbook);
+        server.holdResponses(true);
+        QTemporaryDir stagedFiles;
+        QVERIFY(stagedFiles.isValid());
+        CalendarPageFixture fixture;
+        fixture.calendarImportSourceUrl = server.url();
+        fixture.calendarImportTemporaryFileTemplate = stagedFiles.filePath(
+            QStringLiteral("calendar-import-XXXXXX.xlsx"));
+        fixture.calendarImportNetworkAccessManagerFactory =
+            server.networkAccessManagerFactory();
+        QVERIFY2(fixture.initialize(true), qPrintable(fixture.initializationError));
+        auto* const service = fixture.page->findChild<Ui::NextCalendarEventImportService*>(
+            QStringLiteral("nextCalendarEventImportService"));
+        QVERIFY(service);
+        Ui::CalendarPreferencesActions actions;
+        actions.calendarImportService = service;
+        Ui::CalendarPreferencesDialog preferences(
+            fixture.path, nullptr, std::move(actions));
+        preferences.show();
+        auto* const importButton = preferences.findChild<QPushButton*>(
+            QStringLiteral("calendarImportEvents"));
+        QVERIFY(importButton);
+        QSignalSpy canceledSpy(service,
+            &Ui::NextCalendarEventImportService::importCanceled);
+        QTest::mouseClick(importButton, Qt::LeftButton);
+        QTRY_COMPARE_WITH_TIMEOUT(server.requestCount(), 1, 5000);
+        QCOMPARE(QDir(stagedFiles.path()).entryList(
+            QDir::Files | QDir::NoDotAndDotDot).size(), 1);
+        QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+        QTRY_COMPARE_WITH_TIMEOUT(canceledSpy.size(), 1, 5000);
+        QVERIFY(service->runtimeMetrics().stagedWorkbookRemovedOnCancel);
+        QVERIFY(QDir(stagedFiles.path()).entryList(
+            QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+        WorkspaceStore verifyStore;
+        QVERIFY(verifyStore.openExisting(fixture.path));
+        const auto persisted = verifyStore.calendarEventRepository()
+            ->loadCalendarEventsInRange(QDate(2026, 7, 1), QDate(2026, 7, 31));
+        QVERIFY(persisted);
+        QVERIFY(persisted->isEmpty());
+    }
+
+    {
+        CalendarImportTestTransport server(workbook);
+        server.holdResponses(true);
+        QTemporaryDir stagedFiles;
+        QTemporaryDir otherWorkspaceDirectory;
+        QVERIFY(stagedFiles.isValid());
+        QVERIFY(otherWorkspaceDirectory.isValid());
+        CalendarPageFixture fixture;
+        fixture.calendarImportSourceUrl = server.url();
+        fixture.calendarImportTemporaryFileTemplate = stagedFiles.filePath(
+            QStringLiteral("calendar-import-XXXXXX.xlsx"));
+        fixture.calendarImportNetworkAccessManagerFactory =
+            server.networkAccessManagerFactory();
+        QVERIFY2(fixture.initialize(true), qPrintable(fixture.initializationError));
+        const QString otherPath = otherWorkspaceDirectory.filePath(
+            QStringLiteral("other.db"));
+        {
+            WorkspaceStore otherStore;
+            QVERIFY(otherStore.open(otherPath));
+        }
+        auto* const service = fixture.page->findChild<Ui::NextCalendarEventImportService*>(
+            QStringLiteral("nextCalendarEventImportService"));
+        QVERIFY(service);
+        Ui::CalendarPreferencesActions actions;
+        actions.calendarImportService = service;
+        Ui::CalendarPreferencesDialog preferences(
+            fixture.path, nullptr, std::move(actions));
+        preferences.show();
+        auto* const importButton = preferences.findChild<QPushButton*>(
+            QStringLiteral("calendarImportEvents"));
+        QVERIFY(importButton);
+        QSignalSpy canceledSpy(service,
+            &Ui::NextCalendarEventImportService::importCanceled);
+        QTest::mouseClick(importButton, Qt::LeftButton);
+        QTRY_COMPARE_WITH_TIMEOUT(server.requestCount(), 1, 5000);
+        fixture.path = otherPath;
+        server.respondToHeldRequests();
+        QTRY_COMPARE_WITH_TIMEOUT(canceledSpy.size(), 1, 5000);
+        QVERIFY(service->runtimeMetrics().stagedWorkbookRemovedAtTerminal);
+        WorkspaceStore originalStore;
+        QVERIFY(originalStore.openExisting(
+            fixture.temporaryDirectory.filePath(QStringLiteral("calendar.db"))));
+        const auto originalEvents = originalStore.calendarEventRepository()
+            ->loadCalendarEventsInRange(QDate(2026, 7, 1), QDate(2026, 7, 31));
+        QVERIFY(originalEvents);
+        QVERIFY(originalEvents->isEmpty());
+        WorkspaceStore otherStore;
+        QVERIFY(otherStore.openExisting(otherPath));
+        const auto otherEvents = otherStore.calendarEventRepository()
+            ->loadCalendarEventsInRange(QDate(2026, 7, 1), QDate(2026, 7, 31));
+        QVERIFY(otherEvents);
+        QVERIFY(otherEvents->isEmpty());
+        QVERIFY(QDir(stagedFiles.path()).entryList(
+            QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+    }
+}
+
+void CalendarPageTests::calendarImportServiceDestructionCleansStagingWithoutWrites()
+{
+    CalendarImportTestTransport server({});
+    server.holdResponses(true);
+    QTemporaryDir stagedFiles;
+    QTemporaryDir workspaceDirectory;
+    QVERIFY(stagedFiles.isValid());
+    QVERIFY(workspaceDirectory.isValid());
+    const QString databasePath = workspaceDirectory.filePath(
+        QStringLiteral("calendar.db"));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(databasePath));
+    }
+
+    auto* const service = new Ui::NextCalendarEventImportService(
+        [databasePath] { return databasePath; },
+        [] { return QStringList{}; },
+        server.url(),
+        stagedFiles.filePath(QStringLiteral("calendar-import-XXXXXX.xlsx")),
+        server.networkAccessManagerFactory());
+    service->start(databasePath);
+    QTRY_COMPARE_WITH_TIMEOUT(server.requestCount(), 1, 5000);
+    QCOMPARE(QDir(stagedFiles.path()).entryList(
+        QDir::Files | QDir::NoDotAndDotDot).size(), 1);
+    delete service;
+    QVERIFY(QDir(stagedFiles.path()).entryList(
+        QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+
+    WorkspaceStore verifyStore;
+    QVERIFY(verifyStore.openExisting(databasePath));
+    const auto persisted = verifyStore.calendarEventRepository()
+        ->loadCalendarEventsInRange(QDate(2026, 7, 1), QDate(2026, 7, 31));
+    QVERIFY(persisted);
+    QVERIFY(persisted->isEmpty());
+}
+
+void CalendarPageTests::calendarImportQueryFailureIsVisibleAndWritesNothing()
+{
+    QFile fixtureFile(QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral("/tests/fixtures/imports/calendar_import_parity_2026.xlsx"));
+    QVERIFY(fixtureFile.open(QIODevice::ReadOnly));
+    const QByteArray workbook = fixtureFile.readAll();
+    QVERIFY(!workbook.isEmpty());
+    CalendarImportTestTransport server(workbook);
+    QTemporaryDir stagedFiles;
+    QVERIFY(stagedFiles.isValid());
+
+    CalendarPageFixture fixture;
+    fixture.calendarImportSourceUrl = server.url();
+    fixture.calendarImportTemporaryFileTemplate = stagedFiles.filePath(
+        QStringLiteral("calendar-import-XXXXXX.xlsx"));
+    fixture.calendarImportNetworkAccessManagerFactory =
+        server.networkAccessManagerFactory();
+    QVERIFY2(fixture.initialize(true), qPrintable(fixture.initializationError));
+    QTRY_VERIFY_WITH_TIMEOUT(!fixture.page->runtimeMetrics().cacheLoading, 5000);
+
+    const auto seeded = Platform::saveCalendarEventAtPath(
+        fixture.path,
+        Application::CalendarEventSaveInput{
+            .title = "Retained event",
+            .startDate = "2026-07-01",
+            .endDate = "2026-07-01",
+            .allDay = true,
+            .eventType = "Meeting",
+            .timeStatus = Domain::CalendarEventTimeStatus::Timed
+        });
+    QVERIFY(seeded);
+
+    {
+        WorkspaceStore schemaStore;
+        QVERIFY(schemaStore.openExisting(fixture.path));
+        QSqlQuery schema(schemaStore.database());
+        QVERIFY(schema.exec(QStringLiteral(
+            "ALTER TABLE calendar_events RENAME TO calendar_events_before_import")));
+        QVERIFY(schema.exec(QStringLiteral(
+            "CREATE TABLE calendar_events (id INTEGER PRIMARY KEY)")));
+    }
+
+    auto* const service = fixture.page->findChild<
+        Ui::NextCalendarEventImportService*>(
+            QStringLiteral("nextCalendarEventImportService"));
+    QVERIFY(service);
+    Ui::CalendarPreferencesActions actions;
+    actions.calendarImportService = service;
+    Ui::CalendarPreferencesDialog preferences(
+        fixture.path, nullptr, std::move(actions));
+    preferences.show();
+    auto* const importButton = preferences.findChild<QPushButton*>(
+        QStringLiteral("calendarImportEvents"));
+    auto* const importStatus = preferences.findChild<QLabel*>(
+        QStringLiteral("calendarImportStatus"));
+    QVERIFY(importButton);
+    QVERIFY(importStatus);
+    QSignalSpy failedSpy(service,
+        &Ui::NextCalendarEventImportService::importFailed);
+    QVERIFY(failedSpy.isValid());
+
+    QTest::mouseClick(importButton, Qt::LeftButton);
+    QTRY_COMPARE_WITH_TIMEOUT(failedSpy.size(), 1, 5000);
+    QVERIFY(importStatus->text().contains(
+        QStringLiteral("Calendar import failed:")));
+    QVERIFY2(importStatus->text().contains(
+            QStringLiteral("Loading calendar events in range")),
+        qPrintable(importStatus->text()));
+    QVERIFY(service->runtimeMetrics().stagedWorkbookReleasedBeforeApply);
+    QVERIFY(service->runtimeMetrics().stagedWorkbookRemovedAtTerminal);
+
+    WorkspaceStore verifyStore;
+    QVERIFY(verifyStore.openExisting(fixture.path));
+    QSqlQuery retained(verifyStore.database());
+    QVERIFY(retained.exec(QStringLiteral(
+        "SELECT COUNT(*) FROM calendar_events_before_import")));
+    QVERIFY(retained.next());
+    QCOMPARE(retained.value(0).toInt(), 1);
+    QSqlQuery current(verifyStore.database());
+    QVERIFY(current.exec(QStringLiteral("SELECT COUNT(*) FROM calendar_events")));
+    QVERIFY(current.next());
+    QCOMPARE(current.value(0).toInt(), 0);
+    QVERIFY(QDir(stagedFiles.path()).entryList(
+        QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+}
+
+void CalendarPageTests::calendarImportBatchSaveFailureRollsBackAllRows()
+{
+    QFile fixtureFile(QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral("/tests/fixtures/imports/calendar_import_parity_2026.xlsx"));
+    QVERIFY(fixtureFile.open(QIODevice::ReadOnly));
+    const QByteArray workbook = fixtureFile.readAll();
+    QVERIFY(!workbook.isEmpty());
+    CalendarImportTestTransport server(workbook);
+    QTemporaryDir stagedFiles;
+    QVERIFY(stagedFiles.isValid());
+
+    CalendarPageFixture fixture;
+    fixture.calendarImportSourceUrl = server.url();
+    fixture.calendarImportTemporaryFileTemplate = stagedFiles.filePath(
+        QStringLiteral("calendar-import-XXXXXX.xlsx"));
+    fixture.calendarImportNetworkAccessManagerFactory =
+        server.networkAccessManagerFactory();
+    QVERIFY2(fixture.initialize(true), qPrintable(fixture.initializationError));
+    {
+        WorkspaceStore triggerStore;
+        QVERIFY(triggerStore.openExisting(fixture.path));
+        QSqlQuery trigger(triggerStore.database());
+        QVERIFY(trigger.exec(QStringLiteral(
+            "CREATE TRIGGER reject_calendar_import BEFORE INSERT ON calendar_events "
+            "WHEN NEW.title = 'Board Meeting' BEGIN "
+            "SELECT RAISE(ABORT, 'test batch failure'); END")));
+    }
+
+    auto* const service = fixture.page->findChild<Ui::NextCalendarEventImportService*>(
+        QStringLiteral("nextCalendarEventImportService"));
+    QVERIFY(service);
+    Ui::CalendarPreferencesActions actions;
+    actions.calendarImportService = service;
+    Ui::CalendarPreferencesDialog preferences(
+        fixture.path, nullptr, std::move(actions));
+    preferences.show();
+    auto* const importButton = preferences.findChild<QPushButton*>(
+        QStringLiteral("calendarImportEvents"));
+    auto* const importStatus = preferences.findChild<QLabel*>(
+        QStringLiteral("calendarImportStatus"));
+    QVERIFY(importButton);
+    QVERIFY(importStatus);
+    QSignalSpy failedSpy(service,
+        &Ui::NextCalendarEventImportService::importFailed);
+    QVERIFY(failedSpy.isValid());
+
+    QTest::mouseClick(importButton, Qt::LeftButton);
+    QTRY_COMPARE_WITH_TIMEOUT(failedSpy.size(), 1, 5000);
+    QVERIFY(importStatus->text().contains(QStringLiteral("Calendar import failed:")));
+    QVERIFY(service->runtimeMetrics().stagedWorkbookReleasedBeforeApply);
+    QVERIFY(service->runtimeMetrics().stagedWorkbookRemovedAtTerminal);
+    WorkspaceStore verifyStore;
+    QVERIFY(verifyStore.openExisting(fixture.path));
+    const auto persisted = verifyStore.calendarEventRepository()
+        ->loadCalendarEventsInRange(QDate(2026, 7, 1), QDate(2026, 7, 31));
+    QVERIFY(persisted);
+    QVERIFY(persisted->isEmpty());
+    QVERIFY(QDir(stagedFiles.path()).entryList(
+        QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+}
+
 void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
 {
+    QFile importFixture(QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral("/tests/fixtures/imports/calendar_import_parity_2026.xlsx"));
+    QVERIFY(importFixture.open(QIODevice::ReadOnly));
+    const QByteArray importWorkbook = importFixture.readAll();
+    QVERIFY(!importWorkbook.isEmpty());
+
     const QString outputDirectory = QStringLiteral(CLASSMNGR_CALENDAR_CAPTURE_DIR);
     QVERIFY(QDir().mkpath(outputDirectory));
     QJsonObject captures;
@@ -1405,7 +2194,16 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
             }
             QApplication::setPalette(palette);
 
+            CalendarImportTestTransport importServer(importWorkbook);
+            importServer.holdResponses(true);
+            QTemporaryDir stagedFiles;
+            QVERIFY(stagedFiles.isValid());
             CalendarPageFixture fixture;
+            fixture.calendarImportSourceUrl = importServer.url();
+            fixture.calendarImportTemporaryFileTemplate = stagedFiles.filePath(
+                QStringLiteral("calendar-import-XXXXXX.xlsx"));
+            fixture.calendarImportNetworkAccessManagerFactory =
+                importServer.networkAccessManagerFactory();
             QVERIFY2(fixture.initialize(true, korean, true),
                 qPrintable(fixture.initializationError));
             QVERIFY(fixture.page->calendarView());
@@ -1452,12 +2250,138 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
             const QImage image = fixture.page->grab().toImage();
             QVERIFY(!image.isNull());
             QVERIFY(image.save(imagePath));
+
+            auto* const service = fixture.page->findChild<
+                Ui::NextCalendarEventImportService*>(
+                    QStringLiteral("nextCalendarEventImportService"));
+            QVERIFY(service);
+            auto* const academicProvider = fixture.page->findChild<
+                AcademicCalendarProvider*>();
+            QVERIFY(academicProvider);
+            Ui::CalendarPreferencesActions preferenceActions;
+            preferenceActions.readDisplayPreferences = [](
+                const QString& path)
+            {
+                return Platform::readCalendarEventDisplayPreferencesAtPath(path);
+            };
+            preferenceActions.saveDisplayPreferences = [](
+                const QString& path,
+                const Application::CalendarEventDisplayPreferencesSaveRequest& request)
+            {
+                return Platform::saveCalendarEventDisplayPreferencesAtPath(
+                    path, request);
+            };
+            preferenceActions.deleteAllEvents = [](const QString& path)
+            {
+                return Platform::deleteAllCalendarEventsAtPath(path);
+            };
+            preferenceActions.readEventTypeColor = [](
+                const QString& path,
+                const Domain::CalendarEventType eventType)
+            {
+                return Platform::readCalendarEventTypeColorAtPath(path, eventType);
+            };
+            preferenceActions.saveEventTypeColor = [](
+                const QString& path,
+                const Domain::CalendarEventType eventType,
+                const std::string& color)
+            {
+                return Platform::writeCalendarEventTypeColorAtPath(
+                    path, eventType, color);
+            };
+            preferenceActions.calendarImportService = service;
+            Ui::CalendarPreferencesDialog preferences(
+                fixture.path, academicProvider, std::move(preferenceActions),
+                fixture.page);
+            preferences.show();
+            QApplication::processEvents();
+            auto* const importButton = preferences.findChild<QPushButton*>(
+                QStringLiteral("calendarImportEvents"));
+            auto* const importStatus = preferences.findChild<QLabel*>(
+                QStringLiteral("calendarImportStatus"));
+            QVERIFY(importButton);
+            QVERIFY(importStatus);
+
+            const QString preferencesImagePath = outputDirectory
+                + QLatin1Char('/') + QStringLiteral("calendar-preferences-")
+                + mode + QStringLiteral(".png");
+            const QImage preferencesImage = preferences.grab().toImage();
+            QVERIFY(!preferencesImage.isNull());
+            QVERIFY(preferencesImage.save(preferencesImagePath));
+
+            QTest::mouseClick(importButton, Qt::LeftButton);
+            QTRY_COMPARE_WITH_TIMEOUT(importServer.requestCount(), 1, 5000);
+            QCOMPARE(importButton->isEnabled(), false);
+            const QString loadingImagePath = outputDirectory
+                + QLatin1Char('/') + QStringLiteral("calendar-import-loading-")
+                + mode + QStringLiteral(".png");
+            const QImage loadingImage = preferences.grab().toImage();
+            QVERIFY(!loadingImage.isNull());
+            QVERIFY(loadingImage.save(loadingImagePath));
+
+            importServer.holdResponses(false);
+            importServer.respondToHeldRequests();
+            QTRY_VERIFY_WITH_TIMEOUT(
+                importStatus->text().contains(
+                    korean ? QStringLiteral("가져왔습니다")
+                           : QStringLiteral("Imported")),
+                5000);
+            QCOMPARE(importButton->isEnabled(), true);
+            const QString successImagePath = outputDirectory
+                + QLatin1Char('/') + QStringLiteral("calendar-import-success-")
+                + mode + QStringLiteral(".png");
+            const QImage successImage = preferences.grab().toImage();
+            QVERIFY(!successImage.isNull());
+            QVERIFY(successImage.save(successImagePath));
+
+            importServer.setBody(QByteArrayLiteral("malformed calendar workbook"));
+            QTest::mouseClick(importButton, Qt::LeftButton);
+            QTRY_VERIFY_WITH_TIMEOUT(
+                importStatus->text().contains(
+                    korean ? QStringLiteral("실패했습니다")
+                           : QStringLiteral("Calendar import failed:")),
+                5000);
+            const QString errorImagePath = outputDirectory
+                + QLatin1Char('/') + QStringLiteral("calendar-import-error-")
+                + mode + QStringLiteral(".png");
+            const QImage errorImage = preferences.grab().toImage();
+            QVERIFY(!errorImage.isNull());
+            QVERIFY(errorImage.save(errorImagePath));
+
+            importServer.holdResponses(true);
+            QTest::mouseClick(importButton, Qt::LeftButton);
+            QTRY_COMPARE_WITH_TIMEOUT(importServer.requestCount(), 3, 5000);
+            service->cancel();
+            QTRY_VERIFY_WITH_TIMEOUT(
+                importStatus->text().contains(
+                    korean ? QStringLiteral("취소되었습니다")
+                           : QStringLiteral("Calendar import was canceled.")),
+                5000);
+            const QString canceledImagePath = outputDirectory
+                + QLatin1Char('/') + QStringLiteral("calendar-import-canceled-")
+                + mode + QStringLiteral(".png");
+            const QImage canceledImage = preferences.grab().toImage();
+            QVERIFY(!canceledImage.isNull());
+            QVERIFY(canceledImage.save(canceledImagePath));
+            preferences.close();
+
             QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
             QApplication::processEvents();
             const ProcessMemorySnapshot released = memoryProvider.snapshot();
             const auto releasedMetrics = fixture.page->runtimeMetrics();
             captures.insert(mode, QJsonObject{
                 {QStringLiteral("image"), QFileInfo(imagePath).fileName()},
+                {QStringLiteral("preferencesImage"),
+                 QFileInfo(preferencesImagePath).fileName()},
+                {QStringLiteral("importStates"), QJsonObject{
+                    {QStringLiteral("loading"),
+                     QFileInfo(loadingImagePath).fileName()},
+                    {QStringLiteral("success"),
+                     QFileInfo(successImagePath).fileName()},
+                    {QStringLiteral("error"),
+                     QFileInfo(errorImagePath).fileName()},
+                    {QStringLiteral("canceled"),
+                     QFileInfo(canceledImagePath).fileName()}}},
                 {QStringLiteral("visibleMonth"), QStringLiteral("2026-10")},
                 {QStringLiteral("firstWeekday"), QStringLiteral("Monday")},
                 {QStringLiteral("upcomingScope"), QStringLiteral("This month")},
