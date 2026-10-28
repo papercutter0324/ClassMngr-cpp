@@ -16,8 +16,10 @@ ownership, dependencies, lifecycle, and verification.
 23. **Accepted — My Schedule and workspace event summary.** See its [Phase 7
     progress log](08-Phase-7-Feature-Migration.md#progress-log) and [capture
     package](../../docs/qt-rewrite/visual-baseline/next/phase-7/my-schedule-workspace-events/README.md).
-24. **Active — Classes list/navigation.**
-25. Class details, create/edit, and co-teachers.
+24. **Accepted — Classes list/navigation** (`368fcee8`). See its [Phase 7
+    progress log](08-Phase-7-Feature-Migration.md#progress-log) and [capture
+    package](../../docs/qt-rewrite/visual-baseline/next/phase-7/classes-navigation/README.md).
+25. **Active — Class details, create/edit, and co-teachers.**
 26. Class notes.
 27. Class analytics and speaking-evaluation defaults.
 28. Testing classes and blocks.

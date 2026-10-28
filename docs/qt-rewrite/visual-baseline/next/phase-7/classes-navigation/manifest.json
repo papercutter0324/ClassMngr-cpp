@@ -1,0 +1,704 @@
+{
+    "captures": [
+        {
+            "fixtureClassCount": 6,
+            "height": 768,
+            "image": "classes_en_US_light_small.png",
+            "locale": "en_US",
+            "memoryProcessWideObservation": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.322",
+                    "peakWorkingSetBytes": 57540608,
+                    "platform": "macos",
+                    "privateUsageBytes": 20038544,
+                    "privateWorkingSetBytes": 19398656,
+                    "workingSetBytes": 57540608
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.239",
+                    "peakWorkingSetBytes": 25214976,
+                    "platform": "macos",
+                    "privateUsageBytes": 8585864,
+                    "privateWorkingSetBytes": 8126464,
+                    "workingSetBytes": 25214976
+                },
+                "scope": "Whole-process observations; not page allocations or budgets",
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.335",
+                    "peakWorkingSetBytes": 61046784,
+                    "platform": "macos",
+                    "privateUsageBytes": 23413648,
+                    "privateWorkingSetBytes": 22773760,
+                    "workingSetBytes": 61046784
+                }
+            },
+            "navigationCounts": {
+                "allGroupRows": 6,
+                "classIdWidgetPropertyCount": 0,
+                "classRows": 6,
+                "detailEditorCount": 0,
+                "detailEditorCountAfterSuspension": 0,
+                "gradeGroupCount": 3,
+                "gradeGroups": [
+                    {
+                        "key": "grade:E4",
+                        "label": "E4",
+                        "rows": 2
+                    },
+                    {
+                        "key": "grade:E5",
+                        "label": "E5",
+                        "rows": 2
+                    },
+                    {
+                        "key": "grade:E6",
+                        "label": "E6",
+                        "rows": 2
+                    }
+                ],
+                "listModelCount": 1,
+                "listViewCount": 1,
+                "modelClearedOnSuspension": true,
+                "observedPageCount": 1,
+                "pageCount": 1,
+                "perClassWidgetCount": 0,
+                "perClassWidgetCountAfterSuspension": 0,
+                "widgetCountAfterSuspension": 41,
+                "widgetCountWhileActive": 41
+            },
+            "readSizes": {
+                "listReadCalls": 1,
+                "listResultClassNameUtf16CodeUnits": 102,
+                "listResultClassRows": 6,
+                "maximumScheduleRowsPerSourceAndClass": 1,
+                "maximumSummaryTokenUtf16CodeUnits": 8,
+                "navigationQueryClassRows": 6,
+                "navigationQueryNameUtf16CodeUnits": 102,
+                "navigationReadCalls": 1,
+                "navigationResultClassRows": 6,
+                "navigationResultSummaryUtf16CodeUnits": 421,
+                "navigationScheduleRowsTotal": 9,
+                "scheduleRowsPerSourceClassMaximum": 14
+            },
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "fixtureClassCount": 96,
+            "height": 768,
+            "image": "classes_en_US_light_96.png",
+            "locale": "en_US",
+            "memoryProcessWideObservation": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.344",
+                    "peakWorkingSetBytes": 61423616,
+                    "platform": "macos",
+                    "privateUsageBytes": 23757712,
+                    "privateWorkingSetBytes": 23117824,
+                    "workingSetBytes": 61423616
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.336",
+                    "peakWorkingSetBytes": 61095936,
+                    "platform": "macos",
+                    "privateUsageBytes": 23446416,
+                    "privateWorkingSetBytes": 22806528,
+                    "workingSetBytes": 61095936
+                },
+                "scope": "Whole-process observations; not page allocations or budgets",
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.358",
+                    "peakWorkingSetBytes": 61440000,
+                    "platform": "macos",
+                    "privateUsageBytes": 23757712,
+                    "privateWorkingSetBytes": 23117824,
+                    "workingSetBytes": 61423616
+                }
+            },
+            "navigationCounts": {
+                "allGroupRows": 96,
+                "classIdWidgetPropertyCount": 0,
+                "classRows": 96,
+                "detailEditorCount": 0,
+                "detailEditorCountAfterSuspension": 0,
+                "gradeGroupCount": 3,
+                "gradeGroups": [
+                    {
+                        "key": "grade:E4",
+                        "label": "E4",
+                        "rows": 32
+                    },
+                    {
+                        "key": "grade:E5",
+                        "label": "E5",
+                        "rows": 32
+                    },
+                    {
+                        "key": "grade:E6",
+                        "label": "E6",
+                        "rows": 32
+                    }
+                ],
+                "listModelCount": 1,
+                "listViewCount": 1,
+                "modelClearedOnSuspension": true,
+                "observedPageCount": 1,
+                "pageCount": 1,
+                "perClassWidgetCount": 0,
+                "perClassWidgetCountAfterSuspension": 0,
+                "widgetCountAfterSuspension": 41,
+                "widgetCountWhileActive": 41
+            },
+            "readSizes": {
+                "listReadCalls": 1,
+                "listResultClassNameUtf16CodeUnits": 1719,
+                "listResultClassRows": 96,
+                "maximumScheduleRowsPerSourceAndClass": 1,
+                "maximumSummaryTokenUtf16CodeUnits": 8,
+                "navigationQueryClassRows": 96,
+                "navigationQueryNameUtf16CodeUnits": 1719,
+                "navigationReadCalls": 1,
+                "navigationResultClassRows": 96,
+                "navigationResultSummaryUtf16CodeUnits": 6927,
+                "navigationScheduleRowsTotal": 144,
+                "scheduleRowsPerSourceClassMaximum": 14
+            },
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "fixtureClassCount": 6,
+            "height": 768,
+            "image": "classes_en_US_dark_small.png",
+            "locale": "en_US",
+            "memoryProcessWideObservation": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.362",
+                    "peakWorkingSetBytes": 61440000,
+                    "platform": "macos",
+                    "privateUsageBytes": 23774096,
+                    "privateWorkingSetBytes": 23134208,
+                    "workingSetBytes": 61440000
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.359",
+                    "peakWorkingSetBytes": 61440000,
+                    "platform": "macos",
+                    "privateUsageBytes": 23757712,
+                    "privateWorkingSetBytes": 23117824,
+                    "workingSetBytes": 61423616
+                },
+                "scope": "Whole-process observations; not page allocations or budgets",
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.373",
+                    "peakWorkingSetBytes": 61456384,
+                    "platform": "macos",
+                    "privateUsageBytes": 23774096,
+                    "privateWorkingSetBytes": 23134208,
+                    "workingSetBytes": 61440000
+                }
+            },
+            "navigationCounts": {
+                "allGroupRows": 6,
+                "classIdWidgetPropertyCount": 0,
+                "classRows": 6,
+                "detailEditorCount": 0,
+                "detailEditorCountAfterSuspension": 0,
+                "gradeGroupCount": 3,
+                "gradeGroups": [
+                    {
+                        "key": "grade:E4",
+                        "label": "E4",
+                        "rows": 2
+                    },
+                    {
+                        "key": "grade:E5",
+                        "label": "E5",
+                        "rows": 2
+                    },
+                    {
+                        "key": "grade:E6",
+                        "label": "E6",
+                        "rows": 2
+                    }
+                ],
+                "listModelCount": 1,
+                "listViewCount": 1,
+                "modelClearedOnSuspension": true,
+                "observedPageCount": 1,
+                "pageCount": 1,
+                "perClassWidgetCount": 0,
+                "perClassWidgetCountAfterSuspension": 0,
+                "widgetCountAfterSuspension": 41,
+                "widgetCountWhileActive": 41
+            },
+            "readSizes": {
+                "listReadCalls": 1,
+                "listResultClassNameUtf16CodeUnits": 102,
+                "listResultClassRows": 6,
+                "maximumScheduleRowsPerSourceAndClass": 1,
+                "maximumSummaryTokenUtf16CodeUnits": 8,
+                "navigationQueryClassRows": 6,
+                "navigationQueryNameUtf16CodeUnits": 102,
+                "navigationReadCalls": 1,
+                "navigationResultClassRows": 6,
+                "navigationResultSummaryUtf16CodeUnits": 421,
+                "navigationScheduleRowsTotal": 9,
+                "scheduleRowsPerSourceClassMaximum": 14
+            },
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "fixtureClassCount": 96,
+            "height": 768,
+            "image": "classes_en_US_dark_96.png",
+            "locale": "en_US",
+            "memoryProcessWideObservation": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.382",
+                    "peakWorkingSetBytes": 61456384,
+                    "platform": "macos",
+                    "privateUsageBytes": 23774096,
+                    "privateWorkingSetBytes": 23134208,
+                    "workingSetBytes": 61440000
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.374",
+                    "peakWorkingSetBytes": 61456384,
+                    "platform": "macos",
+                    "privateUsageBytes": 23774096,
+                    "privateWorkingSetBytes": 23134208,
+                    "workingSetBytes": 61440000
+                },
+                "scope": "Whole-process observations; not page allocations or budgets",
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.396",
+                    "peakWorkingSetBytes": 61456384,
+                    "platform": "macos",
+                    "privateUsageBytes": 23774096,
+                    "privateWorkingSetBytes": 23134208,
+                    "workingSetBytes": 61440000
+                }
+            },
+            "navigationCounts": {
+                "allGroupRows": 96,
+                "classIdWidgetPropertyCount": 0,
+                "classRows": 96,
+                "detailEditorCount": 0,
+                "detailEditorCountAfterSuspension": 0,
+                "gradeGroupCount": 3,
+                "gradeGroups": [
+                    {
+                        "key": "grade:E4",
+                        "label": "E4",
+                        "rows": 32
+                    },
+                    {
+                        "key": "grade:E5",
+                        "label": "E5",
+                        "rows": 32
+                    },
+                    {
+                        "key": "grade:E6",
+                        "label": "E6",
+                        "rows": 32
+                    }
+                ],
+                "listModelCount": 1,
+                "listViewCount": 1,
+                "modelClearedOnSuspension": true,
+                "observedPageCount": 1,
+                "pageCount": 1,
+                "perClassWidgetCount": 0,
+                "perClassWidgetCountAfterSuspension": 0,
+                "widgetCountAfterSuspension": 41,
+                "widgetCountWhileActive": 41
+            },
+            "readSizes": {
+                "listReadCalls": 1,
+                "listResultClassNameUtf16CodeUnits": 1719,
+                "listResultClassRows": 96,
+                "maximumScheduleRowsPerSourceAndClass": 1,
+                "maximumSummaryTokenUtf16CodeUnits": 8,
+                "navigationQueryClassRows": 96,
+                "navigationQueryNameUtf16CodeUnits": 1719,
+                "navigationReadCalls": 1,
+                "navigationResultClassRows": 96,
+                "navigationResultSummaryUtf16CodeUnits": 6927,
+                "navigationScheduleRowsTotal": 144,
+                "scheduleRowsPerSourceClassMaximum": 14
+            },
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "fixtureClassCount": 6,
+            "height": 768,
+            "image": "classes_ko_KR_light_small.png",
+            "locale": "ko_KR",
+            "memoryProcessWideObservation": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.417",
+                    "peakWorkingSetBytes": 64929792,
+                    "platform": "macos",
+                    "privateUsageBytes": 24773544,
+                    "privateWorkingSetBytes": 24117248,
+                    "workingSetBytes": 64929792
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.397",
+                    "peakWorkingSetBytes": 61489152,
+                    "platform": "macos",
+                    "privateUsageBytes": 23774096,
+                    "privateWorkingSetBytes": 23134208,
+                    "workingSetBytes": 61489152
+                },
+                "scope": "Whole-process observations; not page allocations or budgets",
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.429",
+                    "peakWorkingSetBytes": 65011712,
+                    "platform": "macos",
+                    "privateUsageBytes": 24855464,
+                    "privateWorkingSetBytes": 24199168,
+                    "workingSetBytes": 65011712
+                }
+            },
+            "navigationCounts": {
+                "allGroupRows": 6,
+                "classIdWidgetPropertyCount": 0,
+                "classRows": 6,
+                "detailEditorCount": 0,
+                "detailEditorCountAfterSuspension": 0,
+                "gradeGroupCount": 3,
+                "gradeGroups": [
+                    {
+                        "key": "grade:E4",
+                        "label": "E4",
+                        "rows": 2
+                    },
+                    {
+                        "key": "grade:E5",
+                        "label": "E5",
+                        "rows": 2
+                    },
+                    {
+                        "key": "grade:E6",
+                        "label": "E6",
+                        "rows": 2
+                    }
+                ],
+                "listModelCount": 1,
+                "listViewCount": 1,
+                "modelClearedOnSuspension": true,
+                "observedPageCount": 1,
+                "pageCount": 1,
+                "perClassWidgetCount": 0,
+                "perClassWidgetCountAfterSuspension": 0,
+                "widgetCountAfterSuspension": 41,
+                "widgetCountWhileActive": 41
+            },
+            "readSizes": {
+                "listReadCalls": 1,
+                "listResultClassNameUtf16CodeUnits": 102,
+                "listResultClassRows": 6,
+                "maximumScheduleRowsPerSourceAndClass": 1,
+                "maximumSummaryTokenUtf16CodeUnits": 8,
+                "navigationQueryClassRows": 6,
+                "navigationQueryNameUtf16CodeUnits": 102,
+                "navigationReadCalls": 1,
+                "navigationResultClassRows": 6,
+                "navigationResultSummaryUtf16CodeUnits": 421,
+                "navigationScheduleRowsTotal": 9,
+                "scheduleRowsPerSourceClassMaximum": 14
+            },
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "fixtureClassCount": 96,
+            "height": 768,
+            "image": "classes_ko_KR_light_96.png",
+            "locale": "ko_KR",
+            "memoryProcessWideObservation": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.437",
+                    "peakWorkingSetBytes": 65028096,
+                    "platform": "macos",
+                    "privateUsageBytes": 24855464,
+                    "privateWorkingSetBytes": 24199168,
+                    "workingSetBytes": 65011712
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.430",
+                    "peakWorkingSetBytes": 65028096,
+                    "platform": "macos",
+                    "privateUsageBytes": 24855464,
+                    "privateWorkingSetBytes": 24199168,
+                    "workingSetBytes": 65011712
+                },
+                "scope": "Whole-process observations; not page allocations or budgets",
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.452",
+                    "peakWorkingSetBytes": 65028096,
+                    "platform": "macos",
+                    "privateUsageBytes": 24855464,
+                    "privateWorkingSetBytes": 24199168,
+                    "workingSetBytes": 65011712
+                }
+            },
+            "navigationCounts": {
+                "allGroupRows": 96,
+                "classIdWidgetPropertyCount": 0,
+                "classRows": 96,
+                "detailEditorCount": 0,
+                "detailEditorCountAfterSuspension": 0,
+                "gradeGroupCount": 3,
+                "gradeGroups": [
+                    {
+                        "key": "grade:E4",
+                        "label": "E4",
+                        "rows": 32
+                    },
+                    {
+                        "key": "grade:E5",
+                        "label": "E5",
+                        "rows": 32
+                    },
+                    {
+                        "key": "grade:E6",
+                        "label": "E6",
+                        "rows": 32
+                    }
+                ],
+                "listModelCount": 1,
+                "listViewCount": 1,
+                "modelClearedOnSuspension": true,
+                "observedPageCount": 1,
+                "pageCount": 1,
+                "perClassWidgetCount": 0,
+                "perClassWidgetCountAfterSuspension": 0,
+                "widgetCountAfterSuspension": 41,
+                "widgetCountWhileActive": 41
+            },
+            "readSizes": {
+                "listReadCalls": 1,
+                "listResultClassNameUtf16CodeUnits": 1719,
+                "listResultClassRows": 96,
+                "maximumScheduleRowsPerSourceAndClass": 1,
+                "maximumSummaryTokenUtf16CodeUnits": 8,
+                "navigationQueryClassRows": 96,
+                "navigationQueryNameUtf16CodeUnits": 1719,
+                "navigationReadCalls": 1,
+                "navigationResultClassRows": 96,
+                "navigationResultSummaryUtf16CodeUnits": 6927,
+                "navigationScheduleRowsTotal": 144,
+                "scheduleRowsPerSourceClassMaximum": 14
+            },
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "fixtureClassCount": 6,
+            "height": 768,
+            "image": "classes_ko_KR_dark_small.png",
+            "locale": "ko_KR",
+            "memoryProcessWideObservation": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.455",
+                    "peakWorkingSetBytes": 65028096,
+                    "platform": "macos",
+                    "privateUsageBytes": 24855464,
+                    "privateWorkingSetBytes": 24199168,
+                    "workingSetBytes": 65011712
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.452",
+                    "peakWorkingSetBytes": 65028096,
+                    "platform": "macos",
+                    "privateUsageBytes": 24855464,
+                    "privateWorkingSetBytes": 24199168,
+                    "workingSetBytes": 64946176
+                },
+                "scope": "Whole-process observations; not page allocations or budgets",
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.467",
+                    "peakWorkingSetBytes": 65028096,
+                    "platform": "macos",
+                    "privateUsageBytes": 24855464,
+                    "privateWorkingSetBytes": 24199168,
+                    "workingSetBytes": 65011712
+                }
+            },
+            "navigationCounts": {
+                "allGroupRows": 6,
+                "classIdWidgetPropertyCount": 0,
+                "classRows": 6,
+                "detailEditorCount": 0,
+                "detailEditorCountAfterSuspension": 0,
+                "gradeGroupCount": 3,
+                "gradeGroups": [
+                    {
+                        "key": "grade:E4",
+                        "label": "E4",
+                        "rows": 2
+                    },
+                    {
+                        "key": "grade:E5",
+                        "label": "E5",
+                        "rows": 2
+                    },
+                    {
+                        "key": "grade:E6",
+                        "label": "E6",
+                        "rows": 2
+                    }
+                ],
+                "listModelCount": 1,
+                "listViewCount": 1,
+                "modelClearedOnSuspension": true,
+                "observedPageCount": 1,
+                "pageCount": 1,
+                "perClassWidgetCount": 0,
+                "perClassWidgetCountAfterSuspension": 0,
+                "widgetCountAfterSuspension": 41,
+                "widgetCountWhileActive": 41
+            },
+            "readSizes": {
+                "listReadCalls": 1,
+                "listResultClassNameUtf16CodeUnits": 102,
+                "listResultClassRows": 6,
+                "maximumScheduleRowsPerSourceAndClass": 1,
+                "maximumSummaryTokenUtf16CodeUnits": 8,
+                "navigationQueryClassRows": 6,
+                "navigationQueryNameUtf16CodeUnits": 102,
+                "navigationReadCalls": 1,
+                "navigationResultClassRows": 6,
+                "navigationResultSummaryUtf16CodeUnits": 421,
+                "navigationScheduleRowsTotal": 9,
+                "scheduleRowsPerSourceClassMaximum": 14
+            },
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "fixtureClassCount": 96,
+            "height": 768,
+            "image": "classes_ko_KR_dark_96.png",
+            "locale": "ko_KR",
+            "memoryProcessWideObservation": {
+                "active": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.475",
+                    "peakWorkingSetBytes": 65028096,
+                    "platform": "macos",
+                    "privateUsageBytes": 24855464,
+                    "privateWorkingSetBytes": 24199168,
+                    "workingSetBytes": 65011712
+                },
+                "before": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.467",
+                    "peakWorkingSetBytes": 65028096,
+                    "platform": "macos",
+                    "privateUsageBytes": 24855464,
+                    "privateWorkingSetBytes": 24199168,
+                    "workingSetBytes": 65011712
+                },
+                "scope": "Whole-process observations; not page allocations or budgets",
+                "suspended": {
+                    "available": true,
+                    "capturedAt": "2026-10-28T00:43:57.489",
+                    "peakWorkingSetBytes": 65028096,
+                    "platform": "macos",
+                    "privateUsageBytes": 24855464,
+                    "privateWorkingSetBytes": 24199168,
+                    "workingSetBytes": 65011712
+                }
+            },
+            "navigationCounts": {
+                "allGroupRows": 96,
+                "classIdWidgetPropertyCount": 0,
+                "classRows": 96,
+                "detailEditorCount": 0,
+                "detailEditorCountAfterSuspension": 0,
+                "gradeGroupCount": 3,
+                "gradeGroups": [
+                    {
+                        "key": "grade:E4",
+                        "label": "E4",
+                        "rows": 32
+                    },
+                    {
+                        "key": "grade:E5",
+                        "label": "E5",
+                        "rows": 32
+                    },
+                    {
+                        "key": "grade:E6",
+                        "label": "E6",
+                        "rows": 32
+                    }
+                ],
+                "listModelCount": 1,
+                "listViewCount": 1,
+                "modelClearedOnSuspension": true,
+                "observedPageCount": 1,
+                "pageCount": 1,
+                "perClassWidgetCount": 0,
+                "perClassWidgetCountAfterSuspension": 0,
+                "widgetCountAfterSuspension": 41,
+                "widgetCountWhileActive": 41
+            },
+            "readSizes": {
+                "listReadCalls": 1,
+                "listResultClassNameUtf16CodeUnits": 1719,
+                "listResultClassRows": 96,
+                "maximumScheduleRowsPerSourceAndClass": 1,
+                "maximumSummaryTokenUtf16CodeUnits": 8,
+                "navigationQueryClassRows": 96,
+                "navigationQueryNameUtf16CodeUnits": 1719,
+                "navigationReadCalls": 1,
+                "navigationResultClassRows": 96,
+                "navigationResultSummaryUtf16CodeUnits": 6927,
+                "navigationScheduleRowsTotal": 144,
+                "scheduleRowsPerSourceClassMaximum": 14
+            },
+            "theme": "dark",
+            "width": 1024
+        }
+    ],
+    "fixtureSource": "Synthetic bounded class list and navigation summaries injected through page read actions",
+    "memoryScope": "Whole-process working-set/private/peak observations; not page allocations or budgets",
+    "outputAdapter": "not applicable",
+    "platform": "offscreen",
+    "purpose": "Next Classes navigator visual captures and bounded navigation manifest",
+    "readSizeMeaning": "Callback query/result row counts; this capture harness does not issue SQL queries",
+    "style": "Fusion",
+    "translationSource": "Compiled production ClassMngr_ko_KR.qm catalog",
+    "viewport": {
+        "height": 768,
+        "width": 1024
+    }
+}

@@ -37,11 +37,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2 through 6
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
-- Last updated: 2026-10-27
-- Current note: 7A.1–7A.15 remain accepted. Candidate #23, My Schedule and
-  workspace event summary, is accepted; Batch 3 candidate #24, Classes
-  list/navigation, is active. The 7A screenshot comparison and memory
-  measurement remain open, as do the 7A and Phase 7 exit gates. See the
+- Last updated: 2026-10-28
+- Current note: 7A.1–7A.15 and candidates #23–24 remain accepted. Batch 3
+  candidate #25, Class details, create/edit, and co-teachers, is active. The 7A
+  screenshot comparison and memory measurement remain open, as do the 7A and
+  Phase 7 exit gates. See the
   progress log for slice evidence and limits.
 
 ### Slice batches
@@ -670,7 +670,56 @@ keep current status in this plan and live batches in the shared tracker.
   editing, filters, preferences, month grid, and full visual parity remain for
   #33–34. No full suite, Windows run, or final Phase 7 exit gate was verified.
   The 7A screenshot comparison and memory evidence and 7A/Phase 7 exit gates
-  remain open. Candidate #24, Classes list/navigation, is active.
+  remain open.
+
+### Candidate #24 — Classes list/navigation accepted (2026-10-28)
+
+- Commit: `368fcee8`. Next Classes now has a page-scoped model/view navigator
+  with always-visible grade groups and All, legacy ordering and labels,
+  regular/intensive schedule source, weekday/weekend filtering, and All Classes
+  / Active Schedule visibility. Selection uses typed ClassId values and is
+  remembered independently for each grade group and All. Reads go through a
+  path-scoped WorkspaceStore action and bounded class and class-info repository
+  APIs. Reads cap classes at 4,096, schedule rows at 14 per source/class, and
+  navigation text/tokens; over-limit results fail instead of truncating.
+  Testing classes are excluded. My Classes remains a separate route.
+- Lifecycle and scope: replacing or closing the active workspace clears IDs
+  and rows; replacement and re-entry load current data, while close/re-entry
+  shows the no-workspace state. No student counts, class details/editors,
+  create/delete, co-teachers, notes, analytics, roster, evaluations, testing
+  workflows, or section deep links are included; later candidates own them.
+- Capture package: eight synthetic Next-only page captures cover English/Korean,
+  light/dark, and 6/96 classes. The manifest records one page, model, and view;
+  41 page widgets; zero per-class widgets or detail editors; and cleared model
+  rows on suspension. Whole-process observations span 57,622,528–65,159,168
+  working-set bytes and 20,087,648–24,970,104 private-usage bytes. They are not
+  page allocations or a budget. Callback counts are injected action counts, not
+  SQL query counts. The captures use synthetic data without the application
+  shell and do not match the linked legacy reference states; full Classes and
+  Phase 7 visual parity remain open. See the [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/classes-navigation/README.md)
+  and the legacy [English/light](../../docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/english-light/classes-entry.png),
+  [English/dark](../../docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/english-dark/classes-entry.png),
+  [Korean/light](../../docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/korean-light/classes-entry.png),
+  and [Korean/dark](../../docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/korean-dark/classes-entry.png)
+  references.
+- Verification: independent repaired-tree incremental build passed for
+  `ClassMngrData`, `ClassMngrNext`, bootstrap, navigator page/Store/capture,
+  My Classes, PageHost, ordering, repository, route, translation, and resource
+  targets. The focused CTest selection passed 15/15 in 20.20 seconds; both
+  active-workspace lifecycle selectors also passed directly with
+  `QT_QPA_PLATFORM=offscreen` (four QtTest results including setup/cleanup).
+  Resource inventory passed with 187 direct resources and 7 generated runtime
+  inputs; `git diff --check` passed.
+- Limits: before repair, the broad legacy
+  `ClassMngrClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry`
+  timed out after 300,010 ms with 19 passes; no cause or baseline was
+  established, and it was not repeated. The optional adjacent
+  `ClassMngrNextPlatformApplicationServicesClassesListReadPortTests` target
+  failed to link on unresolved `FeatureService`, `ClassService::classes`, and
+  `DocumentCatalog` symbols; it did not run and was not rerun. The focused suite
+  uses the standalone Next WorkspaceStore path. No full suite or Windows result
+  is claimed. The 7A screenshot/memory evidence and 7A/Phase 7 exit gates remain
+  open. Candidate #25, Class details, create/edit, and co-teachers, is active.
 
 ## Objective
 
