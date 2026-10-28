@@ -18,6 +18,32 @@
 
 namespace ClassMngr::Next::Platform
 {
+namespace
+{
+
+[[nodiscard]] QString pendingSlotWeekday(const Domain::Weekday weekday)
+{
+    switch (weekday)
+    {
+    case Domain::Weekday::Monday: return QStringLiteral("Monday");
+    case Domain::Weekday::Tuesday: return QStringLiteral("Tuesday");
+    case Domain::Weekday::Wednesday: return QStringLiteral("Wednesday");
+    case Domain::Weekday::Thursday: return QStringLiteral("Thursday");
+    case Domain::Weekday::Friday: return QStringLiteral("Friday");
+    case Domain::Weekday::Saturday: return QStringLiteral("Saturday");
+    case Domain::Weekday::Sunday: return QStringLiteral("Sunday");
+    }
+    return {};
+}
+
+[[nodiscard]] QString pendingSlotStartTime(const int minute)
+{
+    return QStringLiteral("%1:%2")
+        .arg(minute / 60, 2, 10, QLatin1Char('0'))
+        .arg(minute % 60, 2, 10, QLatin1Char('0'));
+}
+
+} // namespace
 
 class ApplicationServicesTestingClassCreatePort final
     : public Application::TestingClassCreatePort
@@ -105,12 +131,17 @@ public:
             testingClass.fontColor = legacyText(request.fontColor);
             testingClass.notes = legacyText(request.notes);
 
-            const QString assignmentDay = request.assignmentDay
-                ? legacyText(*request.assignmentDay)
-                : QString{};
-            const QString assignmentStartTime = request.assignmentStartTime
-                ? legacyText(*request.assignmentStartTime)
-                : QString{};
+            const QString assignmentDay = request.pendingScheduleSlot
+                ? pendingSlotWeekday(request.pendingScheduleSlot->weekday)
+                : request.assignmentDay
+                    ? legacyText(*request.assignmentDay)
+                    : QString{};
+            const QString assignmentStartTime = request.pendingScheduleSlot
+                ? pendingSlotStartTime(
+                    request.pendingScheduleSlot->startMinute.rawValue())
+                : request.assignmentStartTime
+                    ? legacyText(*request.assignmentStartTime)
+                    : QString{};
 
             const RepositoryResult<int> created = repository->createTestingClass(
                 testingClass,

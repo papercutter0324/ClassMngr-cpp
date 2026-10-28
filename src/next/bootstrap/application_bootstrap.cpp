@@ -24,6 +24,7 @@
 #include "next/platform/workspace_store_classes_navigator_read_actions.h"
 #include "next/platform/workspace_store_class_editor_actions.h"
 #include "next/platform/workspace_store_class_analytics_actions.h"
+#include "next/platform/workspace_store_testing_classes_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -41,6 +42,7 @@
 #include "next/ui/my_workspace_page.h"
 #include "next/ui/my_classes_page.h"
 #include "next/ui/classes_navigator_page.h"
+#include "next/ui/testing_classes_manager_page.h"
 #include "next/ui/qt_file_dialog_presenter.h"
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
@@ -339,6 +341,30 @@ loadWorkspaceCampusChoices(
             return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
                 std::move(page)
             };
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+}
+
+[[nodiscard]] Ui::PageDescriptor testingClassesManagerPageDescriptor(
+    std::function<Ui::TestingClassesManagerPageActions()> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(QStringLiteral("testing_classes")),
+        .label = navigationLabel("Testing Classes"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::TestingClassesManagerPage>(
+                    context, actionsFactory());
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)};
         },
         .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
         .initialDataPolicy = Ui::PageInitialDataPolicy::None
@@ -1220,6 +1246,90 @@ Application::StartupResult ApplicationBootstrap::start()
                     };
                     return actions;
                 }));
+            if (!registration)
+            {
+                initialPageFailure = registration.error().message;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const Ui::PageHostResult<void> registration =
+                m_shell->pageHost().registerPage(
+                    testingClassesManagerPageDescriptor([this] {
+                        Ui::TestingClassesManagerPageActions actions;
+                        actions.saveMode =
+                            Platform::SettingsManagerSaveModePreferencesPort().read();
+                        actions.activeWorkspacePath = [this]()
+                            -> std::optional<QString> {
+                            if (!m_applicationRuntime)
+                            {
+                                return std::nullopt;
+                            }
+                            const auto session = m_applicationRuntime
+                                ->workspaceState().snapshot().session();
+                            if (!session)
+                            {
+                                return std::nullopt;
+                            }
+                            const std::string& path = session->location().value();
+                            return QString::fromUtf8(path.data(),
+                                static_cast<qsizetype>(path.size()));
+                        };
+                        actions.workspaceIdentity = [this] {
+                            if (!m_applicationRuntime)
+                            {
+                                return QString{};
+                            }
+                            const auto session = m_applicationRuntime
+                                ->workspaceState().snapshot().session();
+                            if (!session)
+                            {
+                                return QString{};
+                            }
+                            const std::string& workspaceId =
+                                session->workspaceId().value();
+                            const std::string& path = session->location().value();
+                            return QString::fromUtf8(workspaceId.data(),
+                                static_cast<qsizetype>(workspaceId.size()))
+                                + QLatin1Char('|') + QString::fromUtf8(path.data(),
+                                    static_cast<qsizetype>(path.size()));
+                        };
+                        actions.readClasses = [](
+                            const QString& databasePath) {
+                            return Platform::readTestingClassesAtPath(databasePath);
+                        };
+                        actions.readDetails = [](
+                            const QString& databasePath,
+                            const Domain::ClassId& classId) {
+                            return Platform::readTestingClassDetailsAtPath(
+                                databasePath, classId);
+                        };
+                        actions.readTeacherChoices = [](
+                            const QString& databasePath) {
+                            return Platform::readTestingTeacherChoicesAtPath(
+                                databasePath);
+                        };
+                        actions.updateDetails = [](
+                            const QString& databasePath,
+                            const Application::TestingClassDetailsUpdateRequest& request) {
+                            return Platform::updateTestingClassDetailsAtPath(
+                                databasePath, request);
+                        };
+                        actions.createClass = [](
+                            const QString& databasePath,
+                            const Application::TestingClassCreateRequest& request) {
+                            return Platform::createTestingClassAtPath(
+                                databasePath, request);
+                        };
+                        actions.deleteClass = [](
+                            const QString& databasePath,
+                            const Application::TestingClassDeleteRequest& request) {
+                            return Platform::deleteTestingClassAtPath(
+                                databasePath, request);
+                        };
+                        return actions;
+                    }));
             if (!registration)
             {
                 initialPageFailure = registration.error().message;
@@ -4524,6 +4634,16 @@ void ApplicationBootstrap::clearMyClassesPageForWorkspaceChange()
             static_cast<void>(page->onActivating());
         }
     }
+    if (auto* const page = dynamic_cast<Ui::TestingClassesManagerPage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("testing_classes"))))
+    {
+        page->clearForWorkspaceChange();
+        if (m_shell->pageHost().activePageKey()
+            == std::optional<QString>(QStringLiteral("testing_classes")))
+        {
+            static_cast<void>(page->onActivating());
+        }
+    }
 }
 
 void ApplicationBootstrap::clearMyClassesPageForClosedWorkspace()
@@ -4539,6 +4659,11 @@ void ApplicationBootstrap::clearMyClassesPageForClosedWorkspace()
     }
     if (auto* const page = dynamic_cast<Ui::ClassesNavigatorPage*>(
             m_shell->pageHost().pageInstance(QStringLiteral("classes"))))
+    {
+        page->clearForClosedWorkspace();
+    }
+    if (auto* const page = dynamic_cast<Ui::TestingClassesManagerPage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("testing_classes"))))
     {
         page->clearForClosedWorkspace();
     }

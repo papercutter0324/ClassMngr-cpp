@@ -9935,6 +9935,7 @@ Version: %2</source>
     <message><source>My Workspace</source><translation>내 작업 공간</translation></message>
     <message><source>My Classes</source><translation>내 수업</translation></message>
     <message><source>Classes</source><translation>수업</translation></message>
+    <message><source>Testing Classes</source><translation>테스트 수업</translation></message>
     <message><source>Sub Prep</source><translation>대체 수업 준비</translation></message>
     <message><source>Co-Teachers</source><translation>공동 교사</translation></message>
     <message><source>Campus Staff</source><translation>캠퍼스 직원</translation></message>
@@ -10780,6 +10781,66 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>The selected class cannot be deleted right now.</source><translation>현재 선택한 수업을 삭제할 수 없습니다.</translation></message>
     <message><source>Class changes could not be saved.</source><translation>수업 변경 내용을 저장하지 못했습니다.</translation></message>
     <message><source>Class changes could not be reloaded.</source><translation>수업 변경 내용을 다시 불러오지 못했습니다.</translation></message>
+</context>
+<context>
+    <name>TestingClassesManagerPage</name>
+    <message><source>Testing Classes</source><translation>테스트 수업</translation></message>
+    <message><source>Manage reusable classes for the Testing schedule.</source><translation>테스트 일정에서 사용할 수업을 관리합니다.</translation></message>
+    <message><source>Class Name</source><translation>수업 이름</translation></message>
+    <message><source>Grade</source><translation>학년</translation></message>
+    <message><source>Level</source><translation>레벨</translation></message>
+    <message><source>Room</source><translation>교실</translation></message>
+    <message><source>Korean Teacher</source><translation>한국인 교사</translation></message>
+    <message><source>Class Color</source><translation>수업 색상</translation></message>
+    <message><source>Font Color</source><translation>글자 색상</translation></message>
+    <message><source>Details</source><translation>세부 정보</translation></message>
+    <message><source>Notes</source><translation>노트</translation></message>
+    <message><source>Add Class</source><translation>수업 추가</translation></message>
+    <message><source>Delete Class</source><translation>수업 삭제</translation></message>
+    <message><source>Save Changes</source><translation>변경 내용 저장</translation></message>
+    <message><source>Retry</source><translation>다시 시도</translation></message>
+    <message><source>Choose Color</source><translation>색상 선택</translation></message>
+    <message><source>Choose Class Color</source><translation>수업 색상 선택</translation></message>
+    <message><source>Choose Font Color</source><translation>글자 색상 선택</translation></message>
+    <message><source>Shown on Testing schedules</source><translation>테스트 일정에 표시됩니다</translation></message>
+    <message><source>Instructions and other notes</source><translation>안내 및 기타 노트</translation></message>
+    <message><source>New class for %1 at %2</source><translation>%1 %2에 수업 추가</translation></message>
+    <message><source>No workspace is open.</source><translation>열린 작업 공간이 없습니다.</translation></message>
+    <message><source>Testing class creation is unavailable.</source><translation>테스트 수업을 추가할 수 없습니다.</translation></message>
+    <message><source>The testing class was saved, but its details could not be reloaded.</source><translation>테스트 수업을 저장했지만 세부 정보를 다시 불러오지 못했습니다.</translation></message>
+    <message><source>Testing class saved.</source><translation>테스트 수업을 저장했습니다.</translation></message>
+    <message><source>Testing class details cannot be saved.</source><translation>테스트 수업 정보를 저장할 수 없습니다.</translation></message>
+    <message><source>Testing class saved, but the list could not be refreshed.</source><translation>테스트 수업을 저장했지만 목록을 새로 고치지 못했습니다.</translation></message>
+    <message><source>The testing class list could not be loaded.</source><translation>테스트 수업 목록을 불러오지 못했습니다.</translation></message>
+    <message><source>The testing class list could not be loaded. Retry this page.</source><translation>테스트 수업 목록을 불러오지 못했습니다. 이 페이지에서 다시 시도하세요.</translation></message>
+    <message><source>No testing classes are available. Add a class to begin.</source><translation>사용 가능한 테스트 수업이 없습니다. 수업을 추가하세요.</translation></message>
+    <message><source>Testing class details could not be loaded.</source><translation>테스트 수업 정보를 불러오지 못했습니다.</translation></message>
+    <message><source>Testing class details returned a different class.</source><translation>테스트 수업 정보에서 다른 식별자가 반환되었습니다.</translation></message>
+    <message><source>Teacher choices could not be loaded. Retry to update choices.</source><translation>교사 선택 항목을 불러오지 못했습니다. 다시 시도하세요.</translation></message>
+    <message><source>Workspace changed. Retry to load Testing Classes.</source><translation>작업 공간이 변경되었습니다. 테스트 수업을 불러오려면 다시 시도하세요.</translation></message>
+    <message><source>Class name is required.</source><translation>수업 이름을 입력하세요.</translation></message>
+    <message><source>Choose a grade and level.</source><translation>학년과 레벨을 선택하세요.</translation></message>
+    <message><source>Room is required.</source><translation>교실을 입력하세요.</translation></message>
+    <message><source>Enter valid class and font colors.</source><translation>올바른 수업 및 글자 색상을 입력하세요.</translation></message>
+    <message><source>Unsaved Changes</source><translation>저장하지 않은 변경 내용</translation></message>
+    <message><source>Save testing class changes before %1?</source><translation>%1 전에 테스트 수업 변경 내용을 저장하시겠습니까?</translation></message>
+    <message><source>Save</source><translation>저장</translation></message>
+    <message><source>Discard</source><translation>취소</translation></message>
+    <message><source>Cancel</source><translation>닫기</translation></message>
+    <message><source>Delete %1? This also removes its roster, notes, speaking evaluations, regular and intensive class times, and Testing schedule assignments.</source><translation>%1을(를) 삭제하시겠습니까? 명단, 노트, 말하기 평가, 정규 및 집중 수업 시간, 테스트 일정 배정도 함께 삭제됩니다.</translation></message>
+    <message><source>Delete Testing Class?</source><translation>테스트 수업을 삭제하시겠습니까?</translation></message>
+    <message><source>Testing class deletion is unavailable.</source><translation>테스트 수업을 삭제할 수 없습니다.</translation></message>
+    <message><source>Testing class deleted, but the list could not be refreshed.</source><translation>테스트 수업을 삭제했지만 목록을 새로 고치지 못했습니다.</translation></message>
+    <message><source>Testing class deleted.</source><translation>테스트 수업을 삭제했습니다.</translation></message>
+    <message><source>No Teacher</source><translation>교사 없음</translation></message>
+    <message><source>Teacher %1</source><translation>교사 %1</translation></message>
+    <message><source>Monday</source><translation>월요일</translation></message>
+    <message><source>Tuesday</source><translation>화요일</translation></message>
+    <message><source>Wednesday</source><translation>수요일</translation></message>
+    <message><source>Thursday</source><translation>목요일</translation></message>
+    <message><source>Friday</source><translation>금요일</translation></message>
+    <message><source>Saturday</source><translation>토요일</translation></message>
+    <message><source>Sunday</source><translation>일요일</translation></message>
 </context>
 <context>
     <name>NextMyClassesPage</name>

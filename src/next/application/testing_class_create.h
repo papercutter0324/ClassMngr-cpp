@@ -5,6 +5,7 @@
 #include "next/application/testing_class_required_fields_validation.h"
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
+#include "next/domain/schedule_time.h"
 
 #include <optional>
 #include <string>
@@ -12,6 +13,17 @@
 
 namespace ClassMngr::Next::Application
 {
+
+struct TestingClassPendingScheduleSlot final
+{
+    Domain::Weekday weekday = Domain::Weekday::Monday;
+    Domain::ScheduleTime::StartMinute startMinute{0};
+
+    friend bool operator==(
+        const TestingClassPendingScheduleSlot&,
+        const TestingClassPendingScheduleSlot&
+        ) = default;
+};
 
 struct TestingClassCreateRequest final
 {
@@ -23,6 +35,9 @@ struct TestingClassCreateRequest final
     std::u16string classColor;
     std::u16string fontColor;
     std::u16string notes;
+    std::optional<TestingClassPendingScheduleSlot> pendingScheduleSlot;
+    // Legacy callers still supply the slot as canonical strings. New Next
+    // schedule workflows should use pendingScheduleSlot.
     std::optional<std::u16string> assignmentDay;
     std::optional<std::u16string> assignmentStartTime;
 
@@ -45,6 +60,25 @@ struct TestingClassCreateRequest final
         {
             return invalidInput(
                 "Testing class assignment weekday and start time must be provided together."
+                );
+        }
+
+        if (pendingScheduleSlot
+            && (assignmentDay || assignmentStartTime))
+        {
+            return invalidInput(
+                "A testing assignment slot must use one representation."
+                );
+        }
+
+        if (pendingScheduleSlot
+            && (pendingScheduleSlot->weekday < Domain::Weekday::Monday
+                || pendingScheduleSlot->weekday > Domain::Weekday::Sunday
+                || pendingScheduleSlot->startMinute.rawValue() < 0
+                || pendingScheduleSlot->startMinute.rawValue() >= 24 * 60))
+        {
+            return validationFailure(
+                "A testing assignment requires a valid weekday and start time."
                 );
         }
 

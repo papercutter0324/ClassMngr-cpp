@@ -3287,6 +3287,137 @@ set_tests_properties(ClassMngrNextClassesNavigatorPageTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
+# Exercise the WorkspaceStore-backed Testing Classes manager against temporary
+# workspaces, including create/assignment rollback and the selected editor.
+add_executable(ClassMngrNextTestingClassesManagerTests
+    tests/next/testing_classes_manager_tests.cpp
+    src/next/platform/workspace_store_testing_classes_actions.cpp
+    src/next/ui/testing_classes_manager_page.cpp
+    src/next/ui/testing_classes_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextTestingClassesManagerTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextTestingClassesManagerTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextTestingClassesManagerTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextTestingClassesManagerTests
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrScheduleImportParser
+        ClassMngrScheduleImportRules
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextTestingClassesManagerTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextTestingClassesManagerTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextTestingClassesManagerTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextTestingClassesManagerTests
+    COMMAND ClassMngrNextTestingClassesManagerTests
+)
+set_tests_properties(ClassMngrNextTestingClassesManagerTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Capture paired legacy and Next Testing Classes Details/Notes and pending-slot
+# entry states using the tracked 96-class workspace fixture.
+add_executable(ClassMngrNextTestingClassesVisualCapture
+    tests/next/testing_classes_visual_capture.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/platform/workspace_store_testing_classes_actions.cpp
+    src/next/ui/testing_classes_manager_page.cpp
+    src/next/ui/testing_classes_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+)
+target_compile_features(ClassMngrNextTestingClassesVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextTestingClassesVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextTestingClassesVisualCapture
+    PRIVATE
+        CLASSMNGR_TESTING_CLASSES_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextTestingClassesVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrScheduleImportParser
+        ClassMngrScheduleImportRules
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextTestingClassesVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextTestingClassesVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextTestingClassesVisualCapture
+    ClassMngrNextResourcePackage
+)
+qt_add_resources(ClassMngrNextTestingClassesVisualCapture
+    testing_classes_visual_capture_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
+)
+add_test(
+    NAME ClassMngrNextTestingClassesVisualCapture
+    COMMAND ClassMngrNextTestingClassesVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/testing-classes-visual-capture"
+)
+set_tests_properties(ClassMngrNextTestingClassesVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Capture English/Korean and light/dark navigator states, including a compact
 # synthetic 96-class case and its bounded-query/widget manifest.
 add_executable(ClassMngrNextClassesNavigatorVisualCapture
