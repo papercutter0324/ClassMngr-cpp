@@ -6,17 +6,19 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-29
-- Current milestone: Phase 7 remains in progress. Candidate #42, Document
-  catalog, is accepted in `0d635731`; Batch 4 is active and #43, Document
-  viewer lifecycle/actions, is now in progress. The #42 catalog renders the
-  localized metadata projection and emits stable document IDs without loading
-  PDF bodies; #43 owns viewer sessions. The Initial Setup schedule-import
-  build repair is committed in `80f7f1c6` and leaves the protected Gateway
-  pair untouched. The [C42 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/document-catalog-c42/README.md)
-  records its memory and rendering limits. See the [Phase 7 plan](08-Phase-7-Feature-Migration.md)
-  and [current batch tracker](Current-Slice-Batches.md). Batch 3 and its
-  Windows evidence support were pushed at `2cfb1db3`. Windows Release run
-  [40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018)
+- Current milestone: Phase 7 remains in progress. Candidate #43, Document
+  viewer lifecycle/actions, is accepted in source commit `3ac8fea4`; Batch 4
+  is active and #44, 7J.1 Sub Prep, is now in progress. The viewer opens only
+  the selected PDF, releases QtPdf consumers before its borrowed stream, and
+  verifies timeout recovery, export actions, zoom/navigation, and reopen. Its
+  paired English/Korean × Light/Dark captures are recorded in the
+  [C43 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/document-viewer-c43/README.md).
+  C43's standard macOS Debug configure/build and 14 focused CTests passed.
+  The Initial Setup schedule-import build repair remains committed in
+  `80f7f1c6`, with the protected Gateway pair untouched. See the
+  [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current batch tracker](Current-Slice-Batches.md).
+  Batch 3 and its Windows evidence support were pushed at `2cfb1db3`. Windows
+  Release run [40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018)
   completed at that head, but the x64 collector prerequisite failed and no
   diagnostic artifact was uploaded. A fresh hosted run is pending the Batch 4
   push. Broader 7A visual/lifecycle evidence, hosted memory evidence, and the

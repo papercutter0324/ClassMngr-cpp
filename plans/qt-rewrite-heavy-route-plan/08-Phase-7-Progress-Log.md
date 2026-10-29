@@ -1351,11 +1351,60 @@ Entries are preserved in their original document order.
   capture and relevant shell tests pass, so that target was not expanded.
   No full suite or Windows build ran.
 
-### Candidate #43 — Document viewer lifecycle/actions (in progress, 2026-10-29)
+### Candidate #43 — Document viewer lifecycle/actions accepted (2026-10-29)
 
-- Boundary: consume the stable `DocumentId` selection from #42 and load only
-  the selected PDF into the active viewer session. Preserve load, save/copy,
-  zoom/navigation, close, replace, leave/suspend/release, and reopen behavior.
-  Catalog construction and application startup remain metadata-only.
-- Acceptance will measure viewer/resource release and verify selected-document
-  loading and reopening; no numeric memory threshold is added before Phase 9.
+- Commit: `3ac8fea4` (`Phase7 - Add document viewer lifecycle and actions`).
+  The Next shell consumes the stable `DocumentId` selection from #42 and loads
+  only the selected PDF into a file-backed viewer session. Catalog construction
+  and startup remain metadata-only. The page preserves page navigation,
+  incremental and fit zoom, save/copy of the optional catalog export asset,
+  print capability, close, replacement, suspension, and reopen behavior.
+- Lifecycle: ordinary close/suspension closes the PDF document before
+  releasing its borrowed stream and session. A deterministic timeout fallback
+  destroys the view/document while the stream remains alive, releases the
+  session resources in order, and recreates empty wrappers for a fresh reopen.
+  Tests cover timeout on close and suspension, release ordering, export
+  cancellation/failure, save/open and print delegates, Korean `닫기`, and zoom
+  reset after reopen. No numeric memory threshold is applied before Phase 9.
+- Build and verification: a fresh configure in the standard
+  `build/macos-clang-debug` completed after moving `ClassMngrNext` target
+  creation to `cmake/next_app`, which scopes Qt 6.12's import scan away from the
+  in-repository Release staging tree while retaining the explicit calendar
+  QRC. Built `ClassMngrNext`, `ClassMngrNextDocumentViewerTests`,
+  `ClassMngrNextDocumentViewerVisualCapture`,
+  `ClassMngrNextLegacyDocumentViewerVisualCapture`,
+  `ClassMngrNextDocumentCatalogNavigationTests`,
+  `ClassMngrNextBootstrapTests`,
+  `ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests`,
+  `ClassMngrNextApplicationDocumentCatalogUseCaseTests`,
+  `ClassMngrNextApplicationDocumentContentTests`,
+  `ClassMngrNextPlatformDocumentContentResourcePortTests`,
+  `ClassMngrNextPlatformDocumentExportResourcePortTests`,
+  `ClassMngrNextPlatformQtPdfSessionReleaseTests`, and
+  `ClassMngrNextPageHostTests`.
+  Independent focused CTest passed 14/14: `ClassMngrNextDocumentCatalogNavigationTests`,
+  `ClassMngrNextDocumentViewerTests`, `ClassMngrNextDocumentViewerVisualCapture`,
+  `ClassMngrNextLegacyDocumentViewerVisualCapture`, `ClassMngrNextBootstrapTests`,
+  `ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests`,
+  `NextStartupWorkspaceDependencyBoundary`,
+  `ClassMngrNextApplicationDocumentCatalogUseCaseTests`,
+  `ClassMngrNextApplicationDocumentContentTests`,
+  `ClassMngrNextPlatformDocumentContentResourcePortTests`,
+  `ClassMngrNextPlatformDocumentExportResourcePortTests`,
+  `ClassMngrNextPlatformQtPdfSessionReleaseTests`, `ClassMngrNextPageHostTests`,
+  and `ClassMngrNextLaunch`.
+  Paired Next/Legacy captures cover ready/error/closed/reopened in
+  English/Korean ×
+  Light/Dark. All 32 PNGs are 1024×720 and hash-match fresh captures; visual
+  review found no material content/state mismatch. The package calls the
+  comparison illustrative and makes no pixel-parity claim.
+- Limits: no full suite, Windows build, packaged Release run, or Phase 9 memory
+  gate ran. Capture memory is process-wide, without viewer-specific
+  attribution. The timeout branch is forced through an injected waiter rather
+  than a real five-second QtPdf hang. No physical printer or interactive native
+  print dialog was exercised; runtime locale switching remains outside the
+  #42/#43 boundary.
+- Decision and next: keep viewer content and streams operation-scoped and keep
+  QtPdf consumers gone before stream/session release. Batch 4 continues with
+  #44, 7J.1 Sub Prep, which owns the required 96-class class-information and
+  output migration.

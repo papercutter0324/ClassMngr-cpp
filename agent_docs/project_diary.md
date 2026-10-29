@@ -2,6 +2,20 @@
 
 ## Decisions and Lessons
 
+### Phase 7 document viewer lifecycle and QML scan scope — 2026-10-29
+
+Keep the selected PDF body in one file-backed viewer session; the catalog and
+startup retain metadata only. Close the QtPdf document/view before releasing
+the borrowed stream and application session. If the document does not reach
+Null, destroy the QtPdf consumers while the stream remains alive, then release
+and recreate empty wrappers for a later open. Qt 6.12's QML import scan uses
+the target's CMake source directory as its root and follows symlinks. A
+root-level Next executable therefore walked the in-repository macOS stage's
+`Applications` symlink into system applications. Create the QML-bearing target
+in a narrow CMake subdirectory, keep its QRC inputs explicit, and preserve the
+import scan; do not delete the stage or disable plugin discovery to hide the
+scope problem.
+
 ### Phase 7A visual and memory evidence — 2026-10-28
 
 Capture Initial Setup with a fresh temporary Legacy profile and a Next page

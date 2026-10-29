@@ -189,33 +189,30 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-29 (candidate #42 accepted; candidate #43 active)
+### Current checkpoint — 2026-10-29 (candidate #43 accepted; candidate #44 active)
 
-Candidate #41, Campus Directory, is accepted in source commit `728c8c14` after
-independent focused verification: three CTests passed, the direct campus suite
-passed 12/12, and the 40-image capture package was integrity checked. The slice
-uses packaged read-only data, app-data overrides, the exact historical
-`<process cwd>/data/campuses` migration root, and a campus-local admin
-capability. Campus Staff remains owned by #17–19; app-wide permission parity
-remains #46. Its macOS Maps measurements and lifecycle limits are recorded in
-the [Phase 7 progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).
+Candidate #43, Document viewer lifecycle/actions, is accepted in source commit
+`3ac8fea4`. The Next shell opens only the selected catalog PDF in a file-backed
+session, releases QtPdf consumers before the borrowed stream/session, and
+recreates empty wrappers after the deterministic timeout fallback. Independent
+focused CTest passed 14/14; the Next launch check passed 1/1. The paired
+English/Korean × Light/Dark captures cover ready/error/closed/reopened; all 32
+PNG files matched fresh captures, with no material content/state mismatch.
+The capture package makes no pixel-parity claim and its memory reading is
+process-wide. C43 moved the executable target into `cmake/next_app` so Qt 6.12's
+QML import scan no longer walks staged applications under the repository root.
 
-Batch 4 remains active; candidate #42, Document catalog, is accepted in
-`0d635731`, and #43, Document viewer lifecycle/actions, is in progress. C42
-uses the existing metadata projection, emits stable document IDs, and does not
-load PDF bodies. Its independent focused verification passed eight CTests;
-the four localized/theme captures matched fresh outputs, and the capture
-binary has no QtPdf link. Whole-process macOS memory observations and limits
-are in the [Phase 7 progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).
+Batch 4 continues with #44, 7J.1 Sub Prep. It owns the complete Next-shell
+96-class class-information and output route; existing bounded projections and
+output services are reusable but legacy captures are reference inputs only.
 The Initial Setup schedule-import prerequisite repair is committed in
-`80f7f1c6`; it uses existing path-scoped ports and leaves the protected
-WorkspaceStore Gateway edits outside the commit. Windows Release run
-`40914914018` completed at the pushed SHA, but its x64 diagnostic prerequisite
-build failed and produced no collector artifact. A fresh hosted run is pending
-the Batch 4 push. Other open gates include broader 7A visual/lifecycle evidence
-and the 96-class Sub Prep entry/refresh/output/release route in #44. The
-`<250 MiB` threshold remains a separate Phase 9 gate. The 7A and Phase 7 exit
-gates are not yet passed.
+`80f7f1c6`, leaving the protected WorkspaceStore Gateway edits outside the
+commit. Windows Release run `40914914018` completed at the pushed SHA, but its
+x64 diagnostic prerequisite failed and produced no collector artifact. A fresh
+hosted run is pending the Batch 4 push. Broader 7A visual/lifecycle evidence,
+hosted memory evidence, and the Windows packaged-Next memory gate remain open.
+The `<250 MiB` threshold remains a separate Phase 9 gate. The 7A and Phase 7
+exit gates are not yet passed.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.
@@ -606,7 +603,7 @@ user's response to the exact-payload approval request.
 
 ## Next Milestone
 
-Complete candidates #43–48; begin next-batch discovery when #47 starts. Push
+Complete candidates #44–48; begin next-batch discovery when #47 starts. Push
 Batch 4 after #48, obtain and review a fresh Windows diagnostic artifact from
 that pushed head, and close the broader 7A evidence and Phase 7 exit gates
 before declaring Phase 7 complete;

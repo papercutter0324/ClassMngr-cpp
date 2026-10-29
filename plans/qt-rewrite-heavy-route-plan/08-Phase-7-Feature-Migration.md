@@ -38,19 +38,21 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-29
-- Current note: Candidate #42, Document catalog, is accepted in source commit
-  `0d635731`; Batch 4 remains active and #43, Document viewer lifecycle/actions,
-  is in progress. Candidate #42 renders the localized metadata projection and
-  emits stable document IDs without loading PDF bodies; #43 owns viewer
-  sessions. The Initial Setup schedule-import build repair is committed in
-  `80f7f1c6` using existing path-scoped ports, leaving the protected
-  in-progress Gateway pair untouched. Windows Release run `40914914018`
-  completed at the pushed head, but its x64 diagnostic prerequisite build
-  failed and no memory artifact was uploaded. A fresh hosted run is pending
-  the Batch 4 push. Broader 7A visual and lifecycle evidence, hosted memory
-  evidence, and the Windows packaged-Next memory gate remain open. The 7A and
-  Phase 7 exit gates are not yet passed. See the [Phase 7 progress
-  log](08-Phase-7-Progress-Log.md) for evidence and limits.
+- Current note: Candidate #43, Document viewer lifecycle/actions, is accepted
+  in source commit `3ac8fea4`; Batch 4 remains active and #44, 7J.1 Sub Prep,
+  is in progress. The viewer binds the stable catalog ID to a file-backed
+  session and verifies close/suspend/reopen, export, print capability, zoom,
+  and error handling. A narrow CMake source directory keeps Qt's QML import
+  scan away from in-repository staged applications while retaining the
+  explicit calendar QRC. The Initial Setup schedule-import build repair is
+  committed in `80f7f1c6`; the protected Gateway pair remains untouched. The
+  fresh C43 macOS Debug configure/build and 14 focused CTests passed. Windows
+  Release run `40914914018` completed at the pushed head, but its x64
+  diagnostic prerequisite failed and no memory artifact was uploaded. A fresh
+  hosted run is pending the Batch 4 push. Broader 7A visual and lifecycle
+  evidence, hosted memory evidence, and the Windows packaged-Next memory gate
+  remain open. The 7A and Phase 7 exit gates are not yet passed. See the
+  [Phase 7 progress log](08-Phase-7-Progress-Log.md) for evidence and limits.
 
 ### Slice batches
 
