@@ -38,6 +38,11 @@ struct CampusDashboardCampusSnapshot final
     bool printerDriverUrlUnavailable = true;
     std::string photocopierCode;
     std::string housingLocationsJson;
+
+    friend bool operator==(
+        const CampusDashboardCampusSnapshot&,
+        const CampusDashboardCampusSnapshot&
+        ) = default;
 };
 
 } // namespace ClassMngr::Next::Application

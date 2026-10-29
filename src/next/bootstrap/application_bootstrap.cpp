@@ -1,5 +1,6 @@
 #include "next/platform/workspace_store_roster_output.h"
 #include "next/bootstrap/application_bootstrap.h"
+#include "next/bootstrap/campus_edit_capability_arguments.h"
 
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
 #include "next/application/recent_workspace_history_use_case.h"
@@ -12,7 +13,11 @@
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/positive_decimal_id_validation.h"
 #include "next/application/my_classes_page_read.h"
+#include "next/application/campus_dashboard_campus_save_use_case.h"
+#include "next/application/campus_directory_read_query.h"
+#include "next/application/campus_dashboard_selected_campus_read_query.h"
 #include "next/domain/teacher_display_name.h"
+#include "core/appsettings.h"
 #include "core/settingsmanager.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
@@ -37,6 +42,8 @@
 #include "next/platform/workspace_store_schedule_actions.h"
 #include "next/platform/workspace_store_calendar_actions.h"
 #include "next/platform/calendar_page_resource_campus_directory_query_adapter.h"
+#include "next/platform/campus_directory_repository_adapter.h"
+#include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "next/platform/qt_schedule_output_adapter.h"
 #include "next/platform/workspace_store_schedule_import_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
@@ -70,6 +77,8 @@
 #include "next/ui/upcoming_birthdays_flow.h"
 #include "next/ui/initial_setup_teacher_import_dialog.h"
 #include "next/ui/shared_staff_directory_page.h"
+#include "next/ui/campus_directory_page.h"
+#include "next/ui/campus_directory_route_factories.h"
 #include "next/platform/teacher_validator_teacher_profile_validation_policy.h"
 
 #include <QApplication>
@@ -83,6 +92,7 @@
 #include <QLocale>
 #include <QStringList>
 #include <QTimer>
+#include <QStandardPaths>
 
 #include <cstdio>
 #include <cstring>
@@ -327,16 +337,7 @@ loadWorkspaceCampusChoices(
 [[nodiscard]] std::vector<Ui::PageDescriptor> placeholderPageDescriptors()
 {
     return {
-        placeholderDescriptor(QStringLiteral("sub_prep"), navigationLabel("Sub Prep")),
-        placeholderDescriptor(
-            QStringLiteral("campus_information"), navigationLabel("Information")
-            ),
-        placeholderDescriptor(
-            QStringLiteral("campus_directions"), navigationLabel("Directions")
-            ),
-        placeholderDescriptor(QStringLiteral("campus_address"), navigationLabel("Address")),
-        placeholderDescriptor(QStringLiteral("campus_housing"), navigationLabel("Housing")),
-        placeholderDescriptor(QStringLiteral("campus_map"), navigationLabel("Maps"))
+        placeholderDescriptor(QStringLiteral("sub_prep"), navigationLabel("Sub Prep"))
     };
 }
 
@@ -725,12 +726,28 @@ struct ApplicationBootstrap::CoreServices final
         )
         : resourceLoader(std::move(catalog))
         , startupResourceScope(std::move(startupScope))
+        , campusDirectoryRepository(
+              std::make_shared<Platform::CampusDirectoryRepositoryAdapter>(
+                  resourceLoader,
+                  QDir(QStandardPaths::writableLocation(
+                           QStandardPaths::AppDataLocation
+                           ))
+                      .filePath(QStringLiteral("campuses"))
+                  )
+              )
+        , lastSelectedCampusPort(
+              std::make_shared<Platform::SettingsManagerLastSelectedCampusPort>()
+              )
         , preferences(preferencesPort, preferencesPort)
     {
     }
 
     Resources::ResourceLoader resourceLoader;
     Resources::ResourceScope startupResourceScope;
+    std::shared_ptr<Platform::CampusDirectoryRepositoryAdapter>
+        campusDirectoryRepository;
+    std::shared_ptr<Platform::SettingsManagerLastSelectedCampusPort>
+        lastSelectedCampusPort;
     // Declared before the borrowing model and presenters; destroyed after them.
     Platform::SettingsManagerPreferencesPort preferencesPort;
     Application::PreferencesModel preferences;
@@ -1171,6 +1188,75 @@ Application::StartupResult ApplicationBootstrap::start()
             {
                 initialPageFailure = registration.error().message;
                 break;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            for (Ui::PageDescriptor& descriptor :
+                 Ui::campusDirectoryPageDescriptors([this] {
+                     Ui::CampusDirectoryPageActions actions;
+                     const auto repository =
+                         m_coreServices->campusDirectoryRepository;
+                     const auto lastSelectedCampusPort =
+                         m_coreServices->lastSelectedCampusPort;
+                     actions.editCapability =
+                         campusEditCapabilityForArguments(m_application.arguments());
+                     const Application::CampusEditCapability capability =
+                         actions.editCapability;
+                     actions.loadCampuses = [repository] {
+                         return Application::CampusDirectoryReadQuery::execute(
+                             *repository
+                             );
+                     };
+                     actions.loadCampus = [repository](
+                                              const Domain::CampusId& campusId
+                                              ) {
+                         return Application::CampusDashboardSelectedCampusReadQuery::execute(
+                             Application::CampusDashboardSelectedCampusReadRequest{
+                                 campusId
+                             },
+                             *repository
+                             );
+                     };
+                     actions.saveCampus = [repository, capability](
+                                              const Application::CampusDashboardCampusSnapshot& campus,
+                                              const Application::CampusDashboardCampusSaveIntent intent
+                                              ) {
+                         return Application::CampusDashboardCampusSaveUseCase::execute(
+                             capability,
+                             campus,
+                             intent,
+                             *repository
+                             );
+                     };
+                     actions.readLastSelectedCampus = [lastSelectedCampusPort] {
+                         return lastSelectedCampusPort->read();
+                     };
+                     actions.saveLastSelectedCampus = [lastSelectedCampusPort](
+                                                          const std::optional<Domain::CampusId>& campusId
+                                                          ) {
+                         return lastSelectedCampusPort->write(campusId);
+                     };
+                     actions.importLegacyCampuses = [repository] {
+                         return repository->
+                             importLegacyOverridesFromProcessWorkingDirectory();
+                     };
+                     actions.mapResourcesFor = [repository](
+                                                   const Application::CampusDashboardCampusSnapshot& campus
+                                                   ) {
+                         return repository->mapResourcesFor(campus);
+                     };
+                     return actions;
+                 }))
+            {
+                const Ui::PageHostResult<void> registration =
+                    m_shell->pageHost().registerPage(std::move(descriptor));
+                if (!registration)
+                {
+                    initialPageFailure = registration.error().message;
+                    break;
+                }
             }
         }
 

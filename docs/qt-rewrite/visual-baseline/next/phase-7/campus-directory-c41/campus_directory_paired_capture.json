@@ -1,0 +1,502 @@
+{
+    "captures": [
+        {
+            "campusId": "bundang",
+            "file": "campus_information_en_US_light_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "en_US",
+            "section": "information",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_information_en_US_light_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "en_US",
+            "section": "information",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_directions_en_US_light_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "en_US",
+            "section": "directions",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_directions_en_US_light_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "en_US",
+            "section": "directions",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_address_en_US_light_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "en_US",
+            "section": "address",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_address_en_US_light_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "en_US",
+            "section": "address",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_housing_en_US_light_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "en_US",
+            "section": "housing",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_housing_en_US_light_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "en_US",
+            "section": "housing",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_maps_en_US_light_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "en_US",
+            "section": "maps",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_maps_en_US_light_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "en_US",
+            "section": "maps",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_information_en_US_dark_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "en_US",
+            "section": "information",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_information_en_US_dark_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "en_US",
+            "section": "information",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_directions_en_US_dark_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "en_US",
+            "section": "directions",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_directions_en_US_dark_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "en_US",
+            "section": "directions",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_address_en_US_dark_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "en_US",
+            "section": "address",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_address_en_US_dark_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "en_US",
+            "section": "address",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_housing_en_US_dark_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "en_US",
+            "section": "housing",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_housing_en_US_dark_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "en_US",
+            "section": "housing",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_maps_en_US_dark_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "en_US",
+            "section": "maps",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_maps_en_US_dark_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "en_US",
+            "section": "maps",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_information_ko_KR_light_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "ko_KR",
+            "section": "information",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_information_ko_KR_light_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "ko_KR",
+            "section": "information",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_directions_ko_KR_light_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "ko_KR",
+            "section": "directions",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_directions_ko_KR_light_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "ko_KR",
+            "section": "directions",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_address_ko_KR_light_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "ko_KR",
+            "section": "address",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_address_ko_KR_light_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "ko_KR",
+            "section": "address",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_housing_ko_KR_light_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "ko_KR",
+            "section": "housing",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_housing_ko_KR_light_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "ko_KR",
+            "section": "housing",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_maps_ko_KR_light_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "ko_KR",
+            "section": "maps",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_maps_ko_KR_light_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "ko_KR",
+            "section": "maps",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_information_ko_KR_dark_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "ko_KR",
+            "section": "information",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_information_ko_KR_dark_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "ko_KR",
+            "section": "information",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_directions_ko_KR_dark_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "ko_KR",
+            "section": "directions",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_directions_ko_KR_dark_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "ko_KR",
+            "section": "directions",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_address_ko_KR_dark_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "ko_KR",
+            "section": "address",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_address_ko_KR_dark_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "ko_KR",
+            "section": "address",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_housing_ko_KR_dark_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "ko_KR",
+            "section": "housing",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_housing_ko_KR_dark_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "ko_KR",
+            "section": "housing",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_maps_ko_KR_dark_legacy.png",
+            "height": 768,
+            "implementation": "legacy",
+            "locale": "ko_KR",
+            "section": "maps",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "campusId": "bundang",
+            "file": "campus_maps_ko_KR_dark_next.png",
+            "height": 768,
+            "implementation": "next",
+            "locale": "ko_KR",
+            "section": "maps",
+            "theme": "dark",
+            "width": 1024
+        }
+    ],
+    "dataSource": "The same packaged Bundang campus JSON and map PNGs; Legacy uses the read-only campuses RCC and Next uses its packaged resource catalog.",
+    "memoryMeasurement": {
+        "configuration": {
+            "catalog": "Bundang; packaged read-only JSON and PNG resources",
+            "locale": "en_US",
+            "qt": "6.12.0",
+            "qtPlatformPlugin": "offscreen",
+            "theme": "light",
+            "viewportHeight": 768,
+            "viewportWidth": 1024
+        },
+        "metricSource": "PlatformProcessMemorySnapshotProvider (whole-process resident working set and private usage)",
+        "observations": {
+            "afterLeaveSuspensionRelease": {
+                "campusPngLoadEvents": 2,
+                "decodedMapDimensions": [
+                ],
+                "loadedMapResourceCount": 0,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T14:54:24.192",
+                    "peakWorkingSetBytes": 159006720,
+                    "platform": "macos",
+                    "privateUsageBytes": 94340128,
+                    "workingSetBytes": 158990336
+                }
+            },
+            "afterMapEntry": {
+                "campusPngLoadEvents": 2,
+                "decodedMapDimensions": [
+                    {
+                        "height": 1150,
+                        "width": 1230
+                    },
+                    {
+                        "height": 859,
+                        "width": 1225
+                    }
+                ],
+                "loadedMapResourceCount": 2,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T14:54:24.192",
+                    "peakWorkingSetBytes": 158990336,
+                    "platform": "macos",
+                    "privateUsageBytes": 94340128,
+                    "workingSetBytes": 158990336
+                }
+            },
+            "afterReopen": {
+                "campusPngLoadEvents": 4,
+                "decodedMapDimensions": [
+                    {
+                        "height": 1150,
+                        "width": 1230
+                    },
+                    {
+                        "height": 859,
+                        "width": 1225
+                    }
+                ],
+                "loadedMapResourceCount": 2,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T14:54:24.232",
+                    "peakWorkingSetBytes": 163217408,
+                    "platform": "macos",
+                    "privateUsageBytes": 98567200,
+                    "workingSetBytes": 163217408
+                }
+            },
+            "beforeMapEntry": {
+                "campusPngLoadEvents": 0,
+                "decodedMapDimensions": [
+                ],
+                "loadedMapResourceCount": 0,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T14:54:24.150",
+                    "peakWorkingSetBytes": 157515776,
+                    "platform": "macos",
+                    "privateUsageBytes": 92898336,
+                    "workingSetBytes": 157515776
+                }
+            }
+        },
+        "platform": "macos",
+        "scope": "Whole-process observations; not page-attributed memory and not a memory budget."
+    },
+    "pairedCaptureLimitations": "The Legacy dashboard keeps all campus tabs in one page while Next provides one route per section; paired images use the same campus, locale, theme, and viewport but do not establish pixel parity. Legacy JSON keeps historical :/assets/campuses map references while the current campus RCC uses :/resource-packs/campuses, so this capture target supplies a read-only qrc alias for the same Bundang map PNG bytes to make both map previews visible. The alias exists only in this capture target.",
+    "purpose": "Paired Legacy and Next Campus Directory page captures",
+    "qtPlatformPlugin": "offscreen",
+    "qtVersion": "6.12.0",
+    "style": "Fusion with packaged light/dark stylesheet",
+    "viewport": {
+        "height": 768,
+        "width": 1024
+    }
+}

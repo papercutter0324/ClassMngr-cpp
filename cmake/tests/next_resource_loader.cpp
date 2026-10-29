@@ -1,11 +1,14 @@
 #include "next/resources/resource_loader.h"
 
+#include <QBuffer>
 #include <QCoreApplication>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QFontDatabase>
 #include <QGuiApplication>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -257,6 +260,180 @@ bool testResourceCacheCore()
     {
         return fail(QStringLiteral("resource cache instances or retained owner metadata were incorrect"));
     }
+    return true;
+}
+
+bool testBoundedImageCacheIdentity()
+{
+    QTemporaryDir packageRoot;
+    if (!packageRoot.isValid())
+    {
+        return fail(QStringLiteral("could not create bounded-image cache package fixture"));
+    }
+
+    constexpr int sourceWidth = 800;
+    constexpr int sourceHeight = 400;
+    constexpr int maximumDimension = 100;
+    const QString relativeImagePath = QStringLiteral("assets/test/cache-bound.png");
+    const QString imagePath = QDir(packageRoot.path()).filePath(relativeImagePath);
+    if (!QDir().mkpath(QFileInfo(imagePath).absolutePath()))
+    {
+        return fail(QStringLiteral("could not create synthetic image package directory"));
+    }
+
+    QImage sourceImage(sourceWidth, sourceHeight, QImage::Format_RGBA8888);
+    sourceImage.fill(QColor(31, 92, 173, 255));
+    QByteArray imageBytes;
+    QBuffer imageBuffer(&imageBytes);
+    if (!imageBuffer.open(QIODevice::WriteOnly) || !sourceImage.save(&imageBuffer, "PNG")
+        || imageBytes.isEmpty() || !writeBytes(imagePath, imageBytes))
+    {
+        return fail(QStringLiteral("could not encode the synthetic bounded-cache image"));
+    }
+
+    const QByteArray imageDigest = QCryptographicHash::hash(
+        imageBytes,
+        QCryptographicHash::Sha256
+        ).toHex();
+    const QString digestText = QString::fromLatin1(imageDigest);
+    const QJsonObject sourceMetadata{
+        {QStringLiteral("bytes"), imageBytes.size()},
+        {QStringLiteral("path"), QStringLiteral("synthetic/cache-bound.png")},
+        {QStringLiteral("sha256"), digestText}
+    };
+    const QJsonObject bakedMetadata{
+        {QStringLiteral("bytes"), imageBytes.size()},
+        {QStringLiteral("sha256"), digestText}
+    };
+    const QJsonObject record{
+        {QStringLiteral("category"), QStringLiteral("test")},
+        {QStringLiteral("expected_type"), QStringLiteral("png")},
+        {QStringLiteral("loading"), QJsonObject{
+            {QStringLiteral("tier"), QStringLiteral("feature_on_demand")},
+            {QStringLiteral("policy"), QStringLiteral("decode synthetic bounded-cache image")},
+            {QStringLiteral("lifetime"), QStringLiteral("resource-loader test")},
+            {QStringLiteral("release_policy"), QStringLiteral("release with test cache")}
+        }},
+        {QStringLiteral("location"), QStringLiteral("resource_file")},
+        {QStringLiteral("logical_id"), QStringLiteral("resource:assets/test/cache-bound.png")},
+        {QStringLiteral("owner"), QStringLiteral("ResourceLoader cache identity test")},
+        {QStringLiteral("package_relative_path"), relativeImagePath},
+        {QStringLiteral("provenance"), QJsonObject{
+            {QStringLiteral("baked"), bakedMetadata},
+            {QStringLiteral("source"), sourceMetadata}
+        }},
+        {QStringLiteral("resource_kind"), QStringLiteral("test_image")},
+        {QStringLiteral("startup_necessity"), QStringLiteral("not_required_until_test_use")},
+        {QStringLiteral("streamability"), QJsonObject{
+            {QStringLiteral("method_ref"), QStringLiteral("test_fixture")},
+            {QStringLiteral("status"), QStringLiteral("no")}
+        }}
+    };
+    const QJsonObject catalogDocument{
+        {QStringLiteral("format"), QStringLiteral("ClassMngrNext.ResourceCatalog")},
+        {QStringLiteral("package_path_base"), QStringLiteral("ClassMngrNext::Resources")},
+        {QStringLiteral("path_format"), QStringLiteral("relative-posix")},
+        {QStringLiteral("records"), QJsonArray{record}},
+        {QStringLiteral("schema_version"), 1}
+    };
+    const QString catalogPath = QDir(packageRoot.path()).filePath(
+        QStringLiteral("resource-catalog.json")
+        );
+    if (!writeBytes(
+            catalogPath,
+            QJsonDocument(catalogDocument).toJson(QJsonDocument::Compact)
+            ))
+    {
+        return fail(QStringLiteral("could not write synthetic bounded-cache catalog"));
+    }
+
+    const auto id = resourceId("resource:assets/test/cache-bound.png");
+    if (!id)
+    {
+        return fail(QStringLiteral("synthetic bounded-cache resource ID was rejected"));
+    }
+    auto request = resourceRequest(
+        *id,
+        ResourceScopeKind::Page,
+        QStringLiteral("BoundedImageCacheIdentity")
+        );
+    if (!request)
+    {
+        return false;
+    }
+
+    auto boundedFirstCatalog = ResourceCatalog::load(catalogPath, packageRoot.path());
+    if (!boundedFirstCatalog)
+    {
+        return fail(QStringLiteral("bounded-first synthetic catalog failed to load: ")
+            + boundedFirstCatalog.error().message);
+    }
+    ResourceCache boundedFirstCache(8 * 1024 * 1024);
+    std::vector<ResourceDiagnostic> boundedFirstDiagnostics;
+    ResourceLoader boundedFirstLoader(
+        std::move(*boundedFirstCatalog),
+        boundedFirstCache,
+        [&boundedFirstDiagnostics](const ResourceDiagnostic& diagnostic) {
+            boundedFirstDiagnostics.push_back(diagnostic);
+        }
+        );
+    auto boundedImage = boundedFirstLoader.loadBoundedImage(*request, maximumDimension);
+    if (!boundedImage
+        || boundedImage->get().size() != QSize(maximumDimension, maximumDimension / 2))
+    {
+        return fail(QStringLiteral("bounded-first request did not decode to 100x50"));
+    }
+    auto unboundedAfterBounded = boundedFirstLoader.loadImage(*request);
+    const auto unboundedAfterBoundedInfo = boundedFirstCache.entryInfo(*id);
+    if (!unboundedAfterBounded
+        || unboundedAfterBounded->get().size() != QSize(sourceWidth, sourceHeight)
+        || boundedFirstDiagnostics.size() != 2
+        || boundedFirstDiagnostics.back().cacheHit
+        || !unboundedAfterBoundedInfo
+        || unboundedAfterBoundedInfo->imageMaximumDimension != 0)
+    {
+        return fail(QStringLiteral(
+            "unbounded request reused the smaller bounded image cache entry"
+            ));
+    }
+
+    auto unboundedFirstCatalog = ResourceCatalog::load(catalogPath, packageRoot.path());
+    if (!unboundedFirstCatalog)
+    {
+        return fail(QStringLiteral("unbounded-first synthetic catalog failed to load: ")
+            + unboundedFirstCatalog.error().message);
+    }
+    ResourceCache unboundedFirstCache(8 * 1024 * 1024);
+    std::vector<ResourceDiagnostic> unboundedFirstDiagnostics;
+    ResourceLoader unboundedFirstLoader(
+        std::move(*unboundedFirstCatalog),
+        unboundedFirstCache,
+        [&unboundedFirstDiagnostics](const ResourceDiagnostic& diagnostic) {
+            unboundedFirstDiagnostics.push_back(diagnostic);
+        }
+        );
+    auto unboundedImage = unboundedFirstLoader.loadImage(*request);
+    if (!unboundedImage || unboundedImage->get().size() != QSize(sourceWidth, sourceHeight))
+    {
+        return fail(QStringLiteral("unbounded-first request did not preserve 800x400"));
+    }
+    auto boundedAfterUnbounded = unboundedFirstLoader.loadBoundedImage(
+        *request,
+        maximumDimension
+        );
+    const auto boundedAfterUnboundedInfo = unboundedFirstCache.entryInfo(*id);
+    if (!boundedAfterUnbounded
+        || boundedAfterUnbounded->get().size() != QSize(maximumDimension, maximumDimension / 2)
+        || unboundedFirstDiagnostics.size() != 2
+        || unboundedFirstDiagnostics.back().cacheHit
+        || !boundedAfterUnboundedInfo
+        || boundedAfterUnboundedInfo->imageMaximumDimension != maximumDimension)
+    {
+        return fail(QStringLiteral(
+            "bounded request reused the differently bounded/full-resolution image cache entry"
+            ));
+    }
+
     return true;
 }
 
@@ -1339,7 +1516,8 @@ bool testLoader(QCoreApplication& application)
 int main(int argc, char** argv)
 {
     QGuiApplication application(argc, argv);
-    if (!testResourceCacheCore() || !testLoader(application))
+    if (!testResourceCacheCore() || !testBoundedImageCacheIdentity()
+        || !testLoader(application))
     {
         return 1;
     }

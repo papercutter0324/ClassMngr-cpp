@@ -1,5 +1,147 @@
 include_guard(GLOBAL)
 
+# Campus Directory exercises the direct packaged-catalog overlay, explicit
+# migration path, edit capability, and page-scoped map release behavior.
+add_executable(ClassMngrNextCampusDirectoryTests
+    tests/next/campus_directory_tests.cpp
+    src/next/ui/campus_directory_page.cpp
+    src/next/ui/campus_directory_route_factories.cpp
+    src/next/ui/page_host.cpp
+)
+target_compile_features(ClassMngrNextCampusDirectoryTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextCampusDirectoryTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextCampusDirectoryTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextCampusDirectoryTests
+    PRIVATE
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextCampusDirectoryTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextCampusDirectoryTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextCampusDirectoryTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextCampusDirectoryTests
+    COMMAND ClassMngrNextCampusDirectoryTests
+)
+set_tests_properties(ClassMngrNextCampusDirectoryTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+# Produce the tracked C41 paired route images and map lifecycle memory record
+# only when explicitly invoked; this target does not write during CTest.
+add_executable(ClassMngrNextCampusDirectoryVisualCapture
+    tests/next/campus_directory_visual_capture.cpp
+    src/next/ui/campus_directory_page.cpp
+    src/next/ui/campus_directory_route_factories.cpp
+    src/next/ui/page_host.cpp
+)
+target_compile_features(ClassMngrNextCampusDirectoryVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextCampusDirectoryVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextCampusDirectoryVisualCapture
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+        CLASSMNGR_CAMPUS_DIRECTORY_LEGACY_PACK="${CLASSMNGR_RESOURCE_PACK_OUTPUT_DIR}/campuses.rcc"
+)
+target_link_libraries(ClassMngrNextCampusDirectoryVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextCampusDirectoryVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextCampusDirectoryVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextCampusDirectoryVisualCapture
+    ClassMngrNextResourcePackage
+    ClassMngrcampusesResourcePack
+)
+qt_add_resources(ClassMngrNextCampusDirectoryVisualCapture
+    campus_directory_visual_capture_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
+)
+set(_classmngr_campus_capture_map_files
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/bundang/bundang_map.png"
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/bundang/bundang_building.png"
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/bundang/cheonggu_map.png"
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/bundang/cheonggu_building.png"
+)
+set_source_files_properties(
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/bundang/bundang_map.png"
+    PROPERTIES QT_RESOURCE_ALIAS "bundang/bundang_map.png"
+)
+set_source_files_properties(
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/bundang/bundang_building.png"
+    PROPERTIES QT_RESOURCE_ALIAS "bundang/bundang_building.png"
+)
+set_source_files_properties(
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/bundang/cheonggu_map.png"
+    PROPERTIES QT_RESOURCE_ALIAS "bundang/cheonggu_map.png"
+)
+set_source_files_properties(
+    "${PROJECT_SOURCE_DIR}/resources/assets/campuses/bundang/cheonggu_building.png"
+    PROPERTIES QT_RESOURCE_ALIAS "bundang/cheonggu_building.png"
+)
+qt_add_resources(ClassMngrNextCampusDirectoryVisualCapture
+    campus_directory_legacy_map_reference_alias
+    PREFIX "/assets/campuses"
+    FILES ${_classmngr_campus_capture_map_files}
+)
+add_test(
+    NAME ClassMngrNextCampusDirectoryVisualCapture
+    COMMAND ClassMngrNextCampusDirectoryVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/campus-directory-visual-capture"
+)
+set_tests_properties(ClassMngrNextCampusDirectoryVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Exercise the production Phase 5 bootstrap and its minimal Widgets shell
 # without linking the legacy runtime or any feature services.
 add_executable(ClassMngrNextBootstrapTests

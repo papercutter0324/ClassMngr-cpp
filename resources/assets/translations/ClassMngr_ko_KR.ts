@@ -12085,4 +12085,59 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
         <translation>학생 이름은 프롬프트에서 제거되며 기기에서 다시 복원됩니다.</translation>
     </message>
 </context>
+<context>
+    <name>CampusDirectoryPage</name>
+    <message><source>Office Information</source><translation>사무실 정보</translation></message>
+    <message><source>Directions</source><translation>오시는 길</translation></message>
+    <message><source>Address</source><translation>주소</translation></message>
+    <message><source>Housing</source><translation>숙소</translation></message>
+    <message><source>Maps</source><translation>지도</translation></message>
+    <message><source>Campus Directory</source><translation>캠퍼스 디렉터리</translation></message>
+    <message><source>Campus saving is unavailable.</source><translation>캠퍼스 정보를 저장할 수 없습니다.</translation></message>
+    <message><source>Campus changes saved.</source><translation>캠퍼스 정보를 저장했습니다.</translation></message>
+    <message><source>Campus changes could not be reloaded.</source><translation>캠퍼스 정보를 다시 불러오지 못했습니다.</translation></message>
+    <message><source>Retry</source><translation>다시 시도</translation></message>
+    <message><source>Import legacy campus data</source><translation>이전 캠퍼스 데이터 가져오기</translation></message>
+    <message><source>Discard</source><translation>변경 취소</translation></message>
+    <message><source>Save</source><translation>저장</translation></message>
+    <message><source>Campus information is read-only in this session.</source><translation>이 세션에서는 캠퍼스 정보를 읽기 전용으로 표시합니다.</translation></message>
+    <message><source>Save or discard edits before changing campuses.</source><translation>캠퍼스를 바꾸기 전에 변경 사항을 저장하거나 취소하세요.</translation></message>
+    <message><source>Campus</source><translation>캠퍼스</translation></message>
+    <message><source>Campus code</source><translation>캠퍼스 코드</translation></message>
+    <message><source>Building</source><translation>건물</translation></message>
+    <message><source>Phone</source><translation>전화</translation></message>
+    <message><source>Office</source><translation>사무실</translation></message>
+    <message><source>Office Wi-Fi</source><translation>사무실 Wi-Fi</translation></message>
+    <message><source>Wi-Fi password</source><translation>Wi-Fi 비밀번호</translation></message>
+    <message><source>Printer</source><translation>프린터</translation></message>
+    <message><source>Printer setup</source><translation>프린터 설정</translation></message>
+    <message><source>Printer driver link</source><translation>프린터 드라이버 링크</translation></message>
+    <message><source>Printer driver link unavailable</source><translation>프린터 드라이버 링크 없음</translation></message>
+    <message><source>Photocopier code</source><translation>복사기 코드</translation></message>
+    <message><source>Notes for arrival</source><translation>도착 안내</translation></message>
+    <message><source>Public transit</source><translation>대중교통</translation></message>
+    <message><source>On arrival</source><translation>도착 후</translation></message>
+    <message><source>Complete address</source><translation>전체 주소</translation></message>
+    <message><source>Building name (English)</source><translation>건물 이름 (영어)</translation></message>
+    <message><source>Building name (Korean)</source><translation>건물 이름 (한국어)</translation></message>
+    <message><source>English address details</source><translation>영어 주소 세부 정보</translation></message>
+    <message><source>Korean address details</source><translation>한국어 주소 세부 정보</translation></message>
+    <message><source>Housing locations</source><translation>숙소 위치</translation></message>
+    <message><source>Online map links</source><translation>온라인 지도 링크</translation></message>
+    <message><source>Naver Map</source><translation>네이버 지도</translation></message>
+    <message><source>Kakao Map</source><translation>카카오맵</translation></message>
+    <message><source>Open Naver Map</source><translation>네이버 지도 열기</translation></message>
+    <message><source>Open Kakao Map</source><translation>카카오맵 열기</translation></message>
+    <message><source>Campus directory is unavailable.</source><translation>캠퍼스 목록을 사용할 수 없습니다.</translation></message>
+    <message><source>No campuses are available.</source><translation>사용 가능한 캠퍼스가 없습니다.</translation></message>
+    <message><source>Campus details are unavailable.</source><translation>캠퍼스 정보를 사용할 수 없습니다.</translation></message>
+    <message><source>The selected campus could not be found.</source><translation>선택한 캠퍼스를 찾을 수 없습니다.</translation></message>
+    <message><source>No map images are available for this campus.</source><translation>이 캠퍼스에 사용할 지도 이미지가 없습니다.</translation></message>
+    <message><source>Campus map</source><translation>캠퍼스 지도</translation></message>
+    <message><source>Map image could not be loaded.</source><translation>지도 이미지를 불러오지 못했습니다.</translation></message>
+    <message><source>The map link could not be opened.</source><translation>지도 링크를 열지 못했습니다.</translation></message>
+    <message><source>Legacy campus import is unavailable.</source><translation>이전 캠퍼스 데이터를 가져올 수 없습니다.</translation></message>
+    <message><source>Save or discard edits before importing legacy campus data.</source><translation>이전 데이터를 가져오기 전에 변경 사항을 저장하거나 취소하세요.</translation></message>
+    <message><source>Legacy campus data imported.</source><translation>이전 캠퍼스 데이터를 가져왔습니다.</translation></message>
+</context>
 </TS>

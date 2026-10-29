@@ -30,6 +30,9 @@ public:
         ResourceCacheValueKind kind;
         qint64 accountedBytes;
         ResourceScope scope;
+        // Zero represents a full-resolution image request. For images, this
+        // request bound is part of the cached value's identity.
+        int imageMaximumDimension = 0;
     };
 
     struct Snapshot final
@@ -55,7 +58,10 @@ public:
 
     [[nodiscard]] std::optional<QString> findText(const ResourceId& id);
     [[nodiscard]] std::optional<QJsonDocument> findJson(const ResourceId& id);
-    [[nodiscard]] std::optional<QImage> findImage(const ResourceId& id);
+    [[nodiscard]] std::optional<QImage> findImage(
+        const ResourceId& id,
+        int maximumDimension = 0
+        );
 
     [[nodiscard]] Snapshot snapshot(const ResourceId& id) const;
 
@@ -72,7 +78,8 @@ public:
     void insertImage(
         const ResourceId& id,
         const QImage& value,
-        const ResourceScope& scope
+        const ResourceScope& scope,
+        int maximumDimension = 0
         );
 
     [[nodiscard]] std::optional<EntryInfo> entryInfo(const ResourceId& id) const;
@@ -85,20 +92,23 @@ private:
         ResourceCacheValueKind kind;
         qint64 accountedBytes;
         ResourceScope scope;
+        int imageMaximumDimension;
         Value value;
         std::list<QString>::iterator recency;
     };
 
     [[nodiscard]] Entry* findAndTouch(
         const ResourceId& id,
-        ResourceCacheValueKind kind
+        ResourceCacheValueKind kind,
+        int imageMaximumDimension = 0
         );
     void insert(
         const ResourceId& id,
         ResourceCacheValueKind kind,
         qint64 accountedBytes,
         Value value,
-        const ResourceScope& scope
+        const ResourceScope& scope,
+        int imageMaximumDimension = 0
         );
     void remove(const std::map<QString, Entry>::iterator& entry) noexcept;
 

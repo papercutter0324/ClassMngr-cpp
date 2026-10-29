@@ -127,6 +127,13 @@ public:
     [[nodiscard]] ResourceResult<ScopedResource<QImage>> loadImage(
         const ResourceRequest& request
         ) const;
+    // Decodes an image no larger than maximumDimension on either axis. The
+    // bound is applied through QImageReader before decoding when source size
+    // metadata is available, then checked again on the returned image.
+    [[nodiscard]] ResourceResult<ScopedResource<QImage>> loadBoundedImage(
+        const ResourceRequest& request,
+        int maximumDimension
+        ) const;
     [[nodiscard]] ResourceResult<ScopedResource<RegisteredFont>> loadFont(
         const ResourceRequest& request
         ) const;
@@ -150,6 +157,10 @@ private:
     [[nodiscard]] ResourceResult<ScopedResource<QString>> loadTextResource(
         const ResourceRequest& request,
         std::optional<ResourceType> requiredType
+        ) const;
+    [[nodiscard]] ResourceResult<ScopedResource<QImage>> loadImageResource(
+        const ResourceRequest& request,
+        int maximumDimension
         ) const;
     [[nodiscard]] ResourceResult<const ResourceDescriptor*> descriptor(
         const ResourceId& id

@@ -679,6 +679,29 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImage(
     const ResourceRequest& request
     ) const
 {
+    return loadImageResource(request, 0);
+}
+
+ResourceResult<ScopedResource<QImage>> ResourceLoader::loadBoundedImage(
+    const ResourceRequest& request,
+    const int maximumDimension
+    ) const
+{
+    if (maximumDimension < 1)
+    {
+        return std::unexpected(error(
+            ResourceErrorCode::InvalidArgument,
+            QStringLiteral("maximum image dimension must be positive")
+            ));
+    }
+    return loadImageResource(request, maximumDimension);
+}
+
+ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImageResource(
+    const ResourceRequest& request,
+    const int maximumDimension
+    ) const
+{
     return withDiagnostics<ScopedResource<QImage>>(
         m_diagnostics,
         request,
@@ -705,7 +728,7 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImage(
             }
             if (m_cache != nullptr && isCacheableDecodedResource(**found))
             {
-                if (auto cached = m_cache->findImage(request.id()))
+                if (auto cached = m_cache->findImage(request.id(), maximumDimension))
                 {
                     diagnostic.markCacheHit();
                     if (const auto size = resourceDecodedPayloadBytes(*cached))
@@ -726,6 +749,20 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImage(
             }
             QImageReader reader(&buffer);
             reader.setDecideFormatFromContent(true);
+            if (maximumDimension > 0)
+            {
+                const QSize sourceSize = reader.size();
+                if (sourceSize.isValid()
+                    && (sourceSize.width() > maximumDimension
+                        || sourceSize.height() > maximumDimension))
+                {
+                    reader.setScaledSize(sourceSize.scaled(
+                        maximumDimension,
+                        maximumDimension,
+                        Qt::KeepAspectRatio
+                        ));
+                }
+            }
             const QImage image = reader.read();
             if (image.isNull())
             {
@@ -734,9 +771,23 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImage(
                     QStringLiteral("image resource cannot be decoded: ") + reader.errorString()
                     ));
             }
+            if (maximumDimension > 0
+                && (image.width() > maximumDimension
+                    || image.height() > maximumDimension))
+            {
+                return std::unexpected(error(
+                    ResourceErrorCode::DecodeError,
+                    QStringLiteral("decoded image exceeds the requested dimension bound")
+                    ));
+            }
             if (m_cache != nullptr && isCacheableDecodedResource(**found))
             {
-                m_cache->insertImage(request.id(), image, request.scope());
+                m_cache->insertImage(
+                    request.id(),
+                    image,
+                    request.scope(),
+                    maximumDimension
+                    );
             }
             if (const auto size = resourceDecodedPayloadBytes(image))
             {

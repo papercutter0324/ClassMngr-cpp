@@ -51,11 +51,14 @@ qsizetype ResourceCache::entryCount() const
 
 ResourceCache::Entry* ResourceCache::findAndTouch(
     const ResourceId& id,
-    ResourceCacheValueKind kind
+    ResourceCacheValueKind kind,
+    const int imageMaximumDimension
     )
 {
     auto found = m_entries.find(id.value());
-    if (found == m_entries.end() || found->second.kind != kind)
+    if (found == m_entries.end() || found->second.kind != kind
+        || (kind == ResourceCacheValueKind::Image
+            && found->second.imageMaximumDimension != imageMaximumDimension))
     {
         return nullptr;
     }
@@ -86,10 +89,17 @@ std::optional<QJsonDocument> ResourceCache::findJson(const ResourceId& id)
     return std::get<QJsonDocument>(found->value);
 }
 
-std::optional<QImage> ResourceCache::findImage(const ResourceId& id)
+std::optional<QImage> ResourceCache::findImage(
+    const ResourceId& id,
+    const int maximumDimension
+    )
 {
+    if (maximumDimension < 0)
+    {
+        return std::nullopt;
+    }
     const std::lock_guard lock(m_mutex);
-    Entry* found = findAndTouch(id, ResourceCacheValueKind::Image);
+    Entry* found = findAndTouch(id, ResourceCacheValueKind::Image, maximumDimension);
     if (found == nullptr)
     {
         return std::nullopt;
@@ -107,7 +117,8 @@ ResourceCache::Snapshot ResourceCache::snapshot(const ResourceId& id) const
         entry = EntryInfo{
             found->second.kind,
             found->second.accountedBytes,
-            found->second.scope
+            found->second.scope,
+            found->second.imageMaximumDimension
         };
     }
     return Snapshot{m_capacityBytes, m_accountedBytes, std::move(entry)};
@@ -151,15 +162,21 @@ void ResourceCache::insertJson(
 void ResourceCache::insertImage(
     const ResourceId& id,
     const QImage& value,
-    const ResourceScope& scope
+    const ResourceScope& scope,
+    const int maximumDimension
     )
 {
+    if (maximumDimension < 0)
+    {
+        return;
+    }
     insert(
         id,
         ResourceCacheValueKind::Image,
         value.sizeInBytes(),
         Value(value),
-        scope
+        scope,
+        maximumDimension
         );
 }
 
@@ -168,11 +185,14 @@ void ResourceCache::insert(
     ResourceCacheValueKind kind,
     qint64 accountedSize,
     Value value,
-    const ResourceScope& scope
+    const ResourceScope& scope,
+    const int imageMaximumDimension
     )
 {
     const std::lock_guard lock(m_mutex);
     if (accountedSize < 0 || accountedSize > m_capacityBytes
+        || imageMaximumDimension < 0
+        || (kind != ResourceCacheValueKind::Image && imageMaximumDimension != 0)
         || id.value().startsWith(QStringLiteral("document.body:")))
     {
         return;
@@ -196,6 +216,7 @@ void ResourceCache::insert(
         kind,
         accountedSize,
         scope,
+        imageMaximumDimension,
         std::move(value),
         m_recency.begin()
     };
@@ -221,7 +242,8 @@ std::optional<ResourceCache::EntryInfo> ResourceCache::entryInfo(const ResourceI
     return EntryInfo{
         found->second.kind,
         found->second.accountedBytes,
-        found->second.scope
+        found->second.scope,
+        found->second.imageMaximumDimension
     };
 }
 
