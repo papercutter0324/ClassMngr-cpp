@@ -10584,5 +10584,98 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
         <source>The column name is longer than the supported limit.</source>
         <translation>The column name is longer than the supported limit.</translation>
     </message>
+
+    <message>
+        <source>Import Scores</source>
+        <translation>Import Scores</translation>
+    </message>
+    <message>
+        <source>Transfer Student</source>
+        <translation>Transfer Student</translation>
+    </message>
+    <message>
+        <source>Import final grades from speaking evaluations.</source>
+        <translation>Import final grades from speaking evaluations.</translation>
+    </message>
+    <message>
+        <source>Roster must contain 'English' and 'Korean' columns.</source>
+        <translation>Roster must contain 'English' and 'Korean' columns.</translation>
+    </message>
+    <message>
+        <source>Saved speaking-evaluation results could not be loaded. The roster was not changed.</source>
+        <translation>Saved speaking-evaluation results could not be loaded. The roster was not changed.</translation>
+    </message>
+    <message>
+        <source>Scores are already up to date.</source>
+        <translation>Scores are already up to date.</translation>
+    </message>
+    <message>
+        <source>Imported %1 score cells.</source>
+        <translation>Imported %1 score cells.</translation>
+    </message>
+    <message>
+        <source>Transfer classes could not be loaded.</source>
+        <translation>Transfer classes could not be loaded.</translation>
+    </message>
+    <message>
+        <source>No same-grade classes</source>
+        <translation>No same-grade classes</translation>
+    </message>
+    <message>
+        <source>Target roster is full.</source>
+        <translation>Target roster is full.</translation>
+    </message>
+    <message>
+        <source>Class %1</source>
+        <translation>Class %1</translation>
+    </message>
+    <message>
+        <source>%1 (full)</source>
+        <translation>%1 (full)</translation>
+    </message>
+    <message>
+        <source>Select a student row to transfer.</source>
+        <translation>Select a student row to transfer.</translation>
+    </message>
+    <message>
+        <source>Student transferred.</source>
+        <translation>Student transferred.</translation>
+    </message>
+    <message>
+        <source>The student could not be transferred.</source>
+        <translation>The student could not be transferred.</translation>
+    </message>
+    <message>
+        <source>Selected row is already empty.</source>
+        <translation>Selected row is already empty.</translation>
+    </message>
+    <message>
+        <source>Selected row is empty.</source>
+        <translation>Selected row is empty.</translation>
+    </message>
+    <message>
+        <source>Target roster already contains this student.</source>
+        <translation>Target roster already contains this student.</translation>
+    </message>
+    <message>
+        <source>Verify Korean Name Lengths</source>
+        <translation>Verify Korean Name Lengths</translation>
+    </message>
+    <message>
+        <source>Row %1: %2</source>
+        <translation>Row %1: %2</translation>
+    </message>
+    <message>
+        <source>These Korean names have an unusual syllable count:&#10;%1&#10;&#10;Save them anyway?</source>
+        <translation>These Korean names have an unusual syllable count:&#10;%1&#10;&#10;Save them anyway?</translation>
+    </message>
+    <message>
+        <source>Unknown Class</source>
+        <translation>Unknown Class</translation>
+    </message>
+    <message>
+        <source>No Teacher</source>
+        <translation>No Teacher</translation>
+    </message>
 </context>
 </TS>

@@ -33,6 +33,11 @@ public:
         const QVariant& value,
         int role = Qt::EditRole
         ) override;
+    [[nodiscard]] bool setImportedEvaluationGrade(
+        int row,
+        int column,
+        const QString& grade
+        );
     [[nodiscard]] Qt::ItemFlags flags(const QModelIndex& index) const override;
     [[nodiscard]] QVariant headerData(
         int section,

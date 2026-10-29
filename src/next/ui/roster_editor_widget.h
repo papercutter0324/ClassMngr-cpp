@@ -1,12 +1,16 @@
 #pragma once
 
 #include "next/application/roster_save_use_case.h"
+#include "next/application/roster_row_transfer_use_case.h"
+#include "next/application/roster_transfer_target_choices.h"
 #include "next/application/roster_window_read_query.h"
 #include "next/application/save_mode_preferences.h"
+#include "next/application/speaking_evaluation_roster_score_import_batch_use_case.h"
 #include "next/domain/domain_types.h"
 
 #include <QWidget>
 
+#include <array>
 #include <functional>
 #include <optional>
 
@@ -29,6 +33,14 @@ struct RosterEditorActions final
     std::function<Domain::Result<bool>(
         const QString&, const Domain::ClassId&, const std::u16string&)>
         columnHasTailData;
+    std::function<Application::SpeakingEvaluationRosterScoreImportBatchResult(
+        const QString&, const Domain::ClassId&,
+        const std::vector<std::u16string>&)> readEvaluationScores;
+    std::function<Application::RosterTransferTargetChoicesResult(
+        const QString&, const Domain::ClassId&)> readTransferTargets;
+    std::function<Domain::Result<void>(
+        const QString&, const Application::RosterRowTransferSaveRequest&)>
+        saveRosterTransfer;
 };
 
 class RosterTableModel;
@@ -75,6 +87,10 @@ private:
     void addColumn();
     void removeColumn();
     void removeStudentRow();
+    void importScores();
+    void showTransferMenu();
+    [[nodiscard]] bool transferStudentToClass(
+        int row, const Domain::ClassId& targetClassId);
     void moveStudentRow(int offset);
     void focusFirstValidationIssue();
     [[nodiscard]] bool hasQuestionableKoreanLengthErrors() const;
@@ -94,6 +110,8 @@ private:
     QPushButton* m_addColumnButton = nullptr;
     QPushButton* m_removeColumnButton = nullptr;
     QPushButton* m_removeRowButton = nullptr;
+    QPushButton* m_importScoresButton = nullptr;
+    QPushButton* m_transferButton = nullptr;
     QPushButton* m_moveUpButton = nullptr;
     QPushButton* m_moveDownButton = nullptr;
     QPushButton* m_saveButton = nullptr;
@@ -111,6 +129,9 @@ private:
     bool m_readFailed = false;
     bool m_saveFailed = false;
     bool m_hasRowsOutsideWindow = false;
+    bool m_hasSourceEnglishColumn = false;
+    bool m_hasSourceKoreanColumn = false;
+    std::array<bool, 4> m_hasSourceEvaluationColumns{};
     bool m_widthsDirty = false;
     bool m_testingClassMode = false;
     std::vector<std::u16string> m_removedCustomColumns;

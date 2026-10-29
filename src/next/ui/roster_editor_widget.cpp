@@ -2,6 +2,9 @@
 
 #include "next/application/roster_save_preparation.h"
 #include "next/application/roster_evaluation_column_policy.h"
+#include "next/application/roster_row_availability.h"
+#include "next/application/roster_transfer_target_eligibility.h"
+#include "next/application/speaking_evaluation_roster_score_row_assignments.h"
 #include "next/ui/roster_table_model.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
@@ -11,10 +14,12 @@
 #include <QEvent>
 #include <QHeaderView>
 #include <QHBoxLayout>
+#include <QAction>
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QMenu>
 #include <QPalette>
 #include <QPushButton>
 #include <QSignalBlocker>
@@ -27,10 +32,23 @@
 #include <array>
 #include <cmath>
 #include <string>
+#include <vector>
 #include <utility>
 
 namespace ClassMngr::Next::Ui
 {
+namespace
+{
+
+constexpr std::array<std::pair<const char*, const char*>, 4>
+    RosterEvaluationMappings{{
+        {"Winter", "Winter"},
+        {"Speech Contest", "Speech Contest"},
+        {"Summer", "Summer"},
+        {"Fall", "Fall"}
+    }};
+
+} // namespace
 
 class RosterCellDelegate final : public QStyledItemDelegate
 {
@@ -165,6 +183,216 @@ Application::RosterSnapshotColumnWidth defaultWidth(const QString& name)
     return Application::RosterSnapshotColumnWidth{100};
 }
 
+bool hasRosterColumn(
+    const Application::RosterSnapshot& roster,
+    const QString& name
+    )
+{
+    return std::any_of(roster.columns.begin(), roster.columns.end(),
+        [&name](const std::u16string& column) {
+            return QString::fromStdU16String(column).compare(
+                name, Qt::CaseInsensitive) == 0;
+        });
+}
+
+class AutosaveTimerPause final
+{
+public:
+    explicit AutosaveTimerPause(QTimer* timer) noexcept
+        : m_timer(timer)
+        , m_wasActive(timer && timer->isActive())
+        , m_remaining(m_wasActive ? timer->remainingTime() : -1)
+    {
+        if (m_wasActive)
+        {
+            m_timer->stop();
+        }
+    }
+
+    AutosaveTimerPause(const AutosaveTimerPause&) = delete;
+    AutosaveTimerPause& operator=(const AutosaveTimerPause&) = delete;
+
+    ~AutosaveTimerPause()
+    {
+        if (m_resumes && m_wasActive && m_timer)
+        {
+            m_timer->start(std::max(1, m_remaining));
+        }
+    }
+
+    void commit() noexcept
+    {
+        m_resumes = false;
+        if (m_timer)
+        {
+            m_timer->stop();
+        }
+    }
+
+private:
+    QTimer* m_timer = nullptr;
+    bool m_wasActive = false;
+    int m_remaining = -1;
+    bool m_resumes = true;
+};
+
+class CallbackRosterWindowReadPort final
+    : public Application::RosterWindowReadPort
+{
+public:
+    CallbackRosterWindowReadPort(
+        QString databasePath,
+        std::function<Application::RosterWindowReadResult(
+            const QString&, const Domain::ClassId&)> callback)
+        : m_databasePath(std::move(databasePath))
+        , m_callback(std::move(callback))
+    {
+    }
+
+    [[nodiscard]] Application::RosterWindowReadResult readRosterWindow(
+        const Application::RosterWindowReadQuery& query
+        ) const override
+    {
+        if (!m_callback)
+        {
+            return Application::RosterWindowReadResult::failure({
+                .code = Domain::ErrorCode::NotFound,
+                .message = "The roster read action is unavailable.",
+                .recoverable = true
+            });
+        }
+        return m_callback(m_databasePath, query.classId);
+    }
+
+private:
+    QString m_databasePath;
+    std::function<Application::RosterWindowReadResult(
+        const QString&, const Domain::ClassId&)> m_callback;
+};
+
+class CallbackRosterTransferSavePort final
+    : public Application::RosterRowTransferSavePort
+{
+public:
+    CallbackRosterTransferSavePort(
+        QString databasePath,
+        std::function<Domain::Result<void>(
+            const QString&, const Application::RosterRowTransferSaveRequest&)>
+            callback)
+        : m_databasePath(std::move(databasePath))
+        , m_callback(std::move(callback))
+    {
+    }
+
+    [[nodiscard]] Domain::Result<void> saveTransfer(
+        const Application::RosterRowTransferSaveRequest& request
+        ) const override
+    {
+        if (!m_callback)
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::NotFound,
+                .message = "The roster transfer save action is unavailable.",
+                .recoverable = true
+            });
+        }
+        return m_callback(m_databasePath, request);
+    }
+
+private:
+    QString m_databasePath;
+    std::function<Domain::Result<void>(
+        const QString&, const Application::RosterRowTransferSaveRequest&)>
+        m_callback;
+};
+
+class RosterEditorTransferConfirmationPort final
+    : public Application::RosterRowTransferConfirmationPort
+{
+public:
+    explicit RosterEditorTransferConfirmationPort(
+        RosterEditorWidget* parent) noexcept
+        : m_parent(parent)
+    {
+    }
+
+    [[nodiscard]] bool confirmTargetQuestionableKoreanNameLengths(
+        const Application::RosterSnapshot& preparedTarget,
+        const std::vector<Application::RosterSaveIssue>& issues
+        ) const override
+    {
+        QStringList names;
+        for (const Application::RosterSaveIssue& issue : issues)
+        {
+            const int row = issue.row.rawValue();
+            const int column = issue.column.rawValue();
+            if (row < 0 || column < 0
+                || static_cast<std::size_t>(row) >= preparedTarget.rows.size()
+                || static_cast<std::size_t>(column)
+                    >= preparedTarget.rows[static_cast<std::size_t>(row)].size())
+            {
+                continue;
+            }
+            names.append(QCoreApplication::translate("NextRosterEditor",
+                    "Row %1: %2")
+                .arg(row + 1)
+                .arg(QString::fromStdU16String(
+                    preparedTarget.rows[static_cast<std::size_t>(row)]
+                        [static_cast<std::size_t>(column)])));
+        }
+        if (names.isEmpty())
+        {
+            return false;
+        }
+        return QMessageBox::warning(m_parent,
+                QCoreApplication::translate("NextRosterEditor",
+                    "Verify Korean Name Lengths"),
+                QCoreApplication::translate("NextRosterEditor",
+                    "These Korean names have an unusual syllable count:\n%1\n\nSave them anyway?")
+                    .arg(names.join(QLatin1Char('\n'))),
+                QMessageBox::Save | QMessageBox::Cancel,
+                QMessageBox::Cancel) == QMessageBox::Save;
+    }
+
+private:
+    RosterEditorWidget* m_parent = nullptr;
+};
+
+QString transferFailureMessage(const Application::RosterRowTransferResult& result)
+{
+    if (const auto* error = std::get_if<Application::RosterRowRemovalError>(&result))
+    {
+        return error->code == Application::RosterRowRemovalErrorCode::InvalidRowIndex
+            ? QCoreApplication::translate("NextRosterEditor",
+                "Select a student row to transfer.")
+            : QCoreApplication::translate("NextRosterEditor",
+                "Selected row is already empty.");
+    }
+    if (const auto* error =
+            std::get_if<Application::RosterRowTransferPreparationError>(&result))
+    {
+        switch (error->rejection)
+        {
+        case Application::RosterRowTransferPreparationRejection::SourceRowHasNoData:
+            return QCoreApplication::translate("NextRosterEditor",
+                "Selected row is empty.");
+        case Application::RosterRowTransferPreparationRejection::TargetRosterIsFull:
+            return QCoreApplication::translate("NextRosterEditor",
+                "Target roster is full.");
+        case Application::RosterRowTransferPreparationRejection::DuplicateStudentNamePair:
+            return QCoreApplication::translate("NextRosterEditor",
+                "Target roster already contains this student.");
+        }
+    }
+    if (const auto* error = std::get_if<Domain::OperationError>(&result))
+    {
+        const QByteArray bytes(error->message.data(),
+            static_cast<qsizetype>(error->message.size()));
+        return QString::fromUtf8(bytes);
+    }
+    return {};
+}
+
 } // namespace
 
 RosterEditorWidget::RosterEditorWidget(
@@ -249,6 +477,9 @@ void RosterEditorWidget::clear()
     m_readFailed = false;
     m_saveFailed = false;
     m_hasRowsOutsideWindow = false;
+    m_hasSourceEnglishColumn = false;
+    m_hasSourceKoreanColumn = false;
+    m_hasSourceEvaluationColumns.fill(false);
     m_widthsDirty = false;
     m_removedCustomColumns.clear();
     m_overflowLabel->clear();
@@ -332,6 +563,9 @@ bool RosterEditorWidget::saveChanges(const bool showValidationFeedback)
     }
 
     m_model->clearDirty();
+    m_hasSourceEnglishColumn = true;
+    m_hasSourceKoreanColumn = true;
+    m_hasSourceEvaluationColumns.fill(true);
     m_widthsDirty = false;
     m_removedCustomColumns.clear();
     m_saveFailed = false;
@@ -403,6 +637,8 @@ void RosterEditorWidget::buildUi()
     m_addColumnButton = new QPushButton(this);
     m_removeColumnButton = new QPushButton(this);
     m_removeRowButton = new QPushButton(this);
+    m_importScoresButton = new QPushButton(this);
+    m_transferButton = new QPushButton(this);
     m_moveUpButton = new QPushButton(this);
     m_moveDownButton = new QPushButton(this);
     m_saveButton = new QPushButton(this);
@@ -413,6 +649,8 @@ void RosterEditorWidget::buildUi()
              std::pair{m_addColumnButton, "nextRosterAddColumn"},
              std::pair{m_removeColumnButton, "nextRosterRemoveColumn"},
              std::pair{m_removeRowButton, "nextRosterRemoveStudent"},
+             std::pair{m_importScoresButton, "nextRosterImportScores"},
+             std::pair{m_transferButton, "nextRosterTransferStudent"},
              std::pair{m_moveUpButton, "nextRosterMoveStudentUp"},
              std::pair{m_moveDownButton, "nextRosterMoveStudentDown"},
              std::pair{m_saveButton, "nextRosterSave"},
@@ -425,6 +663,8 @@ void RosterEditorWidget::buildUi()
     toolbar->addWidget(m_addColumnButton);
     toolbar->addWidget(m_removeColumnButton);
     toolbar->addWidget(m_removeRowButton);
+    toolbar->addWidget(m_importScoresButton);
+    toolbar->addWidget(m_transferButton);
     toolbar->addWidget(m_moveUpButton);
     toolbar->addWidget(m_moveDownButton);
     toolbar->addWidget(m_keyboardButton);
@@ -441,6 +681,7 @@ void RosterEditorWidget::buildUi()
     root->addWidget(m_statusLabel);
 
     m_autosaveTimer->setSingleShot(true);
+    m_autosaveTimer->setObjectName(QStringLiteral("nextRosterAutosaveTimer"));
     m_autosaveTimer->setInterval(750);
     connect(m_autosaveTimer, &QTimer::timeout, this, [this] {
         static_cast<void>(saveChanges(false));
@@ -451,6 +692,10 @@ void RosterEditorWidget::buildUi()
         [this] { removeColumn(); });
     connect(m_removeRowButton, &QPushButton::clicked, this,
         [this] { removeStudentRow(); });
+    connect(m_importScoresButton, &QPushButton::clicked, this,
+        [this] { importScores(); });
+    connect(m_transferButton, &QPushButton::clicked, this,
+        [this] { showTransferMenu(); });
     connect(m_moveUpButton, &QPushButton::clicked, this,
         [this] { moveStudentRow(-1); });
     connect(m_moveDownButton, &QPushButton::clicked, this,
@@ -524,6 +769,10 @@ void RosterEditorWidget::retranslateUi()
     m_addColumnButton->setText(text("Add Column"));
     m_removeColumnButton->setText(text("Remove Column"));
     m_removeRowButton->setText(text("Remove Student"));
+    m_importScoresButton->setText(text("Import Scores"));
+    m_importScoresButton->setToolTip(
+        text("Import final grades from speaking evaluations."));
+    m_transferButton->setText(text("Transfer Student"));
     m_moveUpButton->setText(text("Move Up"));
     m_moveDownButton->setText(text("Move Down"));
     m_saveButton->setText(text("Save Changes"));
@@ -617,6 +866,17 @@ bool RosterEditorWidget::reload()
 
     m_loading = true;
     m_model->setRoster(loaded.value().roster);
+    m_hasSourceEnglishColumn = hasRosterColumn(
+        loaded.value().roster, QStringLiteral("English"));
+    m_hasSourceKoreanColumn = hasRosterColumn(
+        loaded.value().roster, QStringLiteral("Korean"));
+    for (std::size_t index = 0;
+         index < RosterEvaluationMappings.size(); ++index)
+    {
+        m_hasSourceEvaluationColumns[index] = hasRosterColumn(
+            loaded.value().roster,
+            QString::fromLatin1(RosterEvaluationMappings[index].second));
+    }
     m_loaded = true;
     m_readFailed = false;
     m_saveFailed = false;
@@ -666,6 +926,23 @@ void RosterEditorWidget::updateActions()
     m_removeColumnButton->setEnabled(editable && hasCurrent
         && !m_model->isRequiredColumn(current.column()));
     m_removeRowButton->setEnabled(editable && hasCurrent);
+    m_importScoresButton->setVisible(!m_testingClassMode);
+    m_importScoresButton->setEnabled(editable);
+    m_transferButton->setVisible(!m_testingClassMode);
+    bool currentRowHasData = false;
+    if (hasCurrent && current.row() >= 0
+        && current.row() < m_model->rowCount())
+    {
+        const Application::RosterSnapshot snapshot = m_model->snapshot();
+        if (static_cast<std::size_t>(current.row()) < snapshot.rows.size())
+        {
+            currentRowHasData = Application::rosterRowHasData(
+                snapshot.rows[static_cast<std::size_t>(current.row())]);
+        }
+    }
+    m_transferButton->setEnabled(editable && currentRowHasData
+        && static_cast<bool>(m_actions.readTransferTargets)
+        && static_cast<bool>(m_actions.saveRosterTransfer));
     m_moveUpButton->setEnabled(editable && hasCurrent && current.row() > 0);
     m_moveDownButton->setEnabled(editable && hasCurrent
         && current.row() + 1 < m_model->rowCount());
@@ -831,6 +1108,346 @@ void RosterEditorWidget::removeStudentRow()
     m_table->setCurrentIndex(m_model->index(row, 0));
     markDirty();
     updateActions();
+}
+
+void RosterEditorWidget::importScores()
+{
+    if (!m_loaded || m_readFailed || m_testingClassMode
+        || !m_databasePath || !m_classId)
+    {
+        return;
+    }
+
+    const auto findModelColumn = [this](const QString& name) {
+        for (int column = 0; column < m_model->columnCount(); ++column)
+        {
+            if (m_model->columnName(column).compare(
+                    name, Qt::CaseInsensitive) == 0)
+            {
+                return column;
+            }
+        }
+        return -1;
+    };
+    const int englishColumn = findModelColumn(QStringLiteral("English"));
+    const int koreanColumn = findModelColumn(QStringLiteral("Korean"));
+    if (!m_hasSourceEnglishColumn || !m_hasSourceKoreanColumn
+        || englishColumn < 0 || koreanColumn < 0)
+    {
+        updateStatus(text(
+            "Roster must contain 'English' and 'Korean' columns."), true);
+        return;
+    }
+
+    std::vector<std::u16string> evaluationNames;
+    std::vector<int> scoreColumns;
+    for (std::size_t index = 0;
+         index < RosterEvaluationMappings.size(); ++index)
+    {
+        if (!m_hasSourceEvaluationColumns[index])
+        {
+            continue;
+        }
+        const auto& [evaluationName, columnName] =
+            RosterEvaluationMappings[index];
+        const int column = findModelColumn(QString::fromLatin1(columnName));
+        if (column < 0)
+        {
+            continue;
+        }
+        evaluationNames.push_back(QString::fromLatin1(evaluationName).toStdU16String());
+        scoreColumns.push_back(column);
+    }
+
+    const auto imported = m_actions.readEvaluationScores
+        ? m_actions.readEvaluationScores(
+            *m_databasePath, *m_classId, evaluationNames)
+        : Application::SpeakingEvaluationRosterScoreImportBatchResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The speaking evaluation read action is unavailable.",
+            .recoverable = true
+        });
+    if (!imported)
+    {
+        const QString detail = operationMessage(imported.error());
+        updateStatus(text(
+            "Saved speaking-evaluation results could not be loaded. The roster was not changed.")
+                + (detail.isEmpty() ? QString{} : QStringLiteral("\n") + detail),
+            true);
+        return;
+    }
+    if (imported.value().size() != evaluationNames.size())
+    {
+        updateStatus(text(
+            "Saved speaking-evaluation results could not be loaded. The roster was not changed."),
+            true);
+        return;
+    }
+
+    struct PlannedGrade final
+    {
+        int row = -1;
+        int column = -1;
+        std::u16string grade;
+    };
+    std::vector<PlannedGrade> planned;
+    for (std::size_t evaluationIndex = 0;
+         evaluationIndex < evaluationNames.size(); ++evaluationIndex)
+    {
+        const auto& scoreResult = imported.value()[evaluationIndex];
+        if (!scoreResult)
+        {
+            const QString detail = operationMessage(scoreResult.error());
+            updateStatus(text(
+                "Saved speaking-evaluation results could not be loaded. The roster was not changed.")
+                    + (detail.isEmpty() ? QString{} : QStringLiteral("\n") + detail),
+                true);
+            return;
+        }
+
+        std::vector<Application::SpeakingEvaluationRosterScoreRow> rosterRows;
+        rosterRows.reserve(static_cast<std::size_t>(m_model->rowCount()));
+        for (int row = 0; row < m_model->rowCount(); ++row)
+        {
+            rosterRows.push_back({
+                .names = {
+                    m_model->index(row, englishColumn)
+                        .data(Qt::EditRole).toString().toStdU16String(),
+                    m_model->index(row, koreanColumn)
+                        .data(Qt::EditRole).toString().toStdU16String()
+                },
+                .currentGrade = m_model->index(
+                    row, scoreColumns[evaluationIndex])
+                    .data(Qt::EditRole).toString().toStdU16String()
+            });
+        }
+        const auto assignments =
+            Application::speakingEvaluationRosterScoreRowAssignments(
+                rosterRows, scoreResult.value());
+        for (const auto& assignment : assignments)
+        {
+            planned.push_back({
+                .row = static_cast<int>(assignment.rosterRowIndex.rawValue()),
+                .column = scoreColumns[evaluationIndex],
+                .grade = assignment.finalGrade
+            });
+        }
+    }
+
+    int changeCount = 0;
+    for (const PlannedGrade& assignment : planned)
+    {
+        const QString grade = QString::fromUtf16(
+            assignment.grade.data(),
+            static_cast<qsizetype>(assignment.grade.size()));
+        if (m_model->setImportedEvaluationGrade(
+                assignment.row, assignment.column, grade))
+        {
+            ++changeCount;
+        }
+    }
+    if (changeCount == 0)
+    {
+        updateStatus(text("Scores are already up to date."), false);
+        return;
+    }
+    updateStatus(text("Imported %1 score cells.").arg(changeCount), false);
+    updateActions();
+}
+
+void RosterEditorWidget::showTransferMenu()
+{
+    if (!m_loaded || m_readFailed || m_testingClassMode
+        || !m_databasePath || !m_classId)
+    {
+        return;
+    }
+    const QModelIndex current = m_table->currentIndex();
+    if (!current.isValid())
+    {
+        updateStatus(text("Select a student row to transfer."), true);
+        return;
+    }
+
+    AutosaveTimerPause pendingAutosave(m_autosaveTimer);
+    const auto choices = m_actions.readTransferTargets
+        ? m_actions.readTransferTargets(*m_databasePath, *m_classId)
+        : Application::RosterTransferTargetChoicesResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The transfer target read action is unavailable.",
+            .recoverable = true
+        });
+    if (!choices)
+    {
+        const QString detail = operationMessage(choices.error());
+        updateStatus(text("Transfer classes could not be loaded.")
+                + (detail.isEmpty() ? QString{} : QStringLiteral("\n") + detail),
+            true);
+        return;
+    }
+
+    struct MenuTarget final
+    {
+        Application::RosterTransferTargetChoice choice;
+        QString label;
+    };
+    std::vector<MenuTarget> targets;
+    for (const auto& candidate : choices.value().candidates)
+    {
+        if (Application::isRosterTransferTargetEligible(
+                *m_classId, choices.value().sourceGrade, candidate.classId,
+                candidate.displayMetadata.grade))
+        {
+            const auto formatted =
+                Application::formatRosterTransferTargetDisplayName(
+                    candidate.displayMetadata,
+                    text("Unknown Class").toStdU16String(),
+                    text("No Teacher").toStdU16String());
+            QString label = formatted
+                ? QString::fromStdU16String(*formatted)
+                : QString::fromStdU16String(candidate.className).trimmed();
+            if (label.isEmpty())
+            {
+                label = text("Class %1").arg(QString::fromStdString(
+                    candidate.classId.value()));
+            }
+            targets.push_back({candidate, std::move(label)});
+        }
+    }
+    std::sort(targets.begin(), targets.end(), [](const auto& left, const auto& right) {
+        const int comparison = QString::localeAwareCompare(
+            left.label, right.label);
+        return comparison != 0
+            ? comparison < 0
+            : left.choice.classId.value() < right.choice.classId.value();
+    });
+
+    QMenu menu(this);
+    std::vector<std::pair<QAction*, Domain::ClassId>> transferActions;
+    if (targets.empty())
+    {
+        QAction* const emptyAction = menu.addAction(text("No same-grade classes"));
+        emptyAction->setEnabled(false);
+    }
+    else
+    {
+        for (const MenuTarget& target : targets)
+        {
+            QAction* const action = menu.addAction(target.choice.full
+                ? text("%1 (full)").arg(target.label) : target.label);
+            action->setData(QString::fromStdString(
+                target.choice.classId.value()));
+            action->setEnabled(!target.choice.full);
+            if (target.choice.full)
+            {
+                action->setToolTip(text("Target roster is full."));
+            }
+            else
+            {
+                transferActions.emplace_back(action, target.choice.classId);
+            }
+        }
+    }
+
+    QAction* const selected = menu.exec(m_transferButton->mapToGlobal(
+        QPoint(0, m_transferButton->height())));
+    for (const auto& [action, targetClassId] : transferActions)
+    {
+        if (selected == action
+            && transferStudentToClass(current.row(), targetClassId))
+        {
+            pendingAutosave.commit();
+            break;
+        }
+    }
+}
+
+bool RosterEditorWidget::transferStudentToClass(
+    const int row,
+    const Domain::ClassId& targetClassId
+    )
+{
+    if (!m_loaded || m_readFailed || m_testingClassMode
+        || !m_databasePath || !m_classId
+        || !Application::shouldReadRosterTransferTargetClassInfo(
+            *m_classId, targetClassId))
+    {
+        return false;
+    }
+
+    AutosaveTimerPause pendingAutosave(m_autosaveTimer);
+    bool sourceLengthsConfirmed = false;
+    if (hasQuestionableKoreanLengthErrors())
+    {
+        if (!confirmQuestionableKoreanLengths())
+        {
+            return false;
+        }
+        sourceLengthsConfirmed = true;
+    }
+
+    const Application::RosterRowTransferRequest request{
+        .sourceClassId = *m_classId,
+        .targetClassId = targetClassId,
+        .sourceRoster = m_model->snapshot(),
+        .sourceRow = Application::RosterRowTransferSourceIndex{row},
+        .baseColumnNames = requiredColumns(),
+        .sourceQuestionableKoreanNameLengthsConfirmed = sourceLengthsConfirmed,
+        .sourceRemovedCustomColumns = m_removedCustomColumns
+    };
+    CallbackRosterWindowReadPort windowReadPort(*m_databasePath,
+        m_actions.readRoster);
+    const Application::RosterWindowAsRosterReadPort readPort(windowReadPort);
+    CallbackRosterTransferSavePort savePort(*m_databasePath,
+        m_actions.saveRosterTransfer);
+    const RosterEditorTransferConfirmationPort confirmationPort(this);
+    const auto transferred = Application::RosterRowTransferUseCase::execute(
+        request, readPort, savePort, qtCaseInsensitiveEquals,
+        &confirmationPort);
+    if (!std::holds_alternative<Application::RosterRowTransferSuccess>(transferred))
+    {
+        if (const auto* error = std::get_if<Domain::OperationError>(&transferred);
+            error && error->code == Domain::ErrorCode::Canceled)
+        {
+            return false;
+        }
+        const QString reason = transferFailureMessage(transferred);
+        updateStatus(text("The student could not be transferred.")
+                + (reason.isEmpty() ? QString{} : QStringLiteral("\n") + reason),
+            true);
+        return false;
+    }
+
+    pendingAutosave.commit();
+    m_autosaveTimer->stop();
+    m_loading = true;
+    const bool removed = m_model->removeRowData(row);
+    m_loading = false;
+    if (!removed)
+    {
+        static_cast<void>(reload());
+        updateStatus(text("Student transferred."), false);
+        return true;
+    }
+    m_model->clearDirty();
+    m_hasSourceEnglishColumn = true;
+    m_hasSourceKoreanColumn = true;
+    m_hasSourceEvaluationColumns.fill(true);
+    m_widthsDirty = false;
+    m_removedCustomColumns.clear();
+    m_saveFailed = false;
+    updateStatus(text("Student transferred."), false);
+    const int nextRow = std::min(row, m_model->rowCount() - 1);
+    if (nextRow >= 0 && m_model->columnCount() > 0)
+    {
+        m_table->setCurrentIndex(m_model->index(nextRow, 0));
+    }
+    updateActions();
+    if (m_dirtyChanged)
+    {
+        m_dirtyChanged(false);
+    }
+    return true;
 }
 
 void RosterEditorWidget::moveStudentRow(const int offset)

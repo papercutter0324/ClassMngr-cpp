@@ -257,6 +257,35 @@ bool RosterTableModel::setData(
     return true;
 }
 
+bool RosterTableModel::setImportedEvaluationGrade(
+    const int row,
+    const int column,
+    const QString& grade
+    )
+{
+    if (!m_editable || row < 0 || row >= m_rows.size()
+        || column < 0 || column >= m_columns.size()
+        || !isEvaluationColumn(column))
+    {
+        return false;
+    }
+
+    const QString normalized = normalizedEditedText(
+        grade, m_columns.at(column));
+    if (m_rows[row][column] == normalized)
+    {
+        return false;
+    }
+
+    m_rows[row][column] = normalized;
+    setDirty(true);
+    revalidate();
+    const QModelIndex changed = index(row, column);
+    emit dataChanged(changed, changed, {
+        Qt::DisplayRole, Qt::EditRole, Qt::ToolTipRole, Qt::BackgroundRole});
+    return true;
+}
+
 Qt::ItemFlags RosterTableModel::flags(const QModelIndex& index) const
 {
     Qt::ItemFlags result = QAbstractTableModel::flags(index);

@@ -1341,6 +1341,28 @@ Application::StartupResult ApplicationBootstrap::start()
                         return Platform::rosterColumnHasTailDataAtPath(
                             databasePath, classId, columnName);
                     };
+                    actions.rosterEditor.readEvaluationScores = [](
+                        const QString& databasePath,
+                        const Domain::ClassId& classId,
+                        const std::vector<std::u16string>& evaluationNames
+                        ) {
+                        return Platform::readSpeakingEvaluationRosterScoresAtPath(
+                            databasePath, classId, evaluationNames);
+                    };
+                    actions.rosterEditor.readTransferTargets = [](
+                        const QString& databasePath,
+                        const Domain::ClassId& classId
+                        ) {
+                        return Platform::readRosterTransferTargetChoicesAtPath(
+                            databasePath, classId);
+                    };
+                    actions.rosterEditor.saveRosterTransfer = [](
+                        const QString& databasePath,
+                        const Application::RosterRowTransferSaveRequest& request
+                        ) {
+                        return Platform::saveRosterTransferAtPath(
+                            databasePath, request);
+                    };
                     actions.createClass = [](
                         const QString& databasePath
                         ) {
@@ -1385,6 +1407,28 @@ Application::StartupResult ApplicationBootstrap::start()
                             const std::u16string& columnName) {
                             return Platform::rosterColumnHasTailDataAtPath(
                                 databasePath, classId, columnName);
+                        };
+                        actions.rosterEditor.readEvaluationScores = [](
+                            const QString& databasePath,
+                            const Domain::ClassId& classId,
+                            const std::vector<std::u16string>& evaluationNames
+                            ) {
+                            return Platform::readSpeakingEvaluationRosterScoresAtPath(
+                                databasePath, classId, evaluationNames);
+                        };
+                        actions.rosterEditor.readTransferTargets = [](
+                            const QString& databasePath,
+                            const Domain::ClassId& classId
+                            ) {
+                            return Platform::readRosterTransferTargetChoicesAtPath(
+                                databasePath, classId);
+                        };
+                        actions.rosterEditor.saveRosterTransfer = [](
+                            const QString& databasePath,
+                            const Application::RosterRowTransferSaveRequest& request
+                            ) {
+                            return Platform::saveRosterTransferAtPath(
+                                databasePath, request);
                         };
                         actions.activeWorkspacePath = [this]()
                             -> std::optional<QString> {

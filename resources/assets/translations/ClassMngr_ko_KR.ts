@@ -11660,5 +11660,98 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
         <source>The column name is longer than the supported limit.</source>
         <translation>열 이름이 허용된 길이보다 깁니다.</translation>
     </message>
+
+    <message>
+        <source>Import Scores</source>
+        <translation>성적 가져오기</translation>
+    </message>
+    <message>
+        <source>Transfer Student</source>
+        <translation>학생 이동</translation>
+    </message>
+    <message>
+        <source>Import final grades from speaking evaluations.</source>
+        <translation>말하기 평가에서 최종 성적을 가져옵니다.</translation>
+    </message>
+    <message>
+        <source>Roster must contain 'English' and 'Korean' columns.</source>
+        <translation>명단에 '영어 이름' 및 '한국어 이름' 열이 있어야 합니다.</translation>
+    </message>
+    <message>
+        <source>Saved speaking-evaluation results could not be loaded. The roster was not changed.</source>
+        <translation>말하기 평가 결과를 불러오지 못했습니다. 명단은 변경되지 않았습니다.</translation>
+    </message>
+    <message>
+        <source>Scores are already up to date.</source>
+        <translation>성적이 최신 상태입니다.</translation>
+    </message>
+    <message>
+        <source>Imported %1 score cells.</source>
+        <translation>%1개 성적 셀을 가져왔습니다.</translation>
+    </message>
+    <message>
+        <source>Transfer classes could not be loaded.</source>
+        <translation>이동할 수업 목록을 불러오지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>No same-grade classes</source>
+        <translation>같은 학년의 수업이 없습니다.</translation>
+    </message>
+    <message>
+        <source>Target roster is full.</source>
+        <translation>대상 명단이 가득 찼습니다.</translation>
+    </message>
+    <message>
+        <source>Class %1</source>
+        <translation>수업 %1</translation>
+    </message>
+    <message>
+        <source>%1 (full)</source>
+        <translation>%1 (가득 참)</translation>
+    </message>
+    <message>
+        <source>Select a student row to transfer.</source>
+        <translation>이동할 학생 행을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Student transferred.</source>
+        <translation>학생을 이동했습니다.</translation>
+    </message>
+    <message>
+        <source>The student could not be transferred.</source>
+        <translation>학생을 이동하지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>Selected row is already empty.</source>
+        <translation>선택한 행은 이미 비어 있습니다.</translation>
+    </message>
+    <message>
+        <source>Selected row is empty.</source>
+        <translation>선택한 행이 비어 있습니다.</translation>
+    </message>
+    <message>
+        <source>Target roster already contains this student.</source>
+        <translation>대상 명단에 이미 이 학생이 있습니다.</translation>
+    </message>
+    <message>
+        <source>Verify Korean Name Lengths</source>
+        <translation>한국어 이름 길이 확인</translation>
+    </message>
+    <message>
+        <source>Row %1: %2</source>
+        <translation>%1행: %2</translation>
+    </message>
+    <message>
+        <source>These Korean names have an unusual syllable count:&#10;%1&#10;&#10;Save them anyway?</source>
+        <translation>다음 한국어 이름은 음절 수가 일반적인 범위를 벗어납니다:&#10;%1&#10;&#10;그래도 저장할까요?</translation>
+    </message>
+    <message>
+        <source>Unknown Class</source>
+        <translation>알 수 없는 수업</translation>
+    </message>
+    <message>
+        <source>No Teacher</source>
+        <translation>교사 없음</translation>
+    </message>
 </context>
 </TS>
