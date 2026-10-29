@@ -373,6 +373,12 @@ InitialPage::InitialPage(
     m_signaturePreviewLabel->setWordWrap(true);
     m_signaturePreviewLabel->setFixedHeight(150);
     m_signaturePreviewLabel->setFrameShape(QFrame::StyledPanel);
+    m_signaturePreviewLabel->setStyleSheet(QStringLiteral(
+        "background-color:#ffffff;"
+        "color:#66727a;"
+        "border:1px dashed #a8b2b8;"
+        "border-radius:6px;"
+        ));
     detailsLayout->addWidget(m_signaturePreviewLabel);
 
     auto* imageActions = new QHBoxLayout;

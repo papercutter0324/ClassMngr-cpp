@@ -72,8 +72,9 @@ large-workspace/output acceptance including 96 classes and 8 slots. Batch 3
 remains active through #40 and must not be pushed or closed before #40
 completes. No separate batch-history document is needed. The legacy `.db`
 fixture import/data/relationship/output comparison remains open Phase 7 exit
-evidence, not a test-only candidate. Screenshot comparison and memory evidence,
-along with the 7A and Phase 7 exit gates, remain open.
+evidence, not a test-only candidate. The Initial Setup personal-details
+screenshot subgate is closed; broader 7A visual evidence, memory evidence, the
+Windows packaged-Next memory gate, and the 7A/Phase 7 exit gates remain open.
 
 ## Batch 4 — discovered; queued
 

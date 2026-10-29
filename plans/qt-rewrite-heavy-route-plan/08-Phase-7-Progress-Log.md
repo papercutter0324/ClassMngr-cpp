@@ -1088,3 +1088,18 @@ Entries are preserved in their original document order.
   budget. No full suite, Windows, cross-platform, or Phase 9 memory result is
   claimed. The 7A screenshot comparison and memory evidence, Windows
   packaged-Next memory gate, and 7A/Phase 7 exit gates remain open.
+
+### 7A visual evidence — Initial Setup personal details (2026-10-29)
+
+- The [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/initial-setup-personal-details/README.md)
+  preserves Legacy and Next fixed-size offscreen captures across English/Korean
+  and light/dark. All eight are 1024×720; packaged SHA-256 values match the
+  source captures. Next labels differ by locale; Legacy retains English labels
+  for `ko_KR` because this page has no Korean catalog entries.
+- The independent visual Tester passed this screen's review after the Next
+  dark signature-canvas contrast fix. Save/reopen and signature-processor tests
+  passed, preserving transparent signature bytes. This closes only the setup
+  personal-details screenshot subgate.
+- Limits: offscreen widget renders do not establish native desktop-window
+  behavior. Broader 7A visual evidence, memory evidence, the Windows
+  packaged-Next memory gate, and the 7A/Phase 7 exit gates remain open.

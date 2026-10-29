@@ -13,6 +13,14 @@ Windows x64 Release `ClassMngrNext` process and its own runner/checkpoints.
 Record the measurements without applying the final `<250 MiB` Phase 9 target
 as a Phase 7 threshold.
 
+Initial Setup personal-details captures use a disposable fixture and synthetic
+signature across English/Korean and Light/Dark. The Legacy page has no Korean
+catalog, so English labels in its Korean-locale capture are expected. Keep a
+white preview canvas behind the existing transparent signature in Next dark
+mode while preserving the stored PNG bytes; verify both rendered contrast and
+save/reopen data. Offscreen widget renders support visual review but do not
+establish native desktop-window behavior.
+
 ### Phase 7 Calendar import staging and ownership — 2026-10-28
 
 Candidate #34 keeps the existing remote URL and environment override while

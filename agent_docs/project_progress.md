@@ -189,7 +189,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-29 (candidate #38 accepted; #39 discovery active)
+### Current checkpoint — 2026-10-29 (candidate #38 accepted; #39 implementation active)
 
 Candidate #37, roster templates/printing, is accepted with source commit
 `098f1de7` and preview-capture regression/inventory follow-up `1214b569`.
@@ -222,14 +222,15 @@ Batch 4 discovery is complete with candidates #41–48 listed in the tracker;
 the two independent maps found no other slices. Batch 3 remains un-pushed
 through #40.
 
-The 7A screenshot comparison is still open: Legacy personal-details text has
-no Korean catalog entries. Its capture hook applies Light/Dark separately and
-captures each locale/theme state; build, capture, and independent review remain
-pending. The memory validator’s six Python tests pass, as do local fixture
-targets and 96-class fixture checks; the independent memory recheck and hosted
-Windows Release run remain open. The 7A and Phase 7 exit gates remain open.
-The legacy `.db` fixture import/data/relationship/output comparison also
-remains open. `<250 MiB` is the separate Phase 9 gate.
+The Initial Setup personal-details screenshot subgate is closed with eight
+Legacy/Next offscreen captures, the dark signature-canvas contrast fix, and
+independent English/Korean × Light/Dark review. Signature save/reopen tests
+confirm the transparent stored image bytes remain unchanged. Broader 7A visual
+evidence, overall memory evidence and the hosted Windows x64 Release run, other
+7A workflows, and the 7A/Phase 7 exit gates remain open. The memory validator's
+six Python tests pass; the independent CMake/fixture recheck is active. The
+legacy `.db` fixture import/data/relationship/output comparison also remains
+open. `<250 MiB` is the separate Phase 9 gate.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

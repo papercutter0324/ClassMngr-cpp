@@ -64,6 +64,9 @@
 #include <QJsonObject>
 #include <QMap>
 #include <QLocale>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPen>
 #include <QStyleHints>
 #include <QStyle>
 #include <QPushButton>
@@ -78,6 +81,7 @@
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QToolButton>
+#include <QVBoxLayout>
 #include <QTableView>
 #include <QTableWidget>
 #include <QTreeWidget>
@@ -195,6 +199,81 @@ public:
     void dispatch() override
     {
     }
+};
+
+QImage visualReviewSignature()
+{
+    QImage image(360, 120, QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::white);
+
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing);
+    QPen ink(QColor(QStringLiteral("#202830")));
+    ink.setWidth(5);
+    ink.setCapStyle(Qt::RoundCap);
+    ink.setJoinStyle(Qt::RoundJoin);
+    painter.setPen(ink);
+
+    QPainterPath signature;
+    signature.moveTo(18, 82);
+    signature.cubicTo(31, 44, 43, 34, 51, 66);
+    signature.cubicTo(58, 96, 68, 36, 84, 58);
+    signature.cubicTo(94, 73, 98, 77, 111, 61);
+    signature.cubicTo(124, 45, 137, 43, 144, 59);
+    signature.cubicTo(151, 76, 157, 77, 171, 60);
+    signature.cubicTo(184, 44, 198, 48, 204, 68);
+    signature.cubicTo(211, 88, 224, 90, 242, 71);
+    signature.cubicTo(258, 55, 278, 52, 337, 57);
+    painter.drawPath(signature);
+    painter.drawLine(25, 101, 330, 101);
+    painter.end();
+    return image;
+}
+
+QImage fixedViewportCapture(QWidget& widget)
+{
+    QImage capture(QSize(1024, 720), QImage::Format_ARGB32_Premultiplied);
+    capture.fill(Qt::transparent);
+    QPainter painter(&capture);
+    widget.render(&painter);
+    painter.end();
+    return capture;
+}
+
+class ScopedCaptureAppearance final
+{
+public:
+    ScopedCaptureAppearance(QApplication& application, const bool enabled)
+        : m_application(application)
+        , m_enabled(enabled)
+        , m_styleName(application.style()->objectName())
+        , m_styleSheet(application.styleSheet())
+        , m_palette(application.palette())
+    {
+        if (m_enabled)
+        {
+            m_application.setStyle(QStringLiteral("Fusion"));
+            m_application.setPalette(m_application.style()->standardPalette());
+            m_application.setStyleSheet({});
+        }
+    }
+
+    ~ScopedCaptureAppearance()
+    {
+        if (m_enabled)
+        {
+            m_application.setStyle(m_styleName);
+            m_application.setPalette(m_palette);
+            m_application.setStyleSheet(m_styleSheet);
+        }
+    }
+
+private:
+    QApplication& m_application;
+    bool m_enabled = false;
+    QString m_styleName;
+    QString m_styleSheet;
+    QPalette m_palette;
 };
 
 struct StartupUpdateDispatcherProbe final
@@ -2502,6 +2581,11 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
 
     QApplication& application = *qApp;
     const QString previousStyleSheet = application.styleSheet();
+    const QString visualCaptureDirectory = qEnvironmentVariable(
+        "CLASSMNGR_INITIAL_SETUP_VISUAL_CAPTURE_DIR");
+    const bool visualCaptureEnabled = !visualCaptureDirectory.isEmpty();
+    [[maybe_unused]] const ScopedCaptureAppearance captureAppearance(
+        application, visualCaptureEnabled);
     StartupPreferencesGuard preferences(storedLanguage, storedTheme, 0);
     StartupResourceFixture resources;
     QVERIFY(resources.isValid());
@@ -2516,6 +2600,14 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
     fileDialogProbe->selectedPath = Application::FileDialogPath(
         selectedProfilePath.toUtf8().toStdString()
         );
+    if (visualCaptureEnabled)
+    {
+        const QString signaturePath = temporaryDirectory.filePath(
+            QStringLiteral("visual-review-signature.png"));
+        QVERIFY(visualReviewSignature().save(signaturePath, "PNG"));
+        fileDialogProbe->openPath = Application::FileDialogPath(
+            signaturePath.toUtf8().toStdString());
+    }
 
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams workspace;
     workspace.commandLineArguments = QStringList{QStringLiteral("appearance-test")};
@@ -2539,9 +2631,16 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
         [] { return std::make_unique<SilentStartupUpdateDispatcher>(); }
         );
     QVERIFY(bootstrap.start().succeeded());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    if (visualCaptureEnabled)
+    {
+        shell->resize(1024, 720);
+        QApplication::processEvents();
+    }
 
     Ui::InitialPage* const page = dynamic_cast<Ui::InitialPage*>(
-        bootstrap.shell()->pageHost().pageInstance(
+        shell->pageHost().pageInstance(
             QStringLiteral("initial_setup")
             )
         );
@@ -2605,6 +2704,76 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
         saveDetails->text(),
         korean ? QStringLiteral("변경 사항 저장") : QStringLiteral("Save Changes")
         );
+
+    if (visualCaptureEnabled)
+    {
+        auto* const pageLayout = qobject_cast<QVBoxLayout*>(page->layout());
+        QVERIFY(pageLayout);
+        pageLayout->setContentsMargins(8, 32, 8, 32);
+        pageLayout->setStretch(0, 0);
+        pageLayout->setStretch(pageLayout->count() - 1, 0);
+        pageLayout->activate();
+
+        auto* const personalName = page->findChild<QLineEdit*>(
+            QStringLiteral("classMngrNextInitialSetupPersonalName"));
+        QVERIFY(personalName);
+        personalName->setText(QStringLiteral("Alex Kim"));
+        chooseSignature->click();
+        QApplication::processEvents();
+        QVERIFY(!preview->pixmap().isNull());
+        if (theme == QStringLiteral("dark"))
+        {
+            const QImage renderedPreview = preview->grab().toImage();
+            QVERIFY(!renderedPreview.isNull());
+            QVERIFY(renderedPreview.pixelColor(8, 8).lightness() > 240);
+
+            bool hasDarkSignatureInk = false;
+            const QRect signatureSearchArea = renderedPreview.rect().adjusted(
+                36, 20, -36, -20);
+            for (int y = signatureSearchArea.top();
+                 y <= signatureSearchArea.bottom() && !hasDarkSignatureInk;
+                 ++y)
+            {
+                for (int x = signatureSearchArea.left();
+                     x <= signatureSearchArea.right();
+                     ++x)
+                {
+                    const QColor pixel = renderedPreview.pixelColor(x, y);
+                    if (pixel.red() < 96
+                        && pixel.green() < 96
+                        && pixel.blue() < 96)
+                    {
+                        hasDarkSignatureInk = true;
+                        break;
+                    }
+                }
+            }
+            QVERIFY(hasDarkSignatureInk);
+        }
+
+        auto* const profileLocation = page->findChild<QLabel*>(
+            QStringLiteral("classMngrNextInitialSetupProfileLocation"));
+        QVERIFY(profileLocation);
+        const QString profileLabelPrefix = profileLocation->text().section(
+            QLatin1Char(':'), 0, 0);
+        profileLocation->setText(
+            profileLabelPrefix + QStringLiteral(": setup-profile.tps"));
+        QVERIFY(!profileLocation->text().contains(temporaryDirectory.path()));
+
+        personalName->setFocus(Qt::OtherFocusReason);
+        shell->activateWindow();
+        shell->repaint();
+        QApplication::processEvents();
+        QCOMPARE(shell->size(), QSize(1024, 720));
+        const QImage capture = fixedViewportCapture(*shell);
+        QVERIFY(!capture.isNull());
+        QVERIFY(QDir().mkpath(visualCaptureDirectory));
+        const QString filename = QStringLiteral(
+            "next-initial-setup-personal-details-%1-%2.png")
+            .arg(locale, theme);
+        QVERIFY(capture.save(
+            QDir(visualCaptureDirectory).filePath(filename), "PNG"));
+    }
 
     auto* const teacherEntryGroup = page->findChild<QGroupBox*>(
         QStringLiteral("classMngrNextInitialSetupTeacherEntry")

@@ -43,8 +43,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   AI-assisted comments, and batch workflow, is active; #40, Reports/PDF/
   PowerPoint/export jobs, is pending. Batch 3 remains active through #40.
   Batch 4 discovery is complete and queued with eight ordered candidates. The
-  7A screenshot comparison, memory evidence, and Windows packaged-Next memory
-  gate remain open; the 7A and Phase 7 exit gates are not yet passed. See the
+  Initial Setup personal-details screenshot subgate is closed; broader 7A
+  visual evidence, memory evidence, and the Windows packaged-Next memory gate
+  remain open. The 7A and Phase 7 exit gates are not yet passed. See the
   [Phase 7 progress log](08-Phase-7-Progress-Log.md) for evidence and limits.
 
 ### Slice batches

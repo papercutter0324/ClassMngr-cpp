@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "core/theme_service.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "data/repositories/teacher_repository.h"
@@ -15,10 +16,16 @@
 #include <QBuffer>
 #include <QColorDialog>
 #include <QComboBox>
+#include <QDir>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
+#include <QLocale>
+#include <QPalette>
 #include <QPixmap>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPen>
 #include <QPushButton>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -26,6 +33,7 @@
 #include <QUuid>
 #include <QtTest>
 
+#include <array>
 #include <utility>
 
 namespace
@@ -77,6 +85,97 @@ QByteArray sourcePng()
 
     return encoded;
 }
+
+QImage visualReviewSignature()
+{
+    QImage image(360, 120, QImage::Format_ARGB32_Premultiplied);
+    image.fill(Qt::white);
+
+    QPainter painter(&image);
+    painter.setRenderHint(QPainter::Antialiasing);
+    QPen ink(QColor(QStringLiteral("#202830")));
+    ink.setWidth(5);
+    ink.setCapStyle(Qt::RoundCap);
+    ink.setJoinStyle(Qt::RoundJoin);
+    painter.setPen(ink);
+
+    QPainterPath signature;
+    signature.moveTo(18, 82);
+    signature.cubicTo(31, 44, 43, 34, 51, 66);
+    signature.cubicTo(58, 96, 68, 36, 84, 58);
+    signature.cubicTo(94, 73, 98, 77, 111, 61);
+    signature.cubicTo(124, 45, 137, 43, 144, 59);
+    signature.cubicTo(151, 76, 157, 77, 171, 60);
+    signature.cubicTo(184, 44, 198, 48, 204, 68);
+    signature.cubicTo(211, 88, 224, 90, 242, 71);
+    signature.cubicTo(258, 55, 278, 52, 337, 57);
+    painter.drawPath(signature);
+    painter.drawLine(25, 101, 330, 101);
+    painter.end();
+    return image;
+}
+
+QImage fixedViewportCapture(QWidget& widget)
+{
+    QImage capture(QSize(1024, 720), QImage::Format_ARGB32_Premultiplied);
+    capture.fill(Qt::transparent);
+    QPainter painter(&capture);
+    widget.render(&painter);
+    painter.end();
+    return capture;
+}
+
+class ScopedCaptureBaseStyle final
+{
+public:
+    ScopedCaptureBaseStyle(QApplication& application, const bool enabled)
+        : m_application(application)
+        , m_enabled(enabled)
+        , m_styleName(application.style()->objectName())
+        , m_styleSheet(application.styleSheet())
+        , m_palette(application.palette())
+    {
+        if (m_enabled)
+        {
+            m_application.setStyle(QStringLiteral("Fusion"));
+        }
+    }
+
+    ~ScopedCaptureBaseStyle()
+    {
+        if (m_enabled)
+        {
+            m_application.setStyle(m_styleName);
+            m_application.setPalette(m_palette);
+            m_application.setStyleSheet(m_styleSheet);
+        }
+    }
+
+private:
+    QApplication& m_application;
+    bool m_enabled = false;
+    QString m_styleName;
+    QString m_styleSheet;
+    QPalette m_palette;
+};
+
+class ScopedDefaultLocale final
+{
+public:
+    explicit ScopedDefaultLocale(const QString& localeName)
+        : m_previousLocale(QLocale())
+    {
+        QLocale::setDefault(QLocale(localeName));
+    }
+
+    ~ScopedDefaultLocale()
+    {
+        QLocale::setDefault(m_previousLocale);
+    }
+
+private:
+    QLocale m_previousLocale;
+};
 
 QLabel* signaturePreview(InitialSetupWizard& wizard)
 {
@@ -280,6 +379,7 @@ class InitialSetupWizardTests : public QObject
 private slots:
     void keyboardIsAvailableAtTextEntryStages();
     void personalNameFieldRetainsFocusWhileTyping();
+    void capturesInitialSetupPersonalDetailsForVisualReview();
     void storedSignatureImagePreviewsAndSurvivesSaveWithoutReplacement();
     void missingInvalidAndUnavailableSignatureImagesStayEmpty();
     void storedDisplayNamePreservesUtf8AndWhitespace();
@@ -309,6 +409,84 @@ private slots:
 private:
     QTemporaryDir m_directory;
 };
+
+void InitialSetupWizardTests::
+capturesInitialSetupPersonalDetailsForVisualReview()
+{
+    const QString outputDirectory = qEnvironmentVariable(
+        "CLASSMNGR_INITIAL_SETUP_VISUAL_CAPTURE_DIR");
+    if (outputDirectory.isEmpty())
+    {
+        return;
+    }
+
+    QApplication& application = *qApp;
+    [[maybe_unused]] const ScopedCaptureBaseStyle baseStyle(
+        application, true);
+
+    QByteArray signatureBytes;
+    QBuffer signatureBuffer(&signatureBytes);
+    QVERIFY(signatureBuffer.open(QIODevice::WriteOnly));
+    QVERIFY(visualReviewSignature().save(&signatureBuffer, "PNG"));
+    QVERIFY(QDir().mkpath(outputDirectory));
+
+    const std::array<std::pair<QString, QString>, 4> appearanceCases{{
+        {QStringLiteral("en_US"), QStringLiteral("light")},
+        {QStringLiteral("en_US"), QStringLiteral("dark")},
+        {QStringLiteral("ko_KR"), QStringLiteral("light")},
+        {QStringLiteral("ko_KR"), QStringLiteral("dark")}
+    }};
+    // Legacy has no Korean catalog for this page; Korean rows retain its
+    // shipped English source strings while the Qt default locale is recorded.
+    for (const auto& [locale, theme] : appearanceCases)
+    {
+        [[maybe_unused]] const ScopedDefaultLocale defaultLocale(locale);
+        ApplicationServices services;
+        QVERIFY(openDatabase(services, m_directory));
+        QVERIFY(services.settingsService());
+        QVERIFY(services.settingsService()->saveAll({
+            {
+                QString::fromUtf8(DisplayNameKey),
+                QStringLiteral("Alex Kim")
+            },
+            {
+                QString::fromUtf8(SignatureImageKey),
+                QString::fromLatin1(signatureBytes.toBase64())
+            }
+        }));
+
+        ThemeService* const themeService = services.themeService();
+        QVERIFY(themeService);
+        const Theme selectedTheme = theme == QStringLiteral("dark")
+            ? Theme::Dark
+            : Theme::Light;
+        themeService->setTheme(selectedTheme);
+        QCOMPARE(themeService->currentTheme(), selectedTheme);
+
+        InitialSetupWizard wizard(&services);
+        wizard.resize(1024, 720);
+        showPersonalDetailsPage(wizard);
+        wizard.resize(1024, 720);
+        QApplication::processEvents();
+
+        auto* const name = wizard.findChild<QLineEdit*>(
+            QStringLiteral("setupUserName"));
+        auto* const preview = signaturePreview(wizard);
+        QVERIFY(name && preview);
+        name->setText(QStringLiteral("Alex Kim"));
+        name->setFocus(Qt::OtherFocusReason);
+        QVERIFY(!preview->pixmap().isNull());
+        QApplication::processEvents();
+
+        QCOMPARE(wizard.size(), QSize(1024, 720));
+        const QImage capture = fixedViewportCapture(wizard);
+        QVERIFY(!capture.isNull());
+        const QString filename = QStringLiteral(
+            "legacy-initial-setup-personal-details-%1-%2.png")
+            .arg(locale, theme);
+        QVERIFY(capture.save(QDir(outputDirectory).filePath(filename), "PNG"));
+    }
+}
 
 void InitialSetupWizardTests::
 classTimesRejectsNoncanonicalWeekdaysAfterCreatingBlankClass()
