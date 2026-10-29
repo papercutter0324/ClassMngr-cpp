@@ -14,6 +14,7 @@
 
 #include <QApplication>
 #include <QComboBox>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -27,6 +28,7 @@
 #include <QPdfSelection>
 #include <QPushButton>
 #include <QSqlQuery>
+#include <QStyle>
 #include <QTableView>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -89,6 +91,32 @@ Ui::RosterOutputActions actions()
     return result;
 }
 QPushButton* findButton(QWidget& dialog, const char* name) { return dialog.findChild<QPushButton*>(QString::fromLatin1(name)); }
+QByteArray fileSha256(const QString& path)
+{
+    QFile file(path);
+    return file.open(QIODevice::ReadOnly)
+        ? QCryptographicHash::hash(file.readAll(), QCryptographicHash::Sha256).toHex()
+        : QByteArray{};
+}
+qsizetype nonWhitePixelCount(const QImage& source)
+{
+    const QImage image = source.convertToFormat(QImage::Format_RGB32);
+    qsizetype count = 0;
+    for (int row = 0; row < image.height(); ++row)
+    {
+        const auto* pixels = reinterpret_cast<const QRgb*>(image.constScanLine(row));
+        for (int column = 0; column < image.width(); ++column)
+            if (qRed(pixels[column]) < 245 || qGreen(pixels[column]) < 245
+                || qBlue(pixels[column]) < 245) ++count;
+    }
+    return count;
+}
+struct RejectPreviewOnExit final
+{
+    QDialog& dialog;
+    ~RejectPreviewOnExit() { dialog.reject(); }
+};
+
 }
 class RosterOutputTests final : public QObject
 {
@@ -425,39 +453,125 @@ void RosterOutputTests::captures()
         roster.rows = {{QStringLiteral("FIXTURE TEST"), QStringLiteral("시험명"), QStringLiteral("FIXTURE VALUE")}};
         QVERIFY(store.rosterRepository()->saveRoster(testingId, roster));
     }
-    const auto source = actions(); const auto choices = source.readChoices(path, id(1), false); QVERIFY(choices);
+    auto source = actions(); const auto choices = source.readChoices(path, id(1), false); QVERIFY(choices);
     const auto testingChoices = source.readChoices(path, id(testingId), true); QVERIFY(testingChoices);
     const auto folder = QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("roster-output-visual-captures")); QVERIFY(QDir().mkpath(folder));
+    const auto evidenceFolder = QDir(QCoreApplication::applicationDirPath()).filePath(
+        QStringLiteral("roster-output-evidence/dark-preview-repair"));
+    QVERIFY(QDir().mkpath(evidenceFolder));
+    struct PdfEvidence final
+    {
+        QString path;
+        QString text;
+        QImage page;
+        bool copied = false;
+        int pages = 0;
+    } regularPdf;
+    QString currentCaptureTag;
+    const auto generate = source.savePdf;
+    source.savePdf = [&](const QString& databasePath, const Output::RosterOutputRequest& request,
+                         const QString& outputPath, const R::Fonts& fonts) {
+        const auto result = generate(databasePath, request, outputPath, fonts);
+        if (!request.testingClass && result.status == DocumentOutputStatus::Sent)
+        {
+            regularPdf = {};
+            regularPdf.path = evidenceFolder + QStringLiteral("/roster_preview_")
+                + currentCaptureTag + QStringLiteral(".pdf");
+            QFile::remove(regularPdf.path);
+            regularPdf.copied = QFile::copy(outputPath, regularPdf.path);
+        }
+        return result;
+    };
     const auto original = qApp->palette(); QJsonArray captures;
     for (const auto& locale : {QStringLiteral("en_US"), QStringLiteral("ko_KR")})
     {
         QTranslator translator;
         if (locale == QStringLiteral("ko_KR")) { QVERIFY(translator.load(QStringLiteral(CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY) + QStringLiteral("/ClassMngr_ko_KR.qm"))); qApp->installTranslator(&translator); }
-        for (bool dark : {false, true})
+        // Exercise dark before any light preview in a fresh capture run.
+        for (bool dark : {true, false})
         {
             QPalette palette = original;
             palette.setColor(QPalette::Window, QColor(dark ? "#202327" : "#f5f6f7")); palette.setColor(QPalette::WindowText, QColor(dark ? "#eeeeee" : "#181818"));
             palette.setColor(QPalette::Base, QColor(dark ? "#17191c" : "#ffffff")); palette.setColor(QPalette::Text, QColor(dark ? "#eeeeee" : "#181818"));
             palette.setColor(QPalette::Button, QColor(dark ? "#30343a" : "#eeeeee")); palette.setColor(QPalette::ButtonText, QColor(dark ? "#eeeeee" : "#181818")); qApp->setPalette(palette);
             const auto tag = locale + (dark ? QStringLiteral("_dark") : QStringLiteral("_light"));
+            currentCaptureTag = tag;
+            bool regularCaptureVerified = false;
+            QJsonObject regularCaptureEvidence;
             Ui::RosterPrintDialog dialog(path, id(1), false, *choices, source); dialog.show(); QCoreApplication::processEvents();
             QCOMPARE(findButton(dialog, "nextRosterPreview")->text(), locale == QStringLiteral("ko_KR") ? QStringLiteral("미리보기") : QStringLiteral("Preview"));
             QVERIFY(dialog.grab().save(folder + QStringLiteral("/roster_templates_") + tag + QStringLiteral(".png")));
-            QTimer::singleShot(0, [&] {
-                auto* preview = dialog.findChild<QDialog*>(QStringLiteral("nextRosterPreviewDialog")); QVERIFY(preview); QCoreApplication::processEvents();
-                QVERIFY(preview->grab().save(folder + QStringLiteral("/roster_preview_") + tag + QStringLiteral(".png"))); preview->reject();
+            QTimer::singleShot(0, &dialog, [&] {
+                auto* preview = dialog.findChild<QDialog*>(QStringLiteral("nextRosterPreviewDialog")); QVERIFY(preview);
+                const RejectPreviewOnExit closePreview{*preview};
+                QCoreApplication::processEvents();
+                // Capture first, before loading the independent reference, so
+                // PDF/font cache warmup cannot hide a production paint issue.
+                const QString imagePath = folder + QStringLiteral("/roster_preview_") + tag + QStringLiteral(".png");
+                const QPixmap screenshot = preview->grab();
+                QVERIFY(screenshot.save(imagePath));
+                QVERIFY(regularPdf.copied);
+                QPdfDocument reference;
+                QCOMPARE(reference.load(regularPdf.path), QPdfDocument::Error::None);
+                QCOMPARE(reference.status(), QPdfDocument::Status::Ready);
+                regularPdf.pages = reference.pageCount();
+                QCOMPARE(regularPdf.pages, 1);
+                regularPdf.text = reference.getAllText(0).text();
+                const QSize size = reference.pagePointSize(0).toSize().scaled(
+                    QSize(820, 630), Qt::KeepAspectRatio);
+                regularPdf.page = reference.render(0, size);
+                QVERIFY(regularPdf.text.contains(QStringLiteral("Monday")));
+                QVERIFY(regularPdf.text.contains(QStringLiteral("FIXTURE S0")));
+                QVERIFY(regularPdf.text.contains(QStringLiteral("FIXTURE S1")));
+                QVERIFY(!regularPdf.page.isNull());
+                // A non-null white raster must not count as a rendered page.
+                const qsizetype paintedPixels = nonWhitePixelCount(regularPdf.page);
+                QVERIFY(paintedPixels > 10'000);
+                auto* pageLabel = preview->findChild<QLabel*>(QStringLiteral("nextRosterPreviewPage"));
+                QVERIFY(pageLabel);
+                const QPixmap page = pageLabel->pixmap();
+                QVERIFY(!page.isNull());
+                QCOMPARE(page.toImage().convertToFormat(QImage::Format_RGB32),
+                    regularPdf.page.convertToFormat(QImage::Format_RGB32));
+
+                // Inspect the actual PNG artifact, not just the QLabel's
+                // backing pixmap, so a blank offscreen capture fails too.
+                QCOMPARE(screenshot.devicePixelRatio(), 1.0);
+                QRect pageRect = QStyle::alignedRect(pageLabel->layoutDirection(),
+                    pageLabel->alignment(), page.size(), pageLabel->contentsRect());
+                pageRect.translate(pageLabel->mapTo(preview, QPoint{}));
+                const QImage capturedPage = QImage(imagePath).copy(pageRect);
+                QCOMPARE(capturedPage.convertToFormat(QImage::Format_RGB32),
+                    regularPdf.page.convertToFormat(QImage::Format_RGB32));
+                const QString renderedPagePath = evidenceFolder + QStringLiteral("/roster_preview_")
+                    + tag + QStringLiteral("-page.png");
+                QVERIFY(regularPdf.page.save(renderedPagePath));
+                regularCaptureEvidence = {
+                    {QStringLiteral("pdf"), regularPdf.path},
+                    {QStringLiteral("pdfSha256"), QString::fromLatin1(fileSha256(regularPdf.path))},
+                    {QStringLiteral("image"), imagePath},
+                    {QStringLiteral("imageSha256"), QString::fromLatin1(fileSha256(imagePath))},
+                    {QStringLiteral("renderedPage"), renderedPagePath},
+                    {QStringLiteral("pdfPageCount"), regularPdf.pages},
+                    {QStringLiteral("expectedPdfText"), QJsonArray{QStringLiteral("Monday"), QStringLiteral("FIXTURE S0"), QStringLiteral("FIXTURE S1")}},
+                    {QStringLiteral("pdfContainsExpectedFixtureText"), true},
+                    {QStringLiteral("visiblePageMatchesPdfRaster"), true},
+                    {QStringLiteral("pageNonWhitePixels"), static_cast<qint64>(paintedPixels)}
+                };
+                regularCaptureVerified = true;
             });
             findButton(dialog, "nextRosterPreview")->click();
+            QVERIFY(regularCaptureVerified);
             Ui::RosterPrintDialog testingDialog(path, id(testingId), true, *testingChoices, source); testingDialog.show(); QCoreApplication::processEvents();
             QVERIFY(testingDialog.grab().save(folder + QStringLiteral("/testing_roster_templates_") + tag + QStringLiteral(".png")));
-            QTimer::singleShot(0, [&] {
+            QTimer::singleShot(0, &testingDialog, [&] {
                 auto* preview = testingDialog.findChild<QDialog*>(QStringLiteral("nextRosterPreviewDialog")); QVERIFY(preview); QCoreApplication::processEvents();
                 const auto pixmap = preview->findChild<QLabel*>(QStringLiteral("nextRosterPreviewPage"))->pixmap();
                 QVERIFY(pixmap.height() > pixmap.width());
                 QVERIFY(preview->grab().save(folder + QStringLiteral("/testing_roster_preview_") + tag + QStringLiteral(".png"))); preview->reject();
             });
             findButton(testingDialog, "nextRosterPreview")->click();
-            captures.append(QJsonObject{{QStringLiteral("locale"), locale}, {QStringLiteral("theme"), dark ? QStringLiteral("dark") : QStringLiteral("light")}, {QStringLiteral("fixture"), QStringLiteral("Synthetic FIXTURE values only")}});
+            captures.append(QJsonObject{{QStringLiteral("locale"), locale}, {QStringLiteral("theme"), dark ? QStringLiteral("dark") : QStringLiteral("light")}, {QStringLiteral("fixture"), QStringLiteral("Synthetic FIXTURE values only")}, {QStringLiteral("regularPreviewEvidence"), regularCaptureEvidence}});
         }
         qApp->removeTranslator(&translator);
     }
