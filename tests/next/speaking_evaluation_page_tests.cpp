@@ -1,15 +1,21 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
+#include "data/repositories/class_info_repository.h"
+#include "data/repositories/settings_repository.h"
+#include "data/repositories/teacher_repository.h"
 #include "next/application/speaking_evaluation_private_notes_split.h"
 #include "next/platform/workspace_store_speaking_evaluation_ports.h"
+#include "next/platform/workspace_store_speaking_evaluation_report_port.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
 #include "next/ui/speaking_evaluation_ai_dialogs.h"
 #include "next/ui/speaking_evaluation_page.h"
+#include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 #include "preferences_test_ports.h"
 
 #include <QApplication>
+#include <QCheckBox>
 #include <QClipboard>
 #include <QComboBox>
 #include <QDialog>
@@ -18,6 +24,7 @@
 #include <QEvent>
 #include <QFile>
 #include <QFileInfo>
+#include <QFontDatabase>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -26,7 +33,10 @@
 #include <QLocale>
 #include <QMessageBox>
 #include <QListView>
+#include <QLineEdit>
 #include <QPalette>
+#include <QPainter>
+#include <QPdfDocument>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QStyle>
@@ -319,6 +329,12 @@ public:
 class PageHarness final
 {
 public:
+    PageHarness()
+    {
+        m_reportActions.assets.latinFamily = QStringLiteral("Arial");
+        m_reportActions.assets.koreanFamily = QStringLiteral("Arial");
+    }
+
     bool initialize(
         FakeEvaluationState& state,
         const bool realWorkspace = false,
@@ -406,6 +422,11 @@ public:
                     }
                     return std::make_unique<FakeClassGradeReadPort>(state);
                 };
+                actions.reportContextReadPortFactory = [](const QString& path) {
+                    return std::make_unique<
+                        Platform::WorkspaceStoreSpeakingEvaluationReportPort>(path);
+                };
+                actions.reports = m_reportActions;
                 actions.preferredAiCommentProvider = [] {
                     return Application::AiCommentProvider::ChatGPT;
                 };
@@ -456,11 +477,20 @@ public:
     }
 
     [[nodiscard]] Ui::PageHost& host() const { return *m_host; }
+    [[nodiscard]] Ui::SpeakingEvaluationReportActions& reportActions()
+    {
+        return m_reportActions;
+    }
+    [[nodiscard]] Resources::ResourceLoader& resourceLoader() const
+    {
+        return *m_loader;
+    }
 
 private:
     Test::MemoryPreferences m_preferences;
     std::unique_ptr<Resources::ResourceLoader> m_loader;
     std::unique_ptr<Ui::PageHost> m_host;
+    Ui::SpeakingEvaluationReportActions m_reportActions;
 };
 
 bool copyLargeFixture(QTemporaryDir& temporary, QString* destination)
@@ -477,6 +507,37 @@ bool copyLargeFixture(QTemporaryDir& temporary, QString* destination)
     }
     *destination = path;
     return true;
+}
+
+bool createReportContextWorkspace(const QString& path, QByteArray* signature)
+{
+    WorkspaceStore store;
+    if (!store.open(path)) return false;
+    const auto createdClass = store.classRepository()->createClass(
+        QStringLiteral("Speaking Report Class"));
+    if (!createdClass) return false;
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Teacher North");
+    teacher.teacherKr = QString::fromUtf8("교사 북");
+    teacher.wifiName = QStringLiteral("PRIVATE_WIFI");
+    teacher.wifiPassword = QStringLiteral("PRIVATE_WIFI_PASSWORD");
+    teacher.zoomId = QStringLiteral("PRIVATE_ZOOM");
+    teacher.zoomPassword = QStringLiteral("PRIVATE_ZOOM_PASSWORD");
+    const auto teacherId = store.teacherRepository()->createTeacher(teacher);
+    if (!teacherId) return false;
+    ClassInfo info;
+    info.classId = *createdClass;
+    info.teacherId = *teacherId;
+    info.classGrade = QStringLiteral("E5");
+    info.classLevel = QStringLiteral("Athena");
+    info.classTimes = {{QStringLiteral("Monday"), QStringLiteral("4:00 PM"),
+        QStringLiteral("4:50 PM")}};
+    if (!store.classInfoRepository()->saveClassInfo(info)) return false;
+
+    *signature = QByteArrayLiteral("report signature bytes");
+    return bool(store.settingsRepository()->saveSetting(
+        QStringLiteral("myInfo/signatureImage"),
+        QString::fromLatin1(signature->toBase64())));
 }
 
 std::vector<std::vector<std::u16string>> evaluationWithAiStudents(
@@ -553,11 +614,15 @@ private slots:
     void aiBatchIsBoundedOrderedAndCancelDoesNotEdit();
     void aiBatchResponseRetryMapsCommentsToSourceRows();
     void aiBatchRejectsOneHundredStudentsWithVisibleLimit();
+    void reportContextUsesPathScopedWorkspaceStoreAndOmitsCredentials();
+    void currentReportSaveAsPdfAndPrintActionsUseOutputEngine();
+    void reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs();
     void batchCheckIndicatorMouseAndKeyboardEventsToggleSelection();
     void batchIncludeIndicatorsRenderCheckedAndUncheckedForAllThemes();
     void koreanLightUndoButtonShowsItsFullLabelAtCaptureSize();
     void workspaceStoreBatchApplySaveReopenPersistsComment();
     void capturesEnglishKoreanLightAndDarkPresentation();
+    void capturesSpeakingEvaluationReportsForEnglishKoreanLightAndDark();
 };
 
 void SpeakingEvaluationPageTests::
@@ -1215,6 +1280,366 @@ aiBatchRejectsOneHundredStudentsWithVisibleLimit()
 }
 
 void SpeakingEvaluationPageTests::
+reportContextUsesPathScopedWorkspaceStoreAndOmitsCredentials()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString path = temporary.filePath(QStringLiteral("reports.tps"));
+    QByteArray expectedSignature;
+    QVERIFY(createReportContextWorkspace(path, &expectedSignature));
+
+    const auto context =
+        Platform::WorkspaceStoreSpeakingEvaluationReportPort(path)
+            .readReportContext(classId(1));
+    QVERIFY(context);
+    QCOMPARE(context.value().classValues.grade, std::u16string(u"E5"));
+    QCOMPARE(context.value().classValues.level, std::u16string(u"Athena"));
+    QCOMPARE(context.value().classValues.nativeTeacher,
+        std::u16string(u"Teacher North"));
+    QCOMPARE(context.value().classValues.koreanTeacher,
+        std::u16string(u"교사 북"));
+    QCOMPARE(context.value().regularTimes.size(), std::size_t(1));
+    QCOMPARE(context.value().regularTimes.front().day, std::u16string(u"Monday"));
+    QCOMPARE(context.value().regularTimes.front().startTime,
+        std::u16string(u"4:00 PM"));
+    QCOMPARE(context.value().regularTimes.front().endTime,
+        std::u16string(u"4:50 PM"));
+    QCOMPARE(context.value().signatureImage,
+        std::string(expectedSignature.constData(),
+            static_cast<std::size_t>(expectedSignature.size())));
+
+    const QString otherPath = temporary.filePath(QStringLiteral("other.tps"));
+    WorkspaceStore emptyStore;
+    QVERIFY(emptyStore.open(otherPath));
+    const auto otherContext =
+        Platform::WorkspaceStoreSpeakingEvaluationReportPort(otherPath)
+            .readReportContext(classId(1));
+    QVERIFY(!otherContext);
+    QCOMPARE(otherContext.error().code, Domain::ErrorCode::NotFound);
+}
+
+void SpeakingEvaluationPageTests::
+currentReportSaveAsPdfAndPrintActionsUseOutputEngine()
+{
+    QTemporaryDir workspaceDirectory;
+    QVERIFY(workspaceDirectory.isValid());
+    const QString workspacePath =
+        workspaceDirectory.filePath(QStringLiteral("single-report-actions.tps"));
+    QByteArray expectedSignature;
+    QVERIFY(createReportContextWorkspace(workspacePath, &expectedSignature));
+
+    FakeEvaluationState state;
+    state.path = workspacePath;
+    auto rows = emptyEvaluation();
+    rows[0][1] = u"Ada Park";
+    rows[0][2] = u"김민지";
+    rows[0][3] = u"A";
+    rows[0][9] = u"A clear, synthetic comment.";
+    state.evaluations[evaluationKey(classId(1), QStringLiteral("Winter"))] = rows;
+
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+    const QString pdfPath = outputDirectory.filePath(
+        QStringLiteral("selected-speaking-report.pdf"));
+    QStringList progressNames;
+    QStringList stagingDirectories;
+    QStringList noticeTitles;
+    QStringList noticeMessages;
+    QList<bool> noticeFailures;
+    QString suggestedFileName;
+    int pathChooserCalls = 0;
+    int printCalls = 0;
+    bool stagedPdfWasAvailableToPrinter = false;
+
+    PageHarness harness;
+    auto& reportActions = harness.reportActions();
+    reportActions.engineOverrides.progressCallback = [&progressNames](
+        int, int, const QString& name) {
+        if (!name.isEmpty()) progressNames.append(name);
+        return true;
+    };
+    reportActions.engineOverrides.stagingDirectoryCreated =
+        [&stagingDirectories](const QString& path) {
+            stagingDirectories.append(path);
+        };
+    reportActions.engineOverrides.printCallback = [&] {
+        ++printCalls;
+        if (!stagingDirectories.isEmpty())
+        {
+            const QStringList stagedPdfs = QDir(stagingDirectories.constLast())
+                .entryList({QStringLiteral("*.pdf")}, QDir::Files);
+            if (stagedPdfs.size() == 1)
+            {
+                QPdfDocument stagedDocument;
+                stagedPdfWasAvailableToPrinter = stagedDocument.load(
+                    QDir(stagingDirectories.constLast()).filePath(
+                        stagedPdfs.constFirst())) == QPdfDocument::Error::None
+                    && stagedDocument.pageCount() == 1;
+            }
+        }
+        return DocumentOutputResult{
+            DocumentOutputStatus::Completed,
+            QStringLiteral("Synthetic print job accepted."),
+            {},
+            {}
+        };
+    };
+    reportActions.choosePdfPath = [&] (QWidget*, const QString& suggested) {
+        ++pathChooserCalls;
+        suggestedFileName = suggested;
+        return pdfPath;
+    };
+    reportActions.showNotice = [&] (QWidget*, bool failed,
+        const QString& title, const QString& message) {
+        noticeFailures.append(failed);
+        noticeTitles.append(title);
+        noticeMessages.append(message);
+    };
+
+    QVERIFY(harness.initialize(state));
+    Ui::SpeakingEvaluationPage* const page = harness.page();
+    QVERIFY(page);
+    page->tableView()->setCurrentIndex(page->matrixModel()->index(0, 1));
+
+    const auto activatePreviewAction = [page](const QString& objectName) {
+        bool dialogSeen = false;
+        QTimer::singleShot(0, [objectName, &dialogSeen] {
+            auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationReportsDialog*>(
+                qApp->activeModalWidget());
+            if (!dialog) return;
+            auto* const action = dialog->findChild<QPushButton*>(objectName);
+            if (!action)
+            {
+                dialog->reject();
+                return;
+            }
+            dialogSeen = true;
+            action->click();
+            dialog->reject();
+        });
+        page->reportsButton()->click();
+        return dialogSeen;
+    };
+
+    QVERIFY(activatePreviewAction(QStringLiteral("nextReportSavePdf")));
+    QCOMPARE(pathChooserCalls, 1);
+    QVERIFY(!suggestedFileName.isEmpty());
+    QCOMPARE(progressNames,
+        QStringList{QStringLiteral("Ada Park (김민지)")});
+    QVERIFY(QFileInfo::exists(pdfPath));
+    QPdfDocument savedDocument;
+    QCOMPARE(savedDocument.load(pdfPath), QPdfDocument::Error::None);
+    QCOMPARE(savedDocument.pageCount(), 1);
+    QCOMPARE(noticeTitles.constLast(), QStringLiteral("Reports Ready"));
+    QCOMPARE(noticeFailures.constLast(), false);
+    QVERIFY(noticeMessages.constLast().contains(pdfPath));
+    QVERIFY(!stagingDirectories.isEmpty());
+    QVERIFY(!QFileInfo::exists(stagingDirectories.constLast()));
+
+    QVERIFY(activatePreviewAction(QStringLiteral("nextReportPrint")));
+    QCOMPARE(pathChooserCalls, 1);
+    QCOMPARE(printCalls, 1);
+    QVERIFY(stagedPdfWasAvailableToPrinter);
+    QCOMPARE(progressNames,
+        (QStringList{QStringLiteral("Ada Park (김민지)"),
+            QStringLiteral("Ada Park (김민지)")}));
+    QCOMPARE(noticeTitles.constLast(), QStringLiteral("Reports Ready"));
+    QCOMPARE(noticeFailures.constLast(), false);
+    QCOMPARE(QDir(outputDirectory.path()).entryList(
+        QDir::Files | QDir::NoDotAndDotDot),
+        QStringList{QStringLiteral("selected-speaking-report.pdf")});
+    QVERIFY(!QFileInfo::exists(stagingDirectories.constLast()));
+    QCOMPARE(speakingEvalReportAssetResidency().sessions, 0);
+    QCOMPARE(speakingEvalReportAssetResidency().templates, 0);
+    QCOMPARE(speakingEvalReportAssetResidency().decodedImageBytes, qsizetype(0));
+}
+
+void SpeakingEvaluationPageTests::
+reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
+{
+    QTemporaryDir workspaceDirectory;
+    QVERIFY(workspaceDirectory.isValid());
+    const QString workspacePath =
+        workspaceDirectory.filePath(QStringLiteral("reports.tps"));
+    QByteArray expectedSignature;
+    QVERIFY(createReportContextWorkspace(workspacePath, &expectedSignature));
+
+    FakeEvaluationState state;
+    state.path = workspacePath;
+    state.identity = QStringLiteral("report-output-workspace");
+    auto rows = emptyEvaluation();
+    rows[0][1] = u"Ada Park";
+    rows[0][2] = u"김민지";
+    rows[0][3] = u"A";
+    rows[0][4] = u"B";
+    rows[0][5] = u"A";
+    rows[0][6] = u"B";
+    rows[0][7] = u"A";
+    rows[0][8] = u"B";
+    rows[0][9] = u"Ada's existing comment";
+    rows[0][10] = u"[Did Well]\nClear ideas\n[Needs Improvement]\nAdd more detail";
+    rows[2][1] = u"Bora Lee";
+    rows[2][2] = u"이예은";
+    rows[2][3] = u"B";
+    rows[2][4] = u"A";
+    rows[2][5] = u"B";
+    rows[2][6] = u"A";
+    rows[2][7] = u"B";
+    rows[2][8] = u"A";
+    rows[2][9] = u"Bora's unsaved comment";
+    rows[2][10] = u"[Did Well]\nGood details\n[Needs Improvement]\nAdd transitions";
+    state.evaluations[evaluationKey(classId(1), QStringLiteral("Winter"))] = rows;
+
+    QTemporaryDir outputRoot;
+    QVERIFY(outputRoot.isValid());
+    QStringList renderedNames;
+    QStringList stagingDirectories;
+    int overwritePromptCount = 0;
+    PageHarness harness;
+    auto& reportActions = harness.reportActions();
+    reportActions.engineOverrides.internalRenderer = [&renderedNames](
+        const SpeakingEvalReportData& report, const QString& path,
+        QString* error)
+    {
+        renderedNames.append(report.englishName);
+        QFile file(path);
+        if (!file.open(QIODevice::WriteOnly)
+            || file.write("%PDF-next-report") != 16)
+        {
+            if (error) *error = QStringLiteral("test report write failed");
+            return false;
+        }
+        return true;
+    };
+    reportActions.engineOverrides.stagingDirectoryCreated =
+        [&stagingDirectories](const QString& path) {
+            stagingDirectories.append(path);
+        };
+    reportActions.confirmOverwrite = [&overwritePromptCount](QWidget*, int count) {
+        overwritePromptCount = count;
+        return false;
+    };
+    reportActions.showNotice = [](QWidget*, bool, const QString&, const QString&) {};
+
+    QVERIFY(harness.initialize(state));
+    Ui::SpeakingEvaluationPage* const page = harness.page();
+    QVERIFY(page);
+    QVERIFY(page->reportsButton()->isEnabled());
+    page->tableView()->setCurrentIndex(page->matrixModel()->index(2, 1));
+
+    bool previewSeen = false;
+    int previewReportCount = 0;
+    int selectedReportIndex = -1;
+    QString previewComment;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationReportsDialog*>(
+            qApp->activeModalWidget());
+        if (!dialog) return;
+        previewSeen = true;
+        previewReportCount = dialog->reports().size();
+        selectedReportIndex = dialog->studentSelector()->currentIndex();
+        const auto& reports = dialog->reports();
+        if (reports.size() != 2
+            || reports.at(0).report.classLabel != QStringLiteral("E5 Athena")
+            || reports.at(0).report.nativeTeacher != QStringLiteral("Teacher North")
+            || reports.at(0).report.koreanTeacher != QStringLiteral("교사 북")
+            || reports.at(0).report.signatureImage != expectedSignature
+            || reports.at(2 - 1).sourceRow != 2
+            || reports.at(1).report.comments != QStringLiteral("Bora's unsaved comment"))
+        {
+            dialog->reject();
+            return;
+        }
+        auto* const commentEditor = dialog->reportWidget()->findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalReportComments"));
+        if (!commentEditor)
+        {
+            dialog->reject();
+            return;
+        }
+        previewComment = QStringLiteral("Edited in the report preview");
+        commentEditor->setPlainText(previewComment);
+        dialog->reject();
+    });
+    page->reportsButton()->click();
+    QVERIFY(previewSeen);
+    QCOMPARE(previewReportCount, 2);
+    QCOMPARE(selectedReportIndex, 1);
+    QCOMPARE(page->matrixModel()->cellText(2, 9), previewComment);
+    QVERIFY(page->hasUnsavedChanges());
+    QCOMPARE(speakingEvalReportAssetResidency().sessions, 0);
+    QCOMPARE(speakingEvalReportAssetResidency().templates, 0);
+    QCOMPARE(speakingEvalReportAssetResidency().decodedImageBytes, qsizetype(0));
+
+    const QString currentDirectory = outputRoot.filePath(QStringLiteral("current"));
+    bool currentBatchSeen = false;
+    DocumentOutputResult currentResult;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationReportBatchDialog*>(
+            qApp->activeModalWidget());
+        if (!dialog) return;
+        currentBatchSeen = true;
+        dialog->scopeSelector()->setCurrentIndex(0);
+        dialog->outputDirectoryEdit()->setText(currentDirectory);
+        dialog->exportButton()->click();
+        currentResult = dialog->lastResult().output;
+    });
+    page->saveReportsButton()->click();
+    QVERIFY(currentBatchSeen);
+    QCOMPARE(currentResult.status, DocumentOutputStatus::Completed);
+    QCOMPARE(currentResult.savedPdfPaths.size(), 1);
+    QVERIFY(currentResult.savedArchivePath.isEmpty());
+    QVERIFY(QFileInfo::exists(currentResult.savedPdfPaths.constFirst()));
+    QCOMPARE(renderedNames, QStringList{QStringLiteral("Bora Lee")});
+    QVERIFY(!QFileInfo::exists(stagingDirectories.constLast()));
+
+    const QString allDirectory = outputRoot.filePath(QStringLiteral("all"));
+    bool allBatchSeen = false;
+    DocumentOutputResult allResult;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationReportBatchDialog*>(
+            qApp->activeModalWidget());
+        if (!dialog) return;
+        allBatchSeen = true;
+        dialog->scopeSelector()->setCurrentIndex(1);
+        dialog->keepIndividualCheck()->setChecked(true);
+        dialog->outputDirectoryEdit()->setText(allDirectory);
+        dialog->exportButton()->click();
+        allResult = dialog->lastResult().output;
+    });
+    page->saveReportsButton()->click();
+    QVERIFY(allBatchSeen);
+    QCOMPARE(allResult.status, DocumentOutputStatus::Completed);
+    QCOMPARE(allResult.savedPdfPaths.size(), 2);
+    QVERIFY(!allResult.savedArchivePath.isEmpty());
+    QVERIFY(QFileInfo::exists(allResult.savedArchivePath));
+    for (const QString& path : allResult.savedPdfPaths)
+        QVERIFY(QFileInfo::exists(path));
+    QCOMPARE(renderedNames,
+        (QStringList{QStringLiteral("Bora Lee"), QStringLiteral("Ada Park"),
+            QStringLiteral("Bora Lee")}));
+    QVERIFY(!QFileInfo::exists(stagingDirectories.constLast()));
+
+    const int rendererCallsBeforeOverwrite = renderedNames.size();
+    bool overwriteBatchSeen = false;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationReportBatchDialog*>(
+            qApp->activeModalWidget());
+        if (!dialog) return;
+        overwriteBatchSeen = true;
+        dialog->scopeSelector()->setCurrentIndex(0);
+        dialog->outputDirectoryEdit()->setText(currentDirectory);
+        dialog->exportButton()->click();
+        dialog->reject();
+    });
+    page->saveReportsButton()->click();
+    QVERIFY(overwriteBatchSeen);
+    QCOMPARE(overwritePromptCount, 1);
+    QCOMPARE(renderedNames.size(), rendererCallsBeforeOverwrite);
+    QVERIFY(!QFileInfo::exists(stagingDirectories.constLast()));
+}
+
+void SpeakingEvaluationPageTests::
 batchCheckIndicatorMouseAndKeyboardEventsToggleSelection()
 {
     std::vector<Ui::SpeakingEvaluationAiBatchStudent> students{
@@ -1731,6 +2156,9 @@ void SpeakingEvaluationPageTests::capturesEnglishKoreanLightAndDarkPresentation(
                      QStringLiteral("speakingEvaluationEditNotes"),
                      QStringLiteral("speakingEvaluationAiComment"),
                      QStringLiteral("speakingEvaluationAiBatchComments"),
+                     QStringLiteral("speakingEvaluationReports"),
+                     QStringLiteral("speakingEvaluationSaveReports"),
+                     QStringLiteral("speakingEvaluationPrintReports"),
                      QStringLiteral("speakingEvaluationUndo"),
                      QStringLiteral("speakingEvaluationSave")})
             {
@@ -1835,6 +2263,302 @@ void SpeakingEvaluationPageTests::capturesEnglishKoreanLightAndDarkPresentation(
     manifest.close();
     QVERIFY(QFileInfo::exists(QDir(outputDirectory).filePath(
         QStringLiteral("ai-batch_ko_KR-dark.png"))));
+}
+
+void SpeakingEvaluationPageTests::
+capturesSpeakingEvaluationReportsForEnglishKoreanLightAndDark()
+{
+    const QString captureDirectory = QDir(QStringLiteral(
+        CLASSMNGR_NEXT_SPEAKING_EVALUATION_CAPTURE_DIRECTORY)).filePath(
+            QStringLiteral("reports-c40"));
+    QDir existingCaptures(captureDirectory);
+    if (existingCaptures.exists())
+        QVERIFY(existingCaptures.removeRecursively());
+    QVERIFY(QDir().mkpath(captureDirectory));
+
+    FakeEvaluationState state;
+    PageHarness harness;
+    QVERIFY(harness.initialize(state));
+    const auto resolvedAssets = Output::resolveSpeakingEvaluationReportAssets(
+        harness.resourceLoader(), SpeakingEvalReportTemplate::Standard);
+    QVERIFY(resolvedAssets);
+    SpeakingEvalReportAssetEnvironment assets = *resolvedAssets;
+
+    QList<int> fontIds;
+    const auto loadFont = [&harness, &fontIds](const QString& logicalId) {
+        const auto id = Resources::ResourceId::fromString(logicalId);
+        if (!id) return QString{};
+        const auto request = Resources::ResourceRequest::create(*id,
+            Resources::ResourceScopeKind::Operation,
+            QStringLiteral("speaking-evaluation-report-capture"));
+        if (!request) return QString{};
+        const auto file = harness.resourceLoader().resolveFile(*request);
+        if (!file) return QString{};
+        const int fontId = QFontDatabase::addApplicationFont(file->get());
+        if (fontId < 0) return QString{};
+        fontIds.append(fontId);
+        return QFontDatabase::applicationFontFamilies(fontId).value(0);
+    };
+    assets.latinFamily = loadFont(QStringLiteral("resource:assets/fonts/Inter.ttc"));
+    assets.koreanFamily = loadFont(
+        QStringLiteral("resource:assets/fonts/PretendardVariable.ttf"));
+    QVERIFY(!assets.latinFamily.isEmpty());
+    QVERIFY(!assets.koreanFamily.isEmpty());
+
+    QImage signature(360, 90, QImage::Format_ARGB32_Premultiplied);
+    signature.fill(Qt::transparent);
+    {
+        QPainter painter(&signature);
+        painter.setPen(QColor(QStringLiteral("#23445A")));
+        painter.drawText(signature.rect(), Qt::AlignCenter,
+            QStringLiteral("Synthetic Signature"));
+    }
+    QByteArray signatureBytes;
+    QBuffer signatureBuffer(&signatureBytes);
+    QVERIFY(signatureBuffer.open(QIODevice::WriteOnly));
+    QVERIFY(signature.save(&signatureBuffer, "PNG"));
+
+    QList<SpeakingEvalBatchReportService::StudentReport> reports;
+    for (int index = 0; index < 2; ++index)
+    {
+        SpeakingEvalReportData report;
+        report.reportTemplate = SpeakingEvalReportTemplate::Standard;
+        report.englishName = index == 0
+            ? QStringLiteral("Jin Park") : QStringLiteral("Mina Lee");
+        report.koreanName = index == 0
+            ? QStringLiteral("김민지") : QStringLiteral("이미나");
+        report.classLabel = QStringLiteral("E5 Athena");
+        report.nativeTeacher = QStringLiteral("Teacher North");
+        report.koreanTeacher = QStringLiteral("교사 북");
+        report.date = QStringLiteral("Jun. 2026");
+        report.comments = index == 0
+            ? QStringLiteral("Jin explains ideas clearly and supports each answer with useful details.")
+            : QStringLiteral("Mina organizes her thoughts well and speaks with confidence.");
+        report.scores = {
+            QStringLiteral("A+"), QStringLiteral("A"), QStringLiteral("B+"),
+            QStringLiteral("A"), QStringLiteral("B"), QStringLiteral("A+")
+        };
+        report.signatureImage = signatureBytes;
+        reports.append({
+            report.englishName + QStringLiteral(" (") + report.koreanName
+                + QStringLiteral(")"),
+            report,
+            index * 2
+        });
+    }
+
+    const QLocale originalLocale;
+    const QPalette originalPalette = qApp->palette();
+    const QString originalStyleSheet = qApp->styleSheet();
+    QTranslator translator;
+    bool translatorInstalled = false;
+    const QString translationDirectory = QStringLiteral(
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY);
+    const QString styleDirectory = QDir(QStringLiteral(
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT)).filePath(QStringLiteral("assets/styles"));
+    QJsonArray captures;
+    int expectedCaptureCount = 8;
+#if defined(Q_OS_MACOS) || defined(Q_OS_WIN)
+    expectedCaptureCount += 2;
+#endif
+    const auto capture = [&captures, &captureDirectory](QWidget& widget,
+        const QString& kind, const QString& locale, const QString& theme,
+        const QSize& expectedSize)
+    {
+        const QString fileName = kind + QLatin1Char('_') + locale
+            + QLatin1Char('-') + theme + QStringLiteral(".png");
+        const QString path = QDir(captureDirectory).filePath(fileName);
+        const QPixmap image = widget.grab();
+        if (image.size() != expectedSize || !image.save(path)) return false;
+        captures.append(QJsonObject{
+            {QStringLiteral("kind"), kind},
+            {QStringLiteral("locale"), locale},
+            {QStringLiteral("theme"), theme},
+            {QStringLiteral("path"), path},
+            {QStringLiteral("width"), image.width()},
+            {QStringLiteral("height"), image.height()}
+        });
+        return true;
+    };
+
+    for (const QString& locale : {QStringLiteral("en_US"), QStringLiteral("ko_KR")})
+    {
+        if (locale == QStringLiteral("ko_KR"))
+        {
+            QVERIFY(translator.load(QDir(translationDirectory).filePath(
+                QStringLiteral("ClassMngr_ko_KR.qm"))));
+            translatorInstalled = qApp->installTranslator(&translator);
+            QVERIFY(translatorInstalled);
+        }
+        for (const QString& theme : {QStringLiteral("light"), QStringLiteral("dark")})
+        {
+            QLocale::setDefault(QLocale(locale));
+            qApp->setPalette(themePalette(theme));
+            qApp->setStyleSheet(readFile(QDir(styleDirectory).filePath(
+                theme + QStringLiteral(".qss"))));
+            QCoreApplication::processEvents();
+
+            Ui::SpeakingEvaluationReportActions actions;
+            actions.assets = assets;
+            {
+                Ui::SpeakingEvaluationReportsDialog preview(reports, 1, actions);
+                preview.resize(940, 900);
+                preview.show();
+                QCoreApplication::processEvents();
+                if (locale == QStringLiteral("ko_KR"))
+                {
+                    const auto* const closeButton =
+                        preview.findChild<QPushButton*>(
+                            QStringLiteral("nextReportClose"));
+                    const auto* const saveButton =
+                        preview.findChild<QPushButton*>(
+                            QStringLiteral("nextReportSavePdf"));
+                    QVERIFY(closeButton);
+                    QVERIFY(saveButton);
+                    QCOMPARE(closeButton->text(), QStringLiteral("닫기"));
+                    QCOMPARE(saveButton->text(), QStringLiteral("PDF로 저장"));
+                }
+                QVERIFY(capture(preview, QStringLiteral("report-preview"),
+                    locale, theme, QSize(940, 900)));
+                preview.hide();
+            }
+            QCOMPARE(speakingEvalReportAssetResidency().sessions, 0);
+            QCOMPARE(speakingEvalReportAssetResidency().templates, 0);
+            QCOMPARE(speakingEvalReportAssetResidency().decodedImageBytes, qsizetype(0));
+
+            {
+                Ui::SpeakingEvaluationReportBatchDialog batch(reports, 1,
+                    captureDirectory, Ui::SpeakingEvaluationReportBatchDialog::Mode::SaveAs,
+                    actions);
+                batch.resize(760, 500);
+                batch.show();
+                QCoreApplication::processEvents();
+                QVERIFY(capture(batch, QStringLiteral("report-batch"),
+                    locale, theme, QSize(760, 500)));
+                if (locale == QStringLiteral("ko_KR"))
+                {
+                    const auto hasNote = [&batch](const QString& text) {
+                        for (const QLabel* label : batch.findChildren<QLabel*>())
+                            if (label->text() == text) return true;
+                        return false;
+                    };
+                    const auto* const cancelButton =
+                        batch.findChild<QPushButton*>(
+                            QStringLiteral("nextReportBatchCancel"));
+                    const auto* const previewButton =
+                        batch.findChild<QPushButton*>(
+                            QStringLiteral("nextReportBatchPreview"));
+                    const auto* const exportButton =
+                        batch.findChild<QPushButton*>(
+                            QStringLiteral("nextReportBatchExport"));
+                    const auto* const chooseButton =
+                        batch.findChild<QPushButton*>(
+                            QStringLiteral("nextReportChooseDirectory"));
+                    const auto* const keepPdfs =
+                        batch.findChild<QCheckBox*>(
+                            QStringLiteral("nextReportKeepPdfs"));
+                    const auto* const openOutput =
+                        batch.findChild<QCheckBox*>(
+                            QStringLiteral("nextReportOpenOutput"));
+                    QVERIFY(cancelButton);
+                    QVERIFY(previewButton);
+                    QVERIFY(exportButton);
+                    QVERIFY(chooseButton);
+                    QVERIFY(keepPdfs);
+                    QVERIFY(openOutput);
+                    QCOMPARE(batch.windowTitle(),
+                        QStringLiteral("말하기 평가 보고서를 다른 이름으로 저장"));
+                    QCOMPARE(cancelButton->text(), QStringLiteral("취소"));
+                    QCOMPARE(previewButton->text(), QStringLiteral("보고서 미리 보기"));
+                    QCOMPARE(exportButton->text(), QStringLiteral("다른 이름으로 저장..."));
+                    QCOMPARE(chooseButton->text(), QStringLiteral("선택…"));
+                    QCOMPARE(keepPdfs->text(), QStringLiteral("압축 후 개별 PDF 파일 유지"));
+                    QCOMPARE(openOutput->text(), QStringLiteral("저장 후 출력 폴더 열기"));
+                    QCOMPARE(batch.scopeSelector()->itemText(0), QStringLiteral("현재 학생"));
+                    QCOMPARE(batch.scopeSelector()->itemText(1), QStringLiteral("모든 학생(2)"));
+                    QCOMPARE(batch.rendererSelector()->itemText(0),
+                        QStringLiteral("내부 템플릿 (기본값)"));
+                    QVERIFY(hasNote(QStringLiteral("학생:")));
+                    QVERIFY(hasNote(QStringLiteral("렌더러:")));
+                    QVERIFY(hasNote(QStringLiteral("출력 폴더:")));
+                    QVERIFY(hasNote(QStringLiteral("말하기 평가 보고서를 파일로 저장합니다.")));
+                    QVERIFY(hasNote(QStringLiteral(
+                        "보고서를 만들 때 권장하는 방법입니다.")));
+#if defined(Q_OS_MACOS) || defined(Q_OS_WIN)
+                    QVERIFY(batch.rendererSelector()->count() > 1);
+                    QCOMPARE(batch.rendererSelector()->itemText(1),
+                        QStringLiteral("PowerPoint (대체)"));
+                    batch.rendererSelector()->setCurrentIndex(1);
+                    QCoreApplication::processEvents();
+#ifdef Q_OS_MACOS
+                    QVERIFY(hasNote(QStringLiteral(
+                        "내부 방식이 작동하지 않을 때만 사용하세요. 완료하는 데 시간이 더 걸릴 수 있으며, 여러 파일 및 폴더 권한 요청이 표시될 수 있습니다. PowerPoint에서 작업 중인 내용이 있다면 저장하세요. 진행 상황이 손실될 위험이 있습니다.")));
+#else
+                    QVERIFY(hasNote(QStringLiteral(
+                        "내부 방식이 작동하지 않을 때만 사용하세요. PowerPoint에서 작업 중인 내용이 있다면 저장하세요. 진행 상황이 손실될 위험이 있습니다.")));
+#endif
+                    const QRect exportButtonGeometry(
+                        exportButton->mapTo(&batch, QPoint()), exportButton->size());
+                    QVERIFY(batch.rect().contains(exportButtonGeometry));
+                    QVERIFY(capture(batch, QStringLiteral("report-batch-powerpoint"),
+                        locale, theme, batch.size()));
+#else
+                    QCOMPARE(batch.rendererSelector()->count(), 1);
+#endif
+                }
+                batch.hide();
+            }
+        }
+        if (translatorInstalled)
+        {
+            qApp->removeTranslator(&translator);
+            translatorInstalled = false;
+        }
+    }
+
+    const QString pdfPath = QDir(captureDirectory).filePath(
+        QStringLiteral("synthetic-speaking-evaluation-report.pdf"));
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = {reports.constFirst()};
+    request.savePdf = true;
+    request.outputFilePath = pdfPath;
+    {
+        SpeakingEvalReportAssetSession assetSession(assets);
+        QVERIFY(assetSession.isValid());
+        const auto result =
+            SpeakingEvalBatchReportService::exportResolvedReports(request);
+        QCOMPARE(result.status, SpeakingEvalBatchReportService::Status::Completed);
+        QCOMPARE(result.savedPdfPaths, QStringList{pdfPath});
+    }
+    QPdfDocument pdf;
+    QCOMPARE(pdf.load(pdfPath), QPdfDocument::Error::None);
+    QCOMPARE(pdf.pageCount(), 1);
+
+    if (translatorInstalled) qApp->removeTranslator(&translator);
+    QLocale::setDefault(originalLocale);
+    qApp->setPalette(originalPalette);
+    qApp->setStyleSheet(originalStyleSheet);
+    for (const int fontId : fontIds)
+        QFontDatabase::removeApplicationFont(fontId);
+
+    QJsonObject manifest{
+        {QStringLiteral("captures"), captures},
+        {QStringLiteral("pdf"), QJsonObject{
+            {QStringLiteral("path"), pdfPath},
+            {QStringLiteral("pages"), pdf.pageCount()},
+            {QStringLiteral("syntheticInput"), true}
+        }},
+        {QStringLiteral("claim"), QStringLiteral(
+            "Synthetic C40 report UI and output evidence; no Legacy/Next pixel-parity claim.")}
+    };
+    QFile manifestFile(QDir(captureDirectory).filePath(
+        QStringLiteral("manifest.json")));
+    QVERIFY(manifestFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QVERIFY(manifestFile.write(QJsonDocument(manifest).toJson(
+        QJsonDocument::Indented)) > 0);
+    manifestFile.close();
+    QCOMPARE(captures.size(), expectedCaptureCount);
+    QVERIFY(QFileInfo::exists(pdfPath));
 }
 
 QTEST_MAIN(SpeakingEvaluationPageTests)

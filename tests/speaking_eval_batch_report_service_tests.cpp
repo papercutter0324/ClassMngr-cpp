@@ -550,6 +550,8 @@ private slots:
     void postCommitPrintOutcomesRetainCommittedOutput_data();
     void postCommitPrintOutcomesRetainCommittedOutput();
     void preCommitCancellationHasNoSavedOutput();
+    void operationStagingDirectoryIsRemovedAfterSuccessFailureAndCancel();
+    void deterministicPowerPointAdapterStagesAndCommitsBatchFiles();
     void batchExportPresentationSurfacesCommittedOutput();
     void existingBatchArchiveRequiresOverwritePermission();
     void duplicateBatchFileNamesAreRejected();
@@ -1216,6 +1218,162 @@ void SpeakingEvalBatchReportServiceTests::preCommitCancellationHasNoSavedOutput(
             QDir::Files | QDir::NoDotAndDotDot
             ).isEmpty()
         );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+operationStagingDirectoryIsRemovedAfterSuccessFailureAndCancel()
+{
+    const auto requestFor = [](const QString& outputDirectory)
+    {
+        SpeakingEvalBatchReportService::Request request;
+        const SpeakingEvalReportData report =
+            goldenReportData(SpeakingEvalReportTemplate::Standard);
+        request.reports = {{report.englishName, report}};
+        request.savePdf = true;
+        request.outputDirectory = outputDirectory;
+        return request;
+    };
+    const auto writePdf = [](const SpeakingEvalReportData&,
+        const QString& path, QString* error)
+    {
+        QFile file(path);
+        if (!file.open(QIODevice::WriteOnly)
+            || file.write("%PDF-test") != 9)
+        {
+            if (error) *error = QStringLiteral("test renderer write failed");
+            return false;
+        }
+        return true;
+    };
+
+    {
+        QTemporaryDir outputDirectory;
+        QVERIFY(outputDirectory.isValid());
+        QString stagingPath;
+        auto request = requestFor(outputDirectory.path());
+        request.internalRenderer = writePdf;
+        request.stagingDirectoryCreated = [&stagingPath](const QString& path) {
+            stagingPath = path;
+        };
+        const auto result =
+            SpeakingEvalBatchReportService::exportResolvedReports(request);
+        QCOMPARE(result.status, SpeakingEvalBatchReportService::Status::Completed);
+        QVERIFY(!stagingPath.isEmpty());
+        QVERIFY(!QFileInfo::exists(stagingPath));
+        QCOMPARE(result.savedPdfPaths.size(), 1);
+        QVERIFY(QFileInfo::exists(result.savedPdfPaths.constFirst()));
+    }
+
+    {
+        QTemporaryDir outputDirectory;
+        QVERIFY(outputDirectory.isValid());
+        QString stagingPath;
+        auto request = requestFor(outputDirectory.path());
+        request.internalRenderer = [](const SpeakingEvalReportData&,
+            const QString&, QString* error)
+        {
+            if (error) *error = QStringLiteral("simulated renderer failure");
+            return false;
+        };
+        request.stagingDirectoryCreated = [&stagingPath](const QString& path) {
+            stagingPath = path;
+        };
+        const auto result =
+            SpeakingEvalBatchReportService::exportResolvedReports(request);
+        QCOMPARE(result.status,
+            SpeakingEvalBatchReportService::Status::InternalRendererFailed);
+        QVERIFY(!stagingPath.isEmpty());
+        QVERIFY(!QFileInfo::exists(stagingPath));
+        QVERIFY(QDir(outputDirectory.path()).entryList(
+            QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+    }
+
+    {
+        QTemporaryDir outputDirectory;
+        QVERIFY(outputDirectory.isValid());
+        QString stagingPath;
+        int rendererCalls = 0;
+        auto request = requestFor(outputDirectory.path());
+        request.internalRenderer = [&rendererCalls, writePdf](
+            const SpeakingEvalReportData& report, const QString& path,
+            QString* error)
+        {
+            ++rendererCalls;
+            return writePdf(report, path, error);
+        };
+        request.progressCallback = [](int, int, const QString&) {
+            return false;
+        };
+        request.stagingDirectoryCreated = [&stagingPath](const QString& path) {
+            stagingPath = path;
+        };
+        const auto result =
+            SpeakingEvalBatchReportService::exportResolvedReports(request);
+        QCOMPARE(result.status, SpeakingEvalBatchReportService::Status::Canceled);
+        QVERIFY(!stagingPath.isEmpty());
+        QVERIFY(!QFileInfo::exists(stagingPath));
+        QCOMPARE(rendererCalls, 0);
+        QVERIFY(QDir(outputDirectory.path()).entryList(
+            QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+    }
+}
+
+void SpeakingEvalBatchReportServiceTests::
+deterministicPowerPointAdapterStagesAndCommitsBatchFiles()
+{
+    QTemporaryDir outputDirectory;
+    QVERIFY(outputDirectory.isValid());
+    QList<SpeakingEvalBatchReportService::StudentReport> reports;
+    for (const QString& name : {QStringLiteral("One"), QStringLiteral("Two")})
+    {
+        auto report = goldenReportData(SpeakingEvalReportTemplate::Standard);
+        report.englishName = name;
+        reports.append({name, report});
+    }
+
+    QString stagingPath;
+    QStringList stagedPaths;
+    auto request = SpeakingEvalBatchReportService::Request{};
+    request.reports = reports;
+    request.renderer = SpeakingEvalBatchReportService::Renderer::PowerPoint;
+    request.savePdf = true;
+    request.keepIndividualPdfFiles = true;
+    request.outputDirectory = outputDirectory.path();
+    request.stagingDirectoryCreated = [&stagingPath](const QString& path) {
+        stagingPath = path;
+    };
+    request.powerPointRenderer = [&stagedPaths](
+        const SpeakingEvalBatchReportService::Request&,
+        const QStringList& pdfPaths, const QString&)
+    {
+        stagedPaths = pdfPaths;
+        for (const QString& path : pdfPaths)
+        {
+            QFile file(path);
+            if (!file.open(QIODevice::WriteOnly)
+                || file.write("%PDF-test") != 9)
+            {
+                return SpeakingEvalBatchReportService::Result{
+                    SpeakingEvalBatchReportService::Status::Failed,
+                    QStringLiteral("simulated PowerPoint write failure")};
+            }
+        }
+        return SpeakingEvalBatchReportService::Result{
+            SpeakingEvalBatchReportService::Status::Completed,
+            QStringLiteral("PowerPoint adapter completed")};
+    };
+
+    const auto result =
+        SpeakingEvalBatchReportService::exportResolvedReports(request);
+    QCOMPARE(result.status, SpeakingEvalBatchReportService::Status::Completed);
+    QVERIFY(!stagingPath.isEmpty());
+    QVERIFY(!QFileInfo::exists(stagingPath));
+    QCOMPARE(stagedPaths.size(), 2);
+    QCOMPARE(result.savedPdfPaths.size(), 2);
+    for (const QString& path : result.savedPdfPaths)
+        QVERIFY(QFileInfo::exists(path));
+    QVERIFY(QFileInfo::exists(result.savedArchivePath));
+    QCOMPARE(storedZipEntries(result.savedArchivePath).size(), 2);
 }
 
 void SpeakingEvalBatchReportServiceTests::

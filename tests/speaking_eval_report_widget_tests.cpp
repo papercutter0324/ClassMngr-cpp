@@ -1,5 +1,6 @@
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 
+#include "core/fontmanager.h"
 #include "domain/models/speaking_evaluation.h"
 #include "features/speaking_eval/services/speaking_eval_report_data_assembler.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
@@ -11,6 +12,8 @@
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QRegion>
+
+#include <memory>
 
 namespace
 {
@@ -279,6 +282,8 @@ class SpeakingEvalReportWidgetTests : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
+    void cleanupTestCase();
     void templateAssetsAreValidAndUseAuthoritativeGeometry();
     void standardMetadataUsesSharedFontAndHalfPointGradeFitting();
     void commentsUseSharedFontFourteenPointMaximumAndWholePointFitting();
@@ -300,7 +305,30 @@ private slots:
     void interactiveTemplateEditsScoresAndComments();
     void signaturesKeepAspectRatioWithinManifestBounds_data();
     void signaturesKeepAspectRatioWithinManifestBounds();
+
+private:
+    std::unique_ptr<SpeakingEvalReportAssetSession> m_assets;
 };
+
+void SpeakingEvalReportWidgetTests::initTestCase()
+{
+    SpeakingEvalReportAssetEnvironment environment;
+    environment.latinFamily = FontManager::getUiFont().family();
+    environment.koreanFamily = FontManager::getKoreanFont().family();
+    m_assets = std::make_unique<SpeakingEvalReportAssetSession>(
+        std::move(environment));
+    QVERIFY(m_assets->isValid());
+}
+
+void SpeakingEvalReportWidgetTests::cleanupTestCase()
+{
+    m_assets.reset();
+    const SpeakingEvalReportAssetResidency residency =
+        speakingEvalReportAssetResidency();
+    QCOMPARE(residency.sessions, 0);
+    QCOMPARE(residency.templates, 0);
+    QCOMPARE(residency.decodedImageBytes, 0);
+}
 
 void SpeakingEvalReportWidgetTests::sharedPainterMatchesWidget_data()
 {

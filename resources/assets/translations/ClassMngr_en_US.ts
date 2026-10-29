@@ -7769,6 +7769,10 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
 </context>
 <context>
     <name>SpeakingEvalPage</name>
+    <message><source>Reports</source><translation>Reports</translation></message>
+    <message><source>Save Reports As…</source><translation>Save Reports As…</translation></message>
+    <message><source>Print Reports</source><translation>Print Reports</translation></message>
+    <message><source>Report data could not be loaded. Please try again.</source><translation>Report data could not be loaded. Please try again.</translation></message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="+98"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="+220"/>

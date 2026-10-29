@@ -4,6 +4,8 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 #include "ui/shared/dialogs/dialog_shell.h"
+#include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include <memory>
 
 class QComboBox;
 class QDate;
@@ -87,6 +89,7 @@ private:
     void saveCurrentReportAsPdf();
 
 private:
+    std::unique_ptr<SpeakingEvalReportAssetSession> m_assetSession;
     QList<SpeakingEvalBatchReportService::StudentReport> m_reports;
     QComboBox* m_studentSelector = nullptr;
     QLabel* m_notesLabel = nullptr;

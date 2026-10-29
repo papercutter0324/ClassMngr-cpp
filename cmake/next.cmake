@@ -202,6 +202,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/speaking_evaluation_ai_batch_eligibility.h
     src/next/application/speaking_evaluation_ai_comment_prompt.h
     src/next/application/speaking_evaluation_report_content.h
+    src/next/application/speaking_evaluation_report_context_read_port.h
     src/next/application/speaking_evaluation_report_template_policy.h
     src/next/application/speaking_evaluation_schedule_label_projection.h
     src/next/application/speaking_evaluation_ai_batch_comment_quality.h
@@ -723,6 +724,13 @@ set_target_properties(ClassMngrNextWorkspace
         POSITION_INDEPENDENT_CODE ON
 )
 
+# The report page uses the shared Qt-only renderer and direct scoped store context.
+add_library(ClassMngrNextSpeakingEvaluationOutput STATIC ${CLASSMNGR_NEXT_SPEAKING_EVALUATION_OUTPUT_SOURCES})
+target_compile_features(ClassMngrNextSpeakingEvaluationOutput PUBLIC cxx_std_23)
+target_include_directories(ClassMngrNextSpeakingEvaluationOutput PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(ClassMngrNextSpeakingEvaluationOutput PUBLIC ClassMngrSpeakingEvalReportEngine PRIVATE ClassMngrNext::Resources ClassMngrWorkspaceStore Qt6::Sql)
+set_target_properties(ClassMngrNextSpeakingEvaluationOutput PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
+
 # Roster output owns a path-bound sparse source and a Qt-only output dialog.
 add_library(ClassMngrNextRosterOutput STATIC ${CLASSMNGR_NEXT_ROSTER_OUTPUT_SOURCES})
 target_compile_features(ClassMngrNextRosterOutput PUBLIC cxx_std_23)
@@ -982,6 +990,7 @@ target_link_libraries(ClassMngrNext
         ClassMngrNextWorkspace
         ClassMngrNextScheduleOutput
         ClassMngrNextRosterOutput
+        ClassMngrNextSpeakingEvaluationOutput
         ClassMngrNextCalendarUi
         ClassMngrNextDocumentCatalog
         ClassMngrNextStartupUpdates
@@ -997,7 +1006,7 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextRosterOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextRosterOutput;ClassMngrNextSpeakingEvaluationOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
     message(FATAL_ERROR
         "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, "
         "ClassMngrNext::Application, ClassMngrClassTransferSupport, "

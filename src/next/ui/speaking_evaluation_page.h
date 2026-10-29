@@ -11,6 +11,8 @@
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
 #include "next/application/speaking_evaluation_roster_names_read_port.h"
 #include "next/application/speaking_evaluation_save_use_case.h"
+#include "next/application/speaking_evaluation_report_context_read_port.h"
+#include "next/ui/speaking_evaluation_reports_dialog.h"
 #include "next/ui/page.h"
 #include "next/ui/speaking_evaluation_model.h"
 #include "next/domain/course.h"
@@ -60,6 +62,9 @@ struct SpeakingEvaluationPageActions final
         rosterNamesReadPortFactory;
     std::function<std::unique_ptr<Application::SelectedClassGradeReadPort>(
         const QString&)> classGradeReadPortFactory;
+    std::function<std::unique_ptr<Application::SpeakingEvaluationReportContextReadPort>(
+        const QString&)> reportContextReadPortFactory;
+    SpeakingEvaluationReportActions reports;
     std::function<Application::AiCommentProvider()> preferredAiCommentProvider;
     std::function<Application::AiCommentVoice()> preferredAiCommentVoice;
     std::function<QString()> customAiCommentWebsiteUrl;
@@ -87,6 +92,9 @@ public:
     [[nodiscard]] QPushButton* retryButton() const noexcept;
     [[nodiscard]] QPushButton* aiCommentButton() const noexcept;
     [[nodiscard]] QPushButton* aiBatchCommentsButton() const noexcept;
+    [[nodiscard]] QPushButton* reportsButton() const noexcept { return m_reportsButton; }
+    [[nodiscard]] QPushButton* saveReportsButton() const noexcept { return m_saveReportsButton; }
+    [[nodiscard]] QPushButton* printReportsButton() const noexcept { return m_printReportsButton; }
     [[nodiscard]] std::optional<Domain::ClassId> selectedClassId() const;
     [[nodiscard]] QString selectedEvaluationName() const;
     [[nodiscard]] std::size_t residentMatrixCount() const noexcept;
@@ -116,7 +124,8 @@ private:
         SaveError,
         ValidationError,
         ImportError,
-        AiPreparationError
+        AiPreparationError,
+        ReportPreparationError
     };
 
     [[nodiscard]] std::optional<QString> activePath() const;
@@ -132,8 +141,9 @@ private:
     void retryCurrentOperation();
     void importRosterNames();
     void editPrivateNotes();
-    void generateAiCommentPrompt();
+    void generateAiCommentPrompt(bool copyAndOpen = false);
     void generateClassAiComments();
+    void openReports(int mode = 0);
     [[nodiscard]] bool loadSelectedClassGrade();
     [[nodiscard]] Application::SpeakingEvaluationAiBatchEligibilityReason
         aiEligibilityForRow(int row) const;
@@ -166,6 +176,9 @@ private:
     QPushButton* m_editNotesButton = nullptr;
     QPushButton* m_aiCommentButton = nullptr;
     QPushButton* m_aiBatchCommentsButton = nullptr;
+    QPushButton* m_reportsButton = nullptr;
+    QPushButton* m_saveReportsButton = nullptr;
+    QPushButton* m_printReportsButton = nullptr;
     QPushButton* m_undoButton = nullptr;
     QPushButton* m_saveButton = nullptr;
     QPushButton* m_retryButton = nullptr;
@@ -182,6 +195,7 @@ private:
     bool m_active = false;
     bool m_syncingControls = false;
     bool m_refreshingValidation = false;
+    int m_reportRetryMode = 0;
 };
 
 } // namespace ClassMngr::Next::Ui

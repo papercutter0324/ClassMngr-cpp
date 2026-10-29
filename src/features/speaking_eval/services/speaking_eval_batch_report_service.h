@@ -44,11 +44,20 @@ struct Request
     // An exact destination for a single-report save-as request. When set,
     // outputDirectory is ignored.
     QString outputFilePath;
+    // Resolved by the caller while its catalog/legacy resource lease lives.
+    QString documentsRoot;
     std::function<bool(int completed, int total, const QString& studentName)>
         progressCallback;
     // Replaces the printer operation when supplied, allowing deterministic
     // post-commit print outcomes in service tests.
     std::function<Result()> printCallback;
+    std::function<bool(const SpeakingEvalReportData&, const QString&, QString*)>
+        internalRenderer;
+    // A deterministic automation boundary; real host automation is used when
+    // this seam is empty. The callback must produce every requested staged PDF.
+    std::function<Result(const Request&, const QStringList&, const QString&)>
+        powerPointRenderer;
+    std::function<void(const QString&)> stagingDirectoryCreated;
 };
 
 [[nodiscard]] QString rendererDisplayName(
@@ -77,5 +86,9 @@ struct Request
 [[nodiscard]] Result exportReports(
     const Request& request
     );
+
+// Qt-only engine entry. All resource paths are explicitly supplied; this path
+// has no DataService, resource-pack lease, or legacy page dependency.
+[[nodiscard]] Result exportResolvedReports(const Request& request);
 
 } // namespace SpeakingEvalBatchReportService

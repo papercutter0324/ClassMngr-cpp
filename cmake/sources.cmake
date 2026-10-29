@@ -389,6 +389,13 @@ set(_classmngr_legacy_runtime_dependencies
     ZLIB::ZLIB
 )
 
+# Shared report rendering/automation has explicit resource inputs and no Legacy Core dependency.
+add_library(ClassMngrSpeakingEvalReportEngine STATIC ${CLASSMNGR_SPEAKING_EVAL_REPORT_ENGINE_SOURCES})
+target_compile_features(ClassMngrSpeakingEvalReportEngine PUBLIC cxx_std_23)
+target_include_directories(ClassMngrSpeakingEvalReportEngine PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(ClassMngrSpeakingEvalReportEngine PUBLIC ClassMngrQtPdfPrint ClassMngrClassTransferSupport ClassMngrScheduleImportRules PRIVATE ZLIB::ZLIB)
+set_target_properties(ClassMngrSpeakingEvalReportEngine PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
+
 add_library(ClassMngrRuntime STATIC
     $<TARGET_OBJECTS:ClassMngrStudentName>
     $<TARGET_OBJECTS:ClassMngrCore>
@@ -413,6 +420,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrSchedulePrint
         ClassMngrQtPdfPrint
         ClassMngrRosterTemplateRenderer
+        ClassMngrSpeakingEvalReportEngine
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
         ClassMngrSQLiteSnapshot
@@ -471,6 +479,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrSchedulePrint
             ClassMngrQtPdfPrint
             ClassMngrRosterTemplateRenderer
+            ClassMngrSpeakingEvalReportEngine
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE
             ClassMngrSQLiteSnapshot

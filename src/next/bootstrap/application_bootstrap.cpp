@@ -26,6 +26,8 @@
 #include "next/platform/workspace_store_class_editor_actions.h"
 #include "next/platform/workspace_store_roster_actions.h"
 #include "next/platform/workspace_store_speaking_evaluation_ports.h"
+#include "next/platform/workspace_store_speaking_evaluation_report_port.h"
+#include "next/platform/settings_manager_powerpoint_data_access_notice_port.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
@@ -1516,6 +1518,15 @@ Application::StartupResult ApplicationBootstrap::start()
                                 Platform::WorkspaceStoreSpeakingEvaluationClassGradeReadPort>(
                                     path);
                         };
+                        actions.reportContextReadPortFactory = [](const QString& path) {
+                            return std::make_unique<Platform::WorkspaceStoreSpeakingEvaluationReportPort>(path);
+                        };
+                        actions.reports.assets.latinFamily = m_coreServices->interFont
+                            ? m_coreServices->interFont->get().familyNames().value(0) : QStringLiteral("Inter");
+                        actions.reports.assets.koreanFamily = m_coreServices->pretendardFont
+                            ? m_coreServices->pretendardFont->get().familyNames().value(0) : QStringLiteral("Pretendard");
+                        actions.reports.showPowerPointDataAccessNotice =
+                            Platform::SettingsManagerPowerPointDataAccessNoticePort().read().showPowerPointDataAccessNotice;
                         actions.preferredAiCommentProvider = [] {
                             return Platform::
                                 SettingsManagerAiCommentProviderPreferencesPort().read();

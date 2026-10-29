@@ -140,6 +140,11 @@ public:
     [[nodiscard]] ResourceResult<ScopedResource<ResourceFileStream>> openStream(
         const ResourceRequest& request
         ) const;
+    // Native output adapters consume a verified installed file during their
+    // operation. Resolution applies the same path/hash checks as openStream.
+    [[nodiscard]] ResourceResult<ScopedResource<QString>> resolveFile(
+        const ResourceRequest& request
+        ) const;
 
 private:
     [[nodiscard]] ResourceResult<ScopedResource<QString>> loadTextResource(

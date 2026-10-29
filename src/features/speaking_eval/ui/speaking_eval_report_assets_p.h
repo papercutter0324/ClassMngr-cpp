@@ -13,6 +13,38 @@
 #include <QString>
 #include <QVector>
 
+// The caller resolves resources and owns the report session. The shared engine
+// never consults a resource pack or guesses application/source directories.
+struct SpeakingEvalReportAssetEnvironment
+{
+    QString templateRoot = QStringLiteral(":/assets/templates/speaking-eval");
+    QString latinFamily = QStringLiteral("Inter");
+    QString koreanFamily = QStringLiteral("Pretendard");
+    QString handwrittenFontPath = QStringLiteral(":/assets/fonts/JustAnotherHand-Regular.ttf");
+    friend bool operator==(const SpeakingEvalReportAssetEnvironment&,
+        const SpeakingEvalReportAssetEnvironment&) = default;
+};
+
+class SpeakingEvalReportAssetSession final
+{
+public:
+    explicit SpeakingEvalReportAssetSession(SpeakingEvalReportAssetEnvironment environment);
+    ~SpeakingEvalReportAssetSession();
+    SpeakingEvalReportAssetSession(const SpeakingEvalReportAssetSession&) = delete;
+    SpeakingEvalReportAssetSession& operator=(const SpeakingEvalReportAssetSession&) = delete;
+    [[nodiscard]] bool isValid() const noexcept { return m_valid; }
+private:
+    bool m_valid = false;
+};
+
+struct SpeakingEvalReportAssetResidency
+{
+    int sessions = 0;
+    int templates = 0;
+    qsizetype decodedImageBytes = 0;
+};
+[[nodiscard]] SpeakingEvalReportAssetResidency speakingEvalReportAssetResidency();
+
 struct SpeakingEvalFieldAsset
 {
     // All geometry and typography values use the 540 x 780 point map where

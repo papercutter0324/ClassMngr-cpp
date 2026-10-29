@@ -947,3 +947,18 @@ ResourceResult<ScopedResource<ResourceFileStream>> ResourceLoader::openStream(
 }
 
 }
+
+namespace ClassMngr::Next::Resources
+{
+ResourceResult<ScopedResource<QString>> ResourceLoader::resolveFile(
+    const ResourceRequest& request) const
+{
+    const auto record = descriptor(request.id());
+    if (!record) return std::unexpected(record.error());
+    const auto path = packageFilePath(**record);
+    if (!path) return std::unexpected(path.error());
+    const auto verified = verifyFile(**record, *path);
+    if (!verified) return std::unexpected(verified.error());
+    return ScopedResource<QString>(*path, request.scope());
+}
+}

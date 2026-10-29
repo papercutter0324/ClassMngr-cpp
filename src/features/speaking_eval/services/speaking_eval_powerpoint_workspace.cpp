@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QStandardPaths>
 #include <QTemporaryDir>
+#include <QUuid>
 
 namespace
 {
@@ -43,13 +44,14 @@ bool SpeakingEvalPowerPointWorkspace::prepare(
 {
 #ifdef Q_OS_MACOS
     Q_UNUSED(stagingDirectory);
+    const QString operation = QUuid::createUuid().toString(QUuid::WithoutBraces);
 
     m_automationDirectory =
         QDir(
             QStandardPaths::writableLocation(
                 QStandardPaths::AppDataLocation
                 )
-            ).filePath(QStringLiteral("PowerPointBatch"));
+            ).filePath(QStringLiteral("PowerPointBatch-%1").arg(operation));
     m_presentationDirectory =
         QDir(
             QStandardPaths::writableLocation(
@@ -57,8 +59,8 @@ bool SpeakingEvalPowerPointWorkspace::prepare(
                 )
             ).filePath(
                 QStringLiteral(
-                    "Library/Containers/com.microsoft.Powerpoint/Data/Documents/ClassMngr/PowerPointBatch"
-                    )
+                    "Library/Containers/com.microsoft.Powerpoint/Data/Documents/ClassMngr/PowerPointBatch-%1"
+                    ).arg(operation)
                 );
 
     m_cleanupAutomationDirectory = true;

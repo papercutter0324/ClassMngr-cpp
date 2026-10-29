@@ -8,6 +8,7 @@
 #include "next/application/selected_class_grade_read_query.h"
 #include "next/platform/speaking_evaluation_qt_text_match_port.h"
 #include "next/ui/speaking_evaluation_ai_dialogs.h"
+#include "shared/speaking_evaluation/report_projection.h"
 
 #include <QComboBox>
 #include <QCoreApplication>
@@ -30,6 +31,9 @@
 #include <QVBoxLayout>
 #include <QStyledItemDelegate>
 #include <QUrl>
+#include <QApplication>
+#include <QClipboard>
+#include <QDesktopServices>
 
 #include <algorithm>
 #include <array>
@@ -365,6 +369,17 @@ SpeakingEvaluationPage::SpeakingEvaluationPage(
     actionsRow->addWidget(m_saveButton);
     root->addLayout(actionsRow);
 
+    auto* outputRow = new QHBoxLayout;
+    m_reportsButton = new QPushButton(this);
+    m_reportsButton->setObjectName(QStringLiteral("speakingEvaluationReports"));
+    m_saveReportsButton = new QPushButton(this);
+    m_saveReportsButton->setObjectName(QStringLiteral("speakingEvaluationSaveReports"));
+    m_printReportsButton = new QPushButton(this);
+    m_printReportsButton->setObjectName(QStringLiteral("speakingEvaluationPrintReports"));
+    outputRow->addWidget(m_reportsButton); outputRow->addWidget(m_saveReportsButton);
+    outputRow->addWidget(m_printReportsButton); outputRow->addStretch();
+    root->addLayout(outputRow);
+
     auto* splitter = new QSplitter(Qt::Horizontal, this);
     splitter->setObjectName(QStringLiteral("speakingEvaluationContentSplitter"));
     m_classList = new QListView(splitter);
@@ -457,6 +472,9 @@ SpeakingEvaluationPage::SpeakingEvaluationPage(
     connect(m_aiBatchCommentsButton, &QPushButton::clicked, this, [this] {
         generateClassAiComments();
     });
+    connect(m_reportsButton, &QPushButton::clicked, this, [this] { openReports(); });
+    connect(m_saveReportsButton, &QPushButton::clicked, this, [this] { openReports(1); });
+    connect(m_printReportsButton, &QPushButton::clicked, this, [this] { openReports(2); });
     connect(m_undoButton, &QPushButton::clicked, m_undoStack, &QUndoStack::undo);
     connect(m_saveButton, &QPushButton::clicked, this, [this] {
         static_cast<void>(saveCurrentEvaluation(true));
@@ -1128,6 +1146,10 @@ void SpeakingEvaluationPage::retryCurrentOperation()
             setStatus(Status::Ready);
         }
     }
+    else if (m_statusKind == Status::ReportPreparationError)
+    {
+        openReports(m_reportRetryMode);
+    }
     else
     {
         static_cast<void>(saveCurrentEvaluation(true));
@@ -1366,7 +1388,7 @@ QUrl SpeakingEvaluationPage::aiProviderUrl() const
     return aiProviderWebsiteUrl(provider, customWebsiteUrl);
 }
 
-void SpeakingEvaluationPage::generateAiCommentPrompt()
+void SpeakingEvaluationPage::generateAiCommentPrompt(const bool copyAndOpen)
 {
     if (!m_evaluationLoaded || !m_matrixModel->hasMatrix())
     {
@@ -1422,6 +1444,16 @@ void SpeakingEvaluationPage::generateAiCommentPrompt()
         return;
     }
 
+    if (copyAndOpen)
+    {
+        QApplication::clipboard()->setText(QString::fromStdU16String(result.prompt));
+        const QUrl url = aiProviderUrl();
+        if (url.scheme() != QStringLiteral("https") || !(m_actions.openExternalUrl
+                ? m_actions.openExternalUrl(url) : QDesktopServices::openUrl(url)))
+            QMessageBox::warning(this, pageText("Unable to Open AI Website"),
+                pageText("The AI website could not be opened. The prompt is still available on the clipboard."));
+        return;
+    }
     SpeakingEvaluationAiPromptDialog dialog(
         QString::fromStdU16String(result.prompt),
         aiProviderName(),
@@ -1429,6 +1461,76 @@ void SpeakingEvaluationPage::generateAiCommentPrompt()
         m_actions.openExternalUrl,
         this);
     static_cast<void>(dialog.exec());
+}
+
+void SpeakingEvaluationPage::openReports(const int mode)
+{
+    m_reportRetryMode = mode;
+    if (!m_evaluationLoaded || !m_selectedClassId || !m_matrixModel->hasMatrix()) return;
+    const auto path = activePath();
+    if (!path || !m_actions.reportContextReadPortFactory)
+    { setStatus(Status::ReportPreparationError); return; }
+    try
+    {
+        auto port = m_actions.reportContextReadPortFactory(*path);
+        if (!port) { setStatus(Status::ReportPreparationError); return; }
+        const auto context = port->readReportContext(*m_selectedClassId);
+        if (!context)
+        { setStatus(Status::ReportPreparationError, errorText(context.error().message)); return; }
+        ClassInfo classInfo;
+        classInfo.classGrade = fromUtf16(context.value().classValues.grade);
+        classInfo.classLevel = fromUtf16(context.value().classValues.level);
+        classInfo.teacherEn = fromUtf16(context.value().classValues.nativeTeacher);
+        classInfo.teacherKr = fromUtf16(context.value().classValues.koreanTeacher);
+        for (const auto& time : context.value().regularTimes)
+            classInfo.classTimes.append({fromUtf16(time.day), fromUtf16(time.startTime), fromUtf16(time.endTime)});
+        SpeakingEvalRows rows;
+        for (int row = 0; row < Application::SpeakingEvaluationRowCount; ++row)
+        {
+            QStringList values;
+            for (int column = 0; column < m_matrixModel->columnCount(); ++column)
+                values.append(m_matrixModel->cellText(row, column));
+            rows.append(std::move(values));
+        }
+        auto reports = buildSpeakingEvalStudentReports(rows, classInfo,
+            QByteArray::fromStdString(context.value().signatureImage));
+        rows.clear(); rows.squeeze();
+        if (reports.isEmpty()) { setStatus(Status::Ready); return; }
+        auto actions = m_actions.reports;
+        auto& loader = resourceContext().resourceLoader();
+        const auto assets = Output::resolveSpeakingEvaluationReportAssets(loader, reports.constFirst().report.reportTemplate);
+        if (!assets) { setStatus(Status::ReportPreparationError, assets.error()); return; }
+        const QString latin = actions.assets.latinFamily, korean = actions.assets.koreanFamily;
+        actions.assets = *assets; actions.assets.latinFamily = latin; actions.assets.koreanFamily = korean;
+        if (!actions.run.resolvePowerPointRoot) actions.run.resolvePowerPointRoot = [&loader](SpeakingEvalReportTemplate kind) {
+            return Output::resolveSpeakingEvaluationPowerPointRoot(loader, kind);
+        };
+        actions.valueEdited = [this](int row, int column, const QString& value) {
+            static_cast<void>(m_matrixModel->setData(m_matrixModel->index(row, column), value));
+        };
+        actions.previewAiPrompt = [this](int row) {
+            m_table->setCurrentIndex(m_matrixModel->index(row, 9)); generateAiCommentPrompt();
+        };
+        actions.copyAndOpenAiPrompt = [this](int row) {
+            m_table->setCurrentIndex(m_matrixModel->index(row, 9)); generateAiCommentPrompt(true);
+        };
+        const int current = std::max(0, speakingEvalReportIndexForSourceRow(reports, m_table->currentIndex().row()));
+        setStatus(Status::Ready);
+        if (mode == 0)
+        {
+            SpeakingEvaluationReportsDialog dialog(std::move(reports), current, std::move(actions), this);
+            dialog.exec();
+        }
+        else
+        {
+            SpeakingEvaluationReportBatchDialog dialog(reports, current,
+                SpeakingEvalBatchReportService::defaultOutputDirectory(classInfo, m_evaluationName),
+                mode == 1 ? SpeakingEvaluationReportBatchDialog::Mode::SaveAs : SpeakingEvaluationReportBatchDialog::Mode::Print,
+                std::move(actions), this);
+            dialog.exec();
+        }
+    }
+    catch (...) { setStatus(Status::ReportPreparationError); }
 }
 
 void SpeakingEvaluationPage::generateClassAiComments()
@@ -1592,12 +1694,20 @@ void SpeakingEvaluationPage::updateActions()
         ? QString{}
         : pageText("Select a student row to create an AI comment prompt."));
     m_aiBatchCommentsButton->setEnabled(matrixReady);
+    bool hasReportStudent = false;
+    if (matrixReady) for (int row = 0; row < Application::SpeakingEvaluationRowCount; ++row)
+        if (!m_matrixModel->cellText(row, 1).trimmed().isEmpty() || !m_matrixModel->cellText(row, 2).trimmed().isEmpty())
+        { hasReportStudent = true; break; }
+    m_reportsButton->setEnabled(matrixReady && hasReportStudent);
+    m_saveReportsButton->setEnabled(matrixReady && hasReportStudent);
+    m_printReportsButton->setEnabled(matrixReady && hasReportStudent);
     m_undoButton->setEnabled(m_undoStack->canUndo());
     m_saveButton->setEnabled(matrixReady && hasUnsavedChanges());
     m_retryButton->setVisible(m_statusKind == Status::ClassListError
         || m_statusKind == Status::EvaluationReadError
         || m_statusKind == Status::SaveError
-        || m_statusKind == Status::AiPreparationError);
+        || m_statusKind == Status::AiPreparationError
+        || m_statusKind == Status::ReportPreparationError);
     m_evaluationChoice->setEnabled(m_classModel->summaryCount() > 0);
     m_classList->setEnabled(m_classModel->summaryCount() > 0);
     m_dirtyIndicator->setText(hasUnsavedChanges()
@@ -1619,7 +1729,8 @@ void SpeakingEvaluationPage::setStatus(
             || status == Status::ClassListError
             || status == Status::SaveError
             || status == Status::ImportError
-            || status == Status::AiPreparationError)
+            || status == Status::AiPreparationError
+            || status == Status::ReportPreparationError)
         {
             m_status->setToolTip(message);
         }
@@ -1655,6 +1766,9 @@ void SpeakingEvaluationPage::setStatus(
         case Status::AiPreparationError:
             m_status->setText(pageText(
                 "The class grade could not be loaded. Retry to use AI comments."));
+            break;
+        case Status::ReportPreparationError:
+            m_status->setText(pageText("Report data could not be loaded. Please try again."));
             break;
         }
     }
@@ -1705,6 +1819,9 @@ void SpeakingEvaluationPage::retranslateUi()
     m_editNotesButton->setText(pageText("Edit Private Notes"));
     m_aiCommentButton->setText(pageText("AI Comment"));
     m_aiBatchCommentsButton->setText(pageText("Class AI Comments"));
+    m_reportsButton->setText(pageText("Reports"));
+    m_saveReportsButton->setText(pageText("Save Reports As…"));
+    m_printReportsButton->setText(pageText("Print Reports"));
     m_undoButton->setText(pageText("Undo"));
     m_saveButton->setText(pageText("Save Changes"));
     m_retryButton->setText(pageText("Retry"));
@@ -1719,11 +1836,14 @@ void SpeakingEvaluationPage::retranslateUi()
 
 void SpeakingEvaluationPage::updateActionButtonWidths()
 {
-    const std::array<QPushButton*, 7> buttons{
+    const std::array<QPushButton*, 10> buttons{
         m_importNamesButton,
         m_editNotesButton,
         m_aiCommentButton,
         m_aiBatchCommentsButton,
+        m_reportsButton,
+        m_saveReportsButton,
+        m_printReportsButton,
         m_undoButton,
         m_saveButton,
         m_retryButton

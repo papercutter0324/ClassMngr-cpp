@@ -1,8 +1,5 @@
 #include "speaking_eval_report_assets_p.h"
 
-#include "core/fontmanager.h"
-#include "core/resource_paths.h"
-
 #include <QFile>
 #include <QDir>
 #include <QFontDatabase>
@@ -18,16 +15,11 @@
 
 namespace
 {
+SpeakingEvalReportAssetEnvironment currentEnvironment;
+int activeSessions = 0;
 QString assetRoot()
 {
-    const QString activeRoot =
-        ResourcePackManager::instance().activeRoot(
-            QStringLiteral("templates")
-            );
-
-    return activeRoot.isEmpty()
-        ? QStringLiteral(":/assets/templates/speaking-eval")
-        : QDir(activeRoot).filePath(QStringLiteral("speaking-eval"));
+    return currentEnvironment.templateRoot;
 }
 
 const QStringList& gradeNames()
@@ -645,11 +637,11 @@ TemplateFontFamilies loadTemplateFonts()
     // Inter and Pretendard are registered for the application's global UI.
     // Reuse those registrations so releasing this template cache cannot
     // remove a font that the rest of the application still owns.
-    fonts.inter = FontManager::getUiFont().family();
-    fonts.pretendard = FontManager::getKoreanFont().family();
+    fonts.inter = currentEnvironment.latinFamily;
+    fonts.pretendard = currentEnvironment.koreanFamily;
     fonts.handwritten =
         loadApplicationFont(
-            ResourcePaths::Fonts::justAnotherHand(),
+            currentEnvironment.handwrittenFontPath,
             QStringLiteral("Just Another Hand"),
             &fonts.registeredFontIds
             );
@@ -1227,6 +1219,46 @@ void releaseSpeakingEvalTemplateAssets()
         }
         cache.fonts.reset();
     }
+}
+
+SpeakingEvalReportAssetSession::SpeakingEvalReportAssetSession(
+    SpeakingEvalReportAssetEnvironment environment)
+{
+    if (activeSessions > 0 && currentEnvironment != environment)
+        return;
+    if (activeSessions == 0)
+    {
+        releaseSpeakingEvalTemplateAssets();
+        currentEnvironment = std::move(environment);
+    }
+    ++activeSessions;
+    m_valid = true;
+}
+
+SpeakingEvalReportAssetSession::~SpeakingEvalReportAssetSession()
+{
+    if (!m_valid) return;
+    if (--activeSessions == 0)
+    {
+        releaseSpeakingEvalTemplateAssets();
+        currentEnvironment = {};
+    }
+}
+
+SpeakingEvalReportAssetResidency speakingEvalReportAssetResidency()
+{
+    const auto& cache = templateAssetCache();
+    SpeakingEvalReportAssetResidency result{activeSessions};
+    const auto count = [&result](const std::optional<SpeakingEvalTemplateAssets>& assets) {
+        if (!assets) return;
+        ++result.templates;
+        result.decodedImageBytes += assets->background.sizeInBytes() + assets->sprites.sizeInBytes();
+        for (const auto& image : assets->studentGrades) result.decodedImageBytes += image.sizeInBytes();
+        for (const auto& image : assets->scoreHighlights) result.decodedImageBytes += image.sizeInBytes();
+    };
+    count(cache.standard);
+    count(cache.advanced);
+    return result;
 }
 
 const SpeakingEvalFieldAsset* speakingEvalFieldAsset(

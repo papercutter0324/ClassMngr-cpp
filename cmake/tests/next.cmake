@@ -28,6 +28,7 @@ target_link_libraries(ClassMngrNextBootstrapTests
         ClassMngrNextCalendarUi
         ClassMngrNextScheduleOutput
         ClassMngrNextRosterOutput
+        ClassMngrNextSpeakingEvaluationOutput
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
@@ -3299,6 +3300,7 @@ target_compile_definitions(ClassMngrNextSpeakingEvaluationPageTests
 target_link_libraries(ClassMngrNextSpeakingEvaluationPageTests
     PRIVATE
         ClassMngrNext::Application
+        ClassMngrNextSpeakingEvaluationOutput
         ClassMngrNext::Resources
         ClassMngrScheduleImportRules
         ClassMngrWorkspaceStore

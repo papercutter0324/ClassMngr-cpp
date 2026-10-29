@@ -229,12 +229,6 @@ qt_add_executable(ClassMngrAcademicCalendarTests
     qt_add_executable(ClassMngrSpeakingEvalReportWidgetTests
         tests/speaking_eval_report_widget_tests.cpp
         src/core/fontmanager.cpp
-        src/features/speaking_eval/services/speaking_eval_report_data_assembler.cpp
-        src/features/speaking_eval/ui/speaking_eval_comment_edit.cpp
-        src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp
-        src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
-        src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
-        src/features/speaking_eval/ui/speaking_eval_report_painter.cpp
     )
 
     target_compile_features(ClassMngrSpeakingEvalReportWidgetTests
@@ -249,6 +243,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrSpeakingEvalReportWidgetTests
         PRIVATE
+            ClassMngrSpeakingEvalReportEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Test
@@ -293,6 +288,9 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         NAME ClassMngrSpeakingEvalReportWidgetTests
         COMMAND ClassMngrSpeakingEvalReportWidgetTests
     )
+    set_tests_properties(ClassMngrSpeakingEvalReportWidgetTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
 
     qt_add_executable(ClassMngrSpeakingEvalWidgetlessPdfTests
         tests/speaking_eval_widgetless_pdf_tests.cpp
@@ -326,34 +324,15 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         src/core/resource_packs/resource_pack_manager.cpp
         src/core/settingsmanager.cpp
         src/core/updater/version.cpp
-        src/core/zip_archive_writer.cpp
         src/features/speaking_eval/services/speaking_eval_ai_batch_response_parser.cpp
         src/features/speaking_eval/services/speaking_eval_ai_batch_response_parser.h
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
-        src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.cpp
-        src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.h
-        src/features/speaking_eval/services/speaking_eval_powerpoint_scripts.cpp
-        src/features/speaking_eval/services/speaking_eval_powerpoint_scripts.h
-        src/features/speaking_eval/services/speaking_eval_powerpoint_workspace.cpp
-        src/features/speaking_eval/services/speaking_eval_powerpoint_workspace.h
         src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp
-        src/features/speaking_eval/ui/speaking_eval_comment_edit.cpp
         src/features/speaking_eval/ui/speaking_eval_delegate.cpp
         src/features/speaking_eval/ui/speaking_eval_model.cpp
-        src/features/speaking_eval/ui/speaking_eval_report_assets_p.cpp
-        src/features/speaking_eval/ui/speaking_eval_private_notes_editor.cpp
         src/features/speaking_eval/ui/speaking_eval_notes_dialog.cpp
         src/features/speaking_eval/ui/speaking_eval_report_dialog.cpp
-        src/features/speaking_eval/ui/speaking_eval_report_widget.cpp
-        src/features/speaking_eval/ui/speaking_eval_report_widget_interaction.cpp
-        src/features/speaking_eval/ui/speaking_eval_report_painter.cpp
         src/features/speaking_eval/ui/speaking_eval_table_view.cpp
-        src/ui/shared/printing/pdf_print_dialog.cpp
-        src/ui/shared/printing/pdf_print_dialog_pages.cpp
-        src/ui/shared/printing/pdf_print_dialog_printer.cpp
-        src/ui/shared/printing/pdf_print_dialog_printing.cpp
-        src/ui/shared/printing/pdf_print_dialog_widgets.cpp
-        src/ui/shared/printing/pdf_print_service.cpp
         src/ui/shared/styles/role_style_registry.cpp
         src/ui/shared/state/ai_comment_options.cpp
         src/ui/shared/widgets/no_wheel_combobox.cpp
@@ -376,6 +355,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
 
     target_link_libraries(ClassMngrSpeakingEvalBatchReportServiceTests
         PRIVATE
+            ClassMngrSpeakingEvalReportEngine
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf
@@ -421,6 +401,9 @@ qt_add_executable(ClassMngrAcademicCalendarTests
     add_test(
         NAME ClassMngrSpeakingEvalBatchReportServiceTests
         COMMAND ClassMngrSpeakingEvalBatchReportServiceTests
+    )
+    set_tests_properties(ClassMngrSpeakingEvalBatchReportServiceTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     add_test(

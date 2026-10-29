@@ -1,3 +1,5 @@
+#include "core/fontmanager.h"
+#include "core/resource_paths.h"
 #include "speaking_eval_batch_export_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
@@ -47,6 +49,13 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     , m_mode(mode)
 {
     const bool saving = m_mode == Mode::SaveAs;
+    SpeakingEvalReportAssetEnvironment environment;
+    const QString templates = ResourcePackManager::instance().activeRoot(QStringLiteral("templates"));
+    if (!templates.isEmpty()) environment.templateRoot = QDir(templates).filePath(QStringLiteral("speaking-eval"));
+    environment.latinFamily = FontManager::getUiFont().family();
+    environment.koreanFamily = FontManager::getKoreanFont().family();
+    environment.handwrittenFontPath = ResourcePaths::Fonts::justAnotherHand();
+    m_assetSession = std::make_unique<SpeakingEvalReportAssetSession>(environment);
     setWindowTitle(
         saving
             ? tr("Save Speaking Reports As")

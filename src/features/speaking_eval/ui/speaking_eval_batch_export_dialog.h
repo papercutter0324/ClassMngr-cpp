@@ -2,6 +2,8 @@
 
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "ui/shared/dialogs/dialog_shell.h"
+#include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include <memory>
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QCoreApplication>
@@ -165,6 +167,7 @@ private:
     [[nodiscard]] SpeakingEvalBatchReportService::Renderer selectedRenderer() const;
 
 private:
+    std::unique_ptr<SpeakingEvalReportAssetSession> m_assetSession;
     QList<SpeakingEvalBatchReportService::StudentReport> m_reports;
     int m_currentStudentIndex = -1;
     Mode m_mode = Mode::SaveAs;

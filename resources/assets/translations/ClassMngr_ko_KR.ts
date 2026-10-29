@@ -3928,12 +3928,12 @@ Rm: %1</source>
     <message>
         <location line="+28"/>
         <source>Internal Template (Default)</source>
-        <translation type="unfinished"></translation>
+        <translation>내부 템플릿 (기본값)</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>PowerPoint (Fallback)</source>
-        <translation type="unfinished"></translation>
+        <translation>PowerPoint (대체)</translation>
     </message>
     <message>
         <location line="+75"/>
@@ -7532,6 +7532,7 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
     <message><source>Save speaking-evaluation reports to files.</source><translation>말하기 평가 보고서를 파일로 저장합니다.</translation></message>
     <message><source>Print speaking-evaluation reports.</source><translation>말하기 평가 보고서를 인쇄합니다.</translation></message>
     <message><source>Save As...</source><translation>다른 이름으로 저장...</translation></message>
+    <message><source>Students:</source><translation>학생:</translation></message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_batch_export_dialog.cpp" line="-386"/>
         <source>Export / Print Speaking Reports</source>
@@ -7707,19 +7708,19 @@ PowerPoint 템플릿을 사용하여 전체 일괄 작업을 다시 시도하시
         <location line="-266"/>
         <location line="+51"/>
         <source>This is the recommended method for creating reports.</source>
-        <translation type="unfinished"></translation>
+        <translation>보고서를 만들 때 권장하는 방법입니다.</translation>
     </message>
     <message>
         <location line="-47"/>
         <location line="+54"/>
         <source>Only use if the internal method doesn&apos;t work. This may take longer to complete, and you will likely be presented with multiple file and folder permission requests. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.</source>
-        <translation type="unfinished"></translation>
+        <translation>내부 방식이 작동하지 않을 때만 사용하세요. 완료하는 데 시간이 더 걸릴 수 있으며, 여러 파일 및 폴더 권한 요청이 표시될 수 있습니다. PowerPoint에서 작업 중인 내용이 있다면 저장하세요. 진행 상황이 손실될 위험이 있습니다.</translation>
     </message>
     <message>
         <location line="-52"/>
         <location line="+54"/>
         <source>Only use if the internal method doesn&apos;t work. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.</source>
-        <translation type="unfinished"></translation>
+        <translation>내부 방식이 작동하지 않을 때만 사용하세요. PowerPoint에서 작업 중인 내용이 있다면 저장하세요. 진행 상황이 손실될 위험이 있습니다.</translation>
     </message>
     <message>
         <location line="+217"/>
@@ -7957,6 +7958,10 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
 </context>
 <context>
     <name>SpeakingEvalPage</name>
+    <message><source>Reports</source><translation>보고서</translation></message>
+    <message><source>Save Reports As…</source><translation>보고서 다른 이름으로 저장…</translation></message>
+    <message><source>Print Reports</source><translation>보고서 인쇄</translation></message>
+    <message><source>Report data could not be loaded. Please try again.</source><translation>보고서 데이터를 불러오지 못했습니다. 다시 시도해 주세요.</translation></message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="52"/>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="213"/>
@@ -8384,7 +8389,7 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location line="+9"/>
         <source>Save As PDF</source>
-        <translation type="unfinished"></translation>
+        <translation>PDF로 저장</translation>
     </message>
     <message>
         <location line="-388"/>
