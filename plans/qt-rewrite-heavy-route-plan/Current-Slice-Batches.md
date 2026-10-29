@@ -57,19 +57,39 @@ ownership, dependencies, lifecycle, and verification.
 37. **Accepted — Roster templates/printing** (source `098f1de7`, follow-up
     `1214b569`). See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
     for acceptance evidence and limits.
-38. **Active — Speaking-evaluation core using model/view and compact state.**
-39. Evaluation analytics, AI-assisted comments, and batch workflow.
-40. Reports, PDF, PowerPoint, and export jobs.
+38. **Accepted — Speaking-evaluation core using model/view and compact state**
+    (`5b0274d9`). See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
+    and [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/speaking-evaluation-core/README.md).
+39. **Active — Evaluation analytics, AI-assisted comments, and batch
+    workflow.**
+40. **Pending — Reports, PDF, PowerPoint, and export jobs.**
 
 Keep My Classes, schedules, rosters, and evaluations model/view-backed with
 compact resident state. Bound import, review, and output data; release it when
 each stage completes. Candidate #31 schedule workbook import is distinct from
 #19 teacher workbook import. The 7J.1 Sub Prep path remains a combined
-large-workspace/output acceptance including 96 classes and 8 slots. Begin
-next-batch discovery when candidate #39 starts. Batch 3 remains open through
-#40 and must not be pushed before #40 completes. Search at #39 for possible work
-beyond #40: Campus Directory; Document catalog/viewer; 7J.1 Sub Prep; legacy
-`.db` compatibility import evidence; global shell, preferences, permissions,
-and updater parity; and any other remaining slices. No separate batch-history
-document is needed. Screenshot comparison and memory evidence, along with the
-7A and Phase 7 exit gates, remain open.
+large-workspace/output acceptance including 96 classes and 8 slots. Batch 3
+remains active through #40 and must not be pushed or closed before #40
+completes. No separate batch-history document is needed. The legacy `.db`
+fixture import/data/relationship/output comparison remains open Phase 7 exit
+evidence, not a test-only candidate. Screenshot comparison and memory evidence,
+along with the 7A and Phase 7 exit gates, remain open.
+
+## Batch 4 — discovered; queued
+
+Two independent maps agree on this ordered list:
+
+41. **Discovered — Campus Directory:** campus content, directions, address,
+    housing, maps, and permitted editing.
+42. **Discovered — Document catalog.**
+43. **Discovered — Document viewer lifecycle/actions:** load, save/copy,
+    zoom/navigation, release, and reopen.
+44. **Discovered — 7J.1 Sub Prep:** large-workspace class information and
+    output.
+45. **Discovered — General app-wide Preferences UI/menu.**
+46. **Discovered — Admin and actual permission-gate parity.**
+47. **Discovered — User-initiated update workflow:** startup updater work is
+    already owned by Phase 5.
+48. **Discovered — Useful Links external navigation.**
+
+No other slices were found.

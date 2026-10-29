@@ -38,13 +38,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-29
-- Current note: Candidate #37, Roster templates/printing, is accepted;
-  candidate #38, Speaking-evaluation core using model/view and compact state,
-  is active. Batch 3 continues through #40; begin next-batch discovery when
-  #39 starts. The 7A screenshot comparison, memory evidence, and Windows
-  packaged-Next memory gate remain open; the 7A and Phase 7 exit gates are not
-  yet passed. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md) for
-  evidence and limits.
+- Current note: Candidate #38, Speaking-evaluation core using model/view and
+  compact state, is accepted; candidate #39, Evaluation analytics,
+  AI-assisted comments, and batch workflow, is active; #40, Reports/PDF/
+  PowerPoint/export jobs, is pending. Batch 3 remains active through #40.
+  Batch 4 discovery is complete and queued with eight ordered candidates. The
+  7A screenshot comparison, memory evidence, and Windows packaged-Next memory
+  gate remain open; the 7A and Phase 7 exit gates are not yet passed. See the
+  [Phase 7 progress log](08-Phase-7-Progress-Log.md) for evidence and limits.
 
 ### Slice batches
 

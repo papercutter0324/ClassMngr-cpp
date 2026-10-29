@@ -1,0 +1,9 @@
+{
+  "captures": [
+    { "locale": "en_US", "path": "en_US-light.png", "theme": "light" },
+    { "locale": "en_US", "path": "en_US-dark.png", "theme": "dark" },
+    { "locale": "ko_KR", "path": "ko_KR-light.png", "theme": "light" },
+    { "locale": "ko_KR", "path": "ko_KR-dark.png", "theme": "dark" }
+  ],
+  "claim": "Presentation evidence; no pixel-parity claim."
+}

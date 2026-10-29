@@ -9088,3 +9088,12 @@ assert expected PDF text, reject a white page, and compare the saved screenshot
 region to the rendered page. This caught and now prevents blank preview captures
 from being accepted. The earlier blank observation could not be reproduced, so
 its cause remains unknown rather than being attributed to a production defect.
+
+## 2026-10-29 — Speaking evaluation residency and switching
+
+Keep a large evaluation feature compact by retaining class summaries while
+loading one fixed 25×11 matrix at a time. Track dirty cells by changed
+coordinates instead of retaining a second full baseline matrix. Test the Save
+choice during switching as well as cancel/discard: successful saves must finish
+before activation changes, and failures must preserve the original selection,
+matrix, and dirty state for retry.

@@ -189,7 +189,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-29 (candidate #37 accepted; #38 active)
+### Current checkpoint — 2026-10-29 (candidate #38 accepted; #39 discovery active)
 
 Candidate #37, roster templates/printing, is accepted with source commit
 `098f1de7` and preview-capture regression/inventory follow-up `1214b569`.
@@ -209,14 +209,27 @@ six projected classes/150 rows and 20 release callbacks; macOS peak RSS was
 64.875 MiB, diagnostic only. Physical printing, full suite, Windows,
 cross-platform, and Phase 9 memory acceptance are not claimed.
 
-Candidate #38, Speaking Evaluation core/model-view, is next; implementation
-has not started. Batch 3 remains un-pushed through #40. The 7A screenshot
-comparison is still open because the current Legacy capture fixture repeats
-an English Fusion state under Korean/Dark filenames; a faithful locale/theme
-pair is under investigation. The memory validator’s six Python tests pass,
-but local fixture-target verification and the hosted Windows Release run
-remain open. The 7A and Phase 7 exit gates remain open. `<250 MiB` is the
-separate Phase 9 gate.
+Candidate #38, Speaking Evaluation core/model-view, is accepted in source
+commit `5b0274d9`. It adds a lazy Next page with compact class/evaluation
+navigation, a single 25×11 model, direct WorkspaceStore read/save/name ports,
+roster import, private notes, undo, autosave/manual save, retry, and safe
+switching. Independent verification passed 10 QtTest cases, the focused page
+CTest, Next launch, and the dependency boundary. CMake ownership validated
+1,909 handwritten files; resource inventory check passed. Four English/Korean
+× Light/Dark captures are packaged as presentation evidence. Candidate #39,
+evaluation analytics, AI-assisted comments, and batch workflows, is active.
+Batch 4 discovery is complete with candidates #41–48 listed in the tracker;
+the two independent maps found no other slices. Batch 3 remains un-pushed
+through #40.
+
+The 7A screenshot comparison is still open: Legacy personal-details text has
+no Korean catalog entries. Its capture hook applies Light/Dark separately and
+captures each locale/theme state; build, capture, and independent review remain
+pending. The memory validator’s six Python tests pass, as do local fixture
+targets and 96-class fixture checks; the independent memory recheck and hosted
+Windows Release run remain open. The 7A and Phase 7 exit gates remain open.
+The legacy `.db` fixture import/data/relationship/output comparison also
+remains open. `<250 MiB` is the separate Phase 9 gate.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

@@ -1063,3 +1063,28 @@ Entries are preserved in their original document order.
   printer submission, Windows build, full-suite pass, or Phase 9 claim is
   made. The 7A screenshot comparison and memory evidence, Windows
   packaged-Next memory gate, and 7A/Phase 7 exit gates remain open.
+
+### Candidate #38 — Speaking-evaluation core accepted (2026-10-29)
+
+- Commit: `5b0274d9` (`Phase7 - Add speaking evaluation editor in Next`). The
+  Next page uses one fixed 25×11 model for the selected class/evaluation and a
+  compact class-summary list. Direct `WorkspaceStore` adapters handle
+  evaluation reads/writes and roster-name import; page flows include
+  validation, private notes, undo, and retry. Save on class/evaluation switch
+  persists before loading the new selection; a failed save retains the draft
+  and allows retry. Automatic save is debounced.
+- Verification: the independent Tester recheck passed the page QtTest 10/10
+  and focused CTest 1/1. Coverage includes save/reopen of changed Unicode
+  cells, Save/Discard and failed-save retry, save-on-switch success/failure,
+  roster import, validation, notes, undo, and one-model release on suspension
+  with 96 class summaries. Next launch and
+  `NextStartupWorkspaceDependencyBoundary` passed. CMake ownership verified
+  one owner for 1,909 handwritten sources. Resource inventory `--check`
+  passed with 194 runtime records (187 direct, 7 generated).
+- Evidence and limits: the four 1440×880 English/Korean × Light/Dark
+  [captures](../../docs/qt-rewrite/visual-baseline/next/phase-7/speaking-evaluation-core/README.md)
+  show presentation only and do not claim pixel parity. The 96-class test
+  verifies compact model residency and release on suspension, not a memory
+  budget. No full suite, Windows, cross-platform, or Phase 9 memory result is
+  claimed. The 7A screenshot comparison and memory evidence, Windows
+  packaged-Next memory gate, and 7A/Phase 7 exit gates remain open.
