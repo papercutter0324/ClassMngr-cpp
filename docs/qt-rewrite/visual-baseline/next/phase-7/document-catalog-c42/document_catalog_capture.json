@@ -1,0 +1,94 @@
+{
+    "captures": [
+        {
+            "documentRows": 30,
+            "file": "document_catalog_en_US_light.png",
+            "folderRows": 7,
+            "height": 720,
+            "locale": "en_US",
+            "selectedDocumentBodyLoaded": false,
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "documentRows": 30,
+            "file": "document_catalog_en_US_dark.png",
+            "folderRows": 7,
+            "height": 720,
+            "locale": "en_US",
+            "selectedDocumentBodyLoaded": false,
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "documentRows": 30,
+            "file": "document_catalog_ko_KR_light.png",
+            "folderRows": 7,
+            "height": 720,
+            "locale": "ko_KR",
+            "selectedDocumentBodyLoaded": false,
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "documentRows": 30,
+            "file": "document_catalog_ko_KR_dark.png",
+            "folderRows": 7,
+            "height": 720,
+            "locale": "ko_KR",
+            "selectedDocumentBodyLoaded": false,
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "theme": "dark",
+            "width": 1024
+        }
+    ],
+    "catalogSource": "ResourceDocumentCatalogPort projection of packaged documents.json metadata",
+    "documentBodyResourceDiagnostics": 0,
+    "memoryMeasurement": {
+        "afterCatalogRender": {
+            "available": true,
+            "capturedAt": "2026-10-29T16:21:54.408",
+            "platform": "macos",
+            "privateUsageBytes": 24200032,
+            "workingSetBytes": 64815104
+        },
+        "afterShellAndCatalogRelease": {
+            "available": true,
+            "capturedAt": "2026-10-29T16:21:54.409",
+            "platform": "macos",
+            "privateUsageBytes": 24200032,
+            "workingSetBytes": 64864256
+        },
+        "beforeMetadataProjection": {
+            "available": true,
+            "capturedAt": "2026-10-29T16:21:54.337",
+            "platform": "macos",
+            "privateUsageBytes": 12468896,
+            "workingSetBytes": 37666816
+        },
+        "documentBodyResourceDiagnostics": 0,
+        "lifecycleInterpretation": "Catalog construction and sidebar rendering retain localized metadata and typed resource references only. The capture path does not construct a QPdfDocument or request a document body.",
+        "metadataDocumentCount": 30,
+        "metadataFolderCount": 7,
+        "metricSource": "PlatformProcessMemorySnapshotProvider (whole-process resident working set and private usage)",
+        "qtPdfDocumentInstances": 0,
+        "wholeProcessMemoryMayRemainHigh": true
+    },
+    "purpose": "Next Document catalog sidebar captures and metadata-only lifecycle sample",
+    "qtPdfDocumentInstances": 0,
+    "qtPdfLinkage": "The capture target does not link Qt6::Pdf or Qt6::PdfWidgets, and the catalog/navigation call path does not construct QPdfDocument.",
+    "qtPlatformPlugin": "offscreen",
+    "qtVersion": "6.12.0",
+    "resourceDiagnosticIds": [
+        "document.catalog-metadata",
+        "document.catalog-metadata"
+    ],
+    "style": "Fusion with packaged light/dark stylesheet",
+    "viewport": {
+        "height": 720,
+        "width": 1024
+    }
+}

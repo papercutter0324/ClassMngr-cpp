@@ -3,6 +3,7 @@
 #include "next/application/workspace_state.h"
 #include "next/application/recent_workspace_history.h"
 #include "next/application/preferences_model.h"
+#include "next/application/document_catalog_projection.h"
 #include "next/domain/domain_types.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/navigation_model.h"
@@ -63,6 +64,8 @@ public:
         std::function<Application::RecentWorkspaceHistory()>;
     using RecentWorkspaceOpenHandler =
         std::function<void(const Application::RecentWorkspacePath&)>;
+    using DocumentCatalogProjectionLoader = std::function<
+        Domain::Result<Application::DocumentCatalogProjection>(const QString&)>;
 
     // The resource loader and preferences model are borrowed and must outlive this shell.
     explicit ApplicationShell(
@@ -118,6 +121,18 @@ public:
     void setKoreanTeacherNavigationRows(
         std::vector<KoreanTeacherNavigationRow> rows
         );
+    void setDocumentCatalogProjection(
+        Application::DocumentCatalogProjection projection
+        );
+    void setDocumentCatalogProjectionLoader(
+        DocumentCatalogProjectionLoader loader
+        );
+    [[nodiscard]] Domain::Result<void> refreshDocumentCatalogProjection(
+        const QString& localeName
+        );
+    void setDocumentCatalogSelectionHandler(
+        std::function<void(const Domain::DocumentId&)> handler
+        );
     void selectKoreanTeacherNavigationRow(
         const Domain::TeacherId& teacherId
         );
@@ -156,6 +171,11 @@ private:
     QAction* m_closeWorkspaceAction = nullptr;
     QMenu* m_recentWorkspaceMenu = nullptr;
     std::optional<NavigationModel> m_navigationModel;
+    std::optional<Application::DocumentCatalogProjection>
+        m_documentCatalogProjection;
+    DocumentCatalogProjectionLoader m_documentCatalogProjectionLoader;
+    std::function<void(const Domain::DocumentId&)>
+        m_documentCatalogSelectionHandler;
     std::vector<KoreanTeacherNavigationRow> m_koreanTeacherNavigationRows;
     std::optional<Domain::TeacherId> m_lastOpenedKoreanTeacherId;
     KoreanTeacherNavigationActions m_koreanTeacherNavigationActions;

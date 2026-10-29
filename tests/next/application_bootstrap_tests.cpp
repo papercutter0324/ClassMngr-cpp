@@ -13,6 +13,7 @@
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
+#include "next/ui/document_catalog_navigation.h"
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/initial_page.h"
 #include "next/ui/my_classes_page.h"
@@ -2439,6 +2440,35 @@ loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell()
         );
     QVERIFY(bootstrap.shell() != nullptr);
     QVERIFY(bootstrap.shell()->isVisible());
+    auto* const navigationTree = bootstrap.shell()->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree")
+        );
+    QVERIFY(navigationTree);
+    QTreeWidgetItem* documentRoot = nullptr;
+    QTreeWidgetItemIterator documentItem(navigationTree);
+    int documentLeafCount = 0;
+    while (*documentItem)
+    {
+        const int kind = (*documentItem)->data(
+            0,
+            static_cast<int>(Ui::DocumentCatalogItemRole::Kind)
+            ).toInt();
+        if (kind == static_cast<int>(Ui::DocumentCatalogItemKind::Root))
+        {
+            documentRoot = *documentItem;
+        }
+        else if (kind == static_cast<int>(Ui::DocumentCatalogItemKind::Document))
+        {
+            ++documentLeafCount;
+        }
+        ++documentItem;
+    }
+    QVERIFY(documentRoot);
+    QCOMPARE(documentRoot->childCount(), 7);
+    QCOMPARE(documentLeafCount, 30);
+    QVERIFY(!QFile::exists(QDir(resources.resourceRoot()).filePath(
+        QStringLiteral("assets/documents/Guides/DYB Lesson Planning Guide.pdf")
+        )));
     const QStringList registeredFamilies = QFontDatabase::families();
     QVERIFY(containsFontFamilyLike(registeredFamilies, QStringLiteral("Inter")));
     QVERIFY(containsFontFamilyLike(registeredFamilies, QStringLiteral("Pretendard")));
@@ -3130,8 +3160,15 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
     QStringList treeLabels;
     for (QTreeWidgetItemIterator item(tree); *item; ++item)
     {
-        treeLabels.push_back((*item)->text(0));
         QVERIFY((*item)->icon(0).isNull());
+        if ((*item)->data(
+                0,
+                static_cast<int>(Ui::DocumentCatalogItemRole::Kind)
+                ).isValid())
+        {
+            continue;
+        }
+        treeLabels.push_back((*item)->text(0));
     }
     const QStringList englishTreeLabels{
         QStringLiteral("Useful Links"), QStringLiteral("Dropbox"),
@@ -3152,6 +3189,26 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
         QStringLiteral("숙소"), QStringLiteral("지도"),
         QStringLiteral("초기 설정")};
     QCOMPARE(treeLabels, korean ? koreanTreeLabels : englishTreeLabels);
+    QTreeWidgetItem* documentRoot = nullptr;
+    for (QTreeWidgetItemIterator item(tree); *item; ++item)
+    {
+        const QVariant documentKind = (*item)->data(
+                0,
+                static_cast<int>(Ui::DocumentCatalogItemRole::Kind)
+                );
+        if (documentKind.isValid()
+            && documentKind.toInt()
+            == static_cast<int>(Ui::DocumentCatalogItemKind::Root))
+        {
+            documentRoot = *item;
+            break;
+        }
+    }
+    QVERIFY(documentRoot);
+    QCOMPARE(documentRoot->text(0), korean ? QStringLiteral("문서") : QStringLiteral("Documents"));
+    QCOMPARE(documentRoot->child(0)->text(0), korean ? QStringLiteral("안내서") : QStringLiteral("Guides"));
+    QCOMPARE(documentRoot->child(0)->child(0)->text(0),
+             korean ? QStringLiteral("수업 계획") : QStringLiteral("Lesson Planning"));
     auto* const page = shell->pageHost().pageInstance(selectedPage.value());
     QVERIFY(page);
     auto* const title = page->findChild<QLabel*>(QStringLiteral("classMngrNextInitialSetupTitle"));

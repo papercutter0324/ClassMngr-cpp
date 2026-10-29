@@ -1,5 +1,113 @@
 include_guard(GLOBAL)
 
+# Exercise the Next-owned document catalog tree and its typed stable-ID
+# selection boundary. This target deliberately does not link QtPdf.
+add_executable(ClassMngrNextDocumentCatalogNavigationTests
+    tests/next/document_catalog_navigation_tests.cpp
+    src/next/ui/application_shell.cpp
+    src/next/ui/document_catalog_navigation.cpp
+    src/next/ui/navigation_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/qt_notification_presenter.cpp
+)
+target_compile_features(ClassMngrNextDocumentCatalogNavigationTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextDocumentCatalogNavigationTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextDocumentCatalogNavigationTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextDocumentCatalogNavigationTests
+    PRIVATE
+        ClassMngrNext::Application
+        ClassMngrNext::DocumentCatalog
+        ClassMngrNext::Resources
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextDocumentCatalogNavigationTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextDocumentCatalogNavigationTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextDocumentCatalogNavigationTests
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextDocumentCatalogNavigationTests
+    COMMAND ClassMngrNextDocumentCatalogNavigationTests
+)
+set_tests_properties(ClassMngrNextDocumentCatalogNavigationTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+# Produce the four C42 catalog states and metadata-only memory/lifecycle
+# measurement only when explicitly invoked.
+add_executable(ClassMngrNextDocumentCatalogVisualCapture
+    tests/next/document_catalog_visual_capture.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/ui/application_shell.cpp
+    src/next/ui/document_catalog_navigation.cpp
+    src/next/ui/navigation_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/qt_notification_presenter.cpp
+)
+target_compile_features(ClassMngrNextDocumentCatalogVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextDocumentCatalogVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextDocumentCatalogVisualCapture
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextDocumentCatalogVisualCapture
+    PRIVATE
+        ClassMngrNext::Application
+        ClassMngrNext::DocumentCatalog
+        ClassMngrNext::Resources
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextDocumentCatalogVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextDocumentCatalogVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextDocumentCatalogVisualCapture
+    ClassMngrNextResourcePackage
+)
+add_test(
+    NAME ClassMngrNextDocumentCatalogVisualCapture
+    COMMAND ClassMngrNextDocumentCatalogVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/document-catalog-visual-capture"
+)
+set_tests_properties(ClassMngrNextDocumentCatalogVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Campus Directory exercises the direct packaged-catalog overlay, explicit
 # migration path, edit capability, and page-scoped map release behavior.
 add_executable(ClassMngrNextCampusDirectoryTests
@@ -149,6 +257,7 @@ add_executable(ClassMngrNextBootstrapTests
     ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
     $<TARGET_OBJECTS:ClassMngrSettings>
     $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
+    $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
 )
 target_compile_features(ClassMngrNextBootstrapTests
     PRIVATE
@@ -497,6 +606,7 @@ set_tests_properties(ClassMngrNextKoreanTeacherDirectoryActionsTests
 add_executable(ClassMngrNextSharedStaffDirectoryTests
     tests/next/shared_staff_directory_tests.cpp
     src/next/ui/application_shell.cpp
+    src/next/ui/document_catalog_navigation.cpp
     src/next/ui/navigation_model.cpp
     src/next/ui/shared_staff_directory_page.cpp
     src/next/ui/shared_staff_directory_table_model.cpp
@@ -647,6 +757,7 @@ endforeach()
 add_executable(ClassMngrNextTeacherDirectoryVisualCapture
     tests/next/korean_teacher_directory_visual_capture.cpp
     src/next/ui/application_shell.cpp
+    src/next/ui/document_catalog_navigation.cpp
     src/next/ui/navigation_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/placeholder_page.cpp
@@ -899,6 +1010,7 @@ set_tests_properties(ClassMngrNextScheduleImportWorkflowTests
 add_executable(ClassMngrNextNavigationTests
     tests/next/navigation_model_tests.cpp
     src/next/ui/application_shell.cpp
+    src/next/ui/document_catalog_navigation.cpp
     src/next/ui/navigation_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/qt_notification_presenter.cpp

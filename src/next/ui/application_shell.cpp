@@ -1,5 +1,6 @@
 #include "next/ui/application_shell.h"
 
+#include "next/ui/document_catalog_navigation.h"
 #include "next/ui/page_host.h"
 #include "next/ui/navigation_font_policy.h"
 
@@ -307,6 +308,15 @@ ApplicationShell::ApplicationShell(
     });
     connect(m_navigationTree, &QTreeWidget::currentItemChanged, this,
             [this](QTreeWidgetItem* current, QTreeWidgetItem*) {
+        if (const auto documentId =
+                DocumentCatalogNavigation::documentIdFor(current))
+        {
+            if (m_documentCatalogSelectionHandler)
+            {
+                m_documentCatalogSelectionHandler(*documentId);
+            }
+            return;
+        }
         if (auto* const teacherItem =
                 dynamic_cast<KoreanTeacherNavigationItem*>(current))
         {
@@ -600,6 +610,69 @@ void ApplicationShell::setKoreanTeacherNavigationRows(
     rebuildNavigationTree();
 }
 
+void ApplicationShell::setDocumentCatalogProjection(
+    Application::DocumentCatalogProjection projection
+    )
+{
+    m_documentCatalogProjection.emplace(std::move(projection));
+    rebuildNavigationTree();
+}
+
+void ApplicationShell::setDocumentCatalogProjectionLoader(
+    DocumentCatalogProjectionLoader loader
+    )
+{
+    m_documentCatalogProjectionLoader = std::move(loader);
+}
+
+Domain::Result<void> ApplicationShell::refreshDocumentCatalogProjection(
+    const QString& localeName
+    )
+{
+    if (!m_documentCatalogProjectionLoader)
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Document catalog locale refresh is unavailable.",
+            .recoverable = false
+        });
+    }
+
+    try
+    {
+        auto projection = m_documentCatalogProjectionLoader(localeName);
+        if (!projection)
+        {
+            return Domain::Result<void>::failure(projection.error());
+        }
+        setDocumentCatalogProjection(std::move(projection.value()));
+        return Domain::Result<void>::success();
+    }
+    catch (const std::exception&)
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Document catalog locale refresh failed.",
+            .recoverable = false
+        });
+    }
+    catch (...)
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Document catalog locale refresh failed.",
+            .recoverable = false
+        });
+    }
+}
+
+void ApplicationShell::setDocumentCatalogSelectionHandler(
+    std::function<void(const Domain::DocumentId&)> handler
+    )
+{
+    m_documentCatalogSelectionHandler = std::move(handler);
+}
+
 void ApplicationShell::selectKoreanTeacherNavigationRow(
     const Domain::TeacherId& teacherId
     )
@@ -653,72 +726,98 @@ void ApplicationShell::synchronizeTeacherImportAction() noexcept
 
 void ApplicationShell::rebuildNavigationTree()
 {
-    if (!m_navigationModel)
-    {
-        return;
-    }
-
+    const std::optional<Domain::DocumentId> selectedDocumentId =
+        DocumentCatalogNavigation::documentIdFor(
+            m_navigationTree->currentItem()
+            );
     const QSignalBlocker signalBlocker(m_navigationTree);
     m_navigationTree->clear();
-    std::function<void(const NavigationNode&, QTreeWidgetItem*)> appendNode;
-    appendNode = [this, &appendNode](const NavigationNode& node,
-                                     QTreeWidgetItem* parent) {
-        const bool isPage = node.kind == NavigationNode::Kind::Page;
-        if (isPage && !node.displayInSidebar)
-        {
-            return;
-        }
-        const QString label = isPage
-            ? m_navigationModel->pageMetadata(*node.pageId)->label
-            : node.label;
-        auto* const item = parent
-            ? new QTreeWidgetItem(parent, QStringList{label})
-            : new QTreeWidgetItem(m_navigationTree, QStringList{label});
-        item->setData(0, NodeKindRole, static_cast<int>(node.kind));
-        item->setData(0, NodeIdRole, node.id);
-        if (isPage)
-        {
-            item->setData(0, PageIdRole, node.pageId->value());
-            const auto metadata = m_navigationModel->pageMetadata(*node.pageId);
-            if (metadata)
-            {
-                const auto icon = navigationIconFor(*metadata);
-                if (icon)
-                {
-                    item->setIcon(0, *icon);
-                }
-            }
-        }
-        else if (node.kind == NavigationNode::Kind::Group)
-        {
-            item->setFlags(item->flags() & ~Qt::ItemIsSelectable);
-            for (const NavigationNode& child : node.children)
-            {
-                appendNode(child, item);
-            }
-            if (node.id == QString::fromLatin1(KoreanTeacherGroupId))
-            {
-                for (const KoreanTeacherNavigationRow& teacher :
-                     m_koreanTeacherNavigationRows)
-                {
-                    auto* const teacherItem = new KoreanTeacherNavigationItem(
-                        teacher.label,
-                        teacher.teacherId
-                        );
-                    teacherItem->setData(
-                        0,
-                        TeacherIdRole,
-                        QString::fromStdString(teacher.teacherId.value())
-                        );
-                    item->addChild(teacherItem);
-                }
-            }
-        }
-    };
-
-    for (const NavigationNode& node : m_navigationModel->visibleNodes())
+    if (m_navigationModel)
     {
-        appendNode(node, nullptr);
+        std::function<void(const NavigationNode&, QTreeWidgetItem*)> appendNode;
+        appendNode = [this, &appendNode](const NavigationNode& node,
+                                         QTreeWidgetItem* parent) {
+            const bool isPage = node.kind == NavigationNode::Kind::Page;
+            if (isPage && !node.displayInSidebar)
+            {
+                return;
+            }
+            const QString label = isPage
+                ? m_navigationModel->pageMetadata(*node.pageId)->label
+                : node.label;
+            auto* const item = parent
+                ? new QTreeWidgetItem(parent, QStringList{label})
+                : new QTreeWidgetItem(m_navigationTree, QStringList{label});
+            item->setData(0, NodeKindRole, static_cast<int>(node.kind));
+            item->setData(0, NodeIdRole, node.id);
+            if (isPage)
+            {
+                item->setData(0, PageIdRole, node.pageId->value());
+                const auto metadata = m_navigationModel->pageMetadata(*node.pageId);
+                if (metadata)
+                {
+                    const auto icon = navigationIconFor(*metadata);
+                    if (icon)
+                    {
+                        item->setIcon(0, *icon);
+                    }
+                }
+            }
+            else if (node.kind == NavigationNode::Kind::Group)
+            {
+                item->setFlags(item->flags() & ~Qt::ItemIsSelectable);
+                for (const NavigationNode& child : node.children)
+                {
+                    appendNode(child, item);
+                }
+                if (node.id == QString::fromLatin1(KoreanTeacherGroupId))
+                {
+                    for (const KoreanTeacherNavigationRow& teacher :
+                         m_koreanTeacherNavigationRows)
+                    {
+                        auto* const teacherItem = new KoreanTeacherNavigationItem(
+                            teacher.label,
+                            teacher.teacherId
+                            );
+                        teacherItem->setData(
+                            0,
+                            TeacherIdRole,
+                            QString::fromStdString(teacher.teacherId.value())
+                            );
+                        item->addChild(teacherItem);
+                    }
+                }
+            }
+        };
+
+        for (const NavigationNode& node : m_navigationModel->visibleNodes())
+        {
+            appendNode(node, nullptr);
+        }
+    }
+
+    if (m_documentCatalogProjection)
+    {
+        DocumentCatalogNavigation::append(
+            *m_navigationTree,
+            *m_documentCatalogProjection
+            );
+    }
+
+    if (selectedDocumentId)
+    {
+        QTreeWidgetItemIterator iterator(m_navigationTree);
+        while (*iterator)
+        {
+            const auto candidate =
+                DocumentCatalogNavigation::documentIdFor(*iterator);
+            if (candidate && *candidate == *selectedDocumentId)
+            {
+                m_navigationTree->setCurrentItem(*iterator);
+                return;
+            }
+            ++iterator;
+        }
     }
     synchronizeNavigationSelection();
 }

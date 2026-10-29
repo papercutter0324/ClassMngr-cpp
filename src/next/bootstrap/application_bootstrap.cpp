@@ -1086,6 +1086,32 @@ Application::StartupResult ApplicationBootstrap::start()
             m_coreServices->resourceLoader,
             m_coreServices->preferences
             );
+        if (!m_applicationRuntime
+            || !m_applicationRuntime->startupDocumentCatalogProjection())
+        {
+            throw std::logic_error(
+                "The startup document catalog projection was not retained."
+                );
+        }
+        m_shell->setDocumentCatalogProjection(
+            *m_applicationRuntime->startupDocumentCatalogProjection()
+            );
+        m_shell->setDocumentCatalogProjectionLoader(
+            [this](const QString& localeName) {
+                if (!m_coreServices)
+                {
+                    return Domain::Result<Application::DocumentCatalogProjection>::failure({
+                        .code = Domain::ErrorCode::Technical,
+                        .message = "Document catalog resources are unavailable.",
+                        .recoverable = false
+                    });
+                }
+                const Platform::ResourceDocumentCatalogPort catalogPort(
+                    m_coreServices->resourceLoader
+                    );
+                return catalogPort.projection(localeName);
+            }
+            );
         m_shell->setCloseHandler([this] {
             return requestWindowClose();
         });
