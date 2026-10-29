@@ -25,6 +25,7 @@
 #include "next/platform/workspace_store_classes_navigator_read_actions.h"
 #include "next/platform/workspace_store_class_editor_actions.h"
 #include "next/platform/workspace_store_roster_actions.h"
+#include "next/platform/workspace_store_speaking_evaluation_ports.h"
 #include "next/platform/workspace_store_class_analytics_actions.h"
 #include "next/platform/workspace_store_testing_classes_actions.h"
 #include "next/platform/workspace_store_class_transfer_actions.h"
@@ -53,6 +54,7 @@
 #include "next/ui/schedule_output_request.h"
 #include "next/ui/my_classes_page.h"
 #include "next/ui/classes_navigator_page.h"
+#include "next/ui/speaking_evaluation_page.h"
 #include "next/ui/testing_classes_manager_page.h"
 #include "next/ui/class_transfer_workflow_page.h"
 #include "next/ui/qt_file_dialog_presenter.h"
@@ -360,6 +362,31 @@ loadWorkspaceCampusChoices(
     };
 }
 
+[[nodiscard]] Ui::PageDescriptor speakingEvaluationPageDescriptor(
+    std::function<Ui::SpeakingEvaluationPageActions()> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(QStringLiteral("speaking_evaluation")),
+        .label = navigationLabel("Speaking Evaluation"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::SpeakingEvaluationPage>(
+                    context,
+                    actionsFactory());
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)};
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+}
+
 [[nodiscard]] Ui::PageDescriptor testingClassesManagerPageDescriptor(
     std::function<Ui::TestingClassesManagerPageActions()> actionsFactory
     )
@@ -599,6 +626,8 @@ loadWorkspaceCampusChoices(
         NavigationNode::page(pageId(QStringLiteral("calendar")), workspace),
         NavigationNode::page(pageId(QStringLiteral("my_classes")), workspace),
         NavigationNode::page(pageId(QStringLiteral("classes")), workspace),
+        NavigationNode::page(
+            pageId(QStringLiteral("speaking_evaluation")), workspace),
         NavigationNode::page(pageId(QStringLiteral("class_transfer")), workspace),
         NavigationNode::page(pageId(QStringLiteral("sub_prep")), workspace),
         NavigationNode::group(
@@ -1384,6 +1413,103 @@ Application::StartupResult ApplicationBootstrap::start()
                     };
                     return actions;
                 }));
+            if (!registration)
+            {
+                initialPageFailure = registration.error().message;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const Ui::PageHostResult<void> registration =
+                m_shell->pageHost().registerPage(
+                    speakingEvaluationPageDescriptor([this] {
+                        Ui::SpeakingEvaluationPageActions actions;
+                        actions.saveMode =
+                            Platform::SettingsManagerSaveModePreferencesPort().read();
+                        actions.activeWorkspacePath = [this]()
+                            -> std::optional<QString> {
+                            if (!m_applicationRuntime)
+                            {
+                                return std::nullopt;
+                            }
+                            const auto session = m_applicationRuntime
+                                ->workspaceState().snapshot().session();
+                            if (!session)
+                            {
+                                return std::nullopt;
+                            }
+                            const std::string& path = session->location().value();
+                            return QString::fromUtf8(
+                                path.data(), static_cast<qsizetype>(path.size()));
+                        };
+                        actions.workspaceIdentity = [this] {
+                            if (!m_applicationRuntime)
+                            {
+                                return QString{};
+                            }
+                            const auto session = m_applicationRuntime
+                                ->workspaceState().snapshot().session();
+                            if (!session)
+                            {
+                                return QString{};
+                            }
+                            const std::string& workspaceId =
+                                session->workspaceId().value();
+                            const std::string& path = session->location().value();
+                            return QString::fromUtf8(
+                                workspaceId.data(),
+                                static_cast<qsizetype>(workspaceId.size()))
+                                + QLatin1Char('|') + QString::fromUtf8(
+                                    path.data(), static_cast<qsizetype>(path.size()));
+                        };
+                        actions.preferredClassSelection = [this]()
+                            -> std::optional<Domain::ClassId> {
+                            if (!m_applicationRuntime)
+                            {
+                                return std::nullopt;
+                            }
+                            const auto selected = m_applicationRuntime
+                                ->selectionState().snapshot();
+                            if (const Domain::ClassId* classId = selected.classId())
+                            {
+                                return *classId;
+                            }
+                            return std::nullopt;
+                        };
+                        actions.setActiveClassSelection = [this](
+                            const std::optional<Domain::ClassId>& classId) {
+                            if (!m_applicationRuntime)
+                            {
+                                return;
+                            }
+                            if (classId)
+                            {
+                                m_applicationRuntime->selectionState().setSelection(
+                                    *classId);
+                            }
+                            else
+                            {
+                                m_applicationRuntime->selectionState().clear();
+                            }
+                        };
+                        actions.readClasses =
+                            Platform::readClassesNavigatorListAtPath;
+                        actions.evaluationReadPortFactory = [](const QString& path) {
+                            return std::make_unique<
+                                Platform::WorkspaceStoreSpeakingEvaluationReadPort>(path);
+                        };
+                        actions.evaluationSavePortFactory = [](const QString& path) {
+                            return std::make_unique<
+                                Platform::WorkspaceStoreSpeakingEvaluationSavePort>(path);
+                        };
+                        actions.rosterNamesReadPortFactory = [](const QString& path) {
+                            return std::make_unique<
+                                Platform::WorkspaceStoreSpeakingEvaluationRosterNamesReadPort>(
+                                    path);
+                        };
+                        return actions;
+                    }));
             if (!registration)
             {
                 initialPageFailure = registration.error().message;

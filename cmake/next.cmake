@@ -550,6 +550,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/application_services_speaking_evaluation_roster_names_read_port.h
     src/next/platform/application_services_speaking_evaluation_batch_read_port.h
     src/next/platform/application_services_speaking_evaluation_save_port.h
+    src/next/platform/workspace_store_speaking_evaluation_ports.h
     src/next/platform/speaking_evaluation_qt_text_match_port.h
     src/next/platform/application_services_class_details_page_read_port.h
     src/next/platform/application_services_my_classes_class_information_batch_read_port.h

@@ -3268,6 +3268,73 @@ set_tests_properties(ClassMngrNextMyClassesPageTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
+# Exercise the path-scoped Next Speaking Evaluation page, exact changed-cell
+# persistence, one-matrix lifecycle, roster import, and presentation captures.
+add_executable(ClassMngrNextSpeakingEvaluationPageTests
+    tests/next/speaking_evaluation_page_tests.cpp
+    src/next/platform/next_startup_profiler_inactive_workspace_compat.cpp
+    src/next/platform/workspace_store_speaking_evaluation_ports.cpp
+    src/next/ui/speaking_evaluation_page.cpp
+    src/next/ui/speaking_evaluation_model.cpp
+    src/next/ui/page_host.cpp
+)
+target_compile_features(ClassMngrNextSpeakingEvaluationPageTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextSpeakingEvaluationPageTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextSpeakingEvaluationPageTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+        CLASSMNGR_NEXT_SPEAKING_EVALUATION_LARGE_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+        CLASSMNGR_NEXT_SPEAKING_EVALUATION_CAPTURE_DIRECTORY="${CMAKE_CURRENT_BINARY_DIR}/speaking-evaluation-visual-captures"
+)
+target_link_libraries(ClassMngrNextSpeakingEvaluationPageTests
+    PRIVATE
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrScheduleImportRules
+        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspaceDomain
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextSpeakingEvaluationPageTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextSpeakingEvaluationPageTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextSpeakingEvaluationPageTests
+    ClassMngrNextResourcePackage
+)
+qt_add_resources(ClassMngrNextSpeakingEvaluationPageTests
+    speaking_evaluation_capture_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
+)
+add_test(
+    NAME ClassMngrNextSpeakingEvaluationPageTests
+    COMMAND ClassMngrNextSpeakingEvaluationPageTests
+)
+set_tests_properties(ClassMngrNextSpeakingEvaluationPageTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Exercise the bounded Next Classes navigator model/page independently from
 # the legacy classes page and detail editor features.
 add_executable(ClassMngrNextClassesNavigatorPageTests

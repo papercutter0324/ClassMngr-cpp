@@ -7844,6 +7844,14 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <translation>표준 영어 문자만 사용할 수 있습니다.</translation>
     </message>
     <message>
+        <source>English name contains unsupported characters.</source>
+        <translation>영어 이름에 지원되지 않는 문자가 있습니다.</translation>
+    </message>
+    <message>
+        <source>Korean name contains unsupported characters.</source>
+        <translation>한국어 이름에 지원되지 않는 문자가 있습니다.</translation>
+    </message>
+    <message>
         <location line="+20"/>
         <source>Invalid Korean name length.</source>
         <translation>한국어 이름 길이가 올바르지 않습니다.</translation>
@@ -7852,6 +7860,38 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <location line="+6"/>
         <source>Uncommon Korean name length. Please verify.</source>
         <translation>한국어 이름 길이가 일반적이지 않습니다. 확인해 주세요.</translation>
+    </message>
+    <message>
+        <source>This student name pair is duplicated.</source>
+        <translation>학생 이름 조합이 중복되었습니다.</translation>
+    </message>
+    <message>
+        <source>Enter both an English and a Korean name.</source>
+        <translation>영어 이름과 한국어 이름을 모두 입력하세요.</translation>
+    </message>
+    <message>
+        <source>Enter a valid score (A+, A, B+, B, or C).</source>
+        <translation>올바른 점수(A+, A, B+, B, C)를 입력하세요.</translation>
+    </message>
+    <message>
+        <source>Comment must be 450 characters or fewer.</source>
+        <translation>의견은 450자 이하여야 합니다.</translation>
+    </message>
+    <message>
+        <source>Notes must be 10000 characters or fewer.</source>
+        <translation>노트는 10000자 이하여야 합니다.</translation>
+    </message>
+    <message>
+        <source>This value is longer than the supported limit.</source>
+        <translation>값이 허용된 길이를 초과했습니다.</translation>
+    </message>
+    <message>
+        <source>This evaluation data is invalid.</source>
+        <translation>평가 데이터가 올바르지 않습니다.</translation>
+    </message>
+    <message>
+        <source>This value is invalid.</source>
+        <translation>값이 올바르지 않습니다.</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -7920,6 +7960,78 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="224"/>
         <source>Retry</source>
         <translation>다시 시도</translation>
+    </message>
+    <message>
+        <source>Winter</source>
+        <translation>겨울</translation>
+    </message>
+    <message>
+        <source>Speech Contest</source>
+        <translation>말하기 대회</translation>
+    </message>
+    <message>
+        <source>Summer</source>
+        <translation>여름</translation>
+    </message>
+    <message>
+        <source>Fall</source>
+        <translation>가을</translation>
+    </message>
+    <message>
+        <source>Private Notes</source>
+        <translation>비공개 메모</translation>
+    </message>
+    <message>
+        <source>Edit Private Notes</source>
+        <translation>비공개 메모 편집</translation>
+    </message>
+    <message>
+        <source>Undo</source>
+        <translation>실행 취소</translation>
+    </message>
+    <message>
+        <source>Unsaved changes</source>
+        <translation>저장되지 않은 변경 사항</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>취소</translation>
+    </message>
+    <message>
+        <source>Discard</source>
+        <translation>변경 사항 버리기</translation>
+    </message>
+    <message>
+        <source>No Teacher Profile is open.</source>
+        <translation>열려 있는 강사 프로필이 없습니다.</translation>
+    </message>
+    <message>
+        <source>Roster names could not be imported.</source>
+        <translation>명단 이름을 가져오지 못했습니다.</translation>
+    </message>
+    <message>
+        <source>Select a student row first.</source>
+        <translation>먼저 학생 행을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>refreshing the class list</source>
+        <translation>수업 목록 새로고침</translation>
+    </message>
+    <message>
+        <source>changing classes</source>
+        <translation>수업 변경</translation>
+    </message>
+    <message>
+        <source>changing evaluations</source>
+        <translation>평가 변경</translation>
+    </message>
+    <message>
+        <source>Questionable Korean Name Lengths</source>
+        <translation>한국어 이름 길이 확인</translation>
+    </message>
+    <message>
+        <source>Some Korean names are only one or five or more syllables. Save anyway?</source>
+        <translation>일부 한국어 이름이 1음절이거나 5음절 이상입니다. 그래도 저장하시겠습니까?</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="+98"/>
@@ -8152,22 +8264,22 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_private_notes_editor.cpp" line="+301"/>
         <source>Did Well</source>
-        <translation type="unfinished"></translation>
+        <translation>잘한 점</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Add positive observations…</source>
-        <translation type="unfinished"></translation>
+        <translation>긍정적인 관찰 내용을 입력하세요…</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Needs Improvement</source>
-        <translation type="unfinished"></translation>
+        <translation>개선할 점</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Add areas for improvement…</source>
-        <translation type="unfinished"></translation>
+        <translation>개선이 필요한 부분을 입력하세요…</translation>
     </message>
 </context>
 <context>

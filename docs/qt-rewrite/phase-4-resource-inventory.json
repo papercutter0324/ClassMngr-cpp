@@ -6,7 +6,9 @@
       "resources": "cae6e20acb8b6b23bd0646f4443be7af4be0015c",
       "calendar_qml": "b75d01f27817b205ad63deca347be0506e3b9796"
     },
-    "tracked_input_worktree_changes": [],
+    "tracked_input_worktree_changes": [
+      "resources/assets/translations/ClassMngr_ko_KR.ts"
+    ],
     "effective_baseline": "Tracked source content at the recorded Git tree IDs plus the exact working-tree bytes recorded below. No installed resource-pack overrides were available in the checked application-owned resource-pack directory."
   },
   "scope": {
@@ -14,8 +16,8 @@
     "tracked_files_under_resources_assets": 226,
     "tracked_files_under_resources_windows": 3,
     "tracked_calendar_qml_sources_outside_resources": 2,
-    "resource_asset_source_bytes_exact": 66017973,
-    "all_tracked_resources_source_bytes_exact": 66019159,
+    "resource_asset_source_bytes_exact": 66022253,
+    "all_tracked_resources_source_bytes_exact": 66023439,
     "calendar_qml_source_bytes_exact": 35154,
     "disposition_record_counts": {
       "build_only_excluded": 31,
@@ -62,7 +64,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 2042658
+        "source_bytes": 2046938
       }
     },
     "resource_categories": {
@@ -112,7 +114,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 2042658
+        "source_bytes": 2046938
       }
     }
   },
@@ -6284,8 +6286,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 517018,
-        "sha256": "bc6383de63a3e0dfcb8d35afce55b3c4c7605667b9abceb6343f089647bcf5e7"
+        "bytes": 521298,
+        "sha256": "338ecda311d6995fe7780116e7b79f22795108ee3b09594e06f474b8570cc57f"
       },
       "installed_size": {
         "bytes": null,
