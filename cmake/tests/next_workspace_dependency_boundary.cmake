@@ -7,6 +7,8 @@ string(REPLACE "\n" ";" _report_lines "${_report}")
 foreach(_line IN LISTS _report_lines)
     if(_line MATCHES "^NEXT_LINKS=(.*)$")
         set(_next_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_SPEAKING_EVALUATION_OUTPUT_LINKS=(.*)$")
+        set(_next_speaking_evaluation_output_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_STARTUP_UPDATE_LINKS=(.*)$")
         set(_next_startup_update_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^UPDATER_LINKS=(.*)$")
@@ -31,6 +33,10 @@ foreach(_line IN LISTS _report_lines)
         set(_next_workspace_sources "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_TYPE=(.*)$")
         set(_next_workspace_type "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_WORKSPACE_PROFILER_COMPAT_SOURCES=(.*)$")
+        set(_next_workspace_profiler_compat_sources "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_WORKSPACE_PROFILER_COMPAT_TYPE=(.*)$")
+        set(_next_workspace_profiler_compat_type "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_DOMAIN_LINKS=(.*)$")
         set(_next_workspace_domain_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_DOMAIN_SOURCES=(.*)$")
@@ -51,11 +57,22 @@ foreach(_line IN LISTS _report_lines)
 endforeach()
 
 set(_expected_next_links
-    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextCalendarUi|ClassMngrNextDocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
+    "Qt6::Core|$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNextCalendarUi|ClassMngrNextDocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
 )
 if(NOT _next_links STREQUAL _expected_next_links)
     message(FATAL_ERROR
         "Unexpected direct ClassMngrNext dependencies: [${_next_links}]"
+    )
+endif()
+
+set(_expected_next_speaking_evaluation_output_links
+    "ClassMngrSpeakingEvalReportEngine|ClassMngrNext::Resources|ClassMngrWorkspaceStore|Qt6::Sql"
+)
+if(NOT _next_speaking_evaluation_output_links STREQUAL
+   _expected_next_speaking_evaluation_output_links)
+    message(FATAL_ERROR
+        "Unexpected Next Speaking Evaluation output closure: "
+        "[${_next_speaking_evaluation_output_links}]"
     )
 endif()
 
@@ -126,7 +143,7 @@ if(NOT _document_catalog_test_links STREQUAL "ClassMngrNext::DocumentCatalog")
 endif()
 
 set(_expected_bootstrap_test_links
-    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::Widgets"
+    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::Widgets"
 )
 if(NOT _bootstrap_test_links STREQUAL _expected_bootstrap_test_links)
     message(FATAL_ERROR
@@ -193,6 +210,7 @@ foreach(_forbidden_dependency IN ITEMS
         Qt6::PdfWidgets
         ClassMngrNext::Platform
         ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrCore
         ClassMngrAppServices
         ApplicationServices)
@@ -201,6 +219,7 @@ foreach(_forbidden_dependency IN ITEMS
             _next_workspace_links
             _next_workspace_domain_links
             _workspace_store_links
+            _next_speaking_evaluation_output_links
             _document_catalog_test_links
             _bootstrap_test_links
             _document_catalog_library_links
@@ -214,6 +233,23 @@ foreach(_forbidden_dependency IN ITEMS
             )
         endif()
     endforeach()
+endforeach()
+
+foreach(_speaking_evaluation_forbidden_dependency IN ITEMS
+        ClassMngrNextCalendarUi
+        ClassMngrCalendarImportParser
+        ClassMngrNext::Calendar)
+    string(FIND "${_next_speaking_evaluation_output_links}"
+        "${_speaking_evaluation_forbidden_dependency}"
+        _speaking_evaluation_dependency_index
+    )
+    if(NOT _speaking_evaluation_dependency_index EQUAL -1)
+        message(FATAL_ERROR
+            "${_speaking_evaluation_forbidden_dependency} entered the narrow "
+            "Next Speaking Evaluation output closure: "
+            "[${_next_speaking_evaluation_output_links}]"
+        )
+    endif()
 endforeach()
 
 foreach(_network_forbidden_set IN ITEMS
@@ -232,9 +268,7 @@ foreach(_network_forbidden_set IN ITEMS
     endif()
 endforeach()
 
-foreach(_required_workspace_source IN ITEMS
-        workspace_store_gateway.cpp
-        next_startup_profiler_inactive_workspace_compat.cpp)
+foreach(_required_workspace_source IN ITEMS workspace_store_gateway.cpp)
     string(FIND "${_next_workspace_sources}" "${_required_workspace_source}" _workspace_source_index)
     if(_workspace_source_index EQUAL -1)
         message(FATAL_ERROR
@@ -243,6 +277,26 @@ foreach(_required_workspace_source IN ITEMS
         )
     endif()
 endforeach()
+
+if(NOT _next_workspace_profiler_compat_type STREQUAL "OBJECT_LIBRARY"
+   OR NOT _next_workspace_profiler_compat_sources MATCHES
+      "next_startup_profiler_inactive_workspace_compat\\.cpp")
+    message(FATAL_ERROR
+        "The inactive-profiler compat source must have one object-library owner: "
+        "type=${_next_workspace_profiler_compat_type}, "
+        "sources=[${_next_workspace_profiler_compat_sources}]"
+    )
+endif()
+string(FIND "${_next_workspace_sources}"
+    "next_startup_profiler_inactive_workspace_compat.cpp"
+    _workspace_compat_source_index
+)
+if(NOT _workspace_compat_source_index EQUAL -1)
+    message(FATAL_ERROR
+        "The inactive-profiler compat source must not also be owned by "
+        "ClassMngrNextWorkspace: [${_next_workspace_sources}]"
+    )
+endif()
 
 string(FIND "${_legacy_sources}" "next_startup_profiler_inactive_workspace_compat.cpp" _legacy_compat_index)
 if(NOT _legacy_compat_index EQUAL -1)

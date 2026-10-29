@@ -702,9 +702,23 @@ target_link_libraries(ClassMngrNextWorkspaceDomain
         ClassMngrDomain
 )
 
+# Share the inactive legacy profiler definitions without compiling the source
+# into both the workspace adapter and focused WorkspaceStore tests.
+add_library(ClassMngrNextWorkspaceProfilerCompat OBJECT
+    ${CLASSMNGR_NEXT_WORKSPACE_PROFILER_COMPAT_SOURCES}
+)
+target_link_libraries(ClassMngrNextWorkspaceProfilerCompat
+    PRIVATE
+        ClassMngrBuildSettings
+)
+set_target_properties(ClassMngrNextWorkspaceProfilerCompat
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+
 # Keep the startup workspace adapter outside the broad Next Platform target:
 # it needs the shared store and Qt Sql, but not Qt Network or legacy services.
-# Its profiler hooks must precede WorkspaceStore's archive on every linker.
 add_library(ClassMngrNextWorkspace OBJECT
     ${CLASSMNGR_NEXT_WORKSPACE_SOURCES}
 )
@@ -983,6 +997,7 @@ target_include_directories(ClassMngrNext
 
 target_link_libraries(ClassMngrNext
     PRIVATE
+        "$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>"
         Qt6::Widgets
         ClassMngrNext::Application
         ClassMngrClassTransferSupport
@@ -1006,12 +1021,14 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextRosterOutput;ClassMngrNextSpeakingEvaluationOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
+   STREQUAL "Qt6::Core;$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextRosterOutput;ClassMngrNextSpeakingEvaluationOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
     message(FATAL_ERROR
-        "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, "
+        "ClassMngrNext must link its inactive-profiler object before "
+        "the following dependent targets: Qt6::Widgets, "
         "ClassMngrNext::Application, ClassMngrClassTransferSupport, "
         "ClassMngrNext::Resources, "
-        "ClassMngrNextWorkspace, ClassMngrNextScheduleOutput, "
+        "ClassMngrNextWorkspace, ClassMngrNextScheduleOutput, ClassMngrNextRosterOutput, "
+        "ClassMngrNextSpeakingEvaluationOutput, "
         "ClassMngrNextCalendarUi, "
         "ClassMngrNextDocumentCatalog, "
         "ClassMngrNextStartupUpdates, ClassMngrTeacherImportParser, "

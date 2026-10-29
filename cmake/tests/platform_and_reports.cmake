@@ -588,6 +588,46 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             "CLASSMNGR_TEST_APP_PATH=$<TARGET_FILE:ClassMngr>"
     )
 
+    add_executable(ClassMngrPhase7NextBlankFixtureTests
+        tests/phase7_next_memory_fixture_tests.cpp
+        $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
+    )
+    target_compile_features(ClassMngrPhase7NextBlankFixtureTests
+        PRIVATE
+            cxx_std_23
+    )
+    set_property(TARGET ClassMngrPhase7NextBlankFixtureTests
+        PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+    )
+    target_include_directories(ClassMngrPhase7NextBlankFixtureTests
+        PRIVATE
+            ${PROJECT_SOURCE_DIR}/src
+    )
+    target_link_libraries(ClassMngrPhase7NextBlankFixtureTests
+        PRIVATE
+            ClassMngrWorkspaceStore
+            ClassMngrNextWorkspaceDomain
+            ClassMngrScheduleImportRules
+            Qt6::Sql
+            Qt6::Test
+    )
+    add_test(
+        NAME ClassMngrPhase7NextBlankFixtureTests
+        COMMAND ClassMngrPhase7NextBlankFixtureTests
+    )
+    set_tests_properties(ClassMngrPhase7NextBlankFixtureTests
+        PROPERTIES
+            LABELS "phase7;next;fixture"
+            RUN_SERIAL TRUE
+    )
+    if(WIN32)
+        set_tests_properties(ClassMngrPhase7NextBlankFixtureTests
+            PROPERTIES
+                ENVIRONMENT_MODIFICATION
+                    "PATH=path_list_prepend:$<TARGET_FILE_DIR:Qt6::Core>"
+        )
+    endif()
+
     if(WIN32)
         set_tests_properties(
             ClassMngrUpdaterTests

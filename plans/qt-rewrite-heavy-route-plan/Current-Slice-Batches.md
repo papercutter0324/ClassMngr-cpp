@@ -78,6 +78,9 @@ generated schema-v6 `.db` relationship/output check from
 not a historical user profile or a test-only candidate. The Initial Setup personal-details
 screenshot subgate is closed; broader 7A visual evidence, memory evidence, the
 Windows packaged-Next memory gate, and the 7A/Phase 7 exit gates remain open.
+The local memory validator passed six Python tests and the blank schema-v6
+fixture CTest passed 1/1 with a narrow store/domain link closure; hosted
+Windows collection remains pending after the Batch 3 push.
 
 ## Batch 4 — discovered; queued
 

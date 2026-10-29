@@ -165,6 +165,10 @@ set(CLASSMNGR_SCHEDULE_IMPORT_PARSER_SOURCES
     "src/features/schedule/import/schedule_workbook_parser.h"
 )
 
+set(CLASSMNGR_NEXT_WORKSPACE_PROFILER_COMPAT_SOURCES
+    "src/next/platform/next_startup_profiler_inactive_workspace_compat.cpp"
+)
+
 set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_gateway.cpp"
     "src/next/platform/workspace_store_gateway.h"
@@ -209,7 +213,6 @@ set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/teacher_validator_teacher_profile_validation_policy.h"
     "src/next/platform/workspace_store_initial_setup_lifecycle_adapter.cpp"
     "src/next/platform/workspace_store_initial_setup_lifecycle_adapter.h"
-    "src/next/platform/next_startup_profiler_inactive_workspace_compat.cpp"
 )
 
 set(CLASSMNGR_DATA_SOURCES

@@ -9125,3 +9125,20 @@ capture should be checked against its generated PDF and expected text; a
 successful render alone does not prove that the visible preview is correct.
 Qt standard dialog buttons can bypass the application translation catalogue,
 so assert visible Korean labels for Save, Print, Save As, and Close actions.
+
+## 2026-10-29 — Separate diagnostic memory collection from release gates
+
+Keep the Phase 7 Windows startup collector diagnostic and inspect its manifest,
+metrics, and validator output after the hosted run. Collector failure must stay
+visible and upload its failure evidence without becoming an accidental release
+gate. Keep the numeric Windows working-set threshold in Phase 9; five startup
+samples across each Phase 7 scenario do not establish that threshold.
+
+## 2026-10-29 — Keep WorkspaceStore fixture targets narrow
+
+Standalone WorkspaceStore fixture tests need explicit ScheduleImportRules,
+workspace-domain, and inactive-profiler compatibility dependencies. The shared
+test finalizer can otherwise hide those links by adding the broad Legacy
+Runtime closure. Reuse one compiled profiler shim owner and assert the final
+link command contains one WorkspaceStore archive without Legacy Runtime or
+Calendar libraries.

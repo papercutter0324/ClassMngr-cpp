@@ -102,6 +102,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrNextWorkspace
         ${CLASSMNGR_NEXT_WORKSPACE_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrNextWorkspaceProfilerCompat
+        ${CLASSMNGR_NEXT_WORKSPACE_PROFILER_COMPAT_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrRosterTemplateRenderer ${CLASSMNGR_ROSTER_TEMPLATE_RENDERER_SOURCES})
     _classmngr_record_manifest(ClassMngrNextRosterOutput ${CLASSMNGR_NEXT_ROSTER_OUTPUT_SOURCES})
     _classmngr_record_manifest(ClassMngrNextSpeakingEvaluationOutput ${CLASSMNGR_NEXT_SPEAKING_EVALUATION_OUTPUT_SOURCES})

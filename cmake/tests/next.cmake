@@ -1188,10 +1188,14 @@ target_link_libraries(ClassMngrNextResourceDocumentCatalogTests
         ClassMngrNext::DocumentCatalog
 )
 
-# Preserve the narrow production startup link boundary and keep its
-# WorkspaceStore profiler compatibility object out of the legacy executable.
+# Preserve the narrow production startup link boundary and capture its
+# WorkspaceStore profiler compatibility object for the boundary assertion.
 get_target_property(_classmngr_next_startup_links
     ClassMngrNext
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_next_speaking_evaluation_output_links
+    ClassMngrNextSpeakingEvaluationOutput
     LINK_LIBRARIES
 )
 get_target_property(_classmngr_next_startup_update_links
@@ -1236,6 +1240,14 @@ get_target_property(_classmngr_next_workspace_type
     ClassMngrNextWorkspace
     TYPE
 )
+get_target_property(_classmngr_next_workspace_profiler_compat_sources
+    ClassMngrNextWorkspaceProfilerCompat
+    SOURCES
+)
+get_target_property(_classmngr_next_workspace_profiler_compat_type
+    ClassMngrNextWorkspaceProfilerCompat
+    TYPE
+)
 get_target_property(_classmngr_next_workspace_domain_links
     ClassMngrNextWorkspaceDomain
     LINK_LIBRARIES
@@ -1270,6 +1282,7 @@ get_target_property(_classmngr_legacy_links
 )
 foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_next_startup_links
+        _classmngr_next_speaking_evaluation_output_links
         _classmngr_next_startup_update_links
         _classmngr_updater_links
         _classmngr_next_workspace_links
@@ -1282,6 +1295,8 @@ foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_workspace_store_links
         _classmngr_next_workspace_sources
         _classmngr_next_workspace_type
+        _classmngr_next_workspace_profiler_compat_sources
+        _classmngr_next_workspace_profiler_compat_type
         _classmngr_next_workspace_domain_links
         _classmngr_next_workspace_domain_sources
         _classmngr_next_workspace_domain_type
@@ -1299,6 +1314,7 @@ set(_classmngr_next_boundary_report
 )
 file(WRITE "${_classmngr_next_boundary_report}"
     "NEXT_LINKS=${_classmngr_next_startup_links}\n"
+    "NEXT_SPEAKING_EVALUATION_OUTPUT_LINKS=${_classmngr_next_speaking_evaluation_output_links}\n"
     "NEXT_STARTUP_UPDATE_LINKS=${_classmngr_next_startup_update_links}\n"
     "UPDATER_LINKS=${_classmngr_updater_links}\n"
     "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
@@ -1311,6 +1327,8 @@ file(WRITE "${_classmngr_next_boundary_report}"
     "WORKSPACE_STORE_LINKS=${_classmngr_workspace_store_links}\n"
     "NEXT_WORKSPACE_SOURCES=${_classmngr_next_workspace_sources}\n"
     "NEXT_WORKSPACE_TYPE=${_classmngr_next_workspace_type}\n"
+    "NEXT_WORKSPACE_PROFILER_COMPAT_SOURCES=${_classmngr_next_workspace_profiler_compat_sources}\n"
+    "NEXT_WORKSPACE_PROFILER_COMPAT_TYPE=${_classmngr_next_workspace_profiler_compat_type}\n"
     "NEXT_WORKSPACE_DOMAIN_LINKS=${_classmngr_next_workspace_domain_links}\n"
     "NEXT_WORKSPACE_DOMAIN_SOURCES=${_classmngr_next_workspace_domain_sources}\n"
     "NEXT_WORKSPACE_DOMAIN_TYPE=${_classmngr_next_workspace_domain_type}\n"

@@ -1150,6 +1150,10 @@ Entries are preserved in their original document order.
   The Next report-output target closure excludes Legacy Runtime/Core/Features,
   ResourcePack, and DataService targets. Resource inventory `--check` and
   `git diff --check` passed.
+- After C40 integration, `ClassMngrNext` built and
+  `NextStartupWorkspaceDependencyBoundary` passed 1/1. The boundary now checks
+  the Speaking Evaluation output target's exact direct closure and excludes
+  Runtime/Calendar dependencies.
 - The [C40 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/speaking-evaluation-reports-c40/README.md)
   contains ten synthetic English/Korean × Light/Dark preview and batch
   captures, a one-page PDF, and verified manifest. It records presentation
@@ -1173,3 +1177,22 @@ Entries are preserved in their original document order.
   `representative_startup.sql` fixture, not a historical user profile. Output
   parity covers one template. This closes the synthetic schema-v6 exit-evidence
   item only; broader 7A and Phase 7 gates remain open.
+
+### Windows Release memory collector — local support verified (2026-10-29)
+
+- The fresh Windows x64 Release workflow is scoped to `Qt-Rewrite` and builds
+  the Next package plus fixture targets before collecting three scenarios:
+  initial setup, empty schema-v6 workspace, and synthetic 96-class/eight-slot
+  workspace. It takes five process samples per scenario and uploads the
+  manifest, metrics, summary, and validator output. This evidence collector
+  has no numeric memory threshold; Phase 9 owns the separate `<250 MiB` gate.
+- Static workflow review confirmed collector failures remain in logs and the
+  uploaded failure manifest but do not block later x64 release checks. Artifact
+  upload still runs under `always()` when files are available.
+- Local verification passed six Python validator tests, the blank schema-v6
+  fixture target (CTest 1/1; direct QtTest 3/3), `ClassMngrNext` build, and
+  `NextStartupWorkspaceDependencyBoundary` CTest 1/1. CMake ownership validated
+  one owner for 1,921 handwritten sources. The fixture's final link has one
+  WorkspaceStore archive and no Legacy Runtime/Calendar closure. The actual
+  hosted Windows collection has not run; the upcoming Batch 3 push is expected
+  to trigger it. No hosted Windows memory or Phase 9 result is claimed.

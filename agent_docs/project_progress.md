@@ -214,10 +214,12 @@ using synthetic fixture data, not a historic profile, with PDF parity limited
 to one landscape template. Exit evidence still open includes broader 7A visual
 and memory/lifecycle evidence and hosted Windows x64 Release Next startup
 collection. The 96-class Sub Prep entry/refresh/output/release route is
-required in #44. The local memory
-validator Python tests pass 6/6; its hosted run remains pending after Batch 3
-push. The `<250 MiB` threshold remains a separate Phase 9 gate. The 7A and
-Phase 7 exit gates are not yet passed.
+required in #44. Local memory-evidence support passed six Python validator
+tests, blank schema-v6 fixture CTest 1/1, and the Next startup dependency
+boundary CTest 1/1. The fixture link has no broad Runtime/Calendar closure and
+source ownership validated 1,921 handwritten files. Its hosted Windows run
+remains pending after Batch 3 push. The `<250 MiB` threshold remains a separate
+Phase 9 gate. The 7A and Phase 7 exit gates are not yet passed.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

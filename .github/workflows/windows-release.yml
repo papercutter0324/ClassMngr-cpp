@@ -37,8 +37,10 @@ on:
       - "resources/**"
       - "scripts/check_resource_pack_references.py"
       - "scripts/installer/**"
+      - "scripts/phase7/**"
       - "scripts/write_build_report.py"
       - "src/**"
+      - "tests/phase7_next_memory_fixture_tests.cpp"
       - "third_party/sqlite/**"
   pull_request:
     paths:
@@ -50,8 +52,10 @@ on:
       - "resources/**"
       - "scripts/check_resource_pack_references.py"
       - "scripts/installer/**"
+      - "scripts/phase7/**"
       - "scripts/write_build_report.py"
       - "src/**"
+      - "tests/phase7_next_memory_fixture_tests.cpp"
       - "third_party/sqlite/**"
 
 permissions:
@@ -221,11 +225,12 @@ jobs:
           } else {
             $env:QT_MSVC_X64_PREFIX
           }
+          $testingEnabled = if ($env:GITHUB_REF -eq "refs/heads/Qt-Rewrite" -and $architecture -eq "x64") { "ON" } else { "OFF" }
           $configureArguments = @(
             "--fresh",
             "--preset", "windows-$architecture-release",
             "-DCMAKE_PREFIX_PATH=$targetQtPrefix",
-            "-DBUILD_TESTING=OFF"
+            "-DBUILD_TESTING=$testingEnabled"
           )
           if ($architecture -eq "arm64") {
             $configureArguments += "-DQT_HOST_PATH=$env:QT_MSVC_X64_PREFIX"
@@ -235,6 +240,42 @@ jobs:
       - name: Build installer
         shell: pwsh
         run: cmake --build --preset "windows-${{ matrix.architecture }}-release-installer" --parallel
+
+      - name: Build and collect Phase 7 Next memory evidence
+        if: github.ref == 'refs/heads/Qt-Rewrite' && matrix.architecture == 'x64'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          Set-Location $Env:GITHUB_WORKSPACE
+
+          cmake --build --preset windows-x64-release --target ClassMngrNextResourcePackage --parallel
+          if ($LASTEXITCODE -ne 0) { throw "ClassMngrNextResourcePackage build failed." }
+
+          cmake --build build\windows-x64-release --config Release --target `
+            ClassMngrStartupPerformanceTests `
+            ClassMngrPhase7NextBlankFixtureTests `
+            --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Phase 7 fixture test targets failed to build." }
+
+          python -m unittest discover -s scripts/phase7 -p "test_*.py"
+          if ($LASTEXITCODE -ne 0) { throw "Phase 7 validator unit tests failed." }
+
+          pwsh -NoProfile -File scripts/phase7/run_next_memory_evidence.ps1 `
+            -BuildDirectory build\windows-x64-release `
+            -QtPrefix $env:QT_MSVC_X64_PREFIX `
+            -EvidenceDirectory artifacts\phase7\windows-x64-next-memory
+
+      - name: Upload Phase 7 Next memory evidence
+        if: always() && github.ref == 'refs/heads/Qt-Rewrite' && matrix.architecture == 'x64'
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase7-next-memory-windows-x64
+          path: |
+            artifacts/phase7/windows-x64-next-memory/manifest.json
+            artifacts/phase7/windows-x64-next-memory/metrics.jsonl
+            artifacts/phase7/windows-x64-next-memory/summary.json
+            artifacts/phase7/windows-x64-next-memory/validator-output.txt
+          if-no-files-found: warn
 
       - name: Smoke test packaged application startup
         if: matrix.architecture == 'x64'
