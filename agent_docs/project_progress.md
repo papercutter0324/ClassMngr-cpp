@@ -189,7 +189,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-29 (candidate #41 accepted; candidate #42 active)
+### Current checkpoint — 2026-10-29 (candidate #42 accepted; candidate #43 active)
 
 Candidate #41, Campus Directory, is accepted in source commit `728c8c14` after
 independent focused verification: three CTests passed, the direct campus suite
@@ -200,18 +200,22 @@ capability. Campus Staff remains owned by #17–19; app-wide permission parity
 remains #46. Its macOS Maps measurements and lifecycle limits are recorded in
 the [Phase 7 progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).
 
-Batch 4 remains active; candidate #42, Document catalog, is in progress. The
-Initial Setup schedule-import prerequisite repair is committed in `80f7f1c6`.
-It uses the existing path-scoped ports and leaves the protected WorkspaceStore
-Gateway edits outside the commit. Independent focused macOS Debug verification
-passed 3 CTests, including active-session visibility, recovery journal and
-backup byte preservation on injected failure, and fresh-store persistence.
-Windows Release run `40914914018` completed at the pushed SHA, but its x64
-diagnostic prerequisite build failed and produced no collector artifact. A
-fresh hosted run is pending the Batch 4 push. Other open gates include broader
-7A visual/lifecycle evidence and the 96-class Sub Prep entry/refresh/output/
-release route in #44. The `<250 MiB` threshold remains a separate Phase 9
-gate. The 7A and Phase 7 exit gates are not yet passed.
+Batch 4 remains active; candidate #42, Document catalog, is accepted in
+`0d635731`, and #43, Document viewer lifecycle/actions, is in progress. C42
+uses the existing metadata projection, emits stable document IDs, and does not
+load PDF bodies. Its independent focused verification passed eight CTests;
+the four localized/theme captures matched fresh outputs, and the capture
+binary has no QtPdf link. Whole-process macOS memory observations and limits
+are in the [Phase 7 progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).
+The Initial Setup schedule-import prerequisite repair is committed in
+`80f7f1c6`; it uses existing path-scoped ports and leaves the protected
+WorkspaceStore Gateway edits outside the commit. Windows Release run
+`40914914018` completed at the pushed SHA, but its x64 diagnostic prerequisite
+build failed and produced no collector artifact. A fresh hosted run is pending
+the Batch 4 push. Other open gates include broader 7A visual/lifecycle evidence
+and the 96-class Sub Prep entry/refresh/output/release route in #44. The
+`<250 MiB` threshold remains a separate Phase 9 gate. The 7A and Phase 7 exit
+gates are not yet passed.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.
@@ -602,10 +606,10 @@ user's response to the exact-payload approval request.
 
 ## Next Milestone
 
-Complete candidate #42, then #43–48; begin next-batch discovery when #47
-starts. Push Batch 4 after #48, obtain and review a fresh Windows diagnostic
-artifact from that pushed head, and close the broader 7A evidence and Phase 7
-exit gates before declaring Phase 7 complete;
+Complete candidates #43–48; begin next-batch discovery when #47 starts. Push
+Batch 4 after #48, obtain and review a fresh Windows diagnostic artifact from
+that pushed head, and close the broader 7A evidence and Phase 7 exit gates
+before declaring Phase 7 complete;
 see the
 [Phase 7 plan](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Feature-Migration.md)
 and [progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).

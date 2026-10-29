@@ -4,10 +4,9 @@
 
 41. **Accepted — Campus Directory** (`728c8c14`). See the [Phase 7 progress
     log](08-Phase-7-Progress-Log.md) and [C41 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/campus-directory-c41/README.md).
-42. **In progress — Document catalog:** localized Next navigation from the
-    existing metadata-only projection; emit stable document IDs and leave PDF
-    body loading to #43.
-43. **Discovered — Document viewer lifecycle/actions:** load, save/copy,
+42. **Accepted — Document catalog** (`0d635731`). See the [Phase 7 progress
+    log](08-Phase-7-Progress-Log.md) and [C42 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/document-catalog-c42/README.md).
+43. **In progress — Document viewer lifecycle/actions:** load, save/copy,
     zoom/navigation, release, and reopen.
 44. **Discovered — 7J.1 Sub Prep:** large-workspace class information and
     output.

@@ -9166,3 +9166,8 @@ use case commits through its own WorkspaceStore, while the active setup session
 can still observe the rows. Verify failed imports preserve recovery journal
 and original-profile backup contents, then verify durability with a fresh-store
 reopen; do not add a generic Gateway save call after that committed operation.
+
+Keep the Next document catalog as metadata-only navigation: emit a typed
+DocumentId selection from a dedicated tree, keep it out of page history, and
+let the viewer own PDF loading and release. The projection refresh should
+preserve the selected ID when the locale changes.

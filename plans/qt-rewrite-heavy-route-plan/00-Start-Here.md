@@ -6,26 +6,22 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-29
-- Current milestone: Phase 7 remains in progress. Candidate #41, Campus
-  Directory, is accepted in `728c8c14`; Batch 4 is active and #42, Document
-  catalog, is now in progress. The Initial Setup schedule-import build repair
-  is committed in `80f7f1c6`; it uses existing path-scoped ports and leaves
-  the protected Gateway pair untouched. Candidate #41 adds the five dashboard
-  sections, packaged read-only campus data, app-data overrides, explicit
-  historical-directory migration, and a campus-local admin capability.
-  Campus Staff remains owned by #17–19, and the general permission gate by
-  #46.
-  See the [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current batch
-  tracker](Current-Slice-Batches.md). The Initial Setup personal-details
-  screenshot subgate is closed. The generated synthetic schema-v6 `.db`
-  relationship/output check passed; it is not historical user-profile
-  evidence. Batch 3 and its Windows evidence support were pushed at
-  `2cfb1db3`. Windows Release run [40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018)
-  completed at that head, but the x64 memory collector's prerequisite build
-  failed and no diagnostic artifact was uploaded. No hosted memory evidence
-  was produced. Broader 7A visual evidence, memory
-  evidence, and the Windows packaged-Next memory gate remain open. The 7A and
-  Phase 7 exit gates are not yet passed.
+- Current milestone: Phase 7 remains in progress. Candidate #42, Document
+  catalog, is accepted in `0d635731`; Batch 4 is active and #43, Document
+  viewer lifecycle/actions, is now in progress. The #42 catalog renders the
+  localized metadata projection and emits stable document IDs without loading
+  PDF bodies; #43 owns viewer sessions. The Initial Setup schedule-import
+  build repair is committed in `80f7f1c6` and leaves the protected Gateway
+  pair untouched. The [C42 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/document-catalog-c42/README.md)
+  records its memory and rendering limits. See the [Phase 7 plan](08-Phase-7-Feature-Migration.md)
+  and [current batch tracker](Current-Slice-Batches.md). Batch 3 and its
+  Windows evidence support were pushed at `2cfb1db3`. Windows Release run
+  [40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018)
+  completed at that head, but the x64 collector prerequisite failed and no
+  diagnostic artifact was uploaded. A fresh hosted run is pending the Batch 4
+  push. Broader 7A visual/lifecycle evidence, hosted memory evidence, and the
+  Windows packaged-Next memory gate remain open. The 7A and Phase 7 exit gates
+  are not yet passed.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

@@ -1304,18 +1304,58 @@ Entries are preserved in their original document order.
   the corrected prerequisite must be exercised by a fresh hosted run after the
   Batch 4 push. No hosted Phase 7 memory evidence or Phase 9 result is claimed.
 
-### Candidate #42 — Document catalog boundary (in progress, 2026-10-29)
+### Candidate #42 — Document catalog accepted (2026-10-29)
 
-- Boundary: use the existing immutable `DocumentCatalogProjection` and
-  `ResourceDocumentCatalogPort` to build localized Next catalog navigation.
-  Preserve folder hierarchy, sibling ordering, document IDs, and print/export
-  metadata.
-- Decision: a document leaf emits its stable `DocumentId`; opening and
-  releasing the selected PDF remains with #43. Catalog construction and
-  application startup must not load PDF bodies or QtPdf pages. Keep the
-  existing strict validation for the packaged metadata rather than adding the
-  Legacy partial-catalog recovery path to this immutable resource.
-- Existing evidence: metadata-only startup without PDF bodies and missing
-  metadata failure are already covered. New acceptance must cover the Next
-  navigation consumer, locale changes, nested ordering/identity, and zero body
-  loads during catalog creation; viewer session lifecycle stays with #43.
+- Commit: `0d635731` (`Phase7 - Add localized document catalog navigation`).
+- Boundary: the Next shell consumes the existing immutable
+  `DocumentCatalogProjection` and renders a localized nested tree. Document
+  leaves carry stable `DocumentId`, folder identity, order, and print/export
+  metadata. Selection emits the typed ID without entering page history.
+  Candidate #43 owns selected PDF loading and viewer lifecycle. Startup and
+  catalog rendering do not load PDF bodies or QtPdf pages. Keep strict
+  validation for the packaged metadata; do not reintroduce Legacy
+  partial-catalog recovery behavior for this immutable resource.
+- Independent verification: the incremental standard macOS Debug build
+  completed for the C42 navigation, visual-capture, bootstrap, navigation, and
+  shared-staff targets. Those five focused CTests passed, along with
+  `ClassMngrNextResourceDocumentCatalogTests`,
+  `ClassMngrDocumentCatalogNavigationParityTests`, and
+  `NextStartupWorkspaceDependencyBoundary` (8 focused tests total). Coverage
+  includes nested sibling ordering, typed selection, print/export flags,
+  locale projection refresh with selection retained, startup projection
+  population, metadata-missing startup failure, and metadata loading while a
+  PDF body is absent. `git diff --check` passed.
+- Capture evidence: the [C42 package](../../docs/qt-rewrite/visual-baseline/next/phase-7/document-catalog-c42/README.md)
+  contains four 1024×720 PNGs across English/Korean and Light/Dark. The Tester
+  matched each SHA-256 to fresh CTest capture output and verified PNG integrity
+  and dimensions. The manifest records 7 folders, 30 documents, and zero
+  non-metadata resource diagnostics. Its zero-document counters are harness
+  observations corroborated by source inspection and the body-absent resource
+  test. The capture executable has no QtPdf link. No pixel-parity claim is
+  made.
+- Memory evidence: `PlatformProcessMemorySnapshotProvider` on macOS
+  `TASK_VM_INFO` measured whole-process resident/private usage at
+  37,666,816/12,468,896 bytes before projection, 64,815,104/24,200,032 bytes
+  after rendering, and 64,864,256/24,200,032 bytes after shell release. No
+  PDF bodies were loaded. These are process-wide lifecycle observations with
+  no numeric threshold; memory did not shrink after release, and no Phase 9
+  result is claimed.
+- Limits: the current Next app has no runtime locale-switch workflow. The
+  projection-refresh API and selection preservation are tested directly; a
+  future locale coordinator must call it after changing the translator. The
+  missing-metadata startup failure is tested; malformed-metadata rejection is
+  supported by code inspection but has no focused negative regression. The
+  unrelated `ClassMngrNextTeacherDirectoryVisualCapture` target remains
+  un-linkable in this worktree due to missing `ColorUtils`, `FileNameUtils`,
+  `ClassInfoConfig`, and profiler-compat symbols in its narrow closure; C42's
+  capture and relevant shell tests pass, so that target was not expanded.
+  No full suite or Windows build ran.
+
+### Candidate #43 — Document viewer lifecycle/actions (in progress, 2026-10-29)
+
+- Boundary: consume the stable `DocumentId` selection from #42 and load only
+  the selected PDF into the active viewer session. Preserve load, save/copy,
+  zoom/navigation, close, replace, leave/suspend/release, and reopen behavior.
+  Catalog construction and application startup remain metadata-only.
+- Acceptance will measure viewer/resource release and verify selected-document
+  loading and reopening; no numeric memory threshold is added before Phase 9.

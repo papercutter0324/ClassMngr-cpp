@@ -38,22 +38,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-29
-- Current note: Candidate #41, Campus Directory, is accepted in source commit
-  `728c8c14`; Batch 4 remains active and #42, Document catalog, is in progress.
-  The Initial Setup schedule-import build repair is committed in `80f7f1c6` and
-  uses existing path-scoped ports, leaving the protected in-progress Gateway
-  pair untouched. Candidate #41 covers the five dashboard sections, packaged
-  read-only catalog, app-data overrides, explicit historical-directory import,
-  and campus-local admin capability. Campus Staff directories remain owned by
-  #17–19; the app-wide permission gate remains #46. The personal-details
-  screenshot and synthetic schema-v6 `.db` relationship/output subgates are
-  closed; the latter is not historical-profile evidence. Windows Release run
-  `40914914018` completed at the pushed head, but its x64 diagnostic
-  prerequisite build failed and no memory artifact was uploaded. A fresh
-  hosted run is pending the Batch 4 push. Broader 7A visual and lifecycle
-  evidence, hosted memory evidence, and the Windows packaged-Next memory gate
-  remain open. The 7A and Phase 7 exit gates are not yet passed. See the
-  [Phase 7 progress log](08-Phase-7-Progress-Log.md) for evidence and limits.
+- Current note: Candidate #42, Document catalog, is accepted in source commit
+  `0d635731`; Batch 4 remains active and #43, Document viewer lifecycle/actions,
+  is in progress. Candidate #42 renders the localized metadata projection and
+  emits stable document IDs without loading PDF bodies; #43 owns viewer
+  sessions. The Initial Setup schedule-import build repair is committed in
+  `80f7f1c6` using existing path-scoped ports, leaving the protected
+  in-progress Gateway pair untouched. Windows Release run `40914914018`
+  completed at the pushed head, but its x64 diagnostic prerequisite build
+  failed and no memory artifact was uploaded. A fresh hosted run is pending
+  the Batch 4 push. Broader 7A visual and lifecycle evidence, hosted memory
+  evidence, and the Windows packaged-Next memory gate remain open. The 7A and
+  Phase 7 exit gates are not yet passed. See the [Phase 7 progress
+  log](08-Phase-7-Progress-Log.md) for evidence and limits.
 
 ### Slice batches
 
