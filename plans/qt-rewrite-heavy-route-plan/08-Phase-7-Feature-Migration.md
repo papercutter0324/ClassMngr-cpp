@@ -38,15 +38,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-29
-- Current note: Candidate #38, Speaking-evaluation core using model/view and
-  compact state, is accepted; candidate #39, Evaluation analytics,
-  AI-assisted comments, and batch workflow, is active; #40, Reports/PDF/
-  PowerPoint/export jobs, is pending. Batch 3 remains active through #40.
-  Batch 4 discovery is complete and queued with eight ordered candidates. The
-  Initial Setup personal-details screenshot subgate is closed; broader 7A
-  visual evidence, memory evidence, and the Windows packaged-Next memory gate
-  remain open. The 7A and Phase 7 exit gates are not yet passed. See the
-  [Phase 7 progress log](08-Phase-7-Progress-Log.md) for evidence and limits.
+- Current note: Candidate #39, AI-assisted Speaking Evaluation comments and
+  batch workflow, is accepted in `02fbeca6`; class analytics remain owned by
+  #27. Candidate #40, Reports/PDF/PowerPoint/export jobs, is active. Batch 3
+  remains active through #40, and Batch 4 discovery is complete with eight
+  ordered candidates queued. The Initial Setup personal-details screenshot
+  subgate is closed; broader 7A visual evidence, memory evidence, and the
+  Windows packaged-Next memory gate remain open. The 7A and Phase 7 exit gates
+  are not yet passed. See the [Phase 7 progress
+  log](08-Phase-7-Progress-Log.md) for evidence and limits.
 
 ### Slice batches
 

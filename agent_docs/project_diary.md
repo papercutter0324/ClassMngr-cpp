@@ -9105,3 +9105,12 @@ coordinates instead of retaining a second full baseline matrix. Test the Save
 choice during switching as well as cancel/discard: successful saves must finish
 before activation changes, and failures must preserve the original selection,
 matrix, and dirty state for retry.
+
+## 2026-10-29 — Speaking Evaluation AI comment boundary
+
+Keep class analytics in candidate #27. Candidate #39 adds single-student and
+batch AI-assisted comments without duplicating the analytics screen. Redact
+student names before copying a prompt to the configured external HTTPS site,
+then restore names locally when applying the response; do not send requests to
+a hosted AI API. Cap a batch at the Legacy 25 evaluation rows and review/apply
+through the existing evaluation matrix undo, dirty-state, and save path.

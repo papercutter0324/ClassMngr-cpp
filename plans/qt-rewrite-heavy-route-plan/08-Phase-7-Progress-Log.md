@@ -1103,3 +1103,29 @@ Entries are preserved in their original document order.
 - Limits: offscreen widget renders do not establish native desktop-window
   behavior. Broader 7A visual evidence, memory evidence, the Windows
   packaged-Next memory gate, and the 7A/Phase 7 exit gates remain open.
+
+### Candidate #39 — AI-assisted Speaking Evaluation comments and batch workflow accepted (2026-10-29)
+
+- Commit: `02fbeca6` (`Phase7 - Add AI-assisted speaking evaluation comments`).
+  Class analytics remain in candidate #27. Candidate #39 adds single-student
+  and batch AI-assisted comments to the model/view evaluation page, with a
+  25-student batch cap, typed eligibility and prompt policies, provider/voice
+  preferences, and the configured external HTTPS website flow. Student names
+  are redacted from the prompt and restored locally when applying responses;
+  no hosted AI API is used. Review/apply uses the existing evaluation matrix,
+  undo, dirty-state, and save path.
+- Verification: the independent Tester validated one owner for 1,911
+  handwritten sources, built the affected targets, and passed focused CTest
+  9/9. Direct offscreen QtTest verified centered mouse and Space-key toggles
+  for both batch-selection and review indicators, and batch apply/save/page
+  recreation/reopen through a real WorkspaceStore fixture. Resource inventory
+  and `git diff --check` passed. The four accepted #38 capture files remain
+  byte-identical to HEAD.
+- Evidence and limits: the [C39 capture
+  package](../../docs/qt-rewrite/visual-baseline/next/phase-7/speaking-evaluation-ai-comments-c39/README.md)
+  records 16 synthetic English/Korean × light/dark page, prompt, selection,
+  and review captures with verified hashes and dimensions. They are
+  presentation evidence and do not claim pixel parity. No full suite,
+  Windows, hosted memory, or Phase 7 exit-gate result is claimed. Candidate
+  #40, reports/PDF/PowerPoint/export jobs, is active; Batch 3 remains open
+  through #40.

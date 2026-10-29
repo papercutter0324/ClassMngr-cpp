@@ -189,48 +189,27 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-29 (candidate #38 accepted; #39 implementation active)
+### Current checkpoint — 2026-10-29 (candidate #39 accepted; #40 active)
 
-Candidate #37, roster templates/printing, is accepted with source commit
-`098f1de7` and preview-capture regression/inventory follow-up `1214b569`.
-Next uses a path-scoped WorkspaceStore output route and a Qt renderer shared
-with the Legacy/SubPrep facade. The editor saves before preview, PDF Save As,
-or Print; Testing Classes keep the current-class/Per-Class restriction. By Day
-and Daily scan sparse rows for up to 25 nonblank name pairs. Per Class uses
-positional rows 0–22 and selected extra columns, releasing page projections
-before loading the next page. Independent recheck passed the two focused CTests
-and direct capture case; five fresh capture processes passed 20 regular
-preview comparisons, including 10 dark cases. The 16 synthetic captures are
-packaged as human-review presentation evidence. The earlier blank observation
-could not be reproduced; its origin remains unknown. Resource inventory
-`--check`, CMake source ownership (1,902), and `git diff --check` pass. The
-synthetic 120-class/3,000-student Daily route produced 20 pages with at most
-six projected classes/150 rows and 20 release callbacks; macOS peak RSS was
-64.875 MiB, diagnostic only. Physical printing, full suite, Windows,
-cross-platform, and Phase 9 memory acceptance are not claimed.
+Candidate #39, AI-assisted Speaking Evaluation comments and batch workflow,
+is accepted in source commit `02fbeca6`. Class analytics remain in candidate
+#27. The page uses typed prompt/eligibility policies, a 25-student batch cap,
+configured external HTTPS website preferences, and local name restoration.
+Review/apply flows through the evaluation matrix's existing undo, dirty-state,
+and save path. Independent verification passed 9 focused CTests and the direct
+mouse/keyboard and WorkspaceStore save/reopen cases. The 16 synthetic captures
+are packaged as presentation evidence; no pixel-parity claim is made. Resource
+inventory, one-owner source validation (1,911), and diff checks passed.
 
-Candidate #38, Speaking Evaluation core/model-view, is accepted in source
-commit `5b0274d9`. It adds a lazy Next page with compact class/evaluation
-navigation, a single 25×11 model, direct WorkspaceStore read/save/name ports,
-roster import, private notes, undo, autosave/manual save, retry, and safe
-switching. Independent verification passed 10 QtTest cases, the focused page
-CTest, Next launch, and the dependency boundary. CMake ownership validated
-1,909 handwritten files; resource inventory check passed. Four English/Korean
-× Light/Dark captures are packaged as presentation evidence. Candidate #39,
-evaluation analytics, AI-assisted comments, and batch workflows, is active.
-Batch 4 discovery is complete with candidates #41–48 listed in the tracker;
-the two independent maps found no other slices. Batch 3 remains un-pushed
-through #40.
-
-The Initial Setup personal-details screenshot subgate is closed with eight
-Legacy/Next offscreen captures, the dark signature-canvas contrast fix, and
-independent English/Korean × Light/Dark review. Signature save/reopen tests
-confirm the transparent stored image bytes remain unchanged. Broader 7A visual
-evidence, overall memory evidence and the hosted Windows x64 Release run, other
-7A workflows, and the 7A/Phase 7 exit gates remain open. The memory validator's
-six Python tests pass; the independent CMake/fixture recheck is active. The
-legacy `.db` fixture import/data/relationship/output comparison also remains
-open. `<250 MiB` is the separate Phase 9 gate.
+Candidate #40, reports/PDF/PowerPoint/export jobs, is active. Batch 3 remains
+un-pushed through #40; Batch 4 is discovered with candidates #41–48 and no
+other slices identified. Exit evidence still open includes the broader 7A
+visual comparison and memory/lifecycle evidence, hosted Windows x64 Release
+Next startup collection, and synthetic schema-v6 `.db` relationship/output
+parity recheck. The 96-class Sub Prep entry/refresh/output/release route is
+required in #44. The local memory-validator Python tests pass 6/6; its hosted
+run remains pending after Batch 3 push. The `<250 MiB` threshold remains a
+separate Phase 9 gate. The 7A and Phase 7 exit gates are not yet passed.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

@@ -6,10 +6,10 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-29
-- Current milestone: Phase 7 remains in progress. Candidate #38,
-  Speaking-evaluation core using model/view and compact state, is accepted;
-  candidate #39, Evaluation analytics, AI-assisted comments, and batch
-  workflow, is active; #40, Reports/PDF/PowerPoint/export jobs, is pending.
+- Current milestone: Phase 7 remains in progress. Candidate #39,
+  AI-assisted Speaking Evaluation comments and batch workflow, is accepted in
+  `02fbeca6`; class analytics were already migrated in #27. Candidate #40,
+  Reports/PDF/PowerPoint/export jobs, is active.
   Batch 3 remains active through #40. Batch 4 discovery is complete and queued
   with eight ordered candidates.
   See the [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current batch
@@ -38,7 +38,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — candidate #39 active | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — candidate #40 active | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

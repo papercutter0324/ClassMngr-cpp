@@ -60,9 +60,16 @@ ownership, dependencies, lifecycle, and verification.
 38. **Accepted — Speaking-evaluation core using model/view and compact state**
     (`5b0274d9`). See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
     and [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/speaking-evaluation-core/README.md).
-39. **Active — Evaluation analytics, AI-assisted comments, and batch
-    workflow.**
-40. **Pending — Reports, PDF, PowerPoint, and export jobs.**
+39. **Accepted — AI-assisted Speaking Evaluation comments and batch workflow**
+    (`02fbeca6`). Class analytics remain in #27; see the [C39 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/speaking-evaluation-ai-comments-c39/README.md).
+40. **Active — Reports, PDF, PowerPoint, and export jobs.** Preserve report
+    content and templates, current/all-student preview/edit behavior, single
+    PDF/print and batch ZIP/individual-PDF output, overwrite/progress/cancel
+    handling, PowerPoint availability/fallback/template restrictions and the
+    macOS access prompt. Keep temporary report data operation-scoped with
+    cleanup on success, failure, and cancellation; test PowerPoint through a
+    deterministic adapter when host automation is unavailable. Do not duplicate
+    #27 analytics or add a hosted AI API.
 
 Keep My Classes, schedules, rosters, and evaluations model/view-backed with
 compact resident state. Bound import, review, and output data; release it when
