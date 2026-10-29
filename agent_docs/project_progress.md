@@ -213,7 +213,8 @@ pixel-parity. Batch 3 and its Windows evidence support were pushed at
 implementation: packaged read-only data, writable app-data overrides with
 import from the known historical directory, and a campus-local `--enable-admin`
 capability. Campus Staff remains owned by #17–19; app-wide permission parity
-remains #46. The generated schema-v6 `.db`
+remains #46. Production implementation is underway; independent verification
+remains pending. The generated schema-v6 `.db`
 relationship/output check passed independently
 using synthetic fixture data, not a historic profile, with PDF parity limited
 to one landscape template. Exit evidence still open includes broader 7A visual
@@ -222,10 +223,12 @@ collection. The 96-class Sub Prep entry/refresh/output/release route is
 required in #44. Local memory-evidence support passed six Python validator
 tests, blank schema-v6 fixture CTest 1/1, and the Next startup dependency
 boundary CTest 1/1. The fixture link has no broad Runtime/Calendar closure and
-source ownership validated 1,921 handwritten files. The Windows Release
-diagnostic run triggered by the push is still running, and its artifact has not
-been reviewed. The `<250 MiB` threshold remains a separate
-Phase 9 gate. The 7A and Phase 7 exit gates are not yet passed.
+source ownership validated 1,921 handwritten files. Windows Release run
+`40914914018` completed at the pushed SHA, but the x64 diagnostic prerequisite
+build failed on missing `WorkspaceStoreGateway` schedule import members; no
+collector files or Phase 7 memory evidence were produced. The `<250 MiB`
+threshold remains a separate Phase 9 gate. The 7A and Phase 7 exit gates are
+not yet passed.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.
@@ -617,8 +620,9 @@ user's response to the exact-payload approval request.
 ## Next Milestone
 
 Complete candidates #41–48 in Batch 4 and push the batch. Begin the next-batch
-discovery when candidate #47 starts. Review the hosted Windows diagnostic
-artifact after run 40914914018 completes. Do not
+discovery when candidate #47 starts. Resolve the Windows diagnostic
+prerequisite build without disturbing the protected Gateway work, then obtain
+and review a fresh artifact. Do not
 declare Phase 7 complete until the 7A and Phase 7 exit gates pass; see the
 [Phase 7 plan](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Feature-Migration.md)
 and [progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).

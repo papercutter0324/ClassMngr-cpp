@@ -1195,11 +1195,17 @@ Entries are preserved in their original document order.
   fixture target (CTest 1/1; direct QtTest 3/3), `ClassMngrNext` build, and
   `NextStartupWorkspaceDependencyBoundary` CTest 1/1. CMake ownership validated
   one owner for 1,921 handwritten sources. The fixture's final link has one
-  WorkspaceStore archive and no Legacy Runtime/Calendar closure. The Windows
-  Release workflow was triggered by the Batch 3 push and is running at
-  [run 40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018).
-  Its diagnostic artifact and metrics have not yet been reviewed. No hosted
-  Windows memory or Phase 9 result is claimed.
+  WorkspaceStore archive and no Legacy Runtime/Calendar closure. Hosted result:
+  [run 40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018)
+  completed with workflow conclusion `success` at the exact pushed SHA, but
+  the Windows x64 diagnostic prerequisite build reported missing
+  `WorkspaceStoreGateway::loadScheduleImportState` and
+  `WorkspaceStoreGateway::applyScheduleImport` declarations/definitions before
+  `ClassMngrNextResourcePackage` failed. Because the collector is
+  non-gating, the workflow continued; the expected
+  `phase7-next-memory-windows-x64` artifact and all four evidence files were
+  absent. The collector did not run, so no hosted Phase 7 memory evidence or
+  Phase 9 result is claimed.
 
 ### Candidate #41 — Campus Directory boundary accepted for implementation (2026-10-29)
 
@@ -1236,4 +1242,8 @@ Entries are preserved in their original document order.
   only the explicit root, atomic-save failure and retry, reopen persistence,
   and map load/release/reopen. Verify English/Korean and Light/Dark captures,
   the narrow Next link boundary, resource inventory, and `git diff --check`.
-  Implementation and independent verification have not started.
+  Include a focused memory measurement at baseline, maps entry, leave/release,
+  and reopen, recording its metric source/configuration and resource counts;
+  this adds no numeric threshold and is not Phase 9 evidence.
+  The implementation is now underway; independent verification remains
+  pending.

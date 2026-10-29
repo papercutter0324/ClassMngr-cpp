@@ -10,7 +10,7 @@
   Reports/PDF/PowerPoint/export jobs, is accepted in `f2b24bd7`; Batch 3 and
   its Windows evidence support were pushed at `2cfb1db3`. Batch 4 is active
   with candidates #41–48. Candidate #41's Campus Dashboard boundary is
-  accepted for implementation: a packaged read-only catalog, writable
+  accepted and production implementation is underway: a packaged read-only catalog, writable
   app-data overrides with import from the one known historical directory, and
   a campus-local admin capability. Campus Staff remains owned by #17–19, and
   the general permission gate by #46.
@@ -18,9 +18,10 @@
   tracker](Current-Slice-Batches.md). The Initial Setup personal-details
   screenshot subgate is closed. The generated synthetic schema-v6 `.db`
   relationship/output check passed; it is not historical user-profile
-  evidence. The Windows Release memory collection on the pushed head is
-  running ([workflow run 40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018));
-  its artifact has not yet been reviewed. Broader 7A visual evidence, memory
+  evidence. Windows Release run [40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018)
+  completed at the pushed head, but the x64 memory collector's prerequisite
+  build failed and no diagnostic artifact was uploaded. No hosted memory
+  evidence was produced. Broader 7A visual evidence, memory
   evidence, and the Windows packaged-Next memory gate remain open. The 7A and
   Phase 7 exit gates are not yet passed.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate

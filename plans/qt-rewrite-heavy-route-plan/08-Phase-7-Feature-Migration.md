@@ -41,16 +41,18 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: Candidate #40, Reports/PDF/PowerPoint/export jobs, is accepted
   in `f2b24bd7`; Batch 3 and its Windows evidence support were pushed at
   `2cfb1db3`. Batch 4 is active with candidates #41–48. Candidate #41's
-  Campus Dashboard boundary is accepted for implementation: a packaged
+  Campus Dashboard boundary is accepted and production implementation is
+  underway: a packaged
   read-only catalog, writable app-data overrides with import from the one
   known historical directory, and a campus-local admin capability. Campus
   Staff directories remain with candidates #17–19; the app-wide permission
   gate remains #46. The Initial Setup personal-details screenshot
   subgate and synthetic schema-v6 `.db` relationship/output check are closed;
-  the latter uses generated data, not a historical profile. The Windows
-  Release memory collection on the pushed head is running and its artifact is
-  unreviewed. Broader 7A visual evidence, memory evidence, and the Windows
-  packaged-Next memory gate remain open. The 7A and Phase 7 exit gates are not
+  the latter uses generated data, not a historical profile. Windows Release
+  run `40914914018` completed at the pushed head, but the x64 memory collector's
+  prerequisite build failed and no diagnostic artifact was uploaded. No
+  hosted memory evidence was produced. Broader 7A visual evidence, memory
+  evidence, and the Windows packaged-Next memory gate remain open. The 7A and Phase 7 exit gates are not
   yet passed. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md) for
   evidence and limits.
 

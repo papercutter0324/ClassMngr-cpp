@@ -9129,10 +9129,11 @@ so assert visible Korean labels for Save, Print, Save As, and Close actions.
 ## 2026-10-29 — Separate diagnostic memory collection from release gates
 
 Keep the Phase 7 Windows startup collector diagnostic and inspect its manifest,
-metrics, and validator output after the hosted run. Collector failure must stay
-visible and upload its failure evidence without becoming an accidental release
-gate. Keep the numeric Windows working-set threshold in Phase 9; five startup
-samples across each Phase 7 scenario do not establish that threshold.
+metrics, and validator output after the hosted run. A workflow can report
+success while a non-gating collector prerequisite fails; require the expected
+artifact and successful validator before claiming evidence. Keep the numeric
+Windows working-set threshold in Phase 9; five startup samples across each
+Phase 7 scenario do not establish that threshold.
 
 ## 2026-10-29 — Keep WorkspaceStore fixture targets narrow
 
