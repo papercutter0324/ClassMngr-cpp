@@ -41,8 +41,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Current note: Candidate #40, Reports/PDF/PowerPoint/export jobs, is accepted
   in `f2b24bd7`; Batch 3 and its Windows evidence support were pushed at
   `2cfb1db3`. Batch 4 is active with candidates #41–48. Candidate #41's
-  Legacy campus save behavior is being traced before its implementation
-  boundary is finalized from Legacy and Next source traces. The Initial Setup personal-details screenshot
+  Campus Dashboard boundary is accepted for implementation: a packaged
+  read-only catalog, writable app-data overrides with import from the one
+  known historical directory, and a campus-local admin capability. Campus
+  Staff directories remain with candidates #17–19; the app-wide permission
+  gate remains #46. The Initial Setup personal-details screenshot
   subgate and synthetic schema-v6 `.db` relationship/output check are closed;
   the latter uses generated data, not a historical profile. The Windows
   Release memory collection on the pushed head is running and its artifact is
@@ -255,7 +258,10 @@ Migrate:
 - Address.
 - Housing.
 - Maps.
-- Campus staff.
+- Campus Staff directories remain owned by candidates #17–19: #17 covers the
+  Korean Teachers directory, #18 covers Native English Teachers and GS Team,
+  and #19 covers normal teacher workbook import. These are workspace-scoped
+  and are not part of the Campus Dashboard migration.
 - Document catalog.
 - Document viewer.
 

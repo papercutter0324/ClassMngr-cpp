@@ -209,8 +209,11 @@ integrity review. Its ten synthetic captures and one-page PDF are packaged in
 the C40 visual-baseline README; they show presentation and output, not
 pixel-parity. Batch 3 and its Windows evidence support were pushed at
 `2cfb1db386850987b0680e9b3f92704a8cb155e6`. Batch 4 is active with candidates
-#41–48; the #41 explicit campus data migration and campus-only edit boundary
-are being finalized from Legacy and Next traces. The generated schema-v6 `.db`
+#41–48. Candidate #41's Campus Dashboard boundary is accepted for
+implementation: packaged read-only data, writable app-data overrides with
+import from the known historical directory, and a campus-local `--enable-admin`
+capability. Campus Staff remains owned by #17–19; app-wide permission parity
+remains #46. The generated schema-v6 `.db`
 relationship/output check passed independently
 using synthetic fixture data, not a historic profile, with PDF parity limited
 to one landscape template. Exit evidence still open includes broader 7A visual

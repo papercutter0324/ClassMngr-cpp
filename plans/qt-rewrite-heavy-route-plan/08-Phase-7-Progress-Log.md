@@ -1200,3 +1200,40 @@ Entries are preserved in their original document order.
   [run 40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018).
   Its diagnostic artifact and metrics have not yet been reviewed. No hosted
   Windows memory or Phase 9 result is claimed.
+
+### Candidate #41 — Campus Directory boundary accepted for implementation (2026-10-29)
+
+- Scope: the five Campus Dashboard sections—office/printer information,
+  directions, address, housing, and maps. Campus Staff is a separate,
+  workspace-scoped directory already owned by #17 (Korean Teachers), #18
+  (Native English Teachers and GS Team), and #19 (teacher workbook import).
+  The Phase 7 §7I list now records that ownership.
+- Legacy evidence: normal dashboard construction mounts
+  `:/resource-packs/campuses`; `CampusJsonRepository::saveCampus()` attempts
+  `QSaveFile` at that read-only resource path and reports a technical failure.
+  Before `b97c3d8e` removed editable campus-directory support, overrides were
+  stored at the exact `<process cwd>/data/campuses` path. Do not claim current
+  packaged Legacy admin edits were persisted.
+- Decision: Next reads the packaged campus catalog through ResourceLoader and
+  stores overrides under the platform app-data directory, with ID-based
+  override precedence and atomic writes. Import only from the one known
+  historical `<process cwd>/data/campuses` directory when it exists; do not
+  search alternate roots. A previous directory launched from a different
+  working directory cannot be discovered automatically. The override remains
+  visible after save/reopen and takes precedence over the packaged campus.
+- Admin boundary: presence of `--enable-admin` yields a typed campus edit
+  capability; absence is read-only. Keep the capability local to the five
+  campus routes and their actions. Do not change generic `PageContext`,
+  `PageHost`, navigation grants, or app-wide permission behavior; candidate
+  #46 owns that gate.
+- Map boundary: resolve map assets as catalog resources rather than retaining
+  Legacy filesystem/resource-pack paths. Load only for the maps section, bound
+  decoded dimensions to the Legacy 1520-pixel maximum, and release map images
+  on suspension/leave/release. Preserve campus selection fallback (saved ID,
+  then first available campus) and current localized fields.
+- Acceptance: cover all five routes, default/changed campus selection,
+  read-only and admin states, packaged/override merge, historical import from
+  only the explicit root, atomic-save failure and retry, reopen persistence,
+  and map load/release/reopen. Verify English/Korean and Light/Dark captures,
+  the narrow Next link boundary, resource inventory, and `git diff --check`.
+  Implementation and independent verification have not started.

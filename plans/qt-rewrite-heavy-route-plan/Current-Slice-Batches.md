@@ -3,8 +3,11 @@
 ## Batch 4 — active
 
 41. **In progress — Campus Directory:** campus content, directions, address,
-    housing, maps, and permitted editing. Its explicit data migration and
-    campus-only edit boundary are being finalized from Legacy and Next traces.
+    housing, maps, and permitted editing. Boundary accepted: packaged
+    read-only catalog, writable app-data overrides, explicit import from the
+    one known historical directory, and campus-local admin capability.
+    Campus Staff directories remain owned by #17–19; app-wide permission
+    parity remains #46.
 42. **Discovered — Document catalog.**
 43. **Discovered — Document viewer lifecycle/actions:** load, save/copy,
     zoom/navigation, release, and reopen.

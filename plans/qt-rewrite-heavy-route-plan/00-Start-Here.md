@@ -9,9 +9,11 @@
 - Current milestone: Phase 7 remains in progress. Candidate #40,
   Reports/PDF/PowerPoint/export jobs, is accepted in `f2b24bd7`; Batch 3 and
   its Windows evidence support were pushed at `2cfb1db3`. Batch 4 is active
-  with candidates #41–48, and #41's explicit campus data migration and
-  campus-only edit capability are being finalized from Legacy and Next source
-  traces.
+  with candidates #41–48. Candidate #41's Campus Dashboard boundary is
+  accepted for implementation: a packaged read-only catalog, writable
+  app-data overrides with import from the one known historical directory, and
+  a campus-local admin capability. Campus Staff remains owned by #17–19, and
+  the general permission gate by #46.
   See the [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current batch
   tracker](Current-Slice-Batches.md). The Initial Setup personal-details
   screenshot subgate is closed. The generated synthetic schema-v6 `.db`

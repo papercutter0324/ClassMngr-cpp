@@ -9142,3 +9142,14 @@ test finalizer can otherwise hide those links by adding the broad Legacy
 Runtime closure. Reuse one compiled profiler shim owner and assert the final
 link command contains one WorkspaceStore archive without Legacy Runtime or
 Calendar libraries.
+
+## 2026-10-29 — Campus Directory data and edit boundaries
+
+The normal Legacy Campus Dashboard reads campus JSON from a mounted resource
+pack, where `QSaveFile` cannot persist edits. Earlier releases stored campus
+overrides under the exact process-relative `data/campuses` directory. In Next,
+keep the installed catalog read-only, persist overrides in app data, and only
+try that one known legacy location for migration; do not guess among other
+roots. Campus edit capability stays local to Campus Dashboard routes, while
+the shared permission gate remains separate. Campus Staff directories are
+workspace data already covered by #17–#19, not campus-record children.
