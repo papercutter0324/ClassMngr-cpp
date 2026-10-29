@@ -4,7 +4,9 @@
 
 41. **Accepted — Campus Directory** (`728c8c14`). See the [Phase 7 progress
     log](08-Phase-7-Progress-Log.md) and [C41 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/campus-directory-c41/README.md).
-42. **Discovered — Document catalog** (next after the setup build repair).
+42. **In progress — Document catalog:** localized Next navigation from the
+    existing metadata-only projection; emit stable document IDs and leave PDF
+    body loading to #43.
 43. **Discovered — Document viewer lifecycle/actions:** load, save/copy,
     zoom/navigation, release, and reopen.
 44. **Discovered — 7J.1 Sub Prep:** large-workspace class information and
@@ -15,7 +17,7 @@
     already owned by Phase 5.
 48. **Discovered — Useful Links external navigation.**
 
-Before #42, resolve the Windows x64 setup schedule-import build failure from
-the pushed Batch 3 head. The remediation is using the committed path-scoped
-ports; the protected Gateway work remains outside it. No other slices were
-found.
+The setup schedule-import prerequisite repair is committed in `80f7f1c6` using
+the existing path-scoped ports; the protected Gateway pair remains outside
+the repair. A fresh hosted diagnostic run is pending the Batch 4 push. No
+other slices were found.

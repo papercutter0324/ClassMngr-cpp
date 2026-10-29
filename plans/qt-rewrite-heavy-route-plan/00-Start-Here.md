@@ -7,10 +7,10 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-29
 - Current milestone: Phase 7 remains in progress. Candidate #41, Campus
-  Directory, is accepted in `728c8c14`; Batch 4 remains active and #42,
-  Document catalog, is next. A clean-head setup schedule-import build repair
-  is underway before #42, using existing path-scoped ports and leaving the
-  protected Gateway edits untouched. Candidate #41 adds the five dashboard
+  Directory, is accepted in `728c8c14`; Batch 4 is active and #42, Document
+  catalog, is now in progress. The Initial Setup schedule-import build repair
+  is committed in `80f7f1c6`; it uses existing path-scoped ports and leaves
+  the protected Gateway pair untouched. Candidate #41 adds the five dashboard
   sections, packaged read-only campus data, app-data overrides, explicit
   historical-directory migration, and a campus-local admin capability.
   Campus Staff remains owned by #17–19, and the general permission gate by

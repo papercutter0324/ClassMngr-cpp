@@ -9160,3 +9160,9 @@ must be part of cache identity (or bounded decoding must happen after a
 separate full-resolution cache lookup). A bounded request must not make a later
 unbounded request return a smaller image, and the reverse order must preserve
 the requested bound.
+
+Initial Setup schedule import can use the existing path-scoped adapter: its
+use case commits through its own WorkspaceStore, while the active setup session
+can still observe the rows. Verify failed imports preserve recovery journal
+and original-profile backup contents, then verify durability with a fresh-store
+reopen; do not add a generic Gateway save call after that committed operation.

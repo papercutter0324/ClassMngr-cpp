@@ -1277,4 +1277,45 @@ Entries are preserved in their original document order.
   cannot be found automatically. The shared ResourceCache retains decoded
   images until LRU eviction, but C41 constructs its map loader without that
   cache and releases its map resources on page lifecycle. Windows diagnostic
-  memory evidence remains unavailable pending the setup build repair below.
+  memory evidence remains unavailable pending a fresh hosted run after the
+  setup repair and Batch 4 push.
+
+### Initial Setup schedule-import diagnostic build repair — accepted (2026-10-29)
+
+- Commit: `80f7f1c6` (`Phase7 - Repair setup schedule import build`).
+- Change: Initial Setup resolves the active profile path from `WorkspaceState`
+  and uses the existing path-scoped schedule-import read/apply adapters. The
+  setup callbacks no longer depend on the missing `WorkspaceStoreGateway`
+  schedule-import members. The protected Gateway pair remains pre-existing
+  user work and was not included in this repair.
+- Regression: the still-open setup Gateway sees six imported regular schedule
+  rows; an injected SQLite trigger failure preserves workspace table counts,
+  settings, pending setup state, and the recovery journal and original-profile
+  backup byte-for-byte. After successful apply, a fresh `WorkspaceStore`
+  confirms the six rows persisted. The generic Gateway `saveWorkspace` call is
+  not part of setup Finish and was removed from the regression because the
+  schedule-import use case commits its own transaction.
+- Independent verification: the incremental standard macOS Debug build
+  completed for the setup and normal schedule-import integration targets.
+  Focused CTest passed 3/3: setup integration, normal schedule-import
+  integration, and `NextStartupWorkspaceDependencyBoundary`.
+  `git diff --check` passed. No full suite or local Windows build ran.
+- Limit: Windows Release run `40914914018` still has no diagnostic artifact;
+  the corrected prerequisite must be exercised by a fresh hosted run after the
+  Batch 4 push. No hosted Phase 7 memory evidence or Phase 9 result is claimed.
+
+### Candidate #42 — Document catalog boundary (in progress, 2026-10-29)
+
+- Boundary: use the existing immutable `DocumentCatalogProjection` and
+  `ResourceDocumentCatalogPort` to build localized Next catalog navigation.
+  Preserve folder hierarchy, sibling ordering, document IDs, and print/export
+  metadata.
+- Decision: a document leaf emits its stable `DocumentId`; opening and
+  releasing the selected PDF remains with #43. Catalog construction and
+  application startup must not load PDF bodies or QtPdf pages. Keep the
+  existing strict validation for the packaged metadata rather than adding the
+  Legacy partial-catalog recovery path to this immutable resource.
+- Existing evidence: metadata-only startup without PDF bodies and missing
+  metadata failure are already covered. New acceptance must cover the Next
+  navigation consumer, locale changes, nested ordering/identity, and zero body
+  loads during catalog creation; viewer session lifecycle stays with #43.
