@@ -3,6 +3,7 @@
 #include "next/application/speaking_evaluation_query.h"
 #include "next/application/speaking_evaluation_roster_names_read_port.h"
 #include "next/application/speaking_evaluation_save_use_case.h"
+#include "next/application/selected_class_grade_read_port.h"
 
 #include <QString>
 
@@ -51,6 +52,23 @@ public:
     [[nodiscard]] Application::SpeakingEvaluationRosterNamesReadResult
     readSpeakingEvaluationRosterNames(
         const Application::SpeakingEvaluationRosterNamesReadRequest& request
+        ) const override;
+
+private:
+    QString m_databasePath;
+};
+
+class WorkspaceStoreSpeakingEvaluationClassGradeReadPort final
+    : public Application::SelectedClassGradeReadPort
+{
+public:
+    explicit WorkspaceStoreSpeakingEvaluationClassGradeReadPort(
+        QString databasePath
+        );
+
+    [[nodiscard]] Application::SelectedClassGradeReadResult
+    readSelectedClassGrade(
+        const Domain::ClassId& classId
         ) const override;
 
 private:

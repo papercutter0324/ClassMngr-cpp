@@ -461,7 +461,8 @@ buildSpeakingEvaluationAiBatchCommentPrompt(
     )
 {
     using namespace SpeakingEvaluationAiCommentPromptDetail;
-    if (request.students.empty())
+    if (request.students.empty()
+        || request.students.size() > kSpeakingEvaluationAiBatchMaximumStudents)
     {
         return {};
     }

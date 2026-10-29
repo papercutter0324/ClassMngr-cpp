@@ -2,8 +2,12 @@
 
 #include "next/domain/course.h"
 
+#include <cstddef>
+
 namespace ClassMngr::Next::Application
 {
+
+inline constexpr std::size_t kSpeakingEvaluationAiBatchMaximumStudents = 25;
 
 enum class SpeakingEvaluationAiBatchEligibilityReason
 {

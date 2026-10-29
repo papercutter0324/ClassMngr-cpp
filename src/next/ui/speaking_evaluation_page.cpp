@@ -1,8 +1,13 @@
 #include "next/ui/speaking_evaluation_page.h"
 
 #include "next/application/speaking_evaluation_private_notes_split.h"
+#include "next/application/speaking_evaluation_ai_comment_prompt.h"
+#include "next/application/speaking_evaluation_ai_batch_eligibility.h"
 #include "next/application/speaking_evaluation_roster_name_import_plan.h"
 #include "next/application/speaking_evaluation_roster_names_read_query.h"
+#include "next/application/selected_class_grade_read_query.h"
+#include "next/platform/speaking_evaluation_qt_text_match_port.h"
+#include "next/ui/speaking_evaluation_ai_dialogs.h"
 
 #include <QComboBox>
 #include <QCoreApplication>
@@ -16,12 +21,15 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QStyle>
+#include <QStyleOptionButton>
 #include <QSplitter>
 #include <QTableView>
 #include <QTimer>
 #include <QUndoStack>
 #include <QVBoxLayout>
 #include <QStyledItemDelegate>
+#include <QUrl>
 
 #include <algorithm>
 #include <array>
@@ -51,6 +59,76 @@ QString fromUtf16(const std::u16string& value)
 QString errorText(const std::string& value)
 {
     return QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size()));
+}
+
+QString aiProviderDisplayName(
+    const Application::AiCommentProvider provider
+    )
+{
+    switch (provider)
+    {
+    case Application::AiCommentProvider::Gemini:
+        return QStringLiteral("Gemini");
+    case Application::AiCommentProvider::Claude:
+        return QStringLiteral("Claude");
+    case Application::AiCommentProvider::MicrosoftCopilot:
+        return QStringLiteral("Microsoft Copilot");
+    case Application::AiCommentProvider::CustomWebsite:
+        return QStringLiteral("Custom AI Website");
+    case Application::AiCommentProvider::ChatGPT:
+    default:
+        return QStringLiteral("ChatGPT");
+    }
+}
+
+QUrl aiProviderWebsiteUrl(
+    const Application::AiCommentProvider provider,
+    const QString& customWebsiteUrl
+    )
+{
+    switch (provider)
+    {
+    case Application::AiCommentProvider::Gemini:
+        return QUrl(QStringLiteral("https://gemini.google.com/app"));
+    case Application::AiCommentProvider::Claude:
+        return QUrl(QStringLiteral("https://claude.ai/"));
+    case Application::AiCommentProvider::MicrosoftCopilot:
+        return QUrl(QStringLiteral("https://copilot.microsoft.com/"));
+    case Application::AiCommentProvider::CustomWebsite:
+    {
+        const QUrl customUrl(customWebsiteUrl.trimmed());
+        return customUrl.isValid()
+                && customUrl.scheme().compare(
+                    QStringLiteral("https"), Qt::CaseInsensitive) == 0
+                && !customUrl.host().isEmpty()
+            ? customUrl
+            : QUrl{};
+    }
+    case Application::AiCommentProvider::ChatGPT:
+    default:
+        return QUrl(QStringLiteral("https://chatgpt.com/"));
+    }
+}
+
+QString aiEligibilityMessage(
+    const Application::SpeakingEvaluationAiBatchEligibilityReason reason
+    )
+{
+    using Reason = Application::SpeakingEvaluationAiBatchEligibilityReason;
+    switch (reason)
+    {
+    case Reason::Eligible:
+        return {};
+    case Reason::MissingName:
+        return pageText("Enter the student's name to create an AI prompt.");
+    case Reason::UnsupportedGrade:
+        return pageText("AI prompts are available for grades E4 through E6.");
+    case Reason::MissingDidWellItem:
+        return pageText("Add at least one Did Well note.");
+    case Reason::MissingNeedsImprovementItem:
+        return pageText("Add at least one Needs Improvement note.");
+    }
+    return {};
 }
 
 std::u16string storedEvaluationName(const int index)
@@ -269,12 +347,19 @@ SpeakingEvaluationPage::SpeakingEvaluationPage(
     m_importNamesButton->setObjectName(QStringLiteral("speakingEvaluationImportNames"));
     m_editNotesButton = new QPushButton(this);
     m_editNotesButton->setObjectName(QStringLiteral("speakingEvaluationEditNotes"));
+    m_aiCommentButton = new QPushButton(this);
+    m_aiCommentButton->setObjectName(QStringLiteral("speakingEvaluationAiComment"));
+    m_aiBatchCommentsButton = new QPushButton(this);
+    m_aiBatchCommentsButton->setObjectName(
+        QStringLiteral("speakingEvaluationAiBatchComments"));
     m_undoButton = new QPushButton(this);
     m_undoButton->setObjectName(QStringLiteral("speakingEvaluationUndo"));
     m_saveButton = new QPushButton(this);
     m_saveButton->setObjectName(QStringLiteral("speakingEvaluationSave"));
     actionsRow->addWidget(m_importNamesButton);
     actionsRow->addWidget(m_editNotesButton);
+    actionsRow->addWidget(m_aiCommentButton);
+    actionsRow->addWidget(m_aiBatchCommentsButton);
     actionsRow->addWidget(m_undoButton);
     actionsRow->addStretch(1);
     actionsRow->addWidget(m_saveButton);
@@ -333,6 +418,10 @@ SpeakingEvaluationPage::SpeakingEvaluationPage(
                 static_cast<void>(selectClass(*classId));
             }
         });
+    connect(m_table->selectionModel(), &QItemSelectionModel::currentChanged,
+        this, [this](const QModelIndex&, const QModelIndex&) {
+            updateActions();
+        });
     connect(m_evaluationChoice,
         qOverload<int>(&QComboBox::currentIndexChanged),
         this, [this](const int index) {
@@ -361,6 +450,12 @@ SpeakingEvaluationPage::SpeakingEvaluationPage(
     });
     connect(m_editNotesButton, &QPushButton::clicked, this, [this] {
         editPrivateNotes();
+    });
+    connect(m_aiCommentButton, &QPushButton::clicked, this, [this] {
+        generateAiCommentPrompt();
+    });
+    connect(m_aiBatchCommentsButton, &QPushButton::clicked, this, [this] {
+        generateClassAiComments();
     });
     connect(m_undoButton, &QPushButton::clicked, m_undoStack, &QUndoStack::undo);
     connect(m_saveButton, &QPushButton::clicked, this, [this] {
@@ -406,6 +501,16 @@ QLabel* SpeakingEvaluationPage::statusLabel() const noexcept
 QPushButton* SpeakingEvaluationPage::retryButton() const noexcept
 {
     return m_retryButton;
+}
+
+QPushButton* SpeakingEvaluationPage::aiCommentButton() const noexcept
+{
+    return m_aiCommentButton;
+}
+
+QPushButton* SpeakingEvaluationPage::aiBatchCommentsButton() const noexcept
+{
+    return m_aiBatchCommentsButton;
 }
 
 std::optional<Domain::ClassId> SpeakingEvaluationPage::selectedClassId() const
@@ -560,6 +665,7 @@ bool SpeakingEvaluationPage::refreshFromStore()
         return false;
     }
     m_summariesLoaded = false;
+    m_selectedClassGrade.reset();
     return loadClassSummaries();
 }
 
@@ -572,6 +678,7 @@ void SpeakingEvaluationPage::clearForWorkspaceChange()
         return;
     }
     m_workspaceIdentity.clear();
+    m_selectedClassGrade.reset();
     m_summariesLoaded = false;
     m_classModel->clear();
     m_selectedClassId.reset();
@@ -599,6 +706,11 @@ void SpeakingEvaluationPage::changeEvent(QEvent* event)
         m_matrixModel->retranslate();
         setStatus(m_statusKind);
         syncSelectionControls();
+    }
+    else if (event->type() == QEvent::StyleChange
+        || event->type() == QEvent::FontChange)
+    {
+        updateActionButtonWidths();
     }
     Page::changeEvent(event);
 }
@@ -685,6 +797,10 @@ bool SpeakingEvaluationPage::loadClassSummaries()
             : preferred && m_classModel->rowForClassId(*preferred) >= 0
                 ? preferred
                 : m_classModel->classIdAt(0);
+        if (previous != m_selectedClassId)
+        {
+            m_selectedClassGrade.reset();
+        }
         syncSelectionControls();
         if (m_classModel->summaryCount() == 0)
         {
@@ -795,6 +911,7 @@ bool SpeakingEvaluationPage::selectClass(const Domain::ClassId& classId)
         return false;
     }
     m_selectedClassId = classId;
+    m_selectedClassGrade.reset();
     if (m_actions.setActiveClassSelection)
     {
         try
@@ -1004,6 +1121,13 @@ void SpeakingEvaluationPage::retryCurrentOperation()
     {
         static_cast<void>(loadEvaluation());
     }
+    else if (m_statusKind == Status::AiPreparationError)
+    {
+        if (loadSelectedClassGrade())
+        {
+            setStatus(Status::Ready);
+        }
+    }
     else
     {
         static_cast<void>(saveCurrentEvaluation(true));
@@ -1120,6 +1244,302 @@ void SpeakingEvaluationPage::editPrivateNotes()
     }
 }
 
+bool SpeakingEvaluationPage::loadSelectedClassGrade()
+{
+    if (m_selectedClassGrade)
+    {
+        return true;
+    }
+    if (!m_selectedClassId || !m_actions.classGradeReadPortFactory)
+    {
+        setStatus(Status::AiPreparationError,
+            pageText("The class grade could not be loaded. Retry to use AI comments."));
+        return false;
+    }
+    const auto path = activePath();
+    if (!path)
+    {
+        setStatus(Status::AiPreparationError,
+            pageText("The class grade could not be loaded. Retry to use AI comments."));
+        return false;
+    }
+
+    try
+    {
+        std::unique_ptr<Application::SelectedClassGradeReadPort> port =
+            m_actions.classGradeReadPortFactory(*path);
+        if (!port)
+        {
+            setStatus(Status::AiPreparationError,
+                pageText("The class grade could not be loaded. Retry to use AI comments."));
+            return false;
+        }
+        const Application::SelectedClassGradeReadQuery query(*port);
+        const Application::SelectedClassGradeReadResult loaded =
+            query.execute(*m_selectedClassId);
+        if (!loaded)
+        {
+            setStatus(Status::AiPreparationError,
+                errorText(loaded.error().message));
+            return false;
+        }
+
+        const std::string& storedGrade = loaded.value().classGrade.value();
+        const QString classGrade = QString::fromUtf8(
+            storedGrade.data(), static_cast<qsizetype>(storedGrade.size()));
+        const int elementaryGrade = Application::speakingEvaluationElementaryGrade(
+            classGrade.toStdU16String());
+        m_selectedClassGrade =
+            Application::speakingEvaluationCourseGradeBandFromInteger(
+                elementaryGrade);
+        return true;
+    }
+    catch (...)
+    {
+        setStatus(Status::AiPreparationError,
+            pageText("The class grade could not be loaded. Retry to use AI comments."));
+        return false;
+    }
+}
+
+Application::SpeakingEvaluationAiBatchEligibilityReason
+SpeakingEvaluationPage::aiEligibilityForRow(const int row) const
+{
+    const QString englishName = m_matrixModel->cellText(row, 1).trimmed();
+    const QString koreanName = m_matrixModel->cellText(row, 2).trimmed();
+    const Application::SpeakingEvaluationPrivateNotes notes =
+        Application::splitSpeakingEvaluationPrivateNotes(
+            m_matrixModel->cellText(row, 10).toStdU16String());
+    return Application::speakingEvaluationAiBatchEligibilityReason({
+        .hasTrimmedStudentName =
+            !englishName.isEmpty() || !koreanName.isEmpty(),
+        .grade = m_selectedClassGrade.value_or(Domain::CourseGradeBand::Other),
+        .hasDidWellItem = !Application::speakingEvaluationAiObservationItems(
+            notes.didWell).empty(),
+        .hasNeedsImprovementItem = !Application::speakingEvaluationAiObservationItems(
+            notes.needsImprovement).empty()
+    });
+}
+
+QString SpeakingEvaluationPage::aiProviderName() const
+{
+    Application::AiCommentProvider provider =
+        Application::AiCommentProvider::ChatGPT;
+    if (m_actions.preferredAiCommentProvider)
+    {
+        try
+        {
+            provider = m_actions.preferredAiCommentProvider();
+        }
+        catch (...)
+        {
+        }
+    }
+    return aiProviderDisplayName(provider);
+}
+
+QUrl SpeakingEvaluationPage::aiProviderUrl() const
+{
+    Application::AiCommentProvider provider =
+        Application::AiCommentProvider::ChatGPT;
+    if (m_actions.preferredAiCommentProvider)
+    {
+        try
+        {
+            provider = m_actions.preferredAiCommentProvider();
+        }
+        catch (...)
+        {
+        }
+    }
+    QString customWebsiteUrl;
+    if (m_actions.customAiCommentWebsiteUrl)
+    {
+        try
+        {
+            customWebsiteUrl = m_actions.customAiCommentWebsiteUrl();
+        }
+        catch (...)
+        {
+        }
+    }
+    return aiProviderWebsiteUrl(provider, customWebsiteUrl);
+}
+
+void SpeakingEvaluationPage::generateAiCommentPrompt()
+{
+    if (!m_evaluationLoaded || !m_matrixModel->hasMatrix())
+    {
+        return;
+    }
+    const int row = m_table->currentIndex().row();
+    if (row < 0 || row >= Application::SpeakingEvaluationRowCount)
+    {
+        setStatus(Status::Ready, pageText("Select a student row first."));
+        return;
+    }
+    if (!loadSelectedClassGrade())
+    {
+        return;
+    }
+
+    const auto reason = aiEligibilityForRow(row);
+    if (reason != Application::SpeakingEvaluationAiBatchEligibilityReason::Eligible)
+    {
+        setStatus(Status::Ready, aiEligibilityMessage(reason));
+        return;
+    }
+
+    const Application::SpeakingEvaluationPrivateNotes notes =
+        Application::splitSpeakingEvaluationPrivateNotes(
+            m_matrixModel->cellText(row, 10).toStdU16String());
+    Application::AiCommentVoice voice = Application::AiCommentVoice::DirectToStudent;
+    if (m_actions.preferredAiCommentVoice)
+    {
+        try
+        {
+            voice = m_actions.preferredAiCommentVoice();
+        }
+        catch (...)
+        {
+        }
+    }
+    const Application::SpeakingEvaluationAiCommentPromptRequest request{
+        .grade = m_selectedClassGrade.value_or(Domain::CourseGradeBand::Other),
+        .englishName = m_matrixModel->cellText(row, 1).toStdU16String(),
+        .koreanName = m_matrixModel->cellText(row, 2).toStdU16String(),
+        .didWell = notes.didWell,
+        .needsImprovement = notes.needsImprovement,
+        .voice = voice
+    };
+    const Platform::SpeakingEvaluationQtTextMatchPort textMatcher;
+    const Application::SpeakingEvaluationAiCommentPromptResult result =
+        Application::buildSpeakingEvaluationAiCommentPrompt(request, textMatcher);
+    if (!result.valid)
+    {
+        setStatus(Status::Ready,
+            pageText("An AI comment prompt could not be created from these notes."));
+        return;
+    }
+
+    SpeakingEvaluationAiPromptDialog dialog(
+        QString::fromStdU16String(result.prompt),
+        aiProviderName(),
+        aiProviderUrl(),
+        m_actions.openExternalUrl,
+        this);
+    static_cast<void>(dialog.exec());
+}
+
+void SpeakingEvaluationPage::generateClassAiComments()
+{
+    if (!m_evaluationLoaded || !m_selectedClassId || !m_matrixModel->hasMatrix())
+    {
+        return;
+    }
+    if (!loadSelectedClassGrade())
+    {
+        return;
+    }
+
+    std::vector<SpeakingEvaluationAiBatchStudent> students;
+    students.reserve(Application::SpeakingEvaluationRowCount);
+    for (int row = 0; row < Application::SpeakingEvaluationRowCount; ++row)
+    {
+        const QString englishName = m_matrixModel->cellText(row, 1).trimmed();
+        const QString koreanName = m_matrixModel->cellText(row, 2).trimmed();
+        if (englishName.isEmpty() && koreanName.isEmpty())
+        {
+            continue;
+        }
+        const Application::SpeakingEvaluationPrivateNotes notes =
+            Application::splitSpeakingEvaluationPrivateNotes(
+                m_matrixModel->cellText(row, 10).toStdU16String());
+        const int id = static_cast<int>(students.size()) + 1;
+        students.push_back({
+            .sourceRow = row,
+            .id = QStringLiteral("STUDENT_%1")
+                .arg(id, 2, 10, QLatin1Char('0')),
+            .englishName = m_matrixModel->cellText(row, 1),
+            .koreanName = m_matrixModel->cellText(row, 2),
+            .oldComment = m_matrixModel->cellText(row, 9),
+            .didWell = fromUtf16(notes.didWell),
+            .needsImprovement = fromUtf16(notes.needsImprovement),
+            .grade = m_selectedClassGrade.value_or(Domain::CourseGradeBand::Other),
+            .eligibilityReason = aiEligibilityForRow(row)
+        });
+    }
+
+    Application::AiCommentVoice voice = Application::AiCommentVoice::DirectToStudent;
+    if (m_actions.preferredAiCommentVoice)
+    {
+        try
+        {
+            voice = m_actions.preferredAiCommentVoice();
+        }
+        catch (...)
+        {
+        }
+    }
+    SpeakingEvaluationAiBatchDialog dialog(
+        std::move(students),
+        voice,
+        aiProviderName(),
+        aiProviderUrl(),
+        m_actions.openExternalUrl,
+        this);
+    if (dialog.exec() != QDialog::Accepted
+        || dialog.acceptedComments().empty())
+    {
+        return;
+    }
+
+    std::vector<SpeakingEvaluationAiBatchAcceptedComment> changes;
+    changes.reserve(dialog.acceptedComments().size());
+    std::size_t staleCount = 0;
+    for (const SpeakingEvaluationAiBatchAcceptedComment& accepted :
+         dialog.acceptedComments())
+    {
+        if (accepted.sourceRow < 0
+            || accepted.sourceRow >= Application::SpeakingEvaluationRowCount)
+        {
+            continue;
+        }
+        if (m_matrixModel->cellText(accepted.sourceRow, 9) != accepted.oldComment)
+        {
+            ++staleCount;
+            continue;
+        }
+        if (accepted.oldComment != accepted.newComment)
+        {
+            changes.push_back(accepted);
+        }
+    }
+    if (changes.empty())
+    {
+        if (staleCount > 0)
+        {
+            setStatus(Status::Ready,
+                pageText("Some comments changed while they were being reviewed."));
+        }
+        return;
+    }
+
+    m_undoStack->beginMacro(pageText("Apply AI Comments"));
+    for (const SpeakingEvaluationAiBatchAcceptedComment& change : changes)
+    {
+        static_cast<void>(m_matrixModel->setData(
+            m_matrixModel->index(change.sourceRow, 9),
+            change.newComment,
+            Qt::EditRole));
+    }
+    m_undoStack->endMacro();
+    setStatus(Status::Ready, staleCount == 0
+        ? pageText("AI comments were added to the evaluation.")
+        : pageText("Some AI comments were added; other comments had changed."));
+    updateDirtyState(true);
+}
+
 void SpeakingEvaluationPage::refreshValidation()
 {
     if (!m_matrixModel->hasMatrix() || !m_selectedClassId
@@ -1164,11 +1584,20 @@ void SpeakingEvaluationPage::updateActions()
     const bool matrixReady = m_evaluationLoaded && m_matrixModel->hasMatrix();
     m_importNamesButton->setEnabled(matrixReady);
     m_editNotesButton->setEnabled(matrixReady);
+    const int currentStudentRow = m_table->currentIndex().row();
+    const bool studentRowSelected = currentStudentRow >= 0
+        && currentStudentRow < Application::SpeakingEvaluationRowCount;
+    m_aiCommentButton->setEnabled(matrixReady && studentRowSelected);
+    m_aiCommentButton->setToolTip(studentRowSelected
+        ? QString{}
+        : pageText("Select a student row to create an AI comment prompt."));
+    m_aiBatchCommentsButton->setEnabled(matrixReady);
     m_undoButton->setEnabled(m_undoStack->canUndo());
     m_saveButton->setEnabled(matrixReady && hasUnsavedChanges());
     m_retryButton->setVisible(m_statusKind == Status::ClassListError
         || m_statusKind == Status::EvaluationReadError
-        || m_statusKind == Status::SaveError);
+        || m_statusKind == Status::SaveError
+        || m_statusKind == Status::AiPreparationError);
     m_evaluationChoice->setEnabled(m_classModel->summaryCount() > 0);
     m_classList->setEnabled(m_classModel->summaryCount() > 0);
     m_dirtyIndicator->setText(hasUnsavedChanges()
@@ -1189,7 +1618,8 @@ void SpeakingEvaluationPage::setStatus(
         if (status == Status::EvaluationReadError
             || status == Status::ClassListError
             || status == Status::SaveError
-            || status == Status::ImportError)
+            || status == Status::ImportError
+            || status == Status::AiPreparationError)
         {
             m_status->setToolTip(message);
         }
@@ -1221,6 +1651,10 @@ void SpeakingEvaluationPage::setStatus(
             break;
         case Status::ImportError:
             m_status->setText(pageText("Roster names could not be imported."));
+            break;
+        case Status::AiPreparationError:
+            m_status->setText(pageText(
+                "The class grade could not be loaded. Retry to use AI comments."));
             break;
         }
     }
@@ -1269,14 +1703,45 @@ void SpeakingEvaluationPage::retranslateUi()
     m_title->setText(pageText("Speaking Evaluation"));
     m_importNamesButton->setText(pageText("Import Names"));
     m_editNotesButton->setText(pageText("Edit Private Notes"));
+    m_aiCommentButton->setText(pageText("AI Comment"));
+    m_aiBatchCommentsButton->setText(pageText("Class AI Comments"));
     m_undoButton->setText(pageText("Undo"));
     m_saveButton->setText(pageText("Save Changes"));
     m_retryButton->setText(pageText("Retry"));
+    updateActionButtonWidths();
     for (int index = 0; index < m_evaluationChoice->count(); ++index)
     {
         const QString storedName = m_evaluationChoice->itemData(index).toString();
         m_evaluationChoice->setItemText(index,
             evaluationLabel(storedName.toStdU16String()));
+    }
+}
+
+void SpeakingEvaluationPage::updateActionButtonWidths()
+{
+    const std::array<QPushButton*, 7> buttons{
+        m_importNamesButton,
+        m_editNotesButton,
+        m_aiCommentButton,
+        m_aiBatchCommentsButton,
+        m_undoButton,
+        m_saveButton,
+        m_retryButton
+    };
+    for (QPushButton* const button : buttons)
+    {
+        if (!button)
+        {
+            continue;
+        }
+        QStyleOptionButton option;
+        option.initFrom(button);
+        option.text = button->text();
+        const QSize textSize = button->fontMetrics().size(
+            Qt::TextShowMnemonic, button->text());
+        const QSize required = button->style()->sizeFromContents(
+            QStyle::CT_PushButton, &option, textSize, button);
+        button->setMinimumWidth(required.width());
     }
 }
 

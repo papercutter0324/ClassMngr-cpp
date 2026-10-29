@@ -815,6 +815,8 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/classes_navigator_page.h"
     "src/next/ui/speaking_evaluation_page.cpp"
     "src/next/ui/speaking_evaluation_page.h"
+    "src/next/ui/speaking_evaluation_ai_dialogs.cpp"
+    "src/next/ui/speaking_evaluation_ai_dialogs.h"
     "src/next/ui/speaking_evaluation_model.cpp"
     "src/next/ui/speaking_evaluation_model.h"
     "src/next/ui/selected_class_editor.cpp"

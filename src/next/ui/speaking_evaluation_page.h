@@ -3,12 +3,17 @@
 #include "next/application/evaluation_default_selection.h"
 #include "next/application/classes_list_read_port.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/ai_comment_provider_preferences.h"
+#include "next/application/ai_comment_voice_preferences.h"
 #include "next/application/save_mode_preferences.h"
+#include "next/application/selected_class_grade_read_port.h"
 #include "next/application/speaking_evaluation_query.h"
+#include "next/application/speaking_evaluation_ai_batch_eligibility.h"
 #include "next/application/speaking_evaluation_roster_names_read_port.h"
 #include "next/application/speaking_evaluation_save_use_case.h"
 #include "next/ui/page.h"
 #include "next/ui/speaking_evaluation_model.h"
+#include "next/domain/course.h"
 
 #include <QString>
 
@@ -25,6 +30,7 @@ class QPushButton;
 class QTableView;
 class QTimer;
 class QUndoStack;
+class QUrl;
 
 namespace ClassMngr::Next::Ui
 {
@@ -52,6 +58,12 @@ struct SpeakingEvaluationPageActions final
     std::function<std::unique_ptr<
         Application::SpeakingEvaluationRosterNamesReadPort>(const QString&)>
         rosterNamesReadPortFactory;
+    std::function<std::unique_ptr<Application::SelectedClassGradeReadPort>(
+        const QString&)> classGradeReadPortFactory;
+    std::function<Application::AiCommentProvider()> preferredAiCommentProvider;
+    std::function<Application::AiCommentVoice()> preferredAiCommentVoice;
+    std::function<QString()> customAiCommentWebsiteUrl;
+    std::function<bool(const QUrl&)> openExternalUrl;
     std::function<SpeakingEvaluationUnsavedChoice(const QString&)>
         resolveUnsavedChanges;
     std::function<bool()> confirmQuestionableKoreanNameLengths;
@@ -73,6 +85,8 @@ public:
     [[nodiscard]] QTableView* tableView() const noexcept;
     [[nodiscard]] QLabel* statusLabel() const noexcept;
     [[nodiscard]] QPushButton* retryButton() const noexcept;
+    [[nodiscard]] QPushButton* aiCommentButton() const noexcept;
+    [[nodiscard]] QPushButton* aiBatchCommentsButton() const noexcept;
     [[nodiscard]] std::optional<Domain::ClassId> selectedClassId() const;
     [[nodiscard]] QString selectedEvaluationName() const;
     [[nodiscard]] std::size_t residentMatrixCount() const noexcept;
@@ -101,7 +115,8 @@ private:
         EvaluationReadError,
         SaveError,
         ValidationError,
-        ImportError
+        ImportError,
+        AiPreparationError
     };
 
     [[nodiscard]] std::optional<QString> activePath() const;
@@ -117,12 +132,20 @@ private:
     void retryCurrentOperation();
     void importRosterNames();
     void editPrivateNotes();
+    void generateAiCommentPrompt();
+    void generateClassAiComments();
+    [[nodiscard]] bool loadSelectedClassGrade();
+    [[nodiscard]] Application::SpeakingEvaluationAiBatchEligibilityReason
+        aiEligibilityForRow(int row) const;
+    [[nodiscard]] QString aiProviderName() const;
+    [[nodiscard]] QUrl aiProviderUrl() const;
     void refreshValidation();
     void updateDirtyState(bool scheduleSave);
     void updateActions();
     void setStatus(Status status, const QString& message = {});
     void syncSelectionControls();
     void retranslateUi();
+    void updateActionButtonWidths();
     void releaseActiveDraft();
     [[nodiscard]] SpeakingEvaluationUnsavedChoice askUnsavedChanges(
         const QString& reason
@@ -141,12 +164,15 @@ private:
     QLabel* m_dirtyIndicator = nullptr;
     QPushButton* m_importNamesButton = nullptr;
     QPushButton* m_editNotesButton = nullptr;
+    QPushButton* m_aiCommentButton = nullptr;
+    QPushButton* m_aiBatchCommentsButton = nullptr;
     QPushButton* m_undoButton = nullptr;
     QPushButton* m_saveButton = nullptr;
     QPushButton* m_retryButton = nullptr;
     QTimer* m_autoSaveTimer = nullptr;
     QUndoStack* m_undoStack = nullptr;
     std::optional<Domain::ClassId> m_selectedClassId;
+    std::optional<Domain::CourseGradeBand> m_selectedClassGrade;
     QString m_evaluationName;
     QString m_workspaceIdentity;
     Status m_statusKind = Status::NoWorkspace;

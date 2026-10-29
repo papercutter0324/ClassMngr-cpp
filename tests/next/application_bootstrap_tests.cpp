@@ -20,6 +20,8 @@
 #include "next/ui/placeholder_page.h"
 #include "next/ui/schedule_page.h"
 #include "next/ui/selected_class_editor.h"
+#include "next/ui/speaking_evaluation_ai_dialogs.h"
+#include "next/ui/speaking_evaluation_page.h"
 #include "next/ui/teacher_profile_page.h"
 #include "next/ui/shared_staff_directory_page.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
@@ -41,6 +43,7 @@
 #include <QContextMenuEvent>
 #include <QCryptographicHash>
 #include <QComboBox>
+#include <QDesktopServices>
 #include <QEvent>
 #include <QFontDatabase>
 #include <QDir>
@@ -81,6 +84,7 @@
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QToolButton>
+#include <QUrl>
 #include <QVBoxLayout>
 #include <QTableView>
 #include <QTableWidget>
@@ -149,6 +153,7 @@ private slots:
     void createActionUsesSelectedPathAndDoesNotRecordPendingProfile();
     void openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess();
     void myClassesReloadsRealWorkspaceDataWhenProfileIsReplacedWhileActive();
+    void speakingEvaluationAiCompositionUsesWorkspaceAndPreferences();
     void classesNavigatorClearsAndReloadsWhenWorkspaceIsReplacedWhileActive();
     void classesNavigatorClearsWhenWorkspaceIsClosedWhileActive();
     void scheduleSelectionOpensClassDetailsAndRefreshesAfterSave();
@@ -1268,6 +1273,78 @@ private:
     }
 };
 
+class SpeakingEvaluationAiPreferencesGuard final
+{
+public:
+    SpeakingEvaluationAiPreferencesGuard()
+        : m_keys{
+            QString::fromUtf8(OptionKeys::AiCommentProvider),
+            QString::fromUtf8(OptionKeys::AiCommentVoice),
+            QString::fromUtf8(OptionKeys::AiCommentCustomWebsiteUrl)
+        }
+    {
+        for (std::size_t index = 0; index < m_keys.size(); ++index)
+        {
+            m_values[index] = SettingsManager::instance().get(m_keys[index]);
+        }
+    }
+
+    ~SpeakingEvaluationAiPreferencesGuard()
+    {
+        for (std::size_t index = 0; index < m_keys.size(); ++index)
+        {
+            if (m_values[index].isValid())
+            {
+                SettingsManager::instance().set(m_keys[index], m_values[index]);
+            }
+            else
+            {
+                SettingsManager::instance().remove(m_keys[index]);
+            }
+        }
+    }
+
+private:
+    std::array<QString, 3> m_keys;
+    std::array<QVariant, 3> m_values;
+};
+
+class CapturedSpeakingEvaluationAiUrlHandler final : public QObject
+{
+    Q_OBJECT
+
+public:
+    QList<QUrl> urls;
+
+public slots:
+    void capture(const QUrl& url)
+    {
+        urls.append(url);
+    }
+};
+
+class SpeakingEvaluationAiHttpsUrlHandlerRegistration final
+{
+public:
+    explicit SpeakingEvaluationAiHttpsUrlHandlerRegistration(
+        CapturedSpeakingEvaluationAiUrlHandler* receiver
+        )
+    {
+        QDesktopServices::setUrlHandler(
+            QStringLiteral("https"), receiver, "capture");
+    }
+
+    ~SpeakingEvaluationAiHttpsUrlHandlerRegistration()
+    {
+        QDesktopServices::unsetUrlHandler(QStringLiteral("https"));
+    }
+
+    SpeakingEvaluationAiHttpsUrlHandlerRegistration(
+        const SpeakingEvaluationAiHttpsUrlHandlerRegistration&) = delete;
+    SpeakingEvaluationAiHttpsUrlHandlerRegistration& operator=(
+        const SpeakingEvaluationAiHttpsUrlHandlerRegistration&) = delete;
+};
+
 class StartupSaveModeGuard final
 {
 public:
@@ -1976,7 +2053,7 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
              QStringLiteral("initial_setup"));
     const std::vector<Ui::NavigationNode>& navigationNodes =
         shell->navigationModel()->nodes();
-    QCOMPARE(navigationNodes.size(), std::size_t(12));
+    QCOMPARE(navigationNodes.size(), std::size_t(13));
     const auto findPageNode = [&navigationNodes](const QString& id)
         -> const Ui::NavigationNode* {
         const auto found = std::find_if(
@@ -5414,6 +5491,110 @@ openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
     QCOMPARE(myClassesLoadState->text(),
              QStringLiteral("The active workspace store is unavailable."));
 
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+speakingEvaluationAiCompositionUsesWorkspaceAndPreferences()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard startupPreferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light));
+    SpeakingEvaluationAiPreferencesGuard aiPreferences;
+    SettingsManager::instance().set(
+        QString::fromUtf8(OptionKeys::AiCommentProvider), 4);
+    SettingsManager::instance().set(
+        QString::fromUtf8(OptionKeys::AiCommentVoice), 1);
+    const QString customWebsite = QStringLiteral(
+        "https://local-ai.example/speaking");
+    SettingsManager::instance().set(
+        QString::fromUtf8(OptionKeys::AiCommentCustomWebsiteUrl),
+        customWebsite);
+
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")));
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString workspacePath = temporaryDirectory.filePath(
+        QStringLiteral("speaking-evaluation-ai.tps"));
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+        workspacePath, QStringLiteral("representative_startup.sql"),
+        &fixtureError), qPrintable(fixtureError));
+    QVERIFY(executeWorkspaceSql(workspacePath, QStringLiteral(
+        "UPDATE class_info SET class_grade='E4' WHERE class_id=1")));
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), workspacePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams));
+    QVERIFY(bootstrap.start().succeeded());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(bootstrap.shell()->pageHost().activatePage(
+        QStringLiteral("speaking_evaluation")));
+    auto* const page = dynamic_cast<Ui::SpeakingEvaluationPage*>(
+        bootstrap.shell()->pageHost().pageInstance(
+            QStringLiteral("speaking_evaluation")));
+    QVERIFY(page);
+    QVERIFY(page->matrixModel()->hasMatrix());
+    QVERIFY(page->selectedClassId().has_value());
+    QCOMPARE(page->selectedClassId()->value(), std::string("1"));
+    QVERIFY(page->matrixModel()->setData(
+        page->matrixModel()->index(0, 1), QStringLiteral("Ada Park")));
+    QVERIFY(page->matrixModel()->setData(
+        page->matrixModel()->index(0, 10),
+        QStringLiteral("[Did Well]\nClear ideas\n"
+                       "[Needs Improvement]\nPractice past tense")));
+    page->tableView()->setCurrentIndex(page->matrixModel()->index(0, 9));
+
+    CapturedSpeakingEvaluationAiUrlHandler urlHandler;
+    SpeakingEvaluationAiHttpsUrlHandlerRegistration urlHandlerRegistration(
+        &urlHandler);
+    bool dialogSeen = false;
+    QString prompt;
+    QString copyOpenLabel;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationAiPromptDialog*>(
+            qApp->activeModalWidget());
+        if (!dialog)
+        {
+            return;
+        }
+        dialogSeen = true;
+        prompt = dialog->promptEditor()->toPlainText();
+        copyOpenLabel = dialog->copyAndOpenButton()->text();
+        dialog->copyAndOpenButton()->click();
+        dialog->reject();
+    });
+    page->aiCommentButton()->click();
+
+    QVERIFY(dialogSeen);
+    QVERIFY(prompt.contains(QStringLiteral("4th-grade elementary ESL")));
+    QVERIFY(prompt.contains(QStringLiteral("Write for a parent or guardian")));
+    QVERIFY(!prompt.contains(QStringLiteral("Ada Park")));
+    QCOMPARE(copyOpenLabel,
+        QStringLiteral("Copy Prompt and Open Custom AI Website"));
+    QCOMPARE(urlHandler.urls.size(), 1);
+    QCOMPARE(urlHandler.urls.front(), QUrl(customWebsite));
+    QVERIFY(page->discardChanges().has_value());
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
 }

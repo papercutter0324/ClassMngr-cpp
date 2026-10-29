@@ -3275,6 +3275,7 @@ add_executable(ClassMngrNextSpeakingEvaluationPageTests
     src/next/platform/next_startup_profiler_inactive_workspace_compat.cpp
     src/next/platform/workspace_store_speaking_evaluation_ports.cpp
     src/next/ui/speaking_evaluation_page.cpp
+    src/next/ui/speaking_evaluation_ai_dialogs.cpp
     src/next/ui/speaking_evaluation_model.cpp
     src/next/ui/page_host.cpp
 )
@@ -3293,7 +3294,7 @@ target_compile_definitions(ClassMngrNextSpeakingEvaluationPageTests
         CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
         CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
         CLASSMNGR_NEXT_SPEAKING_EVALUATION_LARGE_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
-        CLASSMNGR_NEXT_SPEAKING_EVALUATION_CAPTURE_DIRECTORY="${CMAKE_CURRENT_BINARY_DIR}/speaking-evaluation-visual-captures"
+        CLASSMNGR_NEXT_SPEAKING_EVALUATION_CAPTURE_DIRECTORY="${CMAKE_CURRENT_BINARY_DIR}/speaking-evaluation-ai-comment-visual-captures"
 )
 target_link_libraries(ClassMngrNextSpeakingEvaluationPageTests
     PRIVATE

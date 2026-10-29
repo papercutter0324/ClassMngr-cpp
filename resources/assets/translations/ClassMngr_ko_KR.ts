@@ -7447,6 +7447,14 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
         <translation>선택한 코멘트 적용</translation>
     </message>
     <message>
+        <source>No named students are available.</source>
+        <translation>이름이 있는 학생이 없습니다.</translation>
+    </message>
+    <message>
+        <source>The AI comment batch supports up to %1 students.</source>
+        <translation>AI 코멘트 일괄 작업은 최대 %1명의 학생을 지원합니다.</translation>
+    </message>
+    <message>
         <location line="+244"/>
         <source>Unable to Open AI Website</source>
         <translation>AI 웹사이트를 열 수 없음</translation>
@@ -8148,6 +8156,54 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <location line="+227"/>
         <source>Apply AI Comments</source>
         <translation>AI 코멘트 적용</translation>
+    </message>
+    <message>
+        <source>AI Comment</source>
+        <translation>AI 코멘트</translation>
+    </message>
+    <message>
+        <source>Class AI Comments</source>
+        <translation>반 전체 AI 코멘트</translation>
+    </message>
+    <message>
+        <source>AI comments were added to the evaluation.</source>
+        <translation>평가에 AI 코멘트를 추가했습니다.</translation>
+    </message>
+    <message>
+        <source>AI prompts are available for grades E4 through E6.</source>
+        <translation>AI 프롬프트는 E4~E6 학년에서 사용할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>Add at least one Did Well note.</source>
+        <translation>잘한 점 메모를 하나 이상 추가하세요.</translation>
+    </message>
+    <message>
+        <source>Add at least one Needs Improvement note.</source>
+        <translation>개선할 점 메모를 하나 이상 추가하세요.</translation>
+    </message>
+    <message>
+        <source>An AI comment prompt could not be created from these notes.</source>
+        <translation>이 메모로 AI 코멘트 프롬프트를 만들 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Enter the student's name to create an AI prompt.</source>
+        <translation>AI 프롬프트를 만들려면 학생 이름을 입력하세요.</translation>
+    </message>
+    <message>
+        <source>Select a student row to create an AI comment prompt.</source>
+        <translation>AI 코멘트 프롬프트를 만들 학생 행을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Some AI comments were added; other comments had changed.</source>
+        <translation>일부 AI 코멘트를 추가했으며 나머지는 검토 중에 변경되었습니다.</translation>
+    </message>
+    <message>
+        <source>Some comments changed while they were being reviewed.</source>
+        <translation>검토하는 동안 일부 코멘트가 변경되었습니다.</translation>
+    </message>
+    <message>
+        <source>The class grade could not be loaded. Retry to use AI comments.</source>
+        <translation>수업 학년 정보를 불러오지 못했습니다. AI 코멘트를 사용하려면 다시 시도하세요.</translation>
     </message>
     <message>
         <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_ui.cpp" line="-157"/>
@@ -12007,6 +12063,21 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message>
         <source>Next</source>
         <translation>다음</translation>
+    </message>
+</context>
+<context>
+    <name>SpeakingEvalAiPromptDialog</name>
+    <message>
+        <source>AI Comment Prompt</source>
+        <translation>AI 코멘트 프롬프트</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>닫기</translation>
+    </message>
+    <message>
+        <source>Student names are removed from the prompt and restored locally.</source>
+        <translation>학생 이름은 프롬프트에서 제거되며 기기에서 다시 복원됩니다.</translation>
     </message>
 </context>
 </TS>

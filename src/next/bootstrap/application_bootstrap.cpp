@@ -26,6 +26,9 @@
 #include "next/platform/workspace_store_class_editor_actions.h"
 #include "next/platform/workspace_store_roster_actions.h"
 #include "next/platform/workspace_store_speaking_evaluation_ports.h"
+#include "next/platform/settings_manager_ai_comment_custom_website_port.h"
+#include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
+#include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
 #include "next/platform/workspace_store_class_analytics_actions.h"
 #include "next/platform/workspace_store_testing_classes_actions.h"
 #include "next/platform/workspace_store_class_transfer_actions.h"
@@ -1507,6 +1510,25 @@ Application::StartupResult ApplicationBootstrap::start()
                             return std::make_unique<
                                 Platform::WorkspaceStoreSpeakingEvaluationRosterNamesReadPort>(
                                     path);
+                        };
+                        actions.classGradeReadPortFactory = [](const QString& path) {
+                            return std::make_unique<
+                                Platform::WorkspaceStoreSpeakingEvaluationClassGradeReadPort>(
+                                    path);
+                        };
+                        actions.preferredAiCommentProvider = [] {
+                            return Platform::
+                                SettingsManagerAiCommentProviderPreferencesPort().read();
+                        };
+                        actions.preferredAiCommentVoice = [] {
+                            return Platform::
+                                SettingsManagerAiCommentVoicePreferencesPort().read();
+                        };
+                        actions.customAiCommentWebsiteUrl = [] {
+                            const std::string url = Platform::
+                                SettingsManagerAiCommentCustomWebsitePort().read();
+                            return QString::fromUtf8(
+                                url.data(), static_cast<qsizetype>(url.size()));
                         };
                         return actions;
                     }));

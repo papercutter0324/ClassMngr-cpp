@@ -1,6 +1,7 @@
 #include "next/platform/workspace_store_speaking_evaluation_ports.h"
 
 #include "data/database/workspace_store.h"
+#include "data/repositories/class_info_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "domain/models/speaking_evaluation.h"
@@ -379,6 +380,99 @@ readSpeakingEvaluationRosterNames(
         return rosterNamesFailure(
             ErrorCode::Technical,
             "Roster names could not be loaded.");
+    }
+}
+
+WorkspaceStoreSpeakingEvaluationClassGradeReadPort::
+WorkspaceStoreSpeakingEvaluationClassGradeReadPort(QString databasePath)
+    : m_databasePath(std::move(databasePath))
+{
+}
+
+Application::SelectedClassGradeReadResult
+WorkspaceStoreSpeakingEvaluationClassGradeReadPort::
+readSelectedClassGrade(const Domain::ClassId& classId) const
+{
+    const std::optional<int> parsedClassId = classIdAsInt(classId);
+    if (!parsedClassId)
+    {
+        return Application::SelectedClassGradeReadResult::failure({
+            .code = ErrorCode::InvalidInput,
+            .message = "Class ID must be a canonical positive integer.",
+            .recoverable = false
+        });
+    }
+    if (m_databasePath.trimmed().isEmpty())
+    {
+        return Application::SelectedClassGradeReadResult::failure({
+            .code = ErrorCode::NotFound,
+            .message = "The active workspace is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    WorkspaceStore store;
+    const RepositoryStatus opened = store.openExisting(m_databasePath);
+    if (!opened)
+    {
+        return Application::SelectedClassGradeReadResult::failure(repositoryError(
+            opened.error(), "The active workspace could not be opened."));
+    }
+
+    ClassInfoRepository* const repository = store.classInfoRepository();
+    if (!repository)
+    {
+        return Application::SelectedClassGradeReadResult::failure({
+            .code = ErrorCode::NotFound,
+            .message = "The class information repository is unavailable.",
+            .recoverable = true
+        });
+    }
+
+    try
+    {
+        const auto loaded = repository->loadSelectedClassGradeRecordDetailed(
+            *parsedClassId);
+        if (!loaded)
+        {
+            return Application::SelectedClassGradeReadResult::failure(
+                repositoryError(loaded.error(),
+                    "The class grade could not be loaded."));
+        }
+        if (loaded->parentMissing)
+        {
+            return Application::SelectedClassGradeReadResult::failure({
+                .code = ErrorCode::NotFound,
+                .message = "The selected class was not found.",
+                .recoverable = false
+            });
+        }
+
+        const QByteArray gradeBytes = loaded->record.classGrade.toUtf8();
+        Application::SelectedClassGradeReadSnapshot snapshot{
+            .classId = classId,
+            .classGrade = Application::SelectedClassGradeValue(
+                std::string(gradeBytes.constData(),
+                    static_cast<std::size_t>(gradeBytes.size())))
+        };
+        return Application::SelectedClassGradeReadResult::success(
+            std::move(snapshot));
+    }
+    catch (const std::exception&)
+    {
+        return Application::SelectedClassGradeReadResult::failure({
+            .code = ErrorCode::Technical,
+            .message = "The class grade could not be loaded.",
+            .recoverable = true
+        });
+    }
+    catch (...)
+    {
+        return Application::SelectedClassGradeReadResult::failure({
+            .code = ErrorCode::Technical,
+            .message = "The class grade could not be loaded.",
+            .recoverable = true
+        });
     }
 }
 

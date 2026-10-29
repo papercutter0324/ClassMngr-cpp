@@ -465,7 +465,7 @@ bool batchRedactionUsesAliasesAndLongestFirstWithoutBoundaries()
         );
 }
 
-bool batchPromptHasNoStudentCountCap()
+bool batchPromptHonorsEvaluationRowBound()
 {
     const AsciiTextMatcher matcher;
     SpeakingEvaluationAiBatchCommentPromptRequest request;
@@ -474,7 +474,9 @@ bool batchPromptHasNoStudentCountCap()
         Domain::CourseGradeBand::E5,
         Domain::CourseGradeBand::E6
     };
-    for (int index = 1; index <= 30; ++index)
+    for (int index = 1;
+         index <= static_cast<int>(kSpeakingEvaluationAiBatchMaximumStudents);
+         ++index)
     {
         const std::u16string number = index < 10
             ? std::u16string(u"0") + static_cast<char16_t>(u'0' + index)
@@ -493,12 +495,26 @@ bool batchPromptHasNoStudentCountCap()
         request,
         matcher
         );
+    if (!check(
+            result.valid
+                && result.prompt.find(u"Student ID: STUDENT_25")
+                    != std::u16string::npos,
+            "A batch matching the evaluation row bound was rejected."
+            ))
+    {
+        return false;
+    }
+    request.students.push_back({
+        u"STUDENT_26",
+        Domain::CourseGradeBand::E4,
+        u"Name26",
+        {},
+        u"Strong speaking",
+        u"Add detail"
+    });
     return check(
-        result.valid
-            && result.prompt.find(u"Student ID: STUDENT_25") != std::u16string::npos
-            && result.prompt.find(u"<<<STUDENT_30>>>") != std::u16string::npos
-            && result.prompt.find(u"Student ID: STUDENT_30") != std::u16string::npos,
-        "Batch prompt unexpectedly capped the student count."
+        !buildSpeakingEvaluationAiBatchCommentPrompt(request, matcher).valid,
+        "A batch larger than the evaluation row bound was accepted."
         );
 }
 
@@ -603,7 +619,7 @@ int main()
         || !singlePromptTextAndVoiceAreExact()
         || !singlePromptKeepsTypedGradeBandsAndOrdinalWording()
         || !batchRedactionUsesAliasesAndLongestFirstWithoutBoundaries()
-        || !batchPromptHasNoStudentCountCap()
+        || !batchPromptHonorsEvaluationRowBound()
         || !promptRequestGradeFieldsDefaultToOther()
         || !invalidInputsFollowTheExistingEligibilityPolicy())
     {
