@@ -2,6 +2,8 @@
 #include "data/database/workspace_store.h"
 #include "next/bootstrap/application_bootstrap.h"
 #include "next/bootstrap/startup_update_dispatcher.h"
+#include "next/platform/workspace_store_gateway.h"
+#include "next/platform/workspace_store_schedule_import_state_snapshot_port.h"
 #include "next/resources/resource_root_resolver.h"
 #include "next/ui/application_shell.h"
 #include "next/ui/initial_page.h"
@@ -1861,6 +1863,12 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
     seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
         return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
     };
+    Platform::WorkspaceStoreGateway* activeWorkspaceGateway = nullptr;
+    seams.workspaceGatewayFactory = [&activeWorkspaceGateway] {
+        auto gateway = std::make_unique<Platform::WorkspaceStoreGateway>();
+        activeWorkspaceGateway = gateway.get();
+        return gateway;
+    };
     auto scheduleWorkbookQueue = std::make_shared<SelectedOpenPathQueue>();
     scheduleWorkbookQueue->paths = {
         workbookPath,
@@ -1895,6 +1903,14 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
         bootstrap.shell()->pageHost().pageInstance(QStringLiteral("initial_setup"))
         );
     QVERIFY(page);
+    const auto regularScheduleCount = [](const auto& summaries) {
+        std::size_t count = 0;
+        for (const auto& summary : summaries)
+        {
+            count += summary.regularSchedule.size();
+        }
+        return count;
+    };
 
     page->findChild<QPushButton*>(
         QStringLiteral("classMngrNextInitialSetupCreateProfile")
@@ -2180,6 +2196,14 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
         );
     QVERIFY(importedRowsAfterOmission.has_value());
     QCOMPARE(importedRowsAfterOmission->size(), std::size_t(6));
+    QVERIFY(activeWorkspaceGateway);
+    const auto activeSummariesAfterImport =
+        activeWorkspaceGateway->readMyClassesPageSummaries();
+    QVERIFY(activeSummariesAfterImport);
+    QCOMPARE(
+        regularScheduleCount(activeSummariesAfterImport.value()),
+        std::size_t(6)
+        );
     QVERIFY(std::none_of(
         importedRowsAfterOmission->begin(),
         importedRowsAfterOmission->end(),
@@ -2245,6 +2269,22 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
             "SELECT RAISE(ABORT, 'injected schedule import failure'); END"
             )
         ));
+
+    const auto readFileBytes = [](const QString& path)
+        -> std::optional<QByteArray> {
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly))
+        {
+            return std::nullopt;
+        }
+        return file.readAll();
+    };
+    const auto recoveryJournalBytesBeforeFailure =
+        readFileBytes(recoveryJournalPath);
+    const auto originalBackupBytesBeforeFailure =
+        readFileBytes(originalBackup);
+    QVERIFY(recoveryJournalBytesBeforeFailure.has_value());
+    QVERIFY(originalBackupBytesBeforeFailure.has_value());
 
     bool sourceBrowseStarted = false;
     bool reviewStarted = false;
@@ -2382,6 +2422,28 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
         QCOMPARE(tableRowCount(profilePath, QStringLiteral("classes")), originalClasses);
         QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_info")), originalClassInfo);
         QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_times")), originalTimes);
+        const auto recoveryJournalBytesAfterFailure =
+            readFileBytes(recoveryJournalPath);
+        const auto originalBackupBytesAfterFailure =
+            readFileBytes(originalBackup);
+        QVERIFY(recoveryJournalBytesAfterFailure.has_value());
+        QVERIFY(originalBackupBytesAfterFailure.has_value());
+        QCOMPARE(
+            *recoveryJournalBytesAfterFailure,
+            *recoveryJournalBytesBeforeFailure
+            );
+        QCOMPARE(
+            *originalBackupBytesAfterFailure,
+            *originalBackupBytesBeforeFailure
+            );
+        QVERIFY(activeWorkspaceGateway);
+        const auto activeSummariesAfterFailure =
+            activeWorkspaceGateway->readMyClassesPageSummaries();
+        QVERIFY(activeSummariesAfterFailure);
+        QCOMPARE(
+            regularScheduleCount(activeSummariesAfterFailure.value()),
+            std::size_t(6)
+            );
         QVERIFY(executeWorkspaceSql(
             profilePath,
             QStringLiteral("DROP TRIGGER fail_schedule_import_test")
@@ -2772,6 +2834,29 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
     QVERIFY(QFileInfo::exists(originalBackup));
     QCOMPARE(historyProbe->saveCount, 0);
     QVERIFY(historyProbe->savedHistories.empty());
+
+    WorkspaceStore reopenedStore;
+    const RepositoryStatus reopened = reopenedStore.openExisting(profilePath);
+    QVERIFY(reopened);
+    const Platform::WorkspaceStoreScheduleImportStateSnapshotPort reopenedPort(
+        reopenedStore
+        );
+    const auto stateAfterReopen =
+        Application::ScheduleImportStateSnapshotQueryHandler::execute(
+            Application::ScheduleImportStateSnapshotQuery{},
+            reopenedPort
+            );
+    const auto* const reopenedSnapshot =
+        std::get_if<Application::ScheduleImportStateSnapshot>(
+            &stateAfterReopen
+            );
+    QVERIFY(reopenedSnapshot);
+    std::size_t persistedRegularScheduleCount = 0;
+    for (const auto& classroom : reopenedSnapshot->classes)
+    {
+        persistedRegularScheduleCount += classroom.normalTimes.size();
+    }
+    QCOMPARE(persistedRegularScheduleCount, std::size_t(6));
 
     auto* const finish = page->findChild<QPushButton*>(
         QStringLiteral("classMngrNextInitialSetupFinish")

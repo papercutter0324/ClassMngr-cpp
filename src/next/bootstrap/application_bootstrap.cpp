@@ -2487,8 +2487,27 @@ Application::StartupResult ApplicationBootstrap::start()
 
         if (initialPageFailure.isEmpty())
         {
+            const auto initialSetupProfilePath = [this] {
+                if (!m_applicationRuntime)
+                {
+                    return QString{};
+                }
+                const auto session = m_applicationRuntime
+                    ->workspaceState().snapshot().session();
+                if (!session)
+                {
+                    return QString{};
+                }
+                const std::string& path = session->location().value();
+                return QString::fromUtf8(
+                    path.data(), static_cast<qsizetype>(path.size())
+                    );
+            };
             const Ui::PageHostResult<void> registration =
-                m_shell->pageHost().registerPage(initialSetupPageDescriptor([this] {
+                m_shell->pageHost().registerPage(initialSetupPageDescriptor([
+                    this,
+                    initialSetupProfilePath
+                    ] {
                     return Ui::InitialSetupPageActions{
                         .state = [this] { return initialSetupPageState(); },
                         .createProfile = [this] { beginInitialSetupProfile(); },
@@ -2533,43 +2552,17 @@ Application::StartupResult ApplicationBootstrap::start()
                             .chooseWorkbook = [this] {
                                 return chooseInitialSetupScheduleImportWorkbook();
                             },
-                            .readState = [this] {
-                                auto* const storeGateway =
-                                    dynamic_cast<Platform::WorkspaceStoreGateway*>(
-                                        m_workspaceGateway.get()
-                                        );
-                                return storeGateway
-                                    ? storeGateway->loadScheduleImportState()
-                                    : Application::ScheduleImportStateSnapshotOutcome{
-                                          Application::ScheduleImportStateSnapshotFailure{
-                                              Application::ScheduleImportStateSnapshotFailureKind::ActiveSessionUnavailable,
-                                              Application::ScheduleImportStateSnapshotFailureSource::Session,
-                                              "The setup profile schedule store is unavailable."
-                                          }
-                                      };
+                            .readState = [initialSetupProfilePath] {
+                                return Platform::readScheduleImportStateAtPath(
+                                    initialSetupProfilePath()
+                                    );
                             },
-                            .apply = [this](
+                            .apply = [initialSetupProfilePath](
                                 const Application::ScheduleImportApplyRequest& request
                                 ) {
-                                auto* const storeGateway =
-                                    dynamic_cast<Platform::WorkspaceStoreGateway*>(
-                                        m_workspaceGateway.get()
-                                        );
-                                if (!storeGateway)
-                                {
-                                    return Application::ScheduleImportApplyResult{
-                                        std::unexpected(
-                                            Application::ScheduleImportApplyFailure{
-                                                u"The setup profile schedule store is unavailable.",
-                                                std::nullopt,
-                                                std::nullopt,
-                                                std::nullopt,
-                                                Domain::ErrorCode::Technical
-                                            }
-                                            )
-                                    };
-                                }
-                                return storeGateway->applyScheduleImport(request);
+                                return Platform::applyScheduleImportAtPath(
+                                    initialSetupProfilePath(), request
+                                    );
                             },
                             .validationTimeoutMilliseconds = [] {
                                 const Platform::SettingsManagerExcelImportTimeoutPort

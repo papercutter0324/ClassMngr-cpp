@@ -322,6 +322,8 @@ add_executable(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
     tests/next/initial_setup_teacher_entry_bootstrap_integration_tests.cpp
     ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
     $<TARGET_OBJECTS:ClassMngrSettings>
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
+    $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
 )
 target_compile_features(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
     PRIVATE
@@ -341,6 +343,9 @@ target_link_libraries(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationT
     PRIVATE
         ClassMngrClassTransferSupport
         ClassMngrNextCalendarUi
+        ClassMngrNextScheduleOutput
+        ClassMngrNextRosterOutput
+        ClassMngrNextSpeakingEvaluationOutput
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
