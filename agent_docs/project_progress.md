@@ -189,7 +189,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-29 (candidate #40 accepted; Batch 3 push pending)
+### Current checkpoint — 2026-10-29 (candidate #41 active; Batch 4 active)
 
 Candidate #39, AI-assisted Speaking Evaluation comments and batch workflow,
 is accepted in source commit `02fbeca6`. Class analytics remain in candidate
@@ -207,9 +207,11 @@ Save-As/Print interaction checks, report lifecycle/output checks, the narrow
 Next dependency boundary, resource inventory validation, and the C40 capture
 integrity review. Its ten synthetic captures and one-page PDF are packaged in
 the C40 visual-baseline README; they show presentation and output, not
-pixel-parity. Batch 3 is complete locally and awaits push. Batch 4 remains
-discovered with candidates #41–48 and no other slices identified. Exit
-The generated schema-v6 `.db` relationship/output check passed independently
+pixel-parity. Batch 3 and its Windows evidence support were pushed at
+`2cfb1db386850987b0680e9b3f92704a8cb155e6`. Batch 4 is active with candidates
+#41–48; the #41 explicit campus data migration and campus-only edit boundary
+are being finalized from Legacy and Next traces. The generated schema-v6 `.db`
+relationship/output check passed independently
 using synthetic fixture data, not a historic profile, with PDF parity limited
 to one landscape template. Exit evidence still open includes broader 7A visual
 and memory/lifecycle evidence and hosted Windows x64 Release Next startup
@@ -217,8 +219,9 @@ collection. The 96-class Sub Prep entry/refresh/output/release route is
 required in #44. Local memory-evidence support passed six Python validator
 tests, blank schema-v6 fixture CTest 1/1, and the Next startup dependency
 boundary CTest 1/1. The fixture link has no broad Runtime/Calendar closure and
-source ownership validated 1,921 handwritten files. Its hosted Windows run
-remains pending after Batch 3 push. The `<250 MiB` threshold remains a separate
+source ownership validated 1,921 handwritten files. The Windows Release
+diagnostic run triggered by the push is still running, and its artifact has not
+been reviewed. The `<250 MiB` threshold remains a separate
 Phase 9 gate. The 7A and Phase 7 exit gates are not yet passed.
 
 The following checkpoint records are historical; canonical current state is
@@ -610,8 +613,9 @@ user's response to the exact-payload approval request.
 
 ## Next Milestone
 
-Complete Batch 3 through candidate #40, push it, and continue the remaining
-Phase 7 slices. Start next-batch discovery when candidate #39 starts. Do not
+Complete candidates #41–48 in Batch 4 and push the batch. Begin the next-batch
+discovery when candidate #47 starts. Review the hosted Windows diagnostic
+artifact after run 40914914018 completes. Do not
 declare Phase 7 complete until the 7A and Phase 7 exit gates pass; see the
 [Phase 7 plan](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Feature-Migration.md)
 and [progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).

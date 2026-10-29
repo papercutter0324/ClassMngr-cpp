@@ -6,19 +6,21 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-29
-- Current milestone: Phase 7 remains in progress. Candidate #39,
-  AI-assisted Speaking Evaluation comments and batch workflow, is accepted in
-  `02fbeca6`; class analytics were already migrated in #27. Candidate #40,
-  Reports/PDF/PowerPoint/export jobs, is accepted in `f2b24bd7`. Batch 3 is
-  complete locally and awaits push; Batch 4 discovery is complete with eight
-  ordered candidates queued.
+- Current milestone: Phase 7 remains in progress. Candidate #40,
+  Reports/PDF/PowerPoint/export jobs, is accepted in `f2b24bd7`; Batch 3 and
+  its Windows evidence support were pushed at `2cfb1db3`. Batch 4 is active
+  with candidates #41–48, and #41's explicit campus data migration and
+  campus-only edit capability are being finalized from Legacy and Next source
+  traces.
   See the [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current batch
   tracker](Current-Slice-Batches.md). The Initial Setup personal-details
   screenshot subgate is closed. The generated synthetic schema-v6 `.db`
   relationship/output check passed; it is not historical user-profile
-  evidence. Broader 7A visual evidence, memory evidence, and the Windows
-  packaged-Next memory gate remain open. The 7A and Phase 7 exit gates are not
-  yet passed.
+  evidence. The Windows Release memory collection on the pushed head is
+  running ([workflow run 40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018));
+  its artifact has not yet been reviewed. Broader 7A visual evidence, memory
+  evidence, and the Windows packaged-Next memory gate remain open. The 7A and
+  Phase 7 exit gates are not yet passed.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
@@ -40,7 +42,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — candidate #40 active | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — candidate #41 active | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

@@ -38,17 +38,18 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-29
-- Current note: Candidate #39, AI-assisted Speaking Evaluation comments and
-  batch workflow, is accepted in `02fbeca6`; class analytics remain owned by
-  #27. Candidate #40, Reports/PDF/PowerPoint/export jobs, is accepted in
-  `f2b24bd7`. Batch 3 is complete locally and awaits push; Batch 4 discovery is
-  complete with eight ordered candidates queued. The Initial Setup
-  personal-details screenshot subgate is closed. The generated synthetic
-  schema-v6 `.db` relationship/output check passed; it is not historical
-  profile evidence. Broader 7A visual evidence, memory evidence, and the
-  Windows packaged-Next memory gate remain open. The 7A and Phase 7 exit gates
-  are not yet passed. See the [Phase 7 progress
-  log](08-Phase-7-Progress-Log.md) for evidence and limits.
+- Current note: Candidate #40, Reports/PDF/PowerPoint/export jobs, is accepted
+  in `f2b24bd7`; Batch 3 and its Windows evidence support were pushed at
+  `2cfb1db3`. Batch 4 is active with candidates #41–48. Candidate #41's
+  Legacy campus save behavior is being traced before its implementation
+  boundary is finalized from Legacy and Next source traces. The Initial Setup personal-details screenshot
+  subgate and synthetic schema-v6 `.db` relationship/output check are closed;
+  the latter uses generated data, not a historical profile. The Windows
+  Release memory collection on the pushed head is running and its artifact is
+  unreviewed. Broader 7A visual evidence, memory evidence, and the Windows
+  packaged-Next memory gate remain open. The 7A and Phase 7 exit gates are not
+  yet passed. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md) for
+  evidence and limits.
 
 ### Slice batches
 

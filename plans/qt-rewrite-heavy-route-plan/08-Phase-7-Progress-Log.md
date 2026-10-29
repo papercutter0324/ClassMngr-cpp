@@ -1159,8 +1159,10 @@ Entries are preserved in their original document order.
   captures, a one-page PDF, and verified manifest. It records presentation
   evidence only, not Legacy/Next pixel parity. Native PowerPoint automation,
   the macOS protected-area prompt, Windows-specific rendering, hosted Windows
-  startup/memory, and the full suite were not verified. Batch 3 is complete
-  locally and awaits push. The broader 7A and Phase 7 exit gates remain open.
+  startup/memory, and the full suite were not verified at candidate acceptance.
+  Batch 3 and its Windows evidence support were pushed at
+  `2cfb1db386850987b0680e9b3f92704a8cb155e6`. The broader 7A and Phase 7 exit
+  gates remain open.
 
 ### Phase 7 exit evidence — synthetic schema-v6 `.db` output check passed (2026-10-29)
 
@@ -1193,6 +1195,8 @@ Entries are preserved in their original document order.
   fixture target (CTest 1/1; direct QtTest 3/3), `ClassMngrNext` build, and
   `NextStartupWorkspaceDependencyBoundary` CTest 1/1. CMake ownership validated
   one owner for 1,921 handwritten sources. The fixture's final link has one
-  WorkspaceStore archive and no Legacy Runtime/Calendar closure. The actual
-  hosted Windows collection has not run; the upcoming Batch 3 push is expected
-  to trigger it. No hosted Windows memory or Phase 9 result is claimed.
+  WorkspaceStore archive and no Legacy Runtime/Calendar closure. The Windows
+  Release workflow was triggered by the Batch 3 push and is running at
+  [run 40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018).
+  Its diagnostic artifact and metrics have not yet been reviewed. No hosted
+  Windows memory or Phase 9 result is claimed.
