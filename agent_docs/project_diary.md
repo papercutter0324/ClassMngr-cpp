@@ -42,6 +42,23 @@ must save both roster windows in one transaction. Keep workbook roster import,
 Speaking Evaluation name import, templates/printing, evaluation-page migration,
 and analytics in their separate features.
 
+### Phase 7 roster output boundary and data lifetime — 2026-10-28
+
+Candidate #37 shares one Qt renderer between Next and the Legacy/SubPrep
+facade, while Next owns a path-scoped WorkspaceStore read route. Keep Qt
+render types in `Next::Output`; keep `Next::Application` Qt-free. By Day and
+Daily traverse sparse rows until 25 nonblank name pairs; Per Class uses
+positions 0–22 and only selected extra cells. Render one page at a time and
+release its projection before loading the next. Wi-Fi/Zoom fields stay only in
+the template payloads that print them; visual fixtures use synthetic values.
+The 120-class Daily measurement is a macOS diagnostic, not a Phase 7 threshold.
+
+On Apple test builds, `ClassMngrTestRuntime` already owns Legacy feature
+resource objects. Linking `ClassMngrNextCalendarUi` as a normal CMake target
+propagated duplicate resource interface sources; the test runtime now links its
+archive file with an explicit build dependency. Production links remain
+unchanged.
+
 ### Phase 7 Calendar page and QML boundary — 2026-10-28
 
 Candidate #33 extends the narrow `ClassMngrNextCalendarUi` source owner with a
@@ -9062,3 +9079,12 @@ The slice passed focused behavioral, persistence, localization/theme, and
 dependency checks. The Phase 7 screenshot/reference and memory evidence remain
 open, and the legacy wizard parity test still aborts in the macOS Qt bundle
 setup before reaching an assertion; do not describe those gates as passed.
+
+## 2026-10-29 — Roster preview capture integrity
+
+For output previews, a successful PDF render does not prove that the visible
+capture contains the same page. Keep an independent PDF raster for comparison,
+assert expected PDF text, reject a white page, and compare the saved screenshot
+region to the rendered page. This caught and now prevents blank preview captures
+from being accepted. The earlier blank observation could not be reproduced, so
+its cause remains unknown rather than being attributed to a production defect.

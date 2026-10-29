@@ -1030,3 +1030,36 @@ Entries are preserved in their original document order.
 - Limits: no full suite, Windows, cross-platform, or Phase 9 memory result is
   claimed. The 7A screenshot comparison and memory evidence, Windows
   packaged-Next memory gate, and 7A/Phase 7 exit gates remain open.
+
+### Candidate #37 — Roster templates/printing accepted (2026-10-28)
+
+- Commits: source `098f1de7` (`Phase7 - Add Next roster templates and
+  printing`) and test/inventory follow-up `1214b569`
+  (`Phase7 - Guard roster preview captures against blank pages`, 2026-10-29).
+  Next supports By Day, Daily, and Per Class with Extra Info roster output;
+  Testing Classes support current-class Per Class with Extra Info output. The
+  shared renderer preserves legacy template row rules. WorkspaceStore print
+  projections are built and released one page at a time.
+- Verification: the standard incremental macOS build covered Next, roster
+  output/editor, Legacy renderer, and SubPrep parity tests. Five focused CTests
+  passed, as did an independent `NextStartupWorkspaceDependencyBoundary`
+  recheck. After the Tester added a print-port delivery assertion,
+  `ClassMngrNextRosterOutputTests` passed again (1/1). Thirty-two inventory,
+  catalog, baker, and audit Python tests passed; resource inventory
+  `--check`, CMake source ownership (1,902), the dependency boundary, and
+  `git diff --check` passed.
+- Diagnostic memory route: synthetic 120-class/3,000-student Daily output
+  produced 20 pages. Peak retained projection was six classes, 150 rows, and
+  156 cells; all 20 page-release callbacks ran. macOS peak RSS was 64.875 MiB.
+  This is diagnostic evidence only; selected-class page metadata scales with
+  the selection and this is not Windows or Phase 9 memory evidence.
+- Capture follow-up: five fresh processes produced 20 regular-preview
+  comparisons, including 10 Dark cases. The English/Dark and Korean/Dark
+  regular previews were verified nonblank against PDF text and raster output;
+  each screenshot page matched its rendered PDF page pixel-for-pixel. The
+  earlier blank observation's source is unknown; no production omission was
+  reproduced. The 16-image [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/roster-templates-printing/README.md)
+  is synthetic presentation evidence, not strict pixel parity. No physical
+  printer submission, Windows build, full-suite pass, or Phase 9 claim is
+  made. The 7A screenshot comparison and memory evidence, Windows
+  packaged-Next memory gate, and 7A/Phase 7 exit gates remain open.

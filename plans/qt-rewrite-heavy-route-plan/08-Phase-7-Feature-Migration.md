@@ -37,13 +37,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2 through 6
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
-- Last updated: 2026-10-28
-- Current note: Candidate #36, Roster score import and student transfer, is
-  accepted; candidate #37, Roster templates/printing, is active. Batch 3
-  continues through #40; begin next-batch discovery when #39 starts. The 7A
-  screenshot comparison, memory evidence, and Windows packaged-Next memory
-  gate remain open; the 7A and Phase 7 exit gates are not yet passed. See the
-  [Phase 7 progress log](08-Phase-7-Progress-Log.md) for evidence and limits.
+- Last updated: 2026-10-29
+- Current note: Candidate #37, Roster templates/printing, is accepted;
+  candidate #38, Speaking-evaluation core using model/view and compact state,
+  is active. Batch 3 continues through #40; begin next-batch discovery when
+  #39 starts. The 7A screenshot comparison, memory evidence, and Windows
+  packaged-Next memory gate remain open; the 7A and Phase 7 exit gates are not
+  yet passed. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md) for
+  evidence and limits.
 
 ### Slice batches
 

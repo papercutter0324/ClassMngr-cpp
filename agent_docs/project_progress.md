@@ -189,26 +189,34 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-28 (candidate #36 accepted; #37 active)
+### Current checkpoint — 2026-10-29 (candidate #37 accepted; #38 active)
 
-Candidate #36, roster score import and student transfer, is accepted at
-`b0df9112`. Next reads saved speaking-evaluation results and applies typed
-grade-matching rules through a path-scoped WorkspaceStore action. Student
-transfer uses same-grade targets, Legacy-compatible class labels, and an
-atomic two-roster save. The transaction checks both parent classes but has no
-optimistic stale-content comparison. Independent focused CTest passed 6/6;
-the roster-editor QtTest reported 22 passed, 0 failed, including import
-failure/retry and transfer cancel/failure/path-isolation coverage. Direct
-Legacy-label and path-scoped tests passed 4/4. The resource inventory check,
-29 generator tests, CMake source ownership (1,891), and `git diff --check`
-passed. Eight English/Korean × Light/Dark import/transfer captures are
-packaged as presentation evidence, not pixel parity. No full suite, Windows,
-cross-platform, or Phase 9 memory-budget result is claimed. Candidate #37,
-roster templates/printing, is active. Batch 3 remains unpushed through #40;
-the 7A screenshot/memory evidence and 7A/Phase 7 exit gates remain open. The
-safe 7A screenshot route uses temporary/synthetic setup state; Windows Release
-memory evidence must measure the staged Next executable because the existing
-Phase 0 runner is Legacy-only. The `<250 MiB` threshold remains a Phase 9 gate.
+Candidate #37, roster templates/printing, is accepted with source commit
+`098f1de7` and preview-capture regression/inventory follow-up `1214b569`.
+Next uses a path-scoped WorkspaceStore output route and a Qt renderer shared
+with the Legacy/SubPrep facade. The editor saves before preview, PDF Save As,
+or Print; Testing Classes keep the current-class/Per-Class restriction. By Day
+and Daily scan sparse rows for up to 25 nonblank name pairs. Per Class uses
+positional rows 0–22 and selected extra columns, releasing page projections
+before loading the next page. Independent recheck passed the two focused CTests
+and direct capture case; five fresh capture processes passed 20 regular
+preview comparisons, including 10 dark cases. The 16 synthetic captures are
+packaged as human-review presentation evidence. The earlier blank observation
+could not be reproduced; its origin remains unknown. Resource inventory
+`--check`, CMake source ownership (1,902), and `git diff --check` pass. The
+synthetic 120-class/3,000-student Daily route produced 20 pages with at most
+six projected classes/150 rows and 20 release callbacks; macOS peak RSS was
+64.875 MiB, diagnostic only. Physical printing, full suite, Windows,
+cross-platform, and Phase 9 memory acceptance are not claimed.
+
+Candidate #38, Speaking Evaluation core/model-view, is next; implementation
+has not started. Batch 3 remains un-pushed through #40. The 7A screenshot
+comparison is still open because the current Legacy capture fixture repeats
+an English Fusion state under Korean/Dark filenames; a faithful locale/theme
+pair is under investigation. The memory validator’s six Python tests pass,
+but local fixture-target verification and the hosted Windows Release run
+remain open. The 7A and Phase 7 exit gates remain open. `<250 MiB` is the
+separate Phase 9 gate.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

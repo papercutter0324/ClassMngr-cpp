@@ -5,10 +5,10 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-28
-- Current milestone: Phase 7 remains in progress. Candidate #36, Roster score
-  import and student transfer, is accepted; candidate #37, Roster
-  templates/printing, is active.
+- Last updated: 2026-10-29
+- Current milestone: Phase 7 remains in progress. Candidate #37, Roster
+  templates/printing, is accepted; candidate #38, Speaking-evaluation core
+  using model/view and compact state, is active.
   Batch 3 continues through #40; begin next-batch discovery when #39 starts.
   See the [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current batch
   tracker](Current-Slice-Batches.md). The 7A screenshot comparison, memory
@@ -35,7 +35,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — candidate #37 active | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — candidate #38 active | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |
