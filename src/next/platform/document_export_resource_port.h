@@ -26,9 +26,9 @@ using DocumentExportResourceHandle =
 using DocumentExportResourceResult =
     Domain::Result<DocumentExportResourceHandle>;
 
-// Opens only the selected cataloged Office export for one operation. The
-// returned move-only handle owns its package file stream for the operation's
-// lifetime.
+// Opens only the selected cataloged PDF or Office export for one operation.
+// The returned move-only handle owns its package file stream for the
+// operation's lifetime.
 class DocumentExportResourcePort final
 {
 public:
@@ -57,12 +57,13 @@ public:
 
         const QString relative = parsedPath.value();
         const QString suffix = QFileInfo(relative).suffix();
-        if (suffix.compare(QStringLiteral("pptx"), Qt::CaseInsensitive) != 0
+        if (suffix.compare(QStringLiteral("pdf"), Qt::CaseInsensitive) != 0
+            && suffix.compare(QStringLiteral("pptx"), Qt::CaseInsensitive) != 0
             && suffix.compare(QStringLiteral("docx"), Qt::CaseInsensitive) != 0)
         {
             return DocumentExportResourceResult::failure(failure(
                 Domain::ErrorCode::Validation,
-                "The selected document export is not a PPTX or DOCX resource.",
+                "The selected document export is not a PDF, PPTX, or DOCX resource.",
                 false
                 ));
         }
@@ -89,6 +90,8 @@ public:
                 ));
         }
 
+        const bool pdf = descriptor->expectedType() == Resources::ResourceType::Pdf
+            && descriptor->expectedTypeName() == QStringLiteral("pdf");
         const bool pptx = descriptor->expectedType() == Resources::ResourceType::Pptx
             && descriptor->expectedTypeName() == QStringLiteral("pptx");
         const bool docx = descriptor->expectedType() == Resources::ResourceType::Docx
@@ -97,12 +100,12 @@ public:
             QStringLiteral("assets/documents/") + relative;
         if (descriptor->category() != QStringLiteral("documents")
             || descriptor->resourceKind() != QStringLiteral("document_body")
-            || (!pptx && !docx)
+            || (!pdf && !pptx && !docx)
             || descriptor->packageRelativePath() != expectedPackagePath)
         {
             return DocumentExportResourceResult::failure(failure(
                 Domain::ErrorCode::Validation,
-                "The selected resource catalog record is not a matching Office document body.",
+                "The selected resource catalog record is not a matching PDF or Office document body.",
                 false
                 ));
         }

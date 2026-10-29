@@ -130,8 +130,13 @@ public:
     [[nodiscard]] Domain::Result<void> refreshDocumentCatalogProjection(
         const QString& localeName
         );
+    [[nodiscard]] const Application::DocumentCatalogProjection*
+        documentCatalogProjection() const noexcept;
     void setDocumentCatalogSelectionHandler(
         std::function<void(const Domain::DocumentId&)> handler
+        );
+    void setDocumentCatalogSelectionClearedHandler(
+        std::function<void()> handler
         );
     void selectKoreanTeacherNavigationRow(
         const Domain::TeacherId& teacherId
@@ -176,6 +181,7 @@ private:
     DocumentCatalogProjectionLoader m_documentCatalogProjectionLoader;
     std::function<void(const Domain::DocumentId&)>
         m_documentCatalogSelectionHandler;
+    std::function<void()> m_documentCatalogSelectionClearedHandler;
     std::vector<KoreanTeacherNavigationRow> m_koreanTeacherNavigationRows;
     std::optional<Domain::TeacherId> m_lastOpenedKoreanTeacherId;
     KoreanTeacherNavigationActions m_koreanTeacherNavigationActions;

@@ -1,0 +1,968 @@
+{
+    "activeResourceCountMeaning": "One active primary file-backed stream while open/reopened, zero after error/close; ResourceLoader exposes no global active-stream counter, so this is the viewer-owned handle count.",
+    "captureLimits": [
+        "Qt 6.12.0 offscreen/Fusion capture at 1024x720; no native window manager, system font rasterizer, printer, or file dialog is exercised.",
+        "Whole-process memory and process handle/thread counts include Qt and allocator state; they are observations without a threshold.",
+        "Legacy companion captures instantiate PdfViewerPage directly at the same widget viewport; they do not claim full-window or pixel parity with the Next application shell.",
+        "Print and export buttons show capability state; the printer and interactive save dialog are not invoked by this capture harness."
+    ],
+    "captures": [
+        {
+            "errorMessage": "",
+            "file": "document_viewer_en_US_light_ready.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 1,
+                "activeResourceHandles": 1,
+                "contentSessionPhase": "Ready",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:24.975",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 30983080,
+                    "threadCount": 9,
+                    "workingSetBytes": 77496320
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Ready"
+            },
+            "locale": "en_US",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "ready",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "The file was not found.",
+            "file": "document_viewer_en_US_light_error.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 0,
+                "activeResourceHandles": 0,
+                "contentSessionPhase": "Released",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:25.005",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 29606824,
+                    "threadCount": 9,
+                    "workingSetBytes": 80723968
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Null"
+            },
+            "locale": "en_US",
+            "selectedDocumentId": "document_missing_capture_selection",
+            "state": "error",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_en_US_light_closed.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 0,
+                "activeResourceHandles": 0,
+                "contentSessionPhase": "Released",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:25.022",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 29606824,
+                    "threadCount": 9,
+                    "workingSetBytes": 80723968
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Null"
+            },
+            "locale": "en_US",
+            "selectedDocumentId": "",
+            "state": "closed",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_en_US_light_reopened.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 1,
+                "activeResourceHandles": 1,
+                "contentSessionPhase": "Ready",
+                "documentBodyOpenDiagnosticsThisCombination": 2,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:25.561",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 34194344,
+                    "threadCount": 9,
+                    "workingSetBytes": 80920576
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Ready"
+            },
+            "locale": "en_US",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "reopened",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_en_US_dark_ready.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 1,
+                "activeResourceHandles": 1,
+                "contentSessionPhase": "Ready",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:26.128",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 34440104,
+                    "threadCount": 9,
+                    "workingSetBytes": 87801856
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Ready"
+            },
+            "locale": "en_US",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "ready",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "The file was not found.",
+            "file": "document_viewer_en_US_dark_error.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 0,
+                "activeResourceHandles": 0,
+                "contentSessionPhase": "Released",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:26.149",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 29967272,
+                    "threadCount": 9,
+                    "workingSetBytes": 87801856
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Null"
+            },
+            "locale": "en_US",
+            "selectedDocumentId": "document_missing_capture_selection",
+            "state": "error",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_en_US_dark_closed.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 0,
+                "activeResourceHandles": 0,
+                "contentSessionPhase": "Released",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:26.164",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 29967272,
+                    "threadCount": 9,
+                    "workingSetBytes": 87801856
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Null"
+            },
+            "locale": "en_US",
+            "selectedDocumentId": "",
+            "state": "closed",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_en_US_dark_reopened.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 1,
+                "activeResourceHandles": 1,
+                "contentSessionPhase": "Ready",
+                "documentBodyOpenDiagnosticsThisCombination": 2,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:26.709",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 34538408,
+                    "threadCount": 9,
+                    "workingSetBytes": 87982080
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Ready"
+            },
+            "locale": "en_US",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "reopened",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_ko_KR_light_ready.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 1,
+                "activeResourceHandles": 1,
+                "contentSessionPhase": "Ready",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:27.304",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 35881944,
+                    "threadCount": 9,
+                    "workingSetBytes": 98533376
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Ready"
+            },
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "ready",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "파일을 찾을 수 없습니다.",
+            "file": "document_viewer_ko_KR_light_error.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 0,
+                "activeResourceHandles": 0,
+                "contentSessionPhase": "Released",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:27.321",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 31441880,
+                    "threadCount": 9,
+                    "workingSetBytes": 98582528
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Null"
+            },
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_missing_capture_selection",
+            "state": "error",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_ko_KR_light_closed.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 0,
+                "activeResourceHandles": 0,
+                "contentSessionPhase": "Released",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:27.333",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 31441880,
+                    "threadCount": 9,
+                    "workingSetBytes": 98582528
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Null"
+            },
+            "locale": "ko_KR",
+            "selectedDocumentId": "",
+            "state": "closed",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_ko_KR_light_reopened.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 1,
+                "activeResourceHandles": 1,
+                "contentSessionPhase": "Ready",
+                "documentBodyOpenDiagnosticsThisCombination": 2,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:27.876",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 36013016,
+                    "threadCount": 9,
+                    "workingSetBytes": 98762752
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Ready"
+            },
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "reopened",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_ko_KR_dark_ready.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 1,
+                "activeResourceHandles": 1,
+                "contentSessionPhase": "Ready",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:28.442",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 36045784,
+                    "threadCount": 9,
+                    "workingSetBytes": 105381888
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Ready"
+            },
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "ready",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "파일을 찾을 수 없습니다.",
+            "file": "document_viewer_ko_KR_dark_error.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 0,
+                "activeResourceHandles": 0,
+                "contentSessionPhase": "Released",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:28.460",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 31572952,
+                    "threadCount": 9,
+                    "workingSetBytes": 105381888
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Null"
+            },
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_missing_capture_selection",
+            "state": "error",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_ko_KR_dark_closed.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 0,
+                "activeResourceHandles": 0,
+                "contentSessionPhase": "Released",
+                "documentBodyOpenDiagnosticsThisCombination": 1,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:28.474",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 31572952,
+                    "threadCount": 9,
+                    "workingSetBytes": 105381888
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Null"
+            },
+            "locale": "ko_KR",
+            "selectedDocumentId": "",
+            "state": "closed",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "document_viewer_ko_KR_dark_reopened.png",
+            "height": 720,
+            "lifecycle": {
+                "activePrimaryStreams": 1,
+                "activeResourceHandles": 1,
+                "contentSessionPhase": "Ready",
+                "documentBodyOpenDiagnosticsThisCombination": 2,
+                "processMemory": {
+                    "available": true,
+                    "capturedAt": "2026-10-29T18:55:29.018",
+                    "handleCount": 0,
+                    "platform": "macos",
+                    "privateUsageBytes": 36144088,
+                    "threadCount": 9,
+                    "workingSetBytes": 105562112
+                },
+                "qpdfDocumentInstances": 1,
+                "qpdfDocumentStatus": "Ready"
+            },
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "reopened",
+            "theme": "dark",
+            "width": 1024
+        }
+    ],
+    "catalogSource": "ResourceDocumentCatalogPort projection of packaged documents.json metadata",
+    "comparison": "Next captures show the full Next application shell and viewer; the companion Legacy capture target instantiates production PdfViewerPage at the same 1024x720 widget viewport. Legacy keeps print/export in application actions and has no in-page Close button; Next puts Print, Export, and Close in its viewer action row. These are structural observations from matched page-state captures, not pixel-parity claims.",
+    "documentBodyOpenDiagnostics": 8,
+    "errorState": "Unknown stable DocumentId; the prior QPdfDocument is closed and its stream/session are released before the missing selection is reported",
+    "legacyCompanionManifest": "legacy_document_viewer_capture.json",
+    "measurements": [
+        {
+            "locale": "en_US",
+            "metricSource": "PlatformProcessMemorySnapshotProvider (whole-process working set/private usage plus process handles and threads)",
+            "stages": [
+                {
+                    "stage": "baseline",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "absent",
+                        "documentBodyOpenDiagnosticsThisCombination": 0,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:24.384",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 12550816,
+                            "threadCount": 3,
+                            "workingSetBytes": 39043072
+                        },
+                        "qpdfDocumentInstances": 0,
+                        "qpdfDocumentStatus": "absent"
+                    }
+                },
+                {
+                    "stage": "open",
+                    "state": {
+                        "activePrimaryStreams": 1,
+                        "activeResourceHandles": 1,
+                        "contentSessionPhase": "Ready",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:24.975",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 30983080,
+                            "threadCount": 9,
+                            "workingSetBytes": 77496320
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Ready"
+                    }
+                },
+                {
+                    "stage": "error",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "Released",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:25.005",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 29606824,
+                            "threadCount": 9,
+                            "workingSetBytes": 80723968
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Null"
+                    }
+                },
+                {
+                    "stage": "release",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "Released",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:25.022",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 29606824,
+                            "threadCount": 9,
+                            "workingSetBytes": 80723968
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Null"
+                    }
+                },
+                {
+                    "stage": "reopen",
+                    "state": {
+                        "activePrimaryStreams": 1,
+                        "activeResourceHandles": 1,
+                        "contentSessionPhase": "Ready",
+                        "documentBodyOpenDiagnosticsThisCombination": 2,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:25.561",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 34194344,
+                            "threadCount": 9,
+                            "workingSetBytes": 80920576
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Ready"
+                    }
+                },
+                {
+                    "stage": "pageRelease",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "absent",
+                        "documentBodyOpenDiagnosticsThisCombination": 2,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:25.589",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 29541288,
+                            "threadCount": 8,
+                            "workingSetBytes": 80936960
+                        },
+                        "qpdfDocumentInstances": 0,
+                        "qpdfDocumentStatus": "absent"
+                    }
+                }
+            ],
+            "theme": "light"
+        },
+        {
+            "locale": "en_US",
+            "metricSource": "PlatformProcessMemorySnapshotProvider (whole-process working set/private usage plus process handles and threads)",
+            "stages": [
+                {
+                    "stage": "baseline",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "absent",
+                        "documentBodyOpenDiagnosticsThisCombination": 0,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:25.590",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 29574056,
+                            "threadCount": 8,
+                            "workingSetBytes": 80969728
+                        },
+                        "qpdfDocumentInstances": 0,
+                        "qpdfDocumentStatus": "absent"
+                    }
+                },
+                {
+                    "stage": "open",
+                    "state": {
+                        "activePrimaryStreams": 1,
+                        "activeResourceHandles": 1,
+                        "contentSessionPhase": "Ready",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:26.128",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 34440104,
+                            "threadCount": 9,
+                            "workingSetBytes": 87801856
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Ready"
+                    }
+                },
+                {
+                    "stage": "error",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "Released",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:26.149",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 29967272,
+                            "threadCount": 9,
+                            "workingSetBytes": 87801856
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Null"
+                    }
+                },
+                {
+                    "stage": "release",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "Released",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:26.164",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 29967272,
+                            "threadCount": 9,
+                            "workingSetBytes": 87801856
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Null"
+                    }
+                },
+                {
+                    "stage": "reopen",
+                    "state": {
+                        "activePrimaryStreams": 1,
+                        "activeResourceHandles": 1,
+                        "contentSessionPhase": "Ready",
+                        "documentBodyOpenDiagnosticsThisCombination": 2,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:26.709",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 34538408,
+                            "threadCount": 9,
+                            "workingSetBytes": 87982080
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Ready"
+                    }
+                },
+                {
+                    "stage": "pageRelease",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "absent",
+                        "documentBodyOpenDiagnosticsThisCombination": 2,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:26.743",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 29885352,
+                            "threadCount": 8,
+                            "workingSetBytes": 87949312
+                        },
+                        "qpdfDocumentInstances": 0,
+                        "qpdfDocumentStatus": "absent"
+                    }
+                }
+            ],
+            "theme": "dark"
+        },
+        {
+            "locale": "ko_KR",
+            "metricSource": "PlatformProcessMemorySnapshotProvider (whole-process working set/private usage plus process handles and threads)",
+            "stages": [
+                {
+                    "stage": "baseline",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "absent",
+                        "documentBodyOpenDiagnosticsThisCombination": 0,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:26.745",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 29885352,
+                            "threadCount": 8,
+                            "workingSetBytes": 87998464
+                        },
+                        "qpdfDocumentInstances": 0,
+                        "qpdfDocumentStatus": "absent"
+                    }
+                },
+                {
+                    "stage": "open",
+                    "state": {
+                        "activePrimaryStreams": 1,
+                        "activeResourceHandles": 1,
+                        "contentSessionPhase": "Ready",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:27.304",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 35881944,
+                            "threadCount": 9,
+                            "workingSetBytes": 98533376
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Ready"
+                    }
+                },
+                {
+                    "stage": "error",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "Released",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:27.321",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 31441880,
+                            "threadCount": 9,
+                            "workingSetBytes": 98582528
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Null"
+                    }
+                },
+                {
+                    "stage": "release",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "Released",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:27.333",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 31441880,
+                            "threadCount": 9,
+                            "workingSetBytes": 98582528
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Null"
+                    }
+                },
+                {
+                    "stage": "reopen",
+                    "state": {
+                        "activePrimaryStreams": 1,
+                        "activeResourceHandles": 1,
+                        "contentSessionPhase": "Ready",
+                        "documentBodyOpenDiagnosticsThisCombination": 2,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:27.876",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 36013016,
+                            "threadCount": 9,
+                            "workingSetBytes": 98762752
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Ready"
+                    }
+                },
+                {
+                    "stage": "pageRelease",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "absent",
+                        "documentBodyOpenDiagnosticsThisCombination": 2,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:27.904",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 31376344,
+                            "threadCount": 8,
+                            "workingSetBytes": 98746368
+                        },
+                        "qpdfDocumentInstances": 0,
+                        "qpdfDocumentStatus": "absent"
+                    }
+                }
+            ],
+            "theme": "light"
+        },
+        {
+            "locale": "ko_KR",
+            "metricSource": "PlatformProcessMemorySnapshotProvider (whole-process working set/private usage plus process handles and threads)",
+            "stages": [
+                {
+                    "stage": "baseline",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "absent",
+                        "documentBodyOpenDiagnosticsThisCombination": 0,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:27.904",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 31376344,
+                            "threadCount": 8,
+                            "workingSetBytes": 98746368
+                        },
+                        "qpdfDocumentInstances": 0,
+                        "qpdfDocumentStatus": "absent"
+                    }
+                },
+                {
+                    "stage": "open",
+                    "state": {
+                        "activePrimaryStreams": 1,
+                        "activeResourceHandles": 1,
+                        "contentSessionPhase": "Ready",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:28.442",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 36045784,
+                            "threadCount": 9,
+                            "workingSetBytes": 105381888
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Ready"
+                    }
+                },
+                {
+                    "stage": "error",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "Released",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:28.460",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 31572952,
+                            "threadCount": 9,
+                            "workingSetBytes": 105381888
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Null"
+                    }
+                },
+                {
+                    "stage": "release",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "Released",
+                        "documentBodyOpenDiagnosticsThisCombination": 1,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:28.474",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 31572952,
+                            "threadCount": 9,
+                            "workingSetBytes": 105381888
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Null"
+                    }
+                },
+                {
+                    "stage": "reopen",
+                    "state": {
+                        "activePrimaryStreams": 1,
+                        "activeResourceHandles": 1,
+                        "contentSessionPhase": "Ready",
+                        "documentBodyOpenDiagnosticsThisCombination": 2,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:29.018",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 36144088,
+                            "threadCount": 9,
+                            "workingSetBytes": 105562112
+                        },
+                        "qpdfDocumentInstances": 1,
+                        "qpdfDocumentStatus": "Ready"
+                    }
+                },
+                {
+                    "stage": "pageRelease",
+                    "state": {
+                        "activePrimaryStreams": 0,
+                        "activeResourceHandles": 0,
+                        "contentSessionPhase": "absent",
+                        "documentBodyOpenDiagnosticsThisCombination": 2,
+                        "processMemory": {
+                            "available": true,
+                            "capturedAt": "2026-10-29T18:55:29.057",
+                            "handleCount": 0,
+                            "platform": "macos",
+                            "privateUsageBytes": 31785968,
+                            "threadCount": 8,
+                            "workingSetBytes": 105807872
+                        },
+                        "qpdfDocumentInstances": 0,
+                        "qpdfDocumentStatus": "absent"
+                    }
+                }
+            ],
+            "theme": "dark"
+        }
+    ],
+    "purpose": "Paired Next and Legacy document viewer ready/error/closed/reopened captures plus Next process/resource lifecycle observations",
+    "qtPlatformPlugin": "offscreen",
+    "qtVersion": "6.12.0",
+    "selectionRoute": "ApplicationShell typed DocumentId callback bound with bindDocumentViewerSelection; reopen reselects the same tree row after clearing it",
+    "style": "Fusion with packaged light/dark stylesheet",
+    "taskId": "phase7_c43_document_viewer_implementation_01",
+    "viewport": {
+        "height": 720,
+        "width": 1024
+    }
+}

@@ -55,6 +55,7 @@
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
+#include "next/ui/document_viewer_route.h"
 #include "next/ui/font_size_presenter.h"
 #include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
@@ -1112,6 +1113,7 @@ Application::StartupResult ApplicationBootstrap::start()
                 return catalogPort.projection(localeName);
             }
             );
+        Ui::bindDocumentViewerSelection(*m_shell);
         m_shell->setCloseHandler([this] {
             return requestWindowClose();
         });
@@ -2627,6 +2629,16 @@ Application::StartupResult ApplicationBootstrap::start()
             if (!registration)
             {
                 initialPageFailure = registration.error().message;
+            }
+        }
+
+        if (initialPageFailure.isEmpty())
+        {
+            const Ui::PageHostResult<void> viewerRegistration =
+                Ui::registerDocumentViewerPage(m_shell->pageHost());
+            if (!viewerRegistration)
+            {
+                initialPageFailure = viewerRegistration.error().message;
             }
         }
 

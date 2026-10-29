@@ -121,6 +121,7 @@ class NextPlatformDocumentExportResourcePortTests final : public QObject
 private slots:
     void opensOnlySelectedPptxWithOperationScope();
     void opensCatalogedDocxExport();
+    void opensCatalogedPdfExport();
     void rejectsInvalidNonOfficeAndMissingInputsWithoutFallback();
     void rejectsMismatchedDocumentBodyDescriptorsBeforeLoading();
     void missingSelectedBodyFailsWithoutFallback();
@@ -265,6 +266,54 @@ void NextPlatformDocumentExportResourcePortTests::opensCatalogedDocxExport()
     QVERIFY(diagnostics.front().succeeded);
 }
 
+void NextPlatformDocumentExportResourcePortTests::opensCatalogedPdfExport()
+{
+    QTemporaryDir package;
+    QVERIFY(package.isValid());
+    QVERIFY(copyFile(
+        catalogPath(),
+        package.filePath(QStringLiteral("resource-catalog.json"))
+        ));
+
+    const QString selectedRelative =
+        QStringLiteral("Guides/DYB Lesson Planning Guide.pdf");
+    const QString selectedPackagePath =
+        package.filePath(QStringLiteral("assets/documents/") + selectedRelative);
+    QVERIFY(copyFile(
+        QDir(resourceRoot()).filePath(QStringLiteral("assets/documents/") + selectedRelative),
+        selectedPackagePath
+        ));
+
+    auto catalog = Resources::ResourceCatalog::load(
+        package.filePath(QStringLiteral("resource-catalog.json")),
+        package.path()
+        );
+    QVERIFY(catalog);
+    std::vector<Resources::ResourceDiagnostic> diagnostics;
+    Resources::ResourceLoader loader(
+        std::move(*catalog),
+        [&diagnostics](const Resources::ResourceDiagnostic& diagnostic) {
+            diagnostics.push_back(diagnostic);
+        }
+        );
+    DocumentExportResourcePort port(loader);
+
+    auto result = port.openExport(
+        reference("resource://documents/Guides/DYB Lesson Planning Guide.pdf"),
+        QStringLiteral("DocumentViewer:copy-guide-pdf")
+        );
+    QVERIFY(result);
+    QVERIFY(result.value().get().isOpen());
+    QCOMPARE(result.value().scope().kind(), Resources::ResourceScopeKind::Operation);
+    QCOMPARE(result.value().scope().ownerLabel(), QStringLiteral("DocumentViewer:copy-guide-pdf"));
+    QCOMPARE(diagnostics.size(), std::size_t(1));
+    QCOMPARE(
+        diagnostics.front().resourceId.value(),
+        QStringLiteral("document.body:Guides/DYB Lesson Planning Guide.pdf")
+        );
+    QVERIFY(diagnostics.front().succeeded);
+}
+
 void NextPlatformDocumentExportResourcePortTests::
 rejectsInvalidNonOfficeAndMissingInputsWithoutFallback()
 {
@@ -318,8 +367,8 @@ rejectsInvalidNonOfficeAndMissingInputsWithoutFallback()
     }
 
     const auto nonOffice = port.openExport(
-        reference("resource://documents/Guides/DYB Lesson Planning Guide.pdf"),
-        QStringLiteral("DocumentExport:non-office")
+        reference("resource://documents/Speaking Evaluations/unsupported.odp"),
+        QStringLiteral("DocumentExport:unsupported-format")
         );
     QVERIFY(!nonOffice);
     QCOMPARE(nonOffice.error().code, Domain::ErrorCode::Validation);

@@ -53,6 +53,65 @@ set_tests_properties(ClassMngrNextDocumentCatalogNavigationTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+# Exercise the production typed document selection route, file-backed QtPdf
+# session lifecycle, and PDF/Office copy path without starting the app shell.
+add_executable(ClassMngrNextDocumentViewerTests
+    tests/next/document_viewer_page_tests.cpp
+    src/next/ui/application_shell.cpp
+    src/next/ui/document_catalog_navigation.cpp
+    src/next/ui/document_viewer_page.cpp
+    src/next/ui/document_viewer_route.cpp
+    src/next/ui/navigation_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/qt_notification_presenter.cpp
+)
+target_compile_features(ClassMngrNextDocumentViewerTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextDocumentViewerTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextDocumentViewerTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextDocumentViewerTests
+    PRIVATE
+        ClassMngrNext::Application
+        ClassMngrNext::DocumentCatalog
+        ClassMngrNext::Resources
+        ClassMngrQtPdfPrint
+        Qt6::PdfWidgets
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextDocumentViewerTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextDocumentViewerTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextDocumentViewerTests
+    ClassMngrNextResourceCatalog
+    ClassMngrNextTranslationOutputs
+)
+add_test(
+    NAME ClassMngrNextDocumentViewerTests
+    COMMAND ClassMngrNextDocumentViewerTests
+)
+set_tests_properties(ClassMngrNextDocumentViewerTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Produce the four C42 catalog states and metadata-only memory/lifecycle
 # measurement only when explicitly invoked.
 add_executable(ClassMngrNextDocumentCatalogVisualCapture
@@ -104,6 +163,113 @@ add_test(
         "${CMAKE_CURRENT_BINARY_DIR}/document-catalog-visual-capture"
 )
 set_tests_properties(ClassMngrNextDocumentCatalogVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Capture the selected PDF viewer's ready/error/closed/reopened states across
+# locales and themes, with process and viewer-owned resource lifecycle samples.
+add_executable(ClassMngrNextDocumentViewerVisualCapture
+    tests/next/document_viewer_visual_capture.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/ui/application_shell.cpp
+    src/next/ui/document_catalog_navigation.cpp
+    src/next/ui/document_viewer_page.cpp
+    src/next/ui/document_viewer_route.cpp
+    src/next/ui/navigation_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/qt_notification_presenter.cpp
+)
+target_compile_features(ClassMngrNextDocumentViewerVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextDocumentViewerVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextDocumentViewerVisualCapture
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextDocumentViewerVisualCapture
+    PRIVATE
+        ClassMngrNext::Application
+        ClassMngrNext::DocumentCatalog
+        ClassMngrNext::Resources
+        ClassMngrQtPdfPrint
+        Qt6::PdfWidgets
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextDocumentViewerVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextDocumentViewerVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextDocumentViewerVisualCapture
+    ClassMngrNextResourcePackage
+    ClassMngrNextTranslationOutputs
+)
+add_test(
+    NAME ClassMngrNextDocumentViewerVisualCapture
+    COMMAND ClassMngrNextDocumentViewerVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/document-viewer-visual-capture"
+)
+set_tests_properties(ClassMngrNextDocumentViewerVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Capture the paired Legacy PdfViewerPage states with the same Qt/offscreen,
+# viewport, locale, and theme settings as the Next viewer harness.
+add_executable(ClassMngrNextLegacyDocumentViewerVisualCapture
+    tests/next/legacy_document_viewer_visual_capture.cpp
+)
+target_compile_features(ClassMngrNextLegacyDocumentViewerVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextLegacyDocumentViewerVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextLegacyDocumentViewerVisualCapture
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextLegacyDocumentViewerVisualCapture
+    PRIVATE
+        ClassMngrLegacyRuntimeClosure
+        Qt6::PdfWidgets
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextLegacyDocumentViewerVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextLegacyDocumentViewerVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextLegacyDocumentViewerVisualCapture
+    ClassMngrNextResourcePackage
+    ClassMngrNextTranslationOutputs
+)
+add_test(
+    NAME ClassMngrNextLegacyDocumentViewerVisualCapture
+    COMMAND ClassMngrNextLegacyDocumentViewerVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/legacy-document-viewer-visual-capture"
+)
+set_tests_properties(ClassMngrNextLegacyDocumentViewerVisualCapture
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
@@ -283,12 +449,14 @@ target_link_libraries(ClassMngrNextBootstrapTests
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
+        ClassMngrQtPdfPrint
         ClassMngrNextStartupUpdates
         ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser
         Qt6::Concurrent
         Qt6::Sql
         Qt6::Test
+        Qt6::PdfWidgets
         Qt6::Widgets
 )
 set_target_properties(ClassMngrNextBootstrapTests
@@ -458,12 +626,14 @@ target_link_libraries(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationT
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
+        ClassMngrQtPdfPrint
         ClassMngrNextStartupUpdates
         ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser
         Qt6::Concurrent
         Qt6::Sql
         Qt6::Test
+        Qt6::PdfWidgets
         Qt6::Widgets
 )
 set_target_properties(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests

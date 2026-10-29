@@ -317,6 +317,25 @@ ApplicationShell::ApplicationShell(
             }
             return;
         }
+        if (current)
+        {
+            const QVariant catalogKindData = current->data(
+                0,
+                static_cast<int>(DocumentCatalogItemRole::Kind)
+                );
+            if (catalogKindData.isValid()
+                && (catalogKindData.toInt()
+                        == static_cast<int>(DocumentCatalogItemKind::Root)
+                    || catalogKindData.toInt()
+                        == static_cast<int>(DocumentCatalogItemKind::Folder)))
+            {
+                if (m_documentCatalogSelectionClearedHandler)
+                {
+                    m_documentCatalogSelectionClearedHandler();
+                }
+                return;
+            }
+        }
         if (auto* const teacherItem =
                 dynamic_cast<KoreanTeacherNavigationItem*>(current))
         {
@@ -666,11 +685,26 @@ Domain::Result<void> ApplicationShell::refreshDocumentCatalogProjection(
     }
 }
 
+const Application::DocumentCatalogProjection*
+ApplicationShell::documentCatalogProjection() const noexcept
+{
+    return m_documentCatalogProjection
+        ? &*m_documentCatalogProjection
+        : nullptr;
+}
+
 void ApplicationShell::setDocumentCatalogSelectionHandler(
     std::function<void(const Domain::DocumentId&)> handler
     )
 {
     m_documentCatalogSelectionHandler = std::move(handler);
+}
+
+void ApplicationShell::setDocumentCatalogSelectionClearedHandler(
+    std::function<void()> handler
+    )
+{
+    m_documentCatalogSelectionClearedHandler = std::move(handler);
 }
 
 void ApplicationShell::selectKoreanTeacherNavigationRow(

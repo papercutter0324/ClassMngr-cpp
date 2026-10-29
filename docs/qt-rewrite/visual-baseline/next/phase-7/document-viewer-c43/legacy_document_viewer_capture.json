@@ -1,0 +1,196 @@
+{
+    "captures": [
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_en_US_light_ready.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "en_US",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "ready",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "Failed to load PDF: The file was not found.",
+            "file": "legacy_document_viewer_en_US_light_error.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "en_US",
+            "selectedDocumentId": "missing-c43-viewer-selection",
+            "state": "error",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_en_US_light_closed.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "en_US",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "closed",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_en_US_light_reopened.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "en_US",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "reopened",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_en_US_dark_ready.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "en_US",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "ready",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "Failed to load PDF: The file was not found.",
+            "file": "legacy_document_viewer_en_US_dark_error.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "en_US",
+            "selectedDocumentId": "missing-c43-viewer-selection",
+            "state": "error",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_en_US_dark_closed.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "en_US",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "closed",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_en_US_dark_reopened.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "en_US",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "reopened",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_ko_KR_light_ready.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "ready",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_ko_KR_light_error.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "ko_KR",
+            "selectedDocumentId": "missing-c43-viewer-selection",
+            "state": "error",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_ko_KR_light_closed.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "closed",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_ko_KR_light_reopened.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "reopened",
+            "theme": "light",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_ko_KR_dark_ready.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "ready",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_ko_KR_dark_error.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "ko_KR",
+            "selectedDocumentId": "missing-c43-viewer-selection",
+            "state": "error",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_ko_KR_dark_closed.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "closed",
+            "theme": "dark",
+            "width": 1024
+        },
+        {
+            "errorMessage": "",
+            "file": "legacy_document_viewer_ko_KR_dark_reopened.png",
+            "height": 720,
+            "implementation": "legacy-PdfViewerPage",
+            "locale": "ko_KR",
+            "selectedDocumentId": "document_guides_lesson_planning",
+            "state": "reopened",
+            "theme": "dark",
+            "width": 1024
+        }
+    ],
+    "catalogSelectionId": "document_guides_lesson_planning",
+    "comparisonLimits": [
+        "This harness shows the production Legacy PdfViewerPage directly at 1024x720, not the full Legacy MainWindow. Next captures show the Next shell plus its viewer page.",
+        "Legacy print/export controls live in application actions and no in-page Close button exists; Next includes Print, Export, and Close in its viewer action row.",
+        "The paired captures document structure and state only; they do not claim pixel parity."
+    ],
+    "errorState": "Missing file path, matching the Next missing-selection error state by outcome; Legacy is given a missing path through its PDF page API.",
+    "implementation": "Legacy PdfViewerPage",
+    "qtPlatformPlugin": "offscreen",
+    "qtVersion": "6.12.0",
+    "style": "Fusion with packaged light/dark stylesheet",
+    "taskId": "phase7_c43_document_viewer_implementation_01",
+    "viewport": {
+        "height": 720,
+        "width": 1024
+    }
+}

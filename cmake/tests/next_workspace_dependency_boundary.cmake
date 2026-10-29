@@ -57,7 +57,7 @@ foreach(_line IN LISTS _report_lines)
 endforeach()
 
 set(_expected_next_links
-    "Qt6::Core|$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNextCalendarUi|ClassMngrNextDocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
+    "Qt6::Core|$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNextCalendarUi|ClassMngrNextDocumentCatalog|ClassMngrQtPdfPrint|Qt6::PdfWidgets|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
 )
 if(NOT _next_links STREQUAL _expected_next_links)
     message(FATAL_ERROR
@@ -143,7 +143,7 @@ if(NOT _document_catalog_test_links STREQUAL "ClassMngrNext::DocumentCatalog")
 endif()
 
 set(_expected_bootstrap_test_links
-    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::Widgets"
+    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrQtPdfPrint|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::PdfWidgets|Qt6::Widgets"
 )
 if(NOT _bootstrap_test_links STREQUAL _expected_bootstrap_test_links)
     message(FATAL_ERROR
@@ -206,8 +206,6 @@ foreach(_required_store_dependency IN ITEMS
 endforeach()
 
 foreach(_forbidden_dependency IN ITEMS
-        Qt6::Pdf
-        Qt6::PdfWidgets
         ClassMngrNext::Platform
         ClassMngrRuntime
         ClassMngrLegacyRuntimeClosure

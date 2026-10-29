@@ -966,82 +966,13 @@ foreach(_classmngr_next_feature IN LISTS _classmngr_next_feature_targets)
     )
 endforeach()
 
-set(_classmngr_next_bootstrap_sources)
-foreach(_classmngr_next_bootstrap_source IN LISTS
-        CLASSMNGR_NEXT_BOOTSTRAP_SOURCES)
-    list(APPEND _classmngr_next_bootstrap_sources
-        "${PROJECT_SOURCE_DIR}/${_classmngr_next_bootstrap_source}"
-    )
-endforeach()
-
-qt_add_executable(ClassMngrNext
-    "${PROJECT_SOURCE_DIR}/${CLASSMNGR_NEXT_MAIN_SOURCE}"
-    ${_classmngr_next_bootstrap_sources}
-    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
+# Keep Qt's QML import scan rooted in this small source directory. Its target
+# SOURCE_DIR becomes qmlimportscanner's rootPath; using the repository root
+# would traverse generated build and staged application trees.
+add_subdirectory(
+    "${PROJECT_SOURCE_DIR}/cmake/next_app"
+    "${PROJECT_BINARY_DIR}/cmake/next_app"
 )
-
-target_compile_features(ClassMngrNext
-    PRIVATE
-        cxx_std_23
-)
-
-set_target_properties(ClassMngrNext
-    PROPERTIES
-        CXX_EXTENSIONS OFF
-)
-
-target_compile_definitions(ClassMngrNext
-    PRIVATE
-        CLASSMNGR_NEXT_VERSION="${PROJECT_VERSION}"
-)
-
-target_include_directories(ClassMngrNext
-    PRIVATE
-        "${PROJECT_SOURCE_DIR}/src"
-)
-
-target_link_libraries(ClassMngrNext
-    PRIVATE
-        "$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>"
-        Qt6::Widgets
-        ClassMngrNext::Application
-        ClassMngrClassTransferSupport
-        ClassMngrNext::Resources
-        ClassMngrNextWorkspace
-        ClassMngrNextScheduleOutput
-        ClassMngrNextRosterOutput
-        ClassMngrNextSpeakingEvaluationOutput
-        ClassMngrNextCalendarUi
-        ClassMngrNextDocumentCatalog
-        ClassMngrNextStartupUpdates
-        ClassMngrTeacherImportParser
-        ClassMngrScheduleImportParser
-        Qt6::Concurrent
-        Qt6::Network
-)
-
-get_target_property(_classmngr_next_executable_dependencies
-    ClassMngrNext
-    LINK_LIBRARIES
-)
-list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
-if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextRosterOutput;ClassMngrNextSpeakingEvaluationOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
-    message(FATAL_ERROR
-        "ClassMngrNext must link its inactive-profiler object before "
-        "the following dependent targets: Qt6::Widgets, "
-        "ClassMngrNext::Application, ClassMngrClassTransferSupport, "
-        "ClassMngrNext::Resources, "
-        "ClassMngrNextWorkspace, ClassMngrNextScheduleOutput, ClassMngrNextRosterOutput, "
-        "ClassMngrNextSpeakingEvaluationOutput, "
-        "ClassMngrNextCalendarUi, "
-        "ClassMngrNextDocumentCatalog, "
-        "ClassMngrNextStartupUpdates, ClassMngrTeacherImportParser, "
-        "ClassMngrScheduleImportParser, "
-        "Qt6::Concurrent, and Qt6::Network; found "
-        "[${_classmngr_next_executable_dependencies}]"
-    )
-endif()
 
 if(BUILD_TESTING)
     add_test(

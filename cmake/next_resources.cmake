@@ -131,16 +131,18 @@ get_target_property(_classmngr_next_resource_link_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_resource_link_dependencies)
 if(NOT "${_classmngr_next_resource_link_dependencies}"
-   STREQUAL "Qt6::Core;$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextRosterOutput;ClassMngrNextSpeakingEvaluationOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
+   STREQUAL "Qt6::Core;$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextRosterOutput;ClassMngrNextSpeakingEvaluationOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrQtPdfPrint;Qt6::PdfWidgets;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
     message(FATAL_ERROR
         "ClassMngrNext resource embedding must retain its Widgets application "
         "and Resources links plus the narrow workspace, Schedule output, "
         "Speaking Evaluation output, Calendar UI, "
-        "document catalog, and "
+        "document catalog, PDF viewer and print adapters, and "
         "startup-update adapters with Qt Network; found "
         "[${_classmngr_next_resource_link_dependencies}]"
     )
 endif()
+
+qt_finalize_target(ClassMngrNext)
 
 add_custom_target(ClassMngrNextResourcePackage
     DEPENDS
