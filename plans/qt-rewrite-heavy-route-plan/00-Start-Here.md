@@ -14,9 +14,11 @@
   ordered candidates queued.
   See the [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current batch
   tracker](Current-Slice-Batches.md). The Initial Setup personal-details
-  screenshot subgate is closed; broader 7A visual evidence, memory evidence,
-  the synthetic schema-v6 `.db` output check, and the Windows packaged-Next
-  memory gate remain open. The 7A and Phase 7 exit gates are not yet passed.
+  screenshot subgate is closed. The generated synthetic schema-v6 `.db`
+  relationship/output check passed; it is not historical user-profile
+  evidence. Broader 7A visual evidence, memory evidence, and the Windows
+  packaged-Next memory gate remain open. The 7A and Phase 7 exit gates are not
+  yet passed.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

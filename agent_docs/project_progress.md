@@ -209,10 +209,12 @@ integrity review. Its ten synthetic captures and one-page PDF are packaged in
 the C40 visual-baseline README; they show presentation and output, not
 pixel-parity. Batch 3 is complete locally and awaits push. Batch 4 remains
 discovered with candidates #41–48 and no other slices identified. Exit
-evidence still open includes broader 7A visual and memory/lifecycle evidence,
-hosted Windows x64 Release Next startup collection, and synthetic schema-v6
-`.db` relationship/output parity verification. The 96-class Sub Prep
-entry/refresh/output/release route is required in #44. The local memory
+The generated schema-v6 `.db` relationship/output check passed independently
+using synthetic fixture data, not a historic profile, with PDF parity limited
+to one landscape template. Exit evidence still open includes broader 7A visual
+and memory/lifecycle evidence and hosted Windows x64 Release Next startup
+collection. The 96-class Sub Prep entry/refresh/output/release route is
+required in #44. The local memory
 validator Python tests pass 6/6; its hosted run remains pending after Batch 3
 push. The `<250 MiB` threshold remains a separate Phase 9 gate. The 7A and
 Phase 7 exit gates are not yet passed.

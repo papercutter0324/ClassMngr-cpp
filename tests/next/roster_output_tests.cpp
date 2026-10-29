@@ -1,8 +1,10 @@
 #include "core/fontmanager.h"
+#include "data/database/database_schema_manager.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/roster_repository.h"
+#include "data/repositories/settings_repository.h"
 #include "data/repositories/teacher_repository.h"
 #include "data/repositories/testing_class_repository.h"
 #include "features/roster/services/roster_template_print_service.h"
@@ -18,6 +20,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -27,12 +30,15 @@
 #include <QPdfDocument>
 #include <QPdfSelection>
 #include <QPushButton>
+#include <QSqlDatabase>
+#include <QSqlError>
 #include <QSqlQuery>
 #include <QStyle>
 #include <QTableView>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTranslator>
+#include <QUuid>
 #include <QtTest>
 
 using namespace ClassMngr::Next;
@@ -98,6 +104,65 @@ QByteArray fileSha256(const QString& path)
         ? QCryptographicHash::hash(file.readAll(), QCryptographicHash::Sha256).toHex()
         : QByteArray{};
 }
+QString representativeStartupSqlPath()
+{
+    return QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+        QStringLiteral("tests/fixtures/workspaces/representative_startup.sql")
+        );
+}
+bool executeFixtureSql(QSqlDatabase& database, const QString& sqlPath, QString* errorMessage)
+{
+    QFile sqlFile(sqlPath);
+    if (!sqlFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        *errorMessage = sqlFile.errorString();
+        return false;
+    }
+    QSqlQuery query(database);
+    const QStringList statements = QString::fromUtf8(sqlFile.readAll())
+        .split(QLatin1Char(';'), Qt::SkipEmptyParts);
+    for (const QString& rawStatement : statements)
+    {
+        const QString statement = rawStatement.trimmed();
+        if (!statement.isEmpty() && !query.exec(statement))
+        {
+            *errorMessage = QStringLiteral("%1: %2")
+                .arg(statement.simplified().left(160), query.lastError().text());
+            return false;
+        }
+    }
+    return true;
+}
+bool materializeSyntheticRepresentativeProfile(const QString& profilePath, QString* errorMessage)
+{
+    const QString connectionName = QStringLiteral("roster-output-seed-%1")
+        .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));
+    bool success = false;
+    {
+        QSqlDatabase database = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), connectionName);
+        database.setDatabaseName(profilePath);
+        if (!database.open())
+        {
+            *errorMessage = database.lastError().text();
+        }
+        else
+        {
+            const auto schema = DatabaseSchemaManager::createSchema(database);
+            if (!schema)
+            {
+                *errorMessage = schema.error().diagnostic;
+            }
+            else
+            {
+                success = executeFixtureSql(database, representativeStartupSqlPath(), errorMessage);
+            }
+        }
+        database.close();
+        database = QSqlDatabase();
+    }
+    QSqlDatabase::removeDatabase(connectionName);
+    return success;
+}
 qsizetype nonWhitePixelCount(const QImage& source)
 {
     const QImage image = source.convertToFormat(QImage::Format_RGB32);
@@ -127,6 +192,7 @@ private slots:
     void scopesProfilesAndDailyPageOrder();
     void templateParity_data();
     void templateParity();
+    void syntheticRepresentativeSchemaV6DbProfileExitEvidenceParity();
     void restrictionsAndAtomicFailure();
     void pageReleaseAndLargeRoute();
     void editorSaveGate();
@@ -232,6 +298,139 @@ void RosterOutputTests::templateParity()
     }
     if (templateId == 2) { const auto text = pdfText(nextPath); QVERIFY(text.contains(QStringLiteral("FIXTURE B"))); QVERIFY(!text.contains(QStringLiteral("FIXTURE C"))); QVERIFY(text.contains(QStringLiteral("FIXTURE_WIFI"))); QVERIFY(text.contains(QStringLiteral("FIXTURE_ZOOM"))); }
     if (templateId == 1) QVERIFY(!pdfText(nextPath).contains(QStringLiteral("FIXTURE_WIFI")));
+}
+
+void RosterOutputTests::syntheticRepresentativeSchemaV6DbProfileExitEvidenceParity()
+{
+    // This is deterministic synthetic coverage sourced from
+    // representative_startup.sql; it is not a historical user profile.
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const QString profilePath = dir.filePath(QStringLiteral("representative.db"));
+    QString errorMessage;
+    QVERIFY2(materializeSyntheticRepresentativeProfile(profilePath, &errorMessage),
+        qPrintable(errorMessage));
+    QVERIFY(QFileInfo(profilePath).isFile());
+    QCOMPARE(QFileInfo(profilePath).suffix(), QStringLiteral("db"));
+    const QString unsupportedSiblingPath = dir.filePath(QStringLiteral("representative.tps"));
+    QVERIFY(!QFileInfo::exists(unsupportedSiblingPath));
+
+    WorkspaceStore store;
+    const auto opened = store.openExisting(profilePath);
+    if (!opened)
+        QFAIL(qPrintable(opened.error().diagnostic));
+    QSqlDatabase database = store.database();
+    const auto schemaVersion = DatabaseSchemaManager::schemaVersion(database);
+    if (!schemaVersion)
+        QFAIL(qPrintable(schemaVersion.error().diagnostic));
+    QCOMPARE(*schemaVersion, 6);
+
+    QSqlQuery foreignKeyCheck(database);
+    QVERIFY(foreignKeyCheck.exec(QStringLiteral("PRAGMA foreign_key_check")));
+    QVERIFY(!foreignKeyCheck.next());
+
+    const auto classes = store.classRepository()->getClasses();
+    QVERIFY(classes);
+    QCOMPARE(classes->size(), 8);
+    const auto regularClass = store.classRepository()->getClassById(1);
+    QVERIFY(regularClass);
+    QCOMPARE(regularClass->name, QStringLiteral("Bluebird E4"));
+    const auto intensiveClass = store.classRepository()->getClassById(7);
+    QVERIFY(intensiveClass);
+    QCOMPARE(intensiveClass->name, QStringLiteral("Cedar Intensive"));
+
+    const auto regularInfo = store.classInfoRepository()->loadClassInfo(1);
+    QVERIFY(regularInfo);
+    QCOMPARE(regularInfo->teacherId, 1);
+    QCOMPARE(regularInfo->classTimes.size(), 2);
+    QCOMPARE(regularInfo->classTimes.at(0).day, QStringLiteral("Monday"));
+    QCOMPARE(regularInfo->classTimes.at(0).startTime, QStringLiteral("4:00 PM"));
+    QCOMPARE(regularInfo->classTimes.at(1).day, QStringLiteral("Thursday"));
+    const auto intensiveInfo = store.classInfoRepository()->loadClassInfo(7);
+    QVERIFY(intensiveInfo);
+    QCOMPARE(intensiveInfo->teacherId, 3);
+    QCOMPARE(intensiveInfo->intensiveTimes.size(), 2);
+    QCOMPARE(intensiveInfo->intensiveTimes.at(0).day, QStringLiteral("Monday"));
+    QCOMPARE(intensiveInfo->intensiveTimes.at(0).startTime, QStringLiteral("9:00 AM"));
+    QCOMPARE(intensiveInfo->intensiveTimes.at(1).day, QStringLiteral("Wednesday"));
+
+    const auto dana = store.teacherRepository()->getTeacher(1);
+    QVERIFY(dana);
+    QCOMPARE(dana->teacherEn, QStringLiteral("Dana Kim"));
+    QCOMPARE(dana->teacherKr, QString::fromUtf8("김다은"));
+    const auto minseo = store.teacherRepository()->getTeacher(3);
+    QVERIFY(minseo);
+    QCOMPARE(minseo->teacherEn, QStringLiteral("Minseo Park"));
+
+    const auto roster = store.rosterRepository()->loadRoster(1);
+    QVERIFY(roster);
+    QCOMPARE(roster->columns, QStringList({QStringLiteral("Student"), QStringLiteral("School"),
+        QStringLiteral("Level"), QStringLiteral("Notes")}));
+    QCOMPARE(roster->rows.size(), 4);
+    QCOMPARE(roster->rows.at(0).size(), 4);
+    QCOMPARE(roster->rows.at(0).at(0), QStringLiteral("Avery"));
+    QCOMPARE(roster->rows.at(0).at(1), QStringLiteral("River School"));
+    QCOMPARE(roster->rows.at(3).at(0), QStringLiteral("Devon"));
+    const auto scheduleMode = store.settingsRepository()->loadSetting(
+        QStringLiteral("schedule_display_mode"));
+    QVERIFY(scheduleMode);
+    QCOMPARE(scheduleMode->toString(), QStringLiteral("regular"));
+    const auto campus = store.settingsRepository()->loadSetting(QStringLiteral("myInfo/campus"));
+    QVERIFY(campus);
+    QCOMPARE(campus->toString(), QStringLiteral("Fixture Campus"));
+
+    const auto printInfo = store.classInfoRepository()->loadRosterPrintClassInfoRecord(1);
+    QVERIFY(printInfo);
+    RosterTemplatePrintService::RosterClassData legacyClass;
+    legacyClass.classroom = *regularClass;
+    legacyClass.roster = *roster;
+    legacyClass.classInfo = {printInfo->classGrade, printInfo->classLevel,
+        printInfo->teacherEnglishName, printInfo->teacherKoreanName,
+        printInfo->roomNumber, printInfo->wifiName, printInfo->wifiPassword,
+        printInfo->zoomId, printInfo->zoomPassword, {}};
+    for (const auto& time : printInfo->regularTimes)
+        legacyClass.classInfo.regularSchedule.append({time.day, time.startTime, time.endTime});
+
+    Output::RosterOutputRequest request{id(1)};
+    request.scope = Output::RosterOutputScope::CurrentClass;
+    request.templateId = R::TemplateId::PerClassWithExtraInfo;
+    request.orientation = QPageLayout::Landscape;
+    request.extraColumns = {QStringLiteral("Student"), QStringLiteral("School"),
+        QStringLiteral("Level"), QStringLiteral("Notes")};
+    const QString nextPath = dir.filePath(QStringLiteral("next.pdf"));
+    const QString legacyPath = dir.filePath(QStringLiteral("legacy.pdf"));
+    const auto nextResult = Platform::saveRosterOutputPdfAtPath(
+        profilePath, request, nextPath, actions().fonts);
+    QCOMPARE(nextResult.status, DocumentOutputStatus::Sent);
+    const auto legacyResult = RosterTemplatePrintService::saveRostersPdf(
+        {legacyClass}, legacyPath, request.templateId, request.extraColumns, request.orientation);
+    QCOMPARE(legacyResult.status, DocumentOutputStatus::Sent);
+
+    QPdfDocument nextDocument;
+    QPdfDocument legacyDocument;
+    QCOMPARE(nextDocument.load(nextPath), QPdfDocument::Error::None);
+    QCOMPARE(legacyDocument.load(legacyPath), QPdfDocument::Error::None);
+    QCOMPARE(nextDocument.pageCount(), 1);
+    QCOMPARE(nextDocument.pageCount(), legacyDocument.pageCount());
+    const QString nextText = nextDocument.getAllText(0).text();
+    const QString legacyText = legacyDocument.getAllText(0).text();
+    QCOMPARE(nextText, legacyText);
+    for (const QString& visibleFixtureValue : {QStringLiteral("E4 Blue"),
+             QStringLiteral("Dana Kim"), QStringLiteral("Avery"), QStringLiteral("Devon"),
+             QStringLiteral("River School"), QStringLiteral("Fixture-WiFi"),
+             QStringLiteral("301")})
+        QVERIFY2(nextText.contains(visibleFixtureValue), qPrintable(visibleFixtureValue));
+    QCOMPARE(nextDocument.pagePointSize(0), legacyDocument.pagePointSize(0));
+    QVERIFY(nextDocument.pagePointSize(0).width() > nextDocument.pagePointSize(0).height());
+    const QImage nextPage = nextDocument.render(0, QSize(1000, 1000));
+    const QImage legacyPage = legacyDocument.render(0, QSize(1000, 1000));
+    QVERIFY(!nextPage.isNull());
+    QVERIFY(!legacyPage.isNull());
+    QCOMPARE(nextPage.size(), legacyPage.size());
+    QVERIFY(nonWhitePixelCount(nextPage) > 10'000);
+    QCOMPARE(nextPage.convertToFormat(QImage::Format_RGB32),
+        legacyPage.convertToFormat(QImage::Format_RGB32));
+    QVERIFY(!QFileInfo::exists(unsupportedSiblingPath));
 }
 
 void RosterOutputTests::restrictionsAndAtomicFailure()

@@ -37,7 +37,9 @@ website rather than calling an AI API. (CMakeLists.txt, README.md)
 
 ## Important Technical Constraints
 
-- Native workspace output uses `.tps`; legacy `.db` input remains supported.
+- Native workspace output uses `.tps`; existing schema-v6 `.db` databases are
+  supported. Schema versions 0–5 are unsupported and rejected without
+  migration ([Phase 3 schema baseline](../docs/qt-rewrite/phase-3-schema-baseline.md)).
 - Release distribution must include the installed Qt deployment output rather
   than relying on Qt being installed on the user's machine.
 - Qt kit paths are supplied through platform-specific environment variables or

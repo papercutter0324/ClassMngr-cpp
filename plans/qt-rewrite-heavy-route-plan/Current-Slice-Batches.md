@@ -74,8 +74,8 @@ large-workspace/output acceptance including 96 classes and 8 slots. Batch 3 is
 complete locally and awaits its push; do not archive it in this tracker before
 the batch is pushed. No separate batch-history document is needed. The
 generated schema-v6 `.db` relationship/output check from
-`representative_startup.sql` remains open Phase 7 exit evidence, not a
-historical user profile or a test-only candidate. The Initial Setup personal-details
+`representative_startup.sql` passed as synthetic Phase 7 exit evidence; it is
+not a historical user profile or a test-only candidate. The Initial Setup personal-details
 screenshot subgate is closed; broader 7A visual evidence, memory evidence, the
 Windows packaged-Next memory gate, and the 7A/Phase 7 exit gates remain open.
 

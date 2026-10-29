@@ -1157,3 +1157,19 @@ Entries are preserved in their original document order.
   the macOS protected-area prompt, Windows-specific rendering, hosted Windows
   startup/memory, and the full suite were not verified. Batch 3 is complete
   locally and awaits push. The broader 7A and Phase 7 exit gates remain open.
+
+### Phase 7 exit evidence — synthetic schema-v6 `.db` output check passed (2026-10-29)
+
+- The independent `ClassMngrNextRosterOutputTests` target passed after adding
+  the complete `SettingsRepository` header needed by the evidence test. The
+  focused slot `syntheticRepresentativeSchemaV6DbProfileExitEvidenceParity`
+  passed directly offscreen, and the registered CTest passed 1/1. The test
+  checks schema version 6, foreign-key integrity, representative teacher,
+  class, schedule, roster, and settings values, and a no-sibling profile path.
+- The Next PDF matches the Legacy renderer for page size, extracted text,
+  expected values, and rendered RGB pixels in the one-page landscape “Per
+  Class with Extra Info” template.
+- Scope limit: the profile is generated from the synthetic
+  `representative_startup.sql` fixture, not a historical user profile. Output
+  parity covers one template. This closes the synthetic schema-v6 exit-evidence
+  item only; broader 7A and Phase 7 gates remain open.

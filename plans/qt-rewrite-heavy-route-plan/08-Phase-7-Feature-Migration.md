@@ -43,10 +43,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   #27. Candidate #40, Reports/PDF/PowerPoint/export jobs, is accepted in
   `f2b24bd7`. Batch 3 is complete locally and awaits push; Batch 4 discovery is
   complete with eight ordered candidates queued. The Initial Setup
-  personal-details screenshot subgate is closed; broader 7A visual evidence,
-  the synthetic schema-v6 `.db` output check, memory evidence, and the Windows
-  packaged-Next memory gate remain open. The 7A and Phase 7 exit gates are not
-  yet passed. See the [Phase 7 progress
+  personal-details screenshot subgate is closed. The generated synthetic
+  schema-v6 `.db` relationship/output check passed; it is not historical
+  profile evidence. Broader 7A visual evidence, memory evidence, and the
+  Windows packaged-Next memory gate remain open. The 7A and Phase 7 exit gates
+  are not yet passed. See the [Phase 7 progress
   log](08-Phase-7-Progress-Log.md) for evidence and limits.
 
 ### Slice batches
