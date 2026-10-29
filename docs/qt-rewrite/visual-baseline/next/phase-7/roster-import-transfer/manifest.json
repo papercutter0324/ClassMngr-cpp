@@ -1,0 +1,58 @@
+{
+    "captures": [
+        {
+            "image": "roster_import_en_US_light.png",
+            "locale": "en_US",
+            "state": "imported scores",
+            "theme": "light"
+        },
+        {
+            "image": "roster_transfer_en_US_light.png",
+            "locale": "en_US",
+            "state": "student transferred",
+            "theme": "light"
+        },
+        {
+            "image": "roster_import_en_US_dark.png",
+            "locale": "en_US",
+            "state": "imported scores",
+            "theme": "dark"
+        },
+        {
+            "image": "roster_transfer_en_US_dark.png",
+            "locale": "en_US",
+            "state": "student transferred",
+            "theme": "dark"
+        },
+        {
+            "image": "roster_import_ko_KR_light.png",
+            "locale": "ko_KR",
+            "state": "imported scores",
+            "theme": "light"
+        },
+        {
+            "image": "roster_transfer_ko_KR_light.png",
+            "locale": "ko_KR",
+            "state": "student transferred",
+            "theme": "light"
+        },
+        {
+            "image": "roster_import_ko_KR_dark.png",
+            "locale": "ko_KR",
+            "state": "imported scores",
+            "theme": "dark"
+        },
+        {
+            "image": "roster_transfer_ko_KR_dark.png",
+            "locale": "ko_KR",
+            "state": "student transferred",
+            "theme": "dark"
+        }
+    ],
+    "limit": "Presentation evidence only; images do not establish pixel parity.",
+    "scope": "Roster score import and student transfer presentation captures",
+    "viewport": {
+        "height": 768,
+        "width": 1024
+    }
+}

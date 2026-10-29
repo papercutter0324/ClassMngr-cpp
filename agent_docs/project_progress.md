@@ -189,21 +189,24 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-28 (candidate #35 accepted; #36 active)
+### Current checkpoint — 2026-10-28 (candidate #36 accepted; #37 active)
 
-Candidate #35, roster editor and model/view, is accepted at `9da01020`. It adds
-a shared 25-row model/editor to My Classes and Testing Classes, path-scoped
-typed WorkspaceStore actions, active-cell editors, compact row state, sparse
-tail-data checks, validation, failed-save retry, and lifecycle release.
-Focused CTest passed 14/14, including editor, page, manager, adapter, capture,
-and dependency-boundary coverage; the resource inventory check and
-`git diff --check` passed. The capture package contains English/Korean ×
-Light/Dark standalone captures and four paired Legacy/Next Testing Classes
-roster states as presentation evidence, not pixel parity. No full suite, Windows run, Phase 9
-memory-budget acceptance, or cross-platform claim is made. Candidate #36,
-roster imports/transfers, is active. Batch 3 remains unpushed through #40; the
-7A screenshot/memory evidence and 7A/Phase 7 exit gates remain open. The safe
-7A screenshot route uses temporary/synthetic setup state; Windows Release
+Candidate #36, roster score import and student transfer, is accepted at
+`b0df9112`. Next reads saved speaking-evaluation results and applies typed
+grade-matching rules through a path-scoped WorkspaceStore action. Student
+transfer uses same-grade targets, Legacy-compatible class labels, and an
+atomic two-roster save. The transaction checks both parent classes but has no
+optimistic stale-content comparison. Independent focused CTest passed 6/6;
+the roster-editor QtTest reported 22 passed, 0 failed, including import
+failure/retry and transfer cancel/failure/path-isolation coverage. Direct
+Legacy-label and path-scoped tests passed 4/4. The resource inventory check,
+29 generator tests, CMake source ownership (1,891), and `git diff --check`
+passed. Eight English/Korean × Light/Dark import/transfer captures are
+packaged as presentation evidence, not pixel parity. No full suite, Windows,
+cross-platform, or Phase 9 memory-budget result is claimed. Candidate #37,
+roster templates/printing, is active. Batch 3 remains unpushed through #40;
+the 7A screenshot/memory evidence and 7A/Phase 7 exit gates remain open. The
+safe 7A screenshot route uses temporary/synthetic setup state; Windows Release
 memory evidence must measure the staged Next executable because the existing
 Phase 0 runner is Legacy-only. The `<250 MiB` threshold remains a Phase 9 gate.
 

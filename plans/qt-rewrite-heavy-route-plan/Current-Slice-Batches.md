@@ -51,8 +51,10 @@ ownership, dependencies, lifecycle, and verification.
     (`9da01020`). See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
     and [roster-editor presentation
     captures](../../docs/qt-rewrite/visual-baseline/next/phase-7/roster-editor/README.md).
-36. **Active — Roster imports/transfers.**
-37. Roster templates/printing.
+36. **Accepted — Roster score import and student transfer** (`b0df9112`). See
+    the [Phase 7 progress log](08-Phase-7-Progress-Log.md) and [import/transfer
+    captures](../../docs/qt-rewrite/visual-baseline/next/phase-7/roster-import-transfer/README.md).
+37. **Active — Roster templates/printing.**
 38. Speaking-evaluation core using model/view and compact state.
 39. Evaluation analytics, AI-assisted comments, and batch workflow.
 40. Reports, PDF, PowerPoint, and export jobs.

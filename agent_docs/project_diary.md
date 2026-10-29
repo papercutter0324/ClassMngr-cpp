@@ -32,6 +32,16 @@ data before removal, and clear the model when the page suspends after dirty
 state is resolved. Sparse rows retain absolute indexes; do not compact them
 when editing a visible window.
 
+### Phase 7 roster import and transfer boundary — 2026-10-28
+
+Candidate #36 treats the roster's saved-speaking-score import and one-student
+roster transfer as separate uses of the shared roster editor. Use the existing
+typed score projection/matching and transfer policies, with new Next
+WorkspaceStore actions scoped to the editor's explicit profile path. Transfer
+must save both roster windows in one transaction. Keep workbook roster import,
+Speaking Evaluation name import, templates/printing, evaluation-page migration,
+and analytics in their separate features.
+
 ### Phase 7 Calendar page and QML boundary — 2026-10-28
 
 Candidate #33 extends the narrow `ClassMngrNextCalendarUi` source owner with a

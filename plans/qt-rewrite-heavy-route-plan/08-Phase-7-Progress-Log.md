@@ -1006,3 +1006,27 @@ Entries are preserved in their original document order.
 - Limits: no full-suite, Windows, cross-platform, or Phase 9 memory-budget
   result is claimed. The 7A screenshot comparison and memory evidence, Windows
   packaged-Next memory gate, and 7A/Phase 7 exit gates remain open.
+
+### Candidate #36 — Roster score import and student transfer accepted (2026-10-28)
+
+- Commit: `b0df9112` (`Phase7 - Add roster import and student transfer`). The
+  Next roster editor imports saved speaking-evaluation scores and transfers an
+  individual student to a same-grade class. Full targets are disabled and a
+  positive confirmation precedes the paired source/target save. Parent checks
+  verify both class parents in the atomic save; changes made to either roster
+  after it was read are not detected optimistically.
+- Verification: independent Tester passed the focused CTest selection 6/6;
+  `ClassMngrNextRosterEditorTests` reported 22 passed, 0 failed. Assertions
+  cover same-grade target filtering, disabled full targets, database-path
+  forwarding, and positive confirmation while retaining existing assertions.
+  Direct Legacy-label comparison and path-scoped tests passed 4/4.
+  `NextStartupWorkspaceDependencyBoundary`, resource inventory `--check`,
+  CMake source ownership (1,891), and `git diff --check` passed. The inventory
+  contains 187 direct resources and 194 catalog records.
+- Captures: the [roster import/transfer
+  package](../../docs/qt-rewrite/visual-baseline/next/phase-7/roster-import-transfer/README.md)
+  records imported scores and student transferred for English/Korean ×
+  light/dark at 1024×768. These are presentation evidence, not pixel parity.
+- Limits: no full suite, Windows, cross-platform, or Phase 9 memory result is
+  claimed. The 7A screenshot comparison and memory evidence, Windows
+  packaged-Next memory gate, and 7A/Phase 7 exit gates remain open.
