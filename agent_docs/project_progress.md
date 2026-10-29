@@ -189,46 +189,26 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-29 (candidate #41 active; Batch 4 active)
+### Current checkpoint — 2026-10-29 (candidate #41 accepted; setup build repair before #42)
 
-Candidate #39, AI-assisted Speaking Evaluation comments and batch workflow,
-is accepted in source commit `02fbeca6`. Class analytics remain in candidate
-#27. The page uses typed prompt/eligibility policies, a 25-student batch cap,
-configured external HTTPS website preferences, and local name restoration.
-Review/apply flows through the evaluation matrix's existing undo, dirty-state,
-and save path. Independent verification passed 9 focused CTests and the direct
-mouse/keyboard and WorkspaceStore save/reopen cases. The 16 synthetic captures
-are packaged as presentation evidence; no pixel-parity claim is made. Resource
-inventory, one-owner source validation (1,911), and diff checks passed.
-
-Candidate #40, reports/PDF/PowerPoint/export jobs, is accepted in source commit
-`f2b24bd7`. Independent verification passed four focused CTests, the Next
-Save-As/Print interaction checks, report lifecycle/output checks, the narrow
-Next dependency boundary, resource inventory validation, and the C40 capture
-integrity review. Its ten synthetic captures and one-page PDF are packaged in
-the C40 visual-baseline README; they show presentation and output, not
-pixel-parity. Batch 3 and its Windows evidence support were pushed at
-`2cfb1db386850987b0680e9b3f92704a8cb155e6`. Batch 4 is active with candidates
-#41–48. Candidate #41's Campus Dashboard boundary is accepted for
-implementation: packaged read-only data, writable app-data overrides with
-import from the known historical directory, and a campus-local `--enable-admin`
+Candidate #41, Campus Directory, is accepted in source commit `728c8c14` after
+independent focused verification: three CTests passed, the direct campus suite
+passed 12/12, and the 40-image capture package was integrity checked. The slice
+uses packaged read-only data, app-data overrides, the exact historical
+`<process cwd>/data/campuses` migration root, and a campus-local admin
 capability. Campus Staff remains owned by #17–19; app-wide permission parity
-remains #46. Production implementation is underway; independent verification
-remains pending. The generated schema-v6 `.db`
-relationship/output check passed independently
-using synthetic fixture data, not a historic profile, with PDF parity limited
-to one landscape template. Exit evidence still open includes broader 7A visual
-and memory/lifecycle evidence and hosted Windows x64 Release Next startup
-collection. The 96-class Sub Prep entry/refresh/output/release route is
-required in #44. Local memory-evidence support passed six Python validator
-tests, blank schema-v6 fixture CTest 1/1, and the Next startup dependency
-boundary CTest 1/1. The fixture link has no broad Runtime/Calendar closure and
-source ownership validated 1,921 handwritten files. Windows Release run
-`40914914018` completed at the pushed SHA, but the x64 diagnostic prerequisite
-build failed on missing `WorkspaceStoreGateway` schedule import members; no
-collector files or Phase 7 memory evidence were produced. The `<250 MiB`
-threshold remains a separate Phase 9 gate. The 7A and Phase 7 exit gates are
-not yet passed.
+remains #46. Its macOS Maps measurements and lifecycle limits are recorded in
+the [Phase 7 progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).
+
+Batch 4 remains active; candidate #42, Document catalog, is next after a clean-
+head setup schedule-import build repair. The repair uses existing path-scoped
+ports and leaves the protected WorkspaceStore Gateway edits unstaged. Windows
+Release run `40914914018` completed at the pushed SHA, but its x64 diagnostic
+prerequisite build failed on missing Gateway schedule-import members; no
+collector files or hosted Phase 7 memory evidence were produced. Other open
+gates include broader 7A visual/lifecycle evidence and the 96-class Sub Prep
+entry/refresh/output/release route in #44. The `<250 MiB` threshold remains a
+separate Phase 9 gate. The 7A and Phase 7 exit gates are not yet passed.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.
@@ -619,11 +599,11 @@ user's response to the exact-payload approval request.
 
 ## Next Milestone
 
-Complete candidates #41–48 in Batch 4 and push the batch. Begin the next-batch
-discovery when candidate #47 starts. Resolve the Windows diagnostic
-prerequisite build without disturbing the protected Gateway work, then obtain
-and review a fresh artifact. Do not
-declare Phase 7 complete until the 7A and Phase 7 exit gates pass; see the
+Complete the setup build repair and commit it, then start candidate #42. Finish
+#42–48 and push Batch 4; begin next-batch discovery when #47 starts. Obtain and
+review a fresh Windows diagnostic artifact from a clean pushed head. Close the
+broader 7A evidence and Phase 7 exit gates before declaring Phase 7 complete;
+see the
 [Phase 7 plan](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Feature-Migration.md)
 and [progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).
 

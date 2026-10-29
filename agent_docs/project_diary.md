@@ -9154,3 +9154,9 @@ try that one known legacy location for migration; do not guess among other
 roots. Campus edit capability stays local to Campus Dashboard routes, while
 the shared permission gate remains separate. Campus Staff directories are
 workspace data already covered by #17–#19, not campus-record children.
+
+When a shared resource loader caches decoded images, the requested resolution
+must be part of cache identity (or bounded decoding must happen after a
+separate full-resolution cache lookup). A bounded request must not make a later
+unbounded request return a smaller image, and the reverse order must preserve
+the requested bound.

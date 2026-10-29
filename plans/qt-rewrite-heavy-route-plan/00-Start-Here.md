@@ -6,22 +6,24 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-29
-- Current milestone: Phase 7 remains in progress. Candidate #40,
-  Reports/PDF/PowerPoint/export jobs, is accepted in `f2b24bd7`; Batch 3 and
-  its Windows evidence support were pushed at `2cfb1db3`. Batch 4 is active
-  with candidates #41–48. Candidate #41's Campus Dashboard boundary is
-  accepted and production implementation is underway: a packaged read-only catalog, writable
-  app-data overrides with import from the one known historical directory, and
-  a campus-local admin capability. Campus Staff remains owned by #17–19, and
-  the general permission gate by #46.
+- Current milestone: Phase 7 remains in progress. Candidate #41, Campus
+  Directory, is accepted in `728c8c14`; Batch 4 remains active and #42,
+  Document catalog, is next. A clean-head setup schedule-import build repair
+  is underway before #42, using existing path-scoped ports and leaving the
+  protected Gateway edits untouched. Candidate #41 adds the five dashboard
+  sections, packaged read-only campus data, app-data overrides, explicit
+  historical-directory migration, and a campus-local admin capability.
+  Campus Staff remains owned by #17–19, and the general permission gate by
+  #46.
   See the [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current batch
   tracker](Current-Slice-Batches.md). The Initial Setup personal-details
   screenshot subgate is closed. The generated synthetic schema-v6 `.db`
   relationship/output check passed; it is not historical user-profile
-  evidence. Windows Release run [40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018)
-  completed at the pushed head, but the x64 memory collector's prerequisite
-  build failed and no diagnostic artifact was uploaded. No hosted memory
-  evidence was produced. Broader 7A visual evidence, memory
+  evidence. Batch 3 and its Windows evidence support were pushed at
+  `2cfb1db3`. Windows Release run [40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018)
+  completed at that head, but the x64 memory collector's prerequisite build
+  failed and no diagnostic artifact was uploaded. No hosted memory evidence
+  was produced. Broader 7A visual evidence, memory
   evidence, and the Windows packaged-Next memory gate remain open. The 7A and
   Phase 7 exit gates are not yet passed.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
@@ -45,7 +47,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — candidate #41 active | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — Batch 4 active | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

@@ -1207,7 +1207,9 @@ Entries are preserved in their original document order.
   absent. The collector did not run, so no hosted Phase 7 memory evidence or
   Phase 9 result is claimed.
 
-### Candidate #41 — Campus Directory boundary accepted for implementation (2026-10-29)
+### Candidate #41 — Campus Directory accepted (2026-10-29)
+
+- Commit: `728c8c14` (`Phase7 - Add Campus Directory and map lifecycle`).
 
 - Scope: the five Campus Dashboard sections—office/printer information,
   directions, address, housing, and maps. Campus Staff is a separate,
@@ -1237,13 +1239,42 @@ Entries are preserved in their original document order.
   decoded dimensions to the Legacy 1520-pixel maximum, and release map images
   on suspension/leave/release. Preserve campus selection fallback (saved ID,
   then first available campus) and current localized fields.
+- Image-cache boundary: bounded and unbounded requests for one resource ID must
+  not satisfy one another with an image at the wrong resolution. Verify both
+  cache request orders with a synthetic image larger than the bound.
 - Acceptance: cover all five routes, default/changed campus selection,
   read-only and admin states, packaged/override merge, historical import from
   only the explicit root, atomic-save failure and retry, reopen persistence,
-  and map load/release/reopen. Verify English/Korean and Light/Dark captures,
-  the narrow Next link boundary, resource inventory, and `git diff --check`.
-  Include a focused memory measurement at baseline, maps entry, leave/release,
-  and reopen, recording its metric source/configuration and resource counts;
-  this adds no numeric threshold and is not Phase 9 evidence.
-  The implementation is now underway; independent verification remains
-  pending.
+  and map load/release/reopen. Also verify image-cache requests in both
+  bounded/unbounded orders, English/Korean and Light/Dark captures, the narrow
+  Next link boundary, resource inventory, and `git diff --check`.
+- Independent verification: the standard incremental macOS Debug build
+  completed for `ClassMngrNext`, `ClassMngrNextResourceLoaderTests`,
+  `ClassMngrNextCampusDirectoryTests`, and
+  `ClassMngrNextCampusDirectoryVisualCapture`. Focused CTest passed 3/3;
+  Campus Directory direct QtTest passed 12/12. Checks include actual
+  `QSaveFile` obstruction with dirty-state preservation and retry, production
+  argument-helper presence/absence, migration-root bounds, selection,
+  resource lifecycle, cache-resolution order, resource inventory (140 entries),
+  and `git diff --check`. The generated Next link command has no Legacy
+  Runtime, DataService, or ResourcePack dependency.
+- Capture evidence: the [C41 package](../../docs/qt-rewrite/visual-baseline/next/phase-7/campus-directory-c41/README.md)
+  contains 40 PNGs in 20 Legacy/Next pairs across five sections, English and
+  Korean, and Light and Dark. The independent Tester matched all package PNGs
+  to fresh capture outputs by SHA-256 and verified dimensions. The README
+  records offscreen rendering and a capture-only Legacy map alias; it makes no
+  pixel-parity claim.
+- Memory evidence: a whole-process macOS working-set sample was 157,515,776 B
+  before Maps, 158,990,336 B after Maps entry and after page release, and
+  163,217,408 B after reopen. The loaded-map-resource count returns to zero on
+  release, though whole-process working set does not shrink at that point.
+  Two maps decoded at 1230×1150 and 1225×859, below the 1520-pixel cap. This is
+  lifecycle evidence with no numeric threshold, not Phase 9 evidence.
+- Limits: no full suite, other platform, native-screen rendering, or full
+  application launch with the admin flag was run. The helper used by production
+  bootstrap is covered for both flag states. Migration checks only the exact
+  `<process cwd>/data/campuses` path; a different historical working directory
+  cannot be found automatically. The shared ResourceCache retains decoded
+  images until LRU eviction, but C41 constructs its map loader without that
+  cache and releases its map resources on page lifecycle. Windows diagnostic
+  memory evidence remains unavailable pending the setup build repair below.

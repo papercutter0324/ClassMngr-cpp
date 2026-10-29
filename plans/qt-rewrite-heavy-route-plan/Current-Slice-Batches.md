@@ -2,13 +2,9 @@
 
 ## Batch 4 — active
 
-41. **In progress — Campus Directory:** campus content, directions, address,
-    housing, maps, and permitted editing. Boundary accepted: packaged
-    read-only catalog, writable app-data overrides, explicit import from the
-    one known historical directory, and campus-local admin capability.
-    Campus Staff directories remain owned by #17–19; app-wide permission
-    parity remains #46.
-42. **Discovered — Document catalog.**
+41. **Accepted — Campus Directory** (`728c8c14`). See the [Phase 7 progress
+    log](08-Phase-7-Progress-Log.md) and [C41 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/campus-directory-c41/README.md).
+42. **Discovered — Document catalog** (next after the setup build repair).
 43. **Discovered — Document viewer lifecycle/actions:** load, save/copy,
     zoom/navigation, release, and reopen.
 44. **Discovered — 7J.1 Sub Prep:** large-workspace class information and
@@ -19,4 +15,7 @@
     already owned by Phase 5.
 48. **Discovered — Useful Links external navigation.**
 
-No other slices were found.
+Before #42, resolve the Windows x64 setup schedule-import build failure from
+the pushed Batch 3 head. The remediation is using the committed path-scoped
+ports; the protected Gateway work remains outside it. No other slices were
+found.
