@@ -40,12 +40,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-10-29
 - Current note: Candidate #39, AI-assisted Speaking Evaluation comments and
   batch workflow, is accepted in `02fbeca6`; class analytics remain owned by
-  #27. Candidate #40, Reports/PDF/PowerPoint/export jobs, is active. Batch 3
-  remains active through #40, and Batch 4 discovery is complete with eight
-  ordered candidates queued. The Initial Setup personal-details screenshot
-  subgate is closed; broader 7A visual evidence, memory evidence, and the
-  Windows packaged-Next memory gate remain open. The 7A and Phase 7 exit gates
-  are not yet passed. See the [Phase 7 progress
+  #27. Candidate #40, Reports/PDF/PowerPoint/export jobs, is accepted in
+  `f2b24bd7`. Batch 3 is complete locally and awaits push; Batch 4 discovery is
+  complete with eight ordered candidates queued. The Initial Setup
+  personal-details screenshot subgate is closed; broader 7A visual evidence,
+  the synthetic schema-v6 `.db` output check, memory evidence, and the Windows
+  packaged-Next memory gate remain open. The 7A and Phase 7 exit gates are not
+  yet passed. See the [Phase 7 progress
   log](08-Phase-7-Progress-Log.md) for evidence and limits.
 
 ### Slice batches

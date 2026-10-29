@@ -62,24 +62,20 @@ ownership, dependencies, lifecycle, and verification.
     and [capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/speaking-evaluation-core/README.md).
 39. **Accepted — AI-assisted Speaking Evaluation comments and batch workflow**
     (`02fbeca6`). Class analytics remain in #27; see the [C39 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/speaking-evaluation-ai-comments-c39/README.md).
-40. **Active — Reports, PDF, PowerPoint, and export jobs.** Preserve report
-    content and templates, current/all-student preview/edit behavior, single
-    PDF/print and batch ZIP/individual-PDF output, overwrite/progress/cancel
-    handling, PowerPoint availability/fallback/template restrictions and the
-    macOS access prompt. Keep temporary report data operation-scoped with
-    cleanup on success, failure, and cancellation; test PowerPoint through a
-    deterministic adapter when host automation is unavailable. Do not duplicate
-    #27 analytics or add a hosted AI API.
+40. **Accepted — Reports, PDF, PowerPoint, and export jobs** (`f2b24bd7`). See
+    the [Phase 7 progress log](08-Phase-7-Progress-Log.md) and [C40 capture
+    package](../../docs/qt-rewrite/visual-baseline/next/phase-7/speaking-evaluation-reports-c40/README.md).
 
 Keep My Classes, schedules, rosters, and evaluations model/view-backed with
 compact resident state. Bound import, review, and output data; release it when
 each stage completes. Candidate #31 schedule workbook import is distinct from
 #19 teacher workbook import. The 7J.1 Sub Prep path remains a combined
-large-workspace/output acceptance including 96 classes and 8 slots. Batch 3
-remains active through #40 and must not be pushed or closed before #40
-completes. No separate batch-history document is needed. The legacy `.db`
-fixture import/data/relationship/output comparison remains open Phase 7 exit
-evidence, not a test-only candidate. The Initial Setup personal-details
+large-workspace/output acceptance including 96 classes and 8 slots. Batch 3 is
+complete locally and awaits its push; do not archive it in this tracker before
+the batch is pushed. No separate batch-history document is needed. The
+generated schema-v6 `.db` relationship/output check from
+`representative_startup.sql` remains open Phase 7 exit evidence, not a
+historical user profile or a test-only candidate. The Initial Setup personal-details
 screenshot subgate is closed; broader 7A visual evidence, memory evidence, the
 Windows packaged-Next memory gate, and the 7A/Phase 7 exit gates remain open.
 

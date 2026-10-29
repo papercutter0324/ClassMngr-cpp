@@ -9,14 +9,14 @@
 - Current milestone: Phase 7 remains in progress. Candidate #39,
   AI-assisted Speaking Evaluation comments and batch workflow, is accepted in
   `02fbeca6`; class analytics were already migrated in #27. Candidate #40,
-  Reports/PDF/PowerPoint/export jobs, is active.
-  Batch 3 remains active through #40. Batch 4 discovery is complete and queued
-  with eight ordered candidates.
+  Reports/PDF/PowerPoint/export jobs, is accepted in `f2b24bd7`. Batch 3 is
+  complete locally and awaits push; Batch 4 discovery is complete with eight
+  ordered candidates queued.
   See the [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current batch
   tracker](Current-Slice-Batches.md). The Initial Setup personal-details
   screenshot subgate is closed; broader 7A visual evidence, memory evidence,
-  and the Windows packaged-Next memory gate remain open. The 7A and Phase 7
-  exit gates are not yet passed.
+  the synthetic schema-v6 `.db` output check, and the Windows packaged-Next
+  memory gate remain open. The 7A and Phase 7 exit gates are not yet passed.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

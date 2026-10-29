@@ -1,0 +1,101 @@
+{
+  "claim": "Synthetic C40 report UI and output evidence; no Legacy/Next pixel-parity claim.",
+  "captures": [
+    {
+      "kind": "report-preview",
+      "locale": "en_US",
+      "theme": "light",
+      "file": "report-preview_en_US-light.png",
+      "width": 940,
+      "height": 900,
+      "sha256": "17ba8bdf41f61c94905873d9c7d866444a9253bc421dfab34c8dcb0bd4eaa140"
+    },
+    {
+      "kind": "report-batch",
+      "locale": "en_US",
+      "theme": "light",
+      "file": "report-batch_en_US-light.png",
+      "width": 760,
+      "height": 500,
+      "sha256": "3871c1f79e4512bad576ff0858aaafee44ac821c4a63445e60bc73850e6bb951"
+    },
+    {
+      "kind": "report-preview",
+      "locale": "en_US",
+      "theme": "dark",
+      "file": "report-preview_en_US-dark.png",
+      "width": 940,
+      "height": 900,
+      "sha256": "89faa3333ec3abaea0812d7c6ada62a7177cf560af637bf45f19135d786000e5"
+    },
+    {
+      "kind": "report-batch",
+      "locale": "en_US",
+      "theme": "dark",
+      "file": "report-batch_en_US-dark.png",
+      "width": 760,
+      "height": 500,
+      "sha256": "4628d5fa3d87473b4248e32bf029ccad7318712e1ee0729914c0149844429c20"
+    },
+    {
+      "kind": "report-preview",
+      "locale": "ko_KR",
+      "theme": "light",
+      "file": "report-preview_ko_KR-light.png",
+      "width": 940,
+      "height": 900,
+      "sha256": "e934ca9d85ae591bf126f88a5f710b338cb71acf51b5f03b86361453ef9644c7"
+    },
+    {
+      "kind": "report-batch",
+      "locale": "ko_KR",
+      "theme": "light",
+      "file": "report-batch_ko_KR-light.png",
+      "width": 760,
+      "height": 500,
+      "sha256": "7e2e2a4ace057b8ba7d968a9f6af6ef0691bd612acfbd36baa6dfb6f33dc37ea"
+    },
+    {
+      "kind": "report-batch-powerpoint",
+      "locale": "ko_KR",
+      "theme": "light",
+      "file": "report-batch-powerpoint_ko_KR-light.png",
+      "width": 760,
+      "height": 500,
+      "sha256": "7e059e008a1014a14b1afb90e13f7ab8a1073589cdc8e1a83bf357f26f5c761e"
+    },
+    {
+      "kind": "report-preview",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "file": "report-preview_ko_KR-dark.png",
+      "width": 940,
+      "height": 900,
+      "sha256": "003c5c173be64900c438f29ffe570f619006141a0540e7f3a146ccbba9ccfeb0"
+    },
+    {
+      "kind": "report-batch",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "file": "report-batch_ko_KR-dark.png",
+      "width": 760,
+      "height": 500,
+      "sha256": "6b18910599176d86024fb015736f98b763044a766632aa52bf9d5c1c3adc076a"
+    },
+    {
+      "kind": "report-batch-powerpoint",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "file": "report-batch-powerpoint_ko_KR-dark.png",
+      "width": 760,
+      "height": 500,
+      "sha256": "e6159d5ea7d29d0900520d122ca7b376adc59a14641dba66eb5a829b8a6455dc"
+    }
+  ],
+  "pdf": {
+    "file": "synthetic-speaking-evaluation-report.pdf",
+    "pages": 1,
+    "syntheticInput": true,
+    "sha256": "aec997874d2b3e1b4dd78a0cb84042505f0e16d147bd3541a111fc1744d3e6f6"
+  }
+}

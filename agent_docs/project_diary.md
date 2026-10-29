@@ -9114,3 +9114,14 @@ student names before copying a prompt to the configured external HTTPS site,
 then restore names locally when applying the response; do not send requests to
 a hosted AI API. Cap a batch at the Legacy 25 evaluation rows and review/apply
 through the existing evaluation matrix undo, dirty-state, and save path.
+
+## 2026-10-29 — Speaking-evaluation report output ownership
+
+Keep report context behind a path-scoped WorkspaceStore port and resolve
+templates through the Next resource catalog before creating report dialogs.
+Stage PDFs, PowerPoint inputs, and ZIP output in operation-scoped directories
+and verify cleanup after success, failure, and cancellation. A report preview
+capture should be checked against its generated PDF and expected text; a
+successful render alone does not prove that the visible preview is correct.
+Qt standard dialog buttons can bypass the application translation catalogue,
+so assert visible Korean labels for Save, Print, Save As, and Close actions.

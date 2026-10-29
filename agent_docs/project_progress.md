@@ -1,7 +1,7 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 7 — Feature Migration.
-Current deployment: `phase7-migration-20261028`. Route: Heavy.
+Current deployment: `phase7_resume_20261029`. Route: Heavy.
 Phases 0–6 are Complete; Phase 7 is in progress. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;
@@ -189,7 +189,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-29 (candidate #39 accepted; #40 active)
+### Current checkpoint — 2026-10-29 (candidate #40 accepted; Batch 3 push pending)
 
 Candidate #39, AI-assisted Speaking Evaluation comments and batch workflow,
 is accepted in source commit `02fbeca6`. Class analytics remain in candidate
@@ -201,15 +201,21 @@ mouse/keyboard and WorkspaceStore save/reopen cases. The 16 synthetic captures
 are packaged as presentation evidence; no pixel-parity claim is made. Resource
 inventory, one-owner source validation (1,911), and diff checks passed.
 
-Candidate #40, reports/PDF/PowerPoint/export jobs, is active. Batch 3 remains
-un-pushed through #40; Batch 4 is discovered with candidates #41–48 and no
-other slices identified. Exit evidence still open includes the broader 7A
-visual comparison and memory/lifecycle evidence, hosted Windows x64 Release
-Next startup collection, and synthetic schema-v6 `.db` relationship/output
-parity recheck. The 96-class Sub Prep entry/refresh/output/release route is
-required in #44. The local memory-validator Python tests pass 6/6; its hosted
-run remains pending after Batch 3 push. The `<250 MiB` threshold remains a
-separate Phase 9 gate. The 7A and Phase 7 exit gates are not yet passed.
+Candidate #40, reports/PDF/PowerPoint/export jobs, is accepted in source commit
+`f2b24bd7`. Independent verification passed four focused CTests, the Next
+Save-As/Print interaction checks, report lifecycle/output checks, the narrow
+Next dependency boundary, resource inventory validation, and the C40 capture
+integrity review. Its ten synthetic captures and one-page PDF are packaged in
+the C40 visual-baseline README; they show presentation and output, not
+pixel-parity. Batch 3 is complete locally and awaits push. Batch 4 remains
+discovered with candidates #41–48 and no other slices identified. Exit
+evidence still open includes broader 7A visual and memory/lifecycle evidence,
+hosted Windows x64 Release Next startup collection, and synthetic schema-v6
+`.db` relationship/output parity verification. The 96-class Sub Prep
+entry/refresh/output/release route is required in #44. The local memory
+validator Python tests pass 6/6; its hosted run remains pending after Batch 3
+push. The `<250 MiB` threshold remains a separate Phase 9 gate. The 7A and
+Phase 7 exit gates are not yet passed.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

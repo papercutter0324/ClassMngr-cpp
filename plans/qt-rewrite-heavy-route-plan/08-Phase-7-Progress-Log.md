@@ -1129,3 +1129,31 @@ Entries are preserved in their original document order.
   Windows, hosted memory, or Phase 7 exit-gate result is claimed. Candidate
   #40, reports/PDF/PowerPoint/export jobs, is active; Batch 3 remains open
   through #40.
+
+### Candidate #40 — Reports, PDF, PowerPoint, and export jobs accepted (2026-10-29)
+
+- Commit: `f2b24bd7` (`Phase7 - Add speaking evaluation report exports`). The
+  Next report path uses a typed WorkspaceStore context port and resolved
+  catalog resources. It supports unsaved report projection, student
+  navigation/editing, current/all batch output, single-report PDF/print,
+  ZIP/individual PDFs, overwrite handling, and operation-scoped staging with
+  cleanup on success, failure, and cancellation. The 25-student limit matches
+  the existing Legacy evaluation model row count. PowerPoint was exercised via
+  a deterministic adapter; #27 analytics and hosted AI APIs are not duplicated.
+- Independent verification built the report widget, batch service, Next page,
+  and bootstrap test targets. Focused CTest passed 4/4:
+  `ClassMngrSpeakingEvalReportWidgetTests`,
+  `ClassMngrSpeakingEvalBatchReportServiceTests`,
+  `ClassMngrNextBootstrapTests`, and
+  `ClassMngrNextSpeakingEvaluationPageTests`. Direct page interaction verified
+  Save As PDF and Print, including one-page PDF output and staged print input.
+  The Next report-output target closure excludes Legacy Runtime/Core/Features,
+  ResourcePack, and DataService targets. Resource inventory `--check` and
+  `git diff --check` passed.
+- The [C40 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/speaking-evaluation-reports-c40/README.md)
+  contains ten synthetic English/Korean × Light/Dark preview and batch
+  captures, a one-page PDF, and verified manifest. It records presentation
+  evidence only, not Legacy/Next pixel parity. Native PowerPoint automation,
+  the macOS protected-area prompt, Windows-specific rendering, hosted Windows
+  startup/memory, and the full suite were not verified. Batch 3 is complete
+  locally and awaits push. The broader 7A and Phase 7 exit gates remain open.
