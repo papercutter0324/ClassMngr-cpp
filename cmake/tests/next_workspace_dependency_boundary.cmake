@@ -13,6 +13,10 @@ foreach(_line IN LISTS _report_lines)
         set(_updater_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_LINKS=(.*)$")
         set(_next_workspace_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_ROSTER_OUTPUT_LINKS=(.*)$")
+        set(_next_roster_output_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^ROSTER_RENDERER_LINKS=(.*)$")
+        set(_roster_renderer_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_SCHEDULE_OUTPUT_LINKS=(.*)$")
         set(_next_schedule_output_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_CALENDAR_UI_DEPENDENCIES=(.*)$")
@@ -47,12 +51,19 @@ foreach(_line IN LISTS _report_lines)
 endforeach()
 
 set(_expected_next_links
-    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextCalendarUi|ClassMngrNextDocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
+    "Qt6::Core|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextCalendarUi|ClassMngrNextDocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
 )
 if(NOT _next_links STREQUAL _expected_next_links)
     message(FATAL_ERROR
         "Unexpected direct ClassMngrNext dependencies: [${_next_links}]"
     )
+endif()
+
+if(NOT _next_roster_output_links STREQUAL "ClassMngrRosterTemplateRenderer|Qt6::Widgets|ClassMngrWorkspaceStore|ClassMngrQtPdfPrint|Qt6::Sql|Qt6::Pdf")
+    message(FATAL_ERROR "Unexpected Next Roster output closure: [${_next_roster_output_links}]")
+endif()
+if(NOT _roster_renderer_links STREQUAL "Qt6::Gui")
+    message(FATAL_ERROR "Roster renderer must depend only on Qt GUI: [${_roster_renderer_links}]")
 endif()
 
 set(_expected_next_schedule_output_links
@@ -115,7 +126,7 @@ if(NOT _document_catalog_test_links STREQUAL "ClassMngrNext::DocumentCatalog")
 endif()
 
 set(_expected_bootstrap_test_links
-    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrNextScheduleOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::Widgets"
+    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::Widgets"
 )
 if(NOT _bootstrap_test_links STREQUAL _expected_bootstrap_test_links)
     message(FATAL_ERROR

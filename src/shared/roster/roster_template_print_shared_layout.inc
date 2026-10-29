@@ -80,7 +80,7 @@ bool configureRosterPdfWriter(
         QStringLiteral("Rosters")
         );
     writer.setResolution(
-        PdfPrintService::GeneratedPdfResolutionDpi
+        300
         );
 
     return writer.setPageLayout(

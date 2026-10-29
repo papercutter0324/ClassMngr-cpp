@@ -147,6 +147,18 @@ public:
         int fallbackClassReadCount = 0;
     };
 
+    struct PrintProjection final
+    {
+        QStringList columns;
+        QList<QStringList> rows;
+        qsizetype scannedCellCount = 0;
+    };
+    // Names: first 25 nonblank name pairs across sparse absolute rows.
+    // Positional: rows [0,23), including blanks, selected columns only.
+    // Unprinted tail rows and unselected cells are intentionally ignored.
+    [[nodiscard]] RepositoryResult<PrintProjection> loadTemplatePrintProjection(
+        int classId, const QStringList& selectedColumns, bool positional);
+
     explicit RosterRepository(
         QSqlDatabase& database
         );

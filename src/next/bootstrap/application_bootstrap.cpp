@@ -1,3 +1,4 @@
+#include "next/platform/workspace_store_roster_output.h"
 #include "next/bootstrap/application_bootstrap.h"
 
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
@@ -1320,6 +1321,13 @@ Application::StartupResult ApplicationBootstrap::start()
                         ) {
                         return Platform::saveClassNotesAtPath(databasePath, request);
                     };
+                    actions.rosterEditor.output.readChoices = Platform::rosterOutputChoicesAtPath;
+                    actions.rosterEditor.output.savePdf = [] (const QString& path, const Output::RosterOutputRequest& request, const QString& pdf, const RosterTemplateRenderer::Fonts& fonts) {
+                        return Platform::saveRosterOutputPdfAtPath(path, request, pdf, fonts);
+                    };
+                    actions.rosterEditor.output.fonts = {
+                        QFont(m_coreServices->interFont ? m_coreServices->interFont->get().familyNames().value(0) : QStringLiteral("Inter")),
+                        QFont(m_coreServices->pretendardFont ? m_coreServices->pretendardFont->get().familyNames().value(0) : QStringLiteral("Pretendard"))};
                     actions.rosterEditor.saveMode = actions.saveMode;
                     actions.rosterEditor.readRoster = [](
                         const QString& databasePath,
@@ -1390,7 +1398,14 @@ Application::StartupResult ApplicationBootstrap::start()
                         Ui::TestingClassesManagerPageActions actions;
                         actions.saveMode =
                             Platform::SettingsManagerSaveModePreferencesPort().read();
-                        actions.rosterEditor.saveMode = actions.saveMode;
+                        actions.rosterEditor.output.readChoices = Platform::rosterOutputChoicesAtPath;
+                    actions.rosterEditor.output.savePdf = [] (const QString& path, const Output::RosterOutputRequest& request, const QString& pdf, const RosterTemplateRenderer::Fonts& fonts) {
+                        return Platform::saveRosterOutputPdfAtPath(path, request, pdf, fonts);
+                    };
+                    actions.rosterEditor.output.fonts = {
+                        QFont(m_coreServices->interFont ? m_coreServices->interFont->get().familyNames().value(0) : QStringLiteral("Inter")),
+                        QFont(m_coreServices->pretendardFont ? m_coreServices->pretendardFont->get().familyNames().value(0) : QStringLiteral("Pretendard"))};
+                    actions.rosterEditor.saveMode = actions.saveMode;
                         actions.rosterEditor.readRoster = [](
                             const QString& databasePath,
                             const Domain::ClassId& classId) {

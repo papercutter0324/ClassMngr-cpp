@@ -1,6 +1,6 @@
 #pragma once
 
-#include "domain/models/document_output_result.h"
+#include "shared/roster/roster_template_renderer.h"
 #include "domain/models/classroom.h"
 #include "domain/models/roster.h"
 
@@ -35,12 +35,7 @@ enum class Scope
     SelectedClasses
 };
 
-enum class TemplateId
-{
-    ByDay,
-    Daily,
-    PerClassWithExtraInfo
-};
+using TemplateId = RosterTemplateRenderer::TemplateId;
 
 struct Request
 {
@@ -64,34 +59,9 @@ struct Request
         QPageLayout::Portrait;
 };
 
-struct RosterCellValue
-{
-    QString day;
-    int row = 0;
-    int column = 0;
-    QString value;
-};
-
-struct RosterPrintScheduleTime
-{
-    QString day;
-    QString startTime;
-    QString endTime;
-};
-
-struct RosterPrintClassInfo
-{
-    QString classGrade;
-    QString classLevel;
-    QString teacherEn;
-    QString teacherKr;
-    QString roomNumber;
-    QString wifiName;
-    QString wifiPassword;
-    QString zoomId;
-    QString zoomPassword;
-    QList<RosterPrintScheduleTime> regularSchedule;
-};
+using RosterCellValue = RosterTemplateRenderer::RosterCellValue;
+using RosterPrintScheduleTime = RosterTemplateRenderer::RosterPrintScheduleTime;
+using RosterPrintClassInfo = RosterTemplateRenderer::RosterPrintClassInfo;
 
 struct RosterClassData
 {

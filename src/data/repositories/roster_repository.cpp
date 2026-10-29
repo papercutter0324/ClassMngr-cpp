@@ -3870,3 +3870,87 @@ RepositoryResult<int> RosterRepository::getRosterStudentCount(
 
     return loaded->studentCount.value();
 }
+
+RepositoryResult<RosterRepository::PrintProjection>
+RosterRepository::loadTemplatePrintProjection(
+    int classId, const QStringList& selectedColumns, bool positional)
+{
+    PrintProjection result;
+    QList<qlonglong> sourceColumns;
+    QList<qlonglong> selectedIndexes(selectedColumns.size(), -1);
+    QSqlQuery columns(m_database);
+    columns.setForwardOnly(true);
+    if (!columns.prepare(QStringLiteral(
+            "SELECT c.id,rc.id,rc.name,typeof(rc.name),rc.position,typeof(rc.position) "
+            "FROM classes c LEFT JOIN roster_columns rc ON rc.class_id=c.id "
+            "WHERE c.id=? ORDER BY rc.position,rc.id")))
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Roster data is not available.")});
+    columns.addBindValue(classId);
+    if (!columns.exec()) return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Roster data is not available.")});
+    bool parentFound = false;
+    qlonglong ordinal = 0;
+    while (columns.next())
+    {
+        parentFound = true;
+        if (columns.value(1).isNull()) continue;
+        bool validPosition = false;
+        const auto position = columns.value(4).toLongLong(&validPosition);
+        if (!validPosition || position < 0 || columns.value(5).toString() != QStringLiteral("integer")
+            || (columns.value(3).toString() != QStringLiteral("text") && columns.value(3).toString() != QStringLiteral("null")))
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Roster print data is malformed.")});
+        const QString name = columns.value(2).toString();
+        for (qsizetype index = 0; index < selectedColumns.size(); ++index)
+            if (selectedIndexes[index] < 0 && selectedColumns[index].compare(name, Qt::CaseInsensitive) == 0)
+                selectedIndexes[index] = ordinal;
+        ++ordinal;
+    }
+    if (columns.lastError().isValid()) return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Roster data is not available.")});
+    if (!parentFound) return std::unexpected(RepositoryError{RepositoryErrorCode::NotFound, QObject::tr("Roster data is not available.")});
+    for (qsizetype index = 0; index < selectedColumns.size(); ++index)
+        if (selectedIndexes[index] >= 0 && !sourceColumns.contains(selectedIndexes[index]))
+        { sourceColumns.append(selectedIndexes[index]); result.columns.append(selectedColumns[index]); }
+    if (positional)
+        for (int row = 0; row < 23; ++row) result.rows.append(QStringList(result.columns.size(), QString{}));
+    if (sourceColumns.isEmpty()) return result;
+    QStringList indexes;
+    for (qlonglong column : sourceColumns) indexes.append(QString::number(column));
+    QSqlQuery query(m_database);
+    query.setForwardOnly(true);
+    const QString sql = QStringLiteral(
+        "SELECT row_index, typeof(row_index), col_index, typeof(col_index), value, typeof(value) "
+        "FROM roster_data WHERE class_id=? AND col_index IN (%1) %2 ORDER BY row_index,col_index")
+        .arg(indexes.join(','), positional ? QStringLiteral("AND (row_index<23 OR typeof(row_index)<>'integer')") : QString{});
+    if (!query.prepare(sql)) return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Roster data is not available.")});
+    query.addBindValue(classId);
+    if (!query.exec()) return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Roster data is not available.")});
+    qlonglong activeRow = -1;
+    QStringList names(result.columns.size(), QString{});
+    const auto appendNames = [&] {
+        if (std::any_of(names.cbegin(), names.cend(), [](const QString& name) { return !name.trimmed().isEmpty(); })) result.rows.append(names);
+    };
+    while (query.next())
+    {
+        bool valid = false;
+        const auto row = query.value(0).toLongLong(&valid);
+        if (!valid || row < 0 || query.value(1).toString() != QStringLiteral("integer"))
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Roster print data is malformed.")});
+        if (!positional && activeRow >= 0 && row != activeRow)
+        {
+            appendNames();
+            if (result.rows.size() == 25) break;
+            names = QStringList(result.columns.size(), QString{});
+        }
+        if (query.value(3).toString() != QStringLiteral("integer")
+            || (query.value(5).toString() != QStringLiteral("text") && query.value(5).toString() != QStringLiteral("null")))
+            return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Roster print data is malformed.")});
+        activeRow = row;
+        const qsizetype column = sourceColumns.indexOf(query.value(2).toLongLong());
+        if (column < 0) return std::unexpected(RepositoryError{RepositoryErrorCode::Validation, QObject::tr("Roster print data is malformed.")});
+        ++result.scannedCellCount;
+        if (positional) result.rows[static_cast<qsizetype>(row)][column] = query.value(4).toString();
+        else names[column] = query.value(4).toString();
+    }
+    if (query.lastError().isValid()) return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Roster data is not available.")});
+    if (!positional && result.rows.size() < 25 && activeRow >= 0) appendNames();
+    return result;
+}

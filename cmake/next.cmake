@@ -722,6 +722,13 @@ set_target_properties(ClassMngrNextWorkspace
         POSITION_INDEPENDENT_CODE ON
 )
 
+# Roster output owns a path-bound sparse source and a Qt-only output dialog.
+add_library(ClassMngrNextRosterOutput STATIC ${CLASSMNGR_NEXT_ROSTER_OUTPUT_SOURCES})
+target_compile_features(ClassMngrNextRosterOutput PUBLIC cxx_std_23)
+target_include_directories(ClassMngrNextRosterOutput PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(ClassMngrNextRosterOutput PUBLIC ClassMngrRosterTemplateRenderer Qt6::Widgets PRIVATE ClassMngrWorkspaceStore ClassMngrQtPdfPrint Qt6::Sql Qt6::Pdf)
+set_target_properties(ClassMngrNextRosterOutput PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
+
 # Keep Schedule's preview/output closure available to Next without linking the
 # broad legacy feature, shared UI, or Core targets.
 add_library(ClassMngrNextScheduleOutput STATIC
@@ -792,9 +799,12 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrNextCalendarUi
 )
 if(TARGET ClassMngrTestRuntime)
+    # Reuse the resource objects already compiled into Features. Linking this
+    # archive by file avoids propagating Resources' INTERFACE_SOURCES again.
+    add_dependencies(ClassMngrTestRuntime ClassMngrNextCalendarUi)
     target_link_libraries(ClassMngrTestRuntime
         PUBLIC
-            ClassMngrNextCalendarUi
+            "$<TARGET_LINKER_FILE:ClassMngrNextCalendarUi>"
     )
 endif()
 
@@ -970,6 +980,7 @@ target_link_libraries(ClassMngrNext
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNextScheduleOutput
+        ClassMngrNextRosterOutput
         ClassMngrNextCalendarUi
         ClassMngrNextDocumentCatalog
         ClassMngrNextStartupUpdates
@@ -985,7 +996,7 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
+   STREQUAL "Qt6::Core;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextRosterOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
     message(FATAL_ERROR
         "ClassMngrNext must link only Qt6::Core, Qt6::Widgets, "
         "ClassMngrNext::Application, ClassMngrClassTransferSupport, "

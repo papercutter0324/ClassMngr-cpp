@@ -5522,6 +5522,18 @@ Rm: %1</source>
     <message><source>All day</source><translation>하루 종일</translation></message>
     <message><source>Time unknown</source><translation>시간 미상</translation></message>
     <message><source>Time unconfirmed</source><translation>시간 미확정</translation></message>
+    <message>
+        <source>Too many extra columns for the selected orientation.</source>
+        <translation>선택한 용지 방향에 허용되는 추가 열 수를 초과했습니다.</translation>
+    </message>
+    <message>
+        <source>Testing classes support only the current class and Per Class with Extra Info.</source>
+        <translation>테스트 수업은 현재 수업 및 추가 정보가 있는 수업별 명단만 지원합니다.</translation>
+    </message>
+    <message>
+        <source>Roster print data is malformed.</source>
+        <translation>명단 인쇄 데이터의 형식이 잘못되었습니다.</translation>
+    </message>
 </context>
 <context>
     <name>ResourcePackUpdateService</name>
@@ -11752,6 +11764,137 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message>
         <source>No Teacher</source>
         <translation>교사 없음</translation>
+    </message>
+    <message>
+        <source>Templates / Print</source>
+        <translation>템플릿 / 인쇄</translation>
+    </message>
+</context>
+<context>
+    <name>NextRosterOutput</name>
+    <message>
+        <source>Save Rosters as PDF</source>
+        <translation>명단을 PDF로 저장</translation>
+    </message>
+    <message>
+        <source>PDF Files (*.pdf)</source>
+        <translation>PDF 파일 (*.pdf)</translation>
+    </message>
+    <message>
+        <source>Unable to load the generated roster PDF.</source>
+        <translation>생성된 명단 PDF를 불러올 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Print Rosters</source>
+        <translation>명단 인쇄</translation>
+    </message>
+    <message>
+        <source>Unable to create the roster print file.</source>
+        <translation>명단 인쇄 파일을 만들 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>The roster print file could not be completed.</source>
+        <translation>명단 인쇄 파일을 완성할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Roster PDF created.</source>
+        <translation>명단 PDF를 만들었습니다.</translation>
+    </message>
+    <message>
+        <source>Roster Templates and Printing</source>
+        <translation>명단 템플릿 및 인쇄</translation>
+    </message>
+    <message>
+        <source>Choose a template and classes for your roster.</source>
+        <translation>명단에 사용할 템플릿과 수업을 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Template</source>
+        <translation>템플릿</translation>
+    </message>
+    <message>
+        <source>By Day</source>
+        <translation>요일별</translation>
+    </message>
+    <message>
+        <source>Daily</source>
+        <translation>일일 명단</translation>
+    </message>
+    <message>
+        <source>Per Class with Extra Info</source>
+        <translation>추가 정보가 있는 수업별 명단</translation>
+    </message>
+    <message>
+        <source>Classes</source>
+        <translation>수업</translation>
+    </message>
+    <message>
+        <source>All Classes</source>
+        <translation>모든 수업</translation>
+    </message>
+    <message>
+        <source>Current Class</source>
+        <translation>현재 수업</translation>
+    </message>
+    <message>
+        <source>Selected Classes</source>
+        <translation>선택한 수업</translation>
+    </message>
+    <message>
+        <source>Portrait</source>
+        <translation>세로</translation>
+    </message>
+    <message>
+        <source>Landscape</source>
+        <translation>가로</translation>
+    </message>
+    <message>
+        <source>Extra Columns</source>
+        <translation>추가 열</translation>
+    </message>
+    <message>
+        <source>Select up to %1 extra columns.</source>
+        <translation>추가 열을 최대 %1개 선택하세요.</translation>
+    </message>
+    <message>
+        <source>Roster data is not available.</source>
+        <translation>명단 데이터를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <source>Too many extra columns for the selected orientation.</source>
+        <translation>선택한 용지 방향에 허용되는 추가 열 수를 초과했습니다.</translation>
+    </message>
+    <message>
+        <source>Roster Preview</source>
+        <translation>명단 미리보기</translation>
+    </message>
+    <message>
+        <source>Page %1 of %2</source>
+        <translation>%2페이지 중 %1페이지</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation>미리보기</translation>
+    </message>
+    <message>
+        <source>Save As PDF</source>
+        <translation>PDF로 저장</translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation>인쇄</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>닫기</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>이전</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>다음</translation>
     </message>
 </context>
 </TS>

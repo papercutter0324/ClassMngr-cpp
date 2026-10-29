@@ -3274,6 +3274,12 @@ RepositoryResult<ClassSubtitleReadRecord> ClassInfoRepository::loadClassSubtitle
 RepositoryResult<ClassSubtitleReadOutcome>
 ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
 {
+    return loadClassSubtitleRecordDetailed(classId, false);
+}
+
+RepositoryResult<ClassSubtitleReadOutcome>
+ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId, bool validatePrintProjection)
+{
     if (classId <= 0)
     {
         return repositoryFailure(
@@ -3347,6 +3353,13 @@ ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
                 );
         }
     }
+    if (validatePrintProjection)
+        for (const auto* field : {"class_grade", "class_level"})
+        {
+            const auto value = query.value(QLatin1String(field));
+            if (!value.isNull() && value.metaType().id() != QMetaType::QString)
+                return repositoryFailure(QObject::tr("Roster print data is malformed."), RepositoryErrorCode::Validation);
+        }
     outcome.record.grade = query.value("class_grade").toString();
     outcome.record.level = query.value("class_level").toString();
 
@@ -3370,6 +3383,13 @@ ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
 
     while (query.next())
     {
+        if (validatePrintProjection)
+            for (int index = 0; index < 2; ++index)
+            {
+                const auto value = query.value(index);
+                if (!value.isNull() && value.metaType().id() != QMetaType::QString)
+                    return repositoryFailure(QObject::tr("Roster print data is malformed."), RepositoryErrorCode::Validation);
+            }
         ClassTime time;
         time.day = query.value("day").toString();
         time.startTime = query.value("start_time").toString();
@@ -4469,9 +4489,13 @@ ClassInfoRepository::loadRosterPrintClassInfoRecord(
 }
 
 RepositoryResult<RosterPrintClassInfoReadOutcome>
-ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
-    int classId
-    )
+ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(int classId)
+{
+    return loadRosterPrintClassInfoRecordDetailed(classId, true, true);
+}
+
+RepositoryResult<RosterPrintClassInfoReadOutcome>
+ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(int classId, bool includeWifi, bool includeZoom, bool includeRegularSchedule)
 {
     if (classId <= 0)
     {
@@ -4487,7 +4511,7 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
     outcome.record.classId = classId;
 
     QSqlQuery metadataQuery(m_database);
-    metadataQuery.prepare(R"(
+    metadataQuery.prepare(QStringLiteral(R"(
         WITH requested(class_id) AS (VALUES (?))
         SELECT
             requested.class_id AS requested_class_id,
@@ -4497,15 +4521,18 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
             t.teacher_en,
             t.teacher_kr,
             t.room_number,
-            t.wifi_name,
-            t.wifi_password,
-            t.zoom_id,
-            t.zoom_password
+            %1 AS wifi_name,
+            %2 AS wifi_password,
+            %3 AS zoom_id,
+            %4 AS zoom_password
         FROM requested
         LEFT JOIN classes ON classes.id = requested.class_id
         LEFT JOIN class_info ci ON ci.class_id = requested.class_id
         LEFT JOIN teachers t ON ci.teacher_id = t.id
-    )");
+    )").arg(includeWifi ? QStringLiteral("t.wifi_name") : QStringLiteral("NULL"),
+        includeWifi ? QStringLiteral("t.wifi_password") : QStringLiteral("NULL"),
+        includeZoom ? QStringLiteral("t.zoom_id") : QStringLiteral("NULL"),
+        includeZoom ? QStringLiteral("t.zoom_password") : QStringLiteral("NULL")));
     metadataQuery.addBindValue(classId);
 
     const auto loadedMetadata = SqlQueryUtils::executePrepared(
@@ -4536,6 +4563,13 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
             ).arg(classId));
     }
 
+    for (int index = 2; index < 11; ++index)
+    {
+        const auto value = metadataQuery.value(index);
+        if (!value.isNull() && value.metaType().id() != QMetaType::QString)
+            return repositoryFailure(QObject::tr("Roster print data is malformed."), RepositoryErrorCode::Validation);
+    }
+
     outcome.parentMissing = metadataQuery.value("parent_class_id").isNull();
     outcome.record.classId = metadataQuery.value("requested_class_id").toInt();
     outcome.record.parentMissing = outcome.parentMissing;
@@ -4558,6 +4592,8 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
         metadataQuery.value("zoom_id").toString();
     outcome.record.zoomPassword =
         metadataQuery.value("zoom_password").toString();
+
+    if (!includeRegularSchedule) return outcome;
 
     QSqlQuery scheduleQuery(m_database);
     scheduleQuery.prepare(R"(
@@ -4582,6 +4618,12 @@ ClassInfoRepository::loadRosterPrintClassInfoRecordDetailed(
 
     while (scheduleQuery.next())
     {
+        for (int index = 0; index < 3; ++index)
+        {
+            const auto value = scheduleQuery.value(index);
+            if (!value.isNull() && value.metaType().id() != QMetaType::QString)
+                return repositoryFailure(QObject::tr("Roster print data is malformed."), RepositoryErrorCode::Validation);
+        }
         outcome.record.regularTimes.append({
             scheduleQuery.value("day").toString(),
             scheduleQuery.value("start_time").toString(),

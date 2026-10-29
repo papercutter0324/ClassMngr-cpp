@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/roster_save_use_case.h"
+#include "next/ui/roster_output_actions.h"
 #include "next/application/roster_row_transfer_use_case.h"
 #include "next/application/roster_transfer_target_choices.h"
 #include "next/application/roster_window_read_query.h"
@@ -25,6 +26,7 @@ namespace ClassMngr::Next::Ui
 
 struct RosterEditorActions final
 {
+    RosterOutputActions output;
     Application::SaveMode saveMode = Application::SaveMode::Automatic;
     std::function<Application::RosterWindowReadResult(
         const QString&, const Domain::ClassId&)> readRoster;
@@ -68,6 +70,7 @@ public:
         bool testingClassMode = false
         );
     void finishEditing();
+    void openRosterOutput();
     void clear();
     [[nodiscard]] bool saveChanges(bool showValidationFeedback = true);
     [[nodiscard]] bool discardChanges();
@@ -114,6 +117,7 @@ private:
     QPushButton* m_transferButton = nullptr;
     QPushButton* m_moveUpButton = nullptr;
     QPushButton* m_moveDownButton = nullptr;
+    QPushButton* m_outputButton = nullptr;
     QPushButton* m_saveButton = nullptr;
     QPushButton* m_discardButton = nullptr;
     QPushButton* m_retryButton = nullptr;

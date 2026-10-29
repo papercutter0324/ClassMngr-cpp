@@ -5412,6 +5412,18 @@ Rm: %1</source>
         <source>The ZIP archive could not be finalized.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Too many extra columns for the selected orientation.</source>
+        <translation>Too many extra columns for the selected orientation.</translation>
+    </message>
+    <message>
+        <source>Testing classes support only the current class and Per Class with Extra Info.</source>
+        <translation>Testing classes support only the current class and Per Class with Extra Info.</translation>
+    </message>
+    <message>
+        <source>Roster print data is malformed.</source>
+        <translation>Roster print data is malformed.</translation>
+    </message>
 </context>
 <context>
     <name>ResourcePackUpdateService</name>
@@ -10391,6 +10403,137 @@ Version: %2</source>
     <message>
         <source>No Teacher</source>
         <translation>No Teacher</translation>
+    </message>
+    <message>
+        <source>Templates / Print</source>
+        <translation>Templates / Print</translation>
+    </message>
+</context>
+<context>
+    <name>NextRosterOutput</name>
+    <message>
+        <source>Save Rosters as PDF</source>
+        <translation>Save Rosters as PDF</translation>
+    </message>
+    <message>
+        <source>PDF Files (*.pdf)</source>
+        <translation>PDF Files (*.pdf)</translation>
+    </message>
+    <message>
+        <source>Unable to load the generated roster PDF.</source>
+        <translation>Unable to load the generated roster PDF.</translation>
+    </message>
+    <message>
+        <source>Print Rosters</source>
+        <translation>Print Rosters</translation>
+    </message>
+    <message>
+        <source>Unable to create the roster print file.</source>
+        <translation>Unable to create the roster print file.</translation>
+    </message>
+    <message>
+        <source>The roster print file could not be completed.</source>
+        <translation>The roster print file could not be completed.</translation>
+    </message>
+    <message>
+        <source>Roster PDF created.</source>
+        <translation>Roster PDF created.</translation>
+    </message>
+    <message>
+        <source>Roster Templates and Printing</source>
+        <translation>Roster Templates and Printing</translation>
+    </message>
+    <message>
+        <source>Choose a template and classes for your roster.</source>
+        <translation>Choose a template and classes for your roster.</translation>
+    </message>
+    <message>
+        <source>Template</source>
+        <translation>Template</translation>
+    </message>
+    <message>
+        <source>By Day</source>
+        <translation>By Day</translation>
+    </message>
+    <message>
+        <source>Daily</source>
+        <translation>Daily</translation>
+    </message>
+    <message>
+        <source>Per Class with Extra Info</source>
+        <translation>Per Class with Extra Info</translation>
+    </message>
+    <message>
+        <source>Classes</source>
+        <translation>Classes</translation>
+    </message>
+    <message>
+        <source>All Classes</source>
+        <translation>All Classes</translation>
+    </message>
+    <message>
+        <source>Current Class</source>
+        <translation>Current Class</translation>
+    </message>
+    <message>
+        <source>Selected Classes</source>
+        <translation>Selected Classes</translation>
+    </message>
+    <message>
+        <source>Portrait</source>
+        <translation>Portrait</translation>
+    </message>
+    <message>
+        <source>Landscape</source>
+        <translation>Landscape</translation>
+    </message>
+    <message>
+        <source>Extra Columns</source>
+        <translation>Extra Columns</translation>
+    </message>
+    <message>
+        <source>Select up to %1 extra columns.</source>
+        <translation>Select up to %1 extra columns.</translation>
+    </message>
+    <message>
+        <source>Roster data is not available.</source>
+        <translation>Roster data is not available.</translation>
+    </message>
+    <message>
+        <source>Too many extra columns for the selected orientation.</source>
+        <translation>Too many extra columns for the selected orientation.</translation>
+    </message>
+    <message>
+        <source>Roster Preview</source>
+        <translation>Roster Preview</translation>
+    </message>
+    <message>
+        <source>Page %1 of %2</source>
+        <translation>Page %1 of %2</translation>
+    </message>
+    <message>
+        <source>Preview</source>
+        <translation>Preview</translation>
+    </message>
+    <message>
+        <source>Save As PDF</source>
+        <translation>Save As PDF</translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation>Print</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Close</translation>
+    </message>
+    <message>
+        <source>Previous</source>
+        <translation>Previous</translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation>Next</translation>
     </message>
 </context>
 </TS>

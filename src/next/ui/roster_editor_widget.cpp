@@ -1,3 +1,4 @@
+#include "next/ui/roster_print_dialog.h"
 #include "next/ui/roster_editor_widget.h"
 
 #include "next/application/roster_save_preparation.h"
@@ -496,6 +497,7 @@ void RosterEditorWidget::finishEditing()
     }
     if (m_table)
     {
+        if (auto* focused = QApplication::focusWidget(); focused && m_table->isAncestorOf(focused)) focused->clearFocus();
         m_table->clearFocus();
     }
 }
@@ -641,6 +643,9 @@ void RosterEditorWidget::buildUi()
     m_transferButton = new QPushButton(this);
     m_moveUpButton = new QPushButton(this);
     m_moveDownButton = new QPushButton(this);
+    m_outputButton = new QPushButton(this);
+    m_outputButton->setObjectName(QStringLiteral("nextRosterOutput"));
+    connect(m_outputButton, &QPushButton::clicked, this, [this] { openRosterOutput(); });
     m_saveButton = new QPushButton(this);
     m_discardButton = new QPushButton(this);
     m_retryButton = new QPushButton(this);
@@ -668,6 +673,10 @@ void RosterEditorWidget::buildUi()
     toolbar->addWidget(m_moveUpButton);
     toolbar->addWidget(m_moveDownButton);
     toolbar->addWidget(m_keyboardButton);
+    auto* outputToolbar = new QHBoxLayout();
+    outputToolbar->addStretch();
+    outputToolbar->addWidget(m_outputButton);
+    root->insertLayout(0, outputToolbar);
     toolbar->addStretch();
     toolbar->addWidget(m_retryButton);
     toolbar->addWidget(m_discardButton);
@@ -766,6 +775,7 @@ void RosterEditorWidget::releaseKeyboard()
 
 void RosterEditorWidget::retranslateUi()
 {
+    m_outputButton->setText(text("Templates / Print"));
     m_addColumnButton->setText(text("Add Column"));
     m_removeColumnButton->setText(text("Remove Column"));
     m_removeRowButton->setText(text("Remove Student"));
@@ -921,6 +931,8 @@ void RosterEditorWidget::updateActions()
     const bool hasCurrent = current.isValid();
     const bool questionableOnly = hasQuestionableKoreanLengthErrors();
     const bool dirty = hasUnsavedChanges();
+    m_outputButton->setEnabled(editable && static_cast<bool>(m_actions.output.readChoices)
+        && static_cast<bool>(m_actions.output.savePdf));
     m_table->setEnabled(editable);
     m_addColumnButton->setEnabled(editable);
     m_removeColumnButton->setEnabled(editable && hasCurrent
@@ -1515,3 +1527,13 @@ std::optional<QString> RosterEditorWidget::activeColumnName() const
 }
 
 } // namespace ClassMngr::Next::Ui
+
+void ClassMngr::Next::Ui::RosterEditorWidget::openRosterOutput()
+{
+    finishEditing();
+    if (!saveChanges(true) || !m_databasePath || !m_classId || !m_actions.output.readChoices) return;
+    const auto choices = m_actions.output.readChoices(*m_databasePath, *m_classId, m_testingClassMode);
+    if (!choices) { updateStatus(choices.error(), true); return; }
+    RosterPrintDialog dialog(*m_databasePath, *m_classId, m_testingClassMode, *choices, m_actions.output, this);
+    dialog.exec();
+}

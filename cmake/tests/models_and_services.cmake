@@ -319,6 +319,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrRosterTemplatePrintServiceTests
         PRIVATE
+            ClassMngrRosterTemplateRenderer
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf

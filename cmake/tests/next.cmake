@@ -27,6 +27,7 @@ target_link_libraries(ClassMngrNextBootstrapTests
         ClassMngrClassTransferSupport
         ClassMngrNextCalendarUi
         ClassMngrNextScheduleOutput
+        ClassMngrNextRosterOutput
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
@@ -1204,6 +1205,8 @@ get_target_property(_classmngr_next_workspace_links
     ClassMngrNextWorkspace
     LINK_LIBRARIES
 )
+get_target_property(_classmngr_next_roster_output_links ClassMngrNextRosterOutput LINK_LIBRARIES)
+get_target_property(_classmngr_roster_renderer_links ClassMngrRosterTemplateRenderer LINK_LIBRARIES)
 get_target_property(_classmngr_next_schedule_output_links
     ClassMngrNextScheduleOutput
     LINK_LIBRARIES
@@ -1269,6 +1272,8 @@ foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_next_startup_update_links
         _classmngr_updater_links
         _classmngr_next_workspace_links
+        _classmngr_next_roster_output_links
+        _classmngr_roster_renderer_links
         _classmngr_next_schedule_output_links
         _classmngr_next_calendar_ui_dependencies
         _classmngr_next_schedule_output_sources
@@ -1296,6 +1301,8 @@ file(WRITE "${_classmngr_next_boundary_report}"
     "NEXT_STARTUP_UPDATE_LINKS=${_classmngr_next_startup_update_links}\n"
     "UPDATER_LINKS=${_classmngr_updater_links}\n"
     "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
+    "NEXT_ROSTER_OUTPUT_LINKS=${_classmngr_next_roster_output_links}\n"
+    "ROSTER_RENDERER_LINKS=${_classmngr_roster_renderer_links}\n"
     "NEXT_SCHEDULE_OUTPUT_LINKS=${_classmngr_next_schedule_output_links}\n"
     "NEXT_CALENDAR_UI_DEPENDENCIES=${_classmngr_next_calendar_ui_dependencies}\n"
     "NEXT_SCHEDULE_OUTPUT_SOURCES=${_classmngr_next_schedule_output_sources}\n"
@@ -3293,6 +3300,7 @@ target_compile_definitions(ClassMngrNextClassesNavigatorPageTests
 )
 target_link_libraries(ClassMngrNextClassesNavigatorPageTests
     PRIVATE
+        ClassMngrNextRosterOutput
         ClassMngrNext::Resources
         ClassMngrScheduleImportRules
         Qt6::Test
@@ -3350,6 +3358,7 @@ target_compile_definitions(ClassMngrNextTestingClassesManagerTests
 )
 target_link_libraries(ClassMngrNextTestingClassesManagerTests
     PRIVATE
+        ClassMngrNextRosterOutput
         ClassMngrRuntime
         ClassMngrNext::Application
         ClassMngrNext::Resources
@@ -3404,6 +3413,7 @@ target_compile_definitions(ClassMngrNextRosterEditorTests
 )
 target_link_libraries(ClassMngrNextRosterEditorTests
     PRIVATE
+        ClassMngrNextRosterOutput
         ClassMngrRuntime
         ClassMngrNext::Application
         ClassMngrNextWorkspaceDomain
@@ -3595,6 +3605,7 @@ target_compile_definitions(ClassMngrNextTestingClassesVisualCapture
 )
 target_link_libraries(ClassMngrNextTestingClassesVisualCapture
     PRIVATE
+        ClassMngrNextRosterOutput
         ClassMngrRuntime
         ClassMngrNext::Application
         ClassMngrNext::Resources
@@ -7510,3 +7521,20 @@ add_test(
     NAME ClassMngrNextCalendarWorkspaceStoreActionsTests
     COMMAND ClassMngrNextCalendarWorkspaceStoreActionsTests
 )
+
+add_executable(ClassMngrNextRosterOutputTests
+    tests/next/roster_output_tests.cpp
+    src/next/platform/workspace_store_roster_actions.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
+)
+target_compile_features(ClassMngrNextRosterOutputTests PRIVATE cxx_std_23)
+target_include_directories(ClassMngrNextRosterOutputTests PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_compile_definitions(ClassMngrNextRosterOutputTests PRIVATE CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}")
+target_link_libraries(ClassMngrNextRosterOutputTests PRIVATE ClassMngrRuntime ClassMngrNextRosterOutput ClassMngrNextWorkspaceDomain Qt6::Sql Qt6::Pdf Qt6::Test Qt6::Widgets)
+set_target_properties(ClassMngrNextRosterOutputTests PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF)
+set_property(TARGET ClassMngrNextRosterOutputTests PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE)
+add_dependencies(ClassMngrNextRosterOutputTests ClassMngrNextResourcePackage)
+add_test(NAME ClassMngrNextRosterOutputTests COMMAND ClassMngrNextRosterOutputTests)
+set_tests_properties(ClassMngrNextRosterOutputTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1")

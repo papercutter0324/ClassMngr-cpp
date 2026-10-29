@@ -38,10 +38,8 @@ QFont printUiFont(
     )
 {
     QFont font =
-        FontManager::getUiFont(
-            -1,
-            weight
-            );
+        activeFonts.ui;
+    font.setWeight(static_cast<QFont::Weight>(weight));
     font.setPixelSize(
         std::max(
             1,
@@ -58,10 +56,8 @@ QFont printKoreanFont(
     )
 {
     QFont font =
-        FontManager::getKoreanFont(
-            -1,
-            weight
-            );
+        activeFonts.korean;
+    font.setWeight(static_cast<QFont::Weight>(weight));
     font.setPixelSize(
         std::max(
             1,

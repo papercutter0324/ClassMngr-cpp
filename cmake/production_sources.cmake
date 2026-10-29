@@ -690,20 +690,27 @@ set(CLASSMNGR_APP_SERVICES_SOURCES
     "src/app/startup_database_path.h"
 )
 
-# These fragments are included by roster_template_print_service.cpp.
-set(CLASSMNGR_FEATURE_SOURCE_FRAGMENTS
-    "src/features/roster/services/roster_template_print_by_day_template.inc"
-    "src/features/roster/services/roster_template_print_daily_template.inc"
-    "src/features/roster/services/roster_template_print_per_class_template.inc"
-    "src/features/roster/services/roster_template_print_private_service.inc"
-    "src/features/roster/services/roster_template_print_shared_data.inc"
-    "src/features/roster/services/roster_template_print_shared_layout.inc"
-    "src/features/roster/services/roster_template_print_shared_rendering.inc"
+# Legacy owns only request loading; page projection/drawing belongs to the narrow renderer.
+list(APPEND CLASSMNGR_FEATURES_SOURCES
+    "src/features/roster/services/roster_template_print_private_service.inc")
+set(CLASSMNGR_ROSTER_TEMPLATE_RENDERER_SOURCES
+    "src/shared/roster/roster_template_renderer.cpp"
+    "src/shared/roster/roster_template_renderer.h"
+    "src/shared/roster/roster_template_print_by_day_template.inc"
+    "src/shared/roster/roster_template_print_daily_template.inc"
+    "src/shared/roster/roster_template_print_per_class_template.inc"
+    "src/shared/roster/roster_template_print_shared_data.inc"
+    "src/shared/roster/roster_template_print_shared_layout.inc"
+    "src/shared/roster/roster_template_print_shared_rendering.inc"
 )
-set_source_files_properties(${CLASSMNGR_FEATURE_SOURCE_FRAGMENTS}
-    PROPERTIES HEADER_FILE_ONLY TRUE
+set(CLASSMNGR_NEXT_ROSTER_OUTPUT_SOURCES
+    "src/next/output/roster_output.h"
+    "src/next/platform/workspace_store_roster_output.cpp"
+    "src/next/platform/workspace_store_roster_output.h"
+    "src/next/ui/roster_output_actions.h"
+    "src/next/ui/roster_print_dialog.cpp"
+    "src/next/ui/roster_print_dialog.h"
 )
-list(APPEND CLASSMNGR_FEATURES_SOURCES ${CLASSMNGR_FEATURE_SOURCE_FRAGMENTS})
 
 # Keep the printer preview and its shared dialog shell available to both
 # runtimes without pulling the rest of the legacy UI shared object set.

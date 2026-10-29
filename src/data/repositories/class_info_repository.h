@@ -636,6 +636,8 @@ public:
     // record-returning wrapper keeps its successful defaults for unknown IDs.
     [[nodiscard]] RepositoryResult<ClassSubtitleReadOutcome>
         loadClassSubtitleRecordDetailed(int classId);
+    [[nodiscard]] RepositoryResult<ClassSubtitleReadOutcome>
+        loadClassSubtitleRecordDetailed(int classId, bool validatePrintProjection);
     [[nodiscard]] RepositoryResult<QList<ClassSubtitleBatchReadRecord>>
         loadClassSubtitleRecords(const QList<int>& classIds);
     [[nodiscard]] RepositoryResult<std::vector<MyClassesClassInformationBatchReadEntry>>
@@ -646,6 +648,9 @@ public:
         loadRosterPrintClassInfoRecord(int classId);
     [[nodiscard]] RepositoryResult<RosterPrintClassInfoReadOutcome>
         loadRosterPrintClassInfoRecordDetailed(int classId);
+    [[nodiscard]] RepositoryResult<RosterPrintClassInfoReadOutcome>
+        loadRosterPrintClassInfoRecordDetailed(int classId, bool includeWifi, bool includeZoom,
+            bool includeRegularSchedule = true);
     [[nodiscard]] RepositoryResult<QList<RosterPrintClassInfoReadRecord>>
         loadRosterPrintClassInfoRecords(const QList<int>& classIds);
     [[nodiscard]] RepositoryResult<QList<SubPrepRosterOutputClassInfoReadRecord>>

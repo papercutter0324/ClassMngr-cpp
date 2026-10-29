@@ -150,6 +150,11 @@ set_target_properties(ClassMngrQtPdfPrint
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
 )
+add_library(ClassMngrRosterTemplateRenderer STATIC ${CLASSMNGR_ROSTER_TEMPLATE_RENDERER_SOURCES})
+target_compile_features(ClassMngrRosterTemplateRenderer PUBLIC cxx_std_23)
+target_include_directories(ClassMngrRosterTemplateRenderer PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(ClassMngrRosterTemplateRenderer PUBLIC Qt6::Gui)
+set_target_properties(ClassMngrRosterTemplateRenderer PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
 add_library(ClassMngrWorkspaceStore STATIC
     ${CLASSMNGR_WORKSPACE_STORE_SOURCES}
 )
@@ -407,6 +412,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrScheduleImportParser
         ClassMngrSchedulePrint
         ClassMngrQtPdfPrint
+        ClassMngrRosterTemplateRenderer
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
         ClassMngrSQLiteSnapshot
@@ -464,6 +470,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrScheduleImportParser
             ClassMngrSchedulePrint
             ClassMngrQtPdfPrint
+            ClassMngrRosterTemplateRenderer
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE
             ClassMngrSQLiteSnapshot

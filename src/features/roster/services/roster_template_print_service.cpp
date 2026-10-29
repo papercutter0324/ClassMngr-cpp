@@ -69,167 +69,25 @@ private:
     bool m_active = false;
 };
 
-// Template-specific implementation is split into focused include fragments.
-// They share this translation unit so rendering helpers remain private.
-
-#include "roster_template_print_shared_data.inc"
-#include "roster_template_print_shared_layout.inc"
-#include "roster_template_print_shared_rendering.inc"
-#include "roster_template_print_daily_template.inc"
-#include "roster_template_print_by_day_template.inc"
-#include "roster_template_print_per_class_template.inc"
+RosterTemplateRenderer::Fonts fonts() { return {FontManager::getUiFont(-1), FontManager::getKoreanFont(-1)}; }
+QList<RosterTemplateRenderer::RosterClassData> projected(const QList<RosterClassData>& classes)
+{
+    QList<RosterTemplateRenderer::RosterClassData> result;
+    for (const auto& data : classes) {
+        RosterTemplateRenderer::RosterClassData item;
+        item.classroom = {data.classroom.id, data.classroom.name};
+        item.classInfo = data.classInfo;
+        item.roster = {data.roster.columns, data.roster.rows};
+        result.append(std::move(item));
+    }
+    return result;
+}
+Result failed(const QString& message) { return {Status::Failed, message}; }
+Result sent() { return {Status::Sent, {}}; }
+Result canceled() { return {Status::Canceled, {}}; }
+QString failedPdfMessage(const QString& message) { return message.isEmpty() ? QObject::tr("Unable to create the roster print file.") : message; }
 #include "roster_template_print_private_service.inc"
-
-} // namespace
-
-QList<TemplateId> availableTemplateIds()
-{
-    return {
-        TemplateId::ByDay,
-        TemplateId::Daily,
-        TemplateId::PerClassWithExtraInfo
-    };
 }
-
-QString templateDisplayName(
-    TemplateId templateId
-    )
-{
-    return templateTitle(templateId);
-}
-
-QPageLayout::Orientation templateOrientation(
-    TemplateId templateId
-    )
-{
-    switch (templateId)
-    {
-    case TemplateId::PerClassWithExtraInfo:
-        return QPageLayout::Portrait;
-
-    case TemplateId::Daily:
-        return QPageLayout::Portrait;
-
-    case TemplateId::ByDay:
-    default:
-        return QPageLayout::Landscape;
-    }
-}
-
-QPageSize::PageSizeId templatePageSize(
-    TemplateId templateId
-    )
-{
-    Q_UNUSED(templateId);
-    return RosterPdfPageSize;
-}
-
-QImage renderTemplatePreview(
-    TemplateId templateId,
-    const QSize& requestedSize
-    )
-{
-    return renderPreviewImage(
-        templateId,
-        requestedSize,
-        templateId == TemplateId::PerClassWithExtraInfo
-            ? QStringLiteral("class|0")
-            : DaySheets.first(),
-        {},
-        templateOrientation(templateId)
-        );
-}
-
-QImage renderTemplatePreview(
-    const Request& request,
-    const QSize& requestedSize,
-    bool liveData,
-    QString* errorMessage
-    )
-{
-    if (!liveData)
-    {
-        return renderPreviewImage(
-            request.templateId,
-            requestedSize,
-            request.templateId == TemplateId::PerClassWithExtraInfo
-                ? QStringLiteral("class|0")
-                : DaySheets.first(),
-            {},
-            request.templateId == TemplateId::PerClassWithExtraInfo
-                ? request.perClassExtraInfoOrientation
-                : templateOrientation(request.templateId)
-            );
-    }
-
-    QList<RosterClassData> rosterClasses;
-    const Result loadResult =
-        loadRosterClassesForRequest(
-            request,
-            &rosterClasses
-            );
-
-    if (loadResult.status != Status::Sent)
-    {
-        if (errorMessage)
-        {
-            *errorMessage = loadResult.message;
-        }
-        return {};
-    }
-
-    QString valueError;
-    const QList<RosterCellValue> values =
-        buildTemplateCellValues(
-            request.templateId,
-            rosterClasses,
-            request.selectedExtraColumns,
-            request.perClassExtraInfoOrientation,
-            &valueError
-            );
-
-    if (!valueError.isEmpty())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = valueError;
-        }
-        return {};
-    }
-
-    const QStringList days =
-        daysWithValues(
-            request.templateId,
-            values
-            );
-
-    if (days.isEmpty())
-    {
-        if (errorMessage)
-        {
-            *errorMessage =
-                QObject::tr("No selected classes match this roster layout.");
-        }
-        return {};
-    }
-
-    const QString day =
-        days.first();
-
-    return renderPreviewImage(
-        request.templateId,
-        requestedSize,
-        day,
-        valuesForDay(
-            values,
-            day
-            ),
-        request.templateId == TemplateId::PerClassWithExtraInfo
-            ? request.perClassExtraInfoOrientation
-            : templateOrientation(request.templateId)
-        );
-}
-
 QList<int> resolveClassIds(
     Scope scope,
     int currentClassId,
@@ -273,440 +131,36 @@ QList<int> resolveClassIds(
     return ids;
 }
 
-QList<RosterCellValue> buildByDayCellValues(
-    const QList<RosterClassData>& classes,
-    QString* errorMessage
-    )
+QList<TemplateId> availableTemplateIds() { return RosterTemplateRenderer::availableTemplateIds(); }
+QString templateDisplayName(TemplateId id) { return RosterTemplateRenderer::templateDisplayName(id); }
+QPageLayout::Orientation templateOrientation(TemplateId id) { return RosterTemplateRenderer::templateOrientation(id); }
+QPageSize::PageSizeId templatePageSize(TemplateId id) { return RosterTemplateRenderer::templatePageSize(id); }
+int perClassExtraInfoMaxExtraColumns(QPageLayout::Orientation orientation) { return RosterTemplateRenderer::perClassExtraInfoMaxExtraColumns(orientation); }
+QStringList availablePerClassExtraInfoColumns(const QList<RosterClassData>& classes) { return RosterTemplateRenderer::availablePerClassExtraInfoColumns(projected(classes)); }
+QList<RosterCellValue> buildByDayCellValues(const QList<RosterClassData>& classes, QString* error) { return RosterTemplateRenderer::buildByDayCellValues(projected(classes), error); }
+QList<RosterCellValue> buildDailyCellValues(const QList<RosterClassData>& classes, QString* error) { return RosterTemplateRenderer::buildDailyCellValues(projected(classes), error); }
+QList<RosterCellValue> buildPerClassExtraInfoCellValues(const QList<RosterClassData>& classes, const QStringList& columns, QPageLayout::Orientation orientation, QString* error) { return RosterTemplateRenderer::buildPerClassExtraInfoCellValues(projected(classes), columns, orientation, error); }
+QImage renderTemplatePreview(TemplateId id, const QSize& size)
 {
-    QList<RosterCellValue> values;
-    QSet<QString> occupiedSlots;
-
-    for (const RosterClassData& data : classes)
-    {
-        const int englishColumn =
-            rosterColumnIndex(data.roster, QStringLiteral("English"));
-        const int koreanColumn =
-            rosterColumnIndex(data.roster, QStringLiteral("Korean"));
-
-        for (const RosterPrintScheduleTime& time :
-             data.classInfo.regularSchedule)
-        {
-            const QString day =
-                time.day.trimmed();
-
-            if (!DaySheets.contains(day))
-            {
-                continue;
-            }
-
-            const int column =
-                columnForStartTime(time.startTime);
-
-            if (column < 0)
-            {
-                continue;
-            }
-
-            const QString slotKey =
-                day + QLatin1Char('|') + QString::number(column);
-
-            if (occupiedSlots.contains(slotKey))
-            {
-                if (errorMessage)
-                {
-                    *errorMessage =
-                        QObject::tr(
-                            "Multiple selected classes use the %1 %2 slot."
-                            )
-                            .arg(day, time.startTime);
-                }
-                return {};
-            }
-
-            occupiedSlots.insert(slotKey);
-
-            appendCellValue(values, day, column, LevelRow, classLabel(data));
-            appendCellValue(
-                values,
-                day,
-                column,
-                TeacherRoomRow,
-                teacherRoomLabel(data.classInfo)
-                );
-            appendCellValue(values, day, column, WifiRow, data.classInfo.wifiName);
-            appendCellValue(values, day, column, WifiPasswordRow, data.classInfo.wifiPassword);
-            appendCellValue(values, day, column, ZoomRow, data.classInfo.zoomId);
-            appendCellValue(values, day, column, ZoomPasswordRow, data.classInfo.zoomPassword);
-
-            int writtenStudentCount = 0;
-            for (const QStringList& row : data.roster.rows)
-            {
-                if (writtenStudentCount >= MaxStudentsPerClass)
-                {
-                    break;
-                }
-
-                const QString english =
-                    rosterCell(row, englishColumn);
-                const QString korean =
-                    rosterCell(row, koreanColumn);
-
-                if (english.isEmpty() && korean.isEmpty())
-                {
-                    continue;
-                }
-
-                const int outputRow =
-                    FirstStudentRow + writtenStudentCount;
-
-                appendCellValue(values, day, column, outputRow, english);
-                appendCellValue(values, day, column + 1, outputRow, korean);
-                ++writtenStudentCount;
-            }
-        }
-    }
-
-    return values;
+    return RosterTemplateRenderer::previewPage(id,
+        {id == TemplateId::PerClassWithExtraInfo ? QStringLiteral("class|0") : QStringLiteral("Monday"), {}},
+        size, RosterTemplatePrintService::templateOrientation(id), fonts());
 }
-
-QList<RosterCellValue> buildDailyCellValues(
-    const QList<RosterClassData>& classes,
-    QString* errorMessage
-    )
+QImage renderTemplatePreview(const Request& request, const QSize& size, bool live, QString* error)
 {
-    Q_UNUSED(errorMessage);
-
-    QList<RosterCellValue> values;
-
-    for (const QString& day : DaySheets)
-    {
-        QList<DailyClassSection> sections;
-        int inputIndex = 0;
-
-        for (const RosterClassData& data : classes)
-        {
-            for (const RosterPrintScheduleTime& time :
-                 data.classInfo.regularSchedule)
-            {
-                if (time.day.trimmed() != day)
-                {
-                    continue;
-                }
-
-                sections.append(
-                    {
-                        data,
-                        time,
-                        inputIndex
-                    }
-                    );
-                ++inputIndex;
-            }
-        }
-
-        std::stable_sort(
-            sections.begin(),
-            sections.end(),
-            [](const DailyClassSection& left, const DailyClassSection& right)
-            {
-                const QTime leftTime =
-                    parsedStartTime(left.time.startTime);
-                const QTime rightTime =
-                    parsedStartTime(right.time.startTime);
-
-                if (leftTime.isValid() != rightTime.isValid())
-                {
-                    return leftTime.isValid();
-                }
-
-                if (
-                    leftTime.isValid()
-                    && rightTime.isValid()
-                    && leftTime != rightTime
-                    )
-                {
-                    return leftTime < rightTime;
-                }
-
-                const int labelCompare =
-                    classLabel(left.data).localeAwareCompare(
-                        classLabel(right.data)
-                        );
-
-                if (labelCompare != 0)
-                {
-                    return labelCompare < 0;
-                }
-
-                return left.inputIndex < right.inputIndex;
-            }
-            );
-
-        for (int sectionIndex = 0;
-             sectionIndex < sections.size();
-             ++sectionIndex)
-        {
-            const DailyClassSection& section =
-                sections.at(sectionIndex);
-            const int pageIndex =
-                sectionIndex / DailySectionsPerPage;
-            const int pageSectionIndex =
-                sectionIndex % DailySectionsPerPage;
-            const QString pageKey =
-                dailyPageKey(
-                    day,
-                    pageIndex
-                    );
-            const int headerRow =
-                DailyFirstSectionRow
-                + (pageSectionIndex * DailyRowsPerSection);
-
-            appendCellValue(
-                values,
-                pageKey,
-                DailyHeaderColumn,
-                headerRow,
-                dailyClassHeader(
-                    section.data,
-                    section.time
-                    )
-                );
-
-            const int englishColumn =
-                rosterColumnIndex(
-                    section.data.roster,
-                    QStringLiteral("English")
-                    );
-            const int koreanColumn =
-                rosterColumnIndex(
-                    section.data.roster,
-                    QStringLiteral("Korean")
-                    );
-
-            int writtenStudentCount = 0;
-            for (const QStringList& row : section.data.roster.rows)
-            {
-                if (writtenStudentCount >= DailyMaxStudentsPerClass)
-                {
-                    break;
-                }
-
-                const QString name =
-                    dailyStudentName(
-                        row,
-                        englishColumn,
-                        koreanColumn
-                        );
-
-                if (name.isEmpty())
-                {
-                    continue;
-                }
-
-                appendCellValue(
-                    values,
-                    pageKey,
-                    DailyFirstStudentColumn
-                        + (writtenStudentCount % DailyStudentColumnCount),
-                    headerRow
-                        + 1
-                        + (writtenStudentCount / DailyStudentColumnCount),
-                    name
-                    );
-                ++writtenStudentCount;
-            }
-        }
-    }
-
-    return values;
+    if (!live) return RosterTemplateRenderer::previewPage(request.templateId,
+        {request.templateId == TemplateId::PerClassWithExtraInfo ? QStringLiteral("class|0") : QStringLiteral("Monday"), {}},
+        size, request.templateId == TemplateId::PerClassWithExtraInfo ? request.perClassExtraInfoOrientation : RosterTemplatePrintService::templateOrientation(request.templateId), fonts());
+    QList<RosterClassData> classes;
+    const auto loaded = loadRosterClassesForRequest(request, &classes);
+    if (loaded.status != Status::Sent) { if (error) *error = loaded.message; return {}; }
+    QString failure;
+    const auto values = RosterTemplateRenderer::buildTemplateCellValues(request.templateId, projected(classes), request.selectedExtraColumns, request.perClassExtraInfoOrientation, &failure);
+    const auto days = RosterTemplateRenderer::daysWithValues(request.templateId, values);
+    if (!failure.isEmpty() || days.isEmpty()) { if (error) *error = failure.isEmpty() ? QObject::tr("No selected classes match this roster layout.") : failure; return {}; }
+    return RosterTemplateRenderer::previewPage(request.templateId, {days.first(), values}, size,
+        request.templateId == TemplateId::PerClassWithExtraInfo ? request.perClassExtraInfoOrientation : RosterTemplatePrintService::templateOrientation(request.templateId), fonts());
 }
-
-int perClassExtraInfoMaxExtraColumns(
-    QPageLayout::Orientation orientation
-    )
-{
-    return orientation == QPageLayout::Landscape
-        ? PerClassLandscapeMaxExtraColumns
-        : PerClassPortraitMaxExtraColumns;
-}
-
-QStringList availablePerClassExtraInfoColumns(
-    const QList<RosterClassData>& classes
-    )
-{
-    QStringList columns;
-
-    for (const RosterClassData& data : classes)
-    {
-        for (const QString& column : data.roster.columns)
-        {
-            const QString trimmed =
-                column.trimmed();
-
-            if (
-                isPerClassExtraInfoColumn(trimmed)
-                && !containsColumnName(columns, trimmed)
-                )
-            {
-                columns.append(trimmed);
-            }
-        }
-    }
-
-    return columns;
-}
-
-QList<RosterCellValue> buildPerClassExtraInfoCellValues(
-    const QList<RosterClassData>& classes,
-    const QStringList& selectedExtraColumns,
-    QPageLayout::Orientation orientation,
-    QString* errorMessage
-    )
-{
-    Q_UNUSED(errorMessage);
-
-    const QStringList extraColumns =
-        limitedPerClassExtraColumns(
-            selectedExtraColumns,
-            orientation
-            );
-    QList<RosterCellValue> values;
-
-    for (int classIndex = 0; classIndex < classes.size(); ++classIndex)
-    {
-        const RosterClassData& data =
-            classes.at(classIndex);
-        const QString pageKey =
-            perClassPageKey(
-                classIndex,
-                data
-                );
-
-        appendCellValue(values, pageKey, 1, 1, QStringLiteral("Level"));
-        appendCellValue(values, pageKey, 2, 1, classLabel(data));
-        appendCellValue(values, pageKey, 3, 1, QStringLiteral("Room"));
-        appendCellValue(values, pageKey, 4, 1, data.classInfo.roomNumber);
-
-        appendCellValue(values, pageKey, 1, 2, QStringLiteral("Days/Times"));
-        appendCellValue(
-            values,
-            pageKey,
-            2,
-            2,
-            perClassTimeLabels(data.classInfo.regularSchedule).join(
-                QStringLiteral("; ")
-                )
-            );
-        appendCellValue(values, pageKey, 3, 2, QStringLiteral("Wifi"));
-        appendCellValue(values, pageKey, 4, 2, data.classInfo.wifiName);
-
-        appendCellValue(values, pageKey, 1, 3, QStringLiteral("Teacher"));
-        appendCellValue(values, pageKey, 2, 3, teacherLabel(data.classInfo));
-        appendCellValue(values, pageKey, 3, 3, QStringLiteral("Wifi Password"));
-        appendCellValue(values, pageKey, 4, 3, data.classInfo.wifiPassword);
-
-        appendCellValue(values, pageKey, 1, 4, QStringLiteral("ZOOM"));
-        appendCellValue(values, pageKey, 2, 4, data.classInfo.zoomId);
-        appendCellValue(values, pageKey, 3, 4, QStringLiteral("Zoom Password"));
-        appendCellValue(values, pageKey, 4, 4, data.classInfo.zoomPassword);
-
-        appendCellValue(values, pageKey, PerClassIndexColumn, PerClassHeaderRow, QStringLiteral("No."));
-        appendCellValue(values, pageKey, PerClassEnglishColumn, PerClassHeaderRow, QStringLiteral("English Name"));
-        appendCellValue(values, pageKey, PerClassKoreanColumn, PerClassHeaderRow, QStringLiteral("Korean Name"));
-
-        for (int index = 0; index < extraColumns.size(); ++index)
-        {
-            appendCellValue(
-                values,
-                pageKey,
-                PerClassFirstExtraColumn + index,
-                PerClassHeaderRow,
-                extraColumns.at(index)
-                );
-        }
-
-        const int englishColumn =
-            rosterColumnIndex(
-                data.roster,
-                QStringLiteral("English")
-                );
-        const int koreanColumn =
-            rosterColumnIndex(
-                data.roster,
-                QStringLiteral("Korean")
-                );
-        QVector<int> extraColumnIndexes;
-        extraColumnIndexes.reserve(extraColumns.size());
-
-        for (const QString& extraColumn : extraColumns)
-        {
-            extraColumnIndexes.append(
-                rosterColumnIndex(
-                    data.roster,
-                    extraColumn
-                    )
-                );
-        }
-
-        for (
-            int rowIndex = 0;
-            rowIndex < PerClassStudentRowCount;
-            ++rowIndex
-            )
-        {
-            const int outputRow =
-                PerClassFirstStudentRow + rowIndex;
-
-            appendCellValue(
-                values,
-                pageKey,
-                PerClassIndexColumn,
-                outputRow,
-                QString::number(rowIndex + 1)
-                );
-
-            if (rowIndex >= data.roster.rows.size())
-            {
-                continue;
-            }
-
-            const QStringList& row =
-                data.roster.rows.at(rowIndex);
-
-            appendCellValue(
-                values,
-                pageKey,
-                PerClassEnglishColumn,
-                outputRow,
-                rosterCell(row, englishColumn)
-                );
-            appendCellValue(
-                values,
-                pageKey,
-                PerClassKoreanColumn,
-                outputRow,
-                rosterCell(row, koreanColumn)
-                );
-
-            for (int index = 0; index < extraColumnIndexes.size(); ++index)
-            {
-                appendCellValue(
-                    values,
-                    pageKey,
-                    PerClassFirstExtraColumn + index,
-                    outputRow,
-                    rosterCell(
-                        row,
-                        extraColumnIndexes.at(index)
-                        )
-                    );
-            }
-        }
-    }
-
-    return values;
-}
-
 Result saveRostersPdf(
     const QList<RosterClassData>& classes,
     const QString& documentPath,
@@ -761,9 +215,9 @@ Result saveRostersPdf(
     QString errorMessage;
     RendererProjectionReleaseGuard projectionReleaseGuard;
     const QList<RosterCellValue> values =
-        buildTemplateCellValues(
+        RosterTemplateRenderer::buildTemplateCellValues(
             templateId,
-            classes,
+            projected(classes),
             selectedExtraColumns,
             perClassExtraInfoOrientation,
             &errorMessage
@@ -781,7 +235,7 @@ Result saveRostersPdf(
     projectionReleaseGuard.activate();
 
     const QStringList days =
-        daysWithValues(
+        RosterTemplateRenderer::daysWithValues(
             templateId,
             values
             );
@@ -793,102 +247,29 @@ Result saveRostersPdf(
             );
     }
 
-    QPdfWriter writer(documentPath);
-    if (!configureRosterPdfWriter(
-            writer,
-            templateId,
-            templateId == TemplateId::PerClassWithExtraInfo
-                ? perClassExtraInfoOrientation
-                : templateOrientation(templateId)
-            ))
-    {
-        return failed(
-            QObject::tr("Unable to configure the roster print file.")
-            );
-    }
-
-    QPainter painter;
-    if (!painter.begin(&writer))
-    {
-        return failed(
-            QObject::tr("Unable to create the roster print file.")
-            );
-    }
-
-    const QRectF pageRect =
-        rosterPdfPageRect(writer);
-    const QRectF contentRect =
-        templateContentRect(
-            templateId,
-            pageRect,
-            writer.resolution()
-            );
-
-    if (
-        pageRect.width() <= 0.0
-        || pageRect.height() <= 0.0
-        || contentRect.width() <= 0.0
-        || contentRect.height() <= 0.0
-        )
-    {
-        painter.end();
-        return failed(
-            QObject::tr("Unable to determine the roster print area.")
-            );
-    }
-
-    for (int index = 0; index < days.size(); ++index)
-    {
-        if (
-            index > 0
-            && !writer.newPage()
-            )
-        {
-            painter.end();
-            return failed(
-                QObject::tr("Unable to add a roster print page.")
-                );
-        }
-
-        const QString& day =
-            days.at(index);
-        paintTemplateDay(
-            templateId,
-            painter,
-            day,
-            valuesForDay(
-                values,
-                day
-                ),
-            pageRect,
-            contentRect,
-            writer.resolution()
-            );
-    }
-
-    if (!painter.end())
-    {
-        return failed(
-            QObject::tr("The roster print file could not be completed.")
-            );
-    }
+    const auto rendered = RosterTemplateRenderer::saveCellValuesPdf(documentPath, templateId,
+        templateId == TemplateId::PerClassWithExtraInfo ? perClassExtraInfoOrientation : RosterTemplatePrintService::templateOrientation(templateId), values, fonts());
+    if (rendered.status != Status::Sent) return rendered;
 
     if (profiling)
     {
         QJsonObject operation = rosterOperation;
+        const QSize writerSize = QPageLayout(QPageSize(QPageSize::A4),
+            templateId == TemplateId::PerClassWithExtraInfo ? perClassExtraInfoOrientation : RosterTemplatePrintService::templateOrientation(templateId),
+            QMarginsF()).fullRectPixels(300).size();
         operation.insert(QStringLiteral("projectedCellCount"), values.size());
         operation.insert(QStringLiteral("pageCount"), days.size());
         operation.insert(
             QStringLiteral("writerWidthPixels"),
-            writer.width()
+            writerSize.width()
             );
         operation.insert(
             QStringLiteral("writerHeightPixels"),
-            writer.height()
+            writerSize.height()
             );
         operation.insert(
             QStringLiteral("writerResolutionDpi"),
-            writer.resolution()
+            300
             );
         operation.insert(
             QStringLiteral("pdfBytes"),
@@ -1009,9 +390,9 @@ Result printRosters(
                 QObject::tr("Print Rosters"),
                 request.templateId == TemplateId::PerClassWithExtraInfo
                     ? request.perClassExtraInfoOrientation
-                    : templateOrientation(request.templateId),
+                    : RosterTemplatePrintService::templateOrientation(request.templateId),
                 false,
-                templatePageSize(request.templateId),
+                RosterTemplatePrintService::templatePageSize(request.templateId),
                 true
             }
             );

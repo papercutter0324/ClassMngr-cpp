@@ -171,17 +171,9 @@ QTime parsedStartTime(
     const QString& startTime
     )
 {
-    constexpr std::array allowedFormats{
-        ScheduleValueParser::DisplayTimeFormat::HourMinuteAmPmSpaced,
-        ScheduleValueParser::DisplayTimeFormat::HourMinute24Hour
-    };
-
-    const auto parsed = ScheduleValueParser::parseDisplayTime(
-        startTime,
-        allowedFormats
-        );
-
-    return parsed ? *parsed : QTime{};
+    const QString text = startTime.trimmed();
+    QTime time = QTime::fromString(text, QStringLiteral("h:mm AP"));
+    return time.isValid() ? time : QTime::fromString(text, QStringLiteral("H:mm"));
 }
 
 QString dailyPageKey(
@@ -304,7 +296,7 @@ int columnForStartTime(
 }
 
 int rosterColumnIndex(
-    const Roster& roster,
+    const RosterClassData::Rows& roster,
     const QString& name
     )
 {
