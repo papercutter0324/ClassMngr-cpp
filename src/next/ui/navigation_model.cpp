@@ -1,5 +1,6 @@
 #include "next/ui/navigation_model.h"
 
+#include <QCoreApplication>
 #include <QSet>
 
 #include <algorithm>
@@ -60,13 +61,15 @@ NavigationNode NavigationNode::group(
     QString label,
     std::vector<NavigationNode> children,
     const NavigationWorkspaceAvailability availability,
-    const bool retainWhenEmpty
+    const bool retainWhenEmpty,
+    QString labelTranslationSource
     )
 {
     return NavigationNode{
         .kind = Kind::Group,
         .id = std::move(id),
         .label = std::move(label),
+        .labelTranslationSource = std::move(labelTranslationSource),
         .pageId = std::nullopt,
         .children = std::move(children),
         .availability = availability,
@@ -84,6 +87,7 @@ NavigationNode NavigationNode::page(
         .kind = Kind::Page,
         .id = pageId.value(),
         .label = {},
+        .labelTranslationSource = {},
         .pageId = std::move(pageId),
         .children = {},
         .availability = availability,
@@ -95,13 +99,15 @@ NavigationNode NavigationNode::page(
 NavigationNode NavigationNode::placeholder(
     QString id,
     QString label,
-    const NavigationWorkspaceAvailability availability
+    const NavigationWorkspaceAvailability availability,
+    QString labelTranslationSource
     )
 {
     return NavigationNode{
         .kind = Kind::Placeholder,
         .id = std::move(id),
         .label = std::move(label),
+        .labelTranslationSource = std::move(labelTranslationSource),
         .pageId = std::nullopt,
         .children = {},
         .availability = availability,
@@ -160,6 +166,7 @@ NavigationModelResult<NavigationModel> NavigationModel::create(
         pages.push_back({
             .id = descriptor.id,
             .label = descriptor.label,
+            .labelTranslationSource = descriptor.labelTranslationSource,
             .iconResourceId = descriptor.iconResourceId,
             .requiredPermissions = descriptor.requiredPermissions
         });
@@ -355,6 +362,34 @@ std::optional<NavigationPageMetadata> NavigationModel::pageMetadata(
     return found == m_pages.cend()
         ? std::nullopt
         : std::optional<NavigationPageMetadata>(*found);
+}
+
+void NavigationModel::retranslate()
+{
+    std::function<void(NavigationNode&)> translateNode;
+    translateNode = [&translateNode](NavigationNode& node) {
+        if (!node.labelTranslationSource.isEmpty())
+        {
+            node.label = QCoreApplication::translate(
+                "NextNavigation", node.labelTranslationSource.toUtf8().constData());
+        }
+        for (NavigationNode& child : node.children)
+        {
+            translateNode(child);
+        }
+    };
+    for (NavigationNode& node : m_nodes)
+    {
+        translateNode(node);
+    }
+    for (NavigationPageMetadata& page : m_pages)
+    {
+        if (!page.labelTranslationSource.isEmpty())
+        {
+            page.label = QCoreApplication::translate(
+                "NextNavigation", page.labelTranslationSource.toUtf8().constData());
+        }
+    }
 }
 
 bool NavigationModel::isPageVisible(const PageId& pageId) const

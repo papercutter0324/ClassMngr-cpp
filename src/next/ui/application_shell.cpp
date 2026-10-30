@@ -8,15 +8,22 @@
 #include <QDir>
 #include <QCloseEvent>
 #include <QCoreApplication>
+#include <QEvent>
+#include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QKeySequence>
 #include <QMenu>
 #include <QMenuBar>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPersistentModelIndex>
 #include <QPixmap>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QSignalBlocker>
 #include <QStatusBar>
 #include <QStyledItemDelegate>
+#include <QTimer>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QTreeWidgetItemIterator>
@@ -39,9 +46,37 @@ constexpr auto KoreanTeacherGroupId = "teachers_all_korean";
 class NavigationTreeItemDelegate final : public QStyledItemDelegate
 {
 public:
-    explicit NavigationTreeItemDelegate(QObject* parent)
-        : QStyledItemDelegate(parent)
+    explicit NavigationTreeItemDelegate(QTreeWidget* tree)
+        : QStyledItemDelegate(tree)
+        , m_tree(tree)
+        , m_timer(this)
     {
+        if (m_tree && m_tree->viewport())
+        {
+            m_tree->viewport()->installEventFilter(this);
+        }
+        m_timer.setInterval(40);
+        QObject::connect(&m_timer, &QTimer::timeout, this, [this] {
+            advanceMarquee();
+        });
+    }
+
+    void setMarqueeEnabled(const bool enabled)
+    {
+        if (m_enabled == enabled)
+        {
+            return;
+        }
+        m_enabled = enabled;
+        if (!enabled)
+        {
+            m_timer.stop();
+            m_hoveredIndex = QPersistentModelIndex{};
+        }
+        if (m_tree && m_tree->viewport())
+        {
+            m_tree->viewport()->update();
+        }
     }
 
     [[nodiscard]] QSize sizeHint(
@@ -56,6 +91,142 @@ public:
             ));
         return result;
     }
+
+    void paint(
+        QPainter* painter,
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+        ) const override
+    {
+        if (!painter || !m_tree || !m_enabled || index != m_hoveredIndex
+            || !isOverflowing(option, index))
+        {
+            QStyledItemDelegate::paint(painter, option, index);
+            return;
+        }
+
+        QStyleOptionViewItem background(option);
+        initStyleOption(&background, index);
+        const QString label = background.text;
+        background.text.clear();
+        QStyledItemDelegate::paint(painter, background, index);
+
+        QStyleOptionViewItem textOption(option);
+        initStyleOption(&textOption, index);
+        const QRect textRect = m_tree->style()->subElementRect(
+            QStyle::SE_ItemViewItemText, &textOption, m_tree);
+        const QFontMetrics metrics(textOption.font);
+        const int labelWidth = metrics.horizontalAdvance(label);
+        constexpr int gap = 32;
+        const int offset = m_offset % std::max(1, labelWidth + gap);
+        const int baseline = textRect.y()
+            + (textRect.height() - metrics.height()) / 2
+            + metrics.ascent();
+        const QPalette::ColorRole colorRole =
+            option.state.testFlag(QStyle::State_Selected)
+                ? QPalette::HighlightedText
+                : QPalette::Text;
+        painter->save();
+        painter->setClipRect(textRect);
+        painter->setFont(textOption.font);
+        painter->setPen(textOption.palette.color(colorRole));
+        painter->drawText(textRect.x() - offset, baseline,
+            label + QStringLiteral("   ") + label);
+        painter->restore();
+    }
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override
+    {
+        if (m_tree && watched == m_tree->viewport() && event)
+        {
+            if (event->type() == QEvent::MouseMove)
+            {
+                const auto* const mouse = static_cast<QMouseEvent*>(event);
+                setHoveredIndex(m_tree->indexAt(mouse->position().toPoint()));
+            }
+            else if (event->type() == QEvent::Leave)
+            {
+                setHoveredIndex({});
+            }
+        }
+        return QStyledItemDelegate::eventFilter(watched, event);
+    }
+
+private:
+    [[nodiscard]] bool isOverflowing(
+        const QStyleOptionViewItem& option,
+        const QModelIndex& index
+        ) const
+    {
+        if (!m_tree || !index.isValid())
+        {
+            return false;
+        }
+        const QString label = index.data(Qt::DisplayRole).toString();
+        const QFontMetrics metrics(option.font);
+        const QRect textRect = m_tree->style()->subElementRect(
+            QStyle::SE_ItemViewItemText, &option, m_tree);
+        return metrics.horizontalAdvance(label) > textRect.width();
+    }
+
+    void setHoveredIndex(const QModelIndex& index)
+    {
+        if (!m_enabled || index == m_hoveredIndex)
+        {
+            return;
+        }
+        const QPersistentModelIndex previous = m_hoveredIndex;
+        m_hoveredIndex = index;
+        m_offset = 0;
+        updateTimer();
+        if (m_tree && m_tree->viewport())
+        {
+            if (previous.isValid()) m_tree->viewport()->update(
+                m_tree->visualRect(previous));
+            if (m_hoveredIndex.isValid()) m_tree->viewport()->update(
+                m_tree->visualRect(m_hoveredIndex));
+        }
+    }
+
+    void updateTimer()
+    {
+        if (!m_enabled || !m_tree || !m_hoveredIndex.isValid())
+        {
+            m_timer.stop();
+            return;
+        }
+        QStyleOptionViewItem option;
+        option.initFrom(m_tree);
+        option.rect = m_tree->visualRect(m_hoveredIndex);
+        option.font = m_tree->font();
+        if (isOverflowing(option, m_hoveredIndex))
+        {
+            if (!m_timer.isActive()) m_timer.start();
+        }
+        else
+        {
+            m_timer.stop();
+            m_offset = 0;
+        }
+    }
+
+    void advanceMarquee()
+    {
+        if (!m_enabled || !m_tree || !m_hoveredIndex.isValid())
+        {
+            m_timer.stop();
+            return;
+        }
+        ++m_offset;
+        m_tree->viewport()->update(m_tree->visualRect(m_hoveredIndex));
+    }
+
+    QTreeWidget* m_tree = nullptr;
+    QTimer m_timer;
+    QPersistentModelIndex m_hoveredIndex;
+    int m_offset = 0;
+    bool m_enabled = false;
 };
 
 class KoreanTeacherNavigationItem final : public QTreeWidgetItem
@@ -104,6 +275,7 @@ ApplicationShell::ApplicationShell(
     , m_forwardButton(new QPushButton(
           QCoreApplication::translate("NextShell", "Forward"), m_contentWidget))
     , m_notificationPresenter(*statusBar())
+    , m_preferences(&preferences)
 {
     statusBar()->setObjectName(QStringLiteral("classMngrNextNotificationStatusBar"));
     setObjectName(QStringLiteral("classMngrNextApplicationShell"));
@@ -155,24 +327,25 @@ ApplicationShell::ApplicationShell(
     contentLayout->addWidget(m_pageHost, 1);
     setCentralWidget(m_contentWidget);
 
-    QMenu* const fileMenu = menuBar()->addMenu(
+    m_fileMenu = menuBar()->addMenu(
         QCoreApplication::translate("NextShell", "File")
         );
-    m_newTeacherProfileAction = fileMenu->addAction(
+    m_fileMenu->setObjectName(QStringLiteral("classMngrNextFileMenu"));
+    m_newTeacherProfileAction = m_fileMenu->addAction(
         QCoreApplication::translate("NextShell", "New Teacher Profile…")
         );
     m_newTeacherProfileAction->setObjectName(
         QStringLiteral("classMngrNextNewTeacherProfile")
         );
     m_newTeacherProfileAction->setShortcut(QKeySequence::New);
-    m_openTeacherProfileAction = fileMenu->addAction(
+    m_openTeacherProfileAction = m_fileMenu->addAction(
         QCoreApplication::translate("NextShell", "Open Teacher Profile…")
         );
     m_openTeacherProfileAction->setObjectName(
         QStringLiteral("classMngrNextOpenTeacherProfile")
         );
     m_openTeacherProfileAction->setShortcut(QKeySequence::Open);
-    m_recoverInterruptedTeacherProfileAction = fileMenu->addAction(
+    m_recoverInterruptedTeacherProfileAction = m_fileMenu->addAction(
         QCoreApplication::translate(
             "NextShell",
             "Recover Interrupted Teacher Profile…"
@@ -181,14 +354,14 @@ ApplicationShell::ApplicationShell(
     m_recoverInterruptedTeacherProfileAction->setObjectName(
         QStringLiteral("classMngrNextRecoverInterruptedTeacherProfile")
         );
-    m_recentWorkspaceMenu = fileMenu->addMenu(
+    m_recentWorkspaceMenu = m_fileMenu->addMenu(
         QCoreApplication::translate("NextShell", "Recent Files")
         );
     m_recentWorkspaceMenu->setObjectName(
         QStringLiteral("classMngrNextRecentWorkspaceMenu")
         );
-    fileMenu->addSeparator();
-    m_saveWorkspaceAction = fileMenu->addAction(
+    m_fileMenu->addSeparator();
+    m_saveWorkspaceAction = m_fileMenu->addAction(
         QCoreApplication::translate("NextShell", "Save")
         );
     m_saveWorkspaceAction->setObjectName(
@@ -196,7 +369,7 @@ ApplicationShell::ApplicationShell(
         );
     m_saveWorkspaceAction->setShortcut(QKeySequence::Save);
     m_saveWorkspaceAction->setEnabled(false);
-    m_saveWorkspaceAsAction = fileMenu->addAction(
+    m_saveWorkspaceAsAction = m_fileMenu->addAction(
         QCoreApplication::translate("NextShell", "Save As…")
         );
     m_saveWorkspaceAsAction->setObjectName(
@@ -204,14 +377,14 @@ ApplicationShell::ApplicationShell(
         );
     m_saveWorkspaceAsAction->setShortcut(QKeySequence::SaveAs);
     m_saveWorkspaceAsAction->setEnabled(false);
-    m_exportWorkspaceAction = fileMenu->addAction(
+    m_exportWorkspaceAction = m_fileMenu->addAction(
         QCoreApplication::translate("NextShell", "Export Teacher Profile…")
         );
     m_exportWorkspaceAction->setObjectName(
         QStringLiteral("classMngrNextExportWorkspace")
         );
     m_exportWorkspaceAction->setEnabled(false);
-    m_closeWorkspaceAction = fileMenu->addAction(
+    m_closeWorkspaceAction = m_fileMenu->addAction(
         QCoreApplication::translate("NextShell", "Close Teacher Profile")
         );
     m_closeWorkspaceAction->setObjectName(
@@ -220,17 +393,26 @@ ApplicationShell::ApplicationShell(
     m_closeWorkspaceAction->setShortcut(QKeySequence::Close);
     m_closeWorkspaceAction->setEnabled(false);
 
-    QMenu* const teachersMenu = menuBar()->addMenu(
+    m_editMenu = menuBar()->addMenu(
+        QCoreApplication::translate("NextShell", "Edit")
+        );
+    m_editMenu->setObjectName(QStringLiteral("classMngrNextEditMenu"));
+    m_preferencesAction = m_editMenu->addAction(
+        QCoreApplication::translate("NextShell", "Preferences…")
+        );
+    m_preferencesAction->setObjectName(QStringLiteral("classMngrNextPreferences"));
+
+    m_teachersMenu = menuBar()->addMenu(
         QCoreApplication::translate("NextShell", "Teachers")
         );
-    m_importTeachersAction = teachersMenu->addAction(
+    m_importTeachersAction = m_teachersMenu->addAction(
         QCoreApplication::translate("NextShell", "Import Teachers…")
         );
     m_importTeachersAction->setObjectName(
         QStringLiteral("classMngrNextImportTeachers")
         );
     m_importTeachersAction->setEnabled(false);
-    m_upcomingBirthdaysAction = teachersMenu->addAction(
+    m_upcomingBirthdaysAction = m_teachersMenu->addAction(
         QCoreApplication::translate("NextShell", "Upcoming Birthdays…")
         );
     m_upcomingBirthdaysAction->setObjectName(
@@ -292,6 +474,12 @@ ApplicationShell::ApplicationShell(
         if (m_closeWorkspaceHandler)
         {
             m_closeWorkspaceHandler();
+        }
+    });
+    connect(m_preferencesAction, &QAction::triggered, this, [this] {
+        if (m_preferencesHandler)
+        {
+            m_preferencesHandler();
         }
     });
     connect(m_importTeachersAction, &QAction::triggered, this, [this] {
@@ -369,6 +557,25 @@ ApplicationShell::ApplicationShell(
     m_navigationTree->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(m_navigationTree, &QWidget::customContextMenuRequested, this,
             &ApplicationShell::showKoreanTeacherContextMenu);
+
+    applyPreferences(preferences.snapshot());
+    const auto observer = preferences.subscribe(
+        [this](Application::UserPreferencesSnapshot snapshot) {
+            applyPreferences(snapshot);
+        }
+        );
+    if (observer)
+    {
+        m_preferencesObserverId = observer.value();
+    }
+}
+
+ApplicationShell::~ApplicationShell()
+{
+    if (m_preferences && m_preferencesObserverId)
+    {
+        static_cast<void>(m_preferences->unsubscribe(*m_preferencesObserverId));
+    }
 }
 
 void ApplicationShell::setCloseHandler(CloseHandler handler)
@@ -428,6 +635,11 @@ void ApplicationShell::setUpcomingBirthdaysHandler(
 void ApplicationShell::setCloseWorkspaceHandler(std::function<void()> handler)
 {
     m_closeWorkspaceHandler = std::move(handler);
+}
+
+void ApplicationShell::setPreferencesHandler(std::function<void()> handler)
+{
+    m_preferencesHandler = std::move(handler);
 }
 
 void ApplicationShell::setRecentWorkspaceMenuHandlers(
@@ -848,12 +1060,16 @@ void ApplicationShell::rebuildNavigationTree()
             if (candidate && *candidate == *selectedDocumentId)
             {
                 m_navigationTree->setCurrentItem(*iterator);
+                updateNavigationTooltips(m_preferences
+                    && m_preferences->snapshot().sidebarTooltipsEnabled());
                 return;
             }
             ++iterator;
         }
     }
     synchronizeNavigationSelection();
+    updateNavigationTooltips(m_preferences
+        && m_preferences->snapshot().sidebarTooltipsEnabled());
 }
 
 void ApplicationShell::synchronizeNavigationSelection()
@@ -1094,6 +1310,109 @@ void ApplicationShell::closeEvent(QCloseEvent* event)
         {
             event->ignore();
         }
+    }
+}
+
+void ApplicationShell::changeEvent(QEvent* event)
+{
+    QMainWindow::changeEvent(event);
+    if (event && event->type() == QEvent::LanguageChange)
+    {
+        retranslateUi();
+    }
+}
+
+void ApplicationShell::resizeEvent(QResizeEvent* event)
+{
+    QMainWindow::resizeEvent(event);
+    if (m_navigationTree && m_preferences)
+    {
+        updateNavigationTooltips(
+            m_preferences->snapshot().sidebarTooltipsEnabled());
+    }
+}
+
+void ApplicationShell::retranslateUi()
+{
+    setWindowTitle(QCoreApplication::translate("NextShell", "ClassMngr Next"));
+    m_backButton->setText(QCoreApplication::translate("NextShell", "Back"));
+    m_forwardButton->setText(QCoreApplication::translate("NextShell", "Forward"));
+    if (m_fileMenu)
+    {
+        m_fileMenu->setTitle(QCoreApplication::translate("NextShell", "File"));
+    }
+    if (m_editMenu)
+    {
+        m_editMenu->setTitle(QCoreApplication::translate("NextShell", "Edit"));
+    }
+    if (m_teachersMenu)
+    {
+        m_teachersMenu->setTitle(QCoreApplication::translate("NextShell", "Teachers"));
+    }
+    const auto setActionText = [](QAction* action, const char* source) {
+        if (action)
+        {
+            action->setText(QCoreApplication::translate("NextShell", source));
+        }
+    };
+    setActionText(m_newTeacherProfileAction, "New Teacher Profile…");
+    setActionText(m_openTeacherProfileAction, "Open Teacher Profile…");
+    setActionText(m_recoverInterruptedTeacherProfileAction,
+                  "Recover Interrupted Teacher Profile…");
+    setActionText(m_saveWorkspaceAction, "Save");
+    setActionText(m_saveWorkspaceAsAction, "Save As…");
+    setActionText(m_exportWorkspaceAction, "Export Teacher Profile…");
+    setActionText(m_closeWorkspaceAction, "Close Teacher Profile");
+    setActionText(m_preferencesAction, "Preferences…");
+    setActionText(m_importTeachersAction, "Import Teachers…");
+    setActionText(m_upcomingBirthdaysAction, "Upcoming Birthdays…");
+    if (m_recentWorkspaceMenu)
+    {
+        m_recentWorkspaceMenu->setTitle(
+            QCoreApplication::translate("NextShell", "Recent Files"));
+    }
+    if (m_navigationModel)
+    {
+        m_navigationModel->retranslate();
+        rebuildNavigationTree();
+    }
+}
+
+void ApplicationShell::applyPreferences(
+    const Application::UserPreferencesSnapshot& snapshot
+    )
+{
+    m_navigationTree->setFont(
+        NavigationFontPolicy::standardFont(m_navigationTree->font(), snapshot.fontSize()));
+    m_navigationTree->setProperty(
+        "sidebarAnimationEnabled", snapshot.sidebarMarqueeEnabled());
+    if (auto* const delegate = dynamic_cast<NavigationTreeItemDelegate*>(
+            m_navigationTree->itemDelegate()))
+    {
+        delegate->setMarqueeEnabled(snapshot.sidebarMarqueeEnabled());
+    }
+    updateNavigationTooltips(snapshot.sidebarTooltipsEnabled());
+}
+
+void ApplicationShell::updateNavigationTooltips(const bool enabled)
+{
+    QTreeWidgetItemIterator iterator(m_navigationTree);
+    const QFontMetrics metrics(m_navigationTree->font());
+    while (*iterator)
+    {
+        QTreeWidgetItem* const item = *iterator;
+        int depth = 0;
+        for (QTreeWidgetItem* parent = item->parent(); parent; parent = parent->parent())
+        {
+            ++depth;
+        }
+        const int indentation = depth * m_navigationTree->indentation();
+        const int available = std::max(
+            0, m_navigationTree->viewport()->width() - indentation - 44);
+        const QString label = item->text(0);
+        item->setToolTip(0, enabled && metrics.horizontalAdvance(label) > available
+            ? label : QString{});
+        ++iterator;
     }
 }
 

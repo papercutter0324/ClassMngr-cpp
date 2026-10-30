@@ -646,6 +646,12 @@ void SpeakingEvaluationPage::onSuspending() noexcept
     }
 }
 
+void SpeakingEvaluationPage::setSaveMode(const Application::SaveMode mode)
+{
+    m_actions.saveMode = mode;
+    updateDirtyState(true);
+}
+
 PageOperationResult<void> SpeakingEvaluationPage::saveChanges()
 {
     m_autoSaveTimer->stop();

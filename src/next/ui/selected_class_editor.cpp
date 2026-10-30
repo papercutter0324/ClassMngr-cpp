@@ -915,6 +915,27 @@ void SelectedClassEditor::clear()
     updateDirtyState();
 }
 
+void SelectedClassEditor::setSaveMode(const Application::SaveMode mode)
+{
+    m_saveMode = mode;
+    m_actions.saveMode = mode;
+    m_actions.rosterEditor.saveMode = mode;
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->setSaveMode(mode);
+    }
+    if (mode == Application::SaveMode::Automatic)
+    {
+        scheduleDetailsSave();
+        scheduleNotesSave();
+    }
+    else
+    {
+        if (m_detailsAutosave) m_detailsAutosave->stop();
+        if (m_notesAutosave) m_notesAutosave->stop();
+    }
+}
+
 bool SelectedClassEditor::resolveUnsavedChanges(const QString& reason)
 {
     if (!hasUnsavedChanges())

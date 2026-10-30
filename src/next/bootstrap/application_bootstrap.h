@@ -10,6 +10,7 @@
 #include "next/application/initial_setup_class_details_draft.h"
 #include "next/application/initial_setup_class_times_requirement.h"
 #include "next/application/user_prompt_port.h"
+#include "next/application/user_preferences_state.h"
 #include "next/application/custom_color_palette_preferences.h"
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
@@ -158,6 +159,9 @@ private:
     [[nodiscard]] bool loadStartupPreferences();
     [[nodiscard]] Application::StartupStageOutcome loadStartupLanguage();
     [[nodiscard]] bool loadStartupTheme();
+    [[nodiscard]] Domain::Result<void> changeLanguagePreference(
+        Application::LanguagePreference preference
+        );
     [[nodiscard]] bool loadRequiredFonts();
     [[nodiscard]] bool loadRequiredDocumentCatalog();
     [[nodiscard]] Application::StartupStageOutcome openStartupWorkspace();

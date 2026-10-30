@@ -102,6 +102,7 @@ public:
         const QString& classNameFallback = {}
         );
     void clear();
+    void setSaveMode(Application::SaveMode mode);
     [[nodiscard]] bool resolveUnsavedChanges(const QString& reason);
     [[nodiscard]] bool saveChanges(QString* error = nullptr);
     [[nodiscard]] bool discardChanges(QString* error = nullptr);

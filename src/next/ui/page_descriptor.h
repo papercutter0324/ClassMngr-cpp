@@ -70,6 +70,9 @@ struct PageDescriptor final
 {
     PageId id;
     QString label;
+    // Source text for retranslation when the active Qt language changes.
+    // Empty labels remain literal, such as names loaded from user data.
+    QString labelTranslationSource;
     // Absent while the page has no icon in the resource catalog.
     std::optional<Resources::ResourceId> iconResourceId;
     // Stable permission identifiers; PageHost stores but does not enforce them.

@@ -27,6 +27,17 @@
 #include "next/ui/speaking_evaluation_page.h"
 #include "next/ui/teacher_profile_page.h"
 #include "next/ui/shared_staff_directory_page.h"
+#include "next/ui/preferences_dialog.h"
+#include "next/application/startup_update_check_use_case.h"
+#include "next/platform/settings_manager_preferences_port.h"
+#include "next/platform/settings_manager_save_mode_preferences_port.h"
+#include "next/platform/settings_manager_document_page_spacing_preferences_port.h"
+#include "next/platform/settings_manager_document_viewer_background_preferences_port.h"
+#include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
+#include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
+#include "next/platform/settings_manager_ai_comment_custom_website_port.h"
+#include "next/platform/settings_manager_automatic_update_preferences_port.h"
+#include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 #include "core/settingsmanager.h"
 #include "features/my_info/data/signature_image_processor.h"
@@ -42,6 +53,7 @@
 #include <QAbstractButton>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QInputDialog>
 #include <QCalendarWidget>
 #include <QCheckBox>
 #include <QContextMenuEvent>
@@ -50,6 +62,7 @@
 #include <QDesktopServices>
 #include <QEvent>
 #include <QFontDatabase>
+#include <QFormLayout>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -85,6 +98,7 @@
 #include <QSaveFile>
 #include <QSettings>
 #include <QStatusBar>
+#include <QTabWidget>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QToolButton>
@@ -125,6 +139,10 @@ private slots:
     void startupUpdateCheckDoesNotConstructDispatcherAfterShutdownBeforeQueuedTurn();
     void loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell();
     void loadedPreferencesReachPagesAndFontStartupRestoresOnTeardown();
+    void preferencesMenuRoutePersistsAndReopensEveryPreference();
+    void preferencesRouteRetranslatesActiveClassesNavigator();
+    void preferencesMenuRouteVisualCapture_data();
+    void preferencesMenuRouteVisualCapture();
     void shellAppearanceUsesSelectedThemeAndLanguage_data();
     void shellAppearanceUsesSelectedThemeAndLanguage();
     void initialSetupPersonalDetailsAppearance_data();
@@ -1276,6 +1294,86 @@ private:
             SettingsManager::instance().remove(key);
         }
     }
+};
+
+class GlobalPreferencesSettingsGuard final
+{
+public:
+    GlobalPreferencesSettingsGuard()
+        : m_keys{
+            QString::fromUtf8(SettingsManager::Keys::THEME_PREFERENCE),
+            QString::fromUtf8(SettingsManager::Keys::LANGUAGE_PREFERENCE),
+            QString::fromUtf8(SettingsManager::Keys::FONT_SIZE_PREFERENCE),
+            QString::fromUtf8(SettingsManager::Keys::SAVE_MODE_PREFERENCE),
+            QString::fromUtf8(SettingsManager::Keys::AUTOMATIC_UPDATE_CHECKS_ENABLED),
+            QString::fromUtf8(SettingsManager::Keys::SIDEBAR_TOOLTIPS_ENABLED),
+            QString::fromUtf8(SettingsManager::Keys::SIDEBAR_MARQUEE_ENABLED),
+            QString::fromUtf8(SettingsManager::Keys::EXCEL_IMPORT_TIMEOUT_SECONDS),
+            QString::fromUtf8(SettingsManager::Keys::SHOW_POWERPOINT_DATA_ACCESS_NOTICE),
+            QString::fromUtf8(SettingsManager::Keys::DOCUMENT_PAGE_SPACING_PREFERENCE),
+            QString::fromUtf8(SettingsManager::Keys::DOCUMENT_VIEWER_BACKGROUND_PREFERENCE),
+            QString::fromUtf8(SettingsManager::Keys::AI_COMMENT_PROVIDER_PREFERENCE),
+            QString::fromUtf8(SettingsManager::Keys::AI_COMMENT_VOICE_PREFERENCE),
+            QString::fromUtf8(SettingsManager::Keys::AI_COMMENT_CUSTOM_WEBSITE_URL_PREFERENCE)
+        }
+    {
+        for (std::size_t index = 0; index < m_keys.size(); ++index)
+        {
+            m_values[index] = SettingsManager::instance().get(m_keys[index]);
+        }
+    }
+
+    ~GlobalPreferencesSettingsGuard()
+    {
+        for (std::size_t index = 0; index < m_keys.size(); ++index)
+        {
+            if (m_values[index].isValid())
+            {
+                SettingsManager::instance().set(m_keys[index], m_values[index]);
+            }
+            else
+            {
+                SettingsManager::instance().remove(m_keys[index]);
+            }
+        }
+        SettingsManager::instance().sync();
+    }
+
+private:
+    std::array<QString, 14> m_keys;
+    std::array<QVariant, 14> m_values;
+};
+
+class PreferencesSaveModeProbePage final : public Ui::Page
+{
+public:
+    using Ui::Page::Page;
+
+    void setSaveMode(const Application::SaveMode next) override
+    {
+        mode = next;
+        ++updates;
+    }
+
+    Application::SaveMode mode = Application::SaveMode::Automatic;
+    int updates = 0;
+};
+
+class RecordingAutomaticStartupCheckPort final
+    : public Application::StartupUpdateCheckPort
+{
+public:
+    [[nodiscard]] Application::StartupUpdateCheckDispatch check(
+        Application::StartupUpdateCheckCompletion completion
+        ) override
+    {
+        ++calls;
+        pending = std::move(completion);
+        return Application::StartupUpdateCheckDispatch::Started;
+    }
+
+    int calls = 0;
+    Application::StartupUpdateCheckCompletion pending;
 };
 
 class SpeakingEvaluationAiPreferencesGuard final
@@ -2649,6 +2747,682 @@ void ApplicationBootstrapTests::loadedPreferencesReachPagesAndFontStartupRestore
     QCOMPARE(application.font(), previousFont);
     if (previousStoredFont.isValid()) settings.set(fontKey, previousStoredFont);
     else settings.remove(fontKey);
+}
+
+void ApplicationBootstrapTests::preferencesMenuRoutePersistsAndReopensEveryPreference()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    GlobalPreferencesSettingsGuard globalPreferences;
+    StartupPreferencesGuard startupPreferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::ThemePreference::Light), 0);
+    QVERIFY(Platform::SettingsManagerAutomaticUpdatePreferencesPort().write(
+        {.automaticChecksEnabled = false}));
+
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")));
+    QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
+    QVERIFY(resources.addTheme(QStringLiteral("dark")));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("preferences-test")};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application, {}, silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        QStringList{QStringLiteral("en-US")}, std::move(seams));
+    QVERIFY(bootstrap.start().succeeded());
+
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    auto* const action = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextPreferences"));
+    auto* const navigationTree = shell->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree"));
+    QVERIFY(action && navigationTree);
+    shell->resize(560, 480);
+    navigationTree->setFixedWidth(180);
+    QCOMPARE(action->text(), QStringLiteral("Preferences…"));
+    const int originalFontPointSize = application.font().pointSize();
+
+    const auto saveProbeId = Ui::PageId::fromString(
+        QStringLiteral("preferences_save_mode_probe"));
+    QVERIFY(saveProbeId.has_value());
+    Ui::PageDescriptor saveProbeDescriptor{
+        .id = *saveProbeId,
+        .label = QStringLiteral("Save Mode Probe"),
+        .factory = [](const Ui::PageContext& context)
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            return std::unique_ptr<Ui::Page>(
+                new PreferencesSaveModeProbePage(context));
+        }
+    };
+    QVERIFY(shell->pageHost().registerPage(std::move(saveProbeDescriptor)));
+    QVERIFY(shell->pageHost().activatePage(saveProbeId->value()));
+    auto* const saveProbe = dynamic_cast<PreferencesSaveModeProbePage*>(
+        shell->pageHost().pageInstance(saveProbeId->value()));
+    QVERIFY(saveProbe);
+
+    bool interacted = false;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog || dialog->objectName() != QStringLiteral("nextPreferencesDialog"))
+        {
+            return;
+        }
+        const auto findCombo = [dialog](const QString& name) {
+            return dialog->findChild<QComboBox*>(name);
+        };
+        auto* const theme = findCombo(QStringLiteral("preferencesTheme"));
+        auto* const language = findCombo(QStringLiteral("preferencesLanguage"));
+        auto* const fontSize = findCombo(QStringLiteral("preferencesFontSize"));
+        auto* const saveMode = findCombo(QStringLiteral("preferencesSaveMode"));
+        auto* const timeout = findCombo(QStringLiteral("preferencesExcelImportTimeout"));
+        auto* const spacing = findCombo(QStringLiteral("preferencesDocumentSpacing"));
+        auto* const background = findCombo(QStringLiteral("preferencesDocumentBackground"));
+        auto* const provider = findCombo(QStringLiteral("preferencesAiCommentProvider"));
+        auto* const voice = findCombo(QStringLiteral("preferencesAiCommentVoice"));
+        auto* const updates = dialog->findChild<QCheckBox*>(
+            QStringLiteral("preferencesAutomaticUpdates"));
+        auto* const tooltips = dialog->findChild<QCheckBox*>(
+            QStringLiteral("preferencesSidebarTooltips"));
+        auto* const animation = dialog->findChild<QCheckBox*>(
+            QStringLiteral("preferencesSidebarAnimation"));
+        auto* const tabs = dialog->findChild<QTabWidget*>(
+            QStringLiteral("preferencesTabs"));
+        auto* const customWebsite = dialog->findChild<QLabel*>(
+            QStringLiteral("preferencesCustomAiWebsiteUrl"));
+        if (!theme || !language || !fontSize || !saveMode || !timeout
+            || !spacing || !background || !provider || !voice || !updates
+            || !tooltips || !animation || !tabs || !customWebsite)
+        {
+            return;
+        }
+
+        const auto visibleLabelMatches = [](QWidget* field,
+                                            const QString& expectedText) {
+            if (!field || !field->parentWidget()) return false;
+            auto* const form = qobject_cast<QFormLayout*>(
+                field->parentWidget()->layout());
+            auto* const label = form
+                ? qobject_cast<QLabel*>(form->labelForField(field))
+                : nullptr;
+            return field->isVisible() && label && label->isVisible()
+                && label->text() == expectedText;
+        };
+
+        tabs->setCurrentIndex(1);
+        QCoreApplication::processEvents();
+        const bool englishAppearanceLabels =
+            visibleLabelMatches(theme, QStringLiteral("Theme:"))
+            && visibleLabelMatches(language, QStringLiteral("Language:"))
+            && visibleLabelMatches(fontSize, QStringLiteral("Font Size:"));
+        tabs->setCurrentIndex(2);
+        QCoreApplication::processEvents();
+        const bool englishDocumentLabels =
+            visibleLabelMatches(spacing, QStringLiteral("PDF Page Spacing:"))
+            && visibleLabelMatches(background, QStringLiteral("Background Color:"));
+        tabs->setCurrentIndex(3);
+        QCoreApplication::processEvents();
+        const bool englishAiLabels =
+            visibleLabelMatches(provider, QStringLiteral("Preferred AI Website:"))
+            && visibleLabelMatches(voice, QStringLiteral("Comment Voice:"));
+        tabs->setCurrentIndex(0);
+
+        theme->setCurrentIndex(theme->findData(
+            static_cast<int>(Application::ThemePreference::Dark)));
+        const QString tooltipProbeLabel = QStringLiteral(
+            "A very long Next sidebar navigation label used to exercise the live tooltip "
+            "preference when its text extends well beyond the visible navigation width");
+        auto* const tooltipProbeItem = new QTreeWidgetItem(
+            QStringList{tooltipProbeLabel});
+        navigationTree->addTopLevelItem(tooltipProbeItem);
+        fontSize->setCurrentIndex(fontSize->findData(
+            static_cast<int>(Application::FontSize::Large)));
+        saveMode->setCurrentIndex(saveMode->findData(
+            static_cast<int>(Application::SaveMode::Manual)));
+        updates->setChecked(true);
+        tooltips->setChecked(false);
+        tooltips->setChecked(true);
+        const bool tooltipAppeared = tooltipProbeItem->toolTip(0)
+            == tooltipProbeLabel;
+        tooltips->setChecked(false);
+        const bool tooltipCleared = tooltipProbeItem->toolTip(0).isEmpty();
+        animation->setChecked(false);
+        timeout->setCurrentIndex(timeout->findData(300));
+        spacing->setCurrentIndex(spacing->findData(
+            static_cast<int>(Application::DocumentPageSpacing::Large)));
+        background->setCurrentIndex(background->findData(
+            static_cast<int>(Application::DocumentViewerBackground::Black)));
+        voice->setCurrentIndex(voice->findData(
+            static_cast<int>(Application::AiCommentVoice::ThirdPerson)));
+
+        QTimer::singleShot(0, [] {
+            auto* const input = qobject_cast<QInputDialog*>(
+                QApplication::activeModalWidget());
+            if (!input)
+            {
+                return;
+            }
+            if (auto* const line = input->findChild<QLineEdit*>())
+            {
+                line->setText(QStringLiteral("https://school.example/ai"));
+            }
+            input->accept();
+        });
+        provider->setCurrentIndex(provider->findData(
+            static_cast<int>(Application::AiCommentProvider::CustomWebsite)));
+        QCoreApplication::processEvents();
+
+        tabs->setCurrentIndex(3);
+        QCoreApplication::processEvents();
+        const bool englishCustomWebsiteSummary = customWebsite->isVisible()
+            && customWebsite->text()
+                == QStringLiteral("Custom website: https://school.example/ai");
+
+        language->setCurrentIndex(language->findData(
+            static_cast<int>(Application::LanguagePreference::Korean)));
+        QCoreApplication::processEvents();
+        tabs->setCurrentIndex(1);
+        QCoreApplication::processEvents();
+        const bool koreanAppearanceLabels =
+            visibleLabelMatches(theme, QStringLiteral("테마:"))
+            && visibleLabelMatches(language, QStringLiteral("언어:"))
+            && visibleLabelMatches(fontSize, QStringLiteral("글꼴 크기:"));
+        tabs->setCurrentIndex(2);
+        QCoreApplication::processEvents();
+        const bool koreanDocumentLabels =
+            visibleLabelMatches(spacing, QStringLiteral("PDF 페이지 간격:"))
+            && visibleLabelMatches(background, QStringLiteral("배경색:"));
+        tabs->setCurrentIndex(3);
+        QCoreApplication::processEvents();
+        const bool koreanAiLabels =
+            visibleLabelMatches(provider, QStringLiteral("선호하는 AI 웹사이트:"))
+            && visibleLabelMatches(voice, QStringLiteral("댓글 어조:"));
+        const bool koreanCustomWebsiteSummary = customWebsite->isVisible()
+            && customWebsite->text()
+                == QStringLiteral("사용자 지정 웹사이트: https://school.example/ai");
+
+        interacted = englishAppearanceLabels && englishDocumentLabels
+            && englishAiLabels && koreanAppearanceLabels && koreanDocumentLabels
+            && koreanAiLabels && englishCustomWebsiteSummary
+            && koreanCustomWebsiteSummary
+            && action->text() == QStringLiteral("환경 설정…")
+            && dialog->windowTitle() == QStringLiteral("환경 설정")
+            && tooltipAppeared && tooltipCleared
+            && !navigationTree->property("sidebarAnimationEnabled").toBool()
+            && application.styleSheet().contains(QStringLiteral("#2b2b2b"))
+            && application.font().pointSize() > originalFontPointSize
+            && saveProbe->mode == Application::SaveMode::Manual;
+        if (!interacted)
+        {
+            qWarning() << "Preferences route checks" << action->text()
+                       << dialog->windowTitle()
+                       << englishAppearanceLabels << englishDocumentLabels
+                       << englishAiLabels << koreanAppearanceLabels
+                       << koreanDocumentLabels << koreanAiLabels
+                       << englishCustomWebsiteSummary << koreanCustomWebsiteSummary
+                       << tooltipAppeared << tooltipCleared
+                       << navigationTree->property("sidebarAnimationEnabled")
+                       << application.styleSheet().contains(QStringLiteral("#2b2b2b"))
+                       << application.font().pointSize() << originalFontPointSize
+                       << static_cast<int>(saveProbe->mode);
+        }
+        dialog->accept();
+    });
+    action->trigger();
+    QVERIFY(interacted);
+    QCOMPARE(saveProbe->mode, Application::SaveMode::Manual);
+    QVERIFY(saveProbe->updates > 0);
+    QCOMPARE(SettingsManager::instance().excelImportTimeoutSeconds(), 300);
+    QCOMPARE(Platform::SettingsManagerExcelImportTimeoutPort().read()
+                 .normalizedSeconds() * 1000,
+             300'000);
+
+    Platform::SettingsManagerPreferencesPort storedPreferences;
+    Application::PreferencesModel reloaded(storedPreferences, storedPreferences);
+    QVERIFY(reloaded.load());
+    QCOMPARE(reloaded.snapshot().themePreference(), Application::ThemePreference::Dark);
+    QCOMPARE(reloaded.snapshot().languagePreference(), Application::LanguagePreference::Korean);
+    QCOMPARE(reloaded.snapshot().fontSize(), Application::FontSize::Large);
+    QCOMPARE(reloaded.snapshot().automaticUpdateChecksEnabled(), true);
+    QCOMPARE(reloaded.snapshot().sidebarTooltipsEnabled(), false);
+    QCOMPARE(reloaded.snapshot().sidebarMarqueeEnabled(), false);
+    QCOMPARE(reloaded.snapshot().excelImportTimeoutSeconds(), 300);
+    QCOMPARE(Platform::SettingsManagerSaveModePreferencesPort().read(),
+        Application::SaveMode::Manual);
+    QCOMPARE(Platform::SettingsManagerDocumentPageSpacingPreferencesPort().read(),
+        Application::DocumentPageSpacing::Large);
+    QCOMPARE(Platform::SettingsManagerDocumentViewerBackgroundPreferencesPort().read(),
+        Application::DocumentViewerBackground::Black);
+    QCOMPARE(Platform::SettingsManagerAiCommentProviderPreferencesPort().read(),
+        Application::AiCommentProvider::CustomWebsite);
+    QCOMPARE(Platform::SettingsManagerAiCommentVoicePreferencesPort().read(),
+        Application::AiCommentVoice::ThirdPerson);
+    QCOMPARE(Platform::SettingsManagerAiCommentCustomWebsitePort().read(),
+        std::string("https://school.example/ai"));
+
+    bool reopenedPersistedValues = false;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog || dialog->objectName() != QStringLiteral("nextPreferencesDialog"))
+        {
+            return;
+        }
+        const auto findCombo = [dialog](const QString& name) {
+            return dialog->findChild<QComboBox*>(name);
+        };
+        auto* const theme = findCombo(QStringLiteral("preferencesTheme"));
+        auto* const language = findCombo(QStringLiteral("preferencesLanguage"));
+        auto* const fontSize = findCombo(QStringLiteral("preferencesFontSize"));
+        auto* const saveMode = findCombo(QStringLiteral("preferencesSaveMode"));
+        auto* const timeout = findCombo(QStringLiteral("preferencesExcelImportTimeout"));
+        auto* const spacing = findCombo(QStringLiteral("preferencesDocumentSpacing"));
+        auto* const background = findCombo(QStringLiteral("preferencesDocumentBackground"));
+        auto* const provider = findCombo(QStringLiteral("preferencesAiCommentProvider"));
+        auto* const voice = findCombo(QStringLiteral("preferencesAiCommentVoice"));
+        auto* const updates = dialog->findChild<QCheckBox*>(
+            QStringLiteral("preferencesAutomaticUpdates"));
+        auto* const tooltips = dialog->findChild<QCheckBox*>(
+            QStringLiteral("preferencesSidebarTooltips"));
+        auto* const animation = dialog->findChild<QCheckBox*>(
+            QStringLiteral("preferencesSidebarAnimation"));
+        reopenedPersistedValues = theme && language && fontSize && saveMode
+            && timeout && spacing && background && provider && voice && updates
+            && tooltips && animation
+            && theme->currentData().toInt()
+                == static_cast<int>(Application::ThemePreference::Dark)
+            && language->currentData().toInt()
+                == static_cast<int>(Application::LanguagePreference::Korean)
+            && fontSize->currentData().toInt()
+                == static_cast<int>(Application::FontSize::Large)
+            && saveMode->currentData().toInt()
+                == static_cast<int>(Application::SaveMode::Manual)
+            && timeout->currentData().toInt() == 300
+            && spacing->currentData().toInt()
+                == static_cast<int>(Application::DocumentPageSpacing::Large)
+            && background->currentData().toInt()
+                == static_cast<int>(Application::DocumentViewerBackground::Black)
+            && provider->currentData().toInt()
+                == static_cast<int>(Application::AiCommentProvider::CustomWebsite)
+            && voice->currentData().toInt()
+                == static_cast<int>(Application::AiCommentVoice::ThirdPerson)
+            && updates->isChecked() && !tooltips->isChecked()
+            && !animation->isChecked();
+        if (updates)
+        {
+            updates->setChecked(false);
+        }
+        dialog->reject();
+    });
+    action->trigger();
+    QVERIFY(reopenedPersistedValues);
+
+    QVERIFY(!Platform::SettingsManagerAutomaticUpdatePreferencesPort()
+        .read().automaticChecksEnabled);
+    RecordingAutomaticStartupCheckPort startupCheckPort;
+    Application::StartupUpdateCheckUseCase startupCheck(startupCheckPort);
+    const auto disabledDisposition = startupCheck.start({
+        .startupComplete = true,
+        .checkOnStartup = true,
+        .preferences = Platform::SettingsManagerAutomaticUpdatePreferencesPort().read(),
+        .hasReleasesApiUrl = true
+    }, [](Application::StartupUpdateCheckOutcome) {});
+    QCOMPARE(disabledDisposition,
+        Application::StartupUpdateCheckDisposition::NotEligible);
+    QCOMPARE(startupCheckPort.calls, 0);
+
+    QVERIFY(Platform::SettingsManagerAutomaticUpdatePreferencesPort().write(
+        {.automaticChecksEnabled = true}));
+    QVERIFY(Platform::SettingsManagerAutomaticUpdatePreferencesPort()
+        .read().automaticChecksEnabled);
+    RecordingAutomaticStartupCheckPort enabledStartupCheckPort;
+    Application::StartupUpdateCheckUseCase enabledStartupCheck(
+        enabledStartupCheckPort);
+    const auto enabledDisposition = enabledStartupCheck.start({
+        .startupComplete = true,
+        .checkOnStartup = true,
+        .preferences = Platform::SettingsManagerAutomaticUpdatePreferencesPort().read(),
+        .hasReleasesApiUrl = true
+    }, [](Application::StartupUpdateCheckOutcome) {});
+    QCOMPARE(enabledDisposition,
+        Application::StartupUpdateCheckDisposition::Started);
+    QCOMPARE(enabledStartupCheckPort.calls, 1);
+
+    application.setStyleSheet(previousStyleSheet);
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+}
+
+void ApplicationBootstrapTests::preferencesRouteRetranslatesActiveClassesNavigator()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    GlobalPreferencesSettingsGuard globalPreferences;
+    StartupPreferencesGuard startupPreferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::ThemePreference::Light), 0);
+    QVERIFY(Platform::SettingsManagerAutomaticUpdatePreferencesPort().write(
+        {.automaticChecksEnabled = false}));
+
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")));
+    QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString workspacePath = temporaryDirectory.filePath(
+        QStringLiteral("preferences-language-classes.tps"));
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+        workspacePath, QStringLiteral("representative_startup.sql"),
+        &fixtureError), qPrintable(fixtureError));
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("preferences-language-test"), workspacePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application, {}, silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        QStringList{QStringLiteral("en-US")}, std::move(seams));
+    QVERIFY(bootstrap.start().succeeded());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    QVERIFY(shell->pageHost().activatePage(QStringLiteral("classes")));
+    auto* const page = dynamic_cast<Ui::ClassesNavigatorPage*>(
+        shell->pageHost().pageInstance(QStringLiteral("classes")));
+    QVERIFY(page);
+    QVERIFY(page->isActive());
+    QVERIFY(page->isVisible());
+
+    QLabel* const pageTitle = page->findChild<QLabel*>(
+        QStringLiteral("classesNavigatorTitle"));
+    QVERIFY(pageTitle);
+    QLabel* scheduleControlLabel = nullptr;
+    for (QLabel* const label : page->findChildren<QLabel*>())
+    {
+        if (label->property("translationSource").toString()
+            == QStringLiteral("Schedule"))
+        {
+            scheduleControlLabel = label;
+            break;
+        }
+    }
+    QVERIFY(scheduleControlLabel);
+    QVERIFY(scheduleControlLabel->isVisible());
+
+    QTreeWidget* const navigationTree = shell->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree"));
+    QVERIFY(navigationTree);
+    const auto sidebarClassesText = [navigationTree]() {
+        QTreeWidgetItemIterator item(navigationTree);
+        while (*item)
+        {
+            if ((*item)->data(0, Qt::UserRole + 1).toString()
+                == QStringLiteral("classes"))
+            {
+                return (*item)->text(0);
+            }
+            ++item;
+        }
+        return QString{};
+    };
+    QVERIFY(navigationTree->isVisible());
+    QCOMPARE(sidebarClassesText(), QStringLiteral("Classes"));
+    QCOMPARE(pageTitle->text(), QStringLiteral("Classes"));
+    QCOMPARE(scheduleControlLabel->text(), QStringLiteral("Schedule"));
+
+    QAction* const preferencesAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextPreferences"));
+    QVERIFY(preferencesAction);
+    bool liveLanguageSwitchesCorrectly = false;
+    QString liveSwitchDiagnostic;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog
+            || dialog->objectName() != QStringLiteral("nextPreferencesDialog"))
+        {
+            liveSwitchDiagnostic = QStringLiteral(
+                "The production Preferences dialog was not opened.");
+            if (dialog) dialog->reject();
+            return;
+        }
+        auto* const language = dialog->findChild<QComboBox*>(
+            QStringLiteral("preferencesLanguage"));
+        if (!language)
+        {
+            liveSwitchDiagnostic = QStringLiteral(
+                "The Preferences language control was not found.");
+            dialog->reject();
+            return;
+        }
+
+        const int englishIndex = language->findData(
+            static_cast<int>(Application::LanguagePreference::English));
+        const int koreanIndex = language->findData(
+            static_cast<int>(Application::LanguagePreference::Korean));
+        if (englishIndex < 0 || koreanIndex < 0)
+        {
+            liveSwitchDiagnostic = QStringLiteral(
+                "The English and Korean choices were not available.");
+            dialog->reject();
+            return;
+        }
+        const bool openedInEnglish = language->currentData().toInt()
+            == static_cast<int>(Application::LanguagePreference::English);
+
+        language->setCurrentIndex(koreanIndex);
+        QCoreApplication::processEvents();
+        QTreeWidgetItem* koreanSidebarItem = nullptr;
+        QTreeWidgetItemIterator koreanItem(navigationTree);
+        while (*koreanItem)
+        {
+            if ((*koreanItem)->data(0, Qt::UserRole + 1).toString()
+                == QStringLiteral("classes"))
+            {
+                koreanSidebarItem = *koreanItem;
+                break;
+            }
+            ++koreanItem;
+        }
+        const QString koreanSidebarText = koreanSidebarItem
+            ? koreanSidebarItem->text(0) : QString{};
+        const bool koreanSidebarVisible = koreanSidebarItem
+            && !koreanSidebarItem->isHidden();
+        const QString koreanPageTitleText = pageTitle->text();
+        const QString koreanControlLabelText = scheduleControlLabel->text();
+        const bool koreanTexts = language->currentData().toInt()
+                == static_cast<int>(Application::LanguagePreference::Korean)
+            && koreanSidebarVisible
+            && koreanSidebarText == QStringLiteral("수업")
+            && pageTitle->isVisible()
+            && koreanPageTitleText == QStringLiteral("수업")
+            && scheduleControlLabel->isVisible()
+            && koreanControlLabelText == QStringLiteral("일정");
+
+        language->setCurrentIndex(englishIndex);
+        QCoreApplication::processEvents();
+        const QString englishSidebarText = sidebarClassesText();
+        const QString englishPageTitleText = pageTitle->text();
+        const QString englishControlLabelText = scheduleControlLabel->text();
+        const bool englishTextsRestored = language->currentData().toInt()
+                == static_cast<int>(Application::LanguagePreference::English)
+            && englishSidebarText == QStringLiteral("Classes")
+            && pageTitle->isVisible()
+            && englishPageTitleText == QStringLiteral("Classes")
+            && scheduleControlLabel->isVisible()
+            && englishControlLabelText == QStringLiteral("Schedule");
+
+        liveLanguageSwitchesCorrectly = openedInEnglish && koreanTexts
+            && englishTextsRestored;
+        if (!liveLanguageSwitchesCorrectly)
+        {
+            liveSwitchDiagnostic = QStringLiteral(
+                "openedEnglish=%1 korean=%2 [sidebar=%3, title=%4, control=%5] "
+                "englishRestored=%6 [sidebar=%7, title=%8, control=%9]")
+                .arg(openedInEnglish)
+                .arg(koreanTexts)
+                .arg(koreanSidebarText)
+                .arg(koreanPageTitleText)
+                .arg(koreanControlLabelText)
+                .arg(englishTextsRestored)
+                .arg(englishSidebarText)
+                .arg(englishPageTitleText)
+                .arg(englishControlLabelText);
+        }
+        dialog->accept();
+    });
+    preferencesAction->trigger();
+    QVERIFY2(liveLanguageSwitchesCorrectly,
+        qPrintable(liveSwitchDiagnostic));
+
+    Platform::SettingsManagerPreferencesPort storedPreferences;
+    Application::PreferencesModel reloaded(storedPreferences, storedPreferences);
+    QVERIFY(reloaded.load());
+    QCOMPARE(reloaded.snapshot().languagePreference(),
+        Application::LanguagePreference::English);
+
+    bool reopenedLanguagePersisted = false;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog
+            || dialog->objectName() != QStringLiteral("nextPreferencesDialog"))
+        {
+            if (dialog) dialog->reject();
+            return;
+        }
+        auto* const language = dialog->findChild<QComboBox*>(
+            QStringLiteral("preferencesLanguage"));
+        reopenedLanguagePersisted = language
+            && language->currentData().toInt()
+                == static_cast<int>(Application::LanguagePreference::English);
+        dialog->reject();
+    });
+    preferencesAction->trigger();
+    QVERIFY(reopenedLanguagePersisted);
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::preferencesMenuRouteVisualCapture_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<int>("storedLanguage");
+    QTest::addColumn<QString>("theme");
+    QTest::addColumn<int>("storedTheme");
+    QTest::addColumn<QString>("captureName");
+    QTest::newRow("english-light")
+        << QStringLiteral("en_US") << 1 << QStringLiteral("light") << 1
+        << QStringLiteral("english-light.png");
+    QTest::newRow("english-dark")
+        << QStringLiteral("en_US") << 1 << QStringLiteral("dark") << 0
+        << QStringLiteral("english-dark.png");
+    QTest::newRow("korean-light")
+        << QStringLiteral("ko_KR") << 5 << QStringLiteral("light") << 1
+        << QStringLiteral("korean-light.png");
+    QTest::newRow("korean-dark")
+        << QStringLiteral("ko_KR") << 5 << QStringLiteral("dark") << 0
+        << QStringLiteral("korean-dark.png");
+}
+
+void ApplicationBootstrapTests::preferencesMenuRouteVisualCapture()
+{
+    QFETCH(QString, locale);
+    QFETCH(int, storedLanguage);
+    QFETCH(QString, theme);
+    QFETCH(int, storedTheme);
+    QFETCH(QString, captureName);
+
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    GlobalPreferencesSettingsGuard globalPreferences;
+    StartupPreferencesGuard startupPreferences(storedLanguage, storedTheme, 0);
+    QVERIFY(Platform::SettingsManagerAutomaticUpdatePreferencesPort().write(
+        {.automaticChecksEnabled = false}));
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(locale, theme));
+    if (locale != QStringLiteral("ko_KR"))
+    {
+        QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
+    }
+    if (theme != QStringLiteral("dark"))
+    {
+        QVERIFY(resources.addTheme(QStringLiteral("dark")));
+    }
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("preferences-capture")};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application, {}, silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        QStringList{QStringLiteral("en-US")}, std::move(seams));
+    QVERIFY(bootstrap.start().succeeded());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    QAction* const action = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextPreferences"));
+    QVERIFY(action);
+    QCOMPARE(action->text(), locale == QStringLiteral("ko_KR")
+        ? QStringLiteral("환경 설정…") : QStringLiteral("Preferences…"));
+
+    const QString outputDirectory = qEnvironmentVariable(
+        "CLASSMNGR_NEXT_PREFERENCES_CAPTURE_DIR",
+        QDir::current().filePath(QStringLiteral("preferences_visual_captures")));
+    QVERIFY(QDir().mkpath(outputDirectory));
+    const QString capturePath = QDir(outputDirectory).filePath(captureName);
+    bool captured = false;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog || dialog->objectName() != QStringLiteral("nextPreferencesDialog"))
+        {
+            return;
+        }
+        if (auto* const tabs = dialog->findChild<QTabWidget*>(
+                QStringLiteral("preferencesTabs")))
+        {
+            tabs->setCurrentIndex(1);
+        }
+        dialog->setFixedSize(680, 620);
+        dialog->show();
+        QCoreApplication::processEvents();
+        captured = dialog->grab().save(capturePath, "PNG");
+        dialog->reject();
+    });
+    action->trigger();
+    QVERIFY2(captured, qPrintable(QStringLiteral("could not capture %1")
+        .arg(capturePath)));
+    QVERIFY(QFileInfo(capturePath).size() > 0);
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
 }
 
 void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage_data()

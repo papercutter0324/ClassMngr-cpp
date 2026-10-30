@@ -10261,6 +10261,7 @@ Version: %2</source>
     <name>NextNavigation</name>
     <message><source>My Workspace</source><translation>내 작업 공간</translation></message>
     <message><source>My Classes</source><translation>내 수업</translation></message>
+    <message><source>Schedule</source><translation>일정</translation></message>
     <message><source>Classes</source><translation>수업</translation></message>
     <message><source>Class Transfer</source><translation>수업 전송</translation></message>
     <message><source>Testing Classes</source><translation>테스트 수업</translation></message>
@@ -10297,9 +10298,61 @@ Version: %2</source>
     <message><source>Back</source><translation>뒤로</translation></message>
     <message><source>Forward</source><translation>앞으로</translation></message>
     <message><source>ClassMngr Next</source><translation>ClassMngr Next</translation></message>
+    <message><source>File</source><translation>파일</translation></message>
+    <message><source>Edit</source><translation>편집</translation></message>
+    <message><source>Preferences…</source><translation>환경 설정…</translation></message>
+    <message><source>New Teacher Profile…</source><translation>새 교사 프로필…</translation></message>
+    <message><source>Open Teacher Profile…</source><translation>교사 프로필 열기…</translation></message>
+    <message><source>Recover Interrupted Teacher Profile…</source><translation>중단된 교사 프로필 복구…</translation></message>
+    <message><source>Recent Files</source><translation>최근 파일</translation></message>
+    <message><source>Save</source><translation>저장</translation></message>
+    <message><source>Save As…</source><translation>다른 이름으로 저장…</translation></message>
+    <message><source>Export Teacher Profile…</source><translation>교사 프로필 내보내기…</translation></message>
+    <message><source>Close Teacher Profile</source><translation>교사 프로필 닫기</translation></message>
     <message><source>Teachers</source><translation>교사</translation></message>
     <message><source>Import Teachers…</source><translation>교사 가져오기…</translation></message>
     <message><source>Upcoming Birthdays…</source><translation>다가오는 생일…</translation></message>
+</context>
+<context>
+    <name>PreferencesDialog</name>
+    <message><source>Preferences</source><translation>환경 설정</translation></message>
+    <message><source>General</source><translation>일반</translation></message>
+    <message><source>Appearance</source><translation>모양</translation></message>
+    <message><source>Documents</source><translation>문서</translation></message>
+    <message><source>AI Comments</source><translation>AI 댓글</translation></message>
+    <message><source>Save Mode</source><translation>저장 방식</translation></message>
+    <message><source>Updates</source><translation>업데이트</translation></message>
+    <message><source>Sidebar</source><translation>사이드바</translation></message>
+    <message><source>Excel Imports</source><translation>Excel 가져오기</translation></message>
+    <message><source>Save Mode:</source><translation>저장 방식:</translation></message>
+    <message><source>Mode:</source><translation>방식:</translation></message>
+    <message><source>Workbook Timeout:</source><translation>통합 문서 시간 제한:</translation></message>
+    <message><source>Theme:</source><translation>테마:</translation></message>
+    <message><source>Language:</source><translation>언어:</translation></message>
+    <message><source>Font Size:</source><translation>글꼴 크기:</translation></message>
+    <message><source>PDF Page Spacing:</source><translation>PDF 페이지 간격:</translation></message>
+    <message><source>Background Color:</source><translation>배경색:</translation></message>
+    <message><source>Preferred AI Website:</source><translation>선호하는 AI 웹사이트:</translation></message>
+    <message><source>Comment Voice:</source><translation>댓글 어조:</translation></message>
+    <message><source>30 Seconds</source><translation>30초</translation></message>
+    <message><source>1 Minute</source><translation>1분</translation></message>
+    <message><source>2 Minutes</source><translation>2분</translation></message>
+    <message><source>5 Minutes</source><translation>5분</translation></message>
+    <message><source>Custom Website…</source><translation>사용자 지정 웹사이트…</translation></message>
+    <message><source>Custom AI Website</source><translation>사용자 지정 AI 웹사이트</translation></message>
+    <message><source>HTTPS URL:</source><translation>HTTPS 주소:</translation></message>
+    <message><source>Custom website: %1</source><translation>사용자 지정 웹사이트: %1</translation></message>
+    <message><source>Close</source><translation>닫기</translation></message>
+    <message><source>%1: %2</source><translation>%1: %2</translation></message>
+    <message><source>Unable to Load Preferences</source><translation>환경 설정을 불러올 수 없음</translation></message>
+    <message><source>Theme</source><translation>테마</translation></message>
+    <message><source>Language</source><translation>언어</translation></message>
+    <message><source>Font Size</source><translation>글꼴 크기</translation></message>
+    <message><source>PowerPoint Notice</source><translation>PowerPoint 안내</translation></message>
+    <message><source>Automatic Updates</source><translation>업데이트 자동 확인</translation></message>
+    <message><source>Sidebar Tooltips</source><translation>사이드바 툴팁</translation></message>
+    <message><source>Sidebar Animation</source><translation>사이드바 애니메이션</translation></message>
+    <message><source>Workbook Timeout</source><translation>통합 문서 시간 제한</translation></message>
 </context>
 <context>
     <name>NextPlaceholder</name>

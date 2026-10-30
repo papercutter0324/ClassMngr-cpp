@@ -7,6 +7,7 @@ add_executable(ClassMngrNextDocumentCatalogNavigationTests
     src/next/ui/application_shell.cpp
     src/next/ui/document_catalog_navigation.cpp
     src/next/ui/navigation_model.cpp
+    src/next/ui/preferences_dialog.cpp
     src/next/ui/page_host.cpp
     src/next/ui/qt_notification_presenter.cpp
 )
@@ -7868,6 +7869,8 @@ add_executable(ClassMngrNextSchedulePageTests
     src/next/ui/schedule_page_slot_policy_bridge.cpp
     src/next/ui/testing_classes_manager_page.cpp
     src/next/ui/testing_classes_model.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
@@ -7892,6 +7895,7 @@ target_link_libraries(ClassMngrNextSchedulePageTests
         ClassMngrRuntime
         ClassMngrNext::Application
         ClassMngrNext::Resources
+        ClassMngrNextRosterOutput
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore
         ClassMngrScheduleImportParser
@@ -8077,6 +8081,8 @@ add_executable(ClassMngrNextCalendarPageTests
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
+    $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
+    $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
 )
 target_compile_features(ClassMngrNextCalendarPageTests PRIVATE cxx_std_23)
 target_include_directories(ClassMngrNextCalendarPageTests
@@ -8096,6 +8102,7 @@ target_link_libraries(ClassMngrNextCalendarPageTests
         ClassMngrNextCalendarUi
         ClassMngrNext::Application
         ClassMngrNext::Resources
+        ClassMngrSubPrepShared
         ClassMngrNextWorkspace
         ClassMngrNextWorkspaceDomain
         ClassMngrTeacherImportParser

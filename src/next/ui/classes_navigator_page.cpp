@@ -258,6 +258,15 @@ void ClassesNavigatorPage::onSuspending() noexcept
     updateControls();
 }
 
+void ClassesNavigatorPage::setSaveMode(const Application::SaveMode mode)
+{
+    m_actions.saveMode = mode;
+    if (m_selectedClassEditor)
+    {
+        m_selectedClassEditor->setSaveMode(mode);
+    }
+}
+
 bool ClassesNavigatorPage::hasUnsavedChanges() const noexcept
 {
     return m_selectedClassEditor

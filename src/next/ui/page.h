@@ -2,6 +2,7 @@
 
 #include "next/resources/resource_loader.h"
 #include "next/application/preferences_model.h"
+#include "next/application/save_mode_preferences.h"
 #include "next/resources/resource_scope.h"
 
 #include <QWidget>
@@ -132,6 +133,12 @@ public:
     // clear feature-scoped handles here while retaining page-scoped handles
     // until this page is released.
     virtual void onSuspending() noexcept
+    {
+    }
+
+    // App-wide save mode is applied to retained page instances when the
+    // preference changes. Pages without autosave behavior keep the default.
+    virtual void setSaveMode(Application::SaveMode)
     {
     }
 

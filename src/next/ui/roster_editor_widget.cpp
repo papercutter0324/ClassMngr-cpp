@@ -489,6 +489,20 @@ void RosterEditorWidget::clear()
     updateActions();
 }
 
+void RosterEditorWidget::setSaveMode(const Application::SaveMode mode)
+{
+    m_actions.saveMode = mode;
+    if (mode == Application::SaveMode::Automatic && hasUnsavedChanges() && m_loaded)
+    {
+        m_autosaveTimer->start();
+    }
+    else
+    {
+        m_autosaveTimer->stop();
+    }
+    updateActions();
+}
+
 void RosterEditorWidget::finishEditing()
 {
     if (m_keyboard)

@@ -271,6 +271,10 @@ PageHostResult<void> PageHost::activatePage(const QString& pageKey)
                 ));
         }
         targetPage = newlyCreatedPage.get();
+        if (m_saveMode)
+        {
+            targetPage->setSaveMode(*m_saveMode);
+        }
         setLifecycleState(
             *normalizedKey,
             entry,
@@ -494,6 +498,18 @@ std::vector<PageDescriptor> PageHost::pageDescriptors() const
         descriptors.push_back(entry->descriptor);
     }
     return descriptors;
+}
+
+void PageHost::applySaveMode(const Application::SaveMode mode)
+{
+    m_saveMode = mode;
+    for (auto entry = m_pages.begin(); entry != m_pages.end(); ++entry)
+    {
+        if (entry->page)
+        {
+            entry->page->setSaveMode(mode);
+        }
+    }
 }
 
 std::optional<QString> PageHost::normalizedPageKey(const QString& pageKey)

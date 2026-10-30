@@ -72,6 +72,7 @@ public:
     void finishEditing();
     void openRosterOutput();
     void clear();
+    void setSaveMode(Application::SaveMode mode);
     [[nodiscard]] bool saveChanges(bool showValidationFeedback = true);
     [[nodiscard]] bool discardChanges();
     void setDirtyChangedCallback(std::function<void(bool)> callback);

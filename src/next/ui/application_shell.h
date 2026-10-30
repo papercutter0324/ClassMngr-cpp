@@ -20,6 +20,8 @@
 #include <vector>
 
 class QCloseEvent;
+class QEvent;
+class QResizeEvent;
 class QTreeWidget;
 class QPushButton;
 class QMenu;
@@ -73,6 +75,7 @@ public:
         Application::PreferencesModel& preferences,
         QWidget* parent = nullptr
         );
+    ~ApplicationShell() override;
 
     void setCloseHandler(CloseHandler handler);
     void setNewTeacherProfileHandler(std::function<void()> handler);
@@ -86,6 +89,7 @@ public:
     void setImportTeachersHandler(std::function<void()> handler);
     void setUpcomingBirthdaysHandler(std::function<void()> handler);
     void setCloseWorkspaceHandler(std::function<void()> handler);
+    void setPreferencesHandler(std::function<void()> handler);
     void setRecentWorkspaceMenuHandlers(
         RecentWorkspaceHistoryLoader historyLoader,
         RecentWorkspaceOpenHandler openHandler,
@@ -144,6 +148,8 @@ public:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    void changeEvent(QEvent* event) override;
+    void resizeEvent(QResizeEvent* event) override;
 
 private:
     void synchronizeWorkspaceActions(
@@ -155,6 +161,11 @@ private:
     void synchronizeNavigationSelection();
     void synchronizeHistoryControls();
     void refreshRecentWorkspaceMenu();
+    void retranslateUi();
+    void applyPreferences(
+        const Application::UserPreferencesSnapshot& snapshot
+        );
+    void updateNavigationTooltips(bool enabled);
     [[nodiscard]] std::optional<QIcon> navigationIconFor(
         const NavigationPageMetadata& metadata
         );
@@ -174,6 +185,10 @@ private:
     QAction* m_importTeachersAction = nullptr;
     QAction* m_upcomingBirthdaysAction = nullptr;
     QAction* m_closeWorkspaceAction = nullptr;
+    QAction* m_preferencesAction = nullptr;
+    QMenu* m_fileMenu = nullptr;
+    QMenu* m_editMenu = nullptr;
+    QMenu* m_teachersMenu = nullptr;
     QMenu* m_recentWorkspaceMenu = nullptr;
     std::optional<NavigationModel> m_navigationModel;
     std::optional<Application::DocumentCatalogProjection>
@@ -198,11 +213,15 @@ private:
     std::function<void()> m_importTeachersHandler;
     std::function<void()> m_upcomingBirthdaysHandler;
     std::function<void()> m_closeWorkspaceHandler;
+    std::function<void()> m_preferencesHandler;
     RecentWorkspaceHistoryLoader m_recentWorkspaceHistoryLoader;
     RecentWorkspaceOpenHandler m_recentWorkspaceOpenHandler;
     std::function<void()> m_clearRecentWorkspaceHistoryHandler;
     bool m_workspaceIsOpen = false;
     QtNotificationPresenter m_notificationPresenter;
+    Application::PreferencesModel* m_preferences = nullptr;
+    std::optional<Application::PreferencesModel::ObserverId>
+        m_preferencesObserverId;
 };
 
 }  // namespace ClassMngr::Next::Ui

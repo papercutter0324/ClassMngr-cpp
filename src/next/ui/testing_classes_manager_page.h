@@ -106,6 +106,7 @@ public:
 
     [[nodiscard]] PageOperationResult<void> onActivating() override;
     void onSuspending() noexcept override;
+    void setSaveMode(Application::SaveMode mode) override;
     [[nodiscard]] bool hasUnsavedChanges() const noexcept override;
     [[nodiscard]] PageOperationResult<void> saveChanges() override;
     [[nodiscard]] PageOperationResult<void> discardChanges() override;

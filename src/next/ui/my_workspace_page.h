@@ -69,7 +69,7 @@ public:
     void refreshForWorkspaceIdentity();
     void clearForClosedWorkspace();
     void reloadPersonalDetails();
-    void setSaveMode(Application::SaveMode mode);
+    void setSaveMode(Application::SaveMode mode) override;
 
 protected:
     bool eventFilter(QObject* watched, QEvent* event) override;

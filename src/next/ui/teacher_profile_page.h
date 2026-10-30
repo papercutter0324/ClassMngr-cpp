@@ -62,7 +62,7 @@ public:
     [[nodiscard]] PageOperationResult<void> discardChanges() override;
     void onSuspending() noexcept override;
 
-    void setSaveMode(Application::SaveMode mode);
+    void setSaveMode(Application::SaveMode mode) override;
     void retranslateUi();
 
 protected:

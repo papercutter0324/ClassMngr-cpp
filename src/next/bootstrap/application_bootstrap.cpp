@@ -36,6 +36,8 @@
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
 #include "next/platform/settings_manager_ai_comment_voice_preferences_port.h"
+#include "next/platform/settings_manager_document_page_spacing_preferences_port.h"
+#include "next/platform/settings_manager_document_viewer_background_preferences_port.h"
 #include "next/platform/workspace_store_class_analytics_actions.h"
 #include "next/platform/workspace_store_testing_classes_actions.h"
 #include "next/platform/workspace_store_class_transfer_actions.h"
@@ -74,6 +76,7 @@
 #include "next/ui/qt_file_dialog_presenter.h"
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
+#include "next/ui/preferences_dialog.h"
 #include "next/ui/teacher_profile_page.h"
 #include "next/ui/upcoming_birthdays_dialog.h"
 #include "next/ui/upcoming_birthdays_flow.h"
@@ -320,6 +323,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("classes")),
         .label = navigationLabel("Classes"),
+        .labelTranslationSource = QStringLiteral("Classes"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -347,6 +351,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("speaking_evaluation")),
         .label = navigationLabel("Speaking Evaluation"),
+        .labelTranslationSource = QStringLiteral("Speaking Evaluation"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -372,6 +377,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("testing_classes")),
         .label = navigationLabel("Testing Classes"),
+        .labelTranslationSource = QStringLiteral("Testing Classes"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -396,6 +402,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("class_transfer")),
         .label = navigationLabel("Class Transfer"),
+        .labelTranslationSource = QStringLiteral("Class Transfer"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -420,6 +427,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("my_workspace")),
         .label = navigationLabel("My Workspace"),
+        .labelTranslationSource = QStringLiteral("My Workspace"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -446,6 +454,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("schedule")),
         .label = navigationLabel("Schedule"),
+        .labelTranslationSource = QStringLiteral("Schedule"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -470,6 +479,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("calendar")),
         .label = navigationLabel("Calendar"),
+        .labelTranslationSource = QStringLiteral("Calendar"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -494,6 +504,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("my_classes")),
         .label = navigationLabel("My Classes"),
+        .labelTranslationSource = QStringLiteral("My Classes"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -518,6 +529,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("sub_prep")),
         .label = navigationLabel("Sub Prep"),
+        .labelTranslationSource = QStringLiteral("Sub Prep"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -538,6 +550,7 @@ loadWorkspaceCampusChoices(
 [[nodiscard]] Ui::PageDescriptor sharedStaffDirectoryPageDescriptor(
     const QString& id,
     const QString& label,
+    const QString& labelTranslationSource,
     const Ui::StaffDirectoryKind kind,
     std::function<Ui::SharedStaffDirectoryPageActions()> actionsFactory
     )
@@ -545,6 +558,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(id),
         .label = label,
+        .labelTranslationSource = labelTranslationSource,
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [kind, actionsFactory = std::move(actionsFactory)](
@@ -572,6 +586,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("initial_setup")),
         .label = navigationLabel("Initial Setup"),
+        .labelTranslationSource = QStringLiteral("Initial Setup"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -596,6 +611,7 @@ loadWorkspaceCampusChoices(
     return Ui::PageDescriptor{
         .id = pageId(QStringLiteral("teacher_profile")),
         .label = navigationLabel("Teacher Profile"),
+        .labelTranslationSource = QStringLiteral("Teacher Profile"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
         .factory = [actionsFactory = std::move(actionsFactory)](
@@ -637,7 +653,8 @@ loadWorkspaceCampusChoices(
             navigationLabel("Co-Teachers"),
             {},
             workspace,
-            true
+            true,
+            QStringLiteral("Co-Teachers")
             ),
         NavigationNode::group(
             QStringLiteral("campus_staff"),
@@ -654,7 +671,8 @@ loadWorkspaceCampusChoices(
                             )
                     },
                     workspace,
-                    true
+                    true,
+                    QStringLiteral("Korean Teachers")
                     ),
                 NavigationNode::page(
                     pageId(QStringLiteral("native_english_teachers")),
@@ -662,40 +680,57 @@ loadWorkspaceCampusChoices(
                     ),
                 NavigationNode::page(pageId(QStringLiteral("gs_team")), workspace)
             },
-            workspace
+            workspace,
+            false,
+            QStringLiteral("Campus Staff")
             ),
         NavigationNode::group(
             QStringLiteral("useful_links"),
             navigationLabel("Useful Links"),
             {
                 NavigationNode::placeholder(
-                    QStringLiteral("useful_dropbox"), navigationLabel("Dropbox")
+                    QStringLiteral("useful_dropbox"), navigationLabel("Dropbox"),
+                    NavigationWorkspaceAvailability::Always,
+                    QStringLiteral("Dropbox")
                     ),
                 NavigationNode::placeholder(
                     QStringLiteral("useful_vacation_calendar"),
-                    navigationLabel("Vacation Calendar")
+                    navigationLabel("Vacation Calendar"),
+                    NavigationWorkspaceAvailability::Always,
+                    QStringLiteral("Vacation Calendar")
                     ),
                 NavigationNode::placeholder(
                     QStringLiteral("useful_yearly_calendar"),
-                    navigationLabel("Yearly Calendar")
+                    navigationLabel("Yearly Calendar"),
+                    NavigationWorkspaceAvailability::Always,
+                    QStringLiteral("Yearly Calendar")
                     ),
                 NavigationNode::placeholder(
                     QStringLiteral("useful_training_website"),
-                    navigationLabel("Training Website")
+                    navigationLabel("Training Website"),
+                    NavigationWorkspaceAvailability::Always,
+                    QStringLiteral("Training Website")
                     ),
                 NavigationNode::placeholder(
-                    QStringLiteral("useful_net_website"), navigationLabel("NET Website")
+                    QStringLiteral("useful_net_website"), navigationLabel("NET Website"),
+                    NavigationWorkspaceAvailability::Always,
+                    QStringLiteral("NET Website")
                     ),
                 NavigationNode::placeholder(
-                    QStringLiteral("useful_lms_website"), navigationLabel("LMS Website")
+                    QStringLiteral("useful_lms_website"), navigationLabel("LMS Website"),
+                    NavigationWorkspaceAvailability::Always,
+                    QStringLiteral("LMS Website")
                     ),
                 NavigationNode::placeholder(
                     QStringLiteral("useful_highlights_library"),
-                    navigationLabel("Highlights Library")
+                    navigationLabel("Highlights Library"),
+                    NavigationWorkspaceAvailability::Always,
+                    QStringLiteral("Highlights Library")
                     )
             },
             NavigationWorkspaceAvailability::Always,
-            false
+            false,
+            QStringLiteral("Useful Links")
             ),
         NavigationNode::group(
             QStringLiteral("campus_info"),
@@ -706,7 +741,10 @@ loadWorkspaceCampusChoices(
                 NavigationNode::page(pageId(QStringLiteral("campus_address"))),
                 NavigationNode::page(pageId(QStringLiteral("campus_housing"))),
                 NavigationNode::page(pageId(QStringLiteral("campus_map")))
-            }
+            },
+            NavigationWorkspaceAvailability::Always,
+            false,
+            QStringLiteral("Campus Directory")
             ),
         NavigationNode::page(pageId(QStringLiteral("initial_setup")))
     };
@@ -1261,6 +1299,66 @@ Application::StartupResult ApplicationBootstrap::start()
         Ui::bindDocumentViewerSelection(*m_shell);
         m_shell->setCloseHandler([this] {
             return requestWindowClose();
+        });
+        m_shell->setPreferencesHandler([this] {
+            if (!m_coreServices || !m_shell)
+            {
+                return;
+            }
+            Platform::SettingsManagerSaveModePreferencesPort saveMode;
+            Platform::SettingsManagerDocumentPageSpacingPreferencesPort documentSpacing;
+            Platform::SettingsManagerDocumentViewerBackgroundPreferencesPort
+                documentBackground;
+            Platform::SettingsManagerAiCommentProviderPreferencesPort aiProvider;
+            Platform::SettingsManagerAiCommentVoicePreferencesPort aiVoice;
+            Platform::SettingsManagerAiCommentCustomWebsitePort customWebsite;
+            Ui::PreferencesDialog dialog(
+                m_coreServices->preferences,
+                {
+                    .saveMode = saveMode,
+                    .documentSpacing = documentSpacing,
+                    .documentBackground = documentBackground,
+                    .aiProvider = aiProvider,
+                    .aiVoice = aiVoice,
+                    .customWebsite = customWebsite
+                },
+                {
+                    .applyTheme = [this](const Application::ThemePreference preference) {
+                        if (!m_coreServices || !m_coreServices->themePresenter)
+                        {
+                            return Domain::Result<void>::failure({
+                                .code = Domain::ErrorCode::Technical,
+                                .message = "The theme presenter is unavailable.",
+                                .recoverable = false
+                            });
+                        }
+                        return m_coreServices->themePresenter->changePreference(preference);
+                    },
+                    .applyLanguage = [this](const Application::LanguagePreference preference) {
+                        return changeLanguagePreference(preference);
+                    },
+                    .applyFontSize = [this](const Application::FontSize size) {
+                        if (!m_coreServices || !m_coreServices->fontSizePresenter)
+                        {
+                            return Domain::Result<void>::failure({
+                                .code = Domain::ErrorCode::Technical,
+                                .message = "The font-size presenter is unavailable.",
+                                .recoverable = false
+                            });
+                        }
+                        return m_coreServices->fontSizePresenter->changePreference(
+                            size, m_coreServices->preferences);
+                    },
+                    .saveModeChanged = [this](const Application::SaveMode mode) {
+                        if (m_shell)
+                        {
+                            m_shell->pageHost().applySaveMode(mode);
+                        }
+                    }
+                },
+                m_shell.get()
+                );
+            dialog.exec();
         });
         m_shell->setNewTeacherProfileHandler([this] {
             createNewTeacherProfile();
@@ -2634,6 +2732,7 @@ Application::StartupResult ApplicationBootstrap::start()
                     sharedStaffDirectoryPageDescriptor(
                         QStringLiteral("native_english_teachers"),
                         navigationLabel("Native English Teachers"),
+                        QStringLiteral("Native English Teachers"),
                         Ui::StaffDirectoryKind::NativeEnglishTeachers,
                         staffActions));
             if (!nativeRegistration)
@@ -2647,6 +2746,7 @@ Application::StartupResult ApplicationBootstrap::start()
                         sharedStaffDirectoryPageDescriptor(
                             QStringLiteral("gs_team"),
                             navigationLabel("GS Team"),
+                            QStringLiteral("GS Team"),
                             Ui::StaffDirectoryKind::GsTeam,
                             staffActions));
                 if (!gsRegistration)
@@ -2937,6 +3037,135 @@ Application::StartupStageOutcome ApplicationBootstrap::loadStartupLanguage()
     m_coreServices->translation.emplace(std::move(*translation));
     m_coreServices->loadedLocale = locale;
     return Application::StartupStageOutcome::Completed;
+}
+
+Domain::Result<void> ApplicationBootstrap::changeLanguagePreference(
+    const Application::LanguagePreference preference
+    )
+{
+    if (!m_coreServices || !m_coreServices->fontSizePresenter)
+    {
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Language preferences are unavailable.",
+            .recoverable = false
+        });
+    }
+
+    Application::UserPreferencesState candidate = m_coreServices->preferences.state();
+    const auto validated = candidate.setLanguagePreference(preference);
+    if (!validated)
+    {
+        return validated;
+    }
+
+    const QStringList systemLanguages = m_systemUiLanguages.has_value()
+        ? *m_systemUiLanguages
+        : QLocale::system().uiLanguages();
+    QString locale;
+    switch (preference)
+    {
+    case Application::LanguagePreference::English:
+        locale = englishLocaleFor(systemLanguages);
+        break;
+    case Application::LanguagePreference::Korean:
+        locale = QStringLiteral("ko_KR");
+        break;
+    case Application::LanguagePreference::SystemDefault:
+        locale = supportedSystemLocale(systemLanguages);
+        break;
+    default:
+        return Domain::Result<void>::failure({
+            .code = Domain::ErrorCode::InvalidInput,
+            .message = "Language preference is invalid.",
+            .recoverable = false
+        });
+    }
+
+    std::optional<Resources::ScopedResource<Resources::ResourceTranslation>>
+        candidateTranslation;
+    if (!locale.isEmpty())
+    {
+        const auto request = startupRequest(
+            m_coreServices->startupResourceScope,
+            QStringLiteral("resource:assets/translations/ClassMngr_%1.ts").arg(locale)
+            );
+        if (!request)
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message = request.error().message.toStdString(),
+                .recoverable = false
+            });
+        }
+        auto translation = m_coreServices->resourceLoader.loadTranslation(
+            *request, m_application);
+        if (!translation)
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = translation.error().message.toStdString(),
+                .recoverable = true
+            });
+        }
+        candidateTranslation.emplace(std::move(*translation));
+    }
+
+    const Application::UserPreferencesSnapshot previous =
+        m_coreServices->preferences.snapshot();
+    const QString previousLocale = m_coreServices->loadedLocale;
+    const QString interFamily = m_coreServices->interFont
+        ? m_coreServices->interFont->get().familyNames().value(0)
+        : QStringLiteral("Inter");
+    const QString pretendardFamily = m_coreServices->pretendardFont
+        ? m_coreServices->pretendardFont->get().familyNames().value(0)
+        : QStringLiteral("Pretendard");
+    m_coreServices->fontSizePresenter->applyStartupPreference(
+        candidate.snapshot().fontSize(), locale, interFamily, pretendardFamily);
+
+    try
+    {
+        const auto saved = m_coreServices->preferences.applyAndPersist(candidate);
+        if (!saved)
+        {
+            m_coreServices->fontSizePresenter->applyStartupPreference(
+                previous.fontSize(), previousLocale, interFamily, pretendardFamily);
+            return Domain::Result<void>::failure(saved.error());
+        }
+    }
+    catch (...)
+    {
+        const bool committed = !m_coreServices->preferences.isDirty()
+            && m_coreServices->preferences.state() == candidate;
+        if (!committed)
+        {
+            m_coreServices->fontSizePresenter->applyStartupPreference(
+                previous.fontSize(), previousLocale, interFamily, pretendardFamily);
+            throw;
+        }
+    }
+
+    if (candidateTranslation)
+    {
+        m_coreServices->translation.emplace(std::move(*candidateTranslation));
+    }
+    else
+    {
+        m_coreServices->translation.reset();
+    }
+    m_coreServices->loadedLocale = locale;
+
+    if (m_shell)
+    {
+        const Domain::Result<void> refreshed =
+            m_shell->refreshDocumentCatalogProjection(locale);
+        if (!refreshed)
+        {
+            qWarning().noquote() << "ClassMngrNext could not refresh document navigation after a language change:"
+                                 << QString::fromStdString(refreshed.error().message);
+        }
+    }
+    return Domain::Result<void>::success();
 }
 
 bool ApplicationBootstrap::loadStartupTheme()

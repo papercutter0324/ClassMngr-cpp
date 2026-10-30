@@ -35,6 +35,9 @@ struct NavigationNode final
     Kind kind = Kind::Group;
     QString id;
     QString label;
+    // Source text for retranslation when the active Qt language changes.
+    // Empty labels remain literal, such as names loaded from user data.
+    QString labelTranslationSource;
     std::optional<PageId> pageId;
     std::vector<NavigationNode> children;
     NavigationWorkspaceAvailability availability =
@@ -48,7 +51,8 @@ struct NavigationNode final
         std::vector<NavigationNode> children = {},
         NavigationWorkspaceAvailability availability =
             NavigationWorkspaceAvailability::Always,
-        bool retainWhenEmpty = false
+        bool retainWhenEmpty = false,
+        QString labelTranslationSource = {}
         );
 
     [[nodiscard]] static NavigationNode page(
@@ -62,7 +66,8 @@ struct NavigationNode final
         QString id,
         QString label,
         NavigationWorkspaceAvailability availability =
-            NavigationWorkspaceAvailability::Always
+            NavigationWorkspaceAvailability::Always,
+        QString labelTranslationSource = {}
         );
 };
 
@@ -111,6 +116,7 @@ struct NavigationPageMetadata final
 {
     PageId id;
     QString label;
+    QString labelTranslationSource;
     std::optional<Resources::ResourceId> iconResourceId;
     QStringList requiredPermissions;
 };
@@ -156,6 +162,7 @@ public:
     [[nodiscard]] std::optional<NavigationPageMetadata> pageMetadata(
         const PageId& pageId
         ) const;
+    void retranslate();
     [[nodiscard]] bool isPageVisible(const PageId& pageId) const;
 
     [[nodiscard]] std::optional<PageId> initialPageId() const;

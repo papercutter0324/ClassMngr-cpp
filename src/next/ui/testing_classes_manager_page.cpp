@@ -272,6 +272,18 @@ void TestingClassesManagerPage::onSuspending() noexcept
     updateActions();
 }
 
+void TestingClassesManagerPage::setSaveMode(const Application::SaveMode mode)
+{
+    m_saveMode = mode;
+    m_actions.saveMode = mode;
+    m_actions.rosterEditor.saveMode = mode;
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->setSaveMode(mode);
+    }
+    scheduleAutomaticSave();
+}
+
 bool TestingClassesManagerPage::hasUnsavedChanges() const noexcept
 {
     return m_dirty || (m_rosterEditor && m_rosterEditor->hasUnsavedChanges());

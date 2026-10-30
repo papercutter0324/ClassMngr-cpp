@@ -768,6 +768,8 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/bootstrap/qt_startup_diagnostics_sink.h"
     "src/next/ui/application_shell.cpp"
     "src/next/ui/application_shell.h"
+    "src/next/ui/preferences_dialog.cpp"
+    "src/next/ui/preferences_dialog.h"
     "src/next/ui/document_catalog_navigation.cpp"
     "src/next/ui/document_catalog_navigation.h"
     "src/next/ui/document_viewer_page.cpp"

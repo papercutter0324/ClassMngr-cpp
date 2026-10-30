@@ -96,6 +96,7 @@ public:
         ) const;
     // Returns descriptor values in stable, sorted page-ID order.
     [[nodiscard]] std::vector<PageDescriptor> pageDescriptors() const;
+    void applySaveMode(Application::SaveMode mode);
 
 Q_SIGNALS:
     // Emitted for lifecycle state changes while the host rejects reentrant
@@ -136,6 +137,7 @@ private:
     QMap<QString, PageEntry> m_pages;
     std::optional<QString> m_activePageKey;
     bool m_transitionInProgress = false;
+    std::optional<Application::SaveMode> m_saveMode;
 };
 
 }  // namespace ClassMngr::Next::Ui
