@@ -1408,3 +1408,47 @@ Entries are preserved in their original document order.
   QtPdf consumers gone before stream/session release. Batch 4 continues with
   #44, 7J.1 Sub Prep, which owns the required 96-class class-information and
   output migration.
+
+### Candidate #44 — Sub Prep class information and output accepted (2026-10-29)
+
+- Commit: `8c4fece5` (`Phase7 - Migrate Sub Prep class information and output`).
+  The Next shell now reads Sub Prep data through typed operations on the same
+  private `WorkspaceStore` owned by `WorkspaceStoreGateway`. It does not expose
+  the store or open a second database. The page uses one compact summary model,
+  one reusable selected-detail panel, six active editors, bounded scoped
+  queries, and explicit release/re-entry behavior. Output projections are
+  operation-scoped; Pretendard variable-font axes are set explicitly so PDF
+  headings and body text embed the intended Bold and Regular faces separately.
+- Lifecycle and output: the unchanged 96-class / 8-slot fixture projects all
+  96 summaries, verifies mode/day refresh, selection and release/re-entry, and
+  rejects its Monday 4:00 PM schedule conflict without creating a package. A
+  compatible `representative_startup.sql` route generates nonempty Sub Prep
+  and daily-roster PDFs. The Next output Cancel route verifies no destination
+  is created and the selected class/detail remain intact. Four 800×600 captures
+  cover English/Korean × Light/Dark, plus empty and conflict states.
+- Verification: the incremental standard `build/macos-clang-debug` build
+  completed for the affected Next, output, font, and resource targets. Focused
+  CTest passed 13/13 plus roster parity 1/1. QtTest totals included package
+  service 14, print/PDF 24, list model 9, roster parity 6, Next bootstrap 72,
+  active-store Gateway 4, resource pack 12, FontManager 15, Schedule Import
+  workflow 16, normal integration 14, and state/apply ports 8/9. The optional
+  external Schedule Import sample check skipped once because
+  `CLASSMNGR_SCHEDULE_IMPORT_SAMPLE` was unset (99 passed, 1 skipped). The
+  focused Next Cancel/lifecycle slot passed 3/3. Resource inventory `--check`
+  and `git diff --check` passed. The strict PDF comparison passed unchanged
+  references for all 19 Sub Prep pages and 16 daily-roster pages, including
+  page counts, dimensions, and per-page extracted text.
+- Limits: Windows 150-DPI raster parity was not run. Same-renderer macOS
+  Qt 6.11 comparisons changed 11.05–12.21% of daily-roster pixels and
+  0.76–10.35% of Sub Prep PDF pixels; the reference is several weeks old and
+  its Windows provenance is unverified, so pixel parity is not claimed. Both
+  reference and candidate PDFs lack a Unicode mapping for the separator glyph;
+  local extractors return U+001F, and copy/search correctness is not claimed.
+  `ClassMngrSubPrepPageTests::unavailablePreferenceLoadsPreservePageValues`
+  hangs in macOS offscreen modal behavior and is not counted as a pass; the
+  targeted Legacy Cancel test passed. No full suite, Windows build, or Phase 9
+  packaged Release numerical memory gate ran. Memory samples are process-wide.
+- Decision and next: preserve the strict PDF references and keep the Windows
+  pixel and Phase 9 memory gates open. Batch 4 continues with #45, General
+  app-wide Preferences UI/menu; its scope must integrate existing Next
+  page-owned settings rather than duplicate their controls.

@@ -6,24 +6,21 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-29
-- Current milestone: Phase 7 remains in progress. Candidate #43, Document
-  viewer lifecycle/actions, is accepted in source commit `3ac8fea4`; Batch 4
-  is active and #44, 7J.1 Sub Prep, is now in progress. The viewer opens only
-  the selected PDF, releases QtPdf consumers before its borrowed stream, and
-  verifies timeout recovery, export actions, zoom/navigation, and reopen. Its
-  paired English/Korean × Light/Dark captures are recorded in the
-  [C43 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/document-viewer-c43/README.md).
-  C43's standard macOS Debug configure/build and 14 focused CTests passed.
-  The Initial Setup schedule-import build repair remains committed in
-  `80f7f1c6`, with the protected Gateway pair untouched. See the
-  [Phase 7 plan](08-Phase-7-Feature-Migration.md) and [current batch tracker](Current-Slice-Batches.md).
-  Batch 3 and its Windows evidence support were pushed at `2cfb1db3`. Windows
-  Release run [40914914018](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40914914018)
-  completed at that head, but the x64 collector prerequisite failed and no
-  diagnostic artifact was uploaded. A fresh hosted run is pending the Batch 4
-  push. Broader 7A visual/lifecycle evidence, hosted memory evidence, and the
-  Windows packaged-Next memory gate remain open. The 7A and Phase 7 exit gates
-  are not yet passed.
+- Current milestone: Phase 7 remains in progress. Candidate #44, 7J.1 Sub
+  Prep, is accepted in source commit `8c4fece5`; Batch 4 is active and #45,
+  General app-wide Preferences, is next. The Next route uses typed reads
+  from the active private workspace store, one summary model and reusable
+  detail panel, explicit release/re-entry behavior, and operation-scoped
+  package/PDF output. The unchanged 96-class fixture verifies bounded
+  lifecycle and the expected schedule-conflict cleanup. See the
+  [C44 evidence package](../../docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44/review.md),
+  [Phase 7 plan](08-Phase-7-Feature-Migration.md), and [current batch tracker](Current-Slice-Batches.md).
+  Focused macOS Debug verification passed, including the strict PDF text and
+  geometry comparison. Windows 150-DPI raster parity remains unverified; the
+  PDFs have a known separator text-map limitation shared with the retained
+  references. Broader 7A visual/lifecycle evidence, hosted memory evidence,
+  and the Windows packaged-Next memory gate remain open. The 7A and Phase 7
+  exit gates are not yet passed.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
