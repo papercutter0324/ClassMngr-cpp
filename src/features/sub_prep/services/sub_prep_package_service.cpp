@@ -1,17 +1,20 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
+#include "core/fontmanager.h"
 #include "core/startup_profiler.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "next/application/sub_prep_package_request_validation.h"
 #include "next/application/sub_prep_selected_class_ids.h"
+#include "shared/roster/roster_template_renderer.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QByteArray>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
+#include <QFont>
 #include <QHash>
 #include <QPageSize>
 #include <QRegularExpression>
@@ -38,7 +41,7 @@ constexpr int MaximumPathComponentLength = 120;
 
 struct PackageClass
 {
-    RosterTemplatePrintService::RosterClassData rosterData;
+    RosterTemplateRenderer::RosterClassData rosterData;
     Teacher teacher;
     QString displayName;
     QString folderName;
@@ -56,6 +59,68 @@ struct TextProjectionCounts
     qint64 sourceUtf8Bytes = 0;
     qint64 destinationQStringUnits = 0;
 };
+
+RosterTemplateRenderer::Fonts subPrepRosterFonts()
+{
+    QFont ui = FontManager::getUiFont(-1);
+    QFont korean = FontManager::getKoreanFont(-1);
+    korean.setStyleName(QStringLiteral("Regular"));
+    const auto weightAxis = QFont::Tag::fromString(QStringLiteral("wght"));
+    if (weightAxis)
+    {
+        korean.setVariableAxis(*weightAxis, static_cast<float>(QFont::Normal));
+    }
+    return {std::move(ui), std::move(korean)};
+}
+
+RosterTemplateRenderer::Result saveRosterPdf(
+    const QList<RosterTemplateRenderer::RosterClassData>& classes,
+    const QString& documentPath,
+    const RosterTemplateRenderer::TemplateId templateId,
+    const QStringList& selectedExtraColumns = {},
+    const QPageLayout::Orientation perClassOrientation =
+        QPageLayout::Portrait
+    )
+{
+    if (documentPath.trimmed().isEmpty())
+    {
+        return {
+            DocumentOutputStatus::Failed,
+            QObject::tr("No roster print file path was provided.")
+        };
+    }
+
+    QString errorMessage;
+    const QList<RosterTemplateRenderer::RosterCellValue> values =
+        RosterTemplateRenderer::buildTemplateCellValues(
+            templateId,
+            classes,
+            selectedExtraColumns,
+            perClassOrientation,
+            &errorMessage
+            );
+    if (!errorMessage.isEmpty())
+    {
+        return {DocumentOutputStatus::Failed, errorMessage};
+    }
+    if (RosterTemplateRenderer::daysWithValues(templateId, values).isEmpty())
+    {
+        return {
+            DocumentOutputStatus::Failed,
+            QObject::tr("No selected classes match the roster print layout.")
+        };
+    }
+
+    return RosterTemplateRenderer::saveCellValuesPdf(
+        documentPath,
+        templateId,
+        templateId == RosterTemplateRenderer::TemplateId::PerClassWithExtraInfo
+            ? perClassOrientation
+            : RosterTemplateRenderer::templateOrientation(templateId),
+        values,
+        subPrepRosterFonts()
+        );
+}
 
 class TypedSourceReleaseGuard
 {
@@ -570,7 +635,7 @@ QList<PackageClass> loadPackageClasses(
             packageClass.teacher
             );
 
-        Roster& roster = packageClass.rosterData.roster;
+        auto& roster = packageClass.rosterData.roster;
         for (const std::string& sourceColumn : sourceClass.rosterColumns)
         {
             const auto column = decodeSourceText(sourceColumn);
@@ -585,7 +650,6 @@ QList<PackageClass> loadPackageClasses(
                 return {};
             }
             roster.columns.append(*column);
-            roster.columnWidths.append(0);
         }
 
         roster.rows.reserve(
@@ -723,9 +787,9 @@ GeneratedPackage generateAt(
     packageClassesReleaseGuard.activate();
 
     QStringList documents{subPrepRelative};
-    QList<RosterTemplatePrintService::RosterClassData> rosterClasses;
+    QList<RosterTemplateRenderer::RosterClassData> rosterClasses;
     const bool perClassRoster = request.rosterTemplate
-        == RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo;
+        == RosterTemplateRenderer::TemplateId::PerClassWithExtraInfo;
     QStringList selectedExtraColumns;
     selectedExtraColumns.reserve(
         static_cast<qsizetype>(plan.requestedRosterColumns.size())
@@ -773,8 +837,7 @@ GeneratedPackage generateAt(
                 QDir(packageClass.folderName).filePath(
                     QStringLiteral("Roster.pdf")
                     );
-            const auto rosterResult =
-                RosterTemplatePrintService::saveRostersPdf(
+            const auto rosterResult = saveRosterPdf(
                     {packageClass.rosterData},
                     QDir(packageDirectory).filePath(relativePath),
                     request.rosterTemplate,
@@ -782,7 +845,7 @@ GeneratedPackage generateAt(
                     request.perClassOrientation
                     );
 
-            if (rosterResult.status != RosterTemplatePrintService::Status::Sent)
+            if (rosterResult.status != DocumentOutputStatus::Sent)
             {
                 return {false, rosterResult.message, {}};
             }
@@ -792,21 +855,15 @@ GeneratedPackage generateAt(
     }
     else
     {
-        const QString relativePath =
-            QStringLiteral("Rosters - %1.pdf")
-                .arg(
-                    RosterTemplatePrintService::templateDisplayName(
-                        request.rosterTemplate
-                        )
-                    );
-        const auto rosterResult =
-            RosterTemplatePrintService::saveRostersPdf(
+        const QString relativePath = QStringLiteral("Rosters - %1.pdf")
+            .arg(RosterTemplateRenderer::templateDisplayName(request.rosterTemplate));
+        const auto rosterResult = saveRosterPdf(
                 rosterClasses,
                 QDir(packageDirectory).filePath(relativePath),
                 request.rosterTemplate
                 );
 
-        if (rosterResult.status != RosterTemplatePrintService::Status::Sent)
+        if (rosterResult.status != DocumentOutputStatus::Sent)
         {
             return {false, rosterResult.message, {}};
         }

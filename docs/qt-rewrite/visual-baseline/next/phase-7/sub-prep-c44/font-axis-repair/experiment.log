@@ -1,0 +1,7 @@
+Checking font existence:
+":/assets/fonts/Inter.ttc" true
+":/assets/fonts/PretendardVariable.ttf" true
+[FontManager] Loaded: ":/assets/fonts/Inter.ttc" -> QList("Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display")
+[FontManager] Loaded: ":/assets/fonts/PretendardVariable.ttf" -> QList("Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable")
+/tmp/c44-axis-bold-first.pdf regular=Pretendard Variable/Regular/400 wght=400 raw=Regular bold=Pretendard Variable/Bold/700 wght=700 raw=Bold
+/tmp/c44-axis-regular-first.pdf regular=Pretendard Variable/Regular/400 wght=400 raw=Regular bold=Pretendard Variable/Bold/700 wght=700 raw=Bold

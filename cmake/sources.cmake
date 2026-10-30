@@ -110,6 +110,35 @@ classmngr_add_production_objects(
         Qt6::Widgets
         ZLIB::ZLIB
 )
+add_library(ClassMngrFontManager STATIC
+    ${CLASSMNGR_FONT_MANAGER_SOURCES}
+)
+target_compile_features(ClassMngrFontManager PUBLIC cxx_std_23)
+target_include_directories(ClassMngrFontManager PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(ClassMngrFontManager
+    PUBLIC
+        ClassMngrBuildSettings
+        Qt6::Gui
+        Qt6::Widgets
+)
+target_compile_definitions(ClassMngrFontManager
+    PRIVATE CLASSMNGR_HAS_EMBEDDED_SUB_PREP_FONTS=1
+)
+qt_add_resources(ClassMngrFontManager sub_prep_font_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/fonts/Inter.ttc
+        resources/assets/fonts/PretendardVariable.ttf
+)
+set_target_properties(ClassMngrFontManager
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 classmngr_add_production_objects(
     TARGET ClassMngrUpdater
     SOURCES ${CLASSMNGR_UPDATER_SOURCES}
@@ -396,6 +425,37 @@ target_include_directories(ClassMngrSpeakingEvalReportEngine PUBLIC "${PROJECT_S
 target_link_libraries(ClassMngrSpeakingEvalReportEngine PUBLIC ClassMngrQtPdfPrint ClassMngrClassTransferSupport ClassMngrScheduleImportRules PRIVATE ZLIB::ZLIB)
 set_target_properties(ClassMngrSpeakingEvalReportEngine PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
 
+# Shared Qt-only Sub Prep presentation and document services are source-owned
+# once and linked by both runtimes. The Next executable supplies inactive
+# profiler hooks; Legacy resolves the same hooks through its Core target.
+add_library(ClassMngrSubPrepShared STATIC
+    ${CLASSMNGR_SUB_PREP_SHARED_SOURCES}
+)
+target_compile_features(ClassMngrSubPrepShared PUBLIC cxx_std_23)
+target_include_directories(ClassMngrSubPrepShared PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(ClassMngrSubPrepShared
+    PUBLIC
+        ClassMngrRosterTemplateRenderer
+        Qt6::Widgets
+    PRIVATE
+        ClassMngrBuildSettings
+        ClassMngrClassTransferSupport
+        ClassMngrFontManager
+        ClassMngrQtPdfPrint
+        ClassMngrScheduleImportRules
+        ClassMngrWorkspaceStore
+        Qt6::Pdf
+        Qt6::PrintSupport
+)
+set_target_properties(ClassMngrSubPrepShared
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+
 add_library(ClassMngrRuntime STATIC
     $<TARGET_OBJECTS:ClassMngrStudentName>
     $<TARGET_OBJECTS:ClassMngrCore>
@@ -420,6 +480,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrSchedulePrint
         ClassMngrQtPdfPrint
         ClassMngrRosterTemplateRenderer
+        ClassMngrSubPrepShared
         ClassMngrSpeakingEvalReportEngine
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
@@ -479,6 +540,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrSchedulePrint
             ClassMngrQtPdfPrint
             ClassMngrRosterTemplateRenderer
+            ClassMngrSubPrepShared
             ClassMngrSpeakingEvalReportEngine
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE

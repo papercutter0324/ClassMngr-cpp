@@ -215,9 +215,7 @@ qt_add_resources(ClassMngr app_resources
     PREFIX "/"
     BASE "${PROJECT_SOURCE_DIR}/resources"
     FILES
-        resources/assets/fonts/Inter.ttc
         resources/assets/fonts/JustAnotherHand-Regular.ttf
-        resources/assets/fonts/PretendardVariable.ttf
         resources/assets/fonts/DancingScript-wght.ttf
         resources/assets/fonts/GreatVibes-Regular.ttf
         resources/assets/fonts/Caveat-wght.ttf

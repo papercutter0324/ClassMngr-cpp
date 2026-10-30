@@ -7,11 +7,16 @@
 
 #include <QString>
 
+class WorkspaceStore;
+
 namespace ClassMngr::Next::Platform
 {
 
 // Every operation opens the selected .tps by its exact path. No process-wide
 // active-store singleton or ApplicationServices route is involved.
+[[nodiscard]] Application::SchedulePageReadResult readSchedulePageFromStore(
+    WorkspaceStore& store
+    );
 [[nodiscard]] Application::SchedulePageReadResult readSchedulePageAtPath(
     const QString& databasePath
     );

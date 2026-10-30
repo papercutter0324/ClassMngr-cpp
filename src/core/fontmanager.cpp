@@ -14,10 +14,18 @@
 #include <QPointer>
 #include <QPalette>
 #include <QRegularExpression>
+#include <QResource>
 #include <QStyle>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QWidget>
+
+#ifdef CLASSMNGR_HAS_EMBEDDED_SUB_PREP_FONTS
+static void initializeSubPrepFontResources()
+{
+    Q_INIT_RESOURCE(sub_prep_font_resources);
+}
+#endif
 
 
 
@@ -299,6 +307,10 @@ void FontManager::loadFonts()
             "QApplication must exist before loading fonts"
             );
     }
+
+#ifdef CLASSMNGR_HAS_EMBEDDED_SUB_PREP_FONTS
+    initializeSubPrepFontResources();
+#endif
 
     qDebug() << "Checking font existence:";
 

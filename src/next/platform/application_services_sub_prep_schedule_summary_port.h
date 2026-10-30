@@ -41,7 +41,14 @@ public:
     explicit ApplicationServicesSubPrepScheduleSummaryPort(
         ApplicationServices& services
         ) noexcept
-        : m_services(services)
+        : m_services(&services)
+    {
+    }
+
+    explicit ApplicationServicesSubPrepScheduleSummaryPort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
     {
     }
 
@@ -162,7 +169,14 @@ public:
                 return Application::SubPrepScheduleSummaryReadResult::success({});
             }
 
-            WorkspaceStore* const store = m_services.workspaceStore();
+            WorkspaceStore* store = nullptr;
+#ifdef CLASSMNGR_NEXT_WORKSPACE_ADAPTER
+            store = m_store;
+#else
+            store = m_store
+                ? m_store
+                : m_services ? m_services->workspaceStore() : nullptr;
+#endif
             if (!store || !store->isOpen())
             {
                 return failure(
@@ -1150,7 +1164,8 @@ private:
         });
     }
 
-    ApplicationServices& m_services;
+    ApplicationServices* m_services = nullptr;
+    WorkspaceStore* m_store = nullptr;
 };
 
 } // namespace ClassMngr::Next::Platform

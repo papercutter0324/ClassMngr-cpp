@@ -67,6 +67,7 @@ class SubPrepClassInformationListModelTests final : public QObject
 private slots:
     void startsEmpty();
     void filtersAndOrdersRowsByGradeAndConfiguredLevel();
+    void fullNavigationSummaryIsAvailableInTooltip();
     void appliesLegacyScheduleAndLabelTieBreakers();
     void navigationTimeSentinelRetainsNumericOrdering();
     void addsTeacherNamesToDuplicateNavigationLabels();
@@ -169,6 +170,33 @@ filtersAndOrdersRowsByGradeAndConfiguredLevel()
         ));
     QCOMPARE(model.currentGrade(), QStringLiteral("E5"));
     QCOMPARE(model.classIdAt(0)->value(), std::string("43"));
+}
+
+void SubPrepClassInformationListModelTests::
+fullNavigationSummaryIsAvailableInTooltip()
+{
+    auto classSummary = summary(42, 7, "E4", "Hercules", "Mon 9am", 0);
+    classSummary.navigationLabel =
+        "Hercules • Mon 9am; Fri 10am";
+
+    SubPrepClassInformationListModel model;
+    model.setProjection(projection(
+        {std::move(classSummary)},
+        {
+            {
+                .id = teacherId(7),
+                .displayName = "Susan",
+                .facilities = {},
+                .notes = {}
+            }
+        }
+        ));
+
+    QCOMPARE(model.rowCount(), 1);
+    QCOMPARE(
+        model.data(model.index(0, 0), Qt::ToolTipRole).toString(),
+        QStringLiteral("Hercules • Mon 9am; Fri 10am (42)")
+        );
 }
 
 void SubPrepClassInformationListModelTests::

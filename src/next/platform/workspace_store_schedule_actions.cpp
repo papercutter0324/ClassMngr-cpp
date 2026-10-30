@@ -741,6 +741,12 @@ private:
 
 } // namespace
 
+SchedulePageReadResult readSchedulePageFromStore(WorkspaceStore& store)
+{
+    const WorkspaceStoreSchedulePageReadPort port(store);
+    return SchedulePageReadUseCase::execute(port);
+}
+
 SchedulePageReadResult readSchedulePageAtPath(const QString& databasePath)
 {
     WorkspaceStore store;
@@ -749,8 +755,7 @@ SchedulePageReadResult readSchedulePageAtPath(const QString& databasePath)
     {
         return openFailure<SchedulePageReadResult>(opened.error());
     }
-    const WorkspaceStoreSchedulePageReadPort port(store);
-    return SchedulePageReadUseCase::execute(port);
+    return readSchedulePageFromStore(store);
 }
 
 ScheduleDisplayPreferencesSaveResult saveScheduleDisplayPreferencesAtPath(

@@ -1,0 +1,18 @@
+C44 candidate: C44-Rosters-Daily.pdf
+Page count: 16
+All pages: 595x842 pt; rendered comparison: 1240x1754 at 150 DPI
+
+PDF embedded font resources (BaseFont names):
+  Inter-Black
+  Inter-Regular
+  PretendardVariable-Bold
+  PretendardVariable-Regular
+
+Page 1 resource map and text sizes:
+  F11 -> Inter-Black; used at 71 px
+  F12 -> PretendardVariable-Bold; used at 65 px for section headings
+  F13 -> PretendardVariable-Regular; used at 48 px and 53..49 px for body/detail text
+  F14 -> Inter-Regular; used at 33 px
+
+The generated C44 student name operations at 53..49 px use the Regular resource.
+The section heading operations use the Bold resource.

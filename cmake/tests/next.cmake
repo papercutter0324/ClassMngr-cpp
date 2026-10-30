@@ -424,6 +424,7 @@ add_executable(ClassMngrNextBootstrapTests
     $<TARGET_OBJECTS:ClassMngrSettings>
     $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
     $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
+    $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
 )
 target_compile_features(ClassMngrNextBootstrapTests
     PRIVATE
@@ -443,6 +444,7 @@ target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
         ClassMngrClassTransferSupport
         ClassMngrNextCalendarUi
+        ClassMngrSubPrepShared
         ClassMngrNextScheduleOutput
         ClassMngrNextRosterOutput
         ClassMngrNextSpeakingEvaluationOutput
@@ -464,6 +466,9 @@ set_target_properties(ClassMngrNextBootstrapTests
         AUTOMOC ON
         AUTOUIC OFF
         AUTORCC OFF
+)
+classmngr_next_add_mode_combo_arrow_resources(
+    ClassMngrNextBootstrapTests
 )
 set_property(TARGET ClassMngrNextBootstrapTests
     PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
@@ -3714,6 +3719,119 @@ add_test(
 set_tests_properties(ClassMngrNextMyClassesPageTests
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
+# Exercise Sub Prep typed reads through the active gateway-owned store. The
+# test seeds two distinguishable large workspaces and verifies bounded summary,
+# detail, and roster projections plus lifecycle and repository failure paths.
+add_executable(ClassMngrNextSubPrepGatewayTests
+    tests/next/workspace_store_sub_prep_gateway_tests.cpp
+    $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
+    $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
+)
+target_compile_features(ClassMngrNextSubPrepGatewayTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextSubPrepGatewayTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextSubPrepGatewayTests
+    PRIVATE CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+target_link_libraries(ClassMngrNextSubPrepGatewayTests
+    PRIVATE
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrSubPrepShared
+        ClassMngrWorkspaceStore
+        ClassMngrNext::Application
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextSubPrepGatewayTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextSubPrepGatewayTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextSubPrepGatewayTests
+    COMMAND ClassMngrNextSubPrepGatewayTests
+)
+set_tests_properties(ClassMngrNextSubPrepGatewayTests
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+
+# Capture the 96-class Next Sub Prep route in English/Korean and Light/Dark,
+# including selected, empty, and generated-output states with bounded metrics.
+add_executable(ClassMngrNextSubPrepVisualCapture
+    tests/next/sub_prep_visual_capture.cpp
+    src/core/process_memory_snapshot.cpp
+    src/next/ui/sub_prep_page.cpp
+    src/next/ui/sub_prep_page.h
+    src/next/ui/page_host.cpp
+    src/next/ui/page.h
+    src/next/ui/page_host.h
+    $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
+    $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
+)
+target_compile_features(ClassMngrNextSubPrepVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextSubPrepVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextSubPrepVisualCapture
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextSubPrepVisualCapture
+    PRIVATE
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrSubPrepShared
+        ClassMngrWorkspaceStore
+        Qt6::Pdf
+        Qt6::PrintSupport
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextSubPrepVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextSubPrepVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextSubPrepVisualCapture
+    ClassMngrNextResourcePackage
+)
+classmngr_next_add_mode_combo_arrow_resources(
+    ClassMngrNextSubPrepVisualCapture
+)
+add_test(
+    NAME ClassMngrNextSubPrepVisualCapture
+    COMMAND ClassMngrNextSubPrepVisualCapture
+        "${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44"
+)
+set_tests_properties(ClassMngrNextSubPrepVisualCapture
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
 # Exercise the path-scoped Next Speaking Evaluation page, exact changed-cell

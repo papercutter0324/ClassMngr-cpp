@@ -1,0 +1,1 @@
+pages=16 exact_simplified_text_matches=16 differing_pages=0 custom_character_mapping=none

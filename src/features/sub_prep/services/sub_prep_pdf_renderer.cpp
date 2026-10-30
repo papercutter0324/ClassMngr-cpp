@@ -372,11 +372,12 @@ QString sectionHtml(
     const QString& heading,
     const QString& contents,
     bool startOnNewPage = false,
-    bool useStandardTopSpacing = false
+    bool useStandardTopSpacing = false,
+    bool compactHeadingSpacing = false
     )
 {
     return QStringLiteral(
-        "<div class=\"major-section%1%2\"><h2>%3</h2>%4</div>"
+        "<div class=\"major-section%1%2%3\"><h2>%4</h2>%5</div>"
         )
         .arg(
             startOnNewPage
@@ -384,6 +385,9 @@ QString sectionHtml(
                 : QString(),
             useStandardTopSpacing
                 ? QStringLiteral(" first-major-section")
+                : QString(),
+            compactHeadingSpacing
+                ? QStringLiteral(" compact-major-section")
                 : QString(),
             boldHtmlText(heading),
             contents
@@ -780,7 +784,10 @@ QString documentHtml(
 
     html += sectionHtml(
         translate("Schedule"),
-        scheduleHtml(document.schedule)
+        scheduleHtml(document.schedule),
+        false,
+        false,
+        true
         );
     html += sectionHtml(
         translate("Class Information"),
@@ -817,6 +824,7 @@ QString documentStyleSheet()
         "border-top-width:2px; font-size:14pt; font-weight:800; margin:28px 0 9px 0; padding:7px 9px; text-align:center; "
         "page-break-after:avoid; }"
         ".first-major-section h2 { margin-top:14px; }"
+        ".compact-major-section h2 { margin-top:20px; }"
         ".subsection { margin:0 0 11px 0; width:100%; }"
         ".class-materials-subsection { margin-bottom:27px; }"
         ".subsection-heading { background:#e9f1f5; border-left:4px solid #3f7c96; "
@@ -853,7 +861,7 @@ QString documentStyleSheet()
         "page-break-inside:avoid; table-layout:fixed; }"
         ".schedule th { background:#244b5f; border:1px solid #000000; color:#ffffff; "
         "font-weight:700; padding:7px 4px; text-align:center; }"
-        ".schedule td { border:1px solid #000000; padding:5px 4px; text-align:center; vertical-align:middle; }"
+        ".schedule td { border:1px solid #000000; padding:2px 4px; text-align:center; vertical-align:middle; }"
         ".schedule-time { background:#e9f1f5; color:#000000; font-weight:700; }"
         ".schedule-entry { margin:1px 0; padding:4px 3px; }"
         ".schedule-slot { font-weight:700; padding:6px 3px; }"

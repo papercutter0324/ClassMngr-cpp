@@ -1,0 +1,19 @@
+********* Start testing of ApplicationBootstrapTests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 17.0.0 (clang-1700.3.19.1)), macos 27.0.1
+PASS   : ApplicationBootstrapTests::initTestCase()
+QWARN  : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() This plugin does not support propagateSizeHints()
+QWARN  : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() This plugin does not support propagateSizeHints()
+QDEBUG : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() Checking font existence:
+QDEBUG : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() ":/assets/fonts/Inter.ttc" true
+QDEBUG : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() ":/assets/fonts/PretendardVariable.ttf" true
+QDEBUG : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() [FontManager] Loaded: ":/assets/fonts/Inter.ttc" -> QList("Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display")
+QDEBUG : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() [FontManager] Loaded: ":/assets/fonts/PretendardVariable.ttf" -> QList("Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable")
+QINFO  : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() ClassMngrNext shutdown: flushing settings.
+QINFO  : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() ClassMngrNext shutdown: closing the workspace session.
+QINFO  : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() ClassMngrNext shutdown: owned work and workspace are settled.
+QINFO  : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() ClassMngrNext shutdown: releasing page and startup resources.
+QINFO  : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle() ClassMngrNext shutdown: requesting application quit.
+PASS   : ApplicationBootstrapTests::subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle()
+PASS   : ApplicationBootstrapTests::cleanupTestCase()
+Totals: 3 passed, 0 failed, 0 skipped, 0 blacklisted, 1271ms
+********* Finished testing of ApplicationBootstrapTests *********

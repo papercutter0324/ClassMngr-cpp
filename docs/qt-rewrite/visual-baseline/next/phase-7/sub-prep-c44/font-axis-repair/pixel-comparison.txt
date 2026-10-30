@@ -1,0 +1,17 @@
+candidate_pages=16 reference_pages=16
+page=1 width=1240 height=1754 changed_pixels_pct=11.1119 mean_channel_abs=5.70697
+page=2 width=1240 height=1754 changed_pixels_pct=12.2148 mean_channel_abs=6.81223
+page=3 width=1240 height=1754 changed_pixels_pct=11.3187 mean_channel_abs=5.92073
+page=4 width=1240 height=1754 changed_pixels_pct=11.7833 mean_channel_abs=6.10545
+page=5 width=1240 height=1754 changed_pixels_pct=11.0517 mean_channel_abs=5.63161
+page=6 width=1240 height=1754 changed_pixels_pct=11.2531 mean_channel_abs=5.60799
+page=7 width=1240 height=1754 changed_pixels_pct=11.5951 mean_channel_abs=6.18569
+page=8 width=1240 height=1754 changed_pixels_pct=12.0714 mean_channel_abs=6.50947
+page=9 width=1240 height=1754 changed_pixels_pct=11.5533 mean_channel_abs=6.33008
+page=10 width=1240 height=1754 changed_pixels_pct=11.8843 mean_channel_abs=6.42781
+page=11 width=1240 height=1754 changed_pixels_pct=11.6945 mean_channel_abs=6.14585
+page=12 width=1240 height=1754 changed_pixels_pct=11.8652 mean_channel_abs=6.41225
+page=13 width=1240 height=1754 changed_pixels_pct=11.6022 mean_channel_abs=6.26850
+page=14 width=1240 height=1754 changed_pixels_pct=11.8233 mean_channel_abs=6.54693
+page=15 width=1240 height=1754 changed_pixels_pct=11.8525 mean_channel_abs=6.35258
+page=16 width=1240 height=1754 changed_pixels_pct=12.0435 mean_channel_abs=6.57786

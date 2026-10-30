@@ -141,7 +141,7 @@ QVariant SubPrepClassInformationListModel::data(
     case Qt::ToolTipRole:
         return QStringLiteral("%1 (%2)")
             .arg(
-                fromUtf8(summary->displayLabel),
+                m_displayLabels.value(index.row()),
                 fromUtf8(summary->id.value())
                 );
     case ClassIdRole:

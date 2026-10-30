@@ -38,6 +38,13 @@ public:
     }
 
     explicit ApplicationServicesSubPrepCalendarEventIntervalsPort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
+    {
+    }
+
+    explicit ApplicationServicesSubPrepCalendarEventIntervalsPort(
         IntervalRangeReader intervalRangeReader
         )
         : m_intervalRangeReader(std::move(intervalRangeReader))
@@ -80,9 +87,14 @@ public:
             CalendarEventRepository* repository = nullptr;
             if (!m_intervalRangeReader)
             {
-                store = m_services
-                    ? m_services->workspaceStore()
-                    : nullptr;
+                store = nullptr;
+#ifdef CLASSMNGR_NEXT_WORKSPACE_ADAPTER
+                store = m_store;
+#else
+                store = m_store
+                    ? m_store
+                    : m_services ? m_services->workspaceStore() : nullptr;
+#endif
                 if (!store || !store->isOpen())
                 {
                     return failure(
@@ -197,6 +209,7 @@ private:
     }
 
     ApplicationServices* m_services = nullptr;
+    WorkspaceStore* m_store = nullptr;
     IntervalRangeReader m_intervalRangeReader;
 };
 

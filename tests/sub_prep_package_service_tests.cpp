@@ -1,6 +1,8 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
+#include "domain/models/roster.h"
 #include "domain/models/teacher.h"
+#include "features/roster/services/roster_template_print_service.h"
 #include "next/application/sub_prep_roster_output_source_query.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -780,14 +782,42 @@ bool comparePdfToReference(
         // PDF text extraction can insert different line breaks and spacing
         // when a platform uses different font metrics. Preserve the full
         // character sequence while ignoring that layout-only whitespace.
-        if (generated.getAllText(pageIndex).text().simplified()
-            != reference.getAllText(pageIndex).text().simplified())
+        const QString generatedText =
+            generated.getAllText(pageIndex).text().simplified();
+        const QString referenceText =
+            reference.getAllText(pageIndex).text().simplified();
+        if (generatedText != referenceText)
         {
+            qsizetype firstDifference = 0;
+            const qsizetype sharedLength =
+                std::min(generatedText.size(), referenceText.size());
+            while (
+                firstDifference < sharedLength
+                && generatedText.at(firstDifference)
+                    == referenceText.at(firstDifference)
+                )
+            {
+                ++firstDifference;
+            }
+            const qsizetype contextStart =
+                std::max<qsizetype>(0, firstDifference - 48);
+            const QString generatedContext = generatedText.mid(
+                contextStart,
+                96
+                );
+            const QString referenceContext = referenceText.mid(
+                contextStart,
+                96
+                );
             if (errorMessage)
             {
                 *errorMessage = QStringLiteral(
-                    "Generated PDF page %1 text differs from the reference."
-                    ).arg(pageIndex + 1);
+                    "Generated PDF page %1 text differs from the reference "
+                    "at character %2 (generated: '%3'; reference: '%4')."
+                    ).arg(pageIndex + 1)
+                    .arg(firstDifference)
+                    .arg(generatedContext)
+                    .arg(referenceContext);
             }
             return false;
         }
@@ -1704,13 +1734,17 @@ void SubPrepPackageServiceTests
                     ).arg(QFileInfo(documentPath).fileName())
                 );
         QString parityError;
+        const bool matchesReference = comparePdfToReference(
+            documentPath,
+            baselinePdfPath,
+            &parityError
+            );
         QVERIFY2(
-            comparePdfToReference(
-                documentPath,
-                baselinePdfPath,
-                &parityError
-                ),
-            qPrintable(parityError)
+            matchesReference,
+            qPrintable(
+                QStringLiteral("%1: %2")
+                    .arg(QFileInfo(documentPath).fileName(), parityError)
+                )
             );
 
         documentMetadata.insert(

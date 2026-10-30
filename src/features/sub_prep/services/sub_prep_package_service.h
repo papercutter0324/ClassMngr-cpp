@@ -1,8 +1,8 @@
 #pragma once
 
-#include "features/roster/services/roster_template_print_service.h"
 #include "features/sub_prep/services/sub_prep_print_service.h"
 #include "features/schedule/ui/schedule_view_model.h"
+#include "shared/roster/roster_template_renderer.h"
 #include "next/application/sub_prep_package_request_validation.h"
 #include "next/application/sub_prep_roster_output_source_query.h"
 
@@ -45,8 +45,8 @@ struct Request
     bool printPaperCopies = false;
     bool openFolderAfterGeneration = true;
     FolderOpener folderOpener;
-    RosterTemplatePrintService::TemplateId rosterTemplate =
-        RosterTemplatePrintService::TemplateId::ByDay;
+    RosterTemplateRenderer::TemplateId rosterTemplate =
+        RosterTemplateRenderer::TemplateId::ByDay;
     QStringList selectedExtraColumns;
     QPageLayout::Orientation perClassOrientation =
         QPageLayout::Portrait;

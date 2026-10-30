@@ -37,6 +37,13 @@ public:
     {
     }
 
+    explicit ApplicationServicesPersonalDisplayNamePreferencesPort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
+    {
+    }
+
     ApplicationServicesPersonalDisplayNamePreferencesPort(
         const ApplicationServicesPersonalDisplayNamePreferencesPort&
         ) = delete;

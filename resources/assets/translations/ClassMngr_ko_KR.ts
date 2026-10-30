@@ -8934,6 +8934,32 @@ Comments: Please leave a comment about what the student did well and what they n
         <source>Save status</source>
         <translation>저장 상태</translation>
     </message>
+    <message><source>Teacher</source><translation>담당 교사</translation></message>
+    <message><source>Teacher Notes</source><translation>교사 노트</translation></message>
+    <message><source>Regular Schedule</source><translation>정규 수업 일정</translation></message>
+    <message><source>Intensive Schedule</source><translation>집중 수업 일정</translation></message>
+    <message><source>Monday</source><translation>월요일</translation></message>
+    <message><source>Tuesday</source><translation>화요일</translation></message>
+    <message><source>Wednesday</source><translation>수요일</translation></message>
+    <message><source>Thursday</source><translation>목요일</translation></message>
+    <message><source>Friday</source><translation>금요일</translation></message>
+    <message><source>Saturday</source><translation>토요일</translation></message>
+    <message><source>Sunday</source><translation>일요일</translation></message>
+    <message><source>Refresh</source><translation>새로 고침</translation></message>
+    <message><source>Save</source><translation>저장</translation></message>
+    <message><source>Other</source><translation>기타</translation></message>
+    <message><source>Sub Notes</source><translation>대체 교사 메모</translation></message>
+    <message><source>Class information is unavailable.</source><translation>수업 정보를 사용할 수 없습니다.</translation></message>
+    <message><source>The schedule service is unavailable.</source><translation>일정 서비스를 사용할 수 없습니다.</translation></message>
+    <message><source>Sub Prep output is unavailable.</source><translation>대체 수업 준비 출력을 사용할 수 없습니다.</translation></message>
+    <message><source>Sub Prep roster output is unavailable.</source><translation>대체 수업 준비 명단 출력을 사용할 수 없습니다.</translation></message>
+    <message><source>Sub Prep generation canceled.</source><translation>대체 수업 준비 생성을 취소했습니다.</translation></message>
+    <message>
+        <source>The package was created at:
+%1</source>
+        <translation>패키지를 다음 위치에 만들었습니다:
+%1</translation>
+    </message>
 </context>
 <context>
     <name>SubPrepPrintDialog</name>

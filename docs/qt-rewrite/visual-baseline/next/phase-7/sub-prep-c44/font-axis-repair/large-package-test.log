@@ -1,0 +1,13 @@
+********* Start testing of SubPrepPackageServiceTests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (arm64-little_endian-lp64 shared (dynamic) release build; by Apple LLVM 17.0.0 (clang-1700.3.19.1)), macos 27.0.1
+PASS   : SubPrepPackageServiceTests::initTestCase()
+QWARN  : SubPrepPackageServiceTests::largePackageGeneratesOutputReferenceWhenConfigured() qt.qpa.fonts: Populating font family aliases took 20 ms. Replace uses of missing font family "Sans Serif" with one that exists to avoid this cost.
+QDEBUG : SubPrepPackageServiceTests::largePackageGeneratesOutputReferenceWhenConfigured() Checking font existence:
+QDEBUG : SubPrepPackageServiceTests::largePackageGeneratesOutputReferenceWhenConfigured() ":/assets/fonts/Inter.ttc" true
+QDEBUG : SubPrepPackageServiceTests::largePackageGeneratesOutputReferenceWhenConfigured() ":/assets/fonts/PretendardVariable.ttf" true
+QDEBUG : SubPrepPackageServiceTests::largePackageGeneratesOutputReferenceWhenConfigured() [FontManager] Loaded: ":/assets/fonts/Inter.ttc" -> QList("Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display", "Inter Display")
+QDEBUG : SubPrepPackageServiceTests::largePackageGeneratesOutputReferenceWhenConfigured() [FontManager] Loaded: ":/assets/fonts/PretendardVariable.ttf" -> QList("Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable", "Pretendard Variable")
+PASS   : SubPrepPackageServiceTests::largePackageGeneratesOutputReferenceWhenConfigured()
+PASS   : SubPrepPackageServiceTests::cleanupTestCase()
+Totals: 3 passed, 0 failed, 0 skipped, 0 blacklisted, 766ms
+********* Finished testing of SubPrepPackageServiceTests *********

@@ -38,6 +38,7 @@ namespace ClassMngr::Next::Ui
 {
 class ApplicationShell;
 struct InitialSetupPageState;
+struct SubPrepPageActions;
 }
 
 namespace ClassMngr::Next::Bootstrap
@@ -164,6 +165,7 @@ private:
     commandLineStartupWorkspaceLocation() const;
     void ensureWorkspaceComposition();
     [[nodiscard]] Ui::InitialSetupPageState initialSetupPageState() const;
+    [[nodiscard]] Ui::SubPrepPageActions subPrepPageActions();
     void beginInitialSetupProfile();
     void createNewTeacherProfile();
     void openExistingTeacherProfile();

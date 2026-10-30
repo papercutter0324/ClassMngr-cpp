@@ -737,6 +737,9 @@ target_link_libraries(ClassMngrNextWorkspace
         ClassMngrNextWorkspaceDomain
         Qt6::Sql
 )
+target_compile_definitions(ClassMngrNextWorkspace
+    PRIVATE CLASSMNGR_NEXT_WORKSPACE_ADAPTER=1
+)
 set_target_properties(ClassMngrNextWorkspace
     PROPERTIES
         CXX_EXTENSIONS OFF
@@ -782,6 +785,28 @@ set_target_properties(ClassMngrNextScheduleOutput
         AUTOMOC OFF
         AUTOUIC OFF
         AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+
+# Sub Prep's shared Qt-only services have one source owner. Next composes that
+# narrow library with the active-store typed ports and its inactive profiler
+# compatibility object; no Legacy Features object target is linked.
+add_library(ClassMngrNextSubPrepOutput INTERFACE)
+target_link_libraries(ClassMngrNextSubPrepOutput
+    INTERFACE
+        ClassMngrSubPrepShared
+)
+
+add_library(ClassMngrNextSubPrepProfilerCompat OBJECT
+    ${CLASSMNGR_NEXT_SUB_PREP_PROFILER_COMPAT_SOURCES}
+)
+target_link_libraries(ClassMngrNextSubPrepProfilerCompat
+    PRIVATE
+        ClassMngrBuildSettings
+)
+set_target_properties(ClassMngrNextSubPrepProfilerCompat
+    PROPERTIES
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
 )
@@ -940,6 +965,9 @@ classmngr_next_assert_dependencies(ClassMngrNextScheduleOutput
     "$<LINK_ONLY:ClassMngrNext::Application>"
     "$<LINK_ONLY:ClassMngrSchedulePrint>"
     "$<LINK_ONLY:Qt6::Widgets>"
+)
+classmngr_next_assert_dependencies(ClassMngrNextSubPrepOutput
+    ClassMngrSubPrepShared
 )
 classmngr_next_assert_dependencies(ClassMngrNextCalendarUi
     ClassMngrNext::Calendar

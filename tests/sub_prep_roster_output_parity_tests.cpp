@@ -3,6 +3,7 @@
 #include "domain/models/class_info.h"
 #include "domain/models/roster.h"
 #include "domain/models/teacher.h"
+#include "features/roster/services/roster_template_print_service.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -12,6 +13,7 @@
 #endif
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -322,6 +324,11 @@ void SubPrepRosterOutputParityTests::dailyUsesIntensiveMeetings()
     QVERIFY(readPdf(result.documentPaths.first()).loaded);
     QVERIFY(pdf.loaded);
     QCOMPARE(pdf.pages, 1);
+    QFile dailyPdf(result.documentPaths.at(1));
+    QVERIFY(dailyPdf.open(QIODevice::ReadOnly));
+    const QByteArray dailyPdfBytes = dailyPdf.readAll();
+    QVERIFY(dailyPdfBytes.contains("/BaseFont /PretendardVariable-Regular"));
+    QVERIFY(dailyPdfBytes.contains("/BaseFont /PretendardVariable-Bold"));
     const QString compact = compactText(pdf.text);
     for (const auto& token : {QStringLiteral("TUESDAY"), QStringLiteral("E4 Theseus"), QStringLiteral("4 p.m."),
              QStringLiteral("Alice"), QStringLiteral("Room 501"), QStringLiteral("alice.zoom"), QStringLiteral("zoom-key"), QStringLiteral("Alex")})

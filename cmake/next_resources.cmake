@@ -123,7 +123,18 @@ function(classmngr_next_add_calendar_qml_resources target)
     )
 endfunction()
 
+function(classmngr_next_add_mode_combo_arrow_resources target)
+    qt_add_resources("${target}" classmngr_next_mode_combo_arrows
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            "${PROJECT_SOURCE_DIR}/resources/assets/icons/combo_arrow_light.svg"
+            "${PROJECT_SOURCE_DIR}/resources/assets/icons/combo_arrow_dark.svg"
+    )
+endfunction()
+
 classmngr_next_add_calendar_qml_resources(ClassMngrNext)
+classmngr_next_add_mode_combo_arrow_resources(ClassMngrNext)
 
 get_target_property(_classmngr_next_resource_link_dependencies
     ClassMngrNext
@@ -131,10 +142,10 @@ get_target_property(_classmngr_next_resource_link_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_resource_link_dependencies)
 if(NOT "${_classmngr_next_resource_link_dependencies}"
-   STREQUAL "Qt6::Core;$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextRosterOutput;ClassMngrNextSpeakingEvaluationOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrQtPdfPrint;Qt6::PdfWidgets;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
+   STREQUAL "Qt6::Core;$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>;$<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextSubPrepOutput;ClassMngrNextRosterOutput;ClassMngrNextSpeakingEvaluationOutput;ClassMngrNextCalendarUi;ClassMngrNextDocumentCatalog;ClassMngrQtPdfPrint;Qt6::PdfWidgets;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
     message(FATAL_ERROR
         "ClassMngrNext resource embedding must retain its Widgets application "
-        "and Resources links plus the narrow workspace, Schedule output, "
+        "and Resources links plus the narrow workspace, Schedule and Sub Prep output, "
         "Speaking Evaluation output, Calendar UI, "
         "document catalog, PDF viewer and print adapters, and "
         "startup-update adapters with Qt Network; found "

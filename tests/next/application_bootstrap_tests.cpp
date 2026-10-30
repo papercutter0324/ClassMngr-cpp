@@ -20,6 +20,8 @@
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
 #include "next/ui/schedule_page.h"
+#include "next/ui/sub_prep_page.h"
+#include "features/sub_prep/ui/sub_prep_class_information_list_model.h"
 #include "next/ui/selected_class_editor.h"
 #include "next/ui/speaking_evaluation_ai_dialogs.h"
 #include "next/ui/speaking_evaluation_page.h"
@@ -39,6 +41,7 @@
 #include <QApplication>
 #include <QAbstractButton>
 #include <QDialog>
+#include <QDialogButtonBox>
 #include <QCalendarWidget>
 #include <QCheckBox>
 #include <QContextMenuEvent>
@@ -158,6 +161,7 @@ private slots:
     void classesNavigatorClearsAndReloadsWhenWorkspaceIsReplacedWhileActive();
     void classesNavigatorClearsWhenWorkspaceIsClosedWhileActive();
     void scheduleSelectionOpensClassDetailsAndRefreshesAfterSave();
+    void subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle();
     void openActionDoesNotBypassPendingOrUnreadableSetupRecovery();
     void interruptedProfileRecoveryMenuActionOpensCopyOnlyAfterSuccessfulOpen();
     void recentFilesMenuRefreshesOrderedEscapedPathsAndEmptyState();
@@ -6025,6 +6029,306 @@ classesNavigatorClearsWhenWorkspaceIsClosedWhileActive()
     QCOMPARE(page->findChild<QLabel*>(QStringLiteral("classesNavigatorStatus"))
                  ->text(),
         QStringLiteral("No Teacher Profile is open."));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::ThemePreference::Light));
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")));
+    QVERIFY(QFile::exists(QStringLiteral(":/assets/icons/combo_arrow_light.svg")));
+    QVERIFY(QFile::exists(QStringLiteral(":/assets/icons/combo_arrow_dark.svg")));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("sub-prep-large-startup.tps"));
+    const QString journalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+        profilePath, QStringLiteral("large_startup.sql"), &fixtureError),
+        qPrintable(fixtureError));
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = {QStringLiteral("test-app"), profilePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = journalPath;
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application, {}, silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()), std::nullopt,
+        std::move(seams));
+    QVERIFY(bootstrap.start().succeeded());
+
+    Ui::PageHost& host = bootstrap.shell()->pageHost();
+    QVERIFY(host.isPageRegistered(QStringLiteral("sub_prep")));
+    QVERIFY(host.activatePage(QStringLiteral("sub_prep")));
+    auto* const page = dynamic_cast<Ui::SubPrepPage*>(
+        host.pageInstance(QStringLiteral("sub_prep")));
+    QVERIFY(page);
+    QCOMPARE(host.activePageKey(), std::optional<QString>(
+        QStringLiteral("sub_prep")));
+
+    auto metrics = page->visualMetrics();
+    QCOMPARE(metrics.summaryModelCount, 1);
+    QCOMPARE(page->classList()->model(), page->summaryModel());
+    QCOMPARE(metrics.visibleSummaryCount, 96);
+    QCOMPARE(static_cast<int>(page->summaryModel()->projection().classes().size()),
+             metrics.visibleSummaryCount);
+    QCOMPARE(metrics.selectedDetailPanelCount, 1);
+    QCOMPARE(metrics.textEditorCount, 6);
+    QCOMPARE(metrics.selectedDetailReadCount, 1);
+    QVERIFY(page->selectedClassId());
+    QVERIFY(page->selectedDetails());
+    QCOMPARE(page->selectedDetails()->classId.value(),
+             page->selectedClassId()->value());
+
+    // The compact model owns one row value for every visible summary, with
+    // the active grade alone exposed through QListView at a time.
+    SubPrepClassInformationListModel rowCheck;
+    rowCheck.setProjection(page->summaryModel()->projection());
+    int modeledRows = 0;
+    for (const QString& grade : rowCheck.grades())
+    {
+        rowCheck.setCurrentGrade(grade);
+        modeledRows += rowCheck.rowCount();
+    }
+    QCOMPARE(modeledRows, metrics.visibleSummaryCount);
+
+    auto* const mode = page->findChild<QComboBox*>(
+        QStringLiteral("subPrepScheduleMode"));
+    QVERIFY(mode);
+    const auto classFifty = Domain::ClassId::fromString("50");
+    QVERIFY(classFifty);
+    const int detailsBeforeSelection = metrics.selectedDetailReadCount;
+    QVERIFY(page->selectClassForTesting(*classFifty));
+    metrics = page->visualMetrics();
+    QCOMPARE(page->selectedClassId()->value(), classFifty->value());
+    QCOMPARE(page->selectedDetails()->classId.value(), classFifty->value());
+    QCOMPARE(metrics.selectedDetailReadCount, detailsBeforeSelection + 1);
+
+    const auto beforeRefresh = metrics;
+    QString reloadError;
+    QVERIFY2(page->reload(&reloadError), qPrintable(reloadError));
+    metrics = page->visualMetrics();
+    QCOMPARE(metrics.scheduleReadCount, beforeRefresh.scheduleReadCount + 1);
+    QCOMPARE(metrics.summaryReadCount, beforeRefresh.summaryReadCount + 1);
+    QCOMPARE(metrics.selectedDetailReadCount,
+             beforeRefresh.selectedDetailReadCount + 1);
+    QCOMPARE(page->selectedClassId()->value(), classFifty->value());
+
+    mode->setCurrentIndex(mode->findData(
+        static_cast<int>(Application::ScheduleViewMode::Intensive)));
+    metrics = page->visualMetrics();
+    QCOMPARE(metrics.visibleSummaryCount, 24);
+    QVERIFY(page->selectedClassId());
+    QVERIFY(page->selectedDetails());
+    QVERIFY(page->selectedClassId()->value() != classFifty->value());
+    QCOMPARE(page->selectedDetails()->classId.value(),
+             page->selectedClassId()->value());
+    mode->setCurrentIndex(mode->findData(
+        static_cast<int>(Application::ScheduleViewMode::Regular)));
+    metrics = page->visualMetrics();
+    QCOMPARE(metrics.visibleSummaryCount, 96);
+
+    const int summaryBeforeEmpty = metrics.summaryReadCount;
+    const int scheduleBeforeEmpty = metrics.scheduleReadCount;
+    for (int day = 0; day < 5; ++day)
+    {
+        auto* const check = page->findChild<QCheckBox*>(
+            QStringLiteral("subPrepDay_%1").arg(day));
+        QVERIFY(check);
+        check->setChecked(false);
+    }
+    metrics = page->visualMetrics();
+    QCOMPARE(metrics.summaryReadCount, summaryBeforeEmpty + 5);
+    QCOMPARE(metrics.scheduleReadCount, scheduleBeforeEmpty + 5);
+    QCOMPARE(metrics.visibleSummaryCount, 0);
+    QVERIFY(!metrics.selectedDetailsRetained);
+    QVERIFY(!page->selectedDetails());
+
+    auto* const monday = page->findChild<QCheckBox*>(
+        QStringLiteral("subPrepDay_0"));
+    QVERIFY(monday);
+    monday->setChecked(true);
+    QVERIFY(page->visualMetrics().visibleSummaryCount > 0);
+
+    // Run the production output dialog and package service against the same
+    // active gateway, with a bounded Monday operation from the 96-class store.
+    const QString outputRoot = temporaryDirectory.filePath(
+        QStringLiteral("sub-prep-generated"));
+    QVERIFY(QDir().mkpath(outputRoot));
+    auto* const generate = page->findChild<QPushButton*>(
+        QStringLiteral("subPrepGenerateButton"));
+    QVERIFY(generate);
+
+    // Canceling the Next-shell output dialog must leave the selected detail
+    // intact and must not create the requested output directory.
+    const QString canceledOutputRoot = temporaryDirectory.filePath(
+        QStringLiteral("sub-prep-canceled-output"));
+    QVERIFY(!QFileInfo::exists(canceledOutputRoot));
+    const auto selectedBeforeCancel = page->selectedClassId();
+    QVERIFY(selectedBeforeCancel);
+    const auto metricsBeforeCancel = page->visualMetrics();
+    bool cancelDialogSeen = false;
+    bool cancelAutomationFailed = false;
+    QTimer::singleShot(0, page, [&] {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog)
+        {
+            cancelAutomationFailed = true;
+            return;
+        }
+        cancelDialogSeen = true;
+        auto* const folder = dialog->findChild<QLineEdit*>(
+            QStringLiteral("subPrepOutputFolder"));
+        auto* const cancel = dialog->findChild<QPushButton*>(
+            QStringLiteral("subPrepOutputCancel"));
+        if (!folder || !cancel)
+        {
+            cancelAutomationFailed = true;
+            dialog->reject();
+            return;
+        }
+        folder->setText(canceledOutputRoot);
+        cancel->click();
+    });
+    QTimer cancelSafetyClose;
+    cancelSafetyClose.setSingleShot(true);
+    QObject::connect(&cancelSafetyClose, &QTimer::timeout, page, [&] {
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            cancelAutomationFailed = true;
+            modal->close();
+        }
+    });
+    cancelSafetyClose.start(15'000);
+    generate->click();
+    cancelSafetyClose.stop();
+    QVERIFY(cancelDialogSeen);
+    QVERIFY(!cancelAutomationFailed);
+    QVERIFY(!QFileInfo::exists(canceledOutputRoot));
+    QCOMPARE(page->findChild<QLabel*>(
+        QStringLiteral("subPrepRouteStatus"))->text(),
+        QStringLiteral("Sub Prep generation canceled."));
+    const auto metricsAfterCancel = page->visualMetrics();
+    QCOMPARE(metricsAfterCancel.scheduleReadCount,
+             metricsBeforeCancel.scheduleReadCount + 1);
+    QCOMPARE(metricsAfterCancel.summaryReadCount,
+             metricsBeforeCancel.summaryReadCount);
+    QCOMPARE(metricsAfterCancel.selectedDetailReadCount,
+             metricsBeforeCancel.selectedDetailReadCount);
+    QCOMPARE(page->selectedClassId()->value(), selectedBeforeCancel->value());
+    QVERIFY(page->selectedDetails());
+    QCOMPARE(page->selectedDetails()->classId.value(),
+             selectedBeforeCancel->value());
+
+    const int detailsBeforeOutput =
+        page->visualMetrics().selectedDetailReadCount;
+    bool dialogSeen = false;
+    bool automationFailed = false;
+    QTimer::singleShot(0, page, [&] {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog)
+        {
+            automationFailed = true;
+            return;
+        }
+        dialogSeen = true;
+        auto* const folder = dialog->findChild<QLineEdit*>(
+            QStringLiteral("subPrepOutputFolder"));
+        auto* const name = dialog->findChild<QLineEdit*>(
+            QStringLiteral("subPrepOutputUserName"));
+        auto* const openAfter = dialog->findChild<QCheckBox*>(
+            QStringLiteral("subPrepOpenFolderAfterGeneration"));
+        auto* const vacation = dialog->findChild<QCheckBox*>(
+            QStringLiteral("subPrepNextVacationCheckBox"));
+        auto* const buttons = dialog->findChild<QDialogButtonBox*>();
+        if (!folder || !name || !openAfter || !buttons
+            || !buttons->button(QDialogButtonBox::Ok))
+        {
+            automationFailed = true;
+            dialog->reject();
+            return;
+        }
+        folder->setText(outputRoot);
+        name->setText(QStringLiteral("C44"));
+        openAfter->setChecked(false);
+        if (vacation && vacation->isEnabled())
+        {
+            vacation->setChecked(false);
+        }
+        for (int index = 0; index < 7; ++index)
+        {
+            if (auto* const day = dialog->findChild<QCheckBox*>(
+                    QStringLiteral("subPrepOutputDay_%1").arg(index)))
+            {
+                day->setChecked(index == 0);
+            }
+        }
+        buttons->button(QDialogButtonBox::Ok)->click();
+    });
+    QTimer safetyClose;
+    safetyClose.setSingleShot(true);
+    QObject::connect(&safetyClose, &QTimer::timeout, page, [&] {
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            automationFailed = true;
+            modal->close();
+        }
+    });
+    safetyClose.start(15'000);
+    generate->click();
+    safetyClose.stop();
+    QVERIFY(dialogSeen);
+    QVERIFY(!automationFailed);
+    const QString outputStatus = page->findChild<QLabel*>(
+        QStringLiteral("subPrepRouteStatus"))->text();
+    QVERIFY2(outputStatus.contains(QStringLiteral(
+        "Multiple selected classes use the Monday 4:00 PM slot.")),
+        qPrintable(outputStatus));
+    const QStringList folders = QDir(outputRoot).entryList(
+        QDir::Dirs | QDir::NoDotAndDotDot);
+    QVERIFY2(folders.isEmpty(),
+        "The rejected conflicting output must not leave a package folder.");
+    QCOMPARE(page->visualMetrics().selectedDetailReadCount,
+             detailsBeforeOutput);
+    QVERIFY(page->selectedDetails());
+
+    for (int day = 1; day < 5; ++day)
+    {
+        auto* const check = page->findChild<QCheckBox*>(
+            QStringLiteral("subPrepDay_%1").arg(day));
+        QVERIFY(check);
+        check->setChecked(true);
+    }
+    QVERIFY(host.activatePage(QStringLiteral("my_workspace")));
+    metrics = page->visualMetrics();
+    QCOMPARE(metrics.visibleSummaryCount, 0);
+    QVERIFY(!page->selectedDetails());
+    QVERIFY(host.activatePage(QStringLiteral("sub_prep")));
+    metrics = page->visualMetrics();
+    QCOMPARE(metrics.visibleSummaryCount, 96);
+    QCOMPARE(metrics.summaryModelCount, 1);
+    QCOMPARE(metrics.selectedDetailPanelCount, 1);
+    QVERIFY(page->selectedDetails());
+    QCOMPARE(page->selectedDetails()->classId.value(),
+             page->selectedClassId()->value());
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);

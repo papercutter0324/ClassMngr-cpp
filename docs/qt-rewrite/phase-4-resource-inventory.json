@@ -3,7 +3,7 @@
   "title": "Phase 4 effective resource inventory",
   "source_snapshot": {
     "tracked_source_tree_ids": {
-      "resources": "246f73a726fc2fa996361f84998d92e65992b127",
+      "resources": "f2624b138ee8ad9eee0a028e00d9a2a33d85d8c7",
       "calendar_qml": "b75d01f27817b205ad63deca347be0506e3b9796"
     },
     "tracked_input_worktree_changes": [
@@ -16,8 +16,8 @@
     "tracked_files_under_resources_assets": 226,
     "tracked_files_under_resources_windows": 3,
     "tracked_calendar_qml_sources_outside_resources": 2,
-    "resource_asset_source_bytes_exact": 66034394,
-    "all_tracked_resources_source_bytes_exact": 66035580,
+    "resource_asset_source_bytes_exact": 66036661,
+    "all_tracked_resources_source_bytes_exact": 66037847,
     "calendar_qml_source_bytes_exact": 35154,
     "disposition_record_counts": {
       "build_only_excluded": 31,
@@ -64,7 +64,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 2059079
+        "source_bytes": 2061346
       }
     },
     "resource_categories": {
@@ -114,7 +114,7 @@
       },
       "translations": {
         "files": 5,
-        "source_bytes": 2059079
+        "source_bytes": 2061346
       }
     }
   },
@@ -6286,8 +6286,8 @@
       "package_disposition": "runtime_packaged_generated",
       "disposition_reason": "Qt Linguist produces the runtime .qm from this tracked TS source; only the selected locale is loaded.",
       "source_file": {
-        "bytes": 531647,
-        "sha256": "048137704316556cfeda9f1c376026c8cbb425a4da4164f6070dbab079763a67"
+        "bytes": 533914,
+        "sha256": "b9c6919d6488af175a285da8dcbcf03ee80a2c7de44f0c946a8ed7f197d1b047"
       },
       "installed_size": {
         "bytes": null,

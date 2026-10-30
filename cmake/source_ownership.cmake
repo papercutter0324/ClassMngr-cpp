@@ -45,6 +45,9 @@ function(classmngr_check_source_ownership)
         ${CLASSMNGR_STUDENT_NAME_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrCore ${CLASSMNGR_CORE_SOURCES})
+    _classmngr_record_manifest(ClassMngrFontManager
+        ${CLASSMNGR_FONT_MANAGER_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrSpeakingEvalReportEngine ${CLASSMNGR_SPEAKING_EVAL_REPORT_ENGINE_SOURCES})
     _classmngr_record_manifest(ClassMngrUpdater ${CLASSMNGR_UPDATER_SOURCES})
     _classmngr_record_manifest(ClassMngrSettings ${CLASSMNGR_SETTINGS_SOURCES})
@@ -110,6 +113,12 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrNextSpeakingEvaluationOutput ${CLASSMNGR_NEXT_SPEAKING_EVALUATION_OUTPUT_SOURCES})
     _classmngr_record_manifest(ClassMngrNextScheduleOutput
         ${CLASSMNGR_NEXT_SCHEDULE_OUTPUT_SOURCES}
+    )
+    _classmngr_record_manifest(ClassMngrSubPrepShared
+        ${CLASSMNGR_SUB_PREP_SHARED_SOURCES}
+    )
+    _classmngr_record_manifest(ClassMngrNextSubPrepProfilerCompat
+        ${CLASSMNGR_NEXT_SUB_PREP_PROFILER_COMPAT_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrNextCalendarUi
         ${CLASSMNGR_NEXT_CALENDAR_UI_SOURCES}

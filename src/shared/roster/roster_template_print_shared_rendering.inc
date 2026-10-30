@@ -57,7 +57,17 @@ QFont printKoreanFont(
 {
     QFont font =
         activeFonts.korean;
+    if (weight != QFont::Normal)
+    {
+        font.setStyleName(QString());
+    }
     font.setWeight(static_cast<QFont::Weight>(weight));
+    static const auto weightAxis =
+        QFont::Tag::fromString(QStringLiteral("wght"));
+    if (weightAxis && font.isVariableAxisSet(*weightAxis))
+    {
+        font.setVariableAxis(*weightAxis, static_cast<float>(weight));
+    }
     font.setPixelSize(
         std::max(
             1,

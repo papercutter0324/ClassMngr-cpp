@@ -38,6 +38,13 @@ public:
     {
     }
 
+    explicit ApplicationServicesSubPrepPreferencesPort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
+    {
+    }
+
     ApplicationServicesSubPrepPreferencesPort(
         const ApplicationServicesSubPrepPreferencesPort&
         ) = delete;

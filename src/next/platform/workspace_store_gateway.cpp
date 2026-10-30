@@ -39,6 +39,16 @@
 
 #include "next/application/my_classes_page_read_query.h"
 #include "next/platform/workspace_store_my_classes_page_read_port.h"
+#include "next/platform/application_services_sub_prep_schedule_summary_port.h"
+#include "next/platform/application_services_sub_prep_class_details_port.h"
+#include "next/platform/application_services_sub_prep_print_source_port.h"
+#include "next/platform/application_services_sub_prep_roster_output_source_port.h"
+#include "next/platform/application_services_sub_prep_calendar_event_intervals_port.h"
+#include "next/platform/application_services_sub_prep_preferences_port.h"
+#include "next/platform/application_services_sub_prep_personal_zoom_preferences_port.h"
+#include "next/platform/application_services_current_campus_preferences_port.h"
+#include "next/platform/application_services_personal_display_name_preferences_port.h"
+#include "next/platform/workspace_store_schedule_actions.h"
 
 namespace ClassMngr::Next::Platform
 {
@@ -132,6 +142,104 @@ WorkspaceStoreGateway::readMyClassesPageSelectedDetails(
 {
     WorkspaceStoreMyClassesPageReadPort port(*m_store);
     return Application::MyClassesPageReadQuery(port).readSelectedDetails(classId);
+}
+
+Application::SchedulePageReadResult
+WorkspaceStoreGateway::readSubPrepSchedulePage() const
+{
+    return readSchedulePageFromStore(*m_store);
+}
+
+Application::SubPrepScheduleSummaryQueryResult
+WorkspaceStoreGateway::readSubPrepSummaries(
+    const Application::SubPrepScheduleScopeRequest& request
+    ) const
+{
+    ApplicationServicesSubPrepScheduleSummaryPort port(*m_store);
+    return Application::SubPrepScheduleSummaryQuery(port).execute(request);
+}
+
+Application::SubPrepClassDetailsQueryResult
+WorkspaceStoreGateway::readSubPrepSelectedDetails(
+    const Domain::ClassId& classId
+    ) const
+{
+    ApplicationServicesSubPrepClassDetailsPort port(*m_store);
+    return Application::SubPrepClassDetailsQuery(port).execute(classId);
+}
+
+Application::SubPrepPrintSourceQueryResult
+WorkspaceStoreGateway::readSubPrepPrintSource(
+    const Application::SubPrepPrintSourceRequest& request
+    ) const
+{
+    ApplicationServicesSubPrepPrintSourcePort port(*m_store);
+    return Application::SubPrepPrintSourceQuery(port).execute(request);
+}
+
+Application::SubPrepCalendarEventIntervalsQueryResult
+WorkspaceStoreGateway::readSubPrepCalendarEventIntervals(
+    const Application::SubPrepCalendarEventIntervalsRequest& request
+    ) const
+{
+    ApplicationServicesSubPrepCalendarEventIntervalsPort port(*m_store);
+    return Application::SubPrepCalendarEventIntervalsQuery(port).execute(
+        request
+        );
+}
+
+Application::SubPrepPreferencesResult
+WorkspaceStoreGateway::readSubPrepPreferences() const
+{
+    ApplicationServicesSubPrepPreferencesPort port(*m_store);
+    return port.load();
+}
+
+Application::SubPrepPreferencesSaveResult
+WorkspaceStoreGateway::saveSubPrepPreferences(
+    const Application::SubPrepPreferences& preferences
+    ) const
+{
+    ApplicationServicesSubPrepPreferencesPort port(*m_store);
+    return port.save(preferences);
+}
+
+Application::SubPrepPersonalZoomPreferencesResult
+WorkspaceStoreGateway::readSubPrepPersonalZoomPreferences() const
+{
+    ApplicationServicesSubPrepPersonalZoomPreferencesPort port(*m_store);
+    return port.load();
+}
+
+Domain::Result<Application::CurrentCampusPreferenceValue>
+WorkspaceStoreGateway::readSubPrepCurrentCampus() const
+{
+    ApplicationServicesCurrentCampusPreferencesPort port(*m_store);
+    return port.read();
+}
+
+Application::PersonalDisplayNamePreferencesReadResult
+WorkspaceStoreGateway::readSubPrepFolderUserName() const
+{
+    ApplicationServicesPersonalDisplayNamePreferencesPort port(*m_store);
+    return port.read();
+}
+
+Application::PersonalDisplayNamePreferencesSaveResult
+WorkspaceStoreGateway::saveSubPrepFolderUserName(
+    const std::string& userName
+    ) const
+{
+    ApplicationServicesPersonalDisplayNamePreferencesPort port(*m_store);
+    return port.write(userName);
+}
+
+std::unique_ptr<Application::SubPrepRosterOutputSourceReadPort>
+WorkspaceStoreGateway::createSubPrepRosterOutputSourceReadPort() const
+{
+    return std::make_unique<
+        ApplicationServicesSubPrepRosterOutputSourcePort
+        >(*m_store);
 }
 
 Application::PersonalDetailsReadResult

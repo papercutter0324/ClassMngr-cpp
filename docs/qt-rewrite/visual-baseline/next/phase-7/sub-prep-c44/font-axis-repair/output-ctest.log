@@ -1,0 +1,11 @@
+Test project /Users/papercutter0324/Git/ClassMngr-cpp/build/macos-clang-debug
+    Start 161: ClassMngrSubPrepPrintPdfTests
+1/3 Test #161: ClassMngrSubPrepPrintPdfTests .............   Passed    1.63 sec
+    Start 162: ClassMngrSubPrepRosterOutputParityTests
+2/3 Test #162: ClassMngrSubPrepRosterOutputParityTests ...   Passed    1.72 sec
+    Start 163: ClassMngrSubPrepPackageServiceTests
+3/3 Test #163: ClassMngrSubPrepPackageServiceTests .......   Passed    1.48 sec
+
+100% tests passed, 0 tests failed out of 3
+
+Total Test time (real) =   4.84 sec

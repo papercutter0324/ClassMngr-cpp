@@ -66,6 +66,7 @@
 #include "next/ui/calendar_page.h"
 #include "next/ui/schedule_output_request.h"
 #include "next/ui/my_classes_page.h"
+#include "next/ui/sub_prep_page.h"
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/speaking_evaluation_page.h"
 #include "next/ui/testing_classes_manager_page.h"
@@ -312,36 +313,6 @@ loadWorkspaceCampusChoices(
     return campuses;
 }
 
-[[nodiscard]] Ui::PageDescriptor placeholderDescriptor(
-    const QString& id,
-    const QString& label
-    )
-{
-    return Ui::PageDescriptor{
-        .id = pageId(id),
-        .label = label,
-        .iconResourceId = std::nullopt,
-        .requiredPermissions = {},
-        .factory = [label](const Ui::PageContext& context)
-            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
-            std::unique_ptr<Ui::Page> page =
-                std::make_unique<Ui::PlaceholderPage>(context, label);
-            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
-                std::move(page)
-            };
-        },
-        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
-        .initialDataPolicy = Ui::PageInitialDataPolicy::None
-    };
-}
-
-[[nodiscard]] std::vector<Ui::PageDescriptor> placeholderPageDescriptors()
-{
-    return {
-        placeholderDescriptor(QStringLiteral("sub_prep"), navigationLabel("Sub Prep"))
-    };
-}
-
 [[nodiscard]] Ui::PageDescriptor classesNavigatorPageDescriptor(
     std::function<Ui::ClassesNavigatorPageActions()> actionsFactory
     )
@@ -531,6 +502,30 @@ loadWorkspaceCampusChoices(
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             std::unique_ptr<Ui::Page> page =
                 std::make_unique<Ui::MyClassesPage>(context, actionsFactory());
+            return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
+                std::move(page)
+            };
+        },
+        .resourcePolicy = Ui::PageResourcePolicy::PageScoped,
+        .initialDataPolicy = Ui::PageInitialDataPolicy::None
+    };
+}
+
+[[nodiscard]] Ui::PageDescriptor subPrepPageDescriptor(
+    std::function<Ui::SubPrepPageActions()> actionsFactory
+    )
+{
+    return Ui::PageDescriptor{
+        .id = pageId(QStringLiteral("sub_prep")),
+        .label = navigationLabel("Sub Prep"),
+        .iconResourceId = std::nullopt,
+        .requiredPermissions = {},
+        .factory = [actionsFactory = std::move(actionsFactory)](
+                       const Ui::PageContext& context
+                       ) mutable
+            -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            std::unique_ptr<Ui::Page> page =
+                std::make_unique<Ui::SubPrepPage>(context, actionsFactory());
             return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
                 std::move(page)
             };
@@ -759,6 +754,156 @@ struct ApplicationBootstrap::CoreServices final
     std::unique_ptr<Ui::ThemePresenter> themePresenter;
     std::unique_ptr<Ui::FontSizePresenter> fontSizePresenter;
 };
+
+Ui::SubPrepPageActions ApplicationBootstrap::subPrepPageActions()
+{
+    Ui::SubPrepPageActions actions;
+    const auto gateway = [this] {
+        return dynamic_cast<Platform::WorkspaceStoreGateway*>(
+            m_workspaceGateway.get());
+    };
+    actions.workspaceIdentity = [this] {
+        if (!m_applicationRuntime) { return QString{}; }
+        const auto session =
+            m_applicationRuntime->workspaceState().snapshot().session();
+        if (!session) { return QString{}; }
+        return QString::fromUtf8(
+            session->workspaceId().value().data(),
+            static_cast<qsizetype>(session->workspaceId().value().size())
+            ) + QLatin1Char('|') + QString::fromUtf8(
+            session->location().value().data(),
+            static_cast<qsizetype>(session->location().value().size())
+            );
+    };
+    actions.readSchedulePage = [gateway] {
+        if (auto* active = gateway()) { return active->readSubPrepSchedulePage(); }
+        return Application::SchedulePageReadResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    actions.readSummaries = [gateway](
+        const Application::SubPrepScheduleScopeRequest& request) {
+        if (auto* active = gateway()) { return active->readSubPrepSummaries(request); }
+        return Application::SubPrepScheduleSummaryQueryResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    actions.readSelectedDetails = [gateway](const Domain::ClassId& id) {
+        if (auto* active = gateway()) { return active->readSubPrepSelectedDetails(id); }
+        return Application::SubPrepClassDetailsQueryResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    actions.readPreferences = [gateway] {
+        if (auto* active = gateway()) { return active->readSubPrepPreferences(); }
+        return Application::SubPrepPreferencesResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    actions.savePreferences = [gateway](const Application::SubPrepPreferences& value) {
+        if (auto* active = gateway()) { return active->saveSubPrepPreferences(value); }
+        return Application::SubPrepPreferencesSaveResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    actions.readPersonalZoomPreferences = [gateway] {
+        if (auto* active = gateway()) { return active->readSubPrepPersonalZoomPreferences(); }
+        return Application::SubPrepPersonalZoomPreferencesResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    actions.readCurrentCampus = [gateway] {
+        if (auto* active = gateway()) { return active->readSubPrepCurrentCampus(); }
+        return Domain::Result<Application::CurrentCampusPreferenceValue>::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    const auto campusDirectory = m_coreServices->campusDirectoryRepository;
+    actions.readCampuses = [campusDirectory] {
+        std::vector<Application::SubPrepCampusMetadata> campuses;
+        const auto directory = campusDirectory->loadCampuses();
+        if (!directory)
+        {
+            return campuses;
+        }
+
+        campuses.reserve(directory.value().size());
+        for (const Application::CampusDirectoryEntry& entry : directory.value())
+        {
+            const auto selected = campusDirectory->loadCampus(entry.id);
+            if (!selected || !selected.value())
+            {
+                continue;
+            }
+            const auto& campus = *selected.value();
+            const std::string displayName = campus.campusName.empty()
+                ? entry.displayName
+                : campus.campusName;
+            campuses.push_back({
+                .id = entry.id,
+                .displayName = displayName,
+                .officeNumber = campus.officeNumber,
+                .wifiName = campus.officeWifi,
+                .wifiPassword = campus.officeWifiPassword,
+                .photocopierCode = campus.photocopierCode
+            });
+        }
+        return campuses;
+    };
+    actions.readFolderUserName = [gateway] {
+        if (auto* active = gateway()) { return active->readSubPrepFolderUserName(); }
+        return Application::PersonalDisplayNamePreferencesReadResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    actions.saveFolderUserName = [gateway](const std::string& value) {
+        if (auto* active = gateway()) { return active->saveSubPrepFolderUserName(value); }
+        return Application::PersonalDisplayNamePreferencesSaveResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    actions.readCalendarIntervals = [gateway](
+        const Application::SubPrepCalendarEventIntervalsRequest& request) {
+        if (auto* active = gateway()) { return active->readSubPrepCalendarEventIntervals(request); }
+        return Application::SubPrepCalendarEventIntervalsQueryResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    actions.readPrintSource = [gateway](
+        const Application::SubPrepPrintSourceRequest& request) {
+        if (auto* active = gateway()) { return active->readSubPrepPrintSource(request); }
+        return Application::SubPrepPrintSourceQueryResult::failure({
+            .code = Domain::ErrorCode::NotFound,
+            .message = "The active workspace store is unavailable.",
+            .recoverable = true
+        });
+    };
+    actions.createRosterOutputSourceReadPort = [gateway] {
+        if (auto* active = gateway()) { return active->createSubPrepRosterOutputSourceReadPort(); }
+        return std::unique_ptr<Application::SubPrepRosterOutputSourceReadPort>{};
+    };
+    return actions;
+}
 
 int ApplicationBootstrap::run(int argc, char* argv[])
 {
@@ -1208,15 +1353,13 @@ Application::StartupResult ApplicationBootstrap::start()
     QString initialPageFailure;
     try
     {
-        for (Ui::PageDescriptor& descriptor : placeholderPageDescriptors())
+        const Ui::PageHostResult<void> subPrepRegistration =
+            m_shell->pageHost().registerPage(subPrepPageDescriptor(
+                [this] { return subPrepPageActions(); }
+                ));
+        if (!subPrepRegistration)
         {
-            const Ui::PageHostResult<void> registration =
-                m_shell->pageHost().registerPage(std::move(descriptor));
-            if (!registration)
-            {
-                initialPageFailure = registration.error().message;
-                break;
-            }
+            initialPageFailure = subPrepRegistration.error().message;
         }
 
         if (initialPageFailure.isEmpty())

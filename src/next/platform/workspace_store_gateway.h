@@ -16,6 +16,16 @@
 #include "next/application/korean_teacher_birthday_directory_read_port.h"
 #include "next/application/native_english_teacher_birthday_directory_read_port.h"
 #include "next/application/gs_team_birthday_directory_read_port.h"
+#include "next/application/schedule_page_read.h"
+#include "next/application/sub_prep_calendar_event_intervals_query.h"
+#include "next/application/sub_prep_class_details_query.h"
+#include "next/application/sub_prep_personal_zoom_preferences.h"
+#include "next/application/sub_prep_preferences.h"
+#include "next/application/sub_prep_print_source_query.h"
+#include "next/application/sub_prep_roster_output_source_query.h"
+#include "next/application/sub_prep_schedule_summary_query.h"
+#include "next/application/current_campus_preferences.h"
+#include "next/application/personal_display_name_preferences.h"
 #include "next/application/native_english_teacher_directory_read_query.h"
 #include "next/application/native_english_teacher_directory_save_use_case.h"
 #include "next/application/gs_team_directory_read_query.h"
@@ -24,6 +34,7 @@
 
 #include <memory>
 #include <optional>
+#include <string>
 
 #include "next/application/my_classes_page_read.h"
 
@@ -151,6 +162,42 @@ public:
     readMyClassesPageSelectedDetails(
         const Domain::ClassId& classId
         ) const;
+    // C44 Sub Prep operations use the same private store as workspace
+    // lifecycle. Returned values and ports are typed; the store itself stays
+    // private to this gateway.
+    [[nodiscard]] Application::SchedulePageReadResult
+    readSubPrepSchedulePage() const;
+    [[nodiscard]] Application::SubPrepScheduleSummaryQueryResult
+    readSubPrepSummaries(
+        const Application::SubPrepScheduleScopeRequest& request
+        ) const;
+    [[nodiscard]] Application::SubPrepClassDetailsQueryResult
+    readSubPrepSelectedDetails(const Domain::ClassId& classId) const;
+    [[nodiscard]] Application::SubPrepPrintSourceQueryResult
+    readSubPrepPrintSource(
+        const Application::SubPrepPrintSourceRequest& request
+        ) const;
+    [[nodiscard]] Application::SubPrepCalendarEventIntervalsQueryResult
+    readSubPrepCalendarEventIntervals(
+        const Application::SubPrepCalendarEventIntervalsRequest& request
+        ) const;
+    [[nodiscard]] Application::SubPrepPreferencesResult
+    readSubPrepPreferences() const;
+    [[nodiscard]] Application::SubPrepPreferencesSaveResult
+    saveSubPrepPreferences(
+        const Application::SubPrepPreferences& preferences
+        ) const;
+    [[nodiscard]] Application::SubPrepPersonalZoomPreferencesResult
+    readSubPrepPersonalZoomPreferences() const;
+    [[nodiscard]] Domain::Result<Application::CurrentCampusPreferenceValue>
+    readSubPrepCurrentCampus() const;
+    [[nodiscard]] Application::PersonalDisplayNamePreferencesReadResult
+    readSubPrepFolderUserName() const;
+    [[nodiscard]] Application::PersonalDisplayNamePreferencesSaveResult
+    saveSubPrepFolderUserName(const std::string& userName) const;
+    [[nodiscard]] std::unique_ptr<
+        Application::SubPrepRosterOutputSourceReadPort>
+    createSubPrepRosterOutputSourceReadPort() const;
     [[nodiscard]] Application::GsTeamDirectorySaveOutcome saveGsTeamDirectory(
         const Application::GsTeamDirectorySaveRequest& request
         ) const;

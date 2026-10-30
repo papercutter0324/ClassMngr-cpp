@@ -37,6 +37,13 @@ public:
     {
     }
 
+    explicit ApplicationServicesSubPrepPersonalZoomPreferencesPort(
+        WorkspaceStore& store
+        ) noexcept
+        : m_store(&store)
+    {
+    }
+
     ApplicationServicesSubPrepPersonalZoomPreferencesPort(
         const ApplicationServicesSubPrepPersonalZoomPreferencesPort&
         ) = delete;

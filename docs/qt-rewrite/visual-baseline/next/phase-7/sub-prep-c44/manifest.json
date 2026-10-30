@@ -1,0 +1,419 @@
+{
+    "memoryThreshold": "Not evaluated; Phase 9 packaged Release owns the 250 MiB gate",
+    "platform": "offscreen",
+    "route": "Next Sub Prep",
+    "schemaVersion": 1,
+    "style": "Fusion",
+    "successfulOutput": {
+        "files": [
+            {
+                "bytes": 22989,
+                "name": "Rosters - By Day.pdf"
+            },
+            {
+                "bytes": 26338,
+                "name": "Sub Prep.pdf"
+            }
+        ],
+        "fixture": "tests/fixtures/workspaces/representative_startup.sql",
+        "outputFolder": "generated-package-success/C44 Next (26 Oct 2026)",
+        "status": "The package was created at:\n/Users/papercutter0324/Git/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44/generated-package-success/C44 Next (26 Oct 2026)",
+        "visibleSummaryCount": 6
+    },
+    "taskId": "phase7_c44_subprep_implementation_01",
+    "variants": [
+        {
+            "fixture": "tests/fixtures/workspaces/large_startup.sql (96 classes, 8 slots each)",
+            "legacySelectedReference": "/Users/papercutter0324/Git/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states/english-light/sub-prep-selected.png",
+            "locale": "en_US",
+            "states": {
+                "changedSelection": {
+                    "classId": "50",
+                    "image": "changed-selection-en-light.png",
+                    "metrics": {
+                        "activeGradeRowCount": 24,
+                        "projectionClassCount": 96,
+                        "scheduleReadCount": 1,
+                        "selectedClassId": "50",
+                        "selectedDetailPanelCount": 1,
+                        "selectedDetailReadCount": 2,
+                        "selectedDetailsRetained": true,
+                        "summaryModelCount": 1,
+                        "summaryReadCount": 1,
+                        "textEditorCount": 6,
+                        "visibleSummaryCount": 96,
+                        "widgetCount": 105
+                    }
+                },
+                "empty": {
+                    "image": "empty-english-light.png",
+                    "metrics": {
+                        "activeGradeRowCount": 0,
+                        "projectionClassCount": 0,
+                        "scheduleReadCount": 7,
+                        "selectedClassId": "",
+                        "selectedDetailPanelCount": 1,
+                        "selectedDetailReadCount": 6,
+                        "selectedDetailsRetained": false,
+                        "summaryModelCount": 1,
+                        "summaryReadCount": 6,
+                        "textEditorCount": 6,
+                        "visibleSummaryCount": 0,
+                        "widgetCount": 105
+                    }
+                },
+                "memory": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:49.967",
+                        "peakWorkingSetBytes": 69091328,
+                        "platform": "macos",
+                        "privateUsageBytes": 23577512,
+                        "privateWorkingSetBytes": 22921216,
+                        "workingSetBytes": 69091328
+                    },
+                    "beforePage": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:49.864",
+                        "peakWorkingSetBytes": 33914880,
+                        "platform": "macos",
+                        "privateUsageBytes": 11436776,
+                        "privateWorkingSetBytes": 10911744,
+                        "workingSetBytes": 33914880
+                    },
+                    "scope": "Process-wide samples; not per-page allocations and no Phase 9 threshold",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:50.571",
+                        "peakWorkingSetBytes": 136069120,
+                        "platform": "macos",
+                        "privateUsageBytes": 64291824,
+                        "privateWorkingSetBytes": 63586304,
+                        "workingSetBytes": 136069120
+                    }
+                },
+                "outputFailure": {
+                    "image": "output-conflict-en-light.png",
+                    "metrics": {
+                        "activeGradeRowCount": 24,
+                        "projectionClassCount": 96,
+                        "scheduleReadCount": 2,
+                        "selectedClassId": "50",
+                        "selectedDetailPanelCount": 1,
+                        "selectedDetailReadCount": 2,
+                        "selectedDetailsRetained": true,
+                        "summaryModelCount": 1,
+                        "summaryReadCount": 1,
+                        "textEditorCount": 6,
+                        "visibleSummaryCount": 96,
+                        "widgetCount": 105
+                    },
+                    "packageFolderCreated": false,
+                    "status": "Multiple selected classes use the Monday 4:00 PM slot."
+                },
+                "selected": {
+                    "image": "selected-english-light.png",
+                    "metrics": {
+                        "activeGradeRowCount": 24,
+                        "projectionClassCount": 96,
+                        "scheduleReadCount": 1,
+                        "selectedClassId": "25",
+                        "selectedDetailPanelCount": 1,
+                        "selectedDetailReadCount": 1,
+                        "selectedDetailsRetained": true,
+                        "summaryModelCount": 1,
+                        "summaryReadCount": 1,
+                        "textEditorCount": 6,
+                        "visibleSummaryCount": 96,
+                        "widgetCount": 105
+                    },
+                    "modeLabel": "Regular Schedule",
+                    "mondayLabel": "Monday"
+                },
+                "suspendedMetrics": {
+                    "activeGradeRowCount": 0,
+                    "projectionClassCount": 0,
+                    "scheduleReadCount": 7,
+                    "selectedClassId": "",
+                    "selectedDetailPanelCount": 1,
+                    "selectedDetailReadCount": 6,
+                    "selectedDetailsRetained": false,
+                    "summaryModelCount": 1,
+                    "summaryReadCount": 6,
+                    "textEditorCount": 6,
+                    "visibleSummaryCount": 0,
+                    "widgetCount": 105
+                }
+            },
+            "theme": "light"
+        },
+        {
+            "fixture": "tests/fixtures/workspaces/large_startup.sql (96 classes, 8 slots each)",
+            "legacySelectedReference": "/Users/papercutter0324/Git/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states/english-dark/sub-prep-selected.png",
+            "locale": "en_US",
+            "states": {
+                "empty": {
+                    "image": "empty-english-dark.png",
+                    "metrics": {
+                        "activeGradeRowCount": 0,
+                        "projectionClassCount": 0,
+                        "scheduleReadCount": 6,
+                        "selectedClassId": "",
+                        "selectedDetailPanelCount": 1,
+                        "selectedDetailReadCount": 5,
+                        "selectedDetailsRetained": false,
+                        "summaryModelCount": 1,
+                        "summaryReadCount": 6,
+                        "textEditorCount": 6,
+                        "visibleSummaryCount": 0,
+                        "widgetCount": 105
+                    }
+                },
+                "memory": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:50.615",
+                        "peakWorkingSetBytes": 138838016,
+                        "platform": "macos",
+                        "privateUsageBytes": 67044336,
+                        "privateWorkingSetBytes": 66338816,
+                        "workingSetBytes": 138838016
+                    },
+                    "beforePage": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:50.585",
+                        "peakWorkingSetBytes": 136118272,
+                        "platform": "macos",
+                        "privateUsageBytes": 64324592,
+                        "privateWorkingSetBytes": 63619072,
+                        "workingSetBytes": 136118272
+                    },
+                    "scope": "Process-wide samples; not per-page allocations and no Phase 9 threshold",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:50.712",
+                        "peakWorkingSetBytes": 138854400,
+                        "platform": "macos",
+                        "privateUsageBytes": 67044336,
+                        "privateWorkingSetBytes": 66338816,
+                        "workingSetBytes": 138838016
+                    }
+                },
+                "selected": {
+                    "image": "selected-english-dark.png",
+                    "metrics": {
+                        "activeGradeRowCount": 24,
+                        "projectionClassCount": 96,
+                        "scheduleReadCount": 1,
+                        "selectedClassId": "25",
+                        "selectedDetailPanelCount": 1,
+                        "selectedDetailReadCount": 1,
+                        "selectedDetailsRetained": true,
+                        "summaryModelCount": 1,
+                        "summaryReadCount": 1,
+                        "textEditorCount": 6,
+                        "visibleSummaryCount": 96,
+                        "widgetCount": 105
+                    },
+                    "modeLabel": "Regular Schedule",
+                    "mondayLabel": "Monday"
+                },
+                "suspendedMetrics": {
+                    "activeGradeRowCount": 0,
+                    "projectionClassCount": 0,
+                    "scheduleReadCount": 6,
+                    "selectedClassId": "",
+                    "selectedDetailPanelCount": 1,
+                    "selectedDetailReadCount": 5,
+                    "selectedDetailsRetained": false,
+                    "summaryModelCount": 1,
+                    "summaryReadCount": 6,
+                    "textEditorCount": 6,
+                    "visibleSummaryCount": 0,
+                    "widgetCount": 105
+                }
+            },
+            "theme": "dark"
+        },
+        {
+            "fixture": "tests/fixtures/workspaces/large_startup.sql (96 classes, 8 slots each)",
+            "legacySelectedReference": "/Users/papercutter0324/Git/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states/korean-light/sub-prep-selected.png",
+            "locale": "ko_KR",
+            "states": {
+                "empty": {
+                    "image": "empty-korean-light.png",
+                    "metrics": {
+                        "activeGradeRowCount": 0,
+                        "projectionClassCount": 0,
+                        "scheduleReadCount": 6,
+                        "selectedClassId": "",
+                        "selectedDetailPanelCount": 1,
+                        "selectedDetailReadCount": 5,
+                        "selectedDetailsRetained": false,
+                        "summaryModelCount": 1,
+                        "summaryReadCount": 6,
+                        "textEditorCount": 6,
+                        "visibleSummaryCount": 0,
+                        "widgetCount": 105
+                    }
+                },
+                "memory": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:50.774",
+                        "peakWorkingSetBytes": 142393344,
+                        "platform": "macos",
+                        "privateUsageBytes": 67945504,
+                        "privateWorkingSetBytes": 67207168,
+                        "workingSetBytes": 142393344
+                    },
+                    "beforePage": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:50.726",
+                        "peakWorkingSetBytes": 138952704,
+                        "platform": "macos",
+                        "privateUsageBytes": 67109872,
+                        "privateWorkingSetBytes": 66404352,
+                        "workingSetBytes": 138952704
+                    },
+                    "scope": "Process-wide samples; not per-page allocations and no Phase 9 threshold",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:50.869",
+                        "peakWorkingSetBytes": 142458880,
+                        "platform": "macos",
+                        "privateUsageBytes": 67994656,
+                        "privateWorkingSetBytes": 67256320,
+                        "workingSetBytes": 142458880
+                    }
+                },
+                "selected": {
+                    "image": "selected-korean-light.png",
+                    "metrics": {
+                        "activeGradeRowCount": 24,
+                        "projectionClassCount": 96,
+                        "scheduleReadCount": 1,
+                        "selectedClassId": "25",
+                        "selectedDetailPanelCount": 1,
+                        "selectedDetailReadCount": 1,
+                        "selectedDetailsRetained": true,
+                        "summaryModelCount": 1,
+                        "summaryReadCount": 1,
+                        "textEditorCount": 6,
+                        "visibleSummaryCount": 96,
+                        "widgetCount": 105
+                    },
+                    "modeLabel": "정규 수업 일정",
+                    "mondayLabel": "월요일"
+                },
+                "suspendedMetrics": {
+                    "activeGradeRowCount": 0,
+                    "projectionClassCount": 0,
+                    "scheduleReadCount": 6,
+                    "selectedClassId": "",
+                    "selectedDetailPanelCount": 1,
+                    "selectedDetailReadCount": 5,
+                    "selectedDetailsRetained": false,
+                    "summaryModelCount": 1,
+                    "summaryReadCount": 6,
+                    "textEditorCount": 6,
+                    "visibleSummaryCount": 0,
+                    "widgetCount": 105
+                }
+            },
+            "theme": "light"
+        },
+        {
+            "fixture": "tests/fixtures/workspaces/large_startup.sql (96 classes, 8 slots each)",
+            "legacySelectedReference": "/Users/papercutter0324/Git/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states/korean-dark/sub-prep-selected.png",
+            "locale": "ko_KR",
+            "states": {
+                "empty": {
+                    "image": "empty-korean-dark.png",
+                    "metrics": {
+                        "activeGradeRowCount": 0,
+                        "projectionClassCount": 0,
+                        "scheduleReadCount": 6,
+                        "selectedClassId": "",
+                        "selectedDetailPanelCount": 1,
+                        "selectedDetailReadCount": 5,
+                        "selectedDetailsRetained": false,
+                        "summaryModelCount": 1,
+                        "summaryReadCount": 6,
+                        "textEditorCount": 6,
+                        "visibleSummaryCount": 0,
+                        "widgetCount": 105
+                    }
+                },
+                "memory": {
+                    "active": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:50.914",
+                        "peakWorkingSetBytes": 142475264,
+                        "platform": "macos",
+                        "privateUsageBytes": 68011040,
+                        "privateWorkingSetBytes": 67272704,
+                        "workingSetBytes": 142475264
+                    },
+                    "beforePage": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:50.883",
+                        "peakWorkingSetBytes": 142475264,
+                        "platform": "macos",
+                        "privateUsageBytes": 67994656,
+                        "privateWorkingSetBytes": 67256320,
+                        "workingSetBytes": 142245888
+                    },
+                    "scope": "Process-wide samples; not per-page allocations and no Phase 9 threshold",
+                    "suspended": {
+                        "available": true,
+                        "capturedAt": "2026-10-29T23:36:51.010",
+                        "peakWorkingSetBytes": 142508032,
+                        "platform": "macos",
+                        "privateUsageBytes": 68043808,
+                        "privateWorkingSetBytes": 67305472,
+                        "workingSetBytes": 142508032
+                    }
+                },
+                "selected": {
+                    "image": "selected-korean-dark.png",
+                    "metrics": {
+                        "activeGradeRowCount": 24,
+                        "projectionClassCount": 96,
+                        "scheduleReadCount": 1,
+                        "selectedClassId": "25",
+                        "selectedDetailPanelCount": 1,
+                        "selectedDetailReadCount": 1,
+                        "selectedDetailsRetained": true,
+                        "summaryModelCount": 1,
+                        "summaryReadCount": 1,
+                        "textEditorCount": 6,
+                        "visibleSummaryCount": 96,
+                        "widgetCount": 105
+                    },
+                    "modeLabel": "정규 수업 일정",
+                    "mondayLabel": "월요일"
+                },
+                "suspendedMetrics": {
+                    "activeGradeRowCount": 0,
+                    "projectionClassCount": 0,
+                    "scheduleReadCount": 6,
+                    "selectedClassId": "",
+                    "selectedDetailPanelCount": 1,
+                    "selectedDetailReadCount": 5,
+                    "selectedDetailsRetained": false,
+                    "summaryModelCount": 1,
+                    "summaryReadCount": 6,
+                    "textEditorCount": 6,
+                    "visibleSummaryCount": 0,
+                    "widgetCount": 105
+                }
+            },
+            "theme": "dark"
+        }
+    ],
+    "viewport": {
+        "height": 600,
+        "width": 800
+    }
+}

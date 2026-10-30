@@ -10,8 +10,6 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/database_file_format.cpp"
     "src/core/database_file_format.h"
     "src/core/enums/schedule_type.h"
-    "src/core/fontmanager.cpp"
-    "src/core/fontmanager.h"
     "src/core/language_service.cpp"
     "src/core/language_service.h"
     "src/core/process_memory_snapshot.cpp"
@@ -40,8 +38,14 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/utils/file_name_utils.h"
     "src/core/utils/platform.cpp"
     "src/core/utils/platform.h"
-    "src/core/utils/sidebar_node_naming.cpp"
-    "src/core/utils/sidebar_node_naming.h"
+)
+
+# Font resolution is shared by the legacy runtime and the narrow Next output
+# path. Keep this implementation and its embedded required fonts out of the
+# broad Core object library so Sub Prep can use the canonical font policy.
+set(CLASSMNGR_FONT_MANAGER_SOURCES
+    "src/core/fontmanager.cpp"
+    "src/core/fontmanager.h"
 )
 
 # Shared name normalization and validation used by Core and Domain features.
@@ -342,8 +346,6 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/widgets/marquee_label.h"
     "src/ui/shared/widgets/navigation_pill_button.cpp"
     "src/ui/shared/widgets/navigation_pill_button.h"
-    "src/ui/shared/widgets/navigation_pill_style.cpp"
-    "src/ui/shared/widgets/navigation_pill_style.h"
     "src/ui/shared/widgets/navigation_settings_button.cpp"
     "src/ui/shared/widgets/navigation_settings_button.h"
     "src/ui/shared/widgets/navigation_tab_widget.cpp"
@@ -398,10 +400,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/calendar/ui/calendar_page_upcoming_events.cpp"
     "src/features/calendar/ui/calendar_preferences_panel.cpp"
     "src/features/calendar/ui/calendar_preferences_panel.h"
-    "src/features/campus/data/campus_json_codec.cpp"
-    "src/features/campus/data/campus_json_codec.h"
-    "src/features/campus/data/campus_json_repository.cpp"
-    "src/features/campus/data/campus_json_repository.h"
     "src/features/campus/ui/campus_dashboard_page.cpp"
     "src/features/campus/ui/campus_dashboard_page.h"
     "src/features/campus/ui/campus_dashboard_page_address.cpp"
@@ -500,8 +498,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/schedule/services/schedule_import_review_model.h"
     "src/features/schedule/services/schedule_output_controller.cpp"
     "src/features/schedule/services/schedule_output_controller.h"
-    "src/features/schedule/ui/schedule_builder.cpp"
-    "src/features/schedule/ui/schedule_builder.h"
     "src/features/schedule/ui/schedule_cell_hit_test.cpp"
     "src/features/schedule/ui/schedule_cell_hit_test.h"
     "src/features/schedule/ui/schedule_cell_renderer_policy.cpp"
@@ -531,10 +527,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/schedule/ui/schedule_print_document_adapter.h"
     "src/features/schedule/ui/schedule_table_renderer.cpp"
     "src/features/schedule/ui/schedule_table_renderer.h"
-    "src/features/schedule/ui/schedule_time_formatter.cpp"
-    "src/features/schedule/ui/schedule_time_formatter.h"
-    "src/features/schedule/ui/schedule_view_model.cpp"
-    "src/features/schedule/ui/schedule_view_model.h"
     "src/features/schedule/ui/schedule_widget.cpp"
     "src/features/schedule/ui/schedule_widget.h"
     "src/features/schedule/ui/schedule_widget_delegates.cpp"
@@ -573,18 +565,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/speaking_eval/ui/speaking_eval_report_dialog.h"
     "src/features/speaking_eval/ui/speaking_eval_table_view.cpp"
     "src/features/speaking_eval/ui/speaking_eval_table_view.h"
-    "src/features/sub_prep/services/sub_prep_document_model.cpp"
-    "src/features/sub_prep/services/sub_prep_document_model.h"
-    "src/features/sub_prep/services/sub_prep_package_service.cpp"
-    "src/features/sub_prep/services/sub_prep_package_service.h"
-    "src/features/sub_prep/services/sub_prep_pdf_renderer.cpp"
-    "src/features/sub_prep/services/sub_prep_pdf_renderer.h"
-    "src/features/sub_prep/services/sub_prep_print_service.cpp"
-    "src/features/sub_prep/services/sub_prep_print_service.h"
-    "src/features/sub_prep/ui/sub_prep_class_information_model.cpp"
-    "src/features/sub_prep/ui/sub_prep_class_information_model.h"
-    "src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp"
-    "src/features/sub_prep/ui/sub_prep_class_information_list_model.h"
     "src/features/sub_prep/ui/sub_prep_page.cpp"
     "src/features/sub_prep/ui/sub_prep_page.h"
     "src/features/sub_prep/ui/sub_prep_page_class_information.cpp"
@@ -593,8 +573,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/sub_prep/ui/sub_prep_page_ui.cpp"
     "src/features/sub_prep/ui/sub_prep_print_dialog.cpp"
     "src/features/sub_prep/ui/sub_prep_print_dialog.h"
-    "src/features/sub_prep/ui/sub_prep_print_source_mapper.cpp"
-    "src/features/sub_prep/ui/sub_prep_print_source_mapper.h"
     "src/features/teacher/ui/staff_directory_page.cpp"
     "src/features/teacher/ui/staff_directory_page.h"
     "src/features/teacher/ui/teacher_import_apply_error_display.h"
@@ -612,8 +590,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/next/platform/application_services_speaking_evaluation_read_port.cpp"
     "src/next/platform/application_services_speaking_evaluation_batch_read_port.cpp"
     "src/next/platform/application_services_speaking_evaluation_save_port.cpp"
-    "src/next/platform/application_services_sub_prep_personal_zoom_preferences_port.cpp"
-    "src/next/platform/application_services_sub_prep_preferences_port.cpp"
 )
 
 # These deterministic image and typed-signature processors have no legacy
@@ -711,6 +687,43 @@ set(CLASSMNGR_NEXT_SCHEDULE_OUTPUT_SOURCES
     "src/next/platform/qt_schedule_output_adapter.h"
 )
 
+set(CLASSMNGR_SUB_PREP_SHARED_SOURCES
+    "src/features/schedule/ui/schedule_builder.cpp"
+    "src/features/schedule/ui/schedule_builder.h"
+    "src/features/schedule/ui/schedule_time_formatter.cpp"
+    "src/features/schedule/ui/schedule_time_formatter.h"
+    "src/features/schedule/ui/schedule_view_model.cpp"
+    "src/features/schedule/ui/schedule_view_model.h"
+    "src/features/sub_prep/services/sub_prep_document_model.cpp"
+    "src/features/sub_prep/services/sub_prep_document_model.h"
+    "src/features/sub_prep/services/sub_prep_package_service.cpp"
+    "src/features/sub_prep/services/sub_prep_package_service.h"
+    "src/features/sub_prep/services/sub_prep_pdf_renderer.cpp"
+    "src/features/sub_prep/services/sub_prep_pdf_renderer.h"
+    "src/features/sub_prep/services/sub_prep_print_service.cpp"
+    "src/features/sub_prep/services/sub_prep_print_service.h"
+    "src/features/sub_prep/ui/sub_prep_class_information_list_model.cpp"
+    "src/features/sub_prep/ui/sub_prep_class_information_list_model.h"
+    "src/features/sub_prep/ui/sub_prep_class_information_model.cpp"
+    "src/features/sub_prep/ui/sub_prep_class_information_model.h"
+    "src/features/sub_prep/ui/sub_prep_print_source_mapper.cpp"
+    "src/features/sub_prep/ui/sub_prep_print_source_mapper.h"
+    "src/features/campus/data/campus_json_codec.cpp"
+    "src/features/campus/data/campus_json_codec.h"
+    "src/features/campus/data/campus_json_repository.cpp"
+    "src/features/campus/data/campus_json_repository.h"
+    "src/next/platform/application_services_sub_prep_personal_zoom_preferences_port.cpp"
+    "src/next/platform/application_services_sub_prep_preferences_port.cpp"
+    "src/ui/shared/widgets/navigation_pill_style.cpp"
+    "src/ui/shared/widgets/navigation_pill_style.h"
+    "src/core/utils/sidebar_node_naming.cpp"
+    "src/core/utils/sidebar_node_naming.h"
+)
+
+set(CLASSMNGR_NEXT_SUB_PREP_PROFILER_COMPAT_SOURCES
+    "src/next/platform/next_startup_profiler_inactive_sub_prep_compat.cpp"
+)
+
 # Calendar's bounded event cache, QML adapters, and query boundary are a
 # focused surface shared by the Legacy and Next pages. Keep this closure out of
 # the broad Legacy Features object so Next can use it without inheriting that
@@ -772,6 +785,8 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/campus_directory_route_factories.h"
     "src/next/ui/schedule_page.cpp"
     "src/next/ui/schedule_page.h"
+    "src/next/ui/sub_prep_page.cpp"
+    "src/next/ui/sub_prep_page.h"
     "src/next/ui/schedule_print_projection.cpp"
     "src/next/ui/schedule_print_projection.h"
     "src/next/ui/schedule_output_dialog.cpp"
