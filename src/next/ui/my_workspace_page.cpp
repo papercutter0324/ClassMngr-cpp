@@ -47,6 +47,10 @@ namespace
 
 constexpr int AutosaveDebounceMilliseconds = 750;
 constexpr int SignaturePreviewHeight = 120;
+constexpr int LegacyCalendarViewportLeft = 44;
+constexpr int LegacyCalendarViewportTop = 185;
+constexpr int LegacyCalendarViewportRightMargin = 44;
+constexpr int LegacyCalendarViewportBottomMargin = 88;
 
 QString text(const char* source)
 {
@@ -85,70 +89,6 @@ QString scheduleDayText(const std::string& source)
         }
     }
     return day;
-}
-
-QString eventDateText(const Application::CalendarEventSummary& event)
-{
-    const QDate start = QDate::fromString(
-        fromUtf8(event.startDate), Qt::ISODate
-        );
-    const QDate end = QDate::fromString(
-        fromUtf8(event.endDate), Qt::ISODate
-        );
-    if (!start.isValid())
-    {
-        return QStringLiteral("-");
-    }
-    if (!end.isValid() || end == start)
-    {
-        return start.toString(QStringLiteral("MMM d"));
-    }
-    const QString startFormat = start.year() == end.year()
-        ? QStringLiteral("MMM d")
-        : QStringLiteral("MMM d yyyy");
-    return QStringLiteral("%1 - %2")
-        .arg(start.toString(startFormat), end.toString(QStringLiteral("MMM d yyyy")));
-}
-
-QString eventTimeText(const Application::CalendarEventSummary& event)
-{
-    if (event.allDay)
-    {
-        return workspaceText("All day");
-    }
-    if (event.timeStatus == Domain::CalendarEventTimeStatus::Unknown)
-    {
-        return workspaceText("Unknown Time");
-    }
-    if (event.timeStatus == Domain::CalendarEventTimeStatus::Unconfirmed)
-    {
-        return workspaceText("Unconfirmed Time");
-    }
-    if (!event.startTime)
-    {
-        return {};
-    }
-    const QTime start = QTime::fromString(
-        QString::fromStdString(*event.startTime), QStringLiteral("HH:mm")
-        );
-    if (!start.isValid())
-    {
-        return {};
-    }
-    const QString format = QStringLiteral("h:mm AP");
-    const QString startText = start.toString(format);
-    if (!event.endTime)
-    {
-        return startText;
-    }
-    const QTime end = QTime::fromString(
-        QString::fromStdString(*event.endTime), QStringLiteral("HH:mm")
-        );
-    if (!end.isValid())
-    {
-        return {};
-    }
-    return QStringLiteral("%1 - %2").arg(startText, end.toString(format));
 }
 
 class MyWorkspaceScheduleTableModel final : public QAbstractTableModel
@@ -263,90 +203,6 @@ private:
     std::vector<std::pair<std::size_t, std::size_t>> m_visibleRows;
 };
 
-class MyWorkspaceUpcomingEventsTableModel final : public QAbstractTableModel
-{
-public:
-    explicit MyWorkspaceUpcomingEventsTableModel(QObject* parent = nullptr)
-        : QAbstractTableModel(parent)
-    {
-    }
-
-    [[nodiscard]] int rowCount(const QModelIndex& parent = {}) const override
-    {
-        return parent.isValid()
-            ? 0
-            : static_cast<int>(m_projection.eventCount());
-    }
-
-    [[nodiscard]] int columnCount(const QModelIndex& parent = {}) const override
-    {
-        return parent.isValid() ? 0 : 4;
-    }
-
-    [[nodiscard]] QVariant data(
-        const QModelIndex& index,
-        const int role = Qt::DisplayRole
-        ) const override
-    {
-        if (!index.isValid() || index.row() < 0
-            || static_cast<std::size_t>(index.row()) >= m_projection.eventCount()
-            || role != Qt::DisplayRole)
-        {
-            return {};
-        }
-        const Application::CalendarEventSummary& event =
-            m_projection.events().at(static_cast<std::size_t>(index.row()));
-        switch (index.column())
-        {
-        case 0:
-            return eventDateText(event);
-        case 1:
-            return eventTimeText(event);
-        case 2:
-            return fromUtf8(event.title);
-        case 3:
-            return fromUtf8(event.eventType.value());
-        default:
-            return {};
-        }
-    }
-
-    [[nodiscard]] QVariant headerData(
-        const int section,
-        const Qt::Orientation orientation,
-        const int role = Qt::DisplayRole
-        ) const override
-    {
-        if (orientation != Qt::Horizontal || role != Qt::DisplayRole)
-        {
-            return QAbstractTableModel::headerData(section, orientation, role);
-        }
-        switch (section)
-        {
-        case 0: return workspaceText("Date");
-        case 1: return workspaceText("Time");
-        case 2: return workspaceText("Title");
-        case 3: return workspaceText("Type");
-        default: return {};
-        }
-    }
-
-    void setProjection(Application::CalendarEventProjection projection)
-    {
-        beginResetModel();
-        m_projection = std::move(projection);
-        endResetModel();
-    }
-
-    void clear()
-    {
-        setProjection({});
-    }
-
-private:
-    Application::CalendarEventProjection m_projection;
-};
-
 std::string toUtf8(const QString& value)
 {
     const QByteArray encoded = value.toUtf8();
@@ -444,7 +300,7 @@ MyWorkspacePage::MyWorkspacePage(
     connect(m_autosaveTimer, &QTimer::timeout, this, [this] {
         static_cast<void>(saveDetails(false));
     });
-    buildUi();
+    buildUi(context);
     updateSaveStatus(workspaceText("All changes saved."));
 }
 
@@ -483,6 +339,10 @@ PageOperationResult<void> MyWorkspacePage::discardChanges()
 void MyWorkspacePage::onSuspending() noexcept
 {
     m_pageActive = false;
+    if (m_embeddedCalendar)
+    {
+        m_embeddedCalendar->onSuspending();
+    }
     clearWorkspaceSummaries();
     m_autosaveTimer->stop();
     if (m_signaturePreviewLabel)
@@ -503,12 +363,15 @@ void MyWorkspacePage::refreshForWorkspaceIdentity()
 void MyWorkspacePage::clearForClosedWorkspace()
 {
     m_workspaceIdentity.clear();
+    if (m_embeddedCalendar)
+    {
+        m_embeddedCalendar->clearForClosedWorkspace();
+    }
     clearWorkspaceSummaries();
     clearForNewWorkspace();
     m_reloadButton->hide();
     updateSaveStatus(workspaceText("No Teacher Profile is open."));
     updateScheduleStatus(workspaceText("No Teacher Profile is open."));
-    updateUpcomingEventsStatus(workspaceText("No Teacher Profile is open."));
 }
 
 void MyWorkspacePage::reloadPersonalDetails()
@@ -543,6 +406,11 @@ void MyWorkspacePage::setSaveMode(const Application::SaveMode mode)
 
 bool MyWorkspacePage::eventFilter(QObject* watched, QEvent* event)
 {
+    if (watched == m_workspaceTabs && event
+        && event->type() == QEvent::Resize)
+    {
+        updateEmbeddedCalendarViewportInsets();
+    }
     if (watched == m_signaturePreviewLabel && event
         && event->type() == QEvent::Resize)
     {
@@ -603,31 +471,13 @@ void MyWorkspacePage::retranslateUi()
         m_scheduleSubtitle->setText(workspaceText(
             "Read-only regular schedule from registered classes."));
     }
-    if (m_upcomingEventsHeading)
-    {
-        m_upcomingEventsHeading->setText(workspaceText("Upcoming Events"));
-    }
-    if (m_upcomingEventsSubtitle)
-    {
-        m_upcomingEventsSubtitle->setText(workspaceText(
-            "The next 10 events starting today."));
-    }
     if (m_scheduleRetryButton)
     {
         m_scheduleRetryButton->setText(workspaceText("Retry"));
     }
-    if (m_upcomingEventsRetryButton)
-    {
-        m_upcomingEventsRetryButton->setText(workspaceText("Retry"));
-    }
     if (m_scheduleStatusLabel)
     {
         m_scheduleStatusLabel->setText(workspaceText("Schedule data is not loaded."));
-    }
-    if (m_upcomingEventsStatusLabel)
-    {
-        m_upcomingEventsStatusLabel->setText(
-            workspaceText("Upcoming events are not loaded."));
     }
     if (m_scheduleModel)
     {
@@ -637,10 +487,6 @@ void MyWorkspacePage::retranslateUi()
         {
             scheduleModel->retranslateDayLabels();
         }
-    }
-    if (m_upcomingEventsModel)
-    {
-        m_upcomingEventsModel->headerDataChanged(Qt::Horizontal, 0, 3);
     }
 }
 
@@ -657,7 +503,10 @@ void MyWorkspacePage::onWorkspaceTabChanged(const int index)
     }
     else if (m_previousWorkspaceTab == 2)
     {
-        clearUpcomingEventsSummary();
+        if (m_embeddedCalendar)
+        {
+            m_embeddedCalendar->onSuspending();
+        }
     }
     m_previousWorkspaceTab = index;
     m_workspaceTabs->setCurrentIndex(index);
@@ -687,7 +536,10 @@ void MyWorkspacePage::refreshCurrentWorkspaceTab()
     }
     else if (m_workspaceTabs->currentIndex() == 2)
     {
-        loadUpcomingEventsSummary();
+        if (m_embeddedCalendar)
+        {
+            static_cast<void>(m_embeddedCalendar->onActivating());
+        }
     }
 }
 
@@ -746,49 +598,6 @@ void MyWorkspacePage::loadScheduleSummary()
     }
 }
 
-void MyWorkspacePage::loadUpcomingEventsSummary()
-{
-    clearUpcomingEventsSummary();
-    updateUpcomingEventsStatus(workspaceText("Loading upcoming events..."));
-    Application::MyWorkspaceUpcomingEventsReadResult loaded =
-        m_actions.readUpcomingEvents
-            ? m_actions.readUpcomingEvents()
-            : Application::MyWorkspaceUpcomingEventsReadResult::failure({
-                  .code = Domain::ErrorCode::NotFound,
-                  .message = "The active workspace calendar repository is unavailable.",
-                  .recoverable = true
-              });
-    if (!loaded)
-    {
-        updateUpcomingEventsStatus(
-            workspaceText("Upcoming events could not be loaded. Retry this tab."),
-            true
-            );
-        m_upcomingEventsStatusLabel->setToolTip(fromUtf8(loaded.error().message));
-        return;
-    }
-    auto* const model = dynamic_cast<MyWorkspaceUpcomingEventsTableModel*>(
-        m_upcomingEventsModel);
-    if (!model)
-    {
-        updateUpcomingEventsStatus(
-            workspaceText("Upcoming events could not be loaded. Retry this tab."),
-            true
-            );
-        return;
-    }
-    model->setProjection(std::move(loaded.value()));
-    if (model->rowCount() == 0)
-    {
-        updateUpcomingEventsStatus(workspaceText("There are no upcoming events."));
-    }
-    else
-    {
-        updateUpcomingEventsStatus(QString{});
-        m_upcomingEventsTable->resizeRowsToContents();
-    }
-}
-
 void MyWorkspacePage::clearScheduleSummary()
 {
     if (auto* const model = dynamic_cast<MyWorkspaceScheduleTableModel*>(m_scheduleModel))
@@ -802,24 +611,9 @@ void MyWorkspacePage::clearScheduleSummary()
     updateScheduleStatus(QString{});
 }
 
-void MyWorkspacePage::clearUpcomingEventsSummary()
-{
-    if (auto* const model = dynamic_cast<MyWorkspaceUpcomingEventsTableModel*>(
-            m_upcomingEventsModel))
-    {
-        model->clear();
-    }
-    if (m_upcomingEventsStatusLabel)
-    {
-        m_upcomingEventsStatusLabel->setToolTip(QString{});
-    }
-    updateUpcomingEventsStatus(QString{});
-}
-
 void MyWorkspacePage::clearWorkspaceSummaries()
 {
     clearScheduleSummary();
-    clearUpcomingEventsSummary();
 }
 
 void MyWorkspacePage::updateScheduleStatus(
@@ -848,33 +642,27 @@ void MyWorkspacePage::updateScheduleStatus(
     }
 }
 
-void MyWorkspacePage::updateUpcomingEventsStatus(
-    const QString& message,
-    const bool error
-    )
+void MyWorkspacePage::updateEmbeddedCalendarViewportInsets()
 {
-    if (!m_upcomingEventsStatusLabel)
+    if (!m_workspaceTabs || !m_embeddedCalendarLayout)
     {
         return;
     }
-    m_upcomingEventsStatusLabel->setText(message);
-    m_upcomingEventsStatusLabel->setProperty("loadError", error);
-    if (m_upcomingEventsStatusLabel->style())
-    {
-        m_upcomingEventsStatusLabel->style()->unpolish(m_upcomingEventsStatusLabel);
-        m_upcomingEventsStatusLabel->style()->polish(m_upcomingEventsStatusLabel);
-    }
-    if (m_upcomingEventsStatusLabel->parentWidget())
-    {
-        m_upcomingEventsStatusLabel->parentWidget()->setVisible(!message.isEmpty());
-    }
-    if (m_upcomingEventsRetryButton)
-    {
-        m_upcomingEventsRetryButton->setVisible(error);
-    }
+
+    const QPoint topLeft = m_workspaceTabs->mapTo(this, QPoint{});
+    const int right = topLeft.x() + m_workspaceTabs->width();
+    const int bottom = topLeft.y() + m_workspaceTabs->height();
+    const int leftInset = qMax(0, LegacyCalendarViewportLeft - topLeft.x());
+    const int topInset = qMax(0, LegacyCalendarViewportTop - topLeft.y());
+    const int rightInset = qMax(
+        0, right - (width() - LegacyCalendarViewportRightMargin));
+    const int targetBottom = height() - LegacyCalendarViewportBottomMargin;
+    const int bottomInset = qMax(0, bottom - targetBottom);
+    m_embeddedCalendarLayout->setContentsMargins(
+        leftInset, topInset, rightInset, bottomInset);
 }
 
-void MyWorkspacePage::buildUi()
+void MyWorkspacePage::buildUi(const PageContext& context)
 {
     auto* const root = new QVBoxLayout(this);
     root->setContentsMargins(36, 34, 44, 12);
@@ -920,6 +708,7 @@ void MyWorkspacePage::buildUi()
 
     m_workspaceTabs = new QStackedWidget(this);
     m_workspaceTabs->setObjectName(QStringLiteral("nextMyWorkspaceTabPages"));
+    m_workspaceTabs->installEventFilter(this);
     root->addWidget(m_workspaceTabs, 1);
 
     auto* const detailsTab = new QWidget(m_workspaceTabs);
@@ -1210,87 +999,33 @@ void MyWorkspacePage::buildUi()
 
     auto* const calendarTab = new QWidget(m_workspaceTabs);
     calendarTab->setObjectName(QStringLiteral("nextMyWorkspaceCalendarTab"));
-    auto* const calendarLayout = new QVBoxLayout(calendarTab);
-    calendarLayout->setContentsMargins(32, 28, 16, 8);
-    calendarLayout->setSpacing(8);
-    m_upcomingEventsHeading = new QLabel(
-        workspaceText("Upcoming Events"), calendarTab
-        );
-    m_upcomingEventsHeading->setObjectName(
-        QStringLiteral("nextMyWorkspaceUpcomingEventsHeading"));
-    m_upcomingEventsHeading->setAlignment(Qt::AlignCenter);
-    m_upcomingEventsHeading->setFont(scheduleHeadingFont);
-    calendarLayout->addWidget(m_upcomingEventsHeading);
-    m_upcomingEventsSubtitle = new QLabel(
-        workspaceText("The next 10 events starting today."), calendarTab
-        );
-    m_upcomingEventsSubtitle->setObjectName(
-        QStringLiteral("nextMyWorkspaceUpcomingEventsSubtitle"));
-    m_upcomingEventsSubtitle->setAlignment(Qt::AlignCenter);
-    m_upcomingEventsSubtitle->setWordWrap(true);
-    calendarLayout->addWidget(m_upcomingEventsSubtitle);
-
-    auto* const eventsCard = new QFrame(calendarTab);
-    eventsCard->setObjectName(QStringLiteral("nextMyWorkspaceUpcomingEventsCard"));
-    eventsCard->setProperty("role", QStringLiteral("card"));
-    eventsCard->setFrameShape(QFrame::StyledPanel);
-    auto* const eventsCardLayout = new QVBoxLayout(eventsCard);
-    eventsCardLayout->setContentsMargins(12, 12, 12, 8);
-    eventsCardLayout->setSpacing(8);
-    m_upcomingEventsTable = new QTableView(eventsCard);
-    m_upcomingEventsTable->setObjectName(
-        QStringLiteral("nextMyWorkspaceUpcomingEventsTable"));
-    m_upcomingEventsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    m_upcomingEventsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    m_upcomingEventsTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    m_upcomingEventsTable->setAlternatingRowColors(true);
-    m_upcomingEventsTable->verticalHeader()->hide();
-    m_upcomingEventsTable->horizontalHeader()->setStretchLastSection(true);
-    m_upcomingEventsTable->horizontalHeader()->setSectionResizeMode(
-        0, QHeaderView::ResizeToContents);
-    m_upcomingEventsTable->horizontalHeader()->setSectionResizeMode(
-        1, QHeaderView::ResizeToContents);
-    m_upcomingEventsTable->horizontalHeader()->setSectionResizeMode(
-        2, QHeaderView::Stretch);
-    m_upcomingEventsTable->horizontalHeader()->setSectionResizeMode(
-        3, QHeaderView::ResizeToContents);
-    auto* const eventsModel = new MyWorkspaceUpcomingEventsTableModel(
-        m_upcomingEventsTable);
-    m_upcomingEventsModel = eventsModel;
-    m_upcomingEventsTable->setModel(eventsModel);
-    eventsCardLayout->addWidget(m_upcomingEventsTable, 1);
-    auto* const eventsStatusRow = new QWidget(eventsCard);
-    auto* const eventsStatusLayout = new QHBoxLayout(eventsStatusRow);
-    eventsStatusLayout->setContentsMargins(0, 0, 0, 0);
-    eventsStatusLayout->setSpacing(8);
-    m_upcomingEventsStatusLabel = new QLabel(
-        workspaceText("Upcoming events are not loaded."), eventsStatusRow
-        );
-    m_upcomingEventsStatusLabel->setObjectName(
-        QStringLiteral("nextMyWorkspaceUpcomingEventsStatus"));
-    m_upcomingEventsStatusLabel->setWordWrap(true);
-    eventsStatusLayout->addWidget(m_upcomingEventsStatusLabel, 1);
-    m_upcomingEventsRetryButton = new QPushButton(
-        workspaceText("Retry"), eventsStatusRow
-        );
-    m_upcomingEventsRetryButton->setObjectName(
-        QStringLiteral("nextMyWorkspaceUpcomingEventsRetry"));
-    m_upcomingEventsRetryButton->hide();
-    eventsStatusLayout->addWidget(m_upcomingEventsRetryButton);
-    eventsCardLayout->addWidget(eventsStatusRow);
-    calendarLayout->addWidget(eventsCard, 1);
+    m_embeddedCalendarLayout = new QVBoxLayout(calendarTab);
+    m_embeddedCalendarLayout->setContentsMargins(8, 0, 0, 0);
+    m_embeddedCalendarScrollArea = new QScrollArea(calendarTab);
+    m_embeddedCalendarScrollArea->setObjectName(
+        QStringLiteral("nextMyWorkspaceCalendarScrollArea"));
+    m_embeddedCalendarScrollArea->setWidgetResizable(true);
+    m_embeddedCalendarScrollArea->setFrameShape(QFrame::NoFrame);
+    m_embeddedCalendar = new CalendarPage(
+        context,
+        m_actions.createCalendarActions
+            ? m_actions.createCalendarActions(context)
+            : CalendarPageActions{},
+        true);
+    m_embeddedCalendar->setObjectName(
+        QStringLiteral("nextMyWorkspaceEmbeddedCalendar"));
+    m_embeddedCalendarScrollArea->setWidget(m_embeddedCalendar);
+    m_embeddedCalendarLayout->addWidget(m_embeddedCalendarScrollArea, 1);
     m_workspaceTabs->addWidget(calendarTab);
 
     m_workspaceTabBar->setCurrentIndex(1);
     m_workspaceTabs->setCurrentIndex(1);
+    updateEmbeddedCalendarViewportInsets();
     m_previousWorkspaceTab = 1;
     connect(m_workspaceTabBar, &QTabBar::currentChanged,
             this, &MyWorkspacePage::onWorkspaceTabChanged);
     connect(m_scheduleRetryButton, &QPushButton::clicked,
             this, &MyWorkspacePage::loadScheduleSummary);
-    connect(m_upcomingEventsRetryButton, &QPushButton::clicked,
-            this, &MyWorkspacePage::loadUpcomingEventsSummary);
-
     connect(m_reloadButton, &QPushButton::clicked,
             this, &MyWorkspacePage::reloadPersonalDetails);
     connect(m_nameEdit, &QLineEdit::textChanged, this, [this] {

@@ -3,8 +3,8 @@
 #include "next/application/personal_details_save.h"
 #include "next/application/my_info_campus_directory_query_port.h"
 #include "next/application/my_workspace_schedule_read.h"
-#include "next/application/my_workspace_upcoming_events_read.h"
 #include "next/application/save_mode_preferences.h"
+#include "next/ui/calendar_page.h"
 #include "next/ui/page.h"
 
 #include <QByteArray>
@@ -25,6 +25,8 @@ class QTabBar;
 class QTableView;
 class QStackedWidget;
 class QAbstractItemModel;
+class QScrollArea;
+class QVBoxLayout;
 class QWidget;
 
 namespace ClassMngr::Next::Ui
@@ -42,15 +44,15 @@ struct MyWorkspacePageActions final
     std::function<Domain::Result<std::optional<QByteArray>>()> chooseSignatureImage;
     std::function<QString()> workspaceIdentity;
     std::function<Application::MyWorkspaceScheduleReadResult()> readSchedule;
-    std::function<Application::MyWorkspaceUpcomingEventsReadResult()>
-        readUpcomingEvents;
+    std::function<CalendarPageActions(const PageContext&)>
+        createCalendarActions;
     std::function<void(const QString&, const QString&)> reportWarning;
     Application::SaveMode saveMode = Application::SaveMode::Automatic;
 };
 
 // The legacy My Workspace route and tabs remain together; this page owns the
 // normal-workspace My Details draft and its complete typed compatibility
-// bundle. Schedule and upcoming-event summaries are lazy, read-only tabs.
+// bundle. Schedule and Calendar content are created only while their tabs are active.
 class MyWorkspacePage final : public Page
 {
 public:
@@ -76,18 +78,16 @@ protected:
     void changeEvent(QEvent* event) override;
 
 private:
-    void buildUi();
+    void buildUi(const PageContext& context);
     void retranslateUi();
     void onWorkspaceTabChanged(int index);
     void refreshCurrentWorkspaceTab();
     void loadScheduleSummary();
-    void loadUpcomingEventsSummary();
     void clearScheduleSummary();
-    void clearUpcomingEventsSummary();
     void clearWorkspaceSummaries();
     [[nodiscard]] bool synchronizeWorkspaceIdentity();
     void updateScheduleStatus(const QString& message, bool error = false);
-    void updateUpcomingEventsStatus(const QString& message, bool error = false);
+    void updateEmbeddedCalendarViewportInsets();
     [[nodiscard]] bool loadPersonalDetails(bool resetForNewIdentity);
     void applyDetailsToControls(
         const Application::PersonalDetailsSaveRequest& details
@@ -112,17 +112,14 @@ private:
     QTabBar* m_workspaceTabBar = nullptr;
     QStackedWidget* m_workspaceTabs = nullptr;
     QTableView* m_scheduleTable = nullptr;
-    QTableView* m_upcomingEventsTable = nullptr;
     QAbstractItemModel* m_scheduleModel = nullptr;
-    QAbstractItemModel* m_upcomingEventsModel = nullptr;
+    CalendarPage* m_embeddedCalendar = nullptr;
+    QScrollArea* m_embeddedCalendarScrollArea = nullptr;
+    QVBoxLayout* m_embeddedCalendarLayout = nullptr;
     QLabel* m_scheduleStatusLabel = nullptr;
-    QLabel* m_upcomingEventsStatusLabel = nullptr;
     QLabel* m_scheduleHeading = nullptr;
     QLabel* m_scheduleSubtitle = nullptr;
-    QLabel* m_upcomingEventsHeading = nullptr;
-    QLabel* m_upcomingEventsSubtitle = nullptr;
     QPushButton* m_scheduleRetryButton = nullptr;
-    QPushButton* m_upcomingEventsRetryButton = nullptr;
     QWidget* m_statusFooter = nullptr;
     QLabel* m_statusLabel = nullptr;
     QPushButton* m_reloadButton = nullptr;

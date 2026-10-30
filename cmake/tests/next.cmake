@@ -476,6 +476,7 @@ set_target_properties(ClassMngrNextBootstrapTests
 classmngr_next_add_mode_combo_arrow_resources(
     ClassMngrNextBootstrapTests
 )
+classmngr_next_add_calendar_qml_resources(ClassMngrNextBootstrapTests)
 set_property(TARGET ClassMngrNextBootstrapTests
     PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
 )
@@ -3626,6 +3627,7 @@ target_compile_definitions(ClassMngrNextMyWorkspacePageTests
 )
 target_link_libraries(ClassMngrNextMyWorkspacePageTests
     PRIVATE
+        ClassMngrNextCalendarUi
         ClassMngrNext::Resources
         ClassMngrWorkspaceStore
         ClassMngrNextWorkspaceDomain
@@ -3649,6 +3651,7 @@ set_property(TARGET ClassMngrNextMyWorkspacePageTests
 add_dependencies(ClassMngrNextMyWorkspacePageTests
     ClassMngrNextResourcePackage
 )
+classmngr_next_add_calendar_qml_resources(ClassMngrNextMyWorkspacePageTests)
 add_test(
     NAME ClassMngrNextMyWorkspacePageTests
     COMMAND ClassMngrNextMyWorkspacePageTests
@@ -3658,8 +3661,8 @@ set_tests_properties(ClassMngrNextMyWorkspacePageTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
-# Capture the legacy and Next My Workspace schedule composition, plus the
-# Next upcoming-events surface, at a matched 1024x768 Fusion viewport.
+# Capture the Next My Workspace schedule composition and paired embedded
+# Legacy/Next Calendar tabs at a matched 1024x768 Fusion viewport.
 add_executable(ClassMngrNextMyWorkspaceVisualCapture
     tests/next/my_workspace_visual_capture.cpp
     src/next/ui/my_workspace_page.cpp
@@ -3708,6 +3711,7 @@ set_property(TARGET ClassMngrNextMyWorkspaceVisualCapture
 add_dependencies(ClassMngrNextMyWorkspaceVisualCapture
     ClassMngrNextResourcePackage
 )
+classmngr_next_add_calendar_qml_resources(ClassMngrNextMyWorkspaceVisualCapture)
 add_test(
     NAME ClassMngrNextMyWorkspaceVisualCapture
     COMMAND ClassMngrNextMyWorkspaceVisualCapture

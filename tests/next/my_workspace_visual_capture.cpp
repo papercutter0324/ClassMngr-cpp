@@ -3,9 +3,10 @@
 #include "core/process_memory_snapshot.h"
 #include "data/database/workspace_store.h"
 #include "features/my_info/ui/my_workspace_page.h"
+#include "features/calendar/ui/calendar_page.h"
 #include "features/schedule/ui/schedule_page.h"
 #include "next/platform/workspace_store_my_workspace_schedule_read_port.h"
-#include "next/platform/workspace_store_my_workspace_upcoming_events_read_port.h"
+#include "next/platform/workspace_store_calendar_actions.h"
 #include "next/platform/workspace_store_personal_details_port.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
@@ -14,6 +15,7 @@
 #include "preferences_test_ports.h"
 
 #include <QApplication>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -24,8 +26,11 @@
 #include <QLocale>
 #include <QPalette>
 #include <QPushButton>
+#include <QQuickWidget>
+#include <QScrollArea>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QStackedWidget>
 #include <QTabBar>
 #include <QTableView>
 #include <QTemporaryDir>
@@ -80,6 +85,35 @@ QString readText(const QString& path)
 int widgetCount(const QWidget* root)
 {
     return root ? root->findChildren<QWidget*>().size() + 1 : 0;
+}
+
+QJsonObject geometryJson(const QWidget* widget, const QWidget* origin)
+{
+    if (!widget || !origin)
+    {
+        return {};
+    }
+    const QPoint topLeft = widget->mapTo(origin, QPoint{});
+    return {
+        {QStringLiteral("x"), topLeft.x()},
+        {QStringLiteral("y"), topLeft.y()},
+        {QStringLiteral("width"), widget->width()},
+        {QStringLiteral("height"), widget->height()}
+    };
+}
+
+bool geometryMatches(
+    const QJsonObject& geometry,
+    const int x,
+    const int y,
+    const int width,
+    const int height
+    )
+{
+    return geometry.value(QStringLiteral("x")).toInt(-1) == x
+        && geometry.value(QStringLiteral("y")).toInt(-1) == y
+        && geometry.value(QStringLiteral("width")).toInt(-1) == width
+        && geometry.value(QStringLiteral("height")).toInt(-1) == height;
 }
 
 QJsonObject memoryJson(const ProcessMemorySnapshot& snapshot)
@@ -229,13 +263,28 @@ bool saveCapture(QWidget& page, const QString& path, QJsonObject* state, QString
     }
     QApplication::processEvents();
     const QImage image = page.grab().toImage();
-    if (image.size() != Viewport || !image.save(path, "PNG"))
+    const bool saved = image.size() == Viewport && image.save(path, "PNG");
+    if (!saved)
     {
-        *error = QStringLiteral("Could not save a 1024x768 workspace capture.");
+        *error = QStringLiteral(
+            "Could not save a 1024x768 workspace capture at %1 (grabbed %2x%3, null=%4).")
+            .arg(path)
+            .arg(image.width())
+            .arg(image.height())
+            .arg(image.isNull());
         return false;
     }
+    QFile captureFile(path);
+    if (!captureFile.open(QIODevice::ReadOnly))
+    {
+        *error = QStringLiteral("Could not read the saved workspace capture.");
+        return false;
+    }
+    const QByteArray sha256 = QCryptographicHash::hash(
+        captureFile.readAll(), QCryptographicHash::Sha256).toHex();
     *state = {
         {QStringLiteral("image"), QFileInfo(path).fileName()},
+        {QStringLiteral("sha256"), QString::fromLatin1(sha256)},
         {QStringLiteral("width"), image.width()},
         {QStringLiteral("height"), image.height()},
         {QStringLiteral("widgetCount"), widgetCount(&page)}
@@ -284,6 +333,83 @@ bool captureLegacySchedule(
     return true;
 }
 
+bool captureLegacyCalendar(
+    const QString& databasePath,
+    const QString& outputPath,
+    QJsonObject* state,
+    QString* error
+    )
+{
+    PlatformProcessMemorySnapshotProvider memoryProvider;
+    const ProcessMemorySnapshot before = memoryProvider.snapshot();
+    ApplicationServices services;
+    const RepositoryStatus opened = services.openDatabase(databasePath);
+    if (!opened)
+    {
+        *error = opened.error().diagnostic;
+        return false;
+    }
+    MyWorkspacePage page(&services);
+    page.setDatabaseOpen(true);
+    page.openTab(WorkspaceTab::Calendar);
+    QApplication::processEvents();
+    ::CalendarPage* const calendar = page.calendarPage();
+    if (!calendar)
+    {
+        *error = QStringLiteral(
+            "The Legacy My Workspace Calendar tab did not construct its page.");
+        return false;
+    }
+    const ::CalendarPageRuntimeMetrics metrics = calendar->runtimeMetrics();
+    if (metrics.calendarViewObjectCount < 1)
+    {
+        *error = QStringLiteral(
+            "The Legacy embedded Calendar month grid was not constructed.");
+        return false;
+    }
+    if (!saveCapture(page, outputPath, state, error))
+    {
+        return false;
+    }
+    const auto* const calendarViewport = calendar->findChild<QScrollArea*>();
+    const auto* const calendarGrid = calendar->findChild<QQuickWidget*>();
+    const auto* const calendarCard = calendarGrid
+        ? calendarGrid->parentWidget()
+        : nullptr;
+    (*state).insert(QStringLiteral("calendarViewportRect"),
+        geometryJson(calendarViewport, &page));
+    (*state).insert(QStringLiteral("calendarGridRect"),
+        geometryJson(calendarGrid, &page));
+    (*state).insert(QStringLiteral("calendarCardRect"),
+        geometryJson(calendarCard, &page));
+    if (!geometryMatches(state->value(QStringLiteral("calendarViewportRect")).toObject(),
+                         44, 185, 936, 495)
+        || !geometryMatches(state->value(QStringLiteral("calendarGridRect")).toObject(),
+                            90, 239, 834, 840))
+    {
+        *error = QStringLiteral("The Legacy embedded Calendar capture geometry changed.");
+        return false;
+    }
+    const ProcessMemorySnapshot active = memoryProvider.snapshot();
+    page.deactivate();
+    QApplication::processEvents();
+    const ProcessMemorySnapshot suspended = memoryProvider.snapshot();
+    (*state).insert(QStringLiteral("route"),
+        QStringLiteral("legacy_my_workspace_calendar"));
+    (*state).insert(QStringLiteral("calendarCacheEventCount"),
+        metrics.cacheEventCount);
+    (*state).insert(QStringLiteral("calendarViewObjectCount"),
+        metrics.calendarViewObjectCount);
+    (*state).insert(QStringLiteral("calendarCacheLoading"),
+        metrics.cacheLoading);
+    (*state).insert(QStringLiteral("memoryProcessWide"), QJsonObject{
+        {QStringLiteral("before"), memoryJson(before)},
+        {QStringLiteral("active"), memoryJson(active)},
+        {QStringLiteral("suspended"), memoryJson(suspended)}
+    });
+    return true;
+}
+
 bool captureNextSurface(
     const QString& databasePath,
     Resources::ResourceLoader& loader,
@@ -313,7 +439,8 @@ bool captureNextSurface(
         .label = QStringLiteral("My Workspace"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
-        .factory = [&store, &nextPage, &detailsReadCount](const Ui::PageContext& context)
+        .factory = [&store, &nextPage, &detailsReadCount, databasePath](
+            const Ui::PageContext& context)
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             Ui::MyWorkspacePageActions actions;
             actions.workspaceIdentity = [] { return QStringLiteral("capture-workspace"); };
@@ -325,9 +452,22 @@ bool captureNextSurface(
                 const Platform::WorkspaceStoreMyWorkspaceScheduleReadPort port(store);
                 return Application::MyWorkspaceScheduleReadUseCase::execute(port);
             };
-            actions.readUpcomingEvents = [&store] {
-                const Platform::WorkspaceStoreMyWorkspaceUpcomingEventsReadPort port(store);
-                return Application::MyWorkspaceUpcomingEventsReadUseCase::execute(port);
+            actions.createCalendarActions = [databasePath](
+                const Ui::PageContext&) {
+                Ui::CalendarPageActions calendar;
+                calendar.activeWorkspacePath = [databasePath] {
+                    return databasePath;
+                };
+                calendar.readDisplayPreferences = [](const QString& path) {
+                    return Platform::readCalendarEventDisplayPreferencesAtPath(path);
+                };
+                calendar.readCurrentCampus = [](const QString& path) {
+                    return Platform::readCurrentCampusAtPath(path);
+                };
+                calendar.readCampusDirectory = [] {
+                    return std::vector<Application::CalendarPageCampusMetadata>{};
+                };
+                return calendar;
             };
             auto page = std::make_unique<Ui::MyWorkspacePage>(context, std::move(actions));
             nextPage = page.get();
@@ -371,8 +511,38 @@ bool captureNextSurface(
     const ProcessMemorySnapshot active = memoryProvider.snapshot();
     const auto* const scheduleTable = nextPage->findChild<QTableView*>(
         QStringLiteral("nextMyWorkspaceScheduleTable"));
-    const auto* const eventsTable = nextPage->findChild<QTableView*>(
-        QStringLiteral("nextMyWorkspaceUpcomingEventsTable"));
+    const auto* const embeddedCalendar = nextPage->findChild<Ui::CalendarPage*>(
+        QStringLiteral("nextMyWorkspaceEmbeddedCalendar"));
+    Ui::CalendarPageRuntimeMetrics activeCalendarMetrics;
+    QJsonObject calendarViewportRect;
+    QJsonObject calendarCardRect;
+    QJsonObject calendarGridRect;
+    QJsonObject workspaceTabPagesRect;
+    QJsonObject workspaceTabBarRect;
+    if (embeddedCalendar)
+    {
+        activeCalendarMetrics = embeddedCalendar->runtimeMetrics();
+        if (tabIndex == 2)
+        {
+            const auto* const calendarViewport = nextPage->findChild<QScrollArea*>(
+                QStringLiteral("nextMyWorkspaceCalendarScrollArea"));
+            const auto* const calendarGrid = embeddedCalendar->calendarView();
+            const auto* const calendarCard = calendarGrid
+                ? calendarGrid->parentWidget()
+                : nullptr;
+            calendarViewportRect = geometryJson(calendarViewport, nextPage);
+            calendarGridRect = geometryJson(calendarGrid, nextPage);
+            calendarCardRect = geometryJson(calendarCard, nextPage);
+            workspaceTabPagesRect = geometryJson(
+                nextPage->findChild<QStackedWidget*>(
+                    QStringLiteral("nextMyWorkspaceTabPages")),
+                nextPage);
+            workspaceTabBarRect = geometryJson(
+                nextPage->findChild<QTabBar*>(
+                    QStringLiteral("nextMyWorkspaceTabBar")),
+                nextPage);
+        }
+    }
     if (tabIndex == 1 && scheduleTable && scheduleTable->model())
     {
         const QString firstScheduleDay = scheduleTable->model()->data(
@@ -389,21 +559,62 @@ bool captureNextSurface(
     }
     const int rows = tabIndex == 1 && scheduleTable && scheduleTable->model()
         ? scheduleTable->model()->rowCount()
-        : (eventsTable && eventsTable->model() ? eventsTable->model()->rowCount() : 0);
+        : (embeddedCalendar
+            ? activeCalendarMetrics.upcomingResultCount
+            : 0);
+    if (tabIndex == 2
+        && (!embeddedCalendar || !embeddedCalendar->calendarView()
+            || !embeddedCalendar->calendarView()->rootObject()))
+    {
+        *error = QStringLiteral(
+            "The embedded Next My Workspace Calendar content did not activate.");
+        return false;
+    }
     const int modelCount = static_cast<int>(nextPage->findChildren<QTableView*>().size());
     static_cast<void>(host.activatePage(QStringLiteral("other")));
     QApplication::processEvents();
     const ProcessMemorySnapshot suspended = memoryProvider.snapshot();
     (*state).insert(QStringLiteral("route"), tabIndex == 1
-        ? QStringLiteral("next_schedule") : QStringLiteral("next_upcoming_events"));
+        ? QStringLiteral("next_schedule")
+        : QStringLiteral("next_my_workspace_calendar"));
     (*state).insert(QStringLiteral("activeTabIndex"), tabIndex);
     (*state).insert(QStringLiteral("activeSurfaceRowCount"), rows);
     (*state).insert(QStringLiteral("ownedTableModelViewCount"), modelCount);
+    if (tabIndex == 2 && embeddedCalendar)
+    {
+        if (!geometryMatches(calendarViewportRect, 44, 185, 936, 495)
+            || !geometryMatches(calendarGridRect, 90, 239, 834, 840))
+        {
+            *error = QStringLiteral(
+                "The Next embedded Calendar viewport or grid no longer aligns with Legacy.");
+            return false;
+        }
+        (*state).insert(QStringLiteral("workspaceTabPagesRect"),
+            workspaceTabPagesRect);
+        (*state).insert(QStringLiteral("workspaceTabBarRect"),
+            workspaceTabBarRect);
+        (*state).insert(QStringLiteral("calendarViewportRect"),
+            calendarViewportRect);
+        (*state).insert(QStringLiteral("calendarGridRect"), calendarGridRect);
+        (*state).insert(QStringLiteral("calendarCardRect"), calendarCardRect);
+        (*state).insert(QStringLiteral("calendarViewCount"),
+            activeCalendarMetrics.calendarViewCount);
+        (*state).insert(QStringLiteral("calendarRootObjectCount"),
+            activeCalendarMetrics.calendarRootObjectCount);
+        (*state).insert(QStringLiteral("calendarCacheEventCount"),
+            activeCalendarMetrics.cacheEventCount);
+        (*state).insert(QStringLiteral("calendarUpcomingRangeDayCount"),
+            activeCalendarMetrics.upcomingRangeDayCount);
+        (*state).insert(QStringLiteral("liveHeavyCalendarSessionCount"),
+            activeCalendarMetrics.liveHeavySessionCount);
+    }
     (*state).insert(QStringLiteral("personalDetailsReadCount"), detailsReadCount);
     (*state).insert(QStringLiteral("scheduleRowsAfterSuspension"),
         scheduleTable && scheduleTable->model() ? scheduleTable->model()->rowCount() : 0);
-    (*state).insert(QStringLiteral("upcomingEventRowsAfterSuspension"),
-        eventsTable && eventsTable->model() ? eventsTable->model()->rowCount() : 0);
+    (*state).insert(QStringLiteral("calendarViewCountAfterSuspension"),
+        embeddedCalendar
+            ? embeddedCalendar->runtimeMetrics().calendarViewCount
+            : 0);
     (*state).insert(QStringLiteral("memoryProcessWide"), QJsonObject{
         {QStringLiteral("before"), memoryJson(before)},
         {QStringLiteral("active"), memoryJson(active)},
@@ -478,12 +689,13 @@ int main(int argc, char* argv[])
                 }
             }
 
-            for (int tabIndex = 1; tabIndex <= 2; ++tabIndex)
+            for (int tabIndex : {1, 2})
             {
                 const QString suffix = locale + QLatin1Char('_') + theme;
                 const QString name = tabIndex == 1
                     ? QStringLiteral("next_schedule_") + suffix + QStringLiteral(".png")
-                    : QStringLiteral("next_upcoming_events_") + suffix + QStringLiteral(".png");
+                    : QStringLiteral("next_my_workspace_calendar_")
+                        + suffix + QStringLiteral(".png");
                 QJsonObject nextState;
                 if (!captureNextSurface(
                         sourceDatabase,
@@ -502,9 +714,9 @@ int main(int argc, char* argv[])
                 nextState.insert(QStringLiteral("theme"), theme);
                 captures.append(nextState);
 
-                if (tabIndex == 1)
+                if (tabIndex == 2)
                 {
-                    const QString legacyName = QStringLiteral("legacy_schedule_")
+                    const QString legacyName = QStringLiteral("legacy_my_workspace_calendar_")
                         + suffix + QStringLiteral(".png");
                     const QString legacyDatabase = temporaryDirectory.filePath(
                         QStringLiteral("legacy-") + suffix + QStringLiteral(".tps"));
@@ -515,7 +727,7 @@ int main(int argc, char* argv[])
                         return 1;
                     }
                     QJsonObject legacyState;
-                    if (!captureLegacySchedule(
+                    if (!captureLegacyCalendar(
                             legacyDatabase,
                             QDir(outputDirectory).filePath(legacyName),
                             &legacyState,
@@ -563,7 +775,7 @@ int main(int argc, char* argv[])
         return 1;
     }
     if (largeState.value(QStringLiteral("activeSurfaceRowCount")).toInt() != 96
-        || largeState.value(QStringLiteral("ownedTableModelViewCount")).toInt() != 2)
+        || largeState.value(QStringLiteral("ownedTableModelViewCount")).toInt() != 1)
     {
         qCritical("The 96-class schedule capture did not retain its bounded model shape");
         return 1;
@@ -576,15 +788,20 @@ int main(int argc, char* argv[])
     QJsonObject manifest{
         {QStringLiteral("viewport"), QStringLiteral("1024x768")},
         {QStringLiteral("style"), QStringLiteral("Fusion")},
+        {QStringLiteral("checksumAlgorithm"), QStringLiteral("SHA-256")},
         {QStringLiteral("scenarioCount"), captures.size()},
         {QStringLiteral("memoryScope"), QStringLiteral(
             "Process-wide snapshots; differences include the full Qt application, "
             "workspace stores, repositories, translations, widgets, and allocator behavior.")},
-        {QStringLiteral("legacyCalendarCaptured"), false},
-        {QStringLiteral("legacyCalendarReason"), QStringLiteral(
-            "The legacy Calendar page constructs its QQuickWidget month grid while building "
-            "the Upcoming Events panel. The Next events capture is therefore surface-only; "
-            "full Calendar comparison remains for the Calendar migration slice.")},
+        {QStringLiteral("calendarCapture"), QStringLiteral(
+            "Paired Legacy and Next captures show the actual Calendar tab inside each "
+            "My Workspace page, at a 1024x768 embedded viewport. The visible viewport "
+            "and month grid share identical rectangles: viewport 44,185 936x495; grid "
+            "90,239 834x840.")},
+        {QStringLiteral("localizedDivergence"), QStringLiteral(
+            "In ko_KR, the Legacy My Workspace parent title, subtitle, and tab labels "
+            "remain English while its Calendar labels are Korean. Next keeps the Korean "
+            "My Workspace and Calendar translations, as required for Phase 7.")},
         {QStringLiteral("captures"), captures}
     };
     QFile manifestFile(QDir(outputDirectory).filePath(QStringLiteral("manifest.json")));

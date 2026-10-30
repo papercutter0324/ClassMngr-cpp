@@ -35,6 +35,7 @@ class QPushButton;
 class QQuickWidget;
 class QWidget;
 class QVBoxLayout;
+class QShowEvent;
 class CalendarEventModel;
 class AcademicCalendarProvider;
 class WorkspaceStore;
@@ -101,6 +102,8 @@ struct CalendarPageRuntimeMetrics final
     int calendarViewCount = 0;
     int calendarRootObjectCount = 0;
     int calendarViewConstructionCount = 0;
+    int liveHeavySessionCount = 0;
+    int peakLiveHeavySessionCount = 0;
     bool cacheLoading = false;
 };
 
@@ -112,11 +115,15 @@ public:
     explicit CalendarPage(
         const PageContext& context,
         CalendarPageActions actions = {},
+        bool embedded = false,
         QWidget* parent = nullptr
         );
+    ~CalendarPage() override;
 
     [[nodiscard]] PageOperationResult<void> onActivating() override;
     void onSuspending() noexcept override;
+    void refreshForWorkspaceIdentity();
+    void clearForClosedWorkspace();
     [[nodiscard]] CalendarPageRuntimeMetrics runtimeMetrics() const;
     [[nodiscard]] CalendarEventModel* eventModel() const noexcept;
     [[nodiscard]] CalendarEventCache* eventCache() const noexcept;
@@ -125,6 +132,7 @@ public:
 
 protected:
     void changeEvent(QEvent* event) override;
+    void showEvent(QShowEvent* event) override;
 
 private slots:
     void handleCalendarDayActivated(int year, int month, int day);
@@ -142,6 +150,7 @@ private:
 
     void buildShell();
     void ensureCalendarContent();
+    void activateVisibleContent();
     void releaseCalendarContent() noexcept;
     void reloadWorkspaceState();
     void updateRetentionAndQueries();
@@ -188,6 +197,10 @@ private:
     QDate m_visibleMonth;
     int m_upcomingResultCount = 0;
     int m_calendarViewConstructionCount = 0;
+    int m_upcomingScopeSelection = 0;
+    std::array<bool, 6> m_eventTypeFilterEnabled{true, true, true, true, true, true};
+    bool m_embedded = false;
+    bool m_pageActive = false;
     bool m_contentActive = false;
 };
 

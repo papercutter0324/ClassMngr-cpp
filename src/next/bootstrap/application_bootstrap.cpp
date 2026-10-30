@@ -2214,12 +2214,98 @@ Application::StartupResult ApplicationBootstrap::start()
             }
         }
 
+        const auto calendarActionsFactory = [this](
+            const Ui::PageContext& context) {
+            Ui::CalendarPageActions actions;
+            actions.activeWorkspacePath = [this] {
+                if (!m_applicationRuntime)
+                {
+                    return QString{};
+                }
+                const auto session =
+                    m_applicationRuntime->workspaceState().snapshot().session();
+                if (!session)
+                {
+                    return QString{};
+                }
+                const std::string& path = session->location().value();
+                return QString::fromUtf8(
+                    path.data(), static_cast<qsizetype>(path.size()));
+            };
+            actions.readEvent = [](
+                const QString& path,
+                const Domain::CalendarEventId& eventId) {
+                return Platform::readCalendarEventAtPath(path, eventId);
+            };
+            actions.saveEvent = [](
+                const QString& path,
+                const Application::CalendarEventSaveInput& input) {
+                return Platform::saveCalendarEventAtPath(path, input);
+            };
+            actions.deleteEvent = [](
+                const QString& path,
+                const Domain::CalendarEventId& eventId) {
+                return Platform::deleteCalendarEventAtPath(path, eventId);
+            };
+            actions.createRepeatSeries = [](
+                const QString& path,
+                const Application::CalendarEventSeriesCreateInput& input) {
+                return Platform::createCalendarEventSeriesAtPath(path, input);
+            };
+            actions.editRepeatSeries = [](
+                const QString& path,
+                const Application::CalendarEventSeriesEditInput& input) {
+                return Platform::editCalendarEventSeriesAtPath(path, input);
+            };
+            actions.deleteRepeatSeries = [](
+                const QString& path,
+                const Application::CalendarEventSeriesDeleteInput& input) {
+                return Platform::deleteCalendarEventSeriesAtPath(path, input);
+            };
+            actions.deleteAllEvents = [](const QString& path) {
+                return Platform::deleteAllCalendarEventsAtPath(path);
+            };
+            actions.readDisplayPreferences = [](const QString& path) {
+                return Platform::readCalendarEventDisplayPreferencesAtPath(path);
+            };
+            actions.saveDisplayPreferences = [](
+                const QString& path,
+                const Application::CalendarEventDisplayPreferencesSaveRequest& request) {
+                return Platform::saveCalendarEventDisplayPreferencesAtPath(
+                    path, request);
+            };
+            actions.readCurrentCampus = [](const QString& path) {
+                return Platform::readCurrentCampusAtPath(path);
+            };
+            actions.readCampusDirectory = [
+                resourceLoader = &context.resourceLoader(),
+                resourceScope = context.pageScope()] {
+                Platform::CalendarPageResourceCampusDirectoryQueryAdapter query(
+                    *resourceLoader, resourceScope);
+                return query.loadCampuses();
+            };
+            actions.readEventTypeColor = [](
+                const QString& path,
+                const Domain::CalendarEventType eventType) {
+                return Platform::readCalendarEventTypeColorAtPath(path, eventType);
+            };
+            actions.saveEventTypeColor = [](
+                const QString& path,
+                const Domain::CalendarEventType eventType,
+                const std::string& color) {
+                return Platform::writeCalendarEventTypeColorAtPath(
+                    path, eventType, color);
+            };
+            return actions;
+        };
+
         if (initialPageFailure.isEmpty())
         {
             const Ui::PageHostResult<void> registration =
                 m_shell->pageHost().registerPage(myWorkspacePageDescriptor(
-                    [this](const Ui::PageContext&) {
+                    [this, calendarActionsFactory](const Ui::PageContext&) {
                     Ui::MyWorkspacePageActions actions;
+                    actions.createCalendarActions = calendarActionsFactory;
                     actions.saveMode =
                         Platform::SettingsManagerSaveModePreferencesPort().read();
                     actions.readDetails = [this] {
@@ -2262,16 +2348,6 @@ Application::StartupResult ApplicationBootstrap::start()
                             m_applicationRuntime.get(),
                             [](const QString& databasePath) {
                                 return Platform::readMyWorkspaceScheduleAtPath(
-                                    databasePath);
-                            }
-                            );
-                    };
-                    actions.readUpcomingEvents = [this] {
-                        return withActiveWorkspacePath<
-                            Application::MyWorkspaceUpcomingEventsReadResult>(
-                            m_applicationRuntime.get(),
-                            [](const QString& databasePath) {
-                                return Platform::readMyWorkspaceUpcomingEventsAtPath(
                                     databasePath);
                             }
                             );
@@ -2475,91 +2551,8 @@ Application::StartupResult ApplicationBootstrap::start()
         if (initialPageFailure.isEmpty())
         {
             const Ui::PageHostResult<void> registration =
-                m_shell->pageHost().registerPage(calendarPageDescriptor([this](
-                    const Ui::PageContext& context) {
-                    Ui::CalendarPageActions actions;
-                    actions.activeWorkspacePath = [this] {
-                        if (!m_applicationRuntime)
-                        {
-                            return QString{};
-                        }
-                        const auto session =
-                            m_applicationRuntime->workspaceState().snapshot().session();
-                        if (!session)
-                        {
-                            return QString{};
-                        }
-                        const std::string& path = session->location().value();
-                        return QString::fromUtf8(
-                            path.data(), static_cast<qsizetype>(path.size()));
-                    };
-                    actions.readEvent = [](
-                        const QString& path,
-                        const Domain::CalendarEventId& eventId) {
-                        return Platform::readCalendarEventAtPath(path, eventId);
-                    };
-                    actions.saveEvent = [](
-                        const QString& path,
-                        const Application::CalendarEventSaveInput& input) {
-                        return Platform::saveCalendarEventAtPath(path, input);
-                    };
-                    actions.deleteEvent = [](
-                        const QString& path,
-                        const Domain::CalendarEventId& eventId) {
-                        return Platform::deleteCalendarEventAtPath(path, eventId);
-                    };
-                    actions.createRepeatSeries = [](
-                        const QString& path,
-                        const Application::CalendarEventSeriesCreateInput& input) {
-                        return Platform::createCalendarEventSeriesAtPath(path, input);
-                    };
-                    actions.editRepeatSeries = [](
-                        const QString& path,
-                        const Application::CalendarEventSeriesEditInput& input) {
-                        return Platform::editCalendarEventSeriesAtPath(path, input);
-                    };
-                    actions.deleteRepeatSeries = [](
-                        const QString& path,
-                        const Application::CalendarEventSeriesDeleteInput& input) {
-                        return Platform::deleteCalendarEventSeriesAtPath(path, input);
-                    };
-                    actions.deleteAllEvents = [](const QString& path) {
-                        return Platform::deleteAllCalendarEventsAtPath(path);
-                    };
-                    actions.readDisplayPreferences = [](const QString& path) {
-                        return Platform::readCalendarEventDisplayPreferencesAtPath(path);
-                    };
-                    actions.saveDisplayPreferences = [](
-                        const QString& path,
-                        const Application::CalendarEventDisplayPreferencesSaveRequest& request) {
-                        return Platform::saveCalendarEventDisplayPreferencesAtPath(
-                            path, request);
-                    };
-                    actions.readCurrentCampus = [](const QString& path) {
-                        return Platform::readCurrentCampusAtPath(path);
-                    };
-                    actions.readCampusDirectory = [
-                        resourceLoader = &context.resourceLoader(),
-                        resourceScope = context.pageScope()] {
-                        Platform::CalendarPageResourceCampusDirectoryQueryAdapter
-                            query(*resourceLoader, resourceScope);
-                        return query.loadCampuses();
-                    };
-                    actions.readEventTypeColor = [](
-                        const QString& path,
-                        const Domain::CalendarEventType eventType) {
-                        return Platform::readCalendarEventTypeColorAtPath(
-                            path, eventType);
-                    };
-                    actions.saveEventTypeColor = [](
-                        const QString& path,
-                        const Domain::CalendarEventType eventType,
-                        const std::string& color) {
-                        return Platform::writeCalendarEventTypeColorAtPath(
-                            path, eventType, color);
-                    };
-                    return actions;
-                }));
+                m_shell->pageHost().registerPage(
+                    calendarPageDescriptor(calendarActionsFactory));
             if (!registration)
             {
                 initialPageFailure = registration.error().message;
@@ -5852,6 +5845,11 @@ void ApplicationBootstrap::refreshMyWorkspacePage()
     {
         page->refreshForWorkspaceIdentity();
     }
+    if (auto* const page = dynamic_cast<Ui::CalendarPage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("calendar"))))
+    {
+        page->refreshForWorkspaceIdentity();
+    }
 }
 
 void ApplicationBootstrap::refreshSchedulePage()
@@ -5883,6 +5881,11 @@ void ApplicationBootstrap::clearMyWorkspacePageForClosedWorkspace()
     }
     if (auto* const page = dynamic_cast<Ui::MyWorkspacePage*>(
             m_shell->pageHost().pageInstance(QStringLiteral("my_workspace"))))
+    {
+        page->clearForClosedWorkspace();
+    }
+    if (auto* const page = dynamic_cast<Ui::CalendarPage*>(
+            m_shell->pageHost().pageInstance(QStringLiteral("calendar"))))
     {
         page->clearForClosedWorkspace();
     }

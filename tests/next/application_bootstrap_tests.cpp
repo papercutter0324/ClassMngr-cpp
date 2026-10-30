@@ -16,10 +16,12 @@
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
+#include "next/ui/calendar_page.h"
 #include "next/ui/document_catalog_navigation.h"
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/initial_page.h"
 #include "next/ui/my_classes_page.h"
+#include "next/ui/my_workspace_page.h"
 #include "next/ui/page_host.h"
 #include "next/ui/placeholder_page.h"
 #include "next/ui/schedule_page.h"
@@ -184,6 +186,7 @@ private slots:
     void speakingEvaluationAiCompositionUsesWorkspaceAndPreferences();
     void classesNavigatorClearsAndReloadsWhenWorkspaceIsReplacedWhileActive();
     void classesNavigatorClearsWhenWorkspaceIsClosedWhileActive();
+    void calendarRoutesFollowWorkspaceReplacementAndCloseFlows();
     void scheduleSelectionOpensClassDetailsAndRefreshesAfterSave();
     void subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle();
     void openActionDoesNotBypassPendingOrUnreadableSetupRecovery();
@@ -7078,6 +7081,178 @@ classesNavigatorClearsWhenWorkspaceIsClosedWhileActive()
     QCOMPARE(page->findChild<QLabel*>(QStringLiteral("classesNavigatorStatus"))
                  ->text(),
         QStringLiteral("No Teacher Profile is open."));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+calendarRoutesFollowWorkspaceReplacementAndCloseFlows()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString firstPath = temporaryDirectory.filePath(
+        QStringLiteral("calendar-route-first.tps"));
+    const QString secondPath = temporaryDirectory.filePath(
+        QStringLiteral("calendar-route-second.tps"));
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 firstPath, QStringLiteral("representative_startup.sql"),
+                 &fixtureError), qPrintable(fixtureError));
+    QVERIFY2(createWorkspaceWithFixture(
+                 secondPath, QStringLiteral("representative_startup.sql"),
+                 &fixtureError), qPrintable(fixtureError));
+
+    auto fileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        secondPath.toUtf8().toStdString());
+    auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), firstPath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    seams.openProfileFileDialogPortFactory = [fileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            fileDialogProbe);
+    };
+    seams.openProfileRecentWorkspaceHistoryPortFactory = [historyProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    QAction* const openAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextOpenTeacherProfile"));
+    QAction* const closeAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextCloseWorkspace"));
+    QVERIFY(openAction && closeAction);
+
+    auto* const workspace = dynamic_cast<Ui::MyWorkspacePage*>(
+        shell->pageHost().pageInstance(QStringLiteral("my_workspace")));
+    QVERIFY(workspace);
+    auto* const embedded = workspace->findChild<Ui::CalendarPage*>(
+        QStringLiteral("nextMyWorkspaceEmbeddedCalendar"));
+    auto* const workspaceTabs = workspace->findChild<QTabBar*>(
+        QStringLiteral("nextMyWorkspaceTabBar"));
+    QVERIFY(embedded && workspaceTabs);
+    workspaceTabs->setCurrentIndex(2);
+    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarView(), 5000);
+    QVERIFY(embedded->eventCache());
+    QCOMPARE(QFileInfo(embedded->eventCache()->databasePath()).canonicalFilePath(),
+             QFileInfo(firstPath).canonicalFilePath());
+    QCOMPARE(embedded->runtimeMetrics().liveHeavySessionCount, 1);
+
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 1);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+        std::optional<Application::WorkspaceLocation>(
+            Application::WorkspaceLocation(
+                QFileInfo(secondPath).canonicalFilePath().toUtf8().toStdString())));
+    QCOMPARE(shell->pageHost().activePageKey(),
+             std::optional<QString>(QStringLiteral("my_workspace")));
+    QVERIFY(embedded->eventCache());
+    QCOMPARE(QFileInfo(embedded->eventCache()->databasePath()).canonicalFilePath(),
+             QFileInfo(secondPath).canonicalFilePath());
+    QCOMPARE(embedded->runtimeMetrics().liveHeavySessionCount, 1);
+    QVERIFY(embedded->runtimeMetrics().peakLiveHeavySessionCount <= 1);
+
+    closeAction->trigger();
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+    QCOMPARE(shell->navigationModel()->currentPageId()->value(),
+             QStringLiteral("initial_setup"));
+    QVERIFY(!embedded->eventCache());
+    QCOMPARE(embedded->runtimeMetrics().liveHeavySessionCount, 0);
+    QCOMPARE(embedded->runtimeMetrics().calendarViewCount, 0);
+
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        firstPath.toUtf8().toStdString());
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 2);
+    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarView(), 5000);
+    QVERIFY(embedded->eventCache());
+    QCOMPARE(QFileInfo(embedded->eventCache()->databasePath()).canonicalFilePath(),
+             QFileInfo(firstPath).canonicalFilePath());
+
+    const Ui::PageId standaloneCalendarId =
+        *Ui::PageId::fromString(QStringLiteral("calendar"));
+    QVERIFY(shell->navigateTo(standaloneCalendarId));
+    auto* const standalone = dynamic_cast<Ui::CalendarPage*>(
+        shell->pageHost().pageInstance(QStringLiteral("calendar")));
+    QVERIFY(standalone);
+    QTRY_VERIFY_WITH_TIMEOUT(standalone->calendarView(), 5000);
+    QVERIFY(standalone->eventCache());
+    QCOMPARE(QFileInfo(standalone->eventCache()->databasePath()).canonicalFilePath(),
+             QFileInfo(firstPath).canonicalFilePath());
+    QCOMPARE(standalone->runtimeMetrics().liveHeavySessionCount, 1);
+    QCOMPARE(embedded->runtimeMetrics().calendarViewCount, 0);
+    QVERIFY(!embedded->eventCache());
+
+    fileDialogProbe->openPath = Application::FileDialogPath(
+        secondPath.toUtf8().toStdString());
+    openAction->trigger();
+    QCOMPARE(fileDialogProbe->openCount, 3);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location(),
+        std::optional<Application::WorkspaceLocation>(
+            Application::WorkspaceLocation(
+                QFileInfo(secondPath).canonicalFilePath().toUtf8().toStdString())));
+    QCOMPARE(shell->pageHost().activePageKey(),
+             std::optional<QString>(QStringLiteral("my_workspace")));
+    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarView(), 5000);
+    QVERIFY(embedded->eventCache());
+    QCOMPARE(QFileInfo(embedded->eventCache()->databasePath()).canonicalFilePath(),
+             QFileInfo(secondPath).canonicalFilePath());
+    QCOMPARE(standalone->runtimeMetrics().calendarViewCount, 0);
+    QVERIFY(!standalone->eventCache());
+    QCOMPARE(embedded->runtimeMetrics().liveHeavySessionCount, 1);
+    QVERIFY(embedded->runtimeMetrics().peakLiveHeavySessionCount <= 1);
+
+    QVERIFY(shell->navigateTo(standaloneCalendarId));
+    QTRY_VERIFY_WITH_TIMEOUT(standalone->calendarView(), 5000);
+    QVERIFY(standalone->eventCache());
+    QCOMPARE(QFileInfo(standalone->eventCache()->databasePath()).canonicalFilePath(),
+             QFileInfo(secondPath).canonicalFilePath());
+    QCOMPARE(standalone->runtimeMetrics().liveHeavySessionCount, 1);
+    QCOMPARE(embedded->runtimeMetrics().calendarViewCount, 0);
+    QVERIFY(!embedded->eventCache());
+
+    closeAction->trigger();
+    QCOMPARE(bootstrap.workspaceStateSnapshot().lifecycle(),
+             Application::WorkspaceLifecycleState::Closed);
+    QCOMPARE(shell->navigationModel()->currentPageId()->value(),
+             QStringLiteral("initial_setup"));
+    QVERIFY(!standalone->eventCache());
+    QCOMPARE(standalone->runtimeMetrics().liveHeavySessionCount, 0);
+    QCOMPARE(standalone->runtimeMetrics().calendarViewCount, 0);
+    QCOMPARE(embedded->runtimeMetrics().liveHeavySessionCount, 0);
+    QVERIFY(standalone->runtimeMetrics().peakLiveHeavySessionCount <= 1);
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);

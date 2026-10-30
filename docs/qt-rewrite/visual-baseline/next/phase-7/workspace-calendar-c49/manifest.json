@@ -1,0 +1,575 @@
+{
+  "sourcePackage": "artifacts/phase7-batch5-c49-workspace-calendar/",
+  "sourceManifest": "artifacts/phase7-batch5-c49-workspace-calendar/manifest.json",
+  "sourceManifestSha256": "da251d9fbbff995ae146b7748388c637888d33eb1ec1c6aa3396e66a57541055",
+  "sourceScenarioCount": 13,
+  "calendarCaptureCount": 8,
+  "calendarCapture": "Paired Legacy and Next captures show the actual Calendar tab inside each My Workspace page, at a 1024x768 embedded viewport. The visible viewport and month grid share identical rectangles: viewport 44,185 936x495; grid 90,239 834x840.",
+  "checksumAlgorithm": "SHA-256",
+  "localizedDivergence": "In ko_KR, the Legacy My Workspace parent title, subtitle, and tab labels remain English while its Calendar labels are Korean. Next keeps the Korean My Workspace and Calendar translations, as required for Phase 7.",
+  "memoryScope": "Process-wide snapshots; differences include the full Qt application, workspace stores, repositories, translations, widgets, and allocator behavior.",
+  "style": "Fusion",
+  "viewport": "1024x768",
+  "captures": [
+    {
+      "activeSurfaceRowCount": 2,
+      "activeTabIndex": 2,
+      "calendarCacheEventCount": 2,
+      "calendarCardRect": {
+        "height": 1117,
+        "width": 878,
+        "x": 68,
+        "y": 233
+      },
+      "calendarGridRect": {
+        "height": 840,
+        "width": 834,
+        "x": 90,
+        "y": 239
+      },
+      "calendarRootObjectCount": 1,
+      "calendarUpcomingRangeDayCount": 31,
+      "calendarViewCount": 1,
+      "calendarViewCountAfterSuspension": 0,
+      "calendarViewportRect": {
+        "height": 495,
+        "width": 936,
+        "x": 44,
+        "y": 185
+      },
+      "height": 768,
+      "image": "next_my_workspace_calendar_en_US_light.png",
+      "liveHeavyCalendarSessionCount": 1,
+      "locale": "en_US",
+      "memoryProcessWide": {
+        "active": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:23.973",
+          "peakWorkingSetBytes": 113606656,
+          "platform": "macos",
+          "privateUsageBytes": 49447896,
+          "privateWorkingSetBytes": 48758784,
+          "workingSetBytes": 113606656
+        },
+        "before": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:23.848",
+          "peakWorkingSetBytes": 85278720,
+          "platform": "macos",
+          "privateUsageBytes": 32261008,
+          "privateWorkingSetBytes": 31621120,
+          "workingSetBytes": 85278720
+        },
+        "suspended": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:23.975",
+          "peakWorkingSetBytes": 113721344,
+          "platform": "macos",
+          "privateUsageBytes": 48104384,
+          "privateWorkingSetBytes": 47431680,
+          "workingSetBytes": 112410624
+        }
+      },
+      "ownedTableModelViewCount": 1,
+      "personalDetailsReadCount": 0,
+      "route": "next_my_workspace_calendar",
+      "scheduleRowsAfterSuspension": 0,
+      "sha256": "fc318c9873990605b7d6aa87f68eb662f1380a0b0436f95a8dbed7f0f2960d60",
+      "theme": "light",
+      "widgetCount": 135,
+      "width": 1024,
+      "workspaceTabBarRect": {
+        "height": 29,
+        "width": 292,
+        "x": 362,
+        "y": 129
+      },
+      "workspaceTabPagesRect": {
+        "height": 592,
+        "width": 944,
+        "x": 36,
+        "y": 164
+      }
+    },
+    {
+      "calendarCacheEventCount": 2,
+      "calendarCacheLoading": false,
+      "calendarCardRect": {
+        "height": 1191,
+        "width": 878,
+        "x": 68,
+        "y": 233
+      },
+      "calendarGridRect": {
+        "height": 840,
+        "width": 834,
+        "x": 90,
+        "y": 239
+      },
+      "calendarViewObjectCount": 5,
+      "calendarViewportRect": {
+        "height": 495,
+        "width": 936,
+        "x": 44,
+        "y": 185
+      },
+      "height": 768,
+      "image": "legacy_my_workspace_calendar_en_US_light.png",
+      "locale": "en_US",
+      "memoryProcessWide": {
+        "active": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.201",
+          "peakWorkingSetBytes": 156221440,
+          "platform": "macos",
+          "privateUsageBytes": 70943728,
+          "privateWorkingSetBytes": 70238208,
+          "workingSetBytes": 156221440
+        },
+        "before": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:23.976",
+          "peakWorkingSetBytes": 113721344,
+          "platform": "macos",
+          "privateUsageBytes": 48104384,
+          "privateWorkingSetBytes": 47431680,
+          "workingSetBytes": 112410624
+        },
+        "suspended": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.203",
+          "peakWorkingSetBytes": 156237824,
+          "platform": "macos",
+          "privateUsageBytes": 69649368,
+          "privateWorkingSetBytes": 68960256,
+          "workingSetBytes": 154943488
+        }
+      },
+      "route": "legacy_my_workspace_calendar",
+      "sha256": "c48228a4bd1328a1f9da2d2812e8ac8de5ca0087739c1f7161dedf9a8c5549c3",
+      "theme": "light",
+      "widgetCount": 170,
+      "width": 1024
+    },
+    {
+      "activeSurfaceRowCount": 2,
+      "activeTabIndex": 2,
+      "calendarCacheEventCount": 2,
+      "calendarCardRect": {
+        "height": 1119,
+        "width": 878,
+        "x": 68,
+        "y": 233
+      },
+      "calendarGridRect": {
+        "height": 840,
+        "width": 834,
+        "x": 90,
+        "y": 239
+      },
+      "calendarRootObjectCount": 1,
+      "calendarUpcomingRangeDayCount": 31,
+      "calendarViewCount": 1,
+      "calendarViewCountAfterSuspension": 0,
+      "calendarViewportRect": {
+        "height": 495,
+        "width": 936,
+        "x": 44,
+        "y": 185
+      },
+      "height": 768,
+      "image": "next_my_workspace_calendar_en_US_dark.png",
+      "liveHeavyCalendarSessionCount": 1,
+      "locale": "en_US",
+      "memoryProcessWide": {
+        "active": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.338",
+          "peakWorkingSetBytes": 158810112,
+          "platform": "macos",
+          "privateUsageBytes": 73516016,
+          "privateWorkingSetBytes": 72810496,
+          "workingSetBytes": 158810112
+        },
+        "before": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.233",
+          "peakWorkingSetBytes": 156352512,
+          "platform": "macos",
+          "privateUsageBytes": 71025624,
+          "privateWorkingSetBytes": 70336512,
+          "workingSetBytes": 156336128
+        },
+        "suspended": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.339",
+          "peakWorkingSetBytes": 158826496,
+          "platform": "macos",
+          "privateUsageBytes": 72188888,
+          "privateWorkingSetBytes": 71499776,
+          "workingSetBytes": 157499392
+        }
+      },
+      "ownedTableModelViewCount": 1,
+      "personalDetailsReadCount": 0,
+      "route": "next_my_workspace_calendar",
+      "scheduleRowsAfterSuspension": 0,
+      "sha256": "29cae9e0b7a77758faee0c2bb442c4cfe9c928244b0ce84d55865666814212d7",
+      "theme": "dark",
+      "widgetCount": 135,
+      "width": 1024,
+      "workspaceTabBarRect": {
+        "height": 29,
+        "width": 292,
+        "x": 362,
+        "y": 129
+      },
+      "workspaceTabPagesRect": {
+        "height": 592,
+        "width": 944,
+        "x": 36,
+        "y": 164
+      }
+    },
+    {
+      "calendarCacheEventCount": 2,
+      "calendarCacheLoading": false,
+      "calendarCardRect": {
+        "height": 1191,
+        "width": 878,
+        "x": 68,
+        "y": 233
+      },
+      "calendarGridRect": {
+        "height": 840,
+        "width": 834,
+        "x": 90,
+        "y": 239
+      },
+      "calendarViewObjectCount": 5,
+      "calendarViewportRect": {
+        "height": 495,
+        "width": 936,
+        "x": 44,
+        "y": 185
+      },
+      "height": 768,
+      "image": "legacy_my_workspace_calendar_en_US_dark.png",
+      "locale": "en_US",
+      "memoryProcessWide": {
+        "active": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.470",
+          "peakWorkingSetBytes": 158941184,
+          "platform": "macos",
+          "privateUsageBytes": 73647088,
+          "privateWorkingSetBytes": 72941568,
+          "workingSetBytes": 158941184
+        },
+        "before": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.340",
+          "peakWorkingSetBytes": 158826496,
+          "platform": "macos",
+          "privateUsageBytes": 72188888,
+          "privateWorkingSetBytes": 71499776,
+          "workingSetBytes": 157499392
+        },
+        "suspended": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.472",
+          "peakWorkingSetBytes": 158957568,
+          "platform": "macos",
+          "privateUsageBytes": 72352728,
+          "privateWorkingSetBytes": 71663616,
+          "workingSetBytes": 157663232
+        }
+      },
+      "route": "legacy_my_workspace_calendar",
+      "sha256": "c842020fa6bc515fbe83ae571519661d14752ad1a0aa03604bec98baed70492d",
+      "theme": "dark",
+      "widgetCount": 170,
+      "width": 1024
+    },
+    {
+      "activeSurfaceRowCount": 2,
+      "activeTabIndex": 2,
+      "calendarCacheEventCount": 2,
+      "calendarCardRect": {
+        "height": 1117,
+        "width": 878,
+        "x": 68,
+        "y": 233
+      },
+      "calendarGridRect": {
+        "height": 840,
+        "width": 834,
+        "x": 90,
+        "y": 239
+      },
+      "calendarRootObjectCount": 1,
+      "calendarUpcomingRangeDayCount": 31,
+      "calendarViewCount": 1,
+      "calendarViewCountAfterSuspension": 0,
+      "calendarViewportRect": {
+        "height": 495,
+        "width": 936,
+        "x": 44,
+        "y": 185
+      },
+      "height": 768,
+      "image": "next_my_workspace_calendar_ko_KR_light.png",
+      "liveHeavyCalendarSessionCount": 1,
+      "locale": "ko_KR",
+      "memoryProcessWide": {
+        "active": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.616",
+          "peakWorkingSetBytes": 163135488,
+          "platform": "macos",
+          "privateUsageBytes": 75154440,
+          "privateWorkingSetBytes": 74432512,
+          "workingSetBytes": 163135488
+        },
+        "before": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.513",
+          "peakWorkingSetBytes": 161267712,
+          "platform": "macos",
+          "privateUsageBytes": 73303048,
+          "privateWorkingSetBytes": 72581120,
+          "workingSetBytes": 161251328
+        },
+        "suspended": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.618",
+          "peakWorkingSetBytes": 163151872,
+          "platform": "macos",
+          "privateUsageBytes": 73843720,
+          "privateWorkingSetBytes": 73121792,
+          "workingSetBytes": 161824768
+        }
+      },
+      "ownedTableModelViewCount": 1,
+      "personalDetailsReadCount": 0,
+      "route": "next_my_workspace_calendar",
+      "scheduleRowsAfterSuspension": 0,
+      "sha256": "fe3f5b61fc3fc5680709e244fc21dcfcaed6397517d1ae0d205fbece70215c6d",
+      "theme": "light",
+      "widgetCount": 135,
+      "width": 1024,
+      "workspaceTabBarRect": {
+        "height": 29,
+        "width": 201,
+        "x": 408,
+        "y": 120
+      },
+      "workspaceTabPagesRect": {
+        "height": 601,
+        "width": 944,
+        "x": 36,
+        "y": 155
+      }
+    },
+    {
+      "calendarCacheEventCount": 2,
+      "calendarCacheLoading": false,
+      "calendarCardRect": {
+        "height": 1191,
+        "width": 878,
+        "x": 68,
+        "y": 233
+      },
+      "calendarGridRect": {
+        "height": 840,
+        "width": 834,
+        "x": 90,
+        "y": 239
+      },
+      "calendarViewObjectCount": 5,
+      "calendarViewportRect": {
+        "height": 495,
+        "width": 936,
+        "x": 44,
+        "y": 185
+      },
+      "height": 768,
+      "image": "legacy_my_workspace_calendar_ko_KR_light.png",
+      "locale": "ko_KR",
+      "memoryProcessWide": {
+        "active": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.754",
+          "peakWorkingSetBytes": 164020224,
+          "platform": "macos",
+          "privateUsageBytes": 76006408,
+          "privateWorkingSetBytes": 75284480,
+          "workingSetBytes": 164020224
+        },
+        "before": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.619",
+          "peakWorkingSetBytes": 163151872,
+          "platform": "macos",
+          "privateUsageBytes": 73843720,
+          "privateWorkingSetBytes": 73121792,
+          "workingSetBytes": 161824768
+        },
+        "suspended": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.756",
+          "peakWorkingSetBytes": 164036608,
+          "platform": "macos",
+          "privateUsageBytes": 74728456,
+          "privateWorkingSetBytes": 74006528,
+          "workingSetBytes": 162742272
+        }
+      },
+      "route": "legacy_my_workspace_calendar",
+      "sha256": "ffe5c6fe4af988b7bbd998f794af0cb9efab4dad64894ade4daf2bfe736b2705",
+      "theme": "light",
+      "widgetCount": 170,
+      "width": 1024
+    },
+    {
+      "activeSurfaceRowCount": 2,
+      "activeTabIndex": 2,
+      "calendarCacheEventCount": 2,
+      "calendarCardRect": {
+        "height": 1119,
+        "width": 878,
+        "x": 68,
+        "y": 233
+      },
+      "calendarGridRect": {
+        "height": 840,
+        "width": 834,
+        "x": 90,
+        "y": 239
+      },
+      "calendarRootObjectCount": 1,
+      "calendarUpcomingRangeDayCount": 31,
+      "calendarViewCount": 1,
+      "calendarViewCountAfterSuspension": 0,
+      "calendarViewportRect": {
+        "height": 495,
+        "width": 936,
+        "x": 44,
+        "y": 185
+      },
+      "height": 768,
+      "image": "next_my_workspace_calendar_ko_KR_dark.png",
+      "liveHeavyCalendarSessionCount": 1,
+      "locale": "ko_KR",
+      "memoryProcessWide": {
+        "active": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.882",
+          "peakWorkingSetBytes": 164331520,
+          "platform": "macos",
+          "privateUsageBytes": 76350472,
+          "privateWorkingSetBytes": 75628544,
+          "workingSetBytes": 164331520
+        },
+        "before": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.779",
+          "peakWorkingSetBytes": 164036608,
+          "platform": "macos",
+          "privateUsageBytes": 74761224,
+          "privateWorkingSetBytes": 74039296,
+          "workingSetBytes": 162742272
+        },
+        "suspended": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.884",
+          "peakWorkingSetBytes": 164347904,
+          "platform": "macos",
+          "privateUsageBytes": 75039752,
+          "privateWorkingSetBytes": 74317824,
+          "workingSetBytes": 163020800
+        }
+      },
+      "ownedTableModelViewCount": 1,
+      "personalDetailsReadCount": 0,
+      "route": "next_my_workspace_calendar",
+      "scheduleRowsAfterSuspension": 0,
+      "sha256": "cd49ba3401ee21851d5b1744afb0750f041688aca608937f9312450e32a2953f",
+      "theme": "dark",
+      "widgetCount": 135,
+      "width": 1024,
+      "workspaceTabBarRect": {
+        "height": 29,
+        "width": 201,
+        "x": 408,
+        "y": 120
+      },
+      "workspaceTabPagesRect": {
+        "height": 601,
+        "width": 944,
+        "x": 36,
+        "y": 155
+      }
+    },
+    {
+      "calendarCacheEventCount": 2,
+      "calendarCacheLoading": false,
+      "calendarCardRect": {
+        "height": 1191,
+        "width": 878,
+        "x": 68,
+        "y": 233
+      },
+      "calendarGridRect": {
+        "height": 840,
+        "width": 834,
+        "x": 90,
+        "y": 239
+      },
+      "calendarViewObjectCount": 5,
+      "calendarViewportRect": {
+        "height": 495,
+        "width": 936,
+        "x": 44,
+        "y": 185
+      },
+      "height": 768,
+      "image": "legacy_my_workspace_calendar_ko_KR_dark.png",
+      "locale": "ko_KR",
+      "memoryProcessWide": {
+        "active": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:25.018",
+          "peakWorkingSetBytes": 164413440,
+          "platform": "macos",
+          "privateUsageBytes": 76399624,
+          "privateWorkingSetBytes": 75677696,
+          "workingSetBytes": 164413440
+        },
+        "before": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:24.885",
+          "peakWorkingSetBytes": 164347904,
+          "platform": "macos",
+          "privateUsageBytes": 75039752,
+          "privateWorkingSetBytes": 74317824,
+          "workingSetBytes": 163020800
+        },
+        "suspended": {
+          "available": true,
+          "capturedAt": "2026-10-30T06:04:25.019",
+          "peakWorkingSetBytes": 164429824,
+          "platform": "macos",
+          "privateUsageBytes": 75121672,
+          "privateWorkingSetBytes": 74399744,
+          "workingSetBytes": 163135488
+        }
+      },
+      "route": "legacy_my_workspace_calendar",
+      "sha256": "48aa6848b1a0ce7255948982c941b086a7a8c4562f45e04d7ee7eea63b1f13db",
+      "theme": "dark",
+      "widgetCount": 170,
+      "width": 1024
+    }
+  ]
+}

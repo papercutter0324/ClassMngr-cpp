@@ -31,6 +31,7 @@
 #include <QQuickWidget>
 #include <QPushButton>
 #include <QPixmap>
+#include <QShowEvent>
 #include <QUuid>
 #include <QVariantMap>
 #include <QVBoxLayout>
@@ -49,6 +50,8 @@ namespace
 constexpr int EventIdRole = Qt::UserRole + 1;
 constexpr int UpcomingLimit = 10;
 constexpr int UpcomingSearchDays = 366;
+int liveHeavyCalendarSessions = 0;
+int peakHeavyCalendarSessions = 0;
 
 constexpr std::array<Domain::CalendarEventType, 6> EventTypes{
     Domain::CalendarEventType::Vacation,
@@ -153,10 +156,12 @@ QString timingText(const Application::CalendarEventSummary& event)
 CalendarPage::CalendarPage(
     const PageContext& context,
     CalendarPageActions actions,
+    const bool embedded,
     QWidget* parent
     )
     : Page(context, parent),
-      m_actions(std::move(actions))
+      m_actions(std::move(actions)),
+      m_embedded(embedded)
 {
     setObjectName(QStringLiteral("nextCalendarPage"));
     buildShell();
@@ -226,38 +231,69 @@ CalendarPage::CalendarPage(
         });
 }
 
+CalendarPage::~CalendarPage()
+{
+    if (m_calendarImportService)
+    {
+        m_calendarImportService->cancel();
+    }
+    releaseCalendarContent();
+}
+
 void CalendarPage::buildShell()
 {
     m_rootLayout = new QVBoxLayout(this);
-    m_rootLayout->setContentsMargins(20, 16, 20, 16);
+    m_rootLayout->setContentsMargins(
+        m_embedded ? 24 : 20,
+        m_embedded ? 48 : 16,
+        m_embedded ? 24 : 20,
+        m_embedded ? 8 : 16);
     m_rootLayout->setSpacing(12);
 
-    auto* heading = new QWidget(this);
-    auto* headingLayout = new QVBoxLayout(heading);
-    headingLayout->setContentsMargins(0, 0, 0, 0);
-    auto* title = new QLabel(calendarPageText("Calendar"), heading);
-    title->setObjectName(QStringLiteral("calendarPageTitle"));
-    QFont titleFont = title->font();
-    titleFont.setPointSize(titleFont.pointSize() + 6);
-    titleFont.setWeight(QFont::DemiBold);
-    title->setFont(titleFont);
-    auto* subtitle = new QLabel(
-        calendarPageText("View and manage monthly events and upcoming dates."), heading);
-    subtitle->setObjectName(QStringLiteral("calendarPageSubtitle"));
-    subtitle->setWordWrap(true);
-    headingLayout->addWidget(title);
-    headingLayout->addWidget(subtitle);
+    if (!m_embedded)
+    {
+        auto* heading = new QWidget(this);
+        auto* headingLayout = new QVBoxLayout(heading);
+        headingLayout->setContentsMargins(0, 0, 0, 0);
+        auto* title = new QLabel(calendarPageText("Calendar"), heading);
+        title->setObjectName(QStringLiteral("calendarPageTitle"));
+        QFont titleFont = title->font();
+        titleFont.setPointSize(titleFont.pointSize() + 6);
+        titleFont.setWeight(QFont::DemiBold);
+        title->setFont(titleFont);
+        auto* subtitle = new QLabel(
+            calendarPageText("View and manage monthly events and upcoming dates."), heading);
+        subtitle->setObjectName(QStringLiteral("calendarPageSubtitle"));
+        subtitle->setWordWrap(true);
+        headingLayout->addWidget(title);
+        headingLayout->addWidget(subtitle);
 
-    auto* toolbar = new QHBoxLayout;
-    toolbar->addStretch(1);
-    auto* newEvent = new QPushButton(calendarPageText("New Event"), heading);
-    newEvent->setObjectName(QStringLiteral("calendarNewEvent"));
-    auto* preferences = new QPushButton(calendarPageText("Preferences"), heading);
-    preferences->setObjectName(QStringLiteral("calendarPreferences"));
-    toolbar->addWidget(newEvent);
-    toolbar->addWidget(preferences);
-    headingLayout->addLayout(toolbar);
-    m_rootLayout->addWidget(heading);
+        auto* toolbar = new QHBoxLayout;
+        toolbar->addStretch(1);
+        auto* newEvent = new QPushButton(calendarPageText("New Event"), heading);
+        newEvent->setObjectName(QStringLiteral("calendarNewEvent"));
+        auto* preferences = new QPushButton(calendarPageText("Preferences"), heading);
+        preferences->setObjectName(QStringLiteral("calendarPreferences"));
+        toolbar->addWidget(newEvent);
+        toolbar->addWidget(preferences);
+        headingLayout->addLayout(toolbar);
+        m_rootLayout->addWidget(heading);
+
+        connect(newEvent, &QPushButton::clicked, this, [this]
+        {
+            const QDate date = m_visibleMonth.isValid()
+                ? qMax(QDate::currentDate(), m_visibleMonth)
+                : QDate::currentDate();
+            Application::CalendarEventEditDraft draft;
+            draft.startDate = date.toString(Qt::ISODate).toStdString();
+            draft.endDate = draft.startDate;
+            draft.startTime = std::string("09:00");
+            draft.endTime = std::string("10:00");
+            openEventDialog(std::move(draft), false);
+        });
+        connect(preferences, &QPushButton::clicked,
+            this, &CalendarPage::openCalendarPreferences);
+    }
 
     m_status = new QLabel(this);
     m_status->setObjectName(QStringLiteral("calendarPageStatus"));
@@ -271,38 +307,41 @@ void CalendarPage::buildShell()
     m_contentLayout->setContentsMargins(0, 0, 0, 0);
     m_rootLayout->addWidget(m_content, 1);
 
-    connect(newEvent, &QPushButton::clicked, this, [this]
-    {
-        const QDate date = m_visibleMonth.isValid()
-            ? qMax(QDate::currentDate(), m_visibleMonth)
-            : QDate::currentDate();
-        Application::CalendarEventEditDraft draft;
-        draft.startDate = date.toString(Qt::ISODate).toStdString();
-        draft.endDate = draft.startDate;
-        draft.startTime = std::string("09:00");
-        draft.endTime = std::string("10:00");
-        openEventDialog(std::move(draft), false);
-    });
-    connect(preferences, &QPushButton::clicked,
-        this, &CalendarPage::openCalendarPreferences);
 }
 
 PageOperationResult<void> CalendarPage::onActivating()
 {
-    ensureCalendarContent();
-    reloadWorkspaceState();
-    updateRetentionAndQueries();
-    refreshUpcoming();
+    m_pageActive = true;
+    activateVisibleContent();
     return {};
 }
 
 void CalendarPage::onSuspending() noexcept
 {
+    m_pageActive = false;
     if (m_calendarImportService)
     {
         m_calendarImportService->cancel();
     }
     releaseCalendarContent();
+}
+
+void CalendarPage::showEvent(QShowEvent* event)
+{
+    Page::showEvent(event);
+    activateVisibleContent();
+}
+
+void CalendarPage::activateVisibleContent()
+{
+    if (!m_pageActive || !isVisible())
+    {
+        return;
+    }
+    ensureCalendarContent();
+    reloadWorkspaceState();
+    updateRetentionAndQueries();
+    refreshUpcoming();
 }
 
 void CalendarPage::ensureCalendarContent()
@@ -312,11 +351,25 @@ void CalendarPage::ensureCalendarContent()
         return;
     }
     m_contentActive = true;
+    ++liveHeavyCalendarSessions;
+    peakHeavyCalendarSessions = qMax(
+        peakHeavyCalendarSessions, liveHeavyCalendarSessions);
 
-    m_calendarCard = new QWidget(m_content);
+    m_calendarCard = m_embedded
+        ? static_cast<QWidget*>(new QFrame(m_content))
+        : new QWidget(m_content);
     m_calendarCard->setObjectName(QStringLiteral("nextCalendarContentCard"));
+    if (auto* const card = qobject_cast<QFrame*>(m_calendarCard))
+    {
+        card->setProperty("role", QStringLiteral("card"));
+        card->setFrameShape(QFrame::StyledPanel);
+    }
     auto* cardLayout = new QVBoxLayout(m_calendarCard);
-    cardLayout->setContentsMargins(0, 0, 0, 0);
+    cardLayout->setContentsMargins(
+        m_embedded ? 20 : 0,
+        m_embedded ? 4 : 0,
+        m_embedded ? 20 : 0,
+        m_embedded ? 20 : 0);
     cardLayout->setSpacing(12);
 
     m_cache = new CalendarEventCache(this);
@@ -324,12 +377,15 @@ void CalendarPage::ensureCalendarContent()
     connect(m_cache, &CalendarEventCache::cacheChanged, this,
         &CalendarPage::refreshUpcoming);
 
-    m_visibleMonth = QDate::currentDate();
-    if (m_visibleMonth.year() < 2026)
+    if (!m_visibleMonth.isValid())
     {
-        m_visibleMonth = QDate(2026, 1, 1);
+        m_visibleMonth = QDate::currentDate();
+        if (m_visibleMonth.year() < 2026)
+        {
+            m_visibleMonth = QDate(2026, 1, 1);
+        }
+        m_visibleMonth = QDate(m_visibleMonth.year(), m_visibleMonth.month(), 1);
     }
-    m_visibleMonth = QDate(m_visibleMonth.year(), m_visibleMonth.month(), 1);
 
     m_workspaceStore = new WorkspaceStore();
     m_workspacePath = activeWorkspacePath();
@@ -355,7 +411,7 @@ void CalendarPage::ensureCalendarContent()
     m_calendarView = new QQuickWidget(m_calendarCard);
     m_calendarView->setObjectName(QStringLiteral("nextCalendarMonthGrid"));
     m_calendarView->setResizeMode(QQuickWidget::SizeRootObjectToView);
-    m_calendarView->setMinimumHeight(500);
+    m_calendarView->setMinimumHeight(m_embedded ? 840 : 500);
     m_calendarView->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     m_calendarView->rootContext()->setContextProperty(
         QStringLiteral("calendarEventProvider"), m_model);
@@ -379,6 +435,7 @@ void CalendarPage::ensureCalendarContent()
     m_upcomingScope->addItem(calendarPageText("This month"), static_cast<int>(UpcomingScope::CurrentMonth));
     m_upcomingScope->addItem(calendarPageText("Next 30 days"), static_cast<int>(UpcomingScope::Next30Days));
     m_upcomingScope->addItem(calendarPageText("Next 10 events"), static_cast<int>(UpcomingScope::Next10Events));
+    m_upcomingScope->setCurrentIndex(m_upcomingScopeSelection);
     upcomingHeader->addWidget(m_upcomingScope);
     cardLayout->addLayout(upcomingHeader);
 
@@ -389,11 +446,15 @@ void CalendarPage::ensureCalendarContent()
         auto* filter = new QPushButton(typeLabel(index), m_calendarCard);
         filter->setObjectName(QStringLiteral("calendarEventTypeFilter%1").arg(index));
         filter->setCheckable(true);
-        filter->setChecked(true);
+        filter->setChecked(m_eventTypeFilterEnabled.at(
+            static_cast<std::size_t>(index)));
         m_eventTypeFilters[static_cast<std::size_t>(index)] = filter;
         filterRow->addWidget(filter);
-        connect(filter, &QPushButton::toggled,
-            this, &CalendarPage::updateEventTypeFilter);
+        connect(filter, &QPushButton::toggled, this, [this, index](const bool checked)
+        {
+            m_eventTypeFilterEnabled.at(static_cast<std::size_t>(index)) = checked;
+            updateEventTypeFilter();
+        });
     }
     filterRow->addStretch(1);
     cardLayout->addLayout(filterRow);
@@ -404,8 +465,9 @@ void CalendarPage::ensureCalendarContent()
     m_upcomingList->setMaximumHeight(280);
     cardLayout->addWidget(m_upcomingList);
     connect(m_upcomingScope, qOverload<int>(&QComboBox::currentIndexChanged),
-        this, [this]
+        this, [this](const int index)
         {
+            m_upcomingScopeSelection = index;
             updateRetentionAndQueries();
             refreshUpcoming();
         });
@@ -449,6 +511,7 @@ void CalendarPage::releaseCalendarContent() noexcept
         return;
     }
     m_contentActive = false;
+    liveHeavyCalendarSessions = qMax(0, liveHeavyCalendarSessions - 1);
     if (m_calendarView)
     {
         delete m_calendarView;
@@ -540,6 +603,32 @@ void CalendarPage::reloadWorkspaceState()
     }
     updateCampusFilter();
     renderCalendarColors();
+}
+
+void CalendarPage::refreshForWorkspaceIdentity()
+{
+    if (!m_pageActive || !m_contentActive)
+    {
+        return;
+    }
+    reloadWorkspaceState();
+    updateRetentionAndQueries();
+    refreshUpcoming();
+}
+
+void CalendarPage::clearForClosedWorkspace()
+{
+    if (!m_contentActive)
+    {
+        return;
+    }
+    if (m_calendarImportService)
+    {
+        m_calendarImportService->cancel();
+    }
+    reloadWorkspaceState();
+    updateRetentionAndQueries();
+    refreshUpcoming();
 }
 
 void CalendarPage::updateRetentionAndQueries()
@@ -672,9 +761,7 @@ void CalendarPage::refreshUpcoming()
     QStringList activeTypes;
     for (int index = 0; index < static_cast<int>(m_eventTypeFilters.size()); ++index)
     {
-        const QPushButton* const filter = m_eventTypeFilters.at(
-            static_cast<std::size_t>(index));
-        if (!filter || !filter->isChecked())
+        if (!m_eventTypeFilterEnabled.at(static_cast<std::size_t>(index)))
         {
             continue;
         }
@@ -829,24 +916,34 @@ void CalendarPage::applyCalendarPalette()
     }
     QObject* const root = m_calendarView->rootObject();
     const QPalette palette = QApplication::palette();
-    const bool dark = palette.color(QPalette::Window).lightness() < 128;
-    root->setProperty("toolbarColor", dark ? QColor(QStringLiteral("#353b43"))
-                                            : QColor(QStringLiteral("#536f8a")));
-    root->setProperty("toolbarTextColor", dark ? QColor(QStringLiteral("#f5f4f0"))
-                                                : QColor(QStringLiteral("#fbfaf7")));
-    root->setProperty("textColor", palette.color(QPalette::Text));
+    const bool dark = !m_embedded
+        && palette.color(QPalette::Window).lightness() < 128;
+    const QColor toolbarColor = dark ? QColor(QStringLiteral("#353b43"))
+        : QColor(QStringLiteral("#536f8a"));
+    const QColor toolbarTextColor = dark ? QColor(QStringLiteral("#f5f4f0"))
+        : QColor(QStringLiteral("#fbfaf7"));
+    root->setProperty("toolbarColor", toolbarColor);
+    root->setProperty("toolbarTextColor", toolbarTextColor);
+    root->setProperty("textColor", m_embedded
+        ? QColor(QStringLiteral("#27313a")) : palette.color(QPalette::Text));
     root->setProperty("mutedTextColor", dark ? QColor(QStringLiteral("#bac1c8"))
-                                              : QColor(QStringLiteral("#66727a")));
+        : QColor(QStringLiteral("#66727a")));
     root->setProperty("inactiveTextColor", dark ? QColor(QStringLiteral("#747c84"))
-                                                  : QColor(QStringLiteral("#a5aaa9")));
-    root->setProperty("calendarBackground", palette.color(QPalette::Base));
-    root->setProperty("headerBackground", palette.color(QPalette::AlternateBase));
-    root->setProperty("cellBackground", palette.color(QPalette::Base));
+        : QColor(QStringLiteral("#a5aaa9")));
+    root->setProperty("calendarBackground", m_embedded
+        ? QColor(QStringLiteral("#f5f3ee")) : palette.color(QPalette::Base));
+    root->setProperty("headerBackground", m_embedded
+        ? QColor(QStringLiteral("#e2e1dc")) : palette.color(QPalette::AlternateBase));
+    root->setProperty("cellBackground", m_embedded
+        ? QColor(QStringLiteral("#f5f3ee")) : palette.color(QPalette::Base));
     root->setProperty("weekendBackground", dark ? QColor(QStringLiteral("#30363d"))
-                                                  : QColor(QStringLiteral("#e8edf1")));
-    root->setProperty("gridLineColor", palette.color(QPalette::Mid));
-    root->setProperty("accentColor", palette.color(QPalette::Highlight));
-    root->setProperty("accentTextColor", palette.color(QPalette::HighlightedText));
+        : QColor(QStringLiteral("#e8edf1")));
+    root->setProperty("gridLineColor", m_embedded
+        ? QColor(QStringLiteral("#cbc9c2")) : palette.color(QPalette::Mid));
+    root->setProperty("accentColor", m_embedded
+        ? toolbarColor : palette.color(QPalette::Highlight));
+    root->setProperty("accentTextColor", m_embedded
+        ? toolbarTextColor : palette.color(QPalette::HighlightedText));
     const int pixelSize = QFontInfo(m_calendarView->font()).pixelSize();
     if (pixelSize > 0)
     {
@@ -1091,9 +1188,7 @@ CalendarEventCache::DateRange CalendarPage::visibleGridRange() const
 
 CalendarEventCache::DateRange CalendarPage::upcomingRange() const
 {
-    const auto scope = static_cast<UpcomingScope>(
-        m_upcomingScope ? m_upcomingScope->currentData().toInt()
-                        : static_cast<int>(UpcomingScope::CurrentMonth));
+    const auto scope = static_cast<UpcomingScope>(m_upcomingScopeSelection);
     if (scope == UpcomingScope::CurrentMonth && m_visibleMonth.isValid())
     {
         const QDate first(m_visibleMonth.year(), m_visibleMonth.month(), 1);
@@ -1243,6 +1338,8 @@ CalendarPageRuntimeMetrics CalendarPage::runtimeMetrics() const
     metrics.calendarRootObjectCount = m_calendarView
         && m_calendarView->rootObject() ? 1 : 0;
     metrics.calendarViewConstructionCount = m_calendarViewConstructionCount;
+    metrics.liveHeavySessionCount = liveHeavyCalendarSessions;
+    metrics.peakLiveHeavySessionCount = peakHeavyCalendarSessions;
     return metrics;
 }
 
