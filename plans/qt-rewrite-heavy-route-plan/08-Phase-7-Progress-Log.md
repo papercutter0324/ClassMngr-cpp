@@ -1561,3 +1561,27 @@ Entries are preserved in their original document order.
   checks, and keep presentation dependencies narrow. Batch 4 continues with
   #48, Useful Links external navigation. Batch 5 contains the remaining
   preservation-matrix parity and evidence follow-ups; Phase 7 is not complete.
+
+### Candidate #48 — Useful Links external navigation accepted (2026-10-30)
+
+- Commit: `7c1624d3` (`Phase7 - Add Useful Links external navigation`). The
+  seven legacy HTTPS destinations are typed Next external-link actions.
+  Production opens them through `QDesktopServices`; tests inject a fake opener.
+  Selecting a link opens its exact destination once, clears selection, does not
+  change the active page or history, and preserves legacy behavior when the
+  opener returns false: no warning is added. URLs stay locale-independent;
+  English and Korean labels use the existing localized projections.
+- Verification: the incremental standard `build/macos-clang-debug` build
+  completed for Next and the Bootstrap tests. Focused CTest passed 7/7,
+  covering each URL, selection and navigation behavior, English/Korean labels,
+  and four locale/theme captures. The four 1024×720 captures match their
+  manifest sizes and SHA-256 hashes. Resource inventory `--check` and
+  `git diff --check` passed. The Next target has no legacy MainWindow or
+  Sidebar dependency for this feature.
+- Limits: no native browser handoff, real URL launch, or network request was
+  performed. The fake opener's false result was tested; a thrown exception was
+  not. No Windows or full-suite run was performed.
+- Decision and next: keep the seven destinations locale-independent and
+  outside page history. Batch 4 is closed; Batch 5 begins with #49, the
+  Workspace Calendar parity follow-up. The Phase 7 matrix, evidence, full-suite,
+  and Windows exit gates remain open.

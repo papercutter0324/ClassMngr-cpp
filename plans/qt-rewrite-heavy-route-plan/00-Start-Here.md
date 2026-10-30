@@ -6,16 +6,14 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-30
-- Current milestone: Phase 7 remains in progress. Candidate #47,
-  user-initiated updates, is accepted in source commit `d4ddabb8`; its resource
-  inventory follow-up is `d38a799e`. Batch 4 remains active with #48 Useful
-  Links in progress. Next now opens Help → Check for Updates through a
-  bootstrap-owned coordinator sharing one updater service between startup and
-  manual checks. The manual route works when automatic checks are disabled;
-  skip-version preferences and the download flow use typed boundaries. The
-  preservation-matrix review identified remaining Phase 7 follow-ups for
-  Workspace Calendar, Classes/Schedule, active Document Catalog locale
-  updates, Sub Prep output, and broader 7A evidence. See the [Phase 7 progress
+- Current milestone: Phase 7 remains in progress. Batch 4 (#41–48) is closed
+  with Candidate #48, Useful Links, accepted in source commit `7c1624d3`.
+  Batch 5 is active at #49, the Workspace Calendar parity follow-up. Next now
+  opens the seven existing Useful Links through typed external-link actions;
+  opening a link clears selection without changing the page or navigation
+  history. The preservation-matrix review identified remaining Phase 7
+  follow-ups for Classes/Schedule, active Document Catalog locale updates,
+  Sub Prep output, and broader 7A evidence. See the [Phase 7 progress
   log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md). The full project
   suite, Windows runs, 7A evidence, C44 output/raster limitations, and the
