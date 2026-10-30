@@ -476,6 +476,17 @@ ApplicationShell::ApplicationShell(
             m_closeWorkspaceHandler();
         }
     });
+    m_helpMenu = menuBar()->addMenu(
+        QCoreApplication::translate("MenuBuilder", "Help"));
+    m_manualUpdateAction = m_helpMenu->addAction(
+        QCoreApplication::translate("ActionRegistry", "Check for Updates..."));
+    m_manualUpdateAction->setObjectName(QStringLiteral("classMngrNextCheckForUpdates"));
+    connect(m_manualUpdateAction, &QAction::triggered, this, [this] {
+        if (m_manualUpdateHandler)
+        {
+            m_manualUpdateHandler();
+        }
+    });
     connect(m_preferencesAction, &QAction::triggered, this, [this] {
         if (m_preferencesHandler)
         {
@@ -637,6 +648,11 @@ void ApplicationShell::setCloseWorkspaceHandler(std::function<void()> handler)
     m_closeWorkspaceHandler = std::move(handler);
 }
 
+void ApplicationShell::setManualUpdateHandler(std::function<void()> handler)
+{
+    m_manualUpdateHandler = std::move(handler);
+}
+
 void ApplicationShell::setPreferencesHandler(std::function<void()> handler)
 {
     m_preferencesHandler = std::move(handler);
@@ -653,9 +669,9 @@ void ApplicationShell::setCampusEditCapability(
         {
             return;
         }
-        m_adminMenu = menuBar()->addMenu(
-            QCoreApplication::translate("MenuBuilder", "Admin")
-            );
+        m_adminMenu = new QMenu(
+            QCoreApplication::translate("MenuBuilder", "Admin"), this);
+        menuBar()->insertMenu(m_helpMenu->menuAction(), m_adminMenu);
         m_adminMenu->setObjectName(QStringLiteral("classMngrNextAdminMenu"));
         m_manageCampusesAction = m_adminMenu->addAction(
             QCoreApplication::translate("ActionRegistry", "Manage Campuses")
@@ -1413,6 +1429,9 @@ void ApplicationShell::retranslateUi()
     setActionText(m_exportWorkspaceAction, "Export Teacher Profile…");
     setActionText(m_closeWorkspaceAction, "Close Teacher Profile");
     setActionText(m_preferencesAction, "Preferences…");
+    m_helpMenu->setTitle(QCoreApplication::translate("MenuBuilder", "Help"));
+    m_manualUpdateAction->setText(
+        QCoreApplication::translate("ActionRegistry", "Check for Updates..."));
     setActionText(m_importTeachersAction, "Import Teachers…");
     setActionText(m_upcomingBirthdaysAction, "Upcoming Birthdays…");
     if (m_manageCampusesAction)

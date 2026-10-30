@@ -1,5 +1,6 @@
 #include "next/platform/workspace_store_roster_output.h"
 #include "next/bootstrap/application_bootstrap.h"
+#include "next/bootstrap/update_coordinator.h"
 #include "next/bootstrap/campus_edit_capability_arguments.h"
 #include "next/bootstrap/campus_edit_operation_actions.h"
 
@@ -1303,6 +1304,17 @@ Application::StartupResult ApplicationBootstrap::start()
         Ui::bindDocumentViewerSelection(*m_shell);
         m_shell->setCloseHandler([this] {
             return requestWindowClose();
+        });
+        m_shell->setManualUpdateHandler([this] {
+            if (m_shutdownCoordinator.shutdownRequested())
+            {
+                return;
+            }
+            ensureUpdateCoordinator();
+            if (m_startupUpdateDispatcher)
+            {
+                m_startupUpdateDispatcher->openManual();
+            }
         });
         m_shell->setPreferencesHandler([this] {
             if (!m_coreServices || !m_shell)
@@ -5987,6 +5999,16 @@ bool ApplicationBootstrap::releaseWorkspace() noexcept
     return true;
 }
 
+void ApplicationBootstrap::ensureUpdateCoordinator()
+{
+    if (!m_startupUpdateDispatcher && m_shell)
+    {
+        m_startupUpdateDispatcher = m_startupUpdateDispatcherFactory
+            ? m_startupUpdateDispatcherFactory()
+            : makeUpdateCoordinator(m_shell.get());
+    }
+}
+
 void ApplicationBootstrap::scheduleStartupUpdateCheck()
 {
     if (m_startupUpdateCheckScheduled
@@ -6041,9 +6063,7 @@ void ApplicationBootstrap::tryDispatchStartupUpdateCheck()
 
     try
     {
-        m_startupUpdateDispatcher = m_startupUpdateDispatcherFactory
-            ? m_startupUpdateDispatcherFactory()
-            : makeStartupUpdateDispatcher();
+        ensureUpdateCoordinator();
         if (!m_startupUpdateDispatcher)
         {
             qWarning() << "ClassMngrNext startup update dispatcher is unavailable.";

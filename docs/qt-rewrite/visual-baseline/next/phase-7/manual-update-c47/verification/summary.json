@@ -1,0 +1,33 @@
+{
+  "taskId": "phase7_c47_manual_update_implementation_01",
+  "route": "Next Help → Check for Updates → bootstrap-owned coordinator → shared updater dialog",
+  "behavior": [
+    "Startup and manual checks share one service; manual check works with automatic checks disabled.",
+    "Retry, typed skip/unskip preferences, and shared cache/busy results pass.",
+    "Download pause, discard, cancel, and offline saved-fixture verification pass.",
+    "Legacy resource-pack placeholder remains shown by default; Next omits it through the typed presentation API without private widget lookup."
+  ],
+  "verification": {
+    "build": "passed",
+    "focusedCTest": { "passed": 7, "failed": 0 },
+    "freshIntegrationCases": "passed",
+    "resourceInventoryCheck": "passed against current working-tree translation bytes"
+  },
+  "captures": {
+    "count": 36,
+    "coverage": "9 states × English/Korean × light/dark",
+    "freshPngRecaptureByteIdentical": true,
+    "captureManifestByteIdentical": true,
+    "independentlyReviewed": true,
+    "visualCorrection": "All Close and Not Now controls are present; the earlier missing-button report was corrected after original-resolution review."
+  },
+  "translation": {
+    "changedLabels": ["Released: %1", "Latest Version: %1%2"],
+    "inventoryStatus": "Working-tree validation snapshot; refresh after committing the translation source."
+  },
+  "limits": [
+    "No real network request or platform installer process was launched.",
+    "Windows and the full test suite were not run.",
+    "An optional legacy loopback probe failed to bind before sending a request; corresponding Next behavior passed fake-based coverage."
+  ]
+}

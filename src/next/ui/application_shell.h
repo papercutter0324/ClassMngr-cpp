@@ -91,6 +91,7 @@ public:
     void setUpcomingBirthdaysHandler(std::function<void()> handler);
     void setCloseWorkspaceHandler(std::function<void()> handler);
     void setPreferencesHandler(std::function<void()> handler);
+    void setManualUpdateHandler(std::function<void()> handler);
     void setCampusEditCapability(
         Application::CampusEditCapability capability
         );
@@ -190,9 +191,11 @@ private:
     QAction* m_upcomingBirthdaysAction = nullptr;
     QAction* m_closeWorkspaceAction = nullptr;
     QAction* m_preferencesAction = nullptr;
+    QAction* m_manualUpdateAction = nullptr;
     QAction* m_manageCampusesAction = nullptr;
     QMenu* m_fileMenu = nullptr;
     QMenu* m_editMenu = nullptr;
+    QMenu* m_helpMenu = nullptr;
     QMenu* m_teachersMenu = nullptr;
     QMenu* m_adminMenu = nullptr;
     QMenu* m_recentWorkspaceMenu = nullptr;
@@ -220,6 +223,7 @@ private:
     std::function<void()> m_upcomingBirthdaysHandler;
     std::function<void()> m_closeWorkspaceHandler;
     std::function<void()> m_preferencesHandler;
+    std::function<void()> m_manualUpdateHandler;
     Application::CampusEditCapability m_campusEditCapability =
         Application::CampusEditCapability::readOnly();
     RecentWorkspaceHistoryLoader m_recentWorkspaceHistoryLoader;

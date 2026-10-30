@@ -28,11 +28,20 @@ class UpdateDialog : public DialogShell
     Q_OBJECT
 
 public:
+    // Legacy callers retain their resource-pack placeholder. Next explicitly
+    // omits this UI at construction rather than inspecting private widgets.
+    enum class ResourcePackPlaceholder
+    {
+        Show,
+        Omit
+    };
+
     explicit UpdateDialog(
         ClassMngr::Next::Application::ManualUpdateCheckPort& manualUpdateCheckPort,
         bool startupComplete,
         QWidget* parent = nullptr,
-        const QString& skippedVersion = QString()
+        const QString& skippedVersion = QString(),
+        ResourcePackPlaceholder resourcePackPlaceholder = ResourcePackPlaceholder::Show
         );
 
     void refreshForOpen();
@@ -57,6 +66,9 @@ public:
         );
 
 signals:
+    void checkResultReceived(
+        const ClassMngr::Next::Application::ManualUpdateCheckResult& result
+        );
     void skipVersionRequested(
         const QString& version
         );
@@ -119,7 +131,7 @@ private:
         DiscardDownload
     };
 
-    void buildUi();
+    void buildUi(ResourcePackPlaceholder resourcePackPlaceholder);
     void connectSignals();
     void handleManualCheckEvent(
         ClassMngr::Next::Application::ManualUpdateCheckEvent event

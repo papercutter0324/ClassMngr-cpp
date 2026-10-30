@@ -50,6 +50,9 @@ function(classmngr_check_source_ownership)
     )
     _classmngr_record_manifest(ClassMngrSpeakingEvalReportEngine ${CLASSMNGR_SPEAKING_EVAL_REPORT_ENGINE_SOURCES})
     _classmngr_record_manifest(ClassMngrUpdater ${CLASSMNGR_UPDATER_SOURCES})
+    _classmngr_record_manifest(ClassMngrUpdatePresentation
+        ${CLASSMNGR_UPDATE_PRESENTATION_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrSettings ${CLASSMNGR_SETTINGS_SOURCES})
     _classmngr_record_manifest(ClassMngrQtPdfPrint
         ${CLASSMNGR_QT_PDF_PRINT_SOURCES}

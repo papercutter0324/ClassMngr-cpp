@@ -28,10 +28,6 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/startup_profiler.h"
     "src/core/theme_service.cpp"
     "src/core/theme_service.h"
-    "src/core/updater/update_downloader.cpp"
-    "src/core/updater/update_downloader.h"
-    "src/core/updater/update_installer.cpp"
-    "src/core/updater/update_installer.h"
     "src/core/updater/update_signature_verifier.cpp"
     "src/core/updater/update_signature_verifier.h"
     "src/core/utils/colorutils.h"
@@ -69,6 +65,18 @@ set(CLASSMNGR_UPDATER_SOURCES
     "src/core/updater/update_service.h"
     "src/core/updater/version.cpp"
     "src/core/updater/version.h"
+)
+
+# The complete update presentation is shared without the legacy UI/Core umbrellas.
+set(CLASSMNGR_UPDATE_PRESENTATION_SOURCES
+    "src/core/updater/update_downloader.cpp"
+    "src/core/updater/update_downloader.h"
+    "src/core/updater/update_installer.cpp"
+    "src/core/updater/update_installer.h"
+    "src/ui/shared/dialogs/update_dialog.cpp"
+    "src/ui/shared/dialogs/update_dialog.h"
+    "src/ui/shared/dialogs/user_prompt_service.cpp"
+    "src/ui/shared/dialogs/user_prompt_service.h"
 )
 
 set(CLASSMNGR_SETTINGS_SOURCES
@@ -296,10 +304,6 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/dialogs/license_dialog.h"
     "src/ui/shared/dialogs/record_selection_dialog.cpp"
     "src/ui/shared/dialogs/record_selection_dialog.h"
-    "src/ui/shared/dialogs/update_dialog.cpp"
-    "src/ui/shared/dialogs/update_dialog.h"
-    "src/ui/shared/dialogs/user_prompt_service.cpp"
-    "src/ui/shared/dialogs/user_prompt_service.h"
     "src/ui/shared/testing/qt_startup_workflow_test_adapters.cpp"
     "src/ui/shared/testing/qt_startup_workflow_test_adapters.h"
     "src/ui/shared/menus/menu_utils.h"
@@ -876,6 +880,8 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
 )
 
 set(CLASSMNGR_NEXT_STARTUP_UPDATE_SOURCES
+    "src/next/bootstrap/update_coordinator.cpp"
+    "src/next/bootstrap/update_coordinator.h"
     "src/next/bootstrap/startup_update_dispatcher.cpp"
     "src/next/bootstrap/startup_update_dispatcher.h"
 )

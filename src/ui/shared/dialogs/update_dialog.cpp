@@ -67,14 +67,15 @@ UpdateDialog::UpdateDialog(
     ClassMngr::Next::Application::ManualUpdateCheckPort& manualUpdateCheckPort,
     bool startupComplete,
     QWidget* parent,
-    const QString& skippedVersion
+    const QString& skippedVersion,
+    ResourcePackPlaceholder resourcePackPlaceholder
     )
     : DialogShell(QStringLiteral("update"), parent)
     , m_downloader(new UpdateDownloader(this))
     , m_startupComplete(startupComplete)
     , m_skippedVersion(skippedVersion.trimmed())
 {
-    buildUi();
+    buildUi(resourcePackPlaceholder);
     connectSignals();
     showInitialState();
 
@@ -258,6 +259,7 @@ void UpdateDialog::handleManualCheckEvent(
             ClassMngr::Next::Application::ManualUpdateCheckResult
             >)
         {
+            emit checkResultReceived(value);
             handleCheckSucceeded(
                 ClassMngr::Next::UiShared::Details::toPresentationResult(value)
                 );
@@ -509,7 +511,7 @@ void UpdateDialog::handleDownloadDiscarded()
     }
 }
 
-void UpdateDialog::buildUi()
+void UpdateDialog::buildUi(ResourcePackPlaceholder resourcePackPlaceholder)
 {
     setWindowTitle(
         tr("Updates")
@@ -639,35 +641,38 @@ void UpdateDialog::buildUi()
 
     rootLayout->addWidget(m_programFrame);
 
-    auto* resourceFrame =
-        new QFrame(this);
-    resourceFrame->setObjectName("resourcePackUpdateSection");
-    resourceFrame->setFrameShape(QFrame::StyledPanel);
-    resourceFrame->setEnabled(false);
+    if (resourcePackPlaceholder == ResourcePackPlaceholder::Show)
+    {
+        auto* resourceFrame =
+            new QFrame(this);
+        resourceFrame->setObjectName("resourcePackUpdateSection");
+        resourceFrame->setFrameShape(QFrame::StyledPanel);
+        resourceFrame->setEnabled(false);
 
-    auto* resourceLayout =
-        new QHBoxLayout(resourceFrame);
-    resourceLayout->setContentsMargins(16, 14, 16, 14);
-    resourceLayout->setSpacing(12);
+        auto* resourceLayout =
+            new QHBoxLayout(resourceFrame);
+        resourceLayout->setContentsMargins(16, 14, 16, 14);
+        resourceLayout->setSpacing(12);
 
-    auto* resourceIndicator =
-        new QLabel(
-            QStringLiteral("○"),
-            resourceFrame
-            );
-    resourceIndicator->setObjectName("resourcePackUpdateIndicator");
-    resourceIndicator->setFont(indicatorFont);
+        auto* resourceIndicator =
+            new QLabel(
+                QStringLiteral("○"),
+                resourceFrame
+                );
+        resourceIndicator->setObjectName("resourcePackUpdateIndicator");
+        resourceIndicator->setFont(indicatorFont);
 
-    auto* resourceText =
-        new QLabel(
-            tr("<b>Resource Packs</b><br>Coming soon"),
-            resourceFrame
-            );
-    resourceText->setObjectName("resourcePackUpdateText");
+        auto* resourceText =
+            new QLabel(
+                tr("<b>Resource Packs</b><br>Coming soon"),
+                resourceFrame
+                );
+        resourceText->setObjectName("resourcePackUpdateText");
 
-    resourceLayout->addWidget(resourceIndicator);
-    resourceLayout->addWidget(resourceText, 1);
-    rootLayout->addWidget(resourceFrame);
+        resourceLayout->addWidget(resourceIndicator);
+        resourceLayout->addWidget(resourceText, 1);
+        rootLayout->addWidget(resourceFrame);
+    }
 
     auto* buttonLayout =
         new QHBoxLayout;

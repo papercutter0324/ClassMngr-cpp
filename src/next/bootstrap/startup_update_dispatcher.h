@@ -14,6 +14,12 @@ public:
 
     virtual void dispatch() = 0;
 
+    // The bootstrap shell action uses the same owned update boundary even
+    // when startup checks are disabled. No widget crosses this contract.
+    virtual void openManual()
+    {
+    }
+
     // Cancel any owned asynchronous work before its dependencies are torn
     // down. Implementations without pending work may keep the default no-op.
     virtual void cancel() noexcept

@@ -9989,6 +9989,14 @@ Version: %2</source>
         <source>Installed Version: %1</source>
         <translation>설치된 버전: %1</translation>
     </message>
+    <message>
+        <source> (Released: %1)</source>
+        <translation> (출시일: %1)</translation>
+    </message>
+    <message>
+        <source>Latest Version: %1%2</source>
+        <translation>최신 버전: %1%2</translation>
+    </message>
 </context>
 <context>
     <name>UpdateDownloader</name>

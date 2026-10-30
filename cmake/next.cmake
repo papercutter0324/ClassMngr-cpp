@@ -909,7 +909,9 @@ target_link_libraries(ClassMngrNextStartupUpdates
         ClassMngrBuildSettings
         ClassMngrNext::Application
         ClassMngrUpdater
+        ClassMngrUpdatePresentation
         ClassMngrSettings
+        Qt6::Widgets
         Qt6::Network
 )
 set_target_properties(ClassMngrNextStartupUpdates

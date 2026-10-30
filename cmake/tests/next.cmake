@@ -1641,6 +1641,10 @@ get_target_property(_classmngr_next_startup_update_links
     ClassMngrNextStartupUpdates
     LINK_LIBRARIES
 )
+get_target_property(_classmngr_update_presentation_links
+    ClassMngrUpdatePresentation
+    LINK_LIBRARIES
+)
 get_target_property(_classmngr_updater_links
     ClassMngrUpdater
     LINK_LIBRARIES
@@ -1724,6 +1728,7 @@ foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_next_speaking_evaluation_output_links
         _classmngr_next_startup_update_links
         _classmngr_updater_links
+        _classmngr_update_presentation_links
         _classmngr_next_workspace_links
         _classmngr_next_roster_output_links
         _classmngr_roster_renderer_links
@@ -1756,6 +1761,7 @@ file(WRITE "${_classmngr_next_boundary_report}"
     "NEXT_SPEAKING_EVALUATION_OUTPUT_LINKS=${_classmngr_next_speaking_evaluation_output_links}\n"
     "NEXT_STARTUP_UPDATE_LINKS=${_classmngr_next_startup_update_links}\n"
     "UPDATER_LINKS=${_classmngr_updater_links}\n"
+    "UPDATE_PRESENTATION_LINKS=${_classmngr_update_presentation_links}\n"
     "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
     "NEXT_ROSTER_OUTPUT_LINKS=${_classmngr_next_roster_output_links}\n"
     "ROSTER_RENDERER_LINKS=${_classmngr_roster_renderer_links}\n"
@@ -8184,3 +8190,38 @@ set_property(TARGET ClassMngrNextRosterOutputTests PROPERTY CLASSMNGR_STANDALONE
 add_dependencies(ClassMngrNextRosterOutputTests ClassMngrNextResourcePackage)
 add_test(NAME ClassMngrNextRosterOutputTests COMMAND ClassMngrNextRosterOutputTests)
 set_tests_properties(ClassMngrNextRosterOutputTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1")
+
+# C47 exercises the production Next update composition against one shared fake
+# service, typed settings persistence, and the shared presentation only.
+add_executable(ClassMngrNextUpdateCoordinatorTests
+    tests/next/update_coordinator_tests.cpp
+)
+target_compile_features(ClassMngrNextUpdateCoordinatorTests PRIVATE cxx_std_23)
+target_include_directories(ClassMngrNextUpdateCoordinatorTests PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_compile_definitions(ClassMngrNextUpdateCoordinatorTests PRIVATE
+    CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+    CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextUpdateCoordinatorTests PRIVATE
+    ClassMngrNextStartupUpdates ClassMngrNext::Application ClassMngrUpdatePresentation
+    ClassMngrSettings ClassMngrUpdater ClassMngrQtPdfPrint Qt6::Test Qt6::Widgets Qt6::Network
+)
+set_target_properties(ClassMngrNextUpdateCoordinatorTests PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF)
+set_property(TARGET ClassMngrNextUpdateCoordinatorTests PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE)
+add_dependencies(ClassMngrNextUpdateCoordinatorTests ClassMngrNextResourcePackage)
+add_test(NAME ClassMngrNextUpdateCoordinatorTests COMMAND ClassMngrNextUpdateCoordinatorTests)
+set_tests_properties(ClassMngrNextUpdateCoordinatorTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1")
+
+# Reuse the existing offline shared-dialog cases to protect legacy default
+# presentation while the Next coordinator opts out of its obsolete placeholder.
+add_test(NAME ClassMngrNextSharedUpdatePresentationTests
+    COMMAND ClassMngrUpdaterTests
+        dialogShowsDisabledResourcePackSection
+        manualUpdatePresentationReconstructsUtcCheckTime
+        dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale
+        dialogPassesTypedArtifactSizeToLegacyProgress
+        dialogReleaseDateUsesLocalizedShortFormatAndSuppressesInvalid
+)
+set_tests_properties(ClassMngrNextSharedUpdatePresentationTests PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)

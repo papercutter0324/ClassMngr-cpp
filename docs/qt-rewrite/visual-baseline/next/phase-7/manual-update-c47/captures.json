@@ -1,0 +1,296 @@
+{
+    "automaticChecksEnabled": false,
+    "captures": [
+        {
+            "file": "next_en_US_light_checking.png",
+            "height": 225,
+            "locale": "en_US",
+            "state": "checking",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_light_configuration_error.png",
+            "height": 225,
+            "locale": "en_US",
+            "state": "configuration_error",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_light_available.png",
+            "height": 234,
+            "locale": "en_US",
+            "state": "available",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_light_skipped.png",
+            "height": 266,
+            "locale": "en_US",
+            "state": "skipped",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_light_downloading.png",
+            "height": 285,
+            "locale": "en_US",
+            "state": "downloading",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_light_paused.png",
+            "height": 285,
+            "locale": "en_US",
+            "state": "paused",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_light_install.png",
+            "height": 285,
+            "locale": "en_US",
+            "state": "install",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_light_error.png",
+            "height": 285,
+            "locale": "en_US",
+            "state": "error",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_light_up_to_date.png",
+            "height": 295,
+            "locale": "en_US",
+            "state": "up_to_date",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_dark_checking.png",
+            "height": 295,
+            "locale": "en_US",
+            "state": "checking",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_dark_configuration_error.png",
+            "height": 295,
+            "locale": "en_US",
+            "state": "configuration_error",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_dark_available.png",
+            "height": 295,
+            "locale": "en_US",
+            "state": "available",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_dark_skipped.png",
+            "height": 295,
+            "locale": "en_US",
+            "state": "skipped",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_dark_downloading.png",
+            "height": 295,
+            "locale": "en_US",
+            "state": "downloading",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_dark_paused.png",
+            "height": 295,
+            "locale": "en_US",
+            "state": "paused",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_dark_install.png",
+            "height": 295,
+            "locale": "en_US",
+            "state": "install",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_dark_error.png",
+            "height": 295,
+            "locale": "en_US",
+            "state": "error",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_en_US_dark_up_to_date.png",
+            "height": 295,
+            "locale": "en_US",
+            "state": "up_to_date",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_light_checking.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "checking",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_light_configuration_error.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "configuration_error",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_light_available.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "available",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_light_skipped.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "skipped",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_light_downloading.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "downloading",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_light_paused.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "paused",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_light_install.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "install",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_light_error.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "error",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_light_up_to_date.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "up_to_date",
+            "theme": "light",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_dark_checking.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "checking",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_dark_configuration_error.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "configuration_error",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_dark_available.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "available",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_dark_skipped.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "skipped",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_dark_downloading.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "downloading",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_dark_paused.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "paused",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_dark_install.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "install",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_dark_error.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "error",
+            "theme": "dark",
+            "width": 560
+        },
+        {
+            "file": "next_ko_KR_dark_up_to_date.png",
+            "height": 295,
+            "locale": "ko_KR",
+            "state": "up_to_date",
+            "theme": "dark",
+            "width": 560
+        }
+    ],
+    "fixture": "SharedChecks fake application ports and deterministic downloader signals; no network or installer launch",
+    "route": "Next bootstrap UpdateCoordinator → shared UpdateDialog",
+    "task": "phase7_c47_manual_update_implementation_01"
+}

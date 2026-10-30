@@ -179,6 +179,15 @@ set_target_properties(ClassMngrQtPdfPrint
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
 )
+classmngr_add_production_objects(
+    TARGET ClassMngrUpdatePresentation
+    SOURCES ${CLASSMNGR_UPDATE_PRESENTATION_SOURCES}
+    LIBRARIES
+        ClassMngrUpdater
+        ClassMngrQtPdfPrint
+        Qt6::Widgets
+        Qt6::Network
+)
 add_library(ClassMngrRosterTemplateRenderer STATIC ${CLASSMNGR_ROSTER_TEMPLATE_RENDERER_SOURCES})
 target_compile_features(ClassMngrRosterTemplateRenderer PUBLIC cxx_std_23)
 target_include_directories(ClassMngrRosterTemplateRenderer PUBLIC "${PROJECT_SOURCE_DIR}/src")
@@ -462,6 +471,7 @@ add_library(ClassMngrRuntime STATIC
     $<TARGET_OBJECTS:ClassMngrUpdater>
     $<TARGET_OBJECTS:ClassMngrData>
     $<TARGET_OBJECTS:ClassMngrDomain>
+    $<TARGET_OBJECTS:ClassMngrUpdatePresentation>
     $<TARGET_OBJECTS:ClassMngrUiShared>
     $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
     $<TARGET_OBJECTS:ClassMngrFeatures>
@@ -522,6 +532,7 @@ if(APPLE AND BUILD_TESTING)
         $<TARGET_OBJECTS:ClassMngrUpdater>
         $<TARGET_OBJECTS:ClassMngrData>
         $<TARGET_OBJECTS:ClassMngrDomain>
+        $<TARGET_OBJECTS:ClassMngrUpdatePresentation>
         $<TARGET_OBJECTS:ClassMngrUiShared>
         $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
         $<TARGET_OBJECTS:ClassMngrFeatures>

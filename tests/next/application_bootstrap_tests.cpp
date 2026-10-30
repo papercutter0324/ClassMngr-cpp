@@ -7,6 +7,9 @@
 #include "next/application/korean_teacher_birthday_directory_read_port.h"
 #include "next/application/native_english_teacher_birthday_directory_read_port.h"
 #include "next/bootstrap/application_bootstrap.h"
+#include "next/bootstrap/update_coordinator.h"
+#include "next/platform/settings_manager_skipped_update_version_port.h"
+#include "ui/shared/dialogs/update_dialog.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_descriptor.h"
 #include "next/resources/resource_error.h"
@@ -135,6 +138,7 @@ private slots:
     void cleanupTestCase();
     void createsVisibleShellAndReportsOnlyCompletedStartupStage();
     void startupUpdateCheckWaitsForVisibleInitialPageAndLivesUntilShutdown();
+    void manualUpdateActionSharesCoordinatorBeforeStartupDispatch();
     void startupUpdateCheckDoesNotConstructDispatcherAfterFailedStartup();
     void startupUpdateCheckDoesNotConstructDispatcherAfterShutdownBeforeQueuedTurn();
     void loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell();
@@ -2404,6 +2408,82 @@ startupUpdateCheckWaitsForVisibleInitialPageAndLivesUntilShutdown()
     QCOMPARE(probe->factoryCalls, 1);
     QCOMPARE(probe->dispatchCalls, 1);
     application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::manualUpdateActionSharesCoordinatorBeforeStartupDispatch()
+{
+    class OfflinePorts final : public Application::StartupUpdateCheckPort,
+                               public Application::ManualUpdateCheckPort
+    {
+    public:
+        int manualCalls = 0;
+        int startupCalls = 0;
+        Application::ManualUpdateCheckSnapshot snapshot() const override { return {}; }
+        void setObserver(Application::ManualUpdateCheckObserver) override {}
+        Application::ManualUpdateCheckDispatch check(
+            Application::ManualUpdateCheckPolicy,
+            Application::ManualUpdateCheckCompletion completion) override
+        {
+            ++manualCalls;
+            completion(Application::ManualUpdateCheckError{
+                Application::ManualUpdateCheckErrorCode::Configuration,
+                "Offline Next updater fixture"});
+            return Application::ManualUpdateCheckDispatch::Failed;
+        }
+        Application::StartupUpdateCheckDispatch check(
+            Application::StartupUpdateCheckCompletion completion) override
+        {
+            ++startupCalls;
+            completion(Application::StartupUpdateCheckError{
+                Application::StartupUpdateCheckErrorCode::Configuration,
+                "Offline startup fixture"});
+            return Application::StartupUpdateCheckDispatch::Failed;
+        }
+    } ports;
+    GlobalPreferencesSettingsGuard globalPreferences;
+    Platform::SettingsManagerAutomaticUpdatePreferencesPort automatic;
+    Platform::SettingsManagerSkippedUpdateVersionPort skipped;
+    QVERIFY(automatic.write({false}));
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light));
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(expectedEnglishLocale(), QStringLiteral("light")));
+    int factoryCalls = 0;
+    QPointer<Ui::ApplicationShell> shell;
+    Bootstrap::ApplicationBootstrap bootstrap(
+        *qApp, {}, silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()), std::nullopt, {},
+        [&shell, &ports, &automatic, &skipped, &factoryCalls] {
+            ++factoryCalls;
+            return std::make_unique<Bootstrap::UpdateCoordinator>(
+                ports, ports, automatic, skipped, true, true, shell.data());
+        });
+    QVERIFY(bootstrap.start().succeeded());
+    shell = bootstrap.shell();
+    auto* action = shell->findChild<QAction*>(QStringLiteral("classMngrNextCheckForUpdates"));
+    QVERIFY(action && action->isEnabled());
+    action->trigger();
+    QCOMPARE(factoryCalls, 1);
+    QCOMPARE(ports.manualCalls, 1);
+    QPointer<UpdateDialog> dialog = shell->findChild<UpdateDialog*>();
+    QVERIFY(dialog && dialog->isVisible());
+    QCOMPARE(dialog->findChild<QLabel*>(QStringLiteral("programUpdateTitle"))->text(),
+        QStringLiteral("Update Check Failed"));
+    QVERIFY(dialog->findChild<QLabel*>(QStringLiteral("programUpdateDetails"))->text()
+        .contains(QStringLiteral("Offline Next updater fixture")));
+    QCoreApplication::processEvents();
+    QCOMPARE(factoryCalls, 1);
+    QCOMPARE(ports.startupCalls, 0); // Disabled preference gates only startup.
+    dialog->findChild<QPushButton*>(QStringLiteral("updateCheckButton"))->click();
+    QCOMPARE(ports.manualCalls, 2);
+    action->trigger();
+    QCOMPARE(ports.manualCalls, 3);
+    QCOMPARE(factoryCalls, 1);
+    QCOMPARE(shell->findChildren<UpdateDialog*>().size(), 1);
+    static_cast<void>(bootstrap.shutdown());
+    QVERIFY(!dialog);
 }
 
 void ApplicationBootstrapTests::

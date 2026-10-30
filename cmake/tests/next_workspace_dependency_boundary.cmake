@@ -11,6 +11,8 @@ foreach(_line IN LISTS _report_lines)
         set(_next_speaking_evaluation_output_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_STARTUP_UPDATE_LINKS=(.*)$")
         set(_next_startup_update_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^UPDATE_PRESENTATION_LINKS=(.*)$")
+        set(_update_presentation_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^UPDATER_LINKS=(.*)$")
         set(_updater_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_LINKS=(.*)$")
@@ -57,7 +59,7 @@ foreach(_line IN LISTS _report_lines)
 endforeach()
 
 set(_expected_next_links
-    "Qt6::Core|$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNextCalendarUi|ClassMngrNextDocumentCatalog|ClassMngrQtPdfPrint|Qt6::PdfWidgets|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
+    "Qt6::Core|$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>|$<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextSubPrepOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNextCalendarUi|ClassMngrNextDocumentCatalog|ClassMngrQtPdfPrint|Qt6::PdfWidgets|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
 )
 if(NOT _next_links STREQUAL _expected_next_links)
     message(FATAL_ERROR
@@ -117,13 +119,18 @@ if(NOT _next_calendar_ui_dependencies STREQUAL _expected_next_calendar_ui_depend
 endif()
 
 set(_expected_next_startup_update_links
-    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrUpdater|ClassMngrSettings|Qt6::Network"
+    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrUpdater|ClassMngrUpdatePresentation|ClassMngrSettings|Qt6::Widgets|Qt6::Network"
 )
 if(NOT _next_startup_update_links STREQUAL _expected_next_startup_update_links)
     message(FATAL_ERROR
         "Unexpected direct ClassMngrNextStartupUpdates dependencies: "
         "[${_next_startup_update_links}]"
     )
+endif()
+
+if(NOT _update_presentation_links STREQUAL
+   "ClassMngrBuildSettings|ClassMngrUpdater|ClassMngrQtPdfPrint|Qt6::Widgets|Qt6::Network")
+    message(FATAL_ERROR "Unexpected shared update presentation closure: [${_update_presentation_links}]")
 endif()
 
 set(_expected_updater_links
@@ -143,7 +150,7 @@ if(NOT _document_catalog_test_links STREQUAL "ClassMngrNext::DocumentCatalog")
 endif()
 
 set(_expected_bootstrap_test_links
-    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrQtPdfPrint|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::PdfWidgets|Qt6::Widgets"
+    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrSubPrepShared|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrQtPdfPrint|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::PdfWidgets|Qt6::Widgets"
 )
 if(NOT _bootstrap_test_links STREQUAL _expected_bootstrap_test_links)
     message(FATAL_ERROR
@@ -210,6 +217,7 @@ foreach(_forbidden_dependency IN ITEMS
         ClassMngrRuntime
         ClassMngrLegacyRuntimeClosure
         ClassMngrCore
+        ClassMngrUiShared
         ClassMngrAppServices
         ApplicationServices)
     foreach(_dependency_set IN ITEMS
@@ -222,7 +230,8 @@ foreach(_forbidden_dependency IN ITEMS
             _bootstrap_test_links
             _document_catalog_library_links
             _next_startup_update_links
-            _updater_links)
+            _updater_links
+            _update_presentation_links)
         string(FIND "${${_dependency_set}}" "${_forbidden_dependency}" _dependency_index)
         if(NOT _dependency_index EQUAL -1)
             message(FATAL_ERROR

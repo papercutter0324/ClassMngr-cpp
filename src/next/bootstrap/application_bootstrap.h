@@ -261,6 +261,7 @@ private:
     void finalizeShutdown();
     void scheduleStartupUpdateCheck();
     void tryDispatchStartupUpdateCheck();
+    void ensureUpdateCoordinator();
     [[nodiscard]] Application::StartupResult failStartupStage(
         Application::StartupStage stage,
         Application::StartupFailureReason reason =
