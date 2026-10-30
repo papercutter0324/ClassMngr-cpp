@@ -6,20 +6,20 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-30
-- Current milestone: Phase 7 remains in progress. Candidate #45, General
-  app-wide Preferences, is accepted in source commit `f294b94c`; Batch 4 is
-  active and #46, Admin/permission-gate parity, is next. Next now provides a
-  localized Edit → Preferences dialog for General, Appearance, Documents, and
-  AI Comments. Persisted settings update theme, language, font, sidebar, and
-  active-page behavior at runtime; Schedule, Calendar, and Navigation settings
-  remain in their existing page surfaces. Four English/Korean × Light/Dark
-  captures and focused macOS Debug checks passed. See the
-  [C45 evidence package](../../docs/qt-rewrite/visual-baseline/next/phase-7/preferences-c45/README.md),
-  [Phase 7 plan](08-Phase-7-Feature-Migration.md), and [current batch tracker](Current-Slice-Batches.md).
-  The full project suite and Windows runs remain open. C44's Windows 150-DPI
-  raster comparison and shared PDF separator text-map limitation remain open,
-  as do broader 7A evidence and the Phase 9 packaged-Next memory gate. The 7A
-  and Phase 7 exit gates are not yet passed.
+- Current milestone: Phase 7 remains in progress. Candidate #46, Admin and
+  permission-gate parity, is accepted in source commit `0b41a700`; Batch 4 is
+  active and #47 is verifying the existing user-initiated update workflow
+  against Phase 5 ownership, followed by #48 Useful Links. C46 restores Admin
+  → Manage Campuses under the local `--enable-admin` capability, gates direct
+  mutation/import operations, and keeps read-only campus navigation available
+  to all users. The preservation-matrix review identified remaining Phase 7
+  evidence follow-ups for Workspace Calendar, Classes/Schedule, active
+  Document Catalog locale updates, Sub Prep output, and broader 7A evidence.
+  See the [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
+  and [current batch tracker](Current-Slice-Batches.md). The full project
+  suite, Windows runs, 7A evidence, C44 output/raster limitations, and the
+  Phase 7 exit gate remain open. The Phase 9 packaged-Next numeric memory gate
+  is separate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

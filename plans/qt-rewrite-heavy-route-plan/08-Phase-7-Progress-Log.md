@@ -1482,6 +1482,9 @@ Entries are preserved in their original document order.
   generated 194 records (187 direct, 7 generated); inventory `--check` and
   `git diff --check` passed. The Calendar target's additional workspace/Sub
   Prep compatibility dependencies are test-target-only.
+- After the C45 source commit, the generated resource inventory was refreshed
+  to the committed resource tree in follow-up commit `2ea220c3`; its check now
+  passes against `HEAD` without recording translation files as worktree edits.
 - Limits: the full project suite and Windows build/captures were not run.
   One controller test needed local loopback access enabled after the sandbox
   returned `EPERM`; the complete focused group passed on retry. No Phase 9
@@ -1489,3 +1492,33 @@ Entries are preserved in their original document order.
 - Decision and next: keep page-owned preference surfaces separate and
   continue Batch 4 with #46, Admin and actual permission-gate parity. Begin
   next-batch discovery when #47 starts, per the shared tracker.
+
+### Candidate #46 — Admin and permission-gate parity accepted (2026-10-30)
+
+- Commit: `0b41a700` (`Phase7 - Add Admin and campus permission gates`). The
+  Next shell exposes Admin → Manage Campuses only when the existing local
+  `--enable-admin` capability is enabled, and enters Campus Dashboard
+  Information through the standard navigation guard. Campus Directory and
+  map links remain available as read-only routes. Create, Update, and legacy
+  import operation boundaries reject unauthorized calls before reaching their
+  ports; authorized operations persist, and injected failures preserve data.
+- Verification: a fresh configure in the standard
+  `build/macos-clang-debug` folder followed the stale generated-resource
+  repair. The C46 focused CTest group passed 8/8; freshly built
+  `ClassMngrNextNavigationTests` passed 1/1. The direct admin-menu/navigation
+  QtTest case passed 3/3, including menu visibility, target route, guard
+  rejection, activation failure, and history. Denied Create/Update/import
+  cases made zero port calls and preserved data; authorized and failure paths,
+  read-only directory/map access, and dirty-page cancellation passed. Twelve
+  English/Korean × Light/Dark captures across admin menus, editable routes,
+  and read-only routes byte-match fresh captures and were reviewed. Resource
+  inventory `--check` and `git diff --check` passed.
+- Limits: verification used macOS offscreen rendering. No native-screen,
+  Windows, or full-suite run was performed. `--enable-admin` is local
+  capability gating, not account or role authentication. The whole Phase 7
+  preservation-matrix and visual/memory exit gates remain open.
+- Decision and next: retain read-only campus routes for all users and gate
+  writes at operation boundaries. Batch 4 continues with #47, which verifies
+  the existing user-initiated update workflow under Phase 5 ownership; #48
+  remains Useful Links. Batch 5 records the matrix review's remaining
+  evidence and parity follow-ups.
