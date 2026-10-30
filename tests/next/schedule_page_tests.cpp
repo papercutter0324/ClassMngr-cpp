@@ -25,6 +25,7 @@
 #include <QDir>
 #include <QEvent>
 #include <QFile>
+#include <QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
@@ -593,6 +594,7 @@ private slots:
     void scheduleOutputDialogUsesCurrentProjectionAndReleasesOperations();
     void retryReplacementSuspendReentryAndCloseReleaseRows();
     void languageChangeRetranslatesScheduleControls();
+    void outputDialogRetranslatesWhileOpenWithoutLosingOptions();
 };
 
 void SchedulePageTests::controlsPersistModesPreferencesAndTestingDisplay()
@@ -1030,8 +1032,8 @@ void SchedulePageTests::testingAssignmentCancelHandoffFailureRetryAndReload()
     QVERIFY(fixture.testingClasses);
     QVERIFY(fixture.testingClasses->isNewDraft());
     QVERIFY(fixture.testingClasses->pendingSlotLabel());
-    QCOMPARE(fixture.testingClasses->pendingSlotLabel()->text(),
-             QStringLiteral("New class for Monday at 17:00"));
+    QVERIFY(fixture.testingClasses->pendingSlotLabel()->isHidden());
+    QVERIFY(fixture.testingClasses->pendingSlotLabel()->text().isEmpty());
     loaded = Platform::readSchedulePageAtPath(path);
     QVERIFY(loaded);
     savedAssignment = findAssignment(loaded.value());
@@ -1436,6 +1438,68 @@ void SchedulePageTests::languageChangeRetranslatesScheduleControls()
                  QStringLiteral("nextSchedulePreferences"))->text(),
              QStringLiteral("표시 설정"));
     qApp->removeTranslator(&translator);
+}
+
+void SchedulePageTests::outputDialogRetranslatesWhileOpenWithoutLosingOptions()
+{
+    Ui::ScheduleOutputDialog dialog({});
+    auto* const style = dialog.findChild<QGroupBox*>(
+        QStringLiteral("nextScheduleOutputStyleGroup"));
+    auto* const orientation = dialog.findChild<QGroupBox*>(
+        QStringLiteral("nextScheduleOutputOrientationGroup"));
+    auto* const excel = dialog.findChild<QRadioButton*>(
+        QStringLiteral("nextScheduleOutputExcel"));
+    auto* const portrait = dialog.findChild<QRadioButton*>(
+        QStringLiteral("nextScheduleOutputPortrait"));
+    auto* const print = dialog.findChild<QPushButton*>(
+        QStringLiteral("nextScheduleOutputPrint"));
+    auto* const saveAs = dialog.findChild<QPushButton*>(
+        QStringLiteral("nextScheduleOutputSaveAs"));
+    QVERIFY(style);
+    QVERIFY(orientation);
+    QVERIFY(excel);
+    QVERIFY(portrait);
+    QVERIFY(print);
+    QVERIFY(saveAs);
+
+    excel->setChecked(true);
+    portrait->setChecked(true);
+    dialog.show();
+    QApplication::processEvents();
+    QVERIFY(dialog.isVisible());
+    QCOMPARE(dialog.windowTitle(), QStringLiteral("Schedule Output"));
+
+    QTranslator translator;
+    QVERIFY(translator.load(QDir(QStringLiteral(
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY)).filePath(
+            QStringLiteral("ClassMngr_ko_KR.qm"))));
+    QVERIFY(qApp->installTranslator(&translator));
+    QApplication::processEvents();
+    QCOMPARE(dialog.windowTitle(), QStringLiteral("시간표 출력"));
+    QCOMPARE(style->title(), QStringLiteral("스타일"));
+    QCOMPARE(orientation->title(), QStringLiteral("방향"));
+    QCOMPARE(excel->text(), QStringLiteral("Excel"));
+    QCOMPARE(portrait->text(), QStringLiteral("세로"));
+    QCOMPARE(print->text(), QStringLiteral("인쇄"));
+    QCOMPARE(saveAs->text(), QStringLiteral("PDF로 저장…"));
+    QVERIFY(dialog.isVisible());
+    QCOMPARE(dialog.selectedStyle(), SchedulePrintStyle::Excel);
+    QCOMPARE(dialog.selectedOrientation(), QPageLayout::Portrait);
+    QCOMPARE(dialog.selectedKind(), Ui::ScheduleOutputKind::Print);
+    QVERIFY(dialog.selectedPath().isEmpty());
+
+    QVERIFY(qApp->removeTranslator(&translator));
+    QApplication::processEvents();
+    QCOMPARE(dialog.windowTitle(), QStringLiteral("Schedule Output"));
+    QCOMPARE(style->title(), QStringLiteral("Style"));
+    QCOMPARE(orientation->title(), QStringLiteral("Orientation"));
+    QCOMPARE(portrait->text(), QStringLiteral("Portrait"));
+    QCOMPARE(print->text(), QStringLiteral("Print"));
+    QCOMPARE(saveAs->text(), QStringLiteral("Save As PDF…"));
+    QVERIFY(dialog.isVisible());
+    QCOMPARE(dialog.selectedStyle(), SchedulePrintStyle::Excel);
+    QCOMPARE(dialog.selectedOrientation(), QPageLayout::Portrait);
+    dialog.hide();
 }
 
 QTEST_MAIN(SchedulePageTests)

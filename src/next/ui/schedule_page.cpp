@@ -751,6 +751,20 @@ void SchedulePage::retranslateUi()
         }
     }
     updateTestingBanner();
+    if (m_lastImportSummary)
+    {
+        const Application::ScheduleImportApplySummary& summary =
+            *m_lastImportSummary;
+        m_status->setText(pageText(
+            "Schedule import completed: %1 teachers created, %2 room updates, "
+            "%3 classes created, %4 classes updated, %5 skipped, %6 schedules cleared.")
+            .arg(summary.teachersCreated.rawValue())
+            .arg(summary.teachersUpdated.rawValue())
+            .arg(summary.classesCreated.rawValue())
+            .arg(summary.classesUpdated.rawValue())
+            .arg(summary.classesSkipped.rawValue())
+            .arg(summary.schedulesCleared.rawValue()));
+    }
     if (m_model)
     {
         m_model->headerDataChanged(Qt::Horizontal, 0,
@@ -764,6 +778,7 @@ void SchedulePage::clearRetainedState(const bool clearIdentity)
     closeScheduleImport();
     m_model->clear();
     m_lastError.clear();
+    m_lastImportSummary.reset();
     if (clearIdentity)
     {
         m_workspaceIdentity.clear();
@@ -790,6 +805,7 @@ void SchedulePage::clearRetainedState(const bool clearIdentity)
 
 void SchedulePage::setStatus(const QString& message, const bool error)
 {
+    m_lastImportSummary.reset();
     m_status->setText(message);
     m_status->setProperty("error", error);
     m_status->setStyleSheet(error
@@ -916,6 +932,7 @@ void SchedulePage::handleScheduleImportApplied(
         .arg(summary.classesSkipped.rawValue())
         .arg(summary.schedulesCleared.rawValue());
     setStatus(message);
+    m_lastImportSummary = summary;
 }
 
 void SchedulePage::selectMode(const Application::ScheduleDisplayMode mode)

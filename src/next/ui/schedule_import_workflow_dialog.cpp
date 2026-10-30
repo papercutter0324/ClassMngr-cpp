@@ -101,12 +101,15 @@ QString diagnosticText(const ScheduleImportDiagnostic& diagnostic)
 
 QString applyFailureText(const Application::ScheduleImportApplyFailure& failure)
 {
-    QString message = QString::fromStdU16String(failure.message).trimmed();
-    if (message.isEmpty())
+    const QString detail = QString::fromStdU16String(failure.message).trimmed();
+    const QString summary = workflowText("The schedule could not be imported.");
+    if (failure.code == Domain::ErrorCode::Technical)
     {
-        message = workflowText("The schedule could not be imported.");
+        return detail.isEmpty() || detail == summary
+            ? summary
+            : summary + QLatin1Char('\n') + detail;
     }
-    return message;
+    return detail.isEmpty() ? summary : detail;
 }
 
 QString utf8(const std::string& value)
@@ -725,6 +728,15 @@ void ScheduleImportWorkflowDialog::retranslateUi()
     {
         m_teacherModel->retranslateHeaders();
     }
+    if (m_lastApplyFailure)
+    {
+        showReviewError(applyFailureText(*m_lastApplyFailure));
+    }
+    else if (m_pages->currentIndex() == 2
+             && !m_reviewStatus->property("error").toBool())
+    {
+        updateReviewState();
+    }
 }
 
 void ScheduleImportWorkflowDialog::chooseWorkbook()
@@ -1164,6 +1176,9 @@ void ScheduleImportWorkflowDialog::updateReviewState()
     {
         return;
     }
+    m_lastApplyFailure.reset();
+    m_reviewStatus->setProperty("error", false);
+    m_reviewStatus->setStyleSheet(QString{});
     Application::ScheduleImportReviewDecisionRequest decisions =
         m_teacherModel->decisions();
     const Application::ScheduleImportReviewDecisionRequest classDecisions =
@@ -1236,6 +1251,7 @@ void ScheduleImportWorkflowDialog::applyImport()
     {
         return;
     }
+    m_lastApplyFailure.reset();
     QString workspaceError;
     if (!workspaceIsCurrent(&workspaceError))
     {
@@ -1306,7 +1322,8 @@ void ScheduleImportWorkflowDialog::applyImport()
     }
     if (!applied)
     {
-        showReviewError(applyFailureText(applied.error()));
+        m_lastApplyFailure = applied.error();
+        showReviewError(applyFailureText(*m_lastApplyFailure));
         m_primaryButton->setEnabled(true);
         return;
     }
@@ -1343,6 +1360,7 @@ void ScheduleImportWorkflowDialog::showReviewError(const QString& message)
 
 void ScheduleImportWorkflowDialog::clearReviewData()
 {
+    m_lastApplyFailure.reset();
     m_teacherModel->setMapping(nullptr);
     m_classModel->setMapping(nullptr);
     m_previewModel->setUser(nullptr);

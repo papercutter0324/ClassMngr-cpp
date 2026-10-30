@@ -1,0 +1,78 @@
+{
+    "blocks": [
+        {
+            "appliedCandidateCount": 20,
+            "blockName": "김선생",
+            "blockNumber": 1,
+            "candidateCount": 20,
+            "classDecisionCount": 20,
+            "persistedClassCount": 20,
+            "persistedClassInfoCount": 20,
+            "persistedScheduleRowCount": 20,
+            "reloadedScheduleEntryCount": 20,
+            "reloadedScheduleTableRows": 7,
+            "reloadedVisibleClassCount": 20,
+            "teacherDecisionCount": 1
+        },
+        {
+            "appliedCandidateCount": 20,
+            "blockName": "이선생",
+            "blockNumber": 2,
+            "candidateCount": 20,
+            "classDecisionCount": 20,
+            "persistedClassCount": 20,
+            "persistedClassInfoCount": 20,
+            "persistedScheduleRowCount": 20,
+            "reloadedScheduleEntryCount": 20,
+            "reloadedScheduleTableRows": 7,
+            "reloadedVisibleClassCount": 20,
+            "teacherDecisionCount": 1
+        },
+        {
+            "appliedCandidateCount": 20,
+            "blockName": "박선생",
+            "blockNumber": 3,
+            "candidateCount": 20,
+            "classDecisionCount": 20,
+            "persistedClassCount": 20,
+            "persistedClassInfoCount": 20,
+            "persistedScheduleRowCount": 20,
+            "reloadedScheduleEntryCount": 20,
+            "reloadedScheduleTableRows": 7,
+            "reloadedVisibleClassCount": 20,
+            "teacherDecisionCount": 1
+        },
+        {
+            "appliedCandidateCount": 20,
+            "blockName": "최선생",
+            "blockNumber": 4,
+            "candidateCount": 20,
+            "classDecisionCount": 20,
+            "persistedClassCount": 20,
+            "persistedClassInfoCount": 20,
+            "persistedScheduleRowCount": 20,
+            "reloadedScheduleEntryCount": 20,
+            "reloadedScheduleTableRows": 7,
+            "reloadedVisibleClassCount": 20,
+            "teacherDecisionCount": 1
+        },
+        {
+            "appliedCandidateCount": 16,
+            "blockName": "정선생",
+            "blockNumber": 5,
+            "candidateCount": 16,
+            "classDecisionCount": 16,
+            "persistedClassCount": 16,
+            "persistedClassInfoCount": 16,
+            "persistedScheduleRowCount": 16,
+            "reloadedScheduleEntryCount": 16,
+            "reloadedScheduleTableRows": 7,
+            "reloadedVisibleClassCount": 16,
+            "teacherDecisionCount": 1
+        }
+    ],
+    "candidateCountTotal": 96,
+    "sourceWorkbook": "tests/fixtures/imports/schedule_import_c51_conflict_free_5_blocks.xlsx",
+    "taskId": "phase7_c51_schedule_import_output_implementation_01",
+    "transactionInterpretation": "Five block-level applies in separate temporary .tps workspaces; no 96-candidate transaction was performed."
+}

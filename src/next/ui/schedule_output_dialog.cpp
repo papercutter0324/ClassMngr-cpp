@@ -3,6 +3,7 @@
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QDialogButtonBox>
+#include <QEvent>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -37,20 +38,20 @@ ScheduleOutputDialog::ScheduleOutputDialog(
     , m_chooseSavePath(std::move(chooseSavePath))
     , m_selectedKind(ScheduleOutputKind::Print)
 {
-    setWindowTitle(tr("Schedule Output"));
     setModal(true);
     m_layout = new QVBoxLayout(this);
     auto* const layout = m_layout;
 
-    auto* const styleGroup = new QGroupBox(tr("Style"), this);
-    auto* const styleLayout = new QGridLayout(styleGroup);
+    m_styleGroup = new QGroupBox(this);
+    m_styleGroup->setObjectName(QStringLiteral("nextScheduleOutputStyleGroup"));
+    auto* const styleLayout = new QGridLayout(m_styleGroup);
     styleLayout->setContentsMargins(12, 10, 12, 12);
     styleLayout->setHorizontalSpacing(OptionsColumnSpacing);
     styleLayout->setVerticalSpacing(8);
-    m_currentAppearance = new QRadioButton(tr("Current Appearance"), styleGroup);
-    m_light = new QRadioButton(tr("Light"), styleGroup);
-    m_dark = new QRadioButton(tr("Dark"), styleGroup);
-    m_excel = new QRadioButton(tr("Excel"), styleGroup);
+    m_currentAppearance = new QRadioButton(m_styleGroup);
+    m_light = new QRadioButton(m_styleGroup);
+    m_dark = new QRadioButton(m_styleGroup);
+    m_excel = new QRadioButton(m_styleGroup);
     m_currentAppearance->setObjectName(
         QStringLiteral("nextScheduleOutputCurrentAppearance"));
     m_light->setObjectName(QStringLiteral("nextScheduleOutputLight"));
@@ -66,41 +67,108 @@ ScheduleOutputDialog::ScheduleOutputDialog(
     styleLayout->setColumnMinimumWidth(1, requiredColumnWidth(m_excel, m_dark));
     styleLayout->setColumnStretch(0, 1);
     styleLayout->setColumnStretch(1, 1);
-    layout->addWidget(styleGroup);
+    layout->addWidget(m_styleGroup);
 
-    auto* const orientationGroup = new QGroupBox(tr("Orientation"), this);
-    auto* const orientationLayout = new QVBoxLayout(orientationGroup);
+    m_orientationGroup = new QGroupBox(this);
+    m_orientationGroup->setObjectName(
+        QStringLiteral("nextScheduleOutputOrientationGroup"));
+    auto* const orientationLayout = new QVBoxLayout(m_orientationGroup);
     orientationLayout->setContentsMargins(12, 10, 12, 12);
     orientationLayout->setSpacing(8);
-    m_landscape = new QRadioButton(tr("Landscape"), orientationGroup);
-    m_portrait = new QRadioButton(tr("Portrait"), orientationGroup);
+    m_landscape = new QRadioButton(m_orientationGroup);
+    m_portrait = new QRadioButton(m_orientationGroup);
     m_landscape->setObjectName(QStringLiteral("nextScheduleOutputLandscape"));
     m_portrait->setObjectName(QStringLiteral("nextScheduleOutputPortrait"));
     m_landscape->setChecked(true);
     orientationLayout->addWidget(m_landscape);
     orientationLayout->addWidget(m_portrait);
-    layout->addWidget(orientationGroup);
+    layout->addWidget(m_orientationGroup);
 
-    auto* const buttons = new TextFitDialogButtonBox(
+    m_buttons = new TextFitDialogButtonBox(
         QDialogButtonBox::Cancel, this);
-    layout->addWidget(buttons);
-    buttons->button(QDialogButtonBox::Cancel)->setText(tr("Cancel"));
-    buttons->button(QDialogButtonBox::Cancel)->setObjectName(
+    layout->addWidget(m_buttons);
+    m_cancelButton = m_buttons->button(QDialogButtonBox::Cancel);
+    m_cancelButton->setObjectName(
         QStringLiteral("nextScheduleOutputCancel"));
-    auto* const printButton = buttons->addButton(
+    m_printButton = m_buttons->addButton(
         tr("Print"), QDialogButtonBox::ActionRole);
-    printButton->setObjectName(QStringLiteral("nextScheduleOutputPrint"));
-    auto* const saveButton = buttons->addButton(
+    m_printButton->setObjectName(QStringLiteral("nextScheduleOutputPrint"));
+    m_saveButton = m_buttons->addButton(
         tr("Save As PDF…"), QDialogButtonBox::ActionRole);
-    saveButton->setObjectName(QStringLiteral("nextScheduleOutputSaveAs"));
-    printButton->setDefault(true);
-    connect(printButton, &QPushButton::clicked,
+    m_saveButton->setObjectName(QStringLiteral("nextScheduleOutputSaveAs"));
+    m_printButton->setDefault(true);
+    connect(m_printButton, &QPushButton::clicked,
         this, &ScheduleOutputDialog::acceptPrint);
-    connect(saveButton, &QPushButton::clicked,
+    connect(m_saveButton, &QPushButton::clicked,
         this, &ScheduleOutputDialog::choosePdfPath);
 
+    retranslateUi();
     layout->activate();
     setFixedWidth(layout->minimumSize().width());
+}
+
+void ScheduleOutputDialog::changeEvent(QEvent* event)
+{
+    if (event && event->type() == QEvent::LanguageChange)
+    {
+        retranslateUi();
+    }
+    QDialog::changeEvent(event);
+}
+
+void ScheduleOutputDialog::retranslateUi()
+{
+    setWindowTitle(tr("Schedule Output"));
+    if (m_styleGroup)
+    {
+        m_styleGroup->setTitle(tr("Style"));
+    }
+    if (m_currentAppearance)
+    {
+        m_currentAppearance->setText(tr("Current Appearance"));
+    }
+    if (m_light)
+    {
+        m_light->setText(tr("Light"));
+    }
+    if (m_dark)
+    {
+        m_dark->setText(tr("Dark"));
+    }
+    if (m_excel)
+    {
+        m_excel->setText(tr("Excel"));
+    }
+    if (m_orientationGroup)
+    {
+        m_orientationGroup->setTitle(tr("Orientation"));
+    }
+    if (m_landscape)
+    {
+        m_landscape->setText(tr("Landscape"));
+    }
+    if (m_portrait)
+    {
+        m_portrait->setText(tr("Portrait"));
+    }
+    if (m_cancelButton)
+    {
+        m_cancelButton->setText(tr("Cancel"));
+    }
+    if (m_printButton)
+    {
+        m_printButton->setText(tr("Print"));
+    }
+    if (m_saveButton)
+    {
+        m_saveButton->setText(tr("Save As PDF…"));
+    }
+    if (m_layout)
+    {
+        m_layout->invalidate();
+        m_layout->activate();
+        setFixedWidth(m_layout->minimumSize().width());
+    }
 }
 
 ScheduleOutputKind ScheduleOutputDialog::selectedKind() const noexcept

@@ -1,14 +1,22 @@
 #include "data/database/workspace_store.h"
+#include "data/repositories/settings_repository.h"
 #include "core/process_memory_snapshot.h"
 #include "core/settingsmanager.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
+#include "features/schedule/services/schedule_print_service.h"
+#include "features/schedule/ui/schedule_builder.h"
+#include "features/schedule/ui/schedule_print_document_adapter.h"
+#include "features/schedule/ui/schedule_view_model.h"
 #include "next/platform/workspace_store_schedule_actions.h"
 #include "next/platform/workspace_store_schedule_import_actions.h"
+#include "next/platform/qt_schedule_output_adapter.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
 #include "next/ui/schedule_import_workflow_dialog.h"
 #include "next/ui/schedule_import_review_models.h"
+#include "next/ui/schedule_print_projection.h"
+#include "next/ui/schedule_output_dialog.h"
 #include "next/ui/schedule_page.h"
 #include "preferences_test_ports.h"
 #include "sql_script_runner.h"
@@ -22,6 +30,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QElapsedTimer>
+#include <QFontDatabase>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -29,11 +38,17 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QLocale>
+#include <QPainter>
 #include <QPalette>
 #include <QPushButton>
 #include <QStandardPaths>
 #include <QPointer>
+#include <QPdfDocument>
+#include <QPageLayout>
+#include <QPageSize>
+#include <QCryptographicHash>
 #include <QRadioButton>
+#include <QRegularExpression>
 #include <QStyleFactory>
 #include <QSet>
 #include <QStackedWidget>
@@ -47,7 +62,9 @@
 #include <QtTest/QtTest>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
+#include <cmath>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -97,6 +114,13 @@ QString largeApplicableFixturePath()
                        "generated-large-schedule-import-applicable.xlsx"));
 }
 
+QString c51FiveBlockConflictFreeFixturePath()
+{
+    return QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
+        QStringLiteral("tests/fixtures/imports/"
+                       "schedule_import_c51_conflict_free_5_blocks.xlsx"));
+}
+
 QString intensiveFixturePath()
 {
     return QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
@@ -132,6 +156,49 @@ std::optional<ScheduleImportUserBlock> firstVisibleUser(
         }
     }
     return std::nullopt;
+}
+
+struct VisibleScheduleBlock final
+{
+    int sheetIndex = -1;
+    int blockIndex = -1;
+    ScheduleImportUserBlock user;
+};
+
+std::optional<std::vector<VisibleScheduleBlock>> visibleScheduleBlocks(
+    const QString& workbookPath
+    )
+{
+    QFile workbookFile(workbookPath);
+    if (!workbookFile.open(QIODevice::ReadOnly))
+    {
+        return std::nullopt;
+    }
+    auto parsed = parseScheduleImportWorkbook(
+        workbookFile, ScheduleImportKind::Normal);
+    if (!parsed)
+    {
+        return std::nullopt;
+    }
+    std::vector<VisibleScheduleBlock> blocks;
+    int visibleSheetIndex = 0;
+    for (const ScheduleImportSheet& sheet : parsed->sheets)
+    {
+        if (!sheet.visible)
+        {
+            continue;
+        }
+        for (int blockIndex = 0; blockIndex < sheet.users.size(); ++blockIndex)
+        {
+            blocks.push_back({
+                visibleSheetIndex,
+                blockIndex,
+                sheet.users.at(blockIndex)
+            });
+        }
+        ++visibleSheetIndex;
+    }
+    return blocks;
 }
 
 bool createWorkspace(const QString& path, const ScheduleImportUserBlock& user,
@@ -239,6 +306,23 @@ QJsonArray rectangleJson(const QRect& rect)
     return {rect.x(), rect.y(), rect.width(), rect.height()};
 }
 
+QString compactOutputText(QString text)
+{
+    text.remove(QRegularExpression(QStringLiteral("\\s+")));
+    return text;
+}
+
+QByteArray sha256File(const QString& path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        return {};
+    }
+    return QCryptographicHash::hash(file.readAll(), QCryptographicHash::Sha256)
+        .toHex();
+}
+
 class ScheduleImportPageFixture final
 {
 public:
@@ -249,11 +333,15 @@ public:
     QString activePath;
     QString identity;
     QString workbookPath = scheduleFixturePath();
+    QString schedulePdfPath;
     std::function<Result<ScheduleImportWorkbook>(QIODevice&, ScheduleImportKind)>
         parseWorkbook;
     int timeoutMilliseconds = 30'000;
     Ui::SchedulePage* page = nullptr;
     std::vector<Application::ScheduleImportApplyRequest> applyRequests;
+    std::optional<Ui::ScheduleOutputRequest> lastScheduleOutputRequest;
+    Ui::ScheduleOutputResult scheduleOutputResult{
+        Ui::ScheduleOutputResult::Status::Failed, {}};
 
     bool initialize(const QString& path)
     {
@@ -304,6 +392,25 @@ public:
                     const Application::ScheduleSlotStateSaveRequest& request) {
                     return Platform::saveScheduleSlotStateAtPath(
                         databasePath, request);
+                };
+                actions.readScheduleOutputProfileName = [](
+                    const QString& databasePath) {
+                    return Platform::readScheduleOutputProfileNameAtPath(
+                        databasePath);
+                };
+                actions.chooseSchedulePdfPath = [this](QWidget*)
+                    -> std::optional<QString> {
+                    return schedulePdfPath.isEmpty()
+                        ? std::nullopt
+                        : std::optional<QString>(schedulePdfPath);
+                };
+                actions.performScheduleOutput = [this](
+                    Ui::ScheduleOutputRequest request, QWidget* parent) {
+                    lastScheduleOutputRequest = request;
+                    scheduleOutputResult =
+                        Platform::performScheduleOutput(
+                            std::move(request), parent);
+                    return scheduleOutputResult;
                 };
                 actions.chooseScheduleImportWorkbook = [this](QWidget*) {
                     return workbookPath;
@@ -623,9 +730,12 @@ private slots:
     void nonDefaultSheetAndBlockApplyOnlyAfterDiagnosticsAcknowledgement();
     void intensiveImportPreservesOrClearsAbsentSchedulesByTypedMode();
     void overlappingWorkbookPresentsReviewConflict();
+    void importMessagesRetranslateAndPreserveTechnicalDetails();
     void largeWorkbookReviewUsesBoundedWidgetsAndReleasesDataOnCancel();
     void largeNonOverlappingBlockAppliesTwentyCandidates();
+    void everyConflictFreeLargeWorkbookBlockAppliesIndependentlyAndReloads();
     void captureImportVisualEvidenceWhenConfigured();
+    void captureImportedScheduleOutputEvidenceWhenConfigured();
     void changedWorkbookIsDiscardedAndCancellationReleasesWorkflow();
     void timeoutAndCanceledLateParseResultsAreDiscarded();
     void suspendingDuringAsyncParseCancelsAndIgnoresLateResult();
@@ -1025,6 +1135,138 @@ overlappingWorkbookPresentsReviewConflict()
 }
 
 void NormalScheduleImportIntegrationTests::
+importMessagesRetranslateAndPreserveTechnicalDetails()
+{
+    const QString koreanCatalog = QDir(QStringLiteral(
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY)).filePath(
+            QStringLiteral("ClassMngr_ko_KR.qm"));
+
+    QTemporaryDir successTemporary;
+    QVERIFY(successTemporary.isValid());
+    const auto successUser = firstVisibleUser(scheduleFixturePath());
+    QVERIFY(successUser.has_value());
+    const QString successWorkspace = successTemporary.filePath(
+        QStringLiteral("success.tps"));
+    QString error;
+    QVERIFY2(createWorkspace(successWorkspace, *successUser, &error),
+             qPrintable(error));
+    ScheduleImportPageFixture successFixture;
+    QVERIFY(successFixture.initialize(successWorkspace));
+    auto* const successDialog = successFixture.openImport();
+    QVERIFY(successDialog);
+    QVERIFY(successFixture.selectWorkbookAndRead(successDialog));
+    QTRY_VERIFY_WITH_TIMEOUT(successDialog->sheetCombo()->count() > 0, 10000);
+    QVERIFY(successFixture.continueToReview(successDialog));
+    QTRY_COMPARE_WITH_TIMEOUT(
+        successDialog->classTable()->model()->rowCount(),
+        successUser->classes.size(), 10000);
+    setAllTeachersToCreate(successDialog);
+    setAllClassesToCreateNew(successDialog);
+
+    QTranslator successTranslator;
+    QVERIFY(successTranslator.load(koreanCatalog));
+    QVERIFY(qApp->installTranslator(&successTranslator));
+    successDialog->primaryButton()->click();
+    QTRY_VERIFY_WITH_TIMEOUT(successDialog->isHidden(), 10000);
+    QVERIFY(successFixture.page->statusLabel()->text().contains(
+        QStringLiteral("일정 가져오기가 완료되었습니다")));
+    QVERIFY(qApp->removeTranslator(&successTranslator));
+    QApplication::processEvents();
+    QVERIFY(successFixture.page->statusLabel()->text().contains(
+        QStringLiteral("Schedule import completed")));
+
+    QTemporaryDir conflictTemporary;
+    QVERIFY(conflictTemporary.isValid());
+    const QString conflictWorkbook = overlapConflictFixturePath();
+    const auto conflictUser = firstVisibleUser(conflictWorkbook);
+    QVERIFY(conflictUser.has_value());
+    const QString conflictWorkspace = conflictTemporary.filePath(
+        QStringLiteral("conflict.tps"));
+    QVERIFY2(createWorkspace(conflictWorkspace, *conflictUser, &error),
+             qPrintable(error));
+    ScheduleImportPageFixture conflictFixture;
+    QVERIFY(conflictFixture.initialize(conflictWorkspace));
+    conflictFixture.workbookPath = conflictWorkbook;
+    auto* const conflictDialog = conflictFixture.openImport();
+    QVERIFY(conflictDialog);
+    QVERIFY(conflictFixture.selectWorkbookAndRead(conflictDialog));
+    QTRY_VERIFY_WITH_TIMEOUT(conflictDialog->sheetCombo()->count() > 0, 10000);
+    QVERIFY(conflictFixture.continueToReview(conflictDialog));
+    QTRY_COMPARE_WITH_TIMEOUT(
+        conflictDialog->classTable()->model()->rowCount(),
+        conflictUser->classes.size(), 10000);
+    setAllTeachersToCreate(conflictDialog);
+    setAllClassesToCreateNew(conflictDialog);
+    auto* const conflictStatus = conflictDialog->findChild<QLabel*>(
+        QStringLiteral("nextScheduleImportReviewStatus"));
+    QVERIFY(conflictStatus);
+    QTRY_VERIFY_WITH_TIMEOUT(conflictStatus->text().contains(
+        QStringLiteral("overlap"), Qt::CaseInsensitive), 5000);
+
+    QTranslator conflictTranslator;
+    QVERIFY(conflictTranslator.load(koreanCatalog));
+    QVERIFY(qApp->installTranslator(&conflictTranslator));
+    QTRY_COMPARE_WITH_TIMEOUT(conflictStatus->text(),
+        QStringLiteral("제안된 일정이 서로 겹칩니다."), 5000);
+    QVERIFY(!conflictDialog->primaryButton()->isEnabled());
+    QVERIFY(qApp->removeTranslator(&conflictTranslator));
+    QTRY_COMPARE_WITH_TIMEOUT(conflictStatus->text(),
+        QStringLiteral("The proposed schedule contains an overlap."), 5000);
+    conflictDialog->reject();
+
+    QTemporaryDir failureTemporary;
+    QVERIFY(failureTemporary.isValid());
+    const auto failureUser = firstVisibleUser(scheduleFixturePath());
+    QVERIFY(failureUser.has_value());
+    const QString failureWorkspace = failureTemporary.filePath(
+        QStringLiteral("failure.tps"));
+    QVERIFY2(createWorkspace(failureWorkspace, *failureUser, &error),
+             qPrintable(error));
+    QVERIFY2(runSql(failureWorkspace, QStringLiteral(R"(
+        CREATE TRIGGER fail_localized_schedule_import
+        BEFORE INSERT ON class_times
+        BEGIN
+            SELECT RAISE(ABORT, 'localized SQLite detail sentinel');
+        END
+    )"), &error), qPrintable(error));
+    ScheduleImportPageFixture failureFixture;
+    QVERIFY(failureFixture.initialize(failureWorkspace));
+    auto* const failureDialog = failureFixture.openImport();
+    QVERIFY(failureDialog);
+    QVERIFY(failureFixture.selectWorkbookAndRead(failureDialog));
+    QTRY_VERIFY_WITH_TIMEOUT(failureDialog->sheetCombo()->count() > 0, 10000);
+    QVERIFY(failureFixture.continueToReview(failureDialog));
+    QTRY_COMPARE_WITH_TIMEOUT(
+        failureDialog->classTable()->model()->rowCount(),
+        failureUser->classes.size(), 10000);
+    setAllTeachersToCreate(failureDialog);
+    setAllClassesToCreateNew(failureDialog);
+    auto* const failureStatus = failureDialog->findChild<QLabel*>(
+        QStringLiteral("nextScheduleImportReviewStatus"));
+    QVERIFY(failureStatus);
+
+    QTranslator failureTranslator;
+    QVERIFY(failureTranslator.load(koreanCatalog));
+    QVERIFY(qApp->installTranslator(&failureTranslator));
+    failureDialog->primaryButton()->click();
+    QTRY_VERIFY_WITH_TIMEOUT(failureStatus->text().contains(
+        QStringLiteral("localized SQLite detail sentinel")), 5000);
+    QVERIFY(failureStatus->text().startsWith(
+        QStringLiteral("일정을 가져오지 못했습니다.\n")));
+    QVERIFY(failureDialog->isVisible());
+    QVERIFY(qApp->removeTranslator(&failureTranslator));
+    QTRY_VERIFY_WITH_TIMEOUT(failureStatus->text().startsWith(
+        QStringLiteral("The schedule could not be imported.\n")), 5000);
+    QVERIFY(failureStatus->text().contains(
+        QStringLiteral("localized SQLite detail sentinel")));
+    QVERIFY(failureDialog->isVisible());
+    QCOMPARE(scalarInt(failureWorkspace,
+        QStringLiteral("SELECT COUNT(*) FROM classes")),
+        std::optional<int>{0});
+    failureDialog->reject();
+}
+
+void NormalScheduleImportIntegrationTests::
 largeWorkbookReviewUsesBoundedWidgetsAndReleasesDataOnCancel()
 {
     QTemporaryDir temporary;
@@ -1184,6 +1426,579 @@ largeNonOverlappingBlockAppliesTwentyCandidates()
         fixture.page->model()->runtimeMetrics().sourceClassCount, 20, 5000);
     QCOMPARE(dialog->classTable()->model()->rowCount(), 0);
     QCOMPARE(dialog->sourcePathEdit()->text(), QString());
+}
+
+void NormalScheduleImportIntegrationTests::
+everyConflictFreeLargeWorkbookBlockAppliesIndependentlyAndReloads()
+{
+    const QString workbookPath = c51FiveBlockConflictFreeFixturePath();
+    const auto blocks = visibleScheduleBlocks(workbookPath);
+    QVERIFY(blocks.has_value());
+    QCOMPARE(blocks->size(), std::size_t(5));
+    const std::array<int, 5> expectedCandidates{20, 20, 20, 20, 16};
+    int totalCandidates = 0;
+    for (std::size_t index = 0; index < blocks->size(); ++index)
+    {
+        const auto& block = blocks->at(index);
+        QCOMPARE(block.user.classes.size(), expectedCandidates[index]);
+        QVERIFY(block.user.diagnostics.isEmpty());
+        totalCandidates += block.user.classes.size();
+    }
+    QCOMPARE(totalCandidates, 96);
+
+    QJsonArray blockEvidence;
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    for (std::size_t blockNumber = 0; blockNumber < blocks->size(); ++blockNumber)
+    {
+        const VisibleScheduleBlock& block = blocks->at(blockNumber);
+        const int candidateCount = block.user.classes.size();
+        int expectedScheduleRowCount = 0;
+        for (const ScheduleImportClassCandidate& candidate : block.user.classes)
+        {
+            expectedScheduleRowCount += candidate.times.size();
+        }
+
+        const QString workspace = temporary.filePath(
+            QStringLiteral("block-%1.tps").arg(blockNumber + 1));
+        QString error;
+        QVERIFY2(createWorkspace(workspace, block.user, &error),
+                 qPrintable(error));
+        ScheduleImportPageFixture fixture;
+        QVERIFY(fixture.initialize(workspace));
+        fixture.workbookPath = workbookPath;
+        auto* const dialog = fixture.openImport();
+        QVERIFY(dialog);
+        QVERIFY(fixture.selectWorkbookAndRead(dialog));
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->sheetCombo()->count() > block.sheetIndex,
+                                 10000);
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->userCombo()->count() > block.blockIndex,
+                                 10000);
+        QVERIFY(fixture.continueToReview(
+            dialog, block.sheetIndex, block.blockIndex));
+        QTRY_COMPARE_WITH_TIMEOUT(
+            dialog->classTable()->model()->rowCount(), candidateCount, 10000);
+
+        const int teacherDecisionCount =
+            dialog->teacherTable()->model()->rowCount();
+        QVERIFY(teacherDecisionCount > 0);
+        setAllTeachersToCreate(dialog);
+        setAllClassesToCreateNew(dialog);
+        const QString reviewStatus = dialog->findChild<QLabel*>(
+            QStringLiteral("nextScheduleImportReviewStatus"))->text();
+        QVERIFY2(dialog->primaryButton()->isEnabled(),
+            qPrintable(QStringLiteral("Block %1 (%2) is not applicable: %3")
+                .arg(blockNumber + 1)
+                .arg(block.user.name)
+                .arg(reviewStatus)));
+        dialog->primaryButton()->click();
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->isHidden(), 15000);
+
+        QCOMPARE(fixture.applyRequests.size(), std::size_t(1));
+        const Application::ScheduleImportApplyRequest& request =
+            fixture.applyRequests.front();
+        QCOMPARE(request.selectedUserName, block.user.name.toStdU16String());
+        QCOMPARE(request.candidates.size(),
+                 static_cast<std::size_t>(candidateCount));
+        QCOMPARE(request.classes.size(),
+                 static_cast<std::size_t>(candidateCount));
+        QCOMPARE(request.teachers.size(),
+                 static_cast<std::size_t>(teacherDecisionCount));
+        QVERIFY(std::all_of(request.classes.cbegin(), request.classes.cend(),
+            [](const auto& decision) {
+                return decision.action
+                    == Application::ScheduleImportReviewClassAction::CreateNew;
+            }));
+        QVERIFY(std::all_of(request.teachers.cbegin(), request.teachers.cend(),
+            [](const auto& decision) {
+                return decision.action
+                    == Application::ScheduleImportReviewTeacherAction::Create;
+            }));
+
+        const auto persistedClassCount = scalarInt(workspace,
+            QStringLiteral("SELECT COUNT(*) FROM classes"));
+        const auto persistedClassInfoCount = scalarInt(workspace,
+            QStringLiteral("SELECT COUNT(*) FROM class_info"));
+        const auto persistedScheduleRowCount = scalarInt(workspace,
+            QStringLiteral("SELECT COUNT(*) FROM class_times"));
+        QCOMPARE(persistedClassCount,
+                 std::optional<int>{candidateCount});
+        QCOMPARE(persistedClassInfoCount,
+                 std::optional<int>{candidateCount});
+        QCOMPARE(persistedScheduleRowCount,
+                 std::optional<int>{expectedScheduleRowCount});
+
+        QVERIFY(fixture.page->onActivating());
+        QTRY_COMPARE_WITH_TIMEOUT(
+            fixture.page->model()->runtimeMetrics().sourceClassCount,
+            candidateCount, 5000);
+        const auto metrics = fixture.page->model()->runtimeMetrics();
+        QCOMPARE(metrics.entryCount, expectedScheduleRowCount);
+        QCOMPARE(fixture.page->scheduleTable()->model()->rowCount(),
+                 metrics.rowCount);
+        const auto persistedScheduleRowCountAfterReload = scalarInt(workspace,
+            QStringLiteral("SELECT COUNT(*) FROM class_times"));
+        QCOMPARE(persistedScheduleRowCountAfterReload,
+                 std::optional<int>{metrics.entryCount});
+        blockEvidence.append(QJsonObject{
+            {QStringLiteral("blockNumber"),
+                static_cast<int>(blockNumber + 1)},
+            {QStringLiteral("blockName"), block.user.name},
+            {QStringLiteral("candidateCount"), candidateCount},
+            {QStringLiteral("classDecisionCount"),
+                static_cast<int>(request.classes.size())},
+            {QStringLiteral("teacherDecisionCount"),
+                static_cast<int>(request.teachers.size())},
+            {QStringLiteral("appliedCandidateCount"),
+                static_cast<int>(request.candidates.size())},
+            {QStringLiteral("persistedClassCount"),
+                persistedClassCount.value_or(-1)},
+            {QStringLiteral("persistedClassInfoCount"),
+                persistedClassInfoCount.value_or(-1)},
+            {QStringLiteral("persistedScheduleRowCount"),
+                persistedScheduleRowCount.value_or(-1)},
+            {QStringLiteral("reloadedVisibleClassCount"),
+                metrics.sourceClassCount},
+            {QStringLiteral("reloadedScheduleEntryCount"),
+                metrics.entryCount},
+            {QStringLiteral("reloadedScheduleTableRows"),
+                fixture.page->scheduleTable()->model()->rowCount()}
+        });
+    }
+
+    const QString evidenceDirectory = qEnvironmentVariable(
+        "CLASSMNGR_C51_SCHEDULE_OUTPUT_DIR").trimmed();
+    if (!evidenceDirectory.isEmpty())
+    {
+        QVERIFY(QDir().mkpath(evidenceDirectory));
+        QFile evidenceFile(QDir(evidenceDirectory).filePath(
+            QStringLiteral("block-apply-evidence.json")));
+        QVERIFY(evidenceFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+        const QJsonObject evidence{
+            {QStringLiteral("taskId"), QStringLiteral(
+                "phase7_c51_schedule_import_output_implementation_01")},
+            {QStringLiteral("sourceWorkbook"), QStringLiteral(
+                "tests/fixtures/imports/"
+                "schedule_import_c51_conflict_free_5_blocks.xlsx")},
+            {QStringLiteral("candidateCountTotal"), totalCandidates},
+            {QStringLiteral("transactionInterpretation"), QStringLiteral(
+                "Five block-level applies in separate temporary .tps workspaces; "
+                "no 96-candidate transaction was performed.")},
+            {QStringLiteral("blocks"), blockEvidence}
+        };
+        const QByteArray serialized = QJsonDocument(evidence).toJson(
+            QJsonDocument::Indented);
+        QCOMPARE(evidenceFile.write(serialized), serialized.size());
+    }
+}
+
+void NormalScheduleImportIntegrationTests::
+captureImportedScheduleOutputEvidenceWhenConfigured()
+{
+    const QString outputDirectory = qEnvironmentVariable(
+        "CLASSMNGR_C51_SCHEDULE_OUTPUT_DIR").trimmed();
+    if (outputDirectory.isEmpty())
+    {
+        return;
+    }
+    QVERIFY(QDir().mkpath(outputDirectory));
+
+    struct RestoreOutputEnvironment final
+    {
+        QLocale locale = QLocale();
+        QPalette palette = QApplication::palette();
+
+        ~RestoreOutputEnvironment()
+        {
+            QLocale::setDefault(locale);
+            QApplication::setPalette(palette);
+        }
+    } restoreEnvironment;
+    QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));
+    QPalette lightPalette = QApplication::palette();
+    lightPalette.setColor(QPalette::Window, QColor(248, 249, 251));
+    lightPalette.setColor(QPalette::WindowText, QColor(33, 37, 41));
+    lightPalette.setColor(QPalette::Base, Qt::white);
+    lightPalette.setColor(QPalette::Text, QColor(33, 37, 41));
+    lightPalette.setColor(QPalette::Button, QColor(244, 245, 247));
+    lightPalette.setColor(QPalette::ButtonText, QColor(33, 37, 41));
+    QApplication::setPalette(lightPalette);
+
+    const QStringList generatedFiles{
+        QStringLiteral("applied-block-2.tps"),
+        QStringLiteral("legacy-schedule.pdf"),
+        QStringLiteral("next-schedule.pdf"),
+        QStringLiteral("legacy-page-1.png"),
+        QStringLiteral("next-page-1.png"),
+        QStringLiteral("page-comparison.png"),
+        QStringLiteral("output-evidence.json")
+    };
+    for (const QString& fileName : generatedFiles)
+    {
+        const QString path = QDir(outputDirectory).filePath(fileName);
+        if (QFileInfo::exists(path))
+        {
+            QVERIFY2(QFile::remove(path), qPrintable(path));
+        }
+    }
+
+    const QString workbookPath = c51FiveBlockConflictFreeFixturePath();
+    const auto blocks = visibleScheduleBlocks(workbookPath);
+    QVERIFY(blocks.has_value());
+    QCOMPARE(blocks->size(), std::size_t(5));
+    const VisibleScheduleBlock& block = blocks->at(1);
+    QCOMPARE(block.user.classes.size(), 20);
+    QVERIFY(block.user.diagnostics.isEmpty());
+    const QString workspace = QDir(outputDirectory).filePath(
+        QStringLiteral("applied-block-2.tps"));
+    const QString nextPdfPath = QDir(outputDirectory).filePath(
+        QStringLiteral("next-schedule.pdf"));
+    QString error;
+    QVERIFY2(createWorkspace(workspace, block.user, &error), qPrintable(error));
+    QVERIFY(Platform::saveScheduleDisplayPreferencesAtPath(workspace, {
+        .use24HourTime = false,
+        .showEnglishNames = false,
+        .showWeekends = false,
+        .showAllIntensiveHours = false,
+        .testingAffectsM1 = false
+    }));
+    QVERIFY(Platform::saveScheduleDisplayModeAtPath(
+        workspace, Application::ScheduleDisplayMode::Regular));
+    {
+        WorkspaceStore store;
+        QVERIFY2(store.openExisting(workspace), "evidence workspace reopens");
+        QVERIFY(store.settingsRepository()->saveSetting(
+            QStringLiteral("myInfo/name"), QStringLiteral("Alice")));
+    }
+
+    ScheduleImportPageFixture importFixture;
+    QVERIFY(importFixture.initialize(workspace));
+    importFixture.workbookPath = workbookPath;
+    importFixture.schedulePdfPath = nextPdfPath;
+    auto* const importDialog = importFixture.openImport();
+    QVERIFY(importDialog);
+    QVERIFY(importFixture.selectWorkbookAndRead(importDialog));
+    QTRY_VERIFY_WITH_TIMEOUT(
+        importDialog->sheetCombo()->count() > block.sheetIndex, 10000);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        importDialog->userCombo()->count() > block.blockIndex, 10000);
+    QVERIFY(importFixture.continueToReview(
+        importDialog, block.sheetIndex, block.blockIndex));
+    QTRY_COMPARE_WITH_TIMEOUT(importDialog->classTable()->model()->rowCount(),
+                              20, 10000);
+    setAllTeachersToCreate(importDialog);
+    setAllClassesToCreateNew(importDialog);
+    QVERIFY(importDialog->primaryButton()->isEnabled());
+    importDialog->primaryButton()->click();
+    QTRY_VERIFY_WITH_TIMEOUT(importDialog->isHidden(), 15000);
+    QCOMPARE(importFixture.applyRequests.size(), std::size_t(1));
+    QCOMPARE(importFixture.applyRequests.front().candidates.size(),
+             std::size_t(20));
+    QCOMPARE(importFixture.applyRequests.front().classes.size(),
+             std::size_t(20));
+    QCOMPARE(scalarInt(workspace,
+        QStringLiteral("SELECT COUNT(*) FROM classes")),
+        std::optional<int>{20});
+    QCOMPARE(scalarInt(workspace,
+        QStringLiteral("SELECT COUNT(*) FROM class_info")),
+        std::optional<int>{20});
+    int scheduleRowCount = 0;
+    for (const ScheduleImportClassCandidate& candidate : block.user.classes)
+    {
+        scheduleRowCount += candidate.times.size();
+    }
+    QCOMPARE(scalarInt(workspace,
+        QStringLiteral("SELECT COUNT(*) FROM class_times")),
+        std::optional<int>{scheduleRowCount});
+    QCOMPARE(scheduleRowCount, 20);
+
+    QVERIFY(importFixture.page->onActivating());
+    QCOMPARE(importFixture.page->model()->runtimeMetrics().sourceClassCount, 20);
+    QCOMPARE(importFixture.page->model()->runtimeMetrics().entryCount,
+             scheduleRowCount);
+    const SchedulePrintService::Document nextDocument =
+        Ui::schedulePrintDocument(*importFixture.page->model());
+
+    const auto loaded = Platform::readSchedulePageAtPath(workspace);
+    QVERIFY(loaded);
+    QCOMPARE(loaded.value().source.classes.size(), std::size_t(20));
+    ScheduleViewRequest legacyViewRequest;
+    legacyViewRequest.days = visibleScheduleDays(
+        loaded.value().displayPreferences.showWeekends);
+    legacyViewRequest.use24h = loaded.value().displayPreferences.use24HourTime;
+    legacyViewRequest.displayMode = loaded.value().displayMode;
+    ScheduleBuilder legacyBuilder;
+    const ScheduleBuildResult legacyBuild = legacyBuilder.build(
+        loaded.value().source,
+        scheduleModeUsesIntensiveTimes(loaded.value().displayMode),
+        legacyViewRequest.days);
+    const ScheduleViewModel legacyModel = buildScheduleViewModel(
+        legacyBuild, legacyViewRequest);
+    QVERIFY(!legacyModel.rows.isEmpty());
+    const SchedulePrintService::Document legacyDocument =
+        schedulePrintDocumentFromLegacyModel(legacyModel);
+    QVERIFY(!legacyDocument.rows.isEmpty());
+    QVERIFY(legacyDocument == nextDocument);
+
+    QCOMPARE(importFixture.page->model()->runtimeMetrics().entryCount,
+             scheduleRowCount);
+
+    const QString legacyPdfPath = QDir(outputDirectory).filePath(
+        QStringLiteral("legacy-schedule.pdf"));
+
+    bool outputDialogSeen = false;
+    bool outputOptionsSelected = false;
+    QTimer outputDialogPoll;
+    outputDialogPoll.setInterval(10);
+    QObject::connect(&outputDialogPoll, &QTimer::timeout, qApp, [&] {
+        auto* const dialog = qobject_cast<Ui::ScheduleOutputDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog)
+        {
+            return;
+        }
+        outputDialogPoll.stop();
+        outputDialogSeen = true;
+        auto* const excel = dialog->findChild<QRadioButton*>(
+            QStringLiteral("nextScheduleOutputExcel"));
+        auto* const landscape = dialog->findChild<QRadioButton*>(
+            QStringLiteral("nextScheduleOutputLandscape"));
+        auto* const saveAs = dialog->findChild<QPushButton*>(
+            QStringLiteral("nextScheduleOutputSaveAs"));
+        if (!excel || !landscape || !saveAs)
+        {
+            dialog->reject();
+            return;
+        }
+        excel->setChecked(true);
+        landscape->setChecked(true);
+        outputOptionsSelected = true;
+        saveAs->click();
+    });
+    outputDialogPoll.start();
+    importFixture.page->scheduleOutputAction()->trigger();
+    QApplication::processEvents();
+    outputDialogPoll.stop();
+    QVERIFY(outputDialogSeen);
+    QVERIFY(outputOptionsSelected);
+    QCOMPARE(importFixture.scheduleOutputResult.status,
+             Ui::ScheduleOutputResult::Status::Sent);
+    QVERIFY(importFixture.lastScheduleOutputRequest);
+    const Ui::ScheduleOutputRequest& nextRequest =
+        *importFixture.lastScheduleOutputRequest;
+    QCOMPARE(nextRequest.kind, Ui::ScheduleOutputKind::SaveAsPdf);
+    QCOMPARE(nextRequest.style, SchedulePrintStyle::Excel);
+    QCOMPARE(nextRequest.currentTheme, Theme::Light);
+    QCOMPARE(nextRequest.orientation, QPageLayout::Landscape);
+    QCOMPARE(nextRequest.documentPath, nextPdfPath);
+    QCOMPARE(nextRequest.profileName, QStringLiteral("Alice"));
+    QCOMPARE(nextRequest.showEnglishNames,
+             importFixture.page->model()->preferences().showEnglishNames);
+    QVERIFY(nextRequest.document == nextDocument);
+
+    SchedulePrintService::Request legacyRequest;
+    legacyRequest.document = legacyDocument;
+    legacyRequest.style = nextRequest.style;
+    legacyRequest.currentTheme = nextRequest.currentTheme;
+    legacyRequest.englishFont = nextRequest.englishFont;
+    legacyRequest.koreanFont = nextRequest.koreanFont;
+    legacyRequest.userName = nextRequest.profileName;
+    legacyRequest.showEnglishNames = nextRequest.showEnglishNames;
+    legacyRequest.pageOrientation = nextRequest.orientation;
+    const auto legacySaved = SchedulePrintService::saveSchedulePdf(
+        legacyRequest, legacyPdfPath);
+    QVERIFY2(legacySaved.status == SchedulePrintService::Status::Sent,
+             qPrintable(legacySaved.message));
+
+    QPdfDocument legacyPdf;
+    QPdfDocument nextPdf;
+    QCOMPARE(legacyPdf.load(legacyPdfPath), QPdfDocument::Error::None);
+    QCOMPARE(nextPdf.load(nextPdfPath), QPdfDocument::Error::None);
+    QVERIFY(legacyPdf.pageCount() > 0);
+    QCOMPARE(nextPdf.pageCount(), legacyPdf.pageCount());
+    QJsonArray pageSizes;
+    for (int pageIndex = 0; pageIndex < legacyPdf.pageCount(); ++pageIndex)
+    {
+        const QSizeF legacySize = legacyPdf.pagePointSize(pageIndex);
+        const QSizeF nextSize = nextPdf.pagePointSize(pageIndex);
+        QVERIFY(qAbs(legacySize.width() - 842.0) < 2.0);
+        QVERIFY(qAbs(legacySize.height() - 595.0) < 2.0);
+        QVERIFY(qAbs(nextSize.width() - legacySize.width()) < 0.1);
+        QVERIFY(qAbs(nextSize.height() - legacySize.height()) < 0.1);
+        pageSizes.append(QJsonObject{
+            {QStringLiteral("page"), pageIndex + 1},
+            {QStringLiteral("widthPoints"), legacySize.width()},
+            {QStringLiteral("heightPoints"), legacySize.height()}
+        });
+    }
+
+    QStringList expectedText{nextRequest.profileName};
+    for (const ScheduleImportClassCandidate& candidate : block.user.classes)
+    {
+        const QString expectedClassText = candidate.classGrade
+            + QStringLiteral("-") + candidate.classLevel;
+        if (!expectedText.contains(expectedClassText))
+        {
+            expectedText.append(expectedClassText);
+        }
+    }
+    QCOMPARE(expectedText.size(), 5);
+    QJsonArray outputTextEvidence;
+    const auto validatePdfText = [&](QPdfDocument& pdf,
+                                     const QString& route) -> bool {
+        QString allText;
+        for (int pageIndex = 0; pageIndex < pdf.pageCount(); ++pageIndex)
+        {
+            allText += pdf.getAllText(pageIndex).text();
+        }
+        const QString normalized = compactOutputText(allText);
+        for (const QString& expected : expectedText)
+        {
+            if (!normalized.contains(compactOutputText(expected)))
+            {
+                return false;
+            }
+        }
+        outputTextEvidence.append(QJsonObject{
+            {QStringLiteral("route"), route},
+            {QStringLiteral("expectedTextFound"),
+                QJsonArray::fromStringList(expectedText)},
+            {QStringLiteral("pageCount"), pdf.pageCount()}
+        });
+        return true;
+    };
+    QVERIFY(validatePdfText(legacyPdf, QStringLiteral("Legacy")));
+    QVERIFY(validatePdfText(nextPdf, QStringLiteral("Next")));
+
+    const QSize pageImageSize(
+        qRound(legacyPdf.pagePointSize(0).width() * 150.0 / 72.0),
+        qRound(legacyPdf.pagePointSize(0).height() * 150.0 / 72.0));
+    const QImage legacyPageImage = legacyPdf.render(0, pageImageSize);
+    const QImage nextPageImage = nextPdf.render(0, pageImageSize);
+    QVERIFY(!legacyPageImage.isNull());
+    QVERIFY(!nextPageImage.isNull());
+    QCOMPARE(legacyPageImage.size(), nextPageImage.size());
+    const QString legacyImagePath = QDir(outputDirectory).filePath(
+        QStringLiteral("legacy-page-1.png"));
+    const QString nextImagePath = QDir(outputDirectory).filePath(
+        QStringLiteral("next-page-1.png"));
+    QVERIFY(legacyPageImage.save(legacyImagePath, "PNG"));
+    QVERIFY(nextPageImage.save(nextImagePath, "PNG"));
+
+    QImage comparison(pageImageSize.width() * 2, pageImageSize.height(),
+                      QImage::Format_ARGB32_Premultiplied);
+    comparison.fill(Qt::white);
+    QPainter comparisonPainter(&comparison);
+    comparisonPainter.drawImage(QPoint(0, 0), legacyPageImage);
+    comparisonPainter.drawImage(QPoint(pageImageSize.width(), 0), nextPageImage);
+    comparisonPainter.end();
+    QVERIFY(comparison.save(QDir(outputDirectory).filePath(
+        QStringLiteral("page-comparison.png")), "PNG"));
+
+    quint64 changedPixels = 0;
+    quint64 absoluteChannelDifference = 0;
+    for (int y = 0; y < pageImageSize.height(); ++y)
+    {
+        for (int x = 0; x < pageImageSize.width(); ++x)
+        {
+            const QRgb legacyPixel = legacyPageImage.pixel(x, y);
+            const QRgb nextPixel = nextPageImage.pixel(x, y);
+            if (legacyPixel != nextPixel)
+            {
+                ++changedPixels;
+            }
+            absoluteChannelDifference += static_cast<quint64>(qAbs(
+                qRed(legacyPixel) - qRed(nextPixel)));
+            absoluteChannelDifference += static_cast<quint64>(qAbs(
+                qGreen(legacyPixel) - qGreen(nextPixel)));
+            absoluteChannelDifference += static_cast<quint64>(qAbs(
+                qBlue(legacyPixel) - qBlue(nextPixel)));
+        }
+    }
+    const double meanAbsoluteChannelDifference =
+        static_cast<double>(absoluteChannelDifference)
+        / static_cast<double>(pageImageSize.width() * pageImageSize.height() * 3);
+
+    QFile metadataFile(workspace);
+    QVERIFY(metadataFile.open(QIODevice::ReadOnly));
+    const QByteArray workspaceSha256 = QCryptographicHash::hash(
+        metadataFile.readAll(), QCryptographicHash::Sha256).toHex();
+    const QJsonObject evidence{
+        {QStringLiteral("taskId"), QStringLiteral(
+            "phase7_c51_schedule_import_output_implementation_01")},
+        {QStringLiteral("sourceWorkbook"), QStringLiteral(
+            "tests/fixtures/imports/"
+            "schedule_import_c51_conflict_free_5_blocks.xlsx")},
+        {QStringLiteral("appliedBlock"), block.user.name},
+        {QStringLiteral("blockNumber"), 2},
+        {QStringLiteral("appliedCandidateCount"), 20},
+        {QStringLiteral("persistedClassCount"), 20},
+        {QStringLiteral("persistedClassInfoCount"), 20},
+        {QStringLiteral("persistedScheduleRowCount"), scheduleRowCount},
+        {QStringLiteral("reloadedSchedulePageEntryCount"),
+            importFixture.page->model()->runtimeMetrics().entryCount},
+        {QStringLiteral("workspace"), QJsonObject{
+            {QStringLiteral("file"), QFileInfo(workspace).fileName()},
+            {QStringLiteral("sizeBytes"), QFileInfo(workspace).size()},
+            {QStringLiteral("sha256"), QString::fromLatin1(workspaceSha256)}
+        }},
+        {QStringLiteral("settings"), QJsonObject{
+            {QStringLiteral("locale"), QStringLiteral("en_US")},
+            {QStringLiteral("style"), QStringLiteral("Excel")},
+            {QStringLiteral("theme"), QStringLiteral("Light")},
+            {QStringLiteral("orientation"), QStringLiteral("Landscape")},
+            {QStringLiteral("outputKind"), QStringLiteral("SaveAsPdf")},
+            {QStringLiteral("showEnglishNames"),
+                nextRequest.showEnglishNames},
+            {QStringLiteral("profileName"), nextRequest.profileName},
+            {QStringLiteral("englishFont"),
+                nextRequest.englishFont.toString()},
+            {QStringLiteral("koreanFont"),
+                nextRequest.koreanFont.toString()},
+            {QStringLiteral("englishFontFamilyAvailable"),
+                QFontDatabase::families().contains(
+                    nextRequest.englishFont.family())},
+            {QStringLiteral("koreanFontFamilyAvailable"),
+                QFontDatabase::families().contains(
+                    nextRequest.koreanFont.family())}
+        }},
+        {QStringLiteral("legacy"), QJsonObject{
+            {QStringLiteral("pdf"), QFileInfo(legacyPdfPath).fileName()},
+            {QStringLiteral("sha256"), QString::fromLatin1(
+                sha256File(legacyPdfPath))},
+            {QStringLiteral("pageCount"), legacyPdf.pageCount()},
+            {QStringLiteral("pages"), pageSizes}
+        }},
+        {QStringLiteral("next"), QJsonObject{
+            {QStringLiteral("pdf"), QFileInfo(nextPdfPath).fileName()},
+            {QStringLiteral("sha256"), QString::fromLatin1(
+                sha256File(nextPdfPath))},
+            {QStringLiteral("pageCount"), nextPdf.pageCount()},
+            {QStringLiteral("pages"), pageSizes}
+        }},
+        {QStringLiteral("expectedText"), outputTextEvidence},
+        {QStringLiteral("comparison"), QJsonObject{
+            {QStringLiteral("renderedDpi"), 150},
+            {QStringLiteral("representativePageIndex"), 0},
+            {QStringLiteral("imageWidth"), pageImageSize.width()},
+            {QStringLiteral("imageHeight"), pageImageSize.height()},
+            {QStringLiteral("changedPixels"),
+                static_cast<double>(changedPixels)},
+            {QStringLiteral("meanAbsoluteChannelDifference"),
+                meanAbsoluteChannelDifference},
+            {QStringLiteral("legacyImage"),
+                QFileInfo(legacyImagePath).fileName()},
+            {QStringLiteral("nextImage"), QFileInfo(nextImagePath).fileName()},
+            {QStringLiteral("sideBySideImage"),
+                QStringLiteral("page-comparison.png")}
+        }},
+        {QStringLiteral("physicalPrintPerformed"), false}
+    };
+    QFile evidenceFile(QDir(outputDirectory).filePath(
+        QStringLiteral("output-evidence.json")));
+    QVERIFY(evidenceFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QVERIFY(evidenceFile.write(QJsonDocument(evidence).toJson(
+        QJsonDocument::Indented)) >= 0);
 }
 
 void NormalScheduleImportIntegrationTests::

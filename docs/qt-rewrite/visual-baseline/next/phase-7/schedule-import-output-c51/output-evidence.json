@@ -1,0 +1,90 @@
+{
+    "appliedBlock": "이선생",
+    "appliedCandidateCount": 20,
+    "blockNumber": 2,
+    "comparison": {
+        "changedPixels": 0,
+        "imageHeight": 1240,
+        "imageWidth": 1754,
+        "legacyImage": "legacy-page-1.png",
+        "meanAbsoluteChannelDifference": 0,
+        "nextImage": "next-page-1.png",
+        "renderedDpi": 150,
+        "representativePageIndex": 0,
+        "sideBySideImage": "page-comparison.png"
+    },
+    "expectedText": [
+        {
+            "expectedTextFound": [
+                "Alice",
+                "E6-Helios",
+                "E6-Poseidon",
+                "E6-Gaia",
+                "E6-Hera"
+            ],
+            "pageCount": 1,
+            "route": "Legacy"
+        },
+        {
+            "expectedTextFound": [
+                "Alice",
+                "E6-Helios",
+                "E6-Poseidon",
+                "E6-Gaia",
+                "E6-Hera"
+            ],
+            "pageCount": 1,
+            "route": "Next"
+        }
+    ],
+    "legacy": {
+        "pageCount": 1,
+        "pages": [
+            {
+                "heightPoints": 595,
+                "page": 1,
+                "widthPoints": 842
+            }
+        ],
+        "pdf": "legacy-schedule.pdf",
+        "sha256": "e5a56195c87acf3cdde3b71207a14f95a5d75b3af0efd362e6f4deae48d5c756"
+    },
+    "next": {
+        "pageCount": 1,
+        "pages": [
+            {
+                "heightPoints": 595,
+                "page": 1,
+                "widthPoints": 842
+            }
+        ],
+        "pdf": "next-schedule.pdf",
+        "sha256": "49f797abf145605e6773d9bd4a9ef1a3b8296d195b5f9330b4ff47b3760bbe45"
+    },
+    "persistedClassCount": 20,
+    "persistedClassInfoCount": 20,
+    "persistedScheduleRowCount": 20,
+    "physicalPrintPerformed": false,
+    "reloadedSchedulePageEntryCount": 20,
+    "settings": {
+        "englishFont": "Sans Serif,9,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "englishFontFamilyAvailable": false,
+        "koreanFont": "Sans Serif,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,,0,0",
+        "koreanFontFamilyAvailable": false,
+        "locale": "en_US",
+        "orientation": "Landscape",
+        "outputKind": "SaveAsPdf",
+        "profileName": "Alice",
+        "showEnglishNames": false,
+        "style": "Excel",
+        "theme": "Light"
+    },
+    "sourceWorkbook": "tests/fixtures/imports/schedule_import_c51_conflict_free_5_blocks.xlsx",
+    "taskId": "phase7_c51_schedule_import_output_implementation_01",
+    "workspace": {
+        "file": "applied-block-2.tps",
+        "retained": false,
+        "sha256": "e223ac93b7c54f5121903b7d8da7948bc4eccf132e9f768b3221c33fb0ec521a",
+        "sizeBytes": 143360
+    }
+}

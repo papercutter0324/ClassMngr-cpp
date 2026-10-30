@@ -153,6 +153,7 @@ private:
     std::unique_ptr<ScheduleImportChoiceDelegate> m_choiceDelegate;
     std::unique_ptr<ScheduleImportReviewMapping> m_mapping;
     std::unique_ptr<ScheduleImportWorkbook> m_workbook;
+    std::optional<Application::ScheduleImportApplyFailure> m_lastApplyFailure;
     std::shared_ptr<std::atomic_bool> m_parseCancellation;
     QObject* m_parseWatcher = nullptr;
     std::optional<FileMetadata> m_sourceMetadata;

@@ -156,6 +156,7 @@ private:
     QButtonGroup* m_modeGroup = nullptr;
     QString m_workspaceIdentity;
     QString m_lastError;
+    std::optional<Application::ScheduleImportApplySummary> m_lastImportSummary;
     bool m_pageActive = false;
     bool m_loading = false;
     bool m_synchronizingControls = false;

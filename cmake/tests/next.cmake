@@ -8078,6 +8078,7 @@ add_executable(ClassMngrNextNormalScheduleImportIntegrationTests
     src/core/process_memory_snapshot.cpp
     src/next/platform/workspace_store_schedule_actions.cpp
     src/next/platform/workspace_store_schedule_import_actions.cpp
+    src/next/platform/qt_schedule_output_adapter.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
