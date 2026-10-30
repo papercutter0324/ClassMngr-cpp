@@ -7,6 +7,7 @@
 #include <QCoreApplication>
 #include <QDesktopServices>
 #include <QDir>
+#include <QEvent>
 #include <QEventLoop>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -279,6 +280,31 @@ bool DocumentViewerPage::openDocument(
     return true;
 }
 
+void DocumentViewerPage::refreshLocalizedCatalogMetadata(
+    const Application::DocumentCatalogProjection& projection
+    )
+{
+    if (!m_selectedDocumentId)
+    {
+        return;
+    }
+
+    const auto found = std::find_if(
+        projection.documents().begin(),
+        projection.documents().end(),
+        [this](const Application::DocumentEntryMetadata& document) {
+            return document.id == *m_selectedDocumentId;
+        }
+        );
+    if (found == projection.documents().end())
+    {
+        return;
+    }
+
+    m_selectedDocument = *found;
+    retranslateUi();
+}
+
 bool DocumentViewerPage::closeDocument()
 {
     const bool released = releaseActiveContent(true);
@@ -496,6 +522,7 @@ void DocumentViewerPage::buildUi()
 
     auto* const controls = new QHBoxLayout;
     m_pageLabel = new QLabel(viewerText("Page:"), this);
+    m_pageLabel->setObjectName(QStringLiteral("documentViewerPageLabel"));
     m_pageInput = new QLineEdit(QStringLiteral("0"), this);
     m_pageInput->setObjectName(QStringLiteral("documentViewerPageInput"));
     m_pageInput->setFixedWidth(56);
@@ -504,30 +531,29 @@ void DocumentViewerPage::buildUi()
     m_pageValidator = new QIntValidator(1, 1, m_pageInput);
     m_pageInput->setValidator(m_pageValidator);
     m_pageTotalLabel = new QLabel(viewerText("of 0"), this);
+    m_pageTotalLabel->setObjectName(QStringLiteral("documentViewerPageTotal"));
     m_zoomInput = new QLineEdit(QStringLiteral("100%"), this);
     m_zoomInput->setObjectName(QStringLiteral("documentViewerZoomInput"));
-    m_zoomInput->setFixedWidth(66);
+    m_zoomInput->setFixedWidth(76);
     m_zoomInput->setAlignment(Qt::AlignCenter);
     m_zoomInput->setToolTip(viewerText("Zoom:"));
-    auto* const zoomOut = new QPushButton(QStringLiteral("−"), this);
-    zoomOut->setObjectName(QStringLiteral("documentViewerZoomOut"));
-    zoomOut->setToolTip(viewerText("Zoom out"));
-    auto* const zoomIn = new QPushButton(QStringLiteral("+"), this);
-    zoomIn->setObjectName(QStringLiteral("documentViewerZoomIn"));
-    zoomIn->setToolTip(viewerText("Zoom in"));
-    auto* const fitWidth = new QPushButton(viewerText("Fit Width"), this);
-    fitWidth->setObjectName(QStringLiteral("documentViewerFitWidth"));
-    auto* const fitPage = new QPushButton(viewerText("Fit Page"), this);
-    fitPage->setObjectName(QStringLiteral("documentViewerFitPage"));
+    m_zoomOutButton = new QPushButton(QStringLiteral("−"), this);
+    m_zoomOutButton->setObjectName(QStringLiteral("documentViewerZoomOut"));
+    m_zoomInButton = new QPushButton(QStringLiteral("+"), this);
+    m_zoomInButton->setObjectName(QStringLiteral("documentViewerZoomIn"));
+    m_fitWidthButton = new QPushButton(this);
+    m_fitWidthButton->setObjectName(QStringLiteral("documentViewerFitWidth"));
+    m_fitPageButton = new QPushButton(this);
+    m_fitPageButton->setObjectName(QStringLiteral("documentViewerFitPage"));
     controls->addWidget(m_pageLabel);
     controls->addWidget(m_pageInput);
     controls->addWidget(m_pageTotalLabel);
     controls->addSpacing(16);
-    controls->addWidget(zoomOut);
+    controls->addWidget(m_zoomOutButton);
     controls->addWidget(m_zoomInput);
-    controls->addWidget(zoomIn);
-    controls->addWidget(fitWidth);
-    controls->addWidget(fitPage);
+    controls->addWidget(m_zoomInButton);
+    controls->addWidget(m_fitWidthButton);
+    controls->addWidget(m_fitPageButton);
     controls->addStretch(1);
     m_rootLayout->addLayout(controls);
 
@@ -541,16 +567,16 @@ void DocumentViewerPage::buildUi()
             this, [this] { applyPageInput(); });
     connect(m_zoomInput, &QLineEdit::editingFinished,
             this, [this] { applyZoomInput(); });
-    connect(zoomOut, &QPushButton::clicked, this, [this] {
+    connect(m_zoomOutButton, &QPushButton::clicked, this, [this] {
         m_zoomFactor /= kZoomStep;
         applyZoom();
     });
-    connect(zoomIn, &QPushButton::clicked, this, [this] {
+    connect(m_zoomInButton, &QPushButton::clicked, this, [this] {
         m_zoomFactor *= kZoomStep;
         applyZoom();
     });
-    connect(fitWidth, &QPushButton::clicked, this, [this] { fitToWidth(); });
-    connect(fitPage, &QPushButton::clicked, this, [this] { fitToPage(); });
+    connect(m_fitWidthButton, &QPushButton::clicked, this, [this] { fitToWidth(); });
+    connect(m_fitPageButton, &QPushButton::clicked, this, [this] { fitToPage(); });
     connect(m_printButton, &QPushButton::clicked,
             this, [this] { printSelectedDocument(); });
     connect(m_exportButton, &QPushButton::clicked,
@@ -558,7 +584,80 @@ void DocumentViewerPage::buildUi()
     connect(m_closeButton, &QPushButton::clicked,
             this, [this] { static_cast<void>(closeDocument()); });
 
+    retranslateUi();
+}
+
+void DocumentViewerPage::changeEvent(QEvent* event)
+{
+    Page::changeEvent(event);
+    if (event && event->type() == QEvent::LanguageChange)
+    {
+        retranslateUi();
+    }
+}
+
+void DocumentViewerPage::retranslateUi()
+{
+    if (m_titleLabel)
+    {
+        if (m_selectedDocument)
+        {
+            m_titleLabel->setText(QString::fromUtf8(
+                m_selectedDocument->displayName.data(),
+                static_cast<qsizetype>(m_selectedDocument->displayName.size())
+                ));
+        }
+        else
+        {
+            m_titleLabel->clear();
+        }
+    }
+    if (m_printButton)
+    {
+        m_printButton->setText(viewerText("Print"));
+        m_printButton->setToolTip(viewerText("Print this file"));
+    }
+    if (m_exportButton)
+    {
+        m_exportButton->setText(viewerText("Export"));
+        m_exportButton->setToolTip(viewerText("Export this file"));
+    }
+    if (m_closeButton)
+    {
+        m_closeButton->setText(
+            QCoreApplication::translate("ActionRegistry", "Close")
+            );
+    }
+    if (m_pageLabel)
+    {
+        m_pageLabel->setText(viewerText("Page:"));
+    }
+    if (m_pageInput)
+    {
+        m_pageInput->setToolTip(viewerText("Go to page"));
+    }
+    if (m_zoomInput)
+    {
+        m_zoomInput->setToolTip(viewerText("Zoom:"));
+    }
+    if (m_zoomOutButton)
+    {
+        m_zoomOutButton->setToolTip(viewerText("Zoom out"));
+    }
+    if (m_zoomInButton)
+    {
+        m_zoomInButton->setToolTip(viewerText("Zoom in"));
+    }
+    if (m_fitWidthButton)
+    {
+        m_fitWidthButton->setText(viewerText("Fit Width"));
+    }
+    if (m_fitPageButton)
+    {
+        m_fitPageButton->setText(viewerText("Fit Page"));
+    }
     updatePageControls();
+    updateZoomDisplay();
     updateOutputActions();
 }
 

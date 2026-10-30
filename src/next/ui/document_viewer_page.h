@@ -17,6 +17,7 @@ class QIntValidator;
 class QLineEdit;
 class QPushButton;
 class QPdfView;
+class QEvent;
 class QUrl;
 class QVBoxLayout;
 
@@ -61,6 +62,9 @@ public:
         const Domain::DocumentId& documentId,
         const Application::DocumentCatalogProjection& projection
         );
+    void refreshLocalizedCatalogMetadata(
+        const Application::DocumentCatalogProjection& projection
+        );
     [[nodiscard]] bool closeDocument();
     void onSuspending() noexcept override;
 
@@ -89,8 +93,12 @@ public:
         OpenSavedCopyHandler openHandler
         );
 
+protected:
+    void changeEvent(QEvent* event) override;
+
 private:
     void buildUi();
+    void retranslateUi();
     void createPdfConsumers();
     void destroyPdfConsumersForCloseTimeout();
     void handleDocumentStatusChanged(QPdfDocument::Status status);
@@ -134,6 +142,10 @@ private:
     QPushButton* m_printButton = nullptr;
     QPushButton* m_exportButton = nullptr;
     QPushButton* m_closeButton = nullptr;
+    QPushButton* m_zoomOutButton = nullptr;
+    QPushButton* m_zoomInButton = nullptr;
+    QPushButton* m_fitWidthButton = nullptr;
+    QPushButton* m_fitPageButton = nullptr;
     QVBoxLayout* m_rootLayout = nullptr;
     qreal m_zoomFactor = 1.0;
     quint64 m_requestSequence = 0;

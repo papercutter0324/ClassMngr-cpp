@@ -84,6 +84,21 @@ void bindDocumentViewerSelection(ApplicationShell& shell)
             static_cast<void>(viewer->closeDocument());
         }
     });
+    shell.setDocumentCatalogProjectionChangedHandler(
+        [shellPointer](
+            const Application::DocumentCatalogProjection& projection
+            ) {
+            auto* const viewer = dynamic_cast<DocumentViewerPage*>(
+                shellPointer->pageHost().pageInstance(
+                    QString::fromLatin1(kDocumentViewerPageKey)
+                    )
+                );
+            if (viewer)
+            {
+                viewer->refreshLocalizedCatalogMetadata(projection);
+            }
+        }
+        );
 }
 
 }  // namespace ClassMngr::Next::Ui

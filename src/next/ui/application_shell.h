@@ -69,6 +69,8 @@ public:
         std::function<void(const Application::RecentWorkspacePath&)>;
     using DocumentCatalogProjectionLoader = std::function<
         Domain::Result<Application::DocumentCatalogProjection>(const QString&)>;
+    using DocumentCatalogProjectionChangedHandler = std::function<void(
+        const Application::DocumentCatalogProjection&)>;
     using ExternalUrlOpener = std::function<bool(const QUrl&)>;
 
     // The resource loader and preferences model are borrowed and must outlive this shell.
@@ -138,6 +140,9 @@ public:
     void setDocumentCatalogProjectionLoader(
         DocumentCatalogProjectionLoader loader
         );
+    void setDocumentCatalogProjectionChangedHandler(
+        DocumentCatalogProjectionChangedHandler handler
+        );
     [[nodiscard]] Domain::Result<void> refreshDocumentCatalogProjection(
         const QString& localeName
         );
@@ -205,6 +210,8 @@ private:
     std::optional<Application::DocumentCatalogProjection>
         m_documentCatalogProjection;
     DocumentCatalogProjectionLoader m_documentCatalogProjectionLoader;
+    DocumentCatalogProjectionChangedHandler
+        m_documentCatalogProjectionChangedHandler;
     std::function<void(const Domain::DocumentId&)>
         m_documentCatalogSelectionHandler;
     std::function<void()> m_documentCatalogSelectionClearedHandler;

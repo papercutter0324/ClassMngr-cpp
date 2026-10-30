@@ -18,6 +18,7 @@
 #include "next/ui/application_shell.h"
 #include "next/ui/calendar_page.h"
 #include "next/ui/document_catalog_navigation.h"
+#include "next/ui/document_viewer_page.h"
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/initial_page.h"
 #include "next/ui/my_classes_page.h"
@@ -115,6 +116,9 @@
 #include <QTreeWidgetItemIterator>
 #include <QItemSelectionModel>
 #include <QWidget>
+#include <QPdfDocument>
+#include <QPdfPageNavigator>
+#include <QPdfView>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -147,6 +151,7 @@ private slots:
     void loadedPreferencesReachPagesAndFontStartupRestoresOnTeardown();
     void preferencesMenuRoutePersistsAndReopensEveryPreference();
     void preferencesRouteRetranslatesActiveClassesNavigator();
+    void preferencesRouteRetranslatesActiveDocumentCatalogAndViewer();
     void preferencesMenuRouteVisualCapture_data();
     void preferencesMenuRouteVisualCapture();
     void shellAppearanceUsesSelectedThemeAndLanguage_data();
@@ -1248,6 +1253,29 @@ private:
     QTemporaryDir m_directory;
     QString m_resourceRoot;
 };
+
+QTreeWidgetItem* findDocumentCatalogItem(
+    QTreeWidget* tree,
+    const Ui::DocumentCatalogItemRole role,
+    const QString& value
+    )
+{
+    if (!tree)
+    {
+        return nullptr;
+    }
+
+    QTreeWidgetItemIterator iterator(tree);
+    while (*iterator)
+    {
+        if ((*iterator)->data(0, static_cast<int>(role)).toString() == value)
+        {
+            return *iterator;
+        }
+        ++iterator;
+    }
+    return nullptr;
+}
 
 class StartupPreferencesGuard final
 {
@@ -3466,6 +3494,603 @@ void ApplicationBootstrapTests::preferencesRouteRetranslatesActiveClassesNavigat
     });
     preferencesAction->trigger();
     QVERIFY(reopenedLanguagePersisted);
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::preferencesRouteRetranslatesActiveDocumentCatalogAndViewer()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    GlobalPreferencesSettingsGuard globalPreferences;
+    StartupPreferencesGuard startupPreferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::ThemePreference::Light), 0);
+    QVERIFY(Platform::SettingsManagerAutomaticUpdatePreferencesPort().write(
+        {.automaticChecksEnabled = false}));
+
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")));
+    QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
+    QVERIFY(resources.addResource(QStringLiteral(
+        "assets/documents/Guides/DYB Lesson Planning Guide.pdf")));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString workspacePath = temporaryDirectory.filePath(
+        QStringLiteral("preferences-language-documents.tps"));
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+        workspacePath, QStringLiteral("representative_startup.sql"),
+        &fixtureError), qPrintable(fixtureError));
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("preferences-language-documents-test"), workspacePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application, {}, silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        QStringList{QStringLiteral("en-US")}, std::move(seams));
+    QVERIFY(bootstrap.start().succeeded());
+    QVERIFY(bootstrap.workspaceStateSnapshot().session().has_value());
+
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    shell->resize(1024, 720);
+    shell->show();
+    QCoreApplication::processEvents();
+
+    QTreeWidget* const navigationTree = shell->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree"));
+    QVERIFY(navigationTree);
+    QTreeWidgetItem* const documentRoot = findDocumentCatalogItem(
+        navigationTree, Ui::DocumentCatalogItemRole::Kind,
+        QString::number(static_cast<int>(Ui::DocumentCatalogItemKind::Root)));
+    QVERIFY(documentRoot);
+    QCOMPARE(documentRoot->text(0), QStringLiteral("Documents"));
+    QTreeWidgetItem* const guidesFolder = findDocumentCatalogItem(
+        navigationTree, Ui::DocumentCatalogItemRole::FolderId,
+        QStringLiteral("document_guides"));
+    QTreeWidgetItem* const collapsedFolder = findDocumentCatalogItem(
+        navigationTree, Ui::DocumentCatalogItemRole::FolderId,
+        QStringLiteral("document_training"));
+    QVERIFY(guidesFolder && collapsedFolder);
+    collapsedFolder->setExpanded(false);
+    QVERIFY(!collapsedFolder->isExpanded());
+
+    const QString selectedDocumentId =
+        QStringLiteral("document_guides_lesson_planning");
+    QTreeWidgetItem* selectedDocument = findDocumentCatalogItem(
+        navigationTree, Ui::DocumentCatalogItemRole::DocumentId,
+        selectedDocumentId);
+    QVERIFY(selectedDocument);
+    navigationTree->scrollToItem(selectedDocument);
+    navigationTree->setCurrentItem(selectedDocument);
+
+    QTRY_VERIFY(shell->pageHost().activePageKey()
+        == std::optional<QString>(QStringLiteral("document_viewer")));
+    auto* const viewer = dynamic_cast<Ui::DocumentViewerPage*>(
+        shell->pageHost().pageInstance(QStringLiteral("document_viewer")));
+    QVERIFY(viewer);
+    QTRY_VERIFY(viewer->hasLoadedDocument());
+    QTest::qWait(50);
+    QCoreApplication::processEvents();
+    QVERIFY(viewer->isVisible());
+    QCOMPARE(viewer->documentStatus(), QPdfDocument::Status::Ready);
+    QCOMPARE(viewer->contentSnapshot().phase(),
+        Application::DocumentContentPhase::Ready);
+    QVERIFY(viewer->hasActivePrimaryStream());
+
+    QPdfDocument* const pdfDocument = viewer->findChild<QPdfDocument*>();
+    QPdfView* const pdfView = viewer->findChild<QPdfView*>(
+        QStringLiteral("documentViewerPdfView"));
+    QLabel* const viewerTitle = viewer->findChild<QLabel*>(
+        QStringLiteral("documentViewerTitle"));
+    QPushButton* const printButton = viewer->findChild<QPushButton*>(
+        QStringLiteral("documentViewerPrint"));
+    QPushButton* const exportButton = viewer->findChild<QPushButton*>(
+        QStringLiteral("documentViewerExport"));
+    QPushButton* const closeButton = viewer->findChild<QPushButton*>(
+        QStringLiteral("documentViewerClose"));
+    QPushButton* const zoomInButton = viewer->findChild<QPushButton*>(
+        QStringLiteral("documentViewerZoomIn"));
+    QLineEdit* const pageInput = viewer->findChild<QLineEdit*>(
+        QStringLiteral("documentViewerPageInput"));
+    QLineEdit* const zoomInput = viewer->findChild<QLineEdit*>(
+        QStringLiteral("documentViewerZoomInput"));
+    QLabel* const pageLabel = viewer->findChild<QLabel*>(
+        QStringLiteral("documentViewerPageLabel"));
+    QLabel* const pageTotalLabel = viewer->findChild<QLabel*>(
+        QStringLiteral("documentViewerPageTotal"));
+    QPushButton* const fitPageButton = viewer->findChild<QPushButton*>(
+        QStringLiteral("documentViewerFitPage"));
+    QVERIFY(pdfDocument && pdfView && viewerTitle && printButton
+        && exportButton && closeButton && zoomInButton && pageInput
+        && zoomInput && pageLabel && pageTotalLabel && fitPageButton);
+    QCOMPARE(viewerTitle->text(), QStringLiteral("Lesson Planning"));
+    QVERIFY(printButton->isVisible() && exportButton->isVisible());
+
+    QPdfPageNavigator* const navigator = pdfView->pageNavigator();
+    QVERIFY(navigator);
+    QVERIFY(viewer->documentPageCount() > 0);
+    const int selectedPageIndex = std::min(1, viewer->documentPageCount() - 1);
+    QTest::mouseClick(zoomInButton, Qt::LeftButton);
+    QTest::mouseClick(zoomInButton, Qt::LeftButton);
+    QTRY_COMPARE(zoomInput->text(), QStringLiteral("144%"));
+    navigator->jump(selectedPageIndex, {}, pdfView->zoomFactor());
+    QTRY_COMPARE(navigator->currentPage(), selectedPageIndex);
+    QCOMPARE(pdfView->zoomFactor(), qreal(1.44));
+    QCOMPARE(pageInput->text(), QString::number(selectedPageIndex + 1));
+    pdfView->viewport()->update();
+    QCoreApplication::processEvents();
+    QTest::qWait(500);
+    QCoreApplication::processEvents();
+    pdfView->viewport()->repaint();
+    QCoreApplication::processEvents();
+    const Application::DocumentContentSnapshot readySnapshot =
+        viewer->contentSnapshot();
+    QVERIFY(readySnapshot.contentReference().has_value());
+    const QString bodyReference = QString::fromStdString(
+        readySnapshot.contentReference()->value());
+    QCOMPARE(bodyReference,
+        QStringLiteral("resource://documents/Guides/DYB Lesson Planning Guide.pdf"));
+
+    int currentItemChangedCount = 0;
+    QObject::connect(
+        navigationTree,
+        &QTreeWidget::currentItemChanged,
+        shell,
+        [&currentItemChangedCount](QTreeWidgetItem*, QTreeWidgetItem*) {
+            ++currentItemChangedCount;
+        }
+        );
+    int pdfStatusChangedCount = 0;
+    QObject::connect(
+        pdfDocument,
+        &QPdfDocument::statusChanged,
+        shell,
+        [&pdfStatusChangedCount](QPdfDocument::Status) {
+            ++pdfStatusChangedCount;
+        }
+        );
+    QStringList viewerLifecycleEvents;
+    int bodyOpenCount = 1;
+    viewer->setLifecycleObserver(
+        [&viewerLifecycleEvents, &bodyOpenCount](
+            const QString& operation,
+            const QString& phase
+            ) {
+            viewerLifecycleEvents.append(operation + QLatin1Char(':') + phase);
+            if (operation == QStringLiteral("qpdf-document-load")
+                && phase == QStringLiteral("before"))
+            {
+                ++bodyOpenCount;
+            }
+        }
+        );
+
+    const QString captureDirectory = qEnvironmentVariable(
+        "CLASSMNGR_NEXT_DOCUMENT_CATALOG_LOCALE_CAPTURE_DIR");
+    QString captureFailure;
+    QJsonArray evidenceStates;
+    const auto collectVisibleState = [&, shell, viewer, navigationTree,
+                                      selectedDocumentId](
+        const QString& stateName
+        ) {
+        QTreeWidgetItem* const root = findDocumentCatalogItem(
+            navigationTree, Ui::DocumentCatalogItemRole::Kind,
+            QString::number(static_cast<int>(Ui::DocumentCatalogItemKind::Root)));
+        QTreeWidgetItem* const folder = findDocumentCatalogItem(
+            navigationTree, Ui::DocumentCatalogItemRole::FolderId,
+            QStringLiteral("document_guides"));
+        QTreeWidgetItem* const training = findDocumentCatalogItem(
+            navigationTree, Ui::DocumentCatalogItemRole::FolderId,
+            QStringLiteral("document_training"));
+        QTreeWidgetItem* const row = findDocumentCatalogItem(
+            navigationTree, Ui::DocumentCatalogItemRole::DocumentId,
+            selectedDocumentId);
+        auto* const currentViewer = dynamic_cast<Ui::DocumentViewerPage*>(
+            shell->pageHost().pageInstance(QStringLiteral("document_viewer")));
+        QPdfDocument* const currentDocument = currentViewer
+            ? currentViewer->findChild<QPdfDocument*>() : nullptr;
+        QPdfView* const currentView = currentViewer
+            ? currentViewer->findChild<QPdfView*>(
+                QStringLiteral("documentViewerPdfView")) : nullptr;
+        QPdfPageNavigator* const currentNavigator = currentView
+            ? currentView->pageNavigator() : nullptr;
+        const Application::DocumentContentSnapshot snapshot = currentViewer
+            ? currentViewer->contentSnapshot()
+            : Application::DocumentContentSnapshot{};
+        const auto* const currentTitle = currentViewer
+            ? currentViewer->findChild<QLabel*>(
+                QStringLiteral("documentViewerTitle")) : nullptr;
+        const auto* const currentPrint = currentViewer
+            ? currentViewer->findChild<QPushButton*>(
+                QStringLiteral("documentViewerPrint")) : nullptr;
+        const auto* const currentExport = currentViewer
+            ? currentViewer->findChild<QPushButton*>(
+                QStringLiteral("documentViewerExport")) : nullptr;
+        const auto* const currentClose = currentViewer
+            ? currentViewer->findChild<QPushButton*>(
+                QStringLiteral("documentViewerClose")) : nullptr;
+        const auto* const currentPageLabel = currentViewer
+            ? currentViewer->findChild<QLabel*>(
+                QStringLiteral("documentViewerPageLabel")) : nullptr;
+        const auto* const currentPageTotal = currentViewer
+            ? currentViewer->findChild<QLabel*>(
+                QStringLiteral("documentViewerPageTotal")) : nullptr;
+        const auto* const currentPageInput = currentViewer
+            ? currentViewer->findChild<QLineEdit*>(
+                QStringLiteral("documentViewerPageInput")) : nullptr;
+        const auto* const currentZoomInput = currentViewer
+            ? currentViewer->findChild<QLineEdit*>(
+                QStringLiteral("documentViewerZoomInput")) : nullptr;
+        const auto* const currentFitPage = currentViewer
+            ? currentViewer->findChild<QPushButton*>(
+                QStringLiteral("documentViewerFitPage")) : nullptr;
+        const auto selectedId = Ui::DocumentCatalogNavigation::documentIdFor(
+            navigationTree->currentItem());
+        const QString contentReference = snapshot.contentReference()
+            ? QString::fromStdString(snapshot.contentReference()->value())
+            : QString{};
+        QJsonObject state{
+            {QStringLiteral("state"), stateName},
+            {QStringLiteral("activePage"),
+             shell->pageHost().activePageKey().value_or(QString{})},
+            {QStringLiteral("selectedDocumentId"), selectedId
+                ? QString::fromStdString(selectedId->value()) : QString{}},
+            {QStringLiteral("catalogRootLabel"), root ? root->text(0) : QString{}},
+            {QStringLiteral("guidesFolderLabel"), folder ? folder->text(0) : QString{}},
+            {QStringLiteral("selectedRowLabel"), row ? row->text(0) : QString{}},
+            {QStringLiteral("catalogRowsVisible"), root && folder && row
+                && root->isExpanded() && folder->isExpanded()
+                && !row->isHidden()},
+            {QStringLiteral("viewerTitle"), currentTitle
+                ? currentTitle->text() : QString{}},
+            {QStringLiteral("viewerTitleVisible"), currentTitle
+                && currentTitle->isVisible()},
+            {QStringLiteral("printButton"), currentPrint
+                ? currentPrint->text() : QString{}},
+            {QStringLiteral("printButtonVisible"), currentPrint
+                && currentPrint->isVisible()},
+            {QStringLiteral("exportButton"), currentExport
+                ? currentExport->text() : QString{}},
+            {QStringLiteral("exportButtonVisible"), currentExport
+                && currentExport->isVisible()},
+            {QStringLiteral("closeButton"), currentClose
+                ? currentClose->text() : QString{}},
+            {QStringLiteral("closeButtonVisible"), currentClose
+                && currentClose->isVisible()},
+            {QStringLiteral("pageLabel"), currentPageLabel
+                ? currentPageLabel->text() : QString{}},
+            {QStringLiteral("pageLabelVisible"), currentPageLabel
+                && currentPageLabel->isVisible()},
+            {QStringLiteral("pageTotalLabel"), currentPageTotal
+                ? currentPageTotal->text() : QString{}},
+            {QStringLiteral("pageTotalVisible"), currentPageTotal
+                && currentPageTotal->isVisible()},
+            {QStringLiteral("fitPageButton"), currentFitPage
+                ? currentFitPage->text() : QString{}},
+            {QStringLiteral("fitPageButtonVisible"), currentFitPage
+                && currentFitPage->isVisible()},
+            {QStringLiteral("pageInput"), currentPageInput
+                ? currentPageInput->text() : QString{}},
+            {QStringLiteral("pageInputVisible"), currentPageInput
+                && currentPageInput->isVisible()},
+            {QStringLiteral("zoomInput"), currentZoomInput
+                ? currentZoomInput->text() : QString{}},
+            {QStringLiteral("zoomInputVisible"), currentZoomInput
+                && currentZoomInput->isVisible()},
+            {QStringLiteral("pdfStatus"), currentDocument
+                && currentDocument->status() == QPdfDocument::Status::Ready
+                ? QStringLiteral("Ready") : QStringLiteral("not-ready")},
+            {QStringLiteral("contentPhaseReady"), snapshot.phase()
+                == Application::DocumentContentPhase::Ready},
+            {QStringLiteral("contentReference"), contentReference},
+            {QStringLiteral("activePrimaryStream"), currentViewer
+                && currentViewer->hasActivePrimaryStream()},
+            {QStringLiteral("currentPageIndex"), currentNavigator
+                ? currentNavigator->currentPage() : -1},
+            {QStringLiteral("zoomFactor"), currentView
+                ? currentView->zoomFactor() : 0.0},
+            {QStringLiteral("collapsedFolderId"), QStringLiteral("document_training")},
+            {QStringLiteral("collapsedFolderPreserved"), training
+                && !training->isExpanded()},
+            {QStringLiteral("currentItemChangedSignalsSincePreviousState"),
+             currentItemChangedCount},
+            {QStringLiteral("viewerLifecycleEventsSinceBaseline"),
+             static_cast<int>(viewerLifecycleEvents.size())},
+            {QStringLiteral("bodyOpenCount"), bodyOpenCount}
+        };
+
+        if (!captureDirectory.isEmpty())
+        {
+            if (!QDir().mkpath(captureDirectory))
+            {
+                captureFailure = QStringLiteral(
+                    "Could not create capture directory: %1").arg(captureDirectory);
+            }
+            else
+            {
+                const QString filename = stateName + QStringLiteral(".png");
+                const QString filepath = QDir(captureDirectory).filePath(filename);
+                const QPixmap capture = shell->grab();
+                if (capture.size() != QSize(1024, 720)
+                    || !capture.save(filepath, "PNG"))
+                {
+                    captureFailure = QStringLiteral(
+                        "Could not capture %1 at 1024x720.").arg(stateName);
+                }
+                else
+                {
+                    QFile imageFile(filepath);
+                    if (!imageFile.open(QIODevice::ReadOnly))
+                    {
+                        captureFailure = QStringLiteral(
+                            "Could not read the %1 capture.").arg(stateName);
+                    }
+                    else
+                    {
+                        const QByteArray png = imageFile.readAll();
+                        state.insert(QStringLiteral("captureFile"), filename);
+                        state.insert(QStringLiteral("captureBytes"), png.size());
+                        state.insert(QStringLiteral("captureSha256"),
+                            QString::fromLatin1(QCryptographicHash::hash(
+                                png, QCryptographicHash::Sha256).toHex()));
+                    }
+                }
+            }
+        }
+        return state;
+    };
+
+    navigationTree->scrollToItem(selectedDocument);
+    evidenceStates.append(collectVisibleState(QStringLiteral("english-before")));
+    QAction* const preferencesAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextPreferences"));
+    QVERIFY(preferencesAction);
+    bool liveLanguageSwitchesCorrectly = false;
+    QString liveSwitchDiagnostic;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog
+            || dialog->objectName() != QStringLiteral("nextPreferencesDialog"))
+        {
+            liveSwitchDiagnostic = QStringLiteral(
+                "The production Preferences dialog was not opened.");
+            if (dialog) dialog->reject();
+            return;
+        }
+        auto* const language = dialog->findChild<QComboBox*>(
+            QStringLiteral("preferencesLanguage"));
+        if (!language)
+        {
+            liveSwitchDiagnostic = QStringLiteral(
+                "The Preferences language control was not found.");
+            dialog->reject();
+            return;
+        }
+        const int englishIndex = language->findData(
+            static_cast<int>(Application::LanguagePreference::English));
+        const int koreanIndex = language->findData(
+            static_cast<int>(Application::LanguagePreference::Korean));
+        if (englishIndex < 0 || koreanIndex < 0)
+        {
+            liveSwitchDiagnostic = QStringLiteral(
+                "The English and Korean choices were not available.");
+            dialog->reject();
+            return;
+        }
+
+        const bool openedInEnglish = language->currentData().toInt()
+            == static_cast<int>(Application::LanguagePreference::English);
+        currentItemChangedCount = 0;
+        language->setCurrentIndex(koreanIndex);
+        QCoreApplication::processEvents();
+        const QJsonObject koreanState = collectVisibleState(
+            QStringLiteral("korean-after"));
+        evidenceStates.append(koreanState);
+        const bool koreanStateCorrect =
+            koreanState.value(QStringLiteral("catalogRootLabel")).toString()
+                == QStringLiteral("문서")
+            && koreanState.value(QStringLiteral("guidesFolderLabel")).toString()
+                == QStringLiteral("안내서")
+            && koreanState.value(QStringLiteral("selectedRowLabel")).toString()
+                == QStringLiteral("수업 계획")
+            && koreanState.value(QStringLiteral("catalogRowsVisible")).toBool()
+            && koreanState.value(QStringLiteral("viewerTitle")).toString()
+                == QStringLiteral("수업 계획")
+            && koreanState.value(QStringLiteral("viewerTitleVisible")).toBool()
+            && koreanState.value(QStringLiteral("printButton")).toString()
+                == QStringLiteral("인쇄")
+            && koreanState.value(QStringLiteral("printButtonVisible")).toBool()
+            && koreanState.value(QStringLiteral("exportButton")).toString()
+                == QStringLiteral("내보내기")
+            && koreanState.value(QStringLiteral("exportButtonVisible")).toBool()
+            && koreanState.value(QStringLiteral("closeButton")).toString()
+                == QStringLiteral("닫기")
+            && koreanState.value(QStringLiteral("closeButtonVisible")).toBool()
+            && koreanState.value(QStringLiteral("pageLabel")).toString()
+                == QStringLiteral("페이지:")
+            && koreanState.value(QStringLiteral("pageLabelVisible")).toBool()
+            && koreanState.value(QStringLiteral("pageTotalLabel")).toString()
+                .startsWith(QStringLiteral("/ "))
+            && koreanState.value(QStringLiteral("pageTotalVisible")).toBool()
+            && koreanState.value(QStringLiteral("fitPageButton")).toString()
+                == QStringLiteral("페이지에 맞춤")
+            && koreanState.value(QStringLiteral("fitPageButtonVisible")).toBool()
+            && koreanState.value(QStringLiteral("pageInputVisible")).toBool()
+            && koreanState.value(QStringLiteral("zoomInputVisible")).toBool()
+            && koreanState.value(QStringLiteral("activePage")).toString()
+                == QStringLiteral("document_viewer")
+            && koreanState.value(QStringLiteral("selectedDocumentId")).toString()
+                == selectedDocumentId
+            && koreanState.value(QStringLiteral("pdfStatus")).toString()
+                == QStringLiteral("Ready")
+            && koreanState.value(QStringLiteral("contentPhaseReady")).toBool()
+            && koreanState.value(QStringLiteral("contentReference")).toString()
+                == bodyReference
+            && koreanState.value(QStringLiteral("activePrimaryStream")).toBool()
+            && koreanState.value(QStringLiteral("currentPageIndex")).toInt()
+                == selectedPageIndex
+            && qAbs(koreanState.value(QStringLiteral("zoomFactor")).toDouble()
+                    - 1.44) < 0.001
+            && koreanState.value(QStringLiteral("pageInput")).toString()
+                == QString::number(selectedPageIndex + 1)
+            && koreanState.value(QStringLiteral("zoomInput")).toString()
+                == QStringLiteral("144%")
+            && koreanState.value(QStringLiteral("collapsedFolderPreserved")).toBool()
+            && koreanState.value(QStringLiteral("currentItemChangedSignalsSincePreviousState")).toInt() == 0
+            && koreanState.value(QStringLiteral("viewerLifecycleEventsSinceBaseline")).toInt() == 0
+            && koreanState.value(QStringLiteral("bodyOpenCount")).toInt() == 1;
+
+        currentItemChangedCount = 0;
+        language->setCurrentIndex(englishIndex);
+        QCoreApplication::processEvents();
+        const QJsonObject englishRestoredState = collectVisibleState(
+            QStringLiteral("english-restored"));
+        evidenceStates.append(englishRestoredState);
+        const bool englishStateCorrect =
+            englishRestoredState.value(QStringLiteral("catalogRootLabel")).toString()
+                == QStringLiteral("Documents")
+            && englishRestoredState.value(QStringLiteral("guidesFolderLabel")).toString()
+                == QStringLiteral("Guides")
+            && englishRestoredState.value(QStringLiteral("selectedRowLabel")).toString()
+                == QStringLiteral("Lesson Planning")
+            && englishRestoredState.value(QStringLiteral("catalogRowsVisible")).toBool()
+            && englishRestoredState.value(QStringLiteral("viewerTitle")).toString()
+                == QStringLiteral("Lesson Planning")
+            && englishRestoredState.value(QStringLiteral("viewerTitleVisible")).toBool()
+            && englishRestoredState.value(QStringLiteral("printButton")).toString()
+                == QStringLiteral("Print")
+            && englishRestoredState.value(QStringLiteral("printButtonVisible")).toBool()
+            && englishRestoredState.value(QStringLiteral("exportButton")).toString()
+                == QStringLiteral("Export")
+            && englishRestoredState.value(QStringLiteral("exportButtonVisible")).toBool()
+            && englishRestoredState.value(QStringLiteral("closeButton")).toString()
+                == QStringLiteral("Close")
+            && englishRestoredState.value(QStringLiteral("closeButtonVisible")).toBool()
+            && englishRestoredState.value(QStringLiteral("pageLabel")).toString()
+                == QStringLiteral("Page:")
+            && englishRestoredState.value(QStringLiteral("pageLabelVisible")).toBool()
+            && englishRestoredState.value(QStringLiteral("pageTotalLabel")).toString()
+                .startsWith(QStringLiteral("of "))
+            && englishRestoredState.value(QStringLiteral("pageTotalVisible")).toBool()
+            && englishRestoredState.value(QStringLiteral("fitPageButton")).toString()
+                == QStringLiteral("Fit Page")
+            && englishRestoredState.value(QStringLiteral("fitPageButtonVisible")).toBool()
+            && englishRestoredState.value(QStringLiteral("pageInputVisible")).toBool()
+            && englishRestoredState.value(QStringLiteral("zoomInputVisible")).toBool()
+            && englishRestoredState.value(QStringLiteral("activePage")).toString()
+                == QStringLiteral("document_viewer")
+            && englishRestoredState.value(QStringLiteral("selectedDocumentId")).toString()
+                == selectedDocumentId
+            && englishRestoredState.value(QStringLiteral("pdfStatus")).toString()
+                == QStringLiteral("Ready")
+            && englishRestoredState.value(QStringLiteral("contentPhaseReady")).toBool()
+            && englishRestoredState.value(QStringLiteral("contentReference")).toString()
+                == bodyReference
+            && englishRestoredState.value(QStringLiteral("activePrimaryStream")).toBool()
+            && englishRestoredState.value(QStringLiteral("currentPageIndex")).toInt()
+                == selectedPageIndex
+            && qAbs(englishRestoredState.value(QStringLiteral("zoomFactor")).toDouble()
+                    - 1.44) < 0.001
+            && englishRestoredState.value(QStringLiteral("pageInput")).toString()
+                == QString::number(selectedPageIndex + 1)
+            && englishRestoredState.value(QStringLiteral("zoomInput")).toString()
+                == QStringLiteral("144%")
+            && englishRestoredState.value(QStringLiteral("collapsedFolderPreserved")).toBool()
+            && englishRestoredState.value(QStringLiteral("currentItemChangedSignalsSincePreviousState")).toInt() == 0
+            && englishRestoredState.value(QStringLiteral("viewerLifecycleEventsSinceBaseline")).toInt() == 0
+            && englishRestoredState.value(QStringLiteral("bodyOpenCount")).toInt() == 1;
+
+        liveLanguageSwitchesCorrectly = openedInEnglish
+            && koreanStateCorrect && englishStateCorrect;
+        if (!liveLanguageSwitchesCorrectly)
+        {
+            liveSwitchDiagnostic = QStringLiteral(
+                "openedEnglish=%1 Korean=%2 EnglishRestored=%3; Korean state=%4; English state=%5")
+                .arg(openedInEnglish)
+                .arg(koreanStateCorrect)
+                .arg(englishStateCorrect)
+                .arg(QString::fromUtf8(QJsonDocument(koreanState).toJson(
+                    QJsonDocument::Compact)))
+                .arg(QString::fromUtf8(QJsonDocument(englishRestoredState).toJson(
+                    QJsonDocument::Compact)));
+        }
+        dialog->accept();
+    });
+    preferencesAction->trigger();
+    QVERIFY2(liveLanguageSwitchesCorrectly,
+        qPrintable(liveSwitchDiagnostic));
+    QVERIFY2(captureFailure.isEmpty(), qPrintable(captureFailure));
+    QCOMPARE(evidenceStates.size(), 3);
+    QCOMPARE(bodyOpenCount, 1);
+    QCOMPARE(currentItemChangedCount, 0);
+    QCOMPARE(pdfStatusChangedCount, 0);
+    QVERIFY(viewerLifecycleEvents.isEmpty());
+    QCOMPARE(shell->pageHost().activePageKey(),
+        std::optional<QString>(QStringLiteral("document_viewer")));
+    QCOMPARE(shell->pageHost().pageInstance(QStringLiteral("document_viewer")), viewer);
+    QCOMPARE(viewer->findChild<QPdfDocument*>(), pdfDocument);
+    QCOMPARE(viewer->documentStatus(), QPdfDocument::Status::Ready);
+    QVERIFY(viewer->hasActivePrimaryStream());
+    QCOMPARE(viewer->contentSnapshot(), readySnapshot);
+    QCOMPARE(navigator->currentPage(), selectedPageIndex);
+    QCOMPARE(pdfView->zoomFactor(), qreal(1.44));
+    QCOMPARE(zoomInput->text(), QStringLiteral("144%"));
+    QCOMPARE(pageInput->text(), QString::number(selectedPageIndex + 1));
+    QCOMPARE(navigationTree->currentItem()->text(0), QStringLiteral("Lesson Planning"));
+    QCOMPARE(navigationTree->currentItem()->data(
+        0, static_cast<int>(Ui::DocumentCatalogItemRole::DocumentId)).toString(),
+        selectedDocumentId);
+    QCOMPARE(findDocumentCatalogItem(
+        navigationTree, Ui::DocumentCatalogItemRole::FolderId,
+        QStringLiteral("document_training"))->isExpanded(), false);
+
+    if (!captureDirectory.isEmpty())
+    {
+        QJsonObject evidenceManifest{
+            {QStringLiteral("taskId"), QStringLiteral(
+                "phase7_c52_document_catalog_locale_implementation_01")},
+            {QStringLiteral("scenario"), QStringLiteral(
+                "Production ApplicationBootstrap Preferences switch while one packaged PDF viewer session is active")},
+            {QStringLiteral("captureTarget"), QStringLiteral("ClassMngrNextBootstrapTests")},
+            {QStringLiteral("captureTestPattern"), QStringLiteral(
+                "preferencesRouteRetranslatesActiveDocumentCatalogAndViewer")},
+            {QStringLiteral("qtPlatform"), QGuiApplication::platformName()},
+            {QStringLiteral("logicalSize"), QJsonArray{1024, 720}},
+            {QStringLiteral("selectedDocumentId"), selectedDocumentId},
+            {QStringLiteral("contentReference"), bodyReference},
+            {QStringLiteral("collapsedFolderId"), QStringLiteral("document_training")},
+            {QStringLiteral("bodyOpenCount"), bodyOpenCount},
+            {QStringLiteral("bodyOpenCountDuringLocaleSwitches"), 0},
+            {QStringLiteral("bodyOpenCountMeaning"), QStringLiteral(
+                "Starts at the one successful initial typed selection and increments for any later qpdf-document-load begin; stream release and selection signals are also checked.")},
+            {QStringLiteral("treeSelectionSignalsDuringLocaleSwitches"), 0},
+            {QStringLiteral("pdfStatusSignalsDuringLocaleSwitches"), 0},
+            {QStringLiteral("viewerLifecycleEventsDuringLocaleSwitches"),
+             QJsonArray::fromStringList(viewerLifecycleEvents)},
+            {QStringLiteral("states"), evidenceStates}
+        };
+        QSaveFile manifestFile(QDir(captureDirectory).filePath(
+            QStringLiteral("capture-manifest.json")));
+        QVERIFY(manifestFile.open(QIODevice::WriteOnly | QIODevice::Text));
+        QVERIFY(manifestFile.write(QJsonDocument(evidenceManifest).toJson(
+            QJsonDocument::Indented)) > 0);
+        QVERIFY(manifestFile.commit());
+    }
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);

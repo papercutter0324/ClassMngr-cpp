@@ -42,6 +42,7 @@ constexpr int PageIdRole = Qt::UserRole + 1;
 constexpr int NodeIdRole = Qt::UserRole + 2;
 constexpr int TeacherIdRole = Qt::UserRole + 3;
 constexpr int ExternalUrlRole = Qt::UserRole + 4;
+constexpr auto DocumentCatalogRootId = "documents_catalog";
 constexpr auto KoreanTeacherGroupId = "teachers_all_korean";
 
 class NavigationTreeItemDelegate final : public QStyledItemDelegate
@@ -936,6 +937,10 @@ void ApplicationShell::setDocumentCatalogProjection(
 {
     m_documentCatalogProjection.emplace(std::move(projection));
     rebuildNavigationTree();
+    if (m_documentCatalogProjectionChangedHandler)
+    {
+        m_documentCatalogProjectionChangedHandler(*m_documentCatalogProjection);
+    }
 }
 
 void ApplicationShell::setDocumentCatalogProjectionLoader(
@@ -943,6 +948,13 @@ void ApplicationShell::setDocumentCatalogProjectionLoader(
     )
 {
     m_documentCatalogProjectionLoader = std::move(loader);
+}
+
+void ApplicationShell::setDocumentCatalogProjectionChangedHandler(
+    DocumentCatalogProjectionChangedHandler handler
+    )
+{
+    m_documentCatalogProjectionChangedHandler = std::move(handler);
 }
 
 Domain::Result<void> ApplicationShell::refreshDocumentCatalogProjection(
@@ -1065,6 +1077,71 @@ void ApplicationShell::rebuildNavigationTree()
         DocumentCatalogNavigation::documentIdFor(
             m_navigationTree->currentItem()
             );
+    QHash<QString, bool> documentFolderExpansion;
+    std::optional<bool> documentRootExpansion;
+    QTreeWidgetItemIterator previousItem(m_navigationTree);
+    while (*previousItem)
+    {
+        const int kind = (*previousItem)->data(
+            0,
+            static_cast<int>(DocumentCatalogItemRole::Kind)
+            ).toInt();
+        if (kind == static_cast<int>(DocumentCatalogItemKind::Root)
+            && (*previousItem)->data(0, NodeIdRole).toString()
+                == QString::fromLatin1(DocumentCatalogRootId))
+        {
+            documentRootExpansion = (*previousItem)->isExpanded();
+        }
+        else if (kind == static_cast<int>(DocumentCatalogItemKind::Folder))
+        {
+            const QString folderId = (*previousItem)->data(
+                0,
+                static_cast<int>(DocumentCatalogItemRole::FolderId)
+                ).toString();
+            if (!folderId.isEmpty())
+            {
+                documentFolderExpansion.insert(
+                    folderId,
+                    (*previousItem)->isExpanded()
+                    );
+            }
+        }
+        ++previousItem;
+    }
+
+    const auto restoreDocumentFolderExpansion = [this,
+                                                 &documentFolderExpansion,
+                                                 documentRootExpansion] {
+        QTreeWidgetItemIterator item(m_navigationTree);
+        while (*item)
+        {
+            const int kind = (*item)->data(
+                0,
+                static_cast<int>(DocumentCatalogItemRole::Kind)
+                ).toInt();
+            if (kind == static_cast<int>(DocumentCatalogItemKind::Root)
+                && (*item)->data(0, NodeIdRole).toString()
+                    == QString::fromLatin1(DocumentCatalogRootId)
+                && documentRootExpansion.has_value())
+            {
+                (*item)->setExpanded(*documentRootExpansion);
+            }
+            else if (kind == static_cast<int>(DocumentCatalogItemKind::Folder))
+            {
+                const QString folderId = (*item)->data(
+                    0,
+                    static_cast<int>(DocumentCatalogItemRole::FolderId)
+                    ).toString();
+                const auto state = documentFolderExpansion.constFind(folderId);
+                if (state != documentFolderExpansion.cend())
+                {
+                    (*item)->setExpanded(state.value());
+                }
+            }
+            ++item;
+        }
+    };
+
     const QSignalBlocker signalBlocker(m_navigationTree);
     m_navigationTree->clear();
     if (m_navigationModel)
@@ -1154,6 +1231,7 @@ void ApplicationShell::rebuildNavigationTree()
             if (candidate && *candidate == *selectedDocumentId)
             {
                 m_navigationTree->setCurrentItem(*iterator);
+                restoreDocumentFolderExpansion();
                 updateNavigationTooltips(m_preferences
                     && m_preferences->snapshot().sidebarTooltipsEnabled());
                 return;
@@ -1162,6 +1240,7 @@ void ApplicationShell::rebuildNavigationTree()
         }
     }
     synchronizeNavigationSelection();
+    restoreDocumentFolderExpansion();
     updateNavigationTooltips(m_preferences
         && m_preferences->snapshot().sidebarTooltipsEnabled());
 }
