@@ -5,22 +5,21 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-29
-- Current milestone: Phase 7 remains in progress. Candidate #44, 7J.1 Sub
-  Prep, is accepted in source commit `8c4fece5`; Batch 4 is active and #45,
-  General app-wide Preferences, is next. The Next route uses typed reads
-  from the active private workspace store, one summary model and reusable
-  detail panel, explicit release/re-entry behavior, and operation-scoped
-  package/PDF output. The unchanged 96-class fixture verifies bounded
-  lifecycle and the expected schedule-conflict cleanup. See the
-  [C44 evidence package](../../docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44/review.md),
+- Last updated: 2026-10-30
+- Current milestone: Phase 7 remains in progress. Candidate #45, General
+  app-wide Preferences, is accepted in source commit `f294b94c`; Batch 4 is
+  active and #46, Admin/permission-gate parity, is next. Next now provides a
+  localized Edit → Preferences dialog for General, Appearance, Documents, and
+  AI Comments. Persisted settings update theme, language, font, sidebar, and
+  active-page behavior at runtime; Schedule, Calendar, and Navigation settings
+  remain in their existing page surfaces. Four English/Korean × Light/Dark
+  captures and focused macOS Debug checks passed. See the
+  [C45 evidence package](../../docs/qt-rewrite/visual-baseline/next/phase-7/preferences-c45/README.md),
   [Phase 7 plan](08-Phase-7-Feature-Migration.md), and [current batch tracker](Current-Slice-Batches.md).
-  Focused macOS Debug verification passed, including the strict PDF text and
-  geometry comparison. Windows 150-DPI raster parity remains unverified; the
-  PDFs have a known separator text-map limitation shared with the retained
-  references. Broader 7A visual/lifecycle evidence, hosted memory evidence,
-  and the Windows packaged-Next memory gate remain open. The 7A and Phase 7
-  exit gates are not yet passed.
+  The full project suite and Windows runs remain open. C44's Windows 150-DPI
+  raster comparison and shared PDF separator text-map limitation remain open,
+  as do broader 7A evidence and the Phase 9 packaged-Next memory gate. The 7A
+  and Phase 7 exit gates are not yet passed.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

@@ -37,20 +37,22 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2 through 6
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
-- Last updated: 2026-10-29
-- Current note: Candidate #44, 7J.1 Sub Prep, is accepted in source commit
-  `8c4fece5`; Batch 4 remains active and #45, General app-wide Preferences,
-  is next. Sub Prep reads through typed operations on the active private
-  `WorkspaceStore`, retains one summary model and one selected-detail panel,
-  releases page data on suspension, and generates output in an operation
-  scope. The 96-class route verifies bounded lifecycle and the fixture's
-  expected conflict rejection; a compatible SQL-backed route generates both
-  PDFs. Focused macOS Debug verification passed. The Windows 150-DPI pixel
-  comparison remains open, as does the known separator text-map limitation
-  shared by candidate and retained PDFs. The Phase 9 packaged Release memory
-  gate, broader 7A visual/lifecycle evidence, and Phase 7 exit gates remain
-  open. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md) and [C44
-  evidence package](../../docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44/review.md).
+- Last updated: 2026-10-30
+- Current note: Candidate #45, General app-wide Preferences, is accepted in
+  source commit `f294b94c`; Batch 4 remains active and #46, Admin and
+  permission-gate parity, is next. The Next Edit → Preferences dialog covers
+  General, Appearance, Documents, and AI Comments, persists settings through
+  typed global ports, and updates theme, language, font, sidebar, and active
+  page behavior at runtime. Schedule, Calendar, and Navigation controls remain
+  in their page-owned Next surfaces. The production route verifies persistence,
+  rollback, startup-check preference, and live language changes with Classes
+  open. Four English/Korean × Light/Dark captures and focused macOS Debug
+  verification passed. The full project suite and Windows runs remain open;
+  see the [Phase 7 progress log](08-Phase-7-Progress-Log.md) and [C45 evidence
+  package](../../docs/qt-rewrite/visual-baseline/next/phase-7/preferences-c45/README.md).
+  C44's Windows raster comparison and shared PDF separator text-map limitation,
+  the Phase 9 packaged Release memory gate, broader 7A evidence, and Phase 7
+  exit gates remain open.
 
 ### Slice batches
 

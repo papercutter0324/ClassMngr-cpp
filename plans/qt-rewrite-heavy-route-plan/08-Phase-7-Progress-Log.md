@@ -1452,3 +1452,40 @@ Entries are preserved in their original document order.
   pixel and Phase 9 memory gates open. Batch 4 continues with #45, General
   app-wide Preferences UI/menu; its scope must integrate existing Next
   page-owned settings rather than duplicate their controls.
+
+### Candidate #45 — App-wide Preferences accepted (2026-10-30)
+
+- Commit: `f294b94c` (`Phase7 - Add app-wide Preferences to Next`). The Next
+  shell exposes localized Edit → Preferences with General, Appearance,
+  Documents, and AI Comments. Typed settings ports load and persist save mode,
+  startup update checks, sidebar behavior, Excel timeout, theme, language,
+  font size, PDF settings, and AI options. Theme, language, font, sidebar, and
+  active-page save-mode effects are exercised at runtime. Schedule, Calendar,
+  and Navigation preferences remain in their existing page-owned surfaces;
+  Admin remains candidate #46 and the user-initiated updater remains Phase 5.
+- Integration and visual acceptance: the production route edits and persists
+  every migrated field, reopens the dialog, covers cancellation and document/AI
+  failures, checks both automatic startup-check states, and switches language
+  English → Korean → English with Classes active. The sidebar row, page title,
+  Schedule label, and persisted language update and restore. Four production
+  menu captures are 680×620 at scale 1, byte-match fresh captures, and were
+  reviewed for translated labels, contrast, and clipping.
+- Verification: the incremental standard `build/macos-clang-debug` build
+  completed for Next, resource, preferences, and page-regression targets.
+  Focused CTest passed 20/20 registrations; the production Preferences route
+  and capture tests passed 7 Qt cases, and the final live-language route plus
+  the existing Preferences route passed 4 Qt cases. Page-owned Document
+  Catalog, Bootstrap, Schedule, Calendar, and Classes Navigator tests passed
+  5/5. The preference/startup/presenter/port and PowerPoint tests passed 22/22.
+  Startup Performance and the Phase 7 blank-fixture targets ran without skips.
+  PowerPoint notice UI/port coverage ran on macOS. The resource package
+  generated 194 records (187 direct, 7 generated); inventory `--check` and
+  `git diff --check` passed. The Calendar target's additional workspace/Sub
+  Prep compatibility dependencies are test-target-only.
+- Limits: the full project suite and Windows build/captures were not run.
+  One controller test needed local loopback access enabled after the sandbox
+  returned `EPERM`; the complete focused group passed on retry. No Phase 9
+  packaged Release memory result is claimed.
+- Decision and next: keep page-owned preference surfaces separate and
+  continue Batch 4 with #46, Admin and actual permission-gate parity. Begin
+  next-batch discovery when #47 starts, per the shared tracker.
