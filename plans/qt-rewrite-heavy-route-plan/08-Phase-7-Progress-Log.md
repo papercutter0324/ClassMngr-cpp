@@ -1522,3 +1522,42 @@ Entries are preserved in their original document order.
   the existing user-initiated update workflow under Phase 5 ownership; #48
   remains Useful Links. Batch 5 records the matrix review's remaining
   evidence and parity follow-ups.
+
+### Candidate #47 — User-initiated updates accepted (2026-10-30)
+
+- Commits: `d4ddabb8` (`Phase7 - Add user-initiated updates to Next`) and
+  `d38a799e` (`Phase7 - Refresh resource inventory after manual updates`).
+  Next now exposes Help → Check for Updates and routes it through a
+  bootstrap-owned coordinator that shares one `UpdateService` between startup
+  and manual checks. The manual route remains available when the automatic
+  startup-check preference is disabled. Skip/unskip state uses typed
+  preferences, and the existing dialog/download workflow is reused through
+  the narrow `ClassMngrUpdatePresentation` target. Next explicitly omits the
+  legacy resource-pack placeholder through a typed presentation option; the
+  legacy default remains unchanged.
+- Verification: a fresh configure and build in the standard
+  `build/macos-clang-debug` folder rebuilt `ClassMngrNext`, the resource
+  package, and affected updater/bootstrap targets. Seven focused CTests passed
+  7/7, including the dependency boundary, startup/manual use cases,
+  skipped-version policy/port, coordinator, and shared presentation. Direct
+  QtTest calls for the real Help action with automatic checks disabled and the
+  manual retry path passed 3 cases each. Tests cover shared startup/manual
+  cache and busy state, retry, typed skip/unskip persistence and failures,
+  download pause/discard/cancel, and offline checksum verification. Resource
+  inventory `--check` and `git diff --check` passed. The committed inventory
+  records resource tree `40a181dcebfab169569eb5e88e92a5677f10e302` with no
+  worktree inputs.
+- Visual evidence: 36 captures cover nine states in English/Korean ×
+  Light/Dark. Fresh captures and the manifest byte-match the durable package;
+  all images and checksums pass. The independent review verified translated
+  labels, visible error/close/retry actions, download states, and install
+  readiness. No pixel-parity claim is made.
+- Limits: no real network request or installer process was launched. The
+  platform installer launch/process exit are preserved through the shared
+  implementation but were not executed. No Windows or full-suite run was
+  performed. One optional legacy loopback probe failed before sending a
+  request and is not counted; C47 behavior is covered with fake ports.
+- Decision and next: keep one shared updater service for startup and manual
+  checks, and keep presentation dependencies narrow. Batch 4 continues with
+  #48, Useful Links external navigation. Batch 5 contains the remaining
+  preservation-matrix parity and evidence follow-ups; Phase 7 is not complete.

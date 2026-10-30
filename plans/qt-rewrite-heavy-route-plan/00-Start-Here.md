@@ -6,16 +6,17 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-30
-- Current milestone: Phase 7 remains in progress. Candidate #46, Admin and
-  permission-gate parity, is accepted in source commit `0b41a700`; Batch 4 is
-  active and #47 is verifying the existing user-initiated update workflow
-  against Phase 5 ownership, followed by #48 Useful Links. C46 restores Admin
-  → Manage Campuses under the local `--enable-admin` capability, gates direct
-  mutation/import operations, and keeps read-only campus navigation available
-  to all users. The preservation-matrix review identified remaining Phase 7
-  evidence follow-ups for Workspace Calendar, Classes/Schedule, active
-  Document Catalog locale updates, Sub Prep output, and broader 7A evidence.
-  See the [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
+- Current milestone: Phase 7 remains in progress. Candidate #47,
+  user-initiated updates, is accepted in source commit `d4ddabb8`; its resource
+  inventory follow-up is `d38a799e`. Batch 4 remains active with #48 Useful
+  Links in progress. Next now opens Help → Check for Updates through a
+  bootstrap-owned coordinator sharing one updater service between startup and
+  manual checks. The manual route works when automatic checks are disabled;
+  skip-version preferences and the download flow use typed boundaries. The
+  preservation-matrix review identified remaining Phase 7 follow-ups for
+  Workspace Calendar, Classes/Schedule, active Document Catalog locale
+  updates, Sub Prep output, and broader 7A evidence. See the [Phase 7 progress
+  log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md). The full project
   suite, Windows runs, 7A evidence, C44 output/raster limitations, and the
   Phase 7 exit gate remain open. The Phase 9 packaged-Next numeric memory gate

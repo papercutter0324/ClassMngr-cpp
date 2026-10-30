@@ -1,8 +1,9 @@
 {
   "taskId": "phase7_c47_manual_update_implementation_01",
-  "comparison": "Fresh captures after the typed resource-pack presentation API change",
+  "comparison": "Final regenerated captures versus the durable C47 package",
   "pngCount": 36,
   "allPngsByteIdentical": true,
   "captureManifestByteIdentical": true,
+  "checksumsMatch": true,
   "changedFiles": []
 }

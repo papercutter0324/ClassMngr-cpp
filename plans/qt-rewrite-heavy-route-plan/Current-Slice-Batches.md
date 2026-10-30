@@ -14,10 +14,10 @@
     [Phase 7 progress log](08-Phase-7-Progress-Log.md) and [C45 evidence package](../../docs/qt-rewrite/visual-baseline/next/phase-7/preferences-c45/README.md).
 46. **Accepted — Admin and actual permission-gate parity** (`0b41a700`). See
     the [Phase 7 progress log](08-Phase-7-Progress-Log.md) and [C46 review package](../../docs/qt-rewrite/visual-baseline/next/phase-7/campus-admin-c46/REVIEW.md).
-47. **In progress — User-initiated update workflow:** verify the existing Next
-    manual update route and Phase 5 ownership; do not duplicate the startup
-    update coordinator.
-48. **Discovered — Useful Links external navigation.**
+47. **Accepted — User-initiated update workflow** (`d4ddabb8`; inventory
+    follow-up `d38a799e`). See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
+    and [C47 review package](../../docs/qt-rewrite/visual-baseline/next/phase-7/manual-update-c47/README.md).
+48. **In progress — Useful Links external navigation.**
 
 The setup schedule-import prerequisite repair is committed in `80f7f1c6` using
 the existing path-scoped ports. Pre-existing Schedule Import additions in the

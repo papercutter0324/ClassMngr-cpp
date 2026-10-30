@@ -38,17 +38,18 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-30
-- Current note: Candidate #46, Admin and permission-gate parity, is accepted
-  in source commit `0b41a700`; Batch 4 remains active with #47 verifying the
-  existing user-initiated updater against Phase 5 ownership, followed by #48
-  Useful Links. C46 restores Admin → Manage Campuses under the local
-  `--enable-admin` capability, gates direct mutation/import operations, and
-  retains read-only campus navigation for all users. The matrix review found
-  Phase 7 evidence follow-ups for Workspace Calendar, Classes/Schedule, active
-  Document Catalog locale updates, Sub Prep output, and broader 7A evidence;
-  these are tracked in the next batch. The full suite, Windows runs, C44
-  output/raster limitations, and Phase 7 exit gate remain open. The Phase 9
-  packaged Release numeric memory gate is separate.
+- Current note: Candidate #47, user-initiated updates, is accepted in source
+  commit `d4ddabb8`; its generated resource inventory follow-up is committed
+  as `d38a799e`. Batch 4 remains active with #48, Useful Links, in progress.
+  Next now opens Help → Check for Updates through a bootstrap-owned coordinator
+  that shares one updater service across startup and manual checks. Manual
+  checks work when automatic checks are disabled, with typed skip-version
+  preferences and the existing download workflow. The matrix review found
+  Phase 7 follow-ups for Workspace Calendar, Classes/Schedule, active Document
+  Catalog locale updates, Sub Prep output, and broader 7A evidence; these are
+  tracked in the next batch. The full suite, Windows runs, C44 output/raster
+  limitations, and Phase 7 exit gate remain open. The Phase 9 packaged Release
+  numeric memory gate is separate.
 
 ### Slice batches
 

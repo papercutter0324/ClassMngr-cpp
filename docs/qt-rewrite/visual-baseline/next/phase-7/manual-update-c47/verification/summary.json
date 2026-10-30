@@ -7,23 +7,35 @@
     "Download pause, discard, cancel, and offline saved-fixture verification pass.",
     "Legacy resource-pack placeholder remains shown by default; Next omits it through the typed presentation API without private widget lookup."
   ],
-  "verification": {
-    "build": "passed",
-    "focusedCTest": { "passed": 7, "failed": 0 },
-    "freshIntegrationCases": "passed",
-    "resourceInventoryCheck": "passed against current working-tree translation bytes"
+  "build": {
+    "freshConfigureAndBuild": "passed",
+    "directory": "build/macos-clang-debug",
+    "rebuilt": ["Next", "resource package", "C47 tests", "updater targets"]
   },
+  "tests": {
+    "independentCTest": { "passed": 7, "failed": 0 },
+    "helpActionDisabledAutoCheckIntegrationAssertions": 3,
+    "coordinatorRetryAssertions": 3
+  },
+  "resourceInventory": {
+    "check": "passed",
+    "committedResourceTreeId": "40a181dcebfab169569eb5e88e92a5677f10e302",
+    "trackedInputWorktreeChanges": [],
+    "inventoryCommit": "d38a799e"
+  },
+  "diffCheck": "passed",
   "captures": {
     "count": 36,
     "coverage": "9 states × English/Korean × light/dark",
     "freshPngRecaptureByteIdentical": true,
     "captureManifestByteIdentical": true,
+    "checksumsMatchDurablePackage": true,
     "independentlyReviewed": true,
     "visualCorrection": "All Close and Not Now controls are present; the earlier missing-button report was corrected after original-resolution review."
   },
   "translation": {
-    "changedLabels": ["Released: %1", "Latest Version: %1%2"],
-    "inventoryStatus": "Working-tree validation snapshot; refresh after committing the translation source."
+    "sourceCommit": "d4ddabb8",
+    "changedLabels": ["Released: %1", "Latest Version: %1%2"]
   },
   "limits": [
     "No real network request or platform installer process was launched.",
