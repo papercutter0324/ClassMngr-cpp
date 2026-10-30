@@ -4338,8 +4338,86 @@ set_tests_properties(ClassMngrNextTestingClassesVisualCapture
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
-# Capture English/Korean and light/dark navigator states, including a compact
-# synthetic 96-class case and its bounded-query/widget manifest.
+# Capture English/Korean and light/dark navigator states, including compact
+# synthetic lists and the single shared selected-class editor composition.
+add_executable(ClassMngrNextClassesFullShellVisualCapture
+    tests/next/classes_full_shell_visual_capture.cpp
+    src/next/platform/workspace_store_class_editor_actions.cpp
+    src/next/platform/workspace_store_classes_navigator_read_actions.cpp
+    src/next/ui/application_shell.cpp
+    src/next/ui/classes_navigator_page.cpp
+    src/next/ui/classes_navigator_model.cpp
+    src/next/ui/document_catalog_navigation.cpp
+    src/next/ui/navigation_model.cpp
+    src/next/ui/page_host.cpp
+    src/next/ui/qt_notification_presenter.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
+    src/next/ui/selected_class_editor.cpp
+    src/next/ui/selected_class_analytics_model.cpp
+)
+target_compile_features(ClassMngrNextClassesFullShellVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextClassesFullShellVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextClassesFullShellVisualCapture
+    PRIVATE
+        CLASSMNGR_CLASSES_NAVIGATOR_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+        CLASSMNGR_CLASSES_LEGACY_CAPTURE_ROOT="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextClassesFullShellVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrNext::Application
+        ClassMngrNext::DocumentCatalog
+        ClassMngrNext::Resources
+        ClassMngrNextRosterOutput
+        ClassMngrNextWorkspaceDomain
+        ClassMngrWorkspaceStore
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextClassesFullShellVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextClassesFullShellVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextClassesFullShellVisualCapture
+    ClassMngrNextResourcePackage
+    ClassMngrNextTranslationOutputs
+)
+qt_add_resources(ClassMngrNextClassesFullShellVisualCapture
+    classes_full_shell_visual_capture_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
+)
+add_test(
+    NAME ClassMngrNextClassesFullShellVisualCapture
+    COMMAND ClassMngrNextClassesFullShellVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/classes-full-shell-visual-capture"
+)
+set_tests_properties(ClassMngrNextClassesFullShellVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 add_executable(ClassMngrNextClassesNavigatorVisualCapture
     tests/next/classes_navigator_visual_capture.cpp
     src/core/process_memory_snapshot.cpp
@@ -4347,9 +4425,12 @@ add_executable(ClassMngrNextClassesNavigatorVisualCapture
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
     src/next/ui/selected_class_analytics_model.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
 )
 target_compile_features(ClassMngrNextClassesNavigatorVisualCapture
     PRIVATE
@@ -4369,6 +4450,7 @@ target_compile_definitions(ClassMngrNextClassesNavigatorVisualCapture
 target_link_libraries(ClassMngrNextClassesNavigatorVisualCapture
     PRIVATE
         ClassMngrNext::Resources
+        ClassMngrNextRosterOutput
         ClassMngrScheduleImportRules
         Qt6::Widgets
 )
@@ -4383,6 +4465,16 @@ set_property(TARGET ClassMngrNextClassesNavigatorVisualCapture
 )
 add_dependencies(ClassMngrNextClassesNavigatorVisualCapture
     ClassMngrNextResourcePackage
+)
+qt_add_resources(ClassMngrNextClassesNavigatorVisualCapture
+    classes_navigator_visual_capture_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
 )
 add_test(
     NAME ClassMngrNextClassesNavigatorVisualCapture
@@ -5715,6 +5807,10 @@ classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesClassTransferApplyPort
     SOURCES tests/next_platform_application_services_class_transfer_apply_port_tests.cpp
     LIBRARIES Qt6::Test Qt6::Widgets
+    COMPILE_DEFINITIONS
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+    DEPENDENCIES
+        ClassMngrNextTranslationOutputs
     OFFSCREEN
 )
 

@@ -403,13 +403,13 @@ enum class CaptureState
         return false;
     }
     if (state == CaptureState::PendingSlot
-        && page->pendingSlotLabel()->text().isEmpty())
+        && (!page->pendingSlotLabel()->isHidden()
+            || !page->pendingSlotLabel()->text().isEmpty()))
     {
-        if (error) *error = QStringLiteral("Next pending slot context is not visible.");
+        if (error) *error = QStringLiteral("Next exposed a pending-slot label that Legacy hides.");
         return false;
     }
-    const QString pendingSlotDisplayText = state == CaptureState::PendingSlot
-        ? page->pendingSlotLabel()->text() : QString{};
+    const QString pendingSlotDisplayText;
     bool koreanLabelsVerified = false;
     if (QLocale().name().startsWith(QStringLiteral("ko")))
     {
@@ -440,13 +440,10 @@ enum class CaptureState
             && page->roomEdit()->placeholderText() == QStringLiteral("교실")
             && page->notesEdit()->placeholderText()
                 == QStringLiteral("안내 및 기타 노트");
-        const bool pendingTranslated = state != CaptureState::PendingSlot
-            || page->pendingSlotLabel()->text()
-                == QStringLiteral("목요일 10:00에 수업 추가");
-        if (!labelsTranslated || !pendingTranslated)
+        if (!labelsTranslated)
         {
             if (error) *error = QStringLiteral(
-                "The Korean Next Testing Classes labels or pending-slot text remained untranslated.");
+                "The Korean Next Testing Classes labels remained untranslated.");
             return false;
         }
         koreanLabelsVerified = true;
@@ -511,6 +508,9 @@ enum class CaptureState
         {QStringLiteral("pendingScheduleSlot"), pendingScheduleSlotJson(pendingSlot)},
         {QStringLiteral("pendingScheduleSlotDisplayText"), pendingSlotDisplayText.isEmpty()
             ? QJsonValue(QJsonValue::Null) : QJsonValue(pendingSlotDisplayText)},
+        {QStringLiteral("pendingScheduleSlotLabelVisible"),
+            state == CaptureState::PendingSlot
+                && !page->pendingSlotLabel()->isHidden()},
         {QStringLiteral("detailsSnapshotClearedOnSuspension"), clearedOnSuspension},
         {QStringLiteral("memoryProcessWide"), QJsonObject{
             {QStringLiteral("scope"), QStringLiteral(
@@ -733,7 +733,7 @@ int main(int argc, char* argv[])
             {QStringLiteral("width"), Viewport.width()},
             {QStringLiteral("height"), Viewport.height()}}},
         {QStringLiteral("captureLimitation"), QStringLiteral(
-            "The legacy manager retains pending weekday/start only inside page state; Next displays the pending tuple. Both screenshots use the same Thursday 10:00 create context and 1024x768 viewport. Screenshots are evidence for independent visual inspection, not a parity claim.")},
+            "Both managers retain the same Thursday 10:00 create context in page state and hide its label. The captures use a 1024x768 viewport and are evidence for independent visual inspection, not a parity claim.")},
         {QStringLiteral("memoryLimitation"), QStringLiteral(
             "Memory snapshots are whole-process working/private observations; they do not isolate widget allocation or establish a memory budget.")},
         {QStringLiteral("captures"), captures}

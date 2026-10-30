@@ -1,5 +1,5 @@
 {
-    "captureLimitation": "The legacy manager retains pending weekday/start only inside page state; Next displays the pending tuple. Both screenshots use the same Thursday 10:00 create context and 1024x768 viewport. Screenshots are evidence for independent visual inspection, not a parity claim.",
+    "captureLimitation": "Both managers retain the same Thursday 10:00 create context in page state and hide its label. The captures use a 1024x768 viewport and are evidence for independent visual inspection, not a parity claim.",
     "captures": [
         {
             "fixture": "generated-large-classes-visual.tps",
@@ -255,31 +255,31 @@
                 "memoryProcessWide": {
                     "active": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.298",
-                        "peakWorkingSetBytes": 90374144,
+                        "capturedAt": "2026-10-30T06:40:41.427",
+                        "peakWorkingSetBytes": 128368640,
                         "platform": "macos",
-                        "privateUsageBytes": 32375792,
-                        "privateWorkingSetBytes": 31670272,
-                        "workingSetBytes": 90275840
+                        "privateUsageBytes": 53052376,
+                        "privateWorkingSetBytes": 52363264,
+                        "workingSetBytes": 128368640
                     },
                     "before": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.285",
-                        "peakWorkingSetBytes": 90374144,
+                        "capturedAt": "2026-10-30T06:40:41.412",
+                        "peakWorkingSetBytes": 128237568,
                         "platform": "macos",
-                        "privateUsageBytes": 32261104,
-                        "privateWorkingSetBytes": 31555584,
-                        "workingSetBytes": 90112000
+                        "privateUsageBytes": 52904920,
+                        "privateWorkingSetBytes": 52215808,
+                        "workingSetBytes": 128221184
                     },
                     "scope": "Whole-process observations, not page allocation or memory budgets",
                     "suspended": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.317",
-                        "peakWorkingSetBytes": 90505216,
+                        "capturedAt": "2026-10-30T06:40:41.446",
+                        "peakWorkingSetBytes": 128598016,
                         "platform": "macos",
-                        "privateUsageBytes": 32605168,
-                        "privateWorkingSetBytes": 31899648,
-                        "workingSetBytes": 90505216
+                        "privateUsageBytes": 53281752,
+                        "privateWorkingSetBytes": 52592640,
+                        "workingSetBytes": 128598016
                     }
                 },
                 "newClassDraft": true,
@@ -288,16 +288,23 @@
                     "startTime": "10:00",
                     "weekday": "Thursday"
                 },
-                "pendingScheduleSlotDisplayText": "New class for Thursday at 10:00",
+                "pendingScheduleSlotDisplayText": null,
+                "pendingScheduleSlotLabelVisible": false,
+                "rosterDynamicColumnCount": 0,
+                "rosterEditorClearedOnSuspension": true,
+                "rosterEditorLoaded": false,
+                "rosterEditorWidgetCount": 1,
+                "rosterModeledRowCount": 0,
                 "route": "Next TestingClassesManagerPage",
                 "selectedClassId": null,
-                "selectedEditorDescendantCount": 61,
+                "selectedEditorDescendantCount": 96,
                 "selectedEditorWidgetCount": 1,
                 "state": "pending_slot",
                 "testingClassCount": 96,
                 "viewportHeight": 768,
                 "viewportWidth": 1024,
-                "widgetCountWhileActive": 80
+                "widgetCountWhileActive": 115,
+                "imageSha256": "255acecacb191c77a587f2be004ea10d0982660cfd1c41331a9b56087063cdef"
             },
             "sameSelectedClass": true,
             "seededTestingClassCount": 96,
@@ -559,31 +566,31 @@
                 "memoryProcessWide": {
                     "active": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.490",
-                        "peakWorkingSetBytes": 91471872,
+                        "capturedAt": "2026-10-30T06:40:41.694",
+                        "peakWorkingSetBytes": 128745472,
                         "platform": "macos",
-                        "privateUsageBytes": 32801776,
-                        "privateWorkingSetBytes": 32096256,
-                        "workingSetBytes": 90701824
+                        "privateUsageBytes": 53412824,
+                        "privateWorkingSetBytes": 52723712,
+                        "workingSetBytes": 128729088
                     },
                     "before": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.478",
-                        "peakWorkingSetBytes": 91471872,
+                        "capturedAt": "2026-10-30T06:40:41.679",
+                        "peakWorkingSetBytes": 128745472,
                         "platform": "macos",
-                        "privateUsageBytes": 32785392,
-                        "privateWorkingSetBytes": 32079872,
-                        "workingSetBytes": 90685440
+                        "privateUsageBytes": 53412824,
+                        "privateWorkingSetBytes": 52723712,
+                        "workingSetBytes": 128729088
                     },
                     "scope": "Whole-process observations, not page allocation or memory budgets",
                     "suspended": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.509",
-                        "peakWorkingSetBytes": 91471872,
+                        "capturedAt": "2026-10-30T06:40:41.713",
+                        "peakWorkingSetBytes": 128745472,
                         "platform": "macos",
-                        "privateUsageBytes": 33031152,
-                        "privateWorkingSetBytes": 32325632,
-                        "workingSetBytes": 90931200
+                        "privateUsageBytes": 53412824,
+                        "privateWorkingSetBytes": 52723712,
+                        "workingSetBytes": 128729088
                     }
                 },
                 "newClassDraft": true,
@@ -592,16 +599,23 @@
                     "startTime": "10:00",
                     "weekday": "Thursday"
                 },
-                "pendingScheduleSlotDisplayText": "New class for Thursday at 10:00",
+                "pendingScheduleSlotDisplayText": null,
+                "pendingScheduleSlotLabelVisible": false,
+                "rosterDynamicColumnCount": 0,
+                "rosterEditorClearedOnSuspension": true,
+                "rosterEditorLoaded": false,
+                "rosterEditorWidgetCount": 1,
+                "rosterModeledRowCount": 0,
                 "route": "Next TestingClassesManagerPage",
                 "selectedClassId": null,
-                "selectedEditorDescendantCount": 61,
+                "selectedEditorDescendantCount": 96,
                 "selectedEditorWidgetCount": 1,
                 "state": "pending_slot",
                 "testingClassCount": 96,
                 "viewportHeight": 768,
                 "viewportWidth": 1024,
-                "widgetCountWhileActive": 80
+                "widgetCountWhileActive": 115,
+                "imageSha256": "de74735245ea9de330b3ed2433507b4dfaec4adaa3cbcd616c0d8cb8178d86e9"
             },
             "sameSelectedClass": true,
             "seededTestingClassCount": 96,
@@ -863,31 +877,31 @@
                 "memoryProcessWide": {
                     "active": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.689",
-                        "peakWorkingSetBytes": 93224960,
+                        "capturedAt": "2026-10-30T06:40:41.969",
+                        "peakWorkingSetBytes": 131252224,
                         "platform": "macos",
-                        "privateUsageBytes": 34079728,
-                        "privateWorkingSetBytes": 33374208,
-                        "workingSetBytes": 93061120
+                        "privateUsageBytes": 55395288,
+                        "privateWorkingSetBytes": 54706176,
+                        "workingSetBytes": 131252224
                     },
                     "before": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.677",
-                        "peakWorkingSetBytes": 93224960,
+                        "capturedAt": "2026-10-30T06:40:41.954",
+                        "peakWorkingSetBytes": 131203072,
                         "platform": "macos",
-                        "privateUsageBytes": 33997808,
-                        "privateWorkingSetBytes": 33292288,
-                        "workingSetBytes": 92979200
+                        "privateUsageBytes": 55329752,
+                        "privateWorkingSetBytes": 54640640,
+                        "workingSetBytes": 131186688
                     },
                     "scope": "Whole-process observations, not page allocation or memory budgets",
                     "suspended": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.708",
-                        "peakWorkingSetBytes": 93290496,
+                        "capturedAt": "2026-10-30T06:40:41.989",
+                        "peakWorkingSetBytes": 131481600,
                         "platform": "macos",
-                        "privateUsageBytes": 34309104,
-                        "privateWorkingSetBytes": 33603584,
-                        "workingSetBytes": 93290496
+                        "privateUsageBytes": 55624664,
+                        "privateWorkingSetBytes": 54935552,
+                        "workingSetBytes": 131481600
                     }
                 },
                 "newClassDraft": true,
@@ -896,16 +910,23 @@
                     "startTime": "10:00",
                     "weekday": "Thursday"
                 },
-                "pendingScheduleSlotDisplayText": "목요일 10:00에 수업 추가",
+                "pendingScheduleSlotDisplayText": null,
+                "pendingScheduleSlotLabelVisible": false,
+                "rosterDynamicColumnCount": 0,
+                "rosterEditorClearedOnSuspension": true,
+                "rosterEditorLoaded": false,
+                "rosterEditorWidgetCount": 1,
+                "rosterModeledRowCount": 0,
                 "route": "Next TestingClassesManagerPage",
                 "selectedClassId": null,
-                "selectedEditorDescendantCount": 61,
+                "selectedEditorDescendantCount": 96,
                 "selectedEditorWidgetCount": 1,
                 "state": "pending_slot",
                 "testingClassCount": 96,
                 "viewportHeight": 768,
                 "viewportWidth": 1024,
-                "widgetCountWhileActive": 80
+                "widgetCountWhileActive": 115,
+                "imageSha256": "87ff7456bd8709e36d74f17877349b5f6190893c31c1680bd214e4a423d00fcc"
             },
             "sameSelectedClass": true,
             "seededTestingClassCount": 96,
@@ -1167,31 +1188,31 @@
                 "memoryProcessWide": {
                     "active": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.881",
-                        "peakWorkingSetBytes": 94175232,
+                        "capturedAt": "2026-10-30T06:40:42.237",
+                        "peakWorkingSetBytes": 131612672,
                         "platform": "macos",
-                        "privateUsageBytes": 34423792,
-                        "privateWorkingSetBytes": 33718272,
-                        "workingSetBytes": 93405184
+                        "privateUsageBytes": 55739352,
+                        "privateWorkingSetBytes": 55050240,
+                        "workingSetBytes": 131596288
                     },
                     "before": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.869",
-                        "peakWorkingSetBytes": 94175232,
+                        "capturedAt": "2026-10-30T06:40:42.223",
+                        "peakWorkingSetBytes": 131612672,
                         "platform": "macos",
-                        "privateUsageBytes": 34407408,
-                        "privateWorkingSetBytes": 33701888,
-                        "workingSetBytes": 93388800
+                        "privateUsageBytes": 55739352,
+                        "privateWorkingSetBytes": 55050240,
+                        "workingSetBytes": 131596288
                     },
                     "scope": "Whole-process observations, not page allocation or memory budgets",
                     "suspended": {
                         "available": true,
-                        "capturedAt": "2026-10-28T05:10:36.901",
-                        "peakWorkingSetBytes": 94175232,
+                        "capturedAt": "2026-10-30T06:40:42.256",
+                        "peakWorkingSetBytes": 131612672,
                         "platform": "macos",
-                        "privateUsageBytes": 34554864,
-                        "privateWorkingSetBytes": 33849344,
-                        "workingSetBytes": 93536256
+                        "privateUsageBytes": 55739352,
+                        "privateWorkingSetBytes": 55050240,
+                        "workingSetBytes": 131596288
                     }
                 },
                 "newClassDraft": true,
@@ -1200,16 +1221,23 @@
                     "startTime": "10:00",
                     "weekday": "Thursday"
                 },
-                "pendingScheduleSlotDisplayText": "목요일 10:00에 수업 추가",
+                "pendingScheduleSlotDisplayText": null,
+                "pendingScheduleSlotLabelVisible": false,
+                "rosterDynamicColumnCount": 0,
+                "rosterEditorClearedOnSuspension": true,
+                "rosterEditorLoaded": false,
+                "rosterEditorWidgetCount": 1,
+                "rosterModeledRowCount": 0,
                 "route": "Next TestingClassesManagerPage",
                 "selectedClassId": null,
-                "selectedEditorDescendantCount": 61,
+                "selectedEditorDescendantCount": 96,
                 "selectedEditorWidgetCount": 1,
                 "state": "pending_slot",
                 "testingClassCount": 96,
                 "viewportHeight": 768,
                 "viewportWidth": 1024,
-                "widgetCountWhileActive": 80
+                "widgetCountWhileActive": 115,
+                "imageSha256": "abd6a558f0f7e398249a5e10d511b6ddaeb779fee5e43846c631ba7dfafa2b6d"
             },
             "sameSelectedClass": true,
             "seededTestingClassCount": 96,

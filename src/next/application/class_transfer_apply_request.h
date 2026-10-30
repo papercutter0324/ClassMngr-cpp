@@ -3,6 +3,7 @@
 #include "next/application/class_transfer_projection.h"
 #include "next/application/positive_decimal_id_validation.h"
 
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <vector>
@@ -16,6 +17,31 @@ struct ClassTransferApplyRequest final
 {
     std::vector<ClassTransferReviewClassResolution> classes;
     std::vector<ClassTransferReviewTeacherResolution> teachers;
+};
+
+// Maximum number of non-testing Classes allowed after a bounded import.
+class ClassTransferVisibleClassLimit final
+{
+public:
+    explicit constexpr ClassTransferVisibleClassLimit(
+        const std::size_t value
+        ) noexcept
+        : m_value(value)
+    {
+    }
+
+    [[nodiscard]] constexpr std::size_t rawValue() const noexcept
+    {
+        return m_value;
+    }
+
+    friend constexpr bool operator==(
+        const ClassTransferVisibleClassLimit&,
+        const ClassTransferVisibleClassLimit&
+        ) noexcept = default;
+
+private:
+    std::size_t m_value = 0;
 };
 
 struct ClassTransferApplyCandidates final

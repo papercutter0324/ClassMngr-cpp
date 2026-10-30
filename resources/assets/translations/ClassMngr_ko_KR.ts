@@ -5534,6 +5534,11 @@ Rm: %1</source>
         <source>Roster print data is malformed.</source>
         <translation>명단 인쇄 데이터의 형식이 잘못되었습니다.</translation>
     </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="2135"/>
+        <source>The class import would exceed the visible Classes limit of %1.</source>
+        <translation>수업을 가져오면 표시 가능한 수업 수 한도(%1개)를 초과합니다.</translation>
+    </message>
 </context>
 <context>
     <name>ResourcePackUpdateService</name>

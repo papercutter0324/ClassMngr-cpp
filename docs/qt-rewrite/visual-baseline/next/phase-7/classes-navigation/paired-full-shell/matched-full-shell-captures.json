@@ -1,0 +1,100 @@
+{
+    "captures": [
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "image": "en_US-light/legacy_classes_en_US_light.png",
+                "sha256": "1c954196e6a2c721ad6d2ab603415b4315bc7e0fe1d70fb86a926571a90c9da0",
+                "source": "docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/english-light/classes-entry.png"
+            },
+            "locale": "en_US",
+            "next": {
+                "image": "en_US-light/next_classes_en_US-light.png",
+                "sha256": "b5bb108164f7f0f4005fab6591be353819b1fa69ad7514f0620380553a8193f4"
+            },
+            "nextClassesRouteLabel": "Classes",
+            "selectedClassId": 25,
+            "theme": "light",
+            "viewport": {
+                "height": 600,
+                "width": 800
+            }
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "image": "en_US-dark/legacy_classes_en_US_dark.png",
+                "sha256": "0f30211d1ca078e17155f2940b478a2cddb3a74084991576e4f7871a5cdac065",
+                "source": "docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/english-dark/classes-entry.png"
+            },
+            "locale": "en_US",
+            "next": {
+                "image": "en_US-dark/next_classes_en_US-dark.png",
+                "sha256": "ae3e17b6074534b53fe16e9c37c086fca7960a0c2a94e60c9cd8ecc3b5e902c1"
+            },
+            "nextClassesRouteLabel": "Classes",
+            "selectedClassId": 25,
+            "theme": "dark",
+            "viewport": {
+                "height": 600,
+                "width": 800
+            }
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "image": "ko_KR-light/legacy_classes_ko_KR_light.png",
+                "sha256": "6bf74f3cf4c77e434d892ec4cc6d623892c61350a5ca93c1ef4fe4e990e70894",
+                "source": "docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/korean-light/classes-entry.png"
+            },
+            "locale": "ko_KR",
+            "next": {
+                "image": "ko_KR-light/next_classes_ko_KR-light.png",
+                "sha256": "ea7a8e54365355e8d5d70171fd43d965f6762d0d912ec8b353ccadba12c9cc01"
+            },
+            "nextClassesRouteLabel": "수업",
+            "selectedClassId": 25,
+            "theme": "light",
+            "viewport": {
+                "height": 600,
+                "width": 800
+            }
+        },
+        {
+            "fixtureClassCount": 96,
+            "legacy": {
+                "image": "ko_KR-dark/legacy_classes_ko_KR_dark.png",
+                "sha256": "b31502af4d29b6311f20df91817e99eb2dca611a6d128da81728a6caa9aa0dc1",
+                "source": "docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/korean-dark/classes-entry.png"
+            },
+            "locale": "ko_KR",
+            "next": {
+                "image": "ko_KR-dark/next_classes_ko_KR-dark.png",
+                "sha256": "24f3090749cfee6274120cf89b19259e53f8e3f01bf90f71675f6f5b4ba872c8"
+            },
+            "nextClassesRouteLabel": "수업",
+            "selectedClassId": 25,
+            "theme": "dark",
+            "viewport": {
+                "height": 600,
+                "width": 800
+            }
+        }
+    ],
+    "fixture": "docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps",
+    "fixtureClassCount": 96,
+    "fixtureSha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+    "fixtureTeacherCount": 24,
+    "limitation": "The pairs show the same tracked 96-class workspace, class ID 25, locale, theme, and 800x600 viewport. The Legacy images are full-application captures; the Next images show the ApplicationShell window with a single test-registered Classes page, not the production navigation tree. The page navigation and Classes presentation intentionally differ; these captures support visual review and do not claim pixel parity.",
+    "nextClassesRouteLabelSource": "QObject::tr(\"Classes\") using the production compiled locale catalog",
+    "nextShellComposition": "ApplicationShell window with one test-registered Classes page; the production navigation tree is not loaded.",
+    "nextStyle": "Fusion with packaged locale theme",
+    "parityClaim": false,
+    "productionNavigationTreeIncluded": false,
+    "purpose": "Matched Legacy application-shell and Next single-route ApplicationShell window captures using the same tracked workspace fixture and selected class.",
+    "selectedClassId": 25,
+    "viewport": {
+        "height": 600,
+        "width": 800
+    }
+}

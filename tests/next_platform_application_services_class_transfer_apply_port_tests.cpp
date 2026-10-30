@@ -8,9 +8,12 @@
 #include "next/application/class_transfer_apply.h"
 #include "next/platform/application_services_class_transfer_apply_port.h"
 
+#include <QCoreApplication>
+#include <QDir>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QTranslator>
 #include <QUuid>
 #include <QtTest/QtTest>
 
@@ -76,6 +79,117 @@ Application::ClassTransferApplyCommand createCommand(
     });
     return {.package = ClassMngr::Data::Legacy::toPortableClassTransferPackage(
         std::move(package)), .choices = std::move(choices)};
+}
+
+Application::ClassTransferApplyCommand createManyCreatesCommand(
+    const int classCount
+    )
+{
+    ClassTransferPackage package = validPackage();
+    const ClassTransferTeacher& transferTeacher = package.teachers.first();
+    const QString teacherKey = transferTeacher.key;
+    package.classes.clear();
+
+    Application::ClassTransferApplyRequest choices;
+    choices.classes.reserve(static_cast<std::size_t>(classCount));
+    for (int index = 0; index < classCount; ++index)
+    {
+        ClassTransferClass transferClass;
+        transferClass.key = QStringLiteral("class-%1").arg(index);
+        transferClass.name = QStringLiteral("Imported Class %1").arg(index);
+        transferClass.teacherKey = teacherKey;
+        transferClass.info.classGrade = QStringLiteral("E4");
+        transferClass.info.classLevel = QStringLiteral("Theseus");
+        package.classes.append(std::move(transferClass));
+        choices.classes.push_back({
+            Application::ClassTransferPackageClassIndex{index},
+            Application::ClassTransferReviewClassAction::Create,
+            std::nullopt
+        });
+    }
+    choices.teachers.push_back({
+        Application::ClassTransferTeacherKey{teacherKey.toStdString()},
+        Application::ClassTransferReviewTeacherAction::Create,
+        std::nullopt
+    });
+    return {
+        .package = ClassMngr::Data::Legacy::toPortableClassTransferPackage(
+            std::move(package)),
+        .choices = std::move(choices)
+    };
+}
+
+Application::ClassTransferApplyCommand createReplaceAndSkipCommand(
+    const int replaceTargetClassId,
+    const qint64 existingTeacherId
+    )
+{
+    ClassTransferPackage package = validPackage();
+    ClassTransferClass skippedClass = package.classes.first();
+    skippedClass.key = QStringLiteral("class-skip");
+    skippedClass.name = QStringLiteral("Skipped Class");
+    package.classes.append(std::move(skippedClass));
+
+    Application::ClassTransferApplyRequest choices;
+    choices.classes = {
+        {
+            Application::ClassTransferPackageClassIndex{0},
+            Application::ClassTransferReviewClassAction::Replace,
+            classId(replaceTargetClassId)
+        },
+        {
+            Application::ClassTransferPackageClassIndex{1},
+            Application::ClassTransferReviewClassAction::Skip,
+            std::nullopt
+        }
+    };
+    choices.teachers.push_back({
+        Application::ClassTransferTeacherKey{"teacher-1"},
+        Application::ClassTransferReviewTeacherAction::KeepExisting,
+        teacherId(static_cast<int>(existingTeacherId))
+    });
+    return {
+        .package = ClassMngr::Data::Legacy::toPortableClassTransferPackage(
+            std::move(package)),
+        .choices = std::move(choices)
+    };
+}
+
+bool seedVisibleClasses(
+    QSqlDatabase database,
+    const int classCount,
+    const int specialClassIndex = -1,
+    const QString& specialClassName = {},
+    int* specialClassId = nullptr
+    )
+{
+    QSqlQuery insert(database);
+    if (!insert.prepare(QStringLiteral("INSERT INTO classes(name) VALUES(?)")))
+    {
+        return false;
+    }
+    for (int index = 0; index < classCount; ++index)
+    {
+        const QString name = index == specialClassIndex
+            ? specialClassName
+            : QStringLiteral("Existing Class %1").arg(index);
+        insert.bindValue(0, name);
+        if (!insert.exec())
+        {
+            return false;
+        }
+        if (index == specialClassIndex && specialClassId)
+        {
+            bool idValid = false;
+            const qint64 id = insert.lastInsertId().toLongLong(&idValid);
+            if (!idValid || id <= 0 || id > std::numeric_limits<int>::max())
+            {
+                return false;
+            }
+            *specialClassId = static_cast<int>(id);
+        }
+    }
+    return true;
 }
 
 int count(QSqlDatabase database, const QString& table)
@@ -145,6 +259,12 @@ private slots:
     void normalizesOwnedPackageWithoutChangingArrayOrder();
     void createsWithNormalizedPayloadAndTypedSummary();
     void skipsClassAndPreservesPositiveCount();
+    void rejects4097CreateImportWithoutPartialMutation();
+    void nextImportKeepsThe4096VisibleClassLimitUsable();
+    void testingClassesDoNotCountTowardVisibleLimit();
+    void replaceAndSkipDoNotIncreaseTheVisibleClassCount();
+    void legacyRepositoryImportRemainsUnbounded();
+    void rejectsVisibleOverflowWithKoreanTranslation();
     void createNewRejectsGeneratedClassIdOutsideIntAndRollsBack();
     void createNewAcceptsIntMaxGeneratedClassId();
     void replacesClassAndTeacherThroughRepository();
@@ -448,6 +568,200 @@ skipsClassAndPreservesPositiveCount()
     QCOMPARE(result.value().skippedClassCount.rawValue(), 1);
     QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 0);
     QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 0);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+rejects4097CreateImportWithoutPartialMutation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.workspaceStore()->database();
+    const qint64 changesBefore = totalChanges(database);
+    QVERIFY(changesBefore >= 0);
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(createManyCreatesCommand(4097));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(QString::fromStdString(result.error().message),
+        QStringLiteral(
+            "The class import would exceed the visible Classes limit of 4096."));
+    QCOMPARE(totalChanges(database), changesBefore);
+    QCOMPARE(count(database, QStringLiteral("teachers")), 0);
+    QCOMPARE(count(database, QStringLiteral("classes")), 0);
+    QCOMPARE(count(database, QStringLiteral("class_info")), 0);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+nextImportKeepsThe4096VisibleClassLimitUsable()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.workspaceStore()->database();
+    QVERIFY(seedVisibleClasses(database, 4095));
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(createCommand());
+
+    QVERIFY2(result, result ? "" : result.error().message.c_str());
+    QCOMPARE(result.value().createdClassIds.size(), std::size_t(1));
+    QCOMPARE(count(database, QStringLiteral("classes")), 4096);
+    const auto visibleClasses =
+        services.workspaceStore()->classRepository()
+            ->getBoundedClassesForNavigation(4096, 4096);
+    QVERIFY(visibleClasses);
+    QCOMPARE(visibleClasses->size(), 4096);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+testingClassesDoNotCountTowardVisibleLimit()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.workspaceStore()->database();
+    QVERIFY(seedVisibleClasses(database, 4095));
+
+    QSqlQuery insertTestingClass(database);
+    QVERIFY(insertTestingClass.exec(QStringLiteral(
+        "INSERT INTO classes(name) VALUES('Testing Bound Class')")));
+    bool testingClassIdValid = false;
+    const int testingClassId =
+        insertTestingClass.lastInsertId().toInt(&testingClassIdValid);
+    QVERIFY(testingClassIdValid);
+    QVERIFY(testingClassId > 0);
+    QSqlQuery markTestingClass(database);
+    QVERIFY(markTestingClass.prepare(QStringLiteral(
+        "INSERT INTO testing_classes(class_id, room) VALUES(?, ?)")));
+    markTestingClass.addBindValue(testingClassId);
+    markTestingClass.addBindValue(QStringLiteral("Bound testing room"));
+    QVERIFY(markTestingClass.exec());
+    QCOMPARE(count(database, QStringLiteral("classes")), 4096);
+    QCOMPARE(count(database, QStringLiteral("testing_classes")), 1);
+
+    const auto visibleBeforeImport =
+        services.workspaceStore()->classRepository()
+            ->getBoundedClassesForNavigation(4096, 4096);
+    QVERIFY(visibleBeforeImport);
+    QCOMPARE(visibleBeforeImport->size(), 4095);
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(createCommand());
+
+    QVERIFY2(result, result ? "" : result.error().message.c_str());
+    QCOMPARE(result.value().createdClassIds.size(), std::size_t(1));
+    QCOMPARE(count(database, QStringLiteral("classes")), 4097);
+    const auto visibleAfterImport =
+        services.workspaceStore()->classRepository()
+            ->getBoundedClassesForNavigation(4096, 4096);
+    QVERIFY(visibleAfterImport);
+    QCOMPARE(visibleAfterImport->size(), 4096);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+replaceAndSkipDoNotIncreaseTheVisibleClassCount()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.workspaceStore()->database();
+    Teacher localTeacher;
+    localTeacher.teacherEn = QStringLiteral("Alex Kim");
+    localTeacher.preferredName = QStringLiteral("Alex Kim");
+    const auto existingTeacherId = services.workspaceStore()
+        ->teacherRepository()->createTeacher(localTeacher);
+    QVERIFY(existingTeacherId);
+    QVERIFY(seedVisibleClasses(database, 4095));
+    int replaceTargetClassId = -1;
+    QVERIFY(insertLocalClass(services, QStringLiteral("Imported Class"),
+        static_cast<int>(*existingTeacherId), &replaceTargetClassId));
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(createReplaceAndSkipCommand(
+        replaceTargetClassId, *existingTeacherId));
+
+    QVERIFY2(result, result ? "" : result.error().message.c_str());
+    QVERIFY(result.value().createdClassIds.empty());
+    QCOMPARE(result.value().replacedClassIds.size(), std::size_t(1));
+    QCOMPARE(result.value().replacedClassIds.front(),
+        classId(replaceTargetClassId));
+    QCOMPARE(result.value().skippedClassCount.rawValue(), 1);
+    QCOMPARE(count(database, QStringLiteral("classes")), 4096);
+    const auto visibleClasses =
+        services.workspaceStore()->classRepository()
+            ->getBoundedClassesForNavigation(4096, 4096);
+    QVERIFY(visibleClasses);
+    QCOMPARE(visibleClasses->size(), 4096);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+legacyRepositoryImportRemainsUnbounded()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.workspaceStore()->database();
+    QVERIFY(seedVisibleClasses(database, 4096));
+
+    const auto atLimit = services.workspaceStore()->classRepository()
+        ->getBoundedClassesForNavigation(4096, 4096);
+    QVERIFY(atLimit);
+    QCOMPARE(atLimit->size(), 4096);
+
+    ClassImportPlan legacyPlan;
+    legacyPlan.classes.append({0, ClassImportAction::Create, -1});
+    legacyPlan.teachers.append({
+        QStringLiteral("teacher-1"), TeacherImportAction::Create, -1
+    });
+    const RepositoryResult<ClassImportSummary> result =
+        services.workspaceStore()->classTransferRepository()->importClasses(
+            validPackage(), legacyPlan);
+
+    QVERIFY2(result, result ? "" : result.error().diagnostic.toUtf8().constData());
+    QCOMPARE(count(database, QStringLiteral("classes")), 4097);
+    const auto overLimit = services.workspaceStore()->classRepository()
+        ->getBoundedClassesForNavigation(4096, 4096);
+    QVERIFY(!overLimit);
+    QCOMPARE(overLimit.error().code, RepositoryErrorCode::Validation);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
+rejectsVisibleOverflowWithKoreanTranslation()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    QSqlDatabase database = services.workspaceStore()->database();
+    QVERIFY(seedVisibleClasses(database, 4096));
+    const qint64 changesBefore = totalChanges(database);
+    QVERIFY(changesBefore >= 0);
+
+    QTranslator translator;
+    const QString translationPath = QDir(QStringLiteral(
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY))
+            .filePath(QStringLiteral("ClassMngr_ko_KR.qm"));
+    QVERIFY2(translator.load(translationPath), qPrintable(translationPath));
+    QVERIFY(QCoreApplication::installTranslator(&translator));
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+    const auto result = port.apply(createCommand());
+    QCoreApplication::removeTranslator(&translator);
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QCOMPARE(QString::fromStdString(result.error().message),
+        QStringLiteral(
+            "수업을 가져오면 표시 가능한 수업 수 한도(4096개)를 초과합니다."));
+    QCOMPARE(totalChanges(database), changesBefore);
+    QCOMPARE(count(database, QStringLiteral("classes")), 4096);
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::

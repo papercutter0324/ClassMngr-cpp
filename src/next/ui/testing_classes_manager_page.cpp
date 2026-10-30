@@ -43,35 +43,6 @@ constexpr int kTeacherFallbackRole = Qt::UserRole + 38;
         error.message.data(), static_cast<qsizetype>(error.message.size()));
 }
 
-[[nodiscard]] QString weekdayName(const Domain::Weekday weekday)
-{
-    switch (weekday)
-    {
-    case Domain::Weekday::Monday:
-        return QCoreApplication::translate("TestingClassesManagerPage", "Monday");
-    case Domain::Weekday::Tuesday:
-        return QCoreApplication::translate("TestingClassesManagerPage", "Tuesday");
-    case Domain::Weekday::Wednesday:
-        return QCoreApplication::translate("TestingClassesManagerPage", "Wednesday");
-    case Domain::Weekday::Thursday:
-        return QCoreApplication::translate("TestingClassesManagerPage", "Thursday");
-    case Domain::Weekday::Friday:
-        return QCoreApplication::translate("TestingClassesManagerPage", "Friday");
-    case Domain::Weekday::Saturday:
-        return QCoreApplication::translate("TestingClassesManagerPage", "Saturday");
-    case Domain::Weekday::Sunday:
-        return QCoreApplication::translate("TestingClassesManagerPage", "Sunday");
-    }
-    return {};
-}
-
-[[nodiscard]] QString startTimeText(const int minute)
-{
-    return QStringLiteral("%1:%2")
-        .arg(minute / 60, 2, 10, QLatin1Char('0'))
-        .arg(minute % 60, 2, 10, QLatin1Char('0'));
-}
-
 [[nodiscard]] std::optional<qint64> teacherIdFromChoice(
     const QVariant& value
     )
@@ -576,6 +547,7 @@ void TestingClassesManagerPage::buildUi()
     m_pendingSlotLabel = new QLabel(m_editorWidget);
     m_pendingSlotLabel->setObjectName(QStringLiteral("testingClassesPendingSlot"));
     m_pendingSlotLabel->setWordWrap(true);
+    m_pendingSlotLabel->hide();
     editorLayout->addWidget(m_pendingSlotLabel);
     m_sections = new QTabWidget(m_editorWidget);
     m_sections->setObjectName(QStringLiteral("testingClassesSections"));
@@ -832,12 +804,6 @@ void TestingClassesManagerPage::retranslateUi()
                 index, managerText("Teacher %1").arg(teacherId));
         }
     }
-    if (m_pendingSlot)
-    {
-        m_pendingSlotLabel->setText(managerText("New class for %1 at %2")
-            .arg(weekdayName(m_pendingSlot->weekday),
-                startTimeText(m_pendingSlot->startMinute.rawValue())));
-    }
 }
 
 void TestingClassesManagerPage::clearEditor()
@@ -896,16 +862,7 @@ void TestingClassesManagerPage::beginNewClass(
     m_fontColorEdit->setText(QStringLiteral("#000000"));
     m_notesEdit->clear();
     m_loading = false;
-    if (m_pendingSlot)
-    {
-        m_pendingSlotLabel->setText(managerText("New class for %1 at %2")
-            .arg(weekdayName(m_pendingSlot->weekday),
-                startTimeText(m_pendingSlot->startMinute.rawValue())));
-    }
-    else
-    {
-        m_pendingSlotLabel->clear();
-    }
+    m_pendingSlotLabel->clear();
     setStatus({}, false);
     updateColors();
     updateActions();

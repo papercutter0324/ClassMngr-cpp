@@ -4,7 +4,7 @@ Source commit: `368fcee8`.
 
 The eight PNGs and [`manifest.json`](manifest.json) were copied from the
 standard `build/macos-clang-debug/classes-navigator-visual-capture/` output.
-They use Fusion at 1024×768, offscreen, with synthetic page data. English and
+They use Fusion at 1068×768, offscreen, with synthetic page data. English and
 Korean captures cover light and dark themes at 6 and 96 classes. The manifest
 records use of the compiled production Korean catalog.
 
@@ -37,7 +37,10 @@ workflows, and section deep links are outside this candidate.
 ## Model, lifecycle, and memory
 
 The 96-class captures report three grade groups plus All, one page, one list
-model/view, 41 page widgets, zero per-class widgets, and zero detail editors.
+model/view, 266 total page widgets, zero per-class widgets, and one shared
+selected class editor. Suspension clears model rows while retaining the
+single shared editor and its fixed page structure. The manifest records the
+SHA-256 of each generated image.
 Suspension clears model rows; the page and its 41 fixed widgets remain. Active
 whole-process observations range from 57,622,528 to 65,159,168 working-set
 bytes and from 20,087,648 to 24,970,104 private-usage bytes. These observations
@@ -50,15 +53,20 @@ The existing release references are [English/light](../../../release/large-class
 [English/dark](../../../release/large-classes-visual-states/english-dark/classes-entry.png),
 [Korean/light](../../../release/large-classes-visual-states/korean-light/classes-entry.png),
 and [Korean/dark](../../../release/large-classes-visual-states/korean-dark/classes-entry.png).
-Those images show the application menu and sidebar, selected-class summary,
-class and weekday selectors, and detail tabs/editor. The Next captures show a
-page-only schedule/visibility control row, weekday/weekend filters, grade tabs,
-and a scrollable class list, with no application shell or class detail
-sections. The Korean Next navigation labels are localized; the legacy shell
-references retain some English labels. These are different states and data,
-not matched visual comparisons. Full Classes visual parity remains open,
-including the class-detail sections excluded from #24. The 7A screenshot and
-memory evidence and the Phase 7 exit gates also remain open.
+The original Next captures in this directory are synthetic page-only
+navigation states. They remain useful for the small and 96-row model/widget
+counts, but they do not match the Legacy shell captures. The new
+[matched Classes entry captures](paired-full-shell/README.md) use the same
+tracked 96-class workspace, class ID 25, locale, theme, and 800×600 viewport.
+The Legacy images are existing full-application captures. Each Next image
+shows the complete captured `ApplicationShell` window with one test-registered
+Classes route; it does not include the production navigation tree. The route
+label uses the production localized `QObject::tr("Classes")` string. The
+manifest records fixture provenance and SHA-256 hashes. These pairs address
+the missing matched populated-entry captures; they do not claim pixel parity
+or cover other Classes states. The Korean Legacy references retain some
+English labels. Empty/dialog/error full-window captures, the 7A screenshot,
+memory evidence, and the Phase 7 exit gates remain open.
 
 ## Verification
 

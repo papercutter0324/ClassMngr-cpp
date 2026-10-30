@@ -5,6 +5,7 @@
 #include "data/repositories/class_transfer_repository.h"
 #include "domain/validation/class_transfer_package_validator.h"
 #include "next/application/class_transfer_apply_use_case.h"
+#include "next/application/classes_list_read_snapshot.h"
 #include "next/application/positive_decimal_id_validation.h"
 #include "next/platform/repository_error_code.h"
 #include "next/platform/workspace_store_classes_navigator_read_actions.h"
@@ -327,8 +328,12 @@ public:
                         utf8(normalized.error())));
             }
 
-            const auto imported = repository->importClassesWithFailureDetails(
-                *normalized, command.choices);
+            const auto imported =
+                repository->importClassesWithBoundedVisibleClassCount(
+                    *normalized, command.choices,
+                    Application::ClassTransferVisibleClassLimit{
+                        Application::kClassesNavigationMaximumClasses
+                    });
             if (!imported)
             {
                 return Application::ClassTransferApplyResult::failure(

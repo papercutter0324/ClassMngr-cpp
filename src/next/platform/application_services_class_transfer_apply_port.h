@@ -6,6 +6,7 @@
 #include "data/repositories/class_transfer_legacy_package_adapter.h"
 #include "domain/validation/class_transfer_package_validator.h"
 #include "next/application/class_transfer_apply.h"
+#include "next/application/classes_list_read_snapshot.h"
 #include "next/platform/repository_error_code.h"
 
 #include <QByteArray>
@@ -78,9 +79,12 @@ public:
             }
 
             const ClassTransferDetailedImportResult imported =
-                repository->importClassesWithFailureDetails(
+                repository->importClassesWithBoundedVisibleClassCount(
                 *normalized,
-                command.choices
+                command.choices,
+                Application::ClassTransferVisibleClassLimit{
+                    Application::kClassesNavigationMaximumClasses
+                    }
                 );
             if (!imported)
             {

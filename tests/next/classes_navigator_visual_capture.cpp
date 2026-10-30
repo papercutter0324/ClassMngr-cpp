@@ -7,6 +7,7 @@
 #include "preferences_test_ports.h"
 
 #include <QApplication>
+#include <QCryptographicHash>
 #include <QComboBox>
 #include <QDir>
 #include <QFile>
@@ -35,7 +36,7 @@ using namespace ClassMngr::Next;
 namespace
 {
 
-constexpr QSize Viewport{1024, 768};
+constexpr QSize Viewport{1068, 768};
 
 Domain::ClassId classId(const int id)
 {
@@ -48,6 +49,17 @@ QString readText(const QString& path)
     return file.open(QIODevice::ReadOnly | QIODevice::Text)
         ? QString::fromUtf8(file.readAll())
         : QString{};
+}
+
+QByteArray sha256(const QString& path)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        return {};
+    }
+    return QCryptographicHash::hash(file.readAll(), QCryptographicHash::Sha256)
+        .toHex();
 }
 
 QPalette themePalette(const QString& theme)
@@ -158,23 +170,14 @@ int classPropertyWidgetCount(const QWidget* root)
     return count;
 }
 
-int detailEditorCount(const QWidget* root)
+int sharedDetailEditorCount(const QWidget* root)
 {
     if (!root)
     {
         return 0;
     }
-    int count = 0;
-    for (QWidget* const widget : root->findChildren<QWidget*>())
-    {
-        const QString name = widget->objectName();
-        if (name.contains(QStringLiteral("Detail"), Qt::CaseInsensitive)
-            || name.contains(QStringLiteral("Editor"), Qt::CaseInsensitive))
-        {
-            ++count;
-        }
-    }
-    return count;
+    return root->findChildren<QWidget*>(
+        QStringLiteral("selectedClassEditor")).size();
 }
 
 QJsonObject memoryJson(const ProcessMemorySnapshot& snapshot)
@@ -346,9 +349,21 @@ bool captureCase(
                                              : QStringLiteral("small"));
     const QString imagePath = QDir(outputDirectory).filePath(
         QStringLiteral("classes_%1.png").arg(key));
-    if (image.size() != Viewport || !image.save(imagePath, "PNG"))
+    const bool hasExpectedViewport = image.size() == Viewport;
+    const bool imageSaved = hasExpectedViewport && image.save(imagePath, "PNG");
+    if (!imageSaved)
     {
-        if (error) *error = QStringLiteral("A Classes visual capture could not be saved.");
+        if (error) *error = QStringLiteral(
+            "A Classes visual capture could not be saved (image %1x%2, expected %3x%4, path %5).")
+                .arg(image.width()).arg(image.height())
+                .arg(Viewport.width()).arg(Viewport.height()).arg(imagePath);
+        return false;
+    }
+    const QByteArray imageHash = sha256(imagePath);
+    if (imageHash.isEmpty())
+    {
+        if (error) *error = QStringLiteral(
+            "Could not hash the saved Classes capture: %1").arg(imagePath);
         return false;
     }
 
@@ -375,7 +390,7 @@ bool captureCase(
         ? 1 : 0;
     const int activeWidgetCount = widgetCount(page);
     const int perClassWidgetCount = classPropertyWidgetCount(page);
-    const int editors = detailEditorCount(page);
+    const int editors = sharedDetailEditorCount(page);
     const int listResultRows = classRows;
     const int navigationResultRows = static_cast<int>(navigation.classes.size());
 
@@ -394,6 +409,7 @@ bool captureCase(
         {QStringLiteral("theme"), theme},
         {QStringLiteral("fixtureClassCount"), classCount},
         {QStringLiteral("image"), QFileInfo(imagePath).fileName()},
+        {QStringLiteral("sha256"), QString::fromLatin1(imageHash)},
         {QStringLiteral("width"), image.width()},
         {QStringLiteral("height"), image.height()},
         {QStringLiteral("navigationCounts"), QJsonObject{
@@ -414,7 +430,7 @@ bool captureCase(
             {QStringLiteral("perClassWidgetCountAfterSuspension"),
              classPropertyWidgetCount(page)},
             {QStringLiteral("detailEditorCountAfterSuspension"),
-             detailEditorCount(page)}
+             sharedDetailEditorCount(page)}
         }},
         {QStringLiteral("readSizes"), QJsonObject{
             {QStringLiteral("listReadCalls"), listReads},
@@ -445,8 +461,20 @@ bool captureCase(
             {QStringLiteral("suspended"), memoryJson(suspendedMemory)}
         }}
     };
-    return clearedOnSuspension && modelCount == 1 && listViewCount == 1
-        && perClassWidgetCount == 0 && editors == 0;
+    const bool countsMatch = clearedOnSuspension && modelCount == 1
+        && listViewCount == 1 && perClassWidgetCount == 0 && editors == 1
+        && sharedDetailEditorCount(page) == 1;
+    if (!countsMatch && error)
+    {
+        *error = QStringLiteral(
+            "Classes capture counts differed (cleared=%1, models=%2, lists=%3, per-class widgets=%4, editors=%5).")
+                .arg(clearedOnSuspension)
+                .arg(modelCount)
+                .arg(listViewCount)
+                .arg(perClassWidgetCount)
+                .arg(editors);
+    }
+    return countsMatch;
 }
 
 } // namespace

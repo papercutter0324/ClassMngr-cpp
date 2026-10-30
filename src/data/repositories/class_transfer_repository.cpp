@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <limits>
 #include <optional>
 #include <string>
@@ -1953,6 +1954,37 @@ ClassTransferRepository::importClassesWithFailureDetails(
     const ClassMngr::Next::Application::ClassTransferApplyRequest& request
     )
 {
+    return importClassesWithFailureDetailsImpl(package, request, std::nullopt);
+}
+
+ClassTransferDetailedImportResult
+ClassTransferRepository::importClassesWithBoundedVisibleClassCount(
+    const ClassTransferPackage& package,
+    const ClassMngr::Next::Application::ClassTransferApplyRequest& request,
+    const ClassMngr::Next::Application::ClassTransferVisibleClassLimit limit
+    )
+{
+    return importClassesWithFailureDetailsImpl(package, request, limit);
+}
+
+ClassTransferDetailedImportResult
+ClassTransferRepository::importClassesWithFailureDetailsImpl(
+    const ClassTransferPackage& package,
+    const ClassMngr::Next::Application::ClassTransferApplyRequest& request,
+    const std::optional<
+        ClassMngr::Next::Application::ClassTransferVisibleClassLimit> limit
+    )
+{
+    if (limit && (limit->rawValue() == 0
+        || limit->rawValue() > static_cast<std::size_t>(
+            std::numeric_limits<int>::max())))
+    {
+        return std::unexpected(RepositoryError{
+            RepositoryErrorCode::InvalidInput,
+            QObject::tr("The visible Classes import limit is invalid.")
+        });
+    }
+
     if (!m_database.isOpen())
     {
         return std::unexpected(RepositoryError{
@@ -2029,6 +2061,82 @@ ClassTransferRepository::importClassesWithFailureDetails(
             std::move(error)
         });
     };
+
+    if (limit)
+    {
+        std::size_t createCount = 0;
+        for (auto iterator = validatedResult->classes.cbegin();
+             iterator != validatedResult->classes.cend(); ++iterator)
+        {
+            if (iterator.value().action == ClassImportAction::Create)
+            {
+                ++createCount;
+            }
+        }
+
+        QSqlQuery visibleClassCountQuery(m_database);
+        // Match ClassRepository::getBoundedClassesForNavigation: testing
+        // classes are not visible in the Next Classes list.
+        if (!visibleClassCountQuery.exec(QStringLiteral(R"(
+            SELECT COUNT(*)
+            FROM classes c
+            LEFT JOIN testing_classes tc
+            ON tc.class_id = c.id
+            WHERE tc.class_id IS NULL
+        )")))
+        {
+            return failTransaction(queryFailure(
+                visibleClassCountQuery,
+                QObject::tr("Counting visible classes before import")
+                ).error());
+        }
+        if (!visibleClassCountQuery.next())
+        {
+            return failTransaction(RepositoryError{
+                RepositoryErrorCode::Technical,
+                QObject::tr(
+                    "Unable to count visible classes before import: %1")
+                    .arg(visibleClassCountQuery.lastError().text())
+            });
+        }
+        bool existingCountValid = false;
+        const qint64 existingVisibleClassCount =
+            visibleClassCountQuery.value(0).toLongLong(&existingCountValid);
+        if (!existingCountValid || existingVisibleClassCount < 0)
+        {
+            return failTransaction(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "The visible Classes count is outside the supported range.")
+            });
+        }
+
+        const std::uintmax_t existingCount = static_cast<std::uintmax_t>(
+            existingVisibleClassCount);
+        const std::uintmax_t createsCount =
+            static_cast<std::uintmax_t>(createCount);
+        if (createsCount > std::numeric_limits<std::uintmax_t>::max()
+                - existingCount)
+        {
+            return failTransaction(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "The projected visible Classes count is outside the supported range.")
+            });
+        }
+        const std::uintmax_t projectedVisibleClassCount =
+            existingCount + createsCount;
+        if (projectedVisibleClassCount > static_cast<std::uintmax_t>(
+                limit->rawValue()))
+        {
+            return failTransaction(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "The class import would exceed the visible Classes limit of %1.")
+                    .arg(static_cast<qulonglong>(limit->rawValue()))
+            });
+        }
+    }
 
     QHash<QString, qint64> teacherIds;
 

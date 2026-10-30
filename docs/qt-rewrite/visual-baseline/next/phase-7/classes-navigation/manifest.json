@@ -8,39 +8,39 @@
             "memoryProcessWideObservation": {
                 "active": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.322",
-                    "peakWorkingSetBytes": 57540608,
+                    "capturedAt": "2026-10-30T07:35:18.854",
+                    "peakWorkingSetBytes": 63389696,
                     "platform": "macos",
-                    "privateUsageBytes": 20038544,
-                    "privateWorkingSetBytes": 19398656,
-                    "workingSetBytes": 57540608
+                    "privateUsageBytes": 24707936,
+                    "privateWorkingSetBytes": 24100864,
+                    "workingSetBytes": 63389696
                 },
                 "before": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.239",
-                    "peakWorkingSetBytes": 25214976,
+                    "capturedAt": "2026-10-30T07:35:18.757",
+                    "peakWorkingSetBytes": 26198016,
                     "platform": "macos",
-                    "privateUsageBytes": 8585864,
-                    "privateWorkingSetBytes": 8126464,
-                    "workingSetBytes": 25214976
+                    "privateUsageBytes": 8258208,
+                    "privateWorkingSetBytes": 7782400,
+                    "workingSetBytes": 26198016
                 },
                 "scope": "Whole-process observations; not page allocations or budgets",
                 "suspended": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.335",
-                    "peakWorkingSetBytes": 61046784,
+                    "capturedAt": "2026-10-30T07:35:18.870",
+                    "peakWorkingSetBytes": 66977792,
                     "platform": "macos",
-                    "privateUsageBytes": 23413648,
-                    "privateWorkingSetBytes": 22773760,
-                    "workingSetBytes": 61046784
+                    "privateUsageBytes": 28214112,
+                    "privateWorkingSetBytes": 27607040,
+                    "workingSetBytes": 66977792
                 }
             },
             "navigationCounts": {
                 "allGroupRows": 6,
                 "classIdWidgetPropertyCount": 0,
                 "classRows": 6,
-                "detailEditorCount": 0,
-                "detailEditorCountAfterSuspension": 0,
+                "detailEditorCount": 1,
+                "detailEditorCountAfterSuspension": 1,
                 "gradeGroupCount": 3,
                 "gradeGroups": [
                     {
@@ -66,8 +66,8 @@
                 "pageCount": 1,
                 "perClassWidgetCount": 0,
                 "perClassWidgetCountAfterSuspension": 0,
-                "widgetCountAfterSuspension": 41,
-                "widgetCountWhileActive": 41
+                "widgetCountAfterSuspension": 266,
+                "widgetCountWhileActive": 266
             },
             "readSizes": {
                 "listReadCalls": 1,
@@ -83,8 +83,9 @@
                 "navigationScheduleRowsTotal": 9,
                 "scheduleRowsPerSourceClassMaximum": 14
             },
+            "sha256": "d219755b07b5a4299c78e9e7acdd99a9cf64244677017d26c3051b98140478e7",
             "theme": "light",
-            "width": 1024
+            "width": 1068
         },
         {
             "fixtureClassCount": 96,
@@ -94,39 +95,39 @@
             "memoryProcessWideObservation": {
                 "active": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.344",
-                    "peakWorkingSetBytes": 61423616,
+                    "capturedAt": "2026-10-30T07:35:18.896",
+                    "peakWorkingSetBytes": 67289088,
                     "platform": "macos",
-                    "privateUsageBytes": 23757712,
-                    "privateWorkingSetBytes": 23117824,
-                    "workingSetBytes": 61423616
+                    "privateUsageBytes": 28492640,
+                    "privateWorkingSetBytes": 27885568,
+                    "workingSetBytes": 67289088
                 },
                 "before": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.336",
-                    "peakWorkingSetBytes": 61095936,
+                    "capturedAt": "2026-10-30T07:35:18.872",
+                    "peakWorkingSetBytes": 67026944,
                     "platform": "macos",
-                    "privateUsageBytes": 23446416,
-                    "privateWorkingSetBytes": 22806528,
-                    "workingSetBytes": 61095936
+                    "privateUsageBytes": 28230496,
+                    "privateWorkingSetBytes": 27623424,
+                    "workingSetBytes": 67026944
                 },
                 "scope": "Whole-process observations; not page allocations or budgets",
                 "suspended": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.358",
-                    "peakWorkingSetBytes": 61440000,
+                    "capturedAt": "2026-10-30T07:35:18.915",
+                    "peakWorkingSetBytes": 67338240,
                     "platform": "macos",
-                    "privateUsageBytes": 23757712,
-                    "privateWorkingSetBytes": 23117824,
-                    "workingSetBytes": 61423616
+                    "privateUsageBytes": 28541792,
+                    "privateWorkingSetBytes": 27934720,
+                    "workingSetBytes": 67338240
                 }
             },
             "navigationCounts": {
                 "allGroupRows": 96,
                 "classIdWidgetPropertyCount": 0,
                 "classRows": 96,
-                "detailEditorCount": 0,
-                "detailEditorCountAfterSuspension": 0,
+                "detailEditorCount": 1,
+                "detailEditorCountAfterSuspension": 1,
                 "gradeGroupCount": 3,
                 "gradeGroups": [
                     {
@@ -152,8 +153,8 @@
                 "pageCount": 1,
                 "perClassWidgetCount": 0,
                 "perClassWidgetCountAfterSuspension": 0,
-                "widgetCountAfterSuspension": 41,
-                "widgetCountWhileActive": 41
+                "widgetCountAfterSuspension": 266,
+                "widgetCountWhileActive": 266
             },
             "readSizes": {
                 "listReadCalls": 1,
@@ -169,8 +170,9 @@
                 "navigationScheduleRowsTotal": 144,
                 "scheduleRowsPerSourceClassMaximum": 14
             },
+            "sha256": "ba4266c2ee021046bdc000ffff1582596f2e81bc8dd2e05c3569bd5ae77cbf4c",
             "theme": "light",
-            "width": 1024
+            "width": 1068
         },
         {
             "fixtureClassCount": 6,
@@ -180,39 +182,39 @@
             "memoryProcessWideObservation": {
                 "active": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.362",
-                    "peakWorkingSetBytes": 61440000,
+                    "capturedAt": "2026-10-30T07:35:18.936",
+                    "peakWorkingSetBytes": 67354624,
                     "platform": "macos",
-                    "privateUsageBytes": 23774096,
-                    "privateWorkingSetBytes": 23134208,
-                    "workingSetBytes": 61440000
+                    "privateUsageBytes": 28558176,
+                    "privateWorkingSetBytes": 27951104,
+                    "workingSetBytes": 67354624
                 },
                 "before": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.359",
-                    "peakWorkingSetBytes": 61440000,
+                    "capturedAt": "2026-10-30T07:35:18.916",
+                    "peakWorkingSetBytes": 67354624,
                     "platform": "macos",
-                    "privateUsageBytes": 23757712,
-                    "privateWorkingSetBytes": 23117824,
-                    "workingSetBytes": 61423616
+                    "privateUsageBytes": 28541792,
+                    "privateWorkingSetBytes": 27934720,
+                    "workingSetBytes": 67338240
                 },
                 "scope": "Whole-process observations; not page allocations or budgets",
                 "suspended": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.373",
-                    "peakWorkingSetBytes": 61456384,
+                    "capturedAt": "2026-10-30T07:35:18.951",
+                    "peakWorkingSetBytes": 67371008,
                     "platform": "macos",
-                    "privateUsageBytes": 23774096,
-                    "privateWorkingSetBytes": 23134208,
-                    "workingSetBytes": 61440000
+                    "privateUsageBytes": 28558176,
+                    "privateWorkingSetBytes": 27951104,
+                    "workingSetBytes": 67354624
                 }
             },
             "navigationCounts": {
                 "allGroupRows": 6,
                 "classIdWidgetPropertyCount": 0,
                 "classRows": 6,
-                "detailEditorCount": 0,
-                "detailEditorCountAfterSuspension": 0,
+                "detailEditorCount": 1,
+                "detailEditorCountAfterSuspension": 1,
                 "gradeGroupCount": 3,
                 "gradeGroups": [
                     {
@@ -238,8 +240,8 @@
                 "pageCount": 1,
                 "perClassWidgetCount": 0,
                 "perClassWidgetCountAfterSuspension": 0,
-                "widgetCountAfterSuspension": 41,
-                "widgetCountWhileActive": 41
+                "widgetCountAfterSuspension": 266,
+                "widgetCountWhileActive": 266
             },
             "readSizes": {
                 "listReadCalls": 1,
@@ -255,8 +257,9 @@
                 "navigationScheduleRowsTotal": 9,
                 "scheduleRowsPerSourceClassMaximum": 14
             },
+            "sha256": "cddc8c75548fdd83e95db3a6ae1bb1ef75b915ad56788c067a77ba8a186cde1f",
             "theme": "dark",
-            "width": 1024
+            "width": 1068
         },
         {
             "fixtureClassCount": 96,
@@ -266,39 +269,39 @@
             "memoryProcessWideObservation": {
                 "active": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.382",
-                    "peakWorkingSetBytes": 61456384,
+                    "capturedAt": "2026-10-30T07:35:18.977",
+                    "peakWorkingSetBytes": 67371008,
                     "platform": "macos",
-                    "privateUsageBytes": 23774096,
-                    "privateWorkingSetBytes": 23134208,
-                    "workingSetBytes": 61440000
+                    "privateUsageBytes": 28558176,
+                    "privateWorkingSetBytes": 27951104,
+                    "workingSetBytes": 67354624
                 },
                 "before": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.374",
-                    "peakWorkingSetBytes": 61456384,
+                    "capturedAt": "2026-10-30T07:35:18.952",
+                    "peakWorkingSetBytes": 67371008,
                     "platform": "macos",
-                    "privateUsageBytes": 23774096,
-                    "privateWorkingSetBytes": 23134208,
-                    "workingSetBytes": 61440000
+                    "privateUsageBytes": 28558176,
+                    "privateWorkingSetBytes": 27951104,
+                    "workingSetBytes": 67354624
                 },
                 "scope": "Whole-process observations; not page allocations or budgets",
                 "suspended": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.396",
-                    "peakWorkingSetBytes": 61456384,
+                    "capturedAt": "2026-10-30T07:35:18.995",
+                    "peakWorkingSetBytes": 67371008,
                     "platform": "macos",
-                    "privateUsageBytes": 23774096,
-                    "privateWorkingSetBytes": 23134208,
-                    "workingSetBytes": 61440000
+                    "privateUsageBytes": 28558176,
+                    "privateWorkingSetBytes": 27951104,
+                    "workingSetBytes": 67354624
                 }
             },
             "navigationCounts": {
                 "allGroupRows": 96,
                 "classIdWidgetPropertyCount": 0,
                 "classRows": 96,
-                "detailEditorCount": 0,
-                "detailEditorCountAfterSuspension": 0,
+                "detailEditorCount": 1,
+                "detailEditorCountAfterSuspension": 1,
                 "gradeGroupCount": 3,
                 "gradeGroups": [
                     {
@@ -324,8 +327,8 @@
                 "pageCount": 1,
                 "perClassWidgetCount": 0,
                 "perClassWidgetCountAfterSuspension": 0,
-                "widgetCountAfterSuspension": 41,
-                "widgetCountWhileActive": 41
+                "widgetCountAfterSuspension": 266,
+                "widgetCountWhileActive": 266
             },
             "readSizes": {
                 "listReadCalls": 1,
@@ -341,8 +344,9 @@
                 "navigationScheduleRowsTotal": 144,
                 "scheduleRowsPerSourceClassMaximum": 14
             },
+            "sha256": "0ebb621dee900f31f854328239f356fc570375de7bcc56a1d55ae15c4e430c78",
             "theme": "dark",
-            "width": 1024
+            "width": 1068
         },
         {
             "fixtureClassCount": 6,
@@ -352,39 +356,39 @@
             "memoryProcessWideObservation": {
                 "active": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.417",
-                    "peakWorkingSetBytes": 64929792,
+                    "capturedAt": "2026-10-30T07:35:19.033",
+                    "peakWorkingSetBytes": 71303168,
                     "platform": "macos",
-                    "privateUsageBytes": 24773544,
-                    "privateWorkingSetBytes": 24117248,
-                    "workingSetBytes": 64929792
+                    "privateUsageBytes": 29901688,
+                    "privateWorkingSetBytes": 29278208,
+                    "workingSetBytes": 71303168
                 },
                 "before": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.397",
-                    "peakWorkingSetBytes": 61489152,
+                    "capturedAt": "2026-10-30T07:35:18.996",
+                    "peakWorkingSetBytes": 67403776,
                     "platform": "macos",
-                    "privateUsageBytes": 23774096,
-                    "privateWorkingSetBytes": 23134208,
-                    "workingSetBytes": 61489152
+                    "privateUsageBytes": 28558176,
+                    "privateWorkingSetBytes": 27951104,
+                    "workingSetBytes": 67403776
                 },
                 "scope": "Whole-process observations; not page allocations or budgets",
                 "suspended": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.429",
-                    "peakWorkingSetBytes": 65011712,
+                    "capturedAt": "2026-10-30T07:35:19.048",
+                    "peakWorkingSetBytes": 71368704,
                     "platform": "macos",
-                    "privateUsageBytes": 24855464,
-                    "privateWorkingSetBytes": 24199168,
-                    "workingSetBytes": 65011712
+                    "privateUsageBytes": 29967224,
+                    "privateWorkingSetBytes": 29343744,
+                    "workingSetBytes": 71368704
                 }
             },
             "navigationCounts": {
                 "allGroupRows": 6,
                 "classIdWidgetPropertyCount": 0,
                 "classRows": 6,
-                "detailEditorCount": 0,
-                "detailEditorCountAfterSuspension": 0,
+                "detailEditorCount": 1,
+                "detailEditorCountAfterSuspension": 1,
                 "gradeGroupCount": 3,
                 "gradeGroups": [
                     {
@@ -410,8 +414,8 @@
                 "pageCount": 1,
                 "perClassWidgetCount": 0,
                 "perClassWidgetCountAfterSuspension": 0,
-                "widgetCountAfterSuspension": 41,
-                "widgetCountWhileActive": 41
+                "widgetCountAfterSuspension": 266,
+                "widgetCountWhileActive": 266
             },
             "readSizes": {
                 "listReadCalls": 1,
@@ -427,8 +431,9 @@
                 "navigationScheduleRowsTotal": 9,
                 "scheduleRowsPerSourceClassMaximum": 14
             },
+            "sha256": "bf09051b7781be2979c6b98f1a14fc4894036b6236f89be6f9ddd0a6c1ca2c5e",
             "theme": "light",
-            "width": 1024
+            "width": 1068
         },
         {
             "fixtureClassCount": 96,
@@ -438,39 +443,39 @@
             "memoryProcessWideObservation": {
                 "active": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.437",
-                    "peakWorkingSetBytes": 65028096,
+                    "capturedAt": "2026-10-30T07:35:19.073",
+                    "peakWorkingSetBytes": 71385088,
                     "platform": "macos",
-                    "privateUsageBytes": 24855464,
-                    "privateWorkingSetBytes": 24199168,
-                    "workingSetBytes": 65011712
+                    "privateUsageBytes": 29983608,
+                    "privateWorkingSetBytes": 29360128,
+                    "workingSetBytes": 71385088
                 },
                 "before": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.430",
-                    "peakWorkingSetBytes": 65028096,
+                    "capturedAt": "2026-10-30T07:35:19.050",
+                    "peakWorkingSetBytes": 71385088,
                     "platform": "macos",
-                    "privateUsageBytes": 24855464,
-                    "privateWorkingSetBytes": 24199168,
-                    "workingSetBytes": 65011712
+                    "privateUsageBytes": 29967224,
+                    "privateWorkingSetBytes": 29343744,
+                    "workingSetBytes": 71368704
                 },
                 "scope": "Whole-process observations; not page allocations or budgets",
                 "suspended": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.452",
-                    "peakWorkingSetBytes": 65028096,
+                    "capturedAt": "2026-10-30T07:35:19.091",
+                    "peakWorkingSetBytes": 71401472,
                     "platform": "macos",
-                    "privateUsageBytes": 24855464,
-                    "privateWorkingSetBytes": 24199168,
-                    "workingSetBytes": 65011712
+                    "privateUsageBytes": 29983608,
+                    "privateWorkingSetBytes": 29360128,
+                    "workingSetBytes": 71385088
                 }
             },
             "navigationCounts": {
                 "allGroupRows": 96,
                 "classIdWidgetPropertyCount": 0,
                 "classRows": 96,
-                "detailEditorCount": 0,
-                "detailEditorCountAfterSuspension": 0,
+                "detailEditorCount": 1,
+                "detailEditorCountAfterSuspension": 1,
                 "gradeGroupCount": 3,
                 "gradeGroups": [
                     {
@@ -496,8 +501,8 @@
                 "pageCount": 1,
                 "perClassWidgetCount": 0,
                 "perClassWidgetCountAfterSuspension": 0,
-                "widgetCountAfterSuspension": 41,
-                "widgetCountWhileActive": 41
+                "widgetCountAfterSuspension": 266,
+                "widgetCountWhileActive": 266
             },
             "readSizes": {
                 "listReadCalls": 1,
@@ -513,8 +518,9 @@
                 "navigationScheduleRowsTotal": 144,
                 "scheduleRowsPerSourceClassMaximum": 14
             },
+            "sha256": "0ca332f740390a3cea90559eda9e6968c4100976b18e791061bd54211606f15b",
             "theme": "light",
-            "width": 1024
+            "width": 1068
         },
         {
             "fixtureClassCount": 6,
@@ -524,39 +530,39 @@
             "memoryProcessWideObservation": {
                 "active": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.455",
-                    "peakWorkingSetBytes": 65028096,
+                    "capturedAt": "2026-10-30T07:35:19.112",
+                    "peakWorkingSetBytes": 71401472,
                     "platform": "macos",
-                    "privateUsageBytes": 24855464,
-                    "privateWorkingSetBytes": 24199168,
-                    "workingSetBytes": 65011712
+                    "privateUsageBytes": 29983608,
+                    "privateWorkingSetBytes": 29360128,
+                    "workingSetBytes": 71385088
                 },
                 "before": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.452",
-                    "peakWorkingSetBytes": 65028096,
+                    "capturedAt": "2026-10-30T07:35:19.092",
+                    "peakWorkingSetBytes": 71401472,
                     "platform": "macos",
-                    "privateUsageBytes": 24855464,
-                    "privateWorkingSetBytes": 24199168,
-                    "workingSetBytes": 64946176
+                    "privateUsageBytes": 29983608,
+                    "privateWorkingSetBytes": 29360128,
+                    "workingSetBytes": 71254016
                 },
                 "scope": "Whole-process observations; not page allocations or budgets",
                 "suspended": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.467",
-                    "peakWorkingSetBytes": 65028096,
+                    "capturedAt": "2026-10-30T07:35:19.127",
+                    "peakWorkingSetBytes": 71401472,
                     "platform": "macos",
-                    "privateUsageBytes": 24855464,
-                    "privateWorkingSetBytes": 24199168,
-                    "workingSetBytes": 65011712
+                    "privateUsageBytes": 29983608,
+                    "privateWorkingSetBytes": 29360128,
+                    "workingSetBytes": 71385088
                 }
             },
             "navigationCounts": {
                 "allGroupRows": 6,
                 "classIdWidgetPropertyCount": 0,
                 "classRows": 6,
-                "detailEditorCount": 0,
-                "detailEditorCountAfterSuspension": 0,
+                "detailEditorCount": 1,
+                "detailEditorCountAfterSuspension": 1,
                 "gradeGroupCount": 3,
                 "gradeGroups": [
                     {
@@ -582,8 +588,8 @@
                 "pageCount": 1,
                 "perClassWidgetCount": 0,
                 "perClassWidgetCountAfterSuspension": 0,
-                "widgetCountAfterSuspension": 41,
-                "widgetCountWhileActive": 41
+                "widgetCountAfterSuspension": 266,
+                "widgetCountWhileActive": 266
             },
             "readSizes": {
                 "listReadCalls": 1,
@@ -599,8 +605,9 @@
                 "navigationScheduleRowsTotal": 9,
                 "scheduleRowsPerSourceClassMaximum": 14
             },
+            "sha256": "43cef81b26f1df25f5b3696a5a29b8df0b0388a9d3f7e8a4894323b4bbf10fea",
             "theme": "dark",
-            "width": 1024
+            "width": 1068
         },
         {
             "fixtureClassCount": 96,
@@ -610,39 +617,39 @@
             "memoryProcessWideObservation": {
                 "active": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.475",
-                    "peakWorkingSetBytes": 65028096,
+                    "capturedAt": "2026-10-30T07:35:19.152",
+                    "peakWorkingSetBytes": 71401472,
                     "platform": "macos",
-                    "privateUsageBytes": 24855464,
-                    "privateWorkingSetBytes": 24199168,
-                    "workingSetBytes": 65011712
+                    "privateUsageBytes": 29983608,
+                    "privateWorkingSetBytes": 29360128,
+                    "workingSetBytes": 71385088
                 },
                 "before": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.467",
-                    "peakWorkingSetBytes": 65028096,
+                    "capturedAt": "2026-10-30T07:35:19.128",
+                    "peakWorkingSetBytes": 71401472,
                     "platform": "macos",
-                    "privateUsageBytes": 24855464,
-                    "privateWorkingSetBytes": 24199168,
-                    "workingSetBytes": 65011712
+                    "privateUsageBytes": 29983608,
+                    "privateWorkingSetBytes": 29360128,
+                    "workingSetBytes": 71385088
                 },
                 "scope": "Whole-process observations; not page allocations or budgets",
                 "suspended": {
                     "available": true,
-                    "capturedAt": "2026-10-28T00:43:57.489",
-                    "peakWorkingSetBytes": 65028096,
+                    "capturedAt": "2026-10-30T07:35:19.170",
+                    "peakWorkingSetBytes": 71401472,
                     "platform": "macos",
-                    "privateUsageBytes": 24855464,
-                    "privateWorkingSetBytes": 24199168,
-                    "workingSetBytes": 65011712
+                    "privateUsageBytes": 29983608,
+                    "privateWorkingSetBytes": 29360128,
+                    "workingSetBytes": 71385088
                 }
             },
             "navigationCounts": {
                 "allGroupRows": 96,
                 "classIdWidgetPropertyCount": 0,
                 "classRows": 96,
-                "detailEditorCount": 0,
-                "detailEditorCountAfterSuspension": 0,
+                "detailEditorCount": 1,
+                "detailEditorCountAfterSuspension": 1,
                 "gradeGroupCount": 3,
                 "gradeGroups": [
                     {
@@ -668,8 +675,8 @@
                 "pageCount": 1,
                 "perClassWidgetCount": 0,
                 "perClassWidgetCountAfterSuspension": 0,
-                "widgetCountAfterSuspension": 41,
-                "widgetCountWhileActive": 41
+                "widgetCountAfterSuspension": 266,
+                "widgetCountWhileActive": 266
             },
             "readSizes": {
                 "listReadCalls": 1,
@@ -685,8 +692,9 @@
                 "navigationScheduleRowsTotal": 144,
                 "scheduleRowsPerSourceClassMaximum": 14
             },
+            "sha256": "58820342404adb7aa6611a4a5a24c7bc9b964200fff2325f1c5923b3e21952d2",
             "theme": "dark",
-            "width": 1024
+            "width": 1068
         }
     ],
     "fixtureSource": "Synthetic bounded class list and navigation summaries injected through page read actions",
@@ -699,6 +707,6 @@
     "translationSource": "Compiled production ClassMngr_ko_KR.qm catalog",
     "viewport": {
         "height": 768,
-        "width": 1024
+        "width": 1068
     }
 }

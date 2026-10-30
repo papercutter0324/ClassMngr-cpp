@@ -777,8 +777,8 @@ manualAutomaticAndPendingCreateSaveBehavior()
         .startMinute = Domain::ScheduleTime::StartMinute{10 * 60}
     };
     page->openNewClassForPendingSlot(slot);
-    QCOMPARE(page->pendingSlotLabel()->text(),
-        QStringLiteral("New class for Thursday at 10:00"));
+    QVERIFY(page->pendingSlotLabel()->isHidden());
+    QVERIFY(page->pendingSlotLabel()->text().isEmpty());
     userReplace(page->nameEdit(), QStringLiteral("Pending Slot Class"));
     userReplace(page->roomEdit(), QStringLiteral("Testing Room"));
     QTest::qWait(850);

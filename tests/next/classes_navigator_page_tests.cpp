@@ -13,7 +13,9 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
+#include <QMessageBox>
 #include <QPushButton>
+#include <QTimer>
 #include <QTabBar>
 #include <QTabWidget>
 #include <QTableWidget>
@@ -150,6 +152,7 @@ struct ReadState final
     bool failTeacherDetailsRead = false;
     int scheduleRowsPerSource = 1;
     bool confirmDelete = true;
+    bool useNativeDeleteDialog = false;
     Ui::UnsavedChangesChoice unsavedChoice = Ui::UnsavedChangesChoice::Cancel;
     std::optional<Domain::ClassId> sharedSelection;
     std::unordered_map<std::string, QString> savedGrades;
@@ -653,10 +656,13 @@ struct PageFixture final
                     state.lastUnsavedReason = reason;
                     return state.unsavedChoice;
                 };
-                actions.confirmDeleteClass = [this](const QString&) {
-                    ++state.confirmDeleteCount;
-                    return state.confirmDelete;
-                };
+                if (!state.useNativeDeleteDialog)
+                {
+                    actions.confirmDeleteClass = [this](const QString&) {
+                        ++state.confirmDeleteCount;
+                        return state.confirmDelete;
+                    };
+                }
                 return std::unique_ptr<Ui::Page>(
                     std::make_unique<Ui::ClassesNavigatorPage>(
                         context,
@@ -793,6 +799,7 @@ private slots:
     void coTeacherLoadsOnlySelectedTeacherAndRetriesProfileRead();
     void scheduleEditorStopsAtFourteenRows();
     void addDeleteAndWorkspaceLifecycleClearSelectedEditor();
+    void deleteDialogShowsClassNameAndHonorsBothChoices();
     void languageRefreshChangesLabelsWithoutChangingCanonicalSelection();
     void productionKoreanCatalogTranslatesNavigatorDisplay();
 };
@@ -2148,6 +2155,59 @@ void ClassesNavigatorPageTests::addDeleteAndWorkspaceLifecycleClearSelectedEdito
     QVERIFY(!page->selectedClassId().has_value());
     QVERIFY(!editor->classId().has_value());
     QVERIFY(!fixture.state.sharedSelection.has_value());
+}
+
+void ClassesNavigatorPageTests::deleteDialogShowsClassNameAndHonorsBothChoices()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    fixture.state.useNativeDeleteDialog = true;
+    fixture.state.classes = classList({{1, QStringLiteral("First")} });
+    fixture.state.navigation = navigation({
+        navigationEntry(1, QStringLiteral("First"), QStringLiteral("E4"),
+            QStringLiteral("Theseus"), QStringLiteral("Monday"),
+            QStringLiteral("9:00 AM"))
+    });
+    QVERIFY(fixture.activate());
+    Ui::ClassesNavigatorPage* const page = fixture.page();
+    QVERIFY(page);
+    QCOMPARE(page->model()->classCount(), 1);
+
+    QStringList dialogTexts;
+    QList<int> dialogButtons;
+    const auto chooseDialogButton = [page, &dialogTexts, &dialogButtons](
+        const QMessageBox::StandardButton choice) {
+        QTimer::singleShot(0, [choice, &dialogTexts, &dialogButtons] {
+            auto* const dialog = qobject_cast<QMessageBox*>(
+                QApplication::activeModalWidget());
+            if (!dialog)
+            {
+                return;
+            }
+            dialogTexts.push_back(dialog->text());
+            dialogButtons.push_back(static_cast<int>(dialog->standardButtons()));
+            if (QAbstractButton* const button = dialog->button(choice))
+            {
+                button->click();
+            }
+        });
+        page->deleteClassButton()->click();
+    };
+
+    chooseDialogButton(QMessageBox::No);
+    QCOMPARE(dialogTexts,
+        QStringList{QStringLiteral(
+            "Delete E4 Theseus • M 9:00? This cannot be undone.")});
+    QCOMPARE(dialogButtons, QList<int>{static_cast<int>(
+        QMessageBox::Yes | QMessageBox::No)});
+    QCOMPARE(fixture.state.deleteCount, 0);
+    QCOMPARE(page->model()->classCount(), 1);
+
+    chooseDialogButton(QMessageBox::Yes);
+    QCOMPARE(dialogTexts.size(), 2);
+    QCOMPARE(dialogButtons.size(), 2);
+    QCOMPARE(fixture.state.deleteCount, 1);
+    QCOMPARE(page->model()->classCount(), 0);
 }
 
 void ClassesNavigatorPageTests::

@@ -140,6 +140,22 @@ public:
         const ClassMngr::Next::Application::ClassTransferApplyRequest& request
         );
 
+    // Next may enforce its Classes navigation bound inside the import
+    // transaction. Existing callers keep the original unbounded behavior.
+    [[nodiscard]] ClassTransferDetailedImportResult
+    importClassesWithBoundedVisibleClassCount(
+        const ClassTransferPackage& package,
+        const ClassMngr::Next::Application::ClassTransferApplyRequest& request,
+        ClassMngr::Next::Application::ClassTransferVisibleClassLimit limit
+        );
+
 private:
+    [[nodiscard]] ClassTransferDetailedImportResult
+    importClassesWithFailureDetailsImpl(
+        const ClassTransferPackage& package,
+        const ClassMngr::Next::Application::ClassTransferApplyRequest& request,
+        std::optional<ClassMngr::Next::Application::ClassTransferVisibleClassLimit> limit
+        );
+
     QSqlDatabase& m_database;
 };

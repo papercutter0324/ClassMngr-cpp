@@ -1,6 +1,6 @@
 # Testing Classes and Blocks
 
-Candidate #28 was accepted at source commit `9bdbe3aa`; capture metadata follow-up `c2ec78e9` refreshed the pending-slot records.
+Candidate #28 was accepted at source commit `9bdbe3aa`; capture metadata follow-up `c2ec78e9` refreshed the pending-slot records. Candidate #50 hides the Next pending-slot label and refreshes the four Next pending-slot captures below.
 
 ## Capture set
 
@@ -21,7 +21,7 @@ The paired captures use the tracked [96-class fixture](../../../release/large-cl
 | Notes | ko_KR / dark | [PNG](testing_classes_notes_ko_KR_dark_legacy.png) | [PNG](testing_classes_notes_ko_KR_dark_next.png) |
 | Pending slot | ko_KR / dark | [PNG](testing_classes_pending_slot_ko_KR_dark_legacy.png) | [PNG](testing_classes_pending_slot_ko_KR_dark_next.png) |
 
-Tester inspected all six Korean Next states and confirmed translated headings, fields, tabs, buttons, and pending-slot text after a translation-context fix. Inspection also covered representative English/light and Korean/dark pairs. In the pending-slot images, Legacy retains “Thursday 10:00” only in manager page state with no visible label; Next visibly labels the create state “New class for Thursday at 10:00” in English and “목요일 10:00에 수업 추가” in Korean. The four pending-slot Next manifest records carry `{ "weekday": "Thursday", "startMinute": 600, "startTime": "10:00" }`, set `newClassDraft` to true, and include the localized display string. The eight non-pending Next records use null for both pending-slot fields. Legacy records the weekday/start string in page state for its four pending-slot captures and null in the other eight. After capture metadata follow-up `c2ec78e9`, the capture target passed 1/1; JSON counts and the English/light and Korean/light Next pending-slot images were rechecked. The routes and shells differ, so these captures do not establish visual parity.
+Tester inspected all six Korean Next states and confirmed translated headings, fields, tabs, and buttons after a translation-context fix. Inspection also covered representative English/light and Korean/dark pairs. The refreshed pending-slot images show the same Thursday 10:00 create context without a visible slot label in either manager. The four Next pending-slot manifest records retain `{ "weekday": "Thursday", "startMinute": 600, "startTime": "10:00" }`, set `newClassDraft` to true, and record null display text plus `pendingScheduleSlotLabelVisible: false`; each refreshed Next PNG has a SHA-256 entry in the manifest. The eight non-pending Next records use null for both pending-slot fields. Legacy records the weekday/start string in page state for its four pending-slot captures and null in the other eight. The capture target passed 1/1 after the refresh. The routes and shells differ, so these captures do not establish visual parity.
 
 ## Manager boundary and lifecycle
 

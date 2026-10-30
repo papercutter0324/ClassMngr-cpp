@@ -5424,6 +5424,11 @@ Rm: %1</source>
         <source>Roster print data is malformed.</source>
         <translation>Roster print data is malformed.</translation>
     </message>
+    <message>
+        <location filename="../../../src/data/repositories/class_transfer_repository.cpp" line="2135"/>
+        <source>The class import would exceed the visible Classes limit of %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ResourcePackUpdateService</name>
