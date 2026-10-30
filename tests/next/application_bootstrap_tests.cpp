@@ -8856,11 +8856,19 @@ dirtyPageBlocksNavigationOpenNewAndWindowClose()
     QCOMPARE(newDialogFactoryCalls, 0);
     QVERIFY(page->hasUnsavedChanges());
 
-    const auto campusPage = Ui::PageId::fromString(
-        QStringLiteral("campus_information")
+    QVERIFY(shell->findChild<QMenu*>(
+        QStringLiteral("classMngrNextAdminMenu")
+        ) == nullptr);
+    shell->setCampusEditCapability(Application::CampusEditCapability::enabled());
+    QMenu* const adminMenu = shell->findChild<QMenu*>(
+        QStringLiteral("classMngrNextAdminMenu")
         );
-    QVERIFY(campusPage.has_value());
-    QVERIFY(!shell->navigateTo(*campusPage, Ui::NavigationCause::Selection));
+    QAction* const manageCampuses = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextManageCampuses")
+        );
+    QVERIFY(adminMenu != nullptr);
+    QVERIFY(manageCampuses != nullptr);
+    manageCampuses->trigger();
     QCOMPARE(promptProbe->requests.size(), std::size_t(3));
     QCOMPARE(shell->navigationModel()->currentPageId()->value(),
              QStringLiteral("my_workspace"));

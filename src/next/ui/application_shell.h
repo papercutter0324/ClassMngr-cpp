@@ -4,6 +4,7 @@
 #include "next/application/recent_workspace_history.h"
 #include "next/application/preferences_model.h"
 #include "next/application/document_catalog_projection.h"
+#include "next/application/campus_edit_capability.h"
 #include "next/domain/domain_types.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/navigation_model.h"
@@ -90,6 +91,9 @@ public:
     void setUpcomingBirthdaysHandler(std::function<void()> handler);
     void setCloseWorkspaceHandler(std::function<void()> handler);
     void setPreferencesHandler(std::function<void()> handler);
+    void setCampusEditCapability(
+        Application::CampusEditCapability capability
+        );
     void setRecentWorkspaceMenuHandlers(
         RecentWorkspaceHistoryLoader historyLoader,
         RecentWorkspaceOpenHandler openHandler,
@@ -186,9 +190,11 @@ private:
     QAction* m_upcomingBirthdaysAction = nullptr;
     QAction* m_closeWorkspaceAction = nullptr;
     QAction* m_preferencesAction = nullptr;
+    QAction* m_manageCampusesAction = nullptr;
     QMenu* m_fileMenu = nullptr;
     QMenu* m_editMenu = nullptr;
     QMenu* m_teachersMenu = nullptr;
+    QMenu* m_adminMenu = nullptr;
     QMenu* m_recentWorkspaceMenu = nullptr;
     std::optional<NavigationModel> m_navigationModel;
     std::optional<Application::DocumentCatalogProjection>
@@ -214,6 +220,8 @@ private:
     std::function<void()> m_upcomingBirthdaysHandler;
     std::function<void()> m_closeWorkspaceHandler;
     std::function<void()> m_preferencesHandler;
+    Application::CampusEditCapability m_campusEditCapability =
+        Application::CampusEditCapability::readOnly();
     RecentWorkspaceHistoryLoader m_recentWorkspaceHistoryLoader;
     RecentWorkspaceOpenHandler m_recentWorkspaceOpenHandler;
     std::function<void()> m_clearRecentWorkspaceHistoryHandler;

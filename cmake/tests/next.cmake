@@ -330,9 +330,13 @@ set_tests_properties(ClassMngrNextCampusDirectoryTests
 # only when explicitly invoked; this target does not write during CTest.
 add_executable(ClassMngrNextCampusDirectoryVisualCapture
     tests/next/campus_directory_visual_capture.cpp
+    src/next/ui/application_shell.cpp
+    src/next/ui/document_catalog_navigation.cpp
+    src/next/ui/navigation_model.cpp
     src/next/ui/campus_directory_page.cpp
     src/next/ui/campus_directory_route_factories.cpp
     src/next/ui/page_host.cpp
+    src/next/ui/qt_notification_presenter.cpp
 )
 target_compile_features(ClassMngrNextCampusDirectoryVisualCapture
     PRIVATE

@@ -1,6 +1,7 @@
 #include "next/platform/workspace_store_roster_output.h"
 #include "next/bootstrap/application_bootstrap.h"
 #include "next/bootstrap/campus_edit_capability_arguments.h"
+#include "next/bootstrap/campus_edit_operation_actions.h"
 
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
 #include "next/application/recent_workspace_history_use_case.h"
@@ -1270,6 +1271,9 @@ Application::StartupResult ApplicationBootstrap::start()
             m_coreServices->resourceLoader,
             m_coreServices->preferences
             );
+        m_shell->setCampusEditCapability(
+            campusEditCapabilityForArguments(m_application.arguments())
+            );
         if (!m_applicationRuntime
             || !m_applicationRuntime->startupDocumentCatalogProjection())
         {
@@ -1488,17 +1492,7 @@ Application::StartupResult ApplicationBootstrap::start()
                              *repository
                              );
                      };
-                     actions.saveCampus = [repository, capability](
-                                              const Application::CampusDashboardCampusSnapshot& campus,
-                                              const Application::CampusDashboardCampusSaveIntent intent
-                                              ) {
-                         return Application::CampusDashboardCampusSaveUseCase::execute(
-                             capability,
-                             campus,
-                             intent,
-                             *repository
-                             );
-                     };
+                     actions.saveCampus = campusSaveAction(capability, repository);
                      actions.readLastSelectedCampus = [lastSelectedCampusPort] {
                          return lastSelectedCampusPort->read();
                      };
@@ -1507,10 +1501,10 @@ Application::StartupResult ApplicationBootstrap::start()
                                                           ) {
                          return lastSelectedCampusPort->write(campusId);
                      };
-                     actions.importLegacyCampuses = [repository] {
-                         return repository->
-                             importLegacyOverridesFromProcessWorkingDirectory();
-                     };
+                     actions.importLegacyCampuses = campusLegacyImportAction(
+                         capability,
+                         repository
+                         );
                      actions.mapResourcesFor = [repository](
                                                    const Application::CampusDashboardCampusSnapshot& campus
                                                    ) {

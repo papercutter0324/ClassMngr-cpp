@@ -1,0 +1,158 @@
+{
+    "captures": [
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_admin_en_US_light_menu.png",
+            "heightPixels": 50,
+            "locale": "en_US",
+            "routeResult": "Menu action routes to campus_information.",
+            "scale": "1x",
+            "state": "Admin menu open; Manage Campuses visible.",
+            "theme": "light",
+            "view": "adminMenu",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_admin_en_US_light_route.png",
+            "heightPixels": 768,
+            "locale": "en_US",
+            "routeResult": "Manage Campuses activated campus_information.",
+            "scale": "1x",
+            "state": "Authorized Information route; Save control visible.",
+            "theme": "light",
+            "view": "adminInformationRoute",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_readonly_en_US_light_route.png",
+            "heightPixels": 768,
+            "locale": "en_US",
+            "routeResult": "Campus Directory remains accessible at campus_information.",
+            "scale": "1x",
+            "state": "Read-only Information route; notice visible and edit controls hidden.",
+            "theme": "light",
+            "view": "readOnlyInformationRoute",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_admin_en_US_dark_menu.png",
+            "heightPixels": 50,
+            "locale": "en_US",
+            "routeResult": "Menu action routes to campus_information.",
+            "scale": "1x",
+            "state": "Admin menu open; Manage Campuses visible.",
+            "theme": "dark",
+            "view": "adminMenu",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_admin_en_US_dark_route.png",
+            "heightPixels": 768,
+            "locale": "en_US",
+            "routeResult": "Manage Campuses activated campus_information.",
+            "scale": "1x",
+            "state": "Authorized Information route; Save control visible.",
+            "theme": "dark",
+            "view": "adminInformationRoute",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_readonly_en_US_dark_route.png",
+            "heightPixels": 768,
+            "locale": "en_US",
+            "routeResult": "Campus Directory remains accessible at campus_information.",
+            "scale": "1x",
+            "state": "Read-only Information route; notice visible and edit controls hidden.",
+            "theme": "dark",
+            "view": "readOnlyInformationRoute",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_admin_ko_KR_light_menu.png",
+            "heightPixels": 47,
+            "locale": "ko_KR",
+            "routeResult": "Menu action routes to campus_information.",
+            "scale": "1x",
+            "state": "Admin menu open; Manage Campuses visible.",
+            "theme": "light",
+            "view": "adminMenu",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_admin_ko_KR_light_route.png",
+            "heightPixels": 768,
+            "locale": "ko_KR",
+            "routeResult": "Manage Campuses activated campus_information.",
+            "scale": "1x",
+            "state": "Authorized Information route; Save control visible.",
+            "theme": "light",
+            "view": "adminInformationRoute",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_readonly_ko_KR_light_route.png",
+            "heightPixels": 768,
+            "locale": "ko_KR",
+            "routeResult": "Campus Directory remains accessible at campus_information.",
+            "scale": "1x",
+            "state": "Read-only Information route; notice visible and edit controls hidden.",
+            "theme": "light",
+            "view": "readOnlyInformationRoute",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_admin_ko_KR_dark_menu.png",
+            "heightPixels": 47,
+            "locale": "ko_KR",
+            "routeResult": "Menu action routes to campus_information.",
+            "scale": "1x",
+            "state": "Admin menu open; Manage Campuses visible.",
+            "theme": "dark",
+            "view": "adminMenu",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_admin_ko_KR_dark_route.png",
+            "heightPixels": 768,
+            "locale": "ko_KR",
+            "routeResult": "Manage Campuses activated campus_information.",
+            "scale": "1x",
+            "state": "Authorized Information route; Save control visible.",
+            "theme": "dark",
+            "view": "adminInformationRoute",
+            "widthPixels": 1024
+        },
+        {
+            "devicePixelRatio": 1,
+            "file": "campus_readonly_ko_KR_dark_route.png",
+            "heightPixels": 768,
+            "locale": "ko_KR",
+            "routeResult": "Campus Directory remains accessible at campus_information.",
+            "scale": "1x",
+            "state": "Read-only Information route; notice visible and edit controls hidden.",
+            "theme": "dark",
+            "view": "readOnlyInformationRoute",
+            "widthPixels": 1024
+        }
+    ],
+    "dataSource": "Bundang packaged campus catalog; isolated temporary app-data for each capture",
+    "logicalViewport": {
+        "height": 768,
+        "width": 1024
+    },
+    "purpose": "C46 Admin menu and edit-permission review captures",
+    "qtPlatformPlugin": "offscreen",
+    "qtVersion": "6.12.0",
+    "requestedScale": "QT_SCALE_FACTOR=1; images are recorded at devicePixelRatio 1.0",
+    "style": "Fusion with packaged light/dark stylesheet"
+}

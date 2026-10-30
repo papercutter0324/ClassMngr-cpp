@@ -12,12 +12,14 @@
 #include <QFontDatabase>
 #include <QKeySequence>
 #include <QMenu>
+#include <QMenuBar>
 #include <QPointer>
 #include <QStatusBar>
 #include <QTreeWidget>
 #include <QTreeWidgetItemIterator>
 #include <QtTest/QtTest>
 
+#include <algorithm>
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -224,6 +226,7 @@ private slots:
     void workspaceAndPermissionsFilterRoutesAndChooseInitialPages();
     void historyActionStateRequiresAvailableAdjacentRoutes();
     void shellCommitsHistoryOnlyAfterGuardAndActivationSuccess();
+    void shellAdminMenuIsCapabilityGatedAndManageCampusesUsesNavigationGuard();
     void shellHistoryControlsTrackAccessRevocation();
     void shellExposesNewTeacherProfileAction();
     void shellExposesOpenTeacherProfileAction();
@@ -653,6 +656,109 @@ void NavigationModelTests::shellCommitsHistoryOnlyAfterGuardAndActivationSuccess
     QVERIFY(tree->currentItem() != nullptr);
     QCOMPARE(tree->currentItem()->data(0, Qt::UserRole + 1).toString(),
              QStringLiteral("campus_information"));
+}
+
+void NavigationModelTests::shellAdminMenuIsCapabilityGatedAndManageCampusesUsesNavigationGuard()
+{
+    PageProbe campus{QStringLiteral("campus_information")};
+    PageProbe workspace{QStringLiteral("my_workspace")};
+    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    for (Ui::PageDescriptor descriptor : commonDescriptors(&campus, &workspace))
+    {
+        QVERIFY(shell.pageHost().registerPage(std::move(descriptor)));
+    }
+
+    shell.setCampusEditCapability(Application::CampusEditCapability::readOnly());
+    QVERIFY(shell.findChild<QMenu*>(QStringLiteral("classMngrNextAdminMenu")) == nullptr);
+    QVERIFY(shell.findChild<QAction*>(QStringLiteral("classMngrNextManageCampuses")) == nullptr);
+    const QList<QAction*> readOnlyMenuEntries = shell.menuBar()->actions();
+    QVERIFY(std::none_of(
+        readOnlyMenuEntries.cbegin(),
+        readOnlyMenuEntries.cend(),
+        [](const QAction* action) {
+            return action->menu()
+                && action->menu()->objectName()
+                    == QStringLiteral("classMngrNextAdminMenu");
+        }
+        ));
+
+    shell.setCampusEditCapability(Application::CampusEditCapability::enabled());
+    QMenu* const adminMenu = shell.findChild<QMenu*>(
+        QStringLiteral("classMngrNextAdminMenu")
+        );
+    QAction* const manageCampuses = shell.findChild<QAction*>(
+        QStringLiteral("classMngrNextManageCampuses")
+        );
+    QVERIFY(adminMenu != nullptr);
+    QVERIFY(manageCampuses != nullptr);
+    QCOMPARE(manageCampuses->text(), QStringLiteral("Manage Campuses"));
+    const QList<QAction*> adminMenuEntries = shell.menuBar()->actions();
+    const auto adminMenuEntry = std::find_if(
+        adminMenuEntries.cbegin(),
+        adminMenuEntries.cend(),
+        [adminMenu](const QAction* action) { return action->menu() == adminMenu; }
+        );
+    QVERIFY(adminMenuEntry != adminMenuEntries.cend());
+    QVERIFY((*adminMenuEntry)->isVisible());
+
+    const auto configuration = shell.configureNavigation(
+        commonTree(),
+        pageId(QStringLiteral("campus_information")),
+        pageId(QStringLiteral("my_workspace")),
+        Application::WorkspaceLifecycleState::Open
+        );
+    QVERIFY(configuration);
+    QVERIFY(shell.navigateTo(
+        pageId(QStringLiteral("my_workspace")),
+        Ui::NavigationCause::Initial
+        ));
+
+    int guardCalls = 0;
+    bool allowNavigation = false;
+    Ui::NavigationGuardRequest lastRequest{
+        .source = std::nullopt,
+        .target = pageId(QStringLiteral("campus_information")),
+        .cause = Ui::NavigationCause::Initial
+    };
+    shell.setNavigationGuard([&](const Ui::NavigationGuardRequest& request) {
+        ++guardCalls;
+        lastRequest = request;
+        return allowNavigation
+            ? Ui::NavigationGuardDecision::Allow
+            : Ui::NavigationGuardDecision::Reject;
+    });
+
+    // A rejected navigation represents canceling the active page's unsaved-change prompt.
+    manageCampuses->trigger();
+    QCOMPARE(guardCalls, 1);
+    QVERIFY(lastRequest.source.has_value());
+    QCOMPARE(lastRequest.source->value(), QStringLiteral("my_workspace"));
+    QCOMPARE(lastRequest.target.value(), QStringLiteral("campus_information"));
+    QCOMPARE(lastRequest.cause, Ui::NavigationCause::Selection);
+    QCOMPARE(shell.pageHost().activePageKey(),
+             std::optional<QString>(QStringLiteral("my_workspace")));
+    QCOMPARE(shell.navigationModel()->history().size(), std::size_t(1));
+
+    allowNavigation = true;
+    campus.failActivation = true;
+    manageCampuses->trigger();
+    QCOMPARE(guardCalls, 2);
+    QCOMPARE(shell.pageHost().activePageKey(),
+             std::optional<QString>(QStringLiteral("my_workspace")));
+    QCOMPARE(shell.navigationModel()->history().size(), std::size_t(1));
+
+    campus.failActivation = false;
+    manageCampuses->trigger();
+    QCOMPARE(guardCalls, 3);
+    QCOMPARE(shell.pageHost().activePageKey(),
+             std::optional<QString>(QStringLiteral("campus_information")));
+    QCOMPARE(shell.navigationModel()->currentPageId()->value(),
+             QStringLiteral("campus_information"));
+    QCOMPARE(shell.navigationModel()->history().size(), std::size_t(2));
+
+    shell.setCampusEditCapability(Application::CampusEditCapability::readOnly());
+    QVERIFY(shell.findChild<QMenu*>(QStringLiteral("classMngrNextAdminMenu")) == nullptr);
+    QVERIFY(shell.findChild<QAction*>(QStringLiteral("classMngrNextManageCampuses")) == nullptr);
 }
 
 void NavigationModelTests::shellHistoryControlsTrackAccessRevocation()

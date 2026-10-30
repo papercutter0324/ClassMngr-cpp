@@ -4,6 +4,7 @@
 #include "next/application/campus_dashboard_campus_identity_save_policy.h"
 #include "next/application/campus_dashboard_selected_campus_read_port.h"
 #include "next/application/campus_directory_read_port.h"
+#include "next/application/campus_legacy_import_port.h"
 #include "next/resources/resource_loader.h"
 
 #include <QDir>
@@ -34,6 +35,7 @@ class CampusDirectoryRepositoryAdapter final
     : public Application::CampusDirectoryReadPort
     , public Application::CampusDashboardSelectedCampusReadPort
     , public Application::CampusDashboardCampusSavePort
+    , public Application::CampusLegacyImportPort
 {
 public:
     CampusDirectoryRepositoryAdapter(
@@ -241,6 +243,11 @@ public:
             ++imported;
         }
         return Domain::Result<std::size_t>::success(imported);
+    }
+
+    [[nodiscard]] Domain::Result<std::size_t> importLegacyCampuses() const override
+    {
+        return importLegacyOverridesFromProcessWorkingDirectory();
     }
 
     [[nodiscard]] Domain::Result<std::vector<Resources::ResourceId>> mapResourcesFor(

@@ -642,6 +642,51 @@ void ApplicationShell::setPreferencesHandler(std::function<void()> handler)
     m_preferencesHandler = std::move(handler);
 }
 
+void ApplicationShell::setCampusEditCapability(
+    const Application::CampusEditCapability capability
+    )
+{
+    m_campusEditCapability = capability;
+    if (capability.canEdit())
+    {
+        if (m_adminMenu)
+        {
+            return;
+        }
+        m_adminMenu = menuBar()->addMenu(
+            QCoreApplication::translate("MenuBuilder", "Admin")
+            );
+        m_adminMenu->setObjectName(QStringLiteral("classMngrNextAdminMenu"));
+        m_manageCampusesAction = m_adminMenu->addAction(
+            QCoreApplication::translate("ActionRegistry", "Manage Campuses")
+            );
+        m_manageCampusesAction->setObjectName(
+            QStringLiteral("classMngrNextManageCampuses")
+            );
+        connect(m_manageCampusesAction, &QAction::triggered, this, [this] {
+            if (!m_campusEditCapability.canEdit())
+            {
+                return;
+            }
+            const std::optional<PageId> informationPage = PageId::fromString(
+                QStringLiteral("campus_information")
+                );
+            if (informationPage)
+            {
+                static_cast<void>(navigateTo(*informationPage, NavigationCause::Selection));
+            }
+        });
+        return;
+    }
+
+    if (m_adminMenu)
+    {
+        delete m_adminMenu;
+        m_adminMenu = nullptr;
+        m_manageCampusesAction = nullptr;
+    }
+}
+
 void ApplicationShell::setRecentWorkspaceMenuHandlers(
     RecentWorkspaceHistoryLoader historyLoader,
     RecentWorkspaceOpenHandler openHandler,
@@ -1349,6 +1394,10 @@ void ApplicationShell::retranslateUi()
     {
         m_teachersMenu->setTitle(QCoreApplication::translate("NextShell", "Teachers"));
     }
+    if (m_adminMenu)
+    {
+        m_adminMenu->setTitle(QCoreApplication::translate("MenuBuilder", "Admin"));
+    }
     const auto setActionText = [](QAction* action, const char* source) {
         if (action)
         {
@@ -1366,6 +1415,12 @@ void ApplicationShell::retranslateUi()
     setActionText(m_preferencesAction, "Preferences…");
     setActionText(m_importTeachersAction, "Import Teachers…");
     setActionText(m_upcomingBirthdaysAction, "Upcoming Birthdays…");
+    if (m_manageCampusesAction)
+    {
+        m_manageCampusesAction->setText(
+            QCoreApplication::translate("ActionRegistry", "Manage Campuses")
+            );
+    }
     if (m_recentWorkspaceMenu)
     {
         m_recentWorkspaceMenu->setTitle(

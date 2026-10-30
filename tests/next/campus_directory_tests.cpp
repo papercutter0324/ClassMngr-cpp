@@ -1,4 +1,6 @@
 #include "next/application/campus_dashboard_campus_save_use_case.h"
+#include "next/application/campus_legacy_import_use_case.h"
+#include "next/bootstrap/campus_edit_operation_actions.h"
 #include "next/application/campus_dashboard_selected_campus_read_query.h"
 #include "next/application/campus_directory_read_query.h"
 #include "next/bootstrap/campus_edit_capability_arguments.h"
@@ -204,6 +206,7 @@ private slots:
     void packagedDirectoryLoadsAndIdOverrideWinsAfterReload();
     void explicitMigrationReadsOnlyCurrentWorkingDataCampuses();
     void productionAdminArgumentMapsToCampusEditCapabilityByPresence();
+    void composedCampusEditOperationsEnforceCapabilityAndAuthorizedParity();
     void realQSaveFileFailureRetainsDirtyDraftAndRetrySucceeds();
     void packagedMapReferencesAreTypedAndImagesStayWithinBound();
     void savedCampusSelectionAndFirstAvailableFallback();
@@ -216,18 +219,94 @@ private:
     QTemporaryDir m_temporaryDirectory;
 };
 
+class CampusEditOperationProbe final
+    : public Application::CampusDashboardCampusSavePort
+    , public Application::CampusLegacyImportPort
+{
+public:
+    explicit CampusEditOperationProbe(
+        Application::CampusDashboardCampusSnapshot initial
+        )
+        : campuses{std::move(initial)}
+    {
+    }
+
+    [[nodiscard]] Domain::Result<void> saveCampus(
+        const Application::CampusDashboardCampusSnapshot& campus,
+        const Application::CampusDashboardCampusSaveIntent intent,
+        const Application::CampusDashboardCampusNameOrigin nameOrigin =
+            Application::CampusDashboardCampusNameOrigin::UserEntered
+        ) const override
+    {
+        ++saveCalls;
+        if (failSave)
+        {
+            return Domain::Result<void>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "injected save failure",
+                .recoverable = true
+            });
+        }
+        saveIntents.push_back(intent);
+        nameOrigins.push_back(nameOrigin);
+        const auto found = std::find_if(
+            campuses.begin(),
+            campuses.end(),
+            [&campus](const auto& item) { return item.id == campus.id; }
+            );
+        if (found == campuses.end())
+        {
+            campuses.push_back(campus);
+        }
+        else
+        {
+            *found = campus;
+        }
+        return Domain::Result<void>::success();
+    }
+
+    [[nodiscard]] Domain::Result<std::size_t> importLegacyCampuses() const override
+    {
+        ++importCalls;
+        if (failImport)
+        {
+            return Domain::Result<std::size_t>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "injected import failure",
+                .recoverable = true
+            });
+        }
+        campuses.push_back(importedCampus);
+        return Domain::Result<std::size_t>::success(1);
+    }
+
+    mutable std::vector<Application::CampusDashboardCampusSnapshot> campuses;
+    mutable std::vector<Application::CampusDashboardCampusSaveIntent> saveIntents;
+    mutable std::vector<Application::CampusDashboardCampusNameOrigin> nameOrigins;
+    mutable int saveCalls = 0;
+    mutable int importCalls = 0;
+    bool failSave = false;
+    bool failImport = false;
+    Application::CampusDashboardCampusSnapshot importedCampus = [] {
+        auto campus = bundangSnapshot();
+        campus.id = campusId("imported-campus");
+        campus.campusName = "Imported Campus";
+        return campus;
+    }();
+};
+
 void CampusDirectoryTests::packagedDirectoryLoadsAndIdOverrideWinsAfterReload()
 {
     QVERIFY(m_temporaryDirectory.isValid());
     auto catalog = loadCatalog();
     QVERIFY(catalog.has_value());
     Resources::ResourceLoader loader(std::move(*catalog));
-    Platform::CampusDirectoryRepositoryAdapter repository(
+    auto repository = std::make_shared<Platform::CampusDirectoryRepositoryAdapter>(
         loader,
         QDir(m_temporaryDirectory.path()).filePath(QStringLiteral("app-data/campuses"))
         );
 
-    const auto directory = Application::CampusDirectoryReadQuery::execute(repository);
+    const auto directory = Application::CampusDirectoryReadQuery::execute(*repository);
     QVERIFY(directory);
     const auto packaged = std::find_if(
         directory.value().cbegin(),
@@ -242,21 +321,23 @@ void CampusDirectoryTests::packagedDirectoryLoadsAndIdOverrideWinsAfterReload()
 
     const auto selected = Application::CampusDashboardSelectedCampusReadQuery::execute(
         Application::CampusDashboardSelectedCampusReadRequest{campusId("bundang")},
-        repository
+        *repository
         );
     QVERIFY(selected);
     QVERIFY(selected.value().has_value());
     auto edited = *selected.value();
     edited.campusName = "Bundang Override";
-    const auto saved = Application::CampusDashboardCampusSaveUseCase::execute(
+    const Bootstrap::CampusSaveAction saveAction = Bootstrap::campusSaveAction(
         Application::CampusEditCapability::enabled(),
-        edited,
-        Application::CampusDashboardCampusSaveIntent::Update,
         repository
+        );
+    const auto saved = saveAction(
+        edited,
+        Application::CampusDashboardCampusSaveIntent::Update
         );
     QVERIFY(saved);
 
-    const auto reloadedDirectory = Application::CampusDirectoryReadQuery::execute(repository);
+    const auto reloadedDirectory = Application::CampusDirectoryReadQuery::execute(*repository);
     QVERIFY(reloadedDirectory);
     const auto overrideEntry = std::find_if(
         reloadedDirectory.value().cbegin(),
@@ -270,30 +351,51 @@ void CampusDirectoryTests::packagedDirectoryLoadsAndIdOverrideWinsAfterReload()
     QCOMPARE(overrideEntry->displayName, std::string("Bundang Override"));
     const auto reloadedSnapshot = Application::CampusDashboardSelectedCampusReadQuery::execute(
         Application::CampusDashboardSelectedCampusReadRequest{campusId("bundang")},
-        repository
+        *repository
         );
     QVERIFY(reloadedSnapshot);
     QCOMPARE(reloadedSnapshot.value()->campusName, std::string("Bundang Override"));
 
+    auto createdCampus = bundangSnapshot();
+    createdCampus.id = campusId("alpha");
+    createdCampus.campusName = "Alpha Campus";
+    const auto created = saveAction(
+        createdCampus,
+        Application::CampusDashboardCampusSaveIntent::Create
+        );
+    QVERIFY(created);
+    const auto reloadedCreatedCampus =
+        Application::CampusDashboardSelectedCampusReadQuery::execute(
+            Application::CampusDashboardSelectedCampusReadRequest{campusId("alpha")},
+            *repository
+            );
+    QVERIFY(reloadedCreatedCampus);
+    QVERIFY(reloadedCreatedCampus.value().has_value());
+    QCOMPARE(reloadedCreatedCampus.value()->campusName, std::string("Alpha Campus"));
+
     const QStringList files = QDir(
         QDir(m_temporaryDirectory.path()).filePath(QStringLiteral("app-data/campuses"))
         ).entryList({QStringLiteral("campus-*.json")}, QDir::Files);
-    QCOMPARE(files.size(), 1);
+    QCOMPARE(files.size(), 2);
 }
 
 void CampusDirectoryTests::explicitMigrationReadsOnlyCurrentWorkingDataCampuses()
 {
-    QVERIFY(m_temporaryDirectory.isValid());
+    QTemporaryDir migrationTemporaryDirectory;
+    QVERIFY(migrationTemporaryDirectory.isValid());
     auto catalog = loadCatalog();
     QVERIFY(catalog.has_value());
     Resources::ResourceLoader loader(std::move(*catalog));
-    const QString overrideDirectory = QDir(m_temporaryDirectory.path()).filePath(
+    const QString overrideDirectory = QDir(migrationTemporaryDirectory.path()).filePath(
         QStringLiteral("app-data/campuses")
         );
-    Platform::CampusDirectoryRepositoryAdapter repository(loader, overrideDirectory);
+    auto repository = std::make_shared<Platform::CampusDirectoryRepositoryAdapter>(
+        loader,
+        overrideDirectory
+        );
 
     const QString priorWorkingDirectory = QDir::currentPath();
-    const QString migrationRoot = QDir(m_temporaryDirectory.path()).filePath(
+    const QString migrationRoot = QDir(migrationTemporaryDirectory.path()).filePath(
         QStringLiteral("migration-root")
         );
     QVERIFY(QDir().mkpath(QDir(migrationRoot).filePath(QStringLiteral("data/campuses"))));
@@ -311,15 +413,31 @@ void CampusDirectoryTests::explicitMigrationReadsOnlyCurrentWorkingDataCampuses(
         )).toJson()) > 0);
     ignoredInput.close();
 
+    const auto deniedImportAction = Bootstrap::campusLegacyImportAction(
+        Application::CampusEditCapability::readOnly(),
+        repository
+        );
     QVERIFY(QDir::setCurrent(migrationRoot));
-    const auto imported = repository.importLegacyOverridesFromProcessWorkingDirectory();
+    const auto deniedImport = deniedImportAction();
+    QVERIFY(QDir::setCurrent(priorWorkingDirectory));
+    QVERIFY(!deniedImport);
+    QCOMPARE(deniedImport.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!deniedImport.error().recoverable);
+    QVERIFY(!QFileInfo::exists(overrideDirectory));
+
+    const auto authorizedImportAction = Bootstrap::campusLegacyImportAction(
+        Application::CampusEditCapability::enabled(),
+        repository
+        );
+    QVERIFY(QDir::setCurrent(migrationRoot));
+    const auto imported = authorizedImportAction();
     QVERIFY(QDir::setCurrent(priorWorkingDirectory));
     QVERIFY(imported);
     QCOMPARE(imported.value(), std::size_t(1));
 
     const auto legacy = Application::CampusDashboardSelectedCampusReadQuery::execute(
         Application::CampusDashboardSelectedCampusReadRequest{campusId("legacy-campus")},
-        repository
+        *repository
         );
     QVERIFY(legacy);
     QVERIFY(legacy.value().has_value());
@@ -327,10 +445,50 @@ void CampusDirectoryTests::explicitMigrationReadsOnlyCurrentWorkingDataCampuses(
 
     const auto ignored = Application::CampusDashboardSelectedCampusReadQuery::execute(
         Application::CampusDashboardSelectedCampusReadRequest{campusId("ignored-campus")},
-        repository
+        *repository
         );
     QVERIFY(ignored);
     QVERIFY(!ignored.value().has_value());
+
+    QTemporaryDir invalidMigrationRoot;
+    QVERIFY(invalidMigrationRoot.isValid());
+    const QString invalidImportDirectory = QDir(invalidMigrationRoot.path()).filePath(
+        QStringLiteral("data/campuses")
+        );
+    QVERIFY(QDir().mkpath(invalidImportDirectory));
+    QFile invalidInput(QDir(invalidImportDirectory).filePath(
+        QStringLiteral("invalid.json")
+        ));
+    QVERIFY(invalidInput.open(QIODevice::WriteOnly));
+    QVERIFY(invalidInput.write("not valid JSON") > 0);
+    invalidInput.close();
+
+    const QString failedOverrideDirectory = QDir(invalidMigrationRoot.path()).filePath(
+        QStringLiteral("app-data/campuses")
+        );
+    auto failedRepository =
+        std::make_shared<Platform::CampusDirectoryRepositoryAdapter>(
+            loader,
+            failedOverrideDirectory
+            );
+    const auto failedImportAction = Bootstrap::campusLegacyImportAction(
+        Application::CampusEditCapability::enabled(),
+        failedRepository
+        );
+    QVERIFY(QDir::setCurrent(invalidMigrationRoot.path()));
+    const auto failedImport = failedImportAction();
+    QVERIFY(QDir::setCurrent(priorWorkingDirectory));
+    QVERIFY(!failedImport);
+    QVERIFY(!QFileInfo::exists(failedOverrideDirectory));
+    const auto failedImportedCampus =
+        Application::CampusDashboardSelectedCampusReadQuery::execute(
+            Application::CampusDashboardSelectedCampusReadRequest{
+                campusId("legacy-campus")
+            },
+            *failedRepository
+            );
+    QVERIFY(failedImportedCampus);
+    QVERIFY(!failedImportedCampus.value().has_value());
 }
 
 void CampusDirectoryTests::productionAdminArgumentMapsToCampusEditCapabilityByPresence()
@@ -345,6 +503,117 @@ void CampusDirectoryTests::productionAdminArgumentMapsToCampusEditCapabilityByPr
             QString::fromLatin1(AppSettings::AdminModeArgument)
         });
     QVERIFY(present.canEdit());
+}
+
+void CampusDirectoryTests::composedCampusEditOperationsEnforceCapabilityAndAuthorizedParity()
+{
+    auto port = std::make_shared<CampusEditOperationProbe>(bundangSnapshot());
+    const auto originalCampuses = port->campuses;
+    const auto readOnlyCapability = Application::CampusEditCapability::readOnly();
+    const Bootstrap::CampusSaveAction readOnlySave =
+        Bootstrap::campusSaveAction(readOnlyCapability, port);
+    const Bootstrap::CampusLegacyImportAction readOnlyImport =
+        Bootstrap::campusLegacyImportAction(readOnlyCapability, port);
+
+    auto newCampus = bundangSnapshot();
+    newCampus.id = campusId("new-campus");
+    newCampus.campusName = "New Campus";
+    const auto deniedCreate = readOnlySave(
+        newCampus,
+        Application::CampusDashboardCampusSaveIntent::Create
+        );
+    QVERIFY(!deniedCreate);
+    QCOMPARE(deniedCreate.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!deniedCreate.error().recoverable);
+    QCOMPARE(port->saveCalls, 0);
+    QVERIFY(port->saveIntents.empty());
+    QCOMPARE(port->campuses, originalCampuses);
+
+    auto editedBundang = bundangSnapshot();
+    editedBundang.campusName = "Unauthorized Update";
+    const auto deniedUpdate = readOnlySave(
+        editedBundang,
+        Application::CampusDashboardCampusSaveIntent::Update
+        );
+    QVERIFY(!deniedUpdate);
+    QCOMPARE(deniedUpdate.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!deniedUpdate.error().recoverable);
+    QCOMPARE(port->saveCalls, 0);
+    QVERIFY(port->saveIntents.empty());
+    QCOMPARE(port->campuses, originalCampuses);
+
+    const auto deniedImport = readOnlyImport();
+    QVERIFY(!deniedImport);
+    QCOMPARE(deniedImport.error().code, Domain::ErrorCode::InvalidInput);
+    QVERIFY(!deniedImport.error().recoverable);
+    QCOMPARE(port->importCalls, 0);
+    QCOMPARE(port->campuses, originalCampuses);
+
+    const Bootstrap::CampusSaveAction adminSave = Bootstrap::campusSaveAction(
+        Application::CampusEditCapability::enabled(),
+        port
+        );
+    const Bootstrap::CampusLegacyImportAction adminImport =
+        Bootstrap::campusLegacyImportAction(
+            Application::CampusEditCapability::enabled(),
+            port
+            );
+    const auto created = adminSave(
+        newCampus,
+        Application::CampusDashboardCampusSaveIntent::Create
+        );
+    QVERIFY(created);
+    QCOMPARE(port->saveCalls, 1);
+    QCOMPARE(port->saveIntents.back(), Application::CampusDashboardCampusSaveIntent::Create);
+    QCOMPARE(
+        port->nameOrigins.back(),
+        Application::CampusDashboardCampusNameOrigin::UserEntered
+        );
+    QCOMPARE(port->campuses.size(), std::size_t(2));
+    QCOMPARE(port->campuses.back(), newCampus);
+
+    auto updatedCampus = newCampus;
+    updatedCampus.campusName = "Updated Campus";
+    const auto updated = adminSave(
+        updatedCampus,
+        Application::CampusDashboardCampusSaveIntent::Update
+        );
+    QVERIFY(updated);
+    QCOMPARE(port->saveCalls, 2);
+    QCOMPARE(port->saveIntents.back(), Application::CampusDashboardCampusSaveIntent::Update);
+    QCOMPARE(
+        port->nameOrigins.back(),
+        Application::CampusDashboardCampusNameOrigin::UserEntered
+        );
+    QCOMPARE(port->campuses.back(), updatedCampus);
+
+    const auto beforeFailedSave = port->campuses;
+    port->failSave = true;
+    auto failedDraft = updatedCampus;
+    failedDraft.campusName = "Failed Save";
+    const auto failedSave = adminSave(
+        failedDraft,
+        Application::CampusDashboardCampusSaveIntent::Update
+        );
+    QVERIFY(!failedSave);
+    QCOMPARE(port->saveCalls, 3);
+    QCOMPARE(port->campuses, beforeFailedSave);
+    port->failSave = false;
+
+    const auto beforeFailedImport = port->campuses;
+    port->failImport = true;
+    const auto failedImport = adminImport();
+    QVERIFY(!failedImport);
+    QCOMPARE(port->importCalls, 1);
+    QCOMPARE(port->campuses, beforeFailedImport);
+    port->failImport = false;
+
+    const auto imported = adminImport();
+    QVERIFY(imported);
+    QCOMPARE(imported.value(), std::size_t(1));
+    QCOMPARE(port->importCalls, 2);
+    QCOMPARE(port->campuses.size(), std::size_t(3));
+    QCOMPARE(port->campuses.back(), port->importedCampus);
 }
 
 void CampusDirectoryTests::realQSaveFileFailureRetainsDirtyDraftAndRetrySucceeds()
@@ -644,6 +913,19 @@ void CampusDirectoryTests::allFiveRoutesRenderAndReadOnlyDoesNotExposeEditing()
         auto* import = page->findChild<QPushButton*>(QStringLiteral("campusDirectoryImportLegacy"));
         QVERIFY(import != nullptr);
         QVERIFY(import->isHidden());
+        if (id == QStringLiteral("campus_map"))
+        {
+            auto* openNaver = page->findChild<QPushButton*>(
+                QStringLiteral("campusMapNaver")
+                );
+            auto* openKakao = page->findChild<QPushButton*>(
+                QStringLiteral("campusMapKakao")
+                );
+            QVERIFY(openNaver != nullptr);
+            QVERIFY(openKakao != nullptr);
+            QVERIFY(openNaver->isEnabled());
+            QVERIFY(openKakao->isEnabled());
+        }
     }
 }
 

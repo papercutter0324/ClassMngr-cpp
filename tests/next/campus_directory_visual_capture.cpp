@@ -3,13 +3,17 @@
 #include "next/application/campus_dashboard_selected_campus_read_query.h"
 #include "next/application/campus_directory_read_query.h"
 #include "next/platform/campus_directory_repository_adapter.h"
+#include "next/bootstrap/campus_edit_operation_actions.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/campus_directory_route_factories.h"
+#include "next/ui/application_shell.h"
+#include "next/ui/navigation_model.h"
 #include "next/ui/page_host.h"
 #include "preferences_test_ports.h"
 
 #include <QApplication>
+#include <QAction>
 #include <QComboBox>
 #include <QDir>
 #include <QFile>
@@ -21,6 +25,10 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QPixmap>
+#include <QPushButton>
+#include <QPainter>
+#include <QMenu>
+#include <QMenuBar>
 #include <QResource>
 #include <QTemporaryDir>
 #include <QTranslator>
@@ -355,6 +363,329 @@ bool captureNext(
     return true;
 }
 
+std::vector<Ui::PageDescriptor> campusShellDescriptors(
+    const std::shared_ptr<Platform::CampusDirectoryRepositoryAdapter>& repository,
+    const Application::CampusEditCapability capability
+    )
+{
+    return Ui::campusDirectoryPageDescriptors([repository, capability] {
+        Ui::CampusDirectoryPageActions actions;
+        actions.editCapability = capability;
+        actions.loadCampuses = [repository] {
+            return Application::CampusDirectoryReadQuery::execute(*repository);
+        };
+        actions.loadCampus = [repository](const Domain::CampusId& id) {
+            return Application::CampusDashboardSelectedCampusReadQuery::execute(
+                Application::CampusDashboardSelectedCampusReadRequest{id},
+                *repository
+                );
+        };
+        actions.saveCampus = Bootstrap::campusSaveAction(capability, repository);
+        actions.importLegacyCampuses = Bootstrap::campusLegacyImportAction(
+            capability,
+            repository
+            );
+        actions.readLastSelectedCampus = [] {
+            return std::optional<Domain::CampusId>{campusId()};
+        };
+        actions.saveLastSelectedCampus = [](const std::optional<Domain::CampusId>&) {
+            return Domain::Result<void>::success();
+        };
+        actions.mapResourcesFor = [repository](
+                                      const Application::CampusDashboardCampusSnapshot& campus
+                                      ) {
+            return repository->mapResourcesFor(campus);
+        };
+        return actions;
+    });
+}
+
+bool configureCampusShell(
+    Ui::ApplicationShell& shell,
+    const std::shared_ptr<Platform::CampusDirectoryRepositoryAdapter>& repository,
+    const Application::CampusEditCapability capability,
+    const QString& initialPage,
+    QString* error
+    )
+{
+    shell.setCampusEditCapability(capability);
+    for (Ui::PageDescriptor descriptor : campusShellDescriptors(repository, capability))
+    {
+        if (!shell.pageHost().registerPage(std::move(descriptor)))
+        {
+            if (error) *error = QStringLiteral("Could not register a campus shell route.");
+            return false;
+        }
+    }
+
+    using Ui::NavigationNode;
+    std::vector<NavigationNode> routes;
+    for (const QString& id : {
+             QStringLiteral("campus_information"),
+             QStringLiteral("campus_directions"),
+             QStringLiteral("campus_address"),
+             QStringLiteral("campus_housing"),
+             QStringLiteral("campus_map")
+         })
+    {
+        const std::optional<Ui::PageId> page = Ui::PageId::fromString(id);
+        if (!page)
+        {
+            if (error) *error = QStringLiteral("Campus route identifier is invalid.");
+            return false;
+        }
+        routes.push_back(NavigationNode::page(*page));
+    }
+    const std::optional<Ui::PageId> initial = Ui::PageId::fromString(initialPage);
+    if (!initial)
+    {
+        if (error) *error = QStringLiteral("Initial campus route identifier is invalid.");
+        return false;
+    }
+    const auto configured = shell.configureNavigation(
+        {
+            NavigationNode::group(
+                QStringLiteral("campus_info"),
+                QCoreApplication::translate("NextNavigation", "Campus Directory"),
+                std::move(routes),
+                Ui::NavigationWorkspaceAvailability::Always,
+                false,
+                QStringLiteral("Campus Directory")
+                )
+        },
+        *initial,
+        *initial,
+        Application::WorkspaceLifecycleState::Closed
+        );
+    if (!configured || !shell.navigateTo(*initial, Ui::NavigationCause::Initial))
+    {
+        if (error) *error = QStringLiteral("Could not activate the initial campus shell route.");
+        return false;
+    }
+    return true;
+}
+
+bool saveImage(const QImage& image, const QString& path)
+{
+    return !image.isNull() && image.save(path, "PNG");
+}
+
+bool captureAdminReview(
+    Resources::ResourceLoader& loader,
+    const QString& locale,
+    const QString& theme,
+    const QString& outputDirectory,
+    QJsonArray* captures,
+    QString* error
+    )
+{
+    QTemporaryDir temporaryOverrides;
+    if (!temporaryOverrides.isValid())
+    {
+        if (error) *error = QStringLiteral("Could not create isolated C46 review storage.");
+        return false;
+    }
+    auto repository = std::make_shared<Platform::CampusDirectoryRepositoryAdapter>(
+        loader,
+        temporaryOverrides.path()
+        );
+    const QString adminBaseName = QStringLiteral("campus_admin_%1_%2")
+        .arg(locale, theme);
+    const QString readOnlyBaseName = QStringLiteral("campus_readonly_%1_%2")
+        .arg(locale, theme);
+
+    Test::MemoryPreferences adminPreferences;
+    Ui::ApplicationShell adminShell(loader, adminPreferences.model);
+    if (!configureCampusShell(
+            adminShell,
+            repository,
+            Application::CampusEditCapability::enabled(),
+            QStringLiteral("campus_directions"),
+            error
+            ))
+    {
+        return false;
+    }
+    adminShell.resize(Viewport);
+    adminShell.show();
+    QApplication::processEvents();
+    QMenu* const adminMenu = adminShell.findChild<QMenu*>(
+        QStringLiteral("classMngrNextAdminMenu")
+        );
+    QAction* const manageCampuses = adminShell.findChild<QAction*>(
+        QStringLiteral("classMngrNextManageCampuses")
+        );
+    if (!adminMenu || !manageCampuses)
+    {
+        if (error) *error = QStringLiteral("The authorized Admin menu was not composed.");
+        return false;
+    }
+    const QString expectedAdminLabel = locale == QStringLiteral("ko_KR")
+        ? QStringLiteral("관리자")
+        : QStringLiteral("Admin");
+    const QString expectedManageLabel = locale == QStringLiteral("ko_KR")
+        ? QStringLiteral("캠퍼스 관리")
+        : QStringLiteral("Manage Campuses");
+    if (adminMenu->title() != expectedAdminLabel
+        || manageCampuses->text() != expectedManageLabel)
+    {
+        if (error) *error = QStringLiteral("The C46 Admin menu was not translated for this locale.");
+        return false;
+    }
+
+    const QList<QAction*> menuBarEntries = adminShell.menuBar()->actions();
+    const auto adminMenuEntry = std::find_if(
+        menuBarEntries.cbegin(),
+        menuBarEntries.cend(),
+        [adminMenu](const QAction* action) { return action->menu() == adminMenu; }
+        );
+    if (adminMenuEntry == menuBarEntries.cend())
+    {
+        if (error) *error = QStringLiteral("The Admin menu is absent from the menu bar.");
+        return false;
+    }
+    const QRect adminMenuGeometry = adminShell.menuBar()->actionGeometry(*adminMenuEntry);
+    adminMenu->popup(adminShell.menuBar()->mapToGlobal(
+        QPoint(adminMenuGeometry.left(), adminShell.menuBar()->height())
+        ));
+    QApplication::processEvents();
+    const QImage menuBarImage = adminShell.menuBar()->grab().toImage();
+    const QImage dropdownImage = adminMenu->grab().toImage();
+    QImage menuCapture(
+        menuBarImage.width(),
+        menuBarImage.height() + dropdownImage.height(),
+        QImage::Format_ARGB32_Premultiplied
+        );
+    menuCapture.fill(adminShell.palette().color(QPalette::Window));
+    {
+        QPainter painter(&menuCapture);
+        painter.drawImage(0, 0, menuBarImage);
+        painter.drawImage(adminMenuGeometry.left(), menuBarImage.height(), dropdownImage);
+    }
+    const QString menuFile = adminBaseName + QStringLiteral("_menu.png");
+    if (!saveImage(menuCapture, QDir(outputDirectory).filePath(menuFile)))
+    {
+        if (error) *error = QStringLiteral("Could not save the C46 Admin menu capture.");
+        return false;
+    }
+    adminMenu->close();
+    manageCampuses->trigger();
+    QApplication::processEvents();
+    if (adminShell.pageHost().activePageKey()
+        != std::optional<QString>(QStringLiteral("campus_information")))
+    {
+        if (error) *error = QStringLiteral("Manage Campuses did not route to Information.");
+        return false;
+    }
+    auto* adminPage = dynamic_cast<Ui::CampusDirectoryPage*>(
+        adminShell.pageHost().pageInstance(QStringLiteral("campus_information"))
+        );
+    QPushButton* const saveButton = adminPage
+        ? adminPage->findChild<QPushButton*>(QStringLiteral("campusDirectorySave"))
+        : nullptr;
+    if (!saveButton || saveButton->isHidden())
+    {
+        if (error) *error = QStringLiteral("The authorized Information route has no visible Save action.");
+        return false;
+    }
+    const QString adminRouteFile = adminBaseName + QStringLiteral("_route.png");
+    if (!saveWidget(adminShell, QDir(outputDirectory).filePath(adminRouteFile)))
+    {
+        if (error) *error = QStringLiteral("Could not save the C46 Admin route capture.");
+        return false;
+    }
+
+    Test::MemoryPreferences readOnlyPreferences;
+    Ui::ApplicationShell readOnlyShell(loader, readOnlyPreferences.model);
+    if (!configureCampusShell(
+            readOnlyShell,
+            repository,
+            Application::CampusEditCapability::readOnly(),
+            QStringLiteral("campus_information"),
+            error
+            ))
+    {
+        return false;
+    }
+    if (readOnlyShell.findChild<QMenu*>(QStringLiteral("classMngrNextAdminMenu")))
+    {
+        if (error) *error = QStringLiteral("A read-only session contains the Admin menu.");
+        return false;
+    }
+    readOnlyShell.resize(Viewport);
+    readOnlyShell.show();
+    QApplication::processEvents();
+    auto* readOnlyPage = dynamic_cast<Ui::CampusDirectoryPage*>(
+        readOnlyShell.pageHost().pageInstance(QStringLiteral("campus_information"))
+        );
+    const auto* readOnlyNotice = readOnlyPage
+        ? readOnlyPage->findChild<QLabel*>(QStringLiteral("campusDirectoryReadOnlyNotice"))
+        : nullptr;
+    if (!readOnlyNotice)
+    {
+        if (error) *error = QStringLiteral("The read-only route has no explanatory notice.");
+        return false;
+    }
+    const QString readOnlyFile = readOnlyBaseName + QStringLiteral("_route.png");
+    if (!saveWidget(readOnlyShell, QDir(outputDirectory).filePath(readOnlyFile)))
+    {
+        if (error) *error = QStringLiteral("Could not save the C46 read-only route capture.");
+        return false;
+    }
+
+    if (captures)
+    {
+        struct ReviewCapture final
+        {
+            QString view;
+            QString file;
+            QString state;
+            QString routeResult;
+        };
+        for (const ReviewCapture& capture : {
+                 ReviewCapture{
+                     QStringLiteral("adminMenu"),
+                     menuFile,
+                     QStringLiteral("Admin menu open; Manage Campuses visible."),
+                     QStringLiteral("Menu action routes to campus_information.")
+                 },
+                 ReviewCapture{
+                     QStringLiteral("adminInformationRoute"),
+                     adminRouteFile,
+                     QStringLiteral("Authorized Information route; Save control visible."),
+                     QStringLiteral("Manage Campuses activated campus_information.")
+                 },
+                 ReviewCapture{
+                     QStringLiteral("readOnlyInformationRoute"),
+                     readOnlyFile,
+                     QStringLiteral("Read-only Information route; notice visible and edit controls hidden."),
+                     QStringLiteral("Campus Directory remains accessible at campus_information.")
+                 }
+             })
+        {
+            const QImage image(QDir(outputDirectory).filePath(capture.file));
+            if (image.isNull())
+            {
+                if (error) *error = QStringLiteral("Could not read a saved C46 review image.");
+                return false;
+            }
+            captures->append(QJsonObject{
+                {QStringLiteral("view"), capture.view},
+                {QStringLiteral("state"), capture.state},
+                {QStringLiteral("routeResult"), capture.routeResult},
+                {QStringLiteral("locale"), locale},
+                {QStringLiteral("theme"), theme},
+                {QStringLiteral("file"), capture.file},
+                {QStringLiteral("widthPixels"), image.width()},
+                {QStringLiteral("heightPixels"), image.height()},
+                {QStringLiteral("devicePixelRatio"), image.devicePixelRatio()},
+                {QStringLiteral("scale"), QStringLiteral("1x")}
+            });
+        }
+    }
+    return true;
+}
+
 } // namespace
 
 int main(int argc, char* argv[])
@@ -412,6 +743,7 @@ int main(int argc, char* argv[])
     const QStringList locales{QStringLiteral("en_US"), QStringLiteral("ko_KR")};
     const QStringList themes{QStringLiteral("light"), QStringLiteral("dark")};
     QJsonArray captures;
+    QJsonArray adminReviewCaptures;
     QJsonObject memoryMeasurement;
 
     for (const QString& locale : locales)
@@ -473,6 +805,21 @@ int main(int argc, char* argv[])
                     });
                 }
             }
+            QString adminReviewError;
+            if (!captureAdminReview(
+                    loader,
+                    locale,
+                    theme,
+                    outputDirectory,
+                    &adminReviewCaptures,
+                    &adminReviewError
+                    ))
+            {
+                qCritical().noquote()
+                    << "C46 review capture failed for" << locale << theme
+                    << adminReviewError;
+                return 1;
+            }
         }
         if (translator) application.removeTranslator(translator.get());
     }
@@ -482,6 +829,30 @@ int main(int argc, char* argv[])
         qCritical("Campus map lifecycle memory measurements were not produced");
         return 1;
     }
+    QJsonObject c46ReviewManifest{
+        {QStringLiteral("purpose"), QStringLiteral("C46 Admin menu and edit-permission review captures")},
+        {QStringLiteral("qtVersion"), QStringLiteral(QT_VERSION_STR)},
+        {QStringLiteral("qtPlatformPlugin"), QStringLiteral("offscreen")},
+        {QStringLiteral("style"), QStringLiteral("Fusion with packaged light/dark stylesheet")},
+        {QStringLiteral("dataSource"), QStringLiteral("Bundang packaged campus catalog; isolated temporary app-data for each capture")},
+        {QStringLiteral("logicalViewport"), QJsonObject{
+             {QStringLiteral("width"), Viewport.width()},
+             {QStringLiteral("height"), Viewport.height()}}},
+        {QStringLiteral("requestedScale"), QStringLiteral("QT_SCALE_FACTOR=1; images are recorded at devicePixelRatio 1.0")},
+        {QStringLiteral("captures"), adminReviewCaptures}
+    };
+    QFile c46ManifestFile(QDir(outputDirectory).filePath(
+        QStringLiteral("campus_admin_c46_review.json")
+        ));
+    if (!c46ManifestFile.open(QIODevice::WriteOnly | QIODevice::Truncate)
+        || c46ManifestFile.write(
+               QJsonDocument(c46ReviewManifest).toJson(QJsonDocument::Indented)
+               ) < 0)
+    {
+        qCritical("Could not write the C46 review manifest");
+        return 1;
+    }
+
     QJsonObject manifest{
         {QStringLiteral("purpose"), QStringLiteral("Paired Legacy and Next Campus Directory page captures")},
         {QStringLiteral("viewport"), QJsonObject{
@@ -493,7 +864,8 @@ int main(int argc, char* argv[])
         {QStringLiteral("dataSource"), QStringLiteral("The same packaged Bundang campus JSON and map PNGs; Legacy uses the read-only campuses RCC and Next uses its packaged resource catalog.")},
         {QStringLiteral("pairedCaptureLimitations"), QStringLiteral("The Legacy dashboard keeps all campus tabs in one page while Next provides one route per section; paired images use the same campus, locale, theme, and viewport but do not establish pixel parity. Legacy JSON keeps historical :/assets/campuses map references while the current campus RCC uses :/resource-packs/campuses, so this capture target supplies a read-only qrc alias for the same Bundang map PNG bytes to make both map previews visible. The alias exists only in this capture target.")},
         {QStringLiteral("memoryMeasurement"), memoryMeasurement},
-        {QStringLiteral("captures"), captures}
+        {QStringLiteral("captures"), captures},
+        {QStringLiteral("c46AdminReviewCaptures"), adminReviewCaptures}
     };
     QFile manifestFile(QDir(outputDirectory).filePath(QStringLiteral("campus_directory_paired_capture.json")));
     if (!manifestFile.open(QIODevice::WriteOnly | QIODevice::Truncate)
