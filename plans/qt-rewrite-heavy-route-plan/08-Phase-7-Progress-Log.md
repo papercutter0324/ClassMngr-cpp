@@ -1665,3 +1665,35 @@ Entries are preserved in their original document order.
   redesigned Classes content remains behaviorally accessible through the Next
   detail pane. Batch 5 continues with #51, Schedule import/output; Phase 7 and
   its preservation-matrix, visual, Windows, and full-suite gates remain open.
+
+### Candidate #51 — Schedule import/output accepted (2026-10-30)
+
+- Commit: `03ec352f` (`Phase7 - Complete Schedule import and output follow-up`).
+  A deterministic fixture parses five blocks of 20/20/20/20/16 E6 candidates.
+  Each selected block is applied through the existing one-block workflow to a
+  separate temporary `.tps` workspace, then persisted class, class-info, and
+  schedule counts and Schedule reloads are checked. The overlap workbook
+  remains a negative review case. The Schedule output dialog now retranslates
+  on `LanguageChange` while retaining its selected options; import feedback
+  covers localized success/conflict/failure summaries and preserves raw
+  technical failure detail. The C50 pending-label assertion now expects hidden
+  presentation while retaining the Monday 17:00 handoff tuple and persistence.
+- Verification: macOS Debug focused CTest passed 2/2: Schedule Page and Normal
+  Schedule Import Integration. Direct QtTest passed 12/12 Schedule Page cases
+  and 17/17 integration cases. The five-block test asserts all 96 candidates
+  across five independent operations; no 96-candidate transaction is claimed.
+- Output evidence: the durable [C51 package](../../docs/qt-rewrite/visual-baseline/next/phase-7/schedule-import-output-c51/README.md)
+  records a production Next Schedule-page PDF generated from the reloaded
+  second block and a Legacy PDF generated from the same data through
+  `ScheduleBuilder`, the Legacy print-document adapter, and Schedule PDF
+  service. Both are one landscape A4 page (842×595 points), contain the
+  expected profile and E6 labels, and their 150-DPI page renders are identical
+  with zero changed pixels. PDF bytes differ because of metadata timestamps.
+- Limits: Qt 6.12 on macOS used an unpinned platform font fallback because the
+  requested `Sans Serif` family was unavailable. The offscreen Legacy
+  `ScheduleWidget` could not be constructed; the Legacy comparison therefore
+  covers its builder/adapter/PDF-service path, not the interactive widget. No
+  physical print, Windows run, or full-suite pass is claimed.
+- Decision and next: retain one selected block per import and treat the 96
+  candidates as five separate operations. Batch 5 continues with #52, the
+  Document Catalog live-locale follow-up; Phase 7 remains in progress.

@@ -12,9 +12,13 @@
     extra visible label, and adds paired page-state captures. Empty/dialog/error
     full-window captures remain for the exit review; the paired capture uses a
     one-route ApplicationShell, not the production navigation tree.
-51. **In progress — Schedule import/output follow-up:** close the 96-row apply,
-    localized presentation, and print/output evidence gaps recorded by #31–32.
-52. **Discovered — Document Catalog live-locale follow-up:** cover live
+51. **Accepted — Schedule import/output follow-up** (`03ec352f`): five
+    one-block applies cover 96 candidates in separate temporary `.tps`
+    workspaces; each persisted result reloads into Schedule. Live locale
+    switching in the output dialog preserves its open options. Imported
+    Schedule output has matching one-page 150-DPI renders; font fallback and
+    the offscreen Legacy-widget limitation are documented.
+52. **In progress — Document Catalog live-locale follow-up:** cover live
     Preferences locale changes with a PDF open, including catalog labels,
     selected-document identity, viewer title/controls and state, and preservation
     of folder expansion; close the integration gap recorded by #42.
