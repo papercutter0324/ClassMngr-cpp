@@ -6,22 +6,22 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-30
-- Current milestone: Phase 7 remains in progress. Candidate #49, Workspace
-  Calendar parity, is accepted in source commit `f00b9a17`; Batch 5 is active
-  at #50, the Classes parity and transfer-boundary follow-up. The embedded
-  Calendar restores Legacy's month grid, Upcoming scopes, filters, and
-  day-created event draft, with one heavy Calendar owner across route
-  transitions and workspace replacement/close. Its visible grid matches
-  Legacy across English/Korean and Light/Dark captures; the Korean Next shell
-  remains translated where Legacy's shell is English. The post-Batch-4 hosted
+- Current milestone: Phase 7 remains in progress. Candidate #50, Classes
+  parity and the 4,096-class transfer boundary, is accepted in source commit
+  `66ea9162`; Batch 5 is active at #51, the Schedule import/output follow-up.
+  The Next transfer path rejects projected visible-class overflow inside its
+  transaction while preserving the unbounded Legacy import API. The pending
+  testing-slot label is hidden without losing the saved time; matched locale/
+  theme captures document the redesigned Classes view. The post-Batch-4 hosted
   Windows diagnostic built successfully but returned an invalid artifact
   because the staged executable lacked the Next resource catalog; #54 tracks
   packaging repair and a fresh run. See the [Phase 7 progress
   log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md). The full project
   suite, Windows runs, 7A evidence, C44 output/raster limitations, and Phase 7
-  exit gate remain open. The Phase 9 packaged-Next numeric memory gate is
-  separate.
+  exit gate remain open. One Legacy class-transfer fallback test still fails in
+  the offscreen aggregate; #55 must resolve it before reporting a full-suite
+  pass. The Phase 9 packaged-Next numeric memory gate is separate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

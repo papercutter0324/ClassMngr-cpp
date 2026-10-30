@@ -1626,3 +1626,42 @@ Entries are preserved in their original document order.
 - Decision and next: keep the full embedded Calendar content and serialized
   lifecycle. Batch 5 continues with #50, the Classes parity and transfer
   boundary; Phase 7 remains in progress.
+
+### Candidate #50 — Classes parity and transfer boundary accepted (2026-10-30)
+
+- Commit: `66ea9162` (`Phase7 - Complete Classes parity and import boundary`).
+  The Next Class Transfer path now uses a typed bounded-import entry point.
+  Inside the repository-owned transaction, it counts the same visible rows as
+  the Next navigator, adds selected Create actions, and rejects a projected
+  result above 4,096 before writes. Replace and Skip do not increase the count;
+  the previous Legacy import APIs remain unbounded. Overflow is localized and
+  leaves the workspace unchanged. Next hides the pending testing-slot label
+  while retaining and saving the Thursday 10:00 tuple.
+- Verification: the affected macOS Debug targets built. Eight focused CTests
+  passed, including transfer apply/workflow, navigator, Testing Classes, and
+  both capture targets. The five QtTest targets reported 109 passed and no
+  failures. Tests cover 4,097-create atomic rejection, exact 4,096 success and
+  navigability, Replace/Skip, `testing_classes` exclusion, Legacy unbounded
+  import, Korean runtime validation, and transaction-start failure. Resource
+  inventory `--check`, capture hashes, and `git diff --check` passed.
+- Visual evidence: four 800×600 Legacy/Next pairs use the same 96-class
+  fixture, selected class, locale, and theme. The Next layout is a compact
+  two-pane list/editor redesign; the Legacy page uses a banner and wider
+  controls. The class summary remains accessible in the Next list/detail panes.
+  The Next capture uses a one-route `ApplicationShell` harness and does not
+  show the production navigation tree; it does not claim production-shell or
+  pixel parity. Full-window empty/dialog/error captures remain open for #55.
+  The pending-slot package has updated English/Korean × Light/Dark Next
+  captures with the hidden label and preserved tuple.
+- Limits: tests and captures used macOS offscreen rendering; no Windows or
+  full-suite pass is claimed. `ClassMngrClassTransferTests` reproduced one
+  Legacy failure in the teacher-choice fallback dialog (420 passed, 1 failed;
+  expected `Keep local: Romanized One`, got `Keep local: New Teacher`). The
+  failure occurs before class import apply and does not call the new bounded
+  API, but a clean pre-C50 baseline was not tested. Track it for #55 rather
+  than claiming a clean Legacy suite.
+- Decision and next: retain the current Next 4,096 navigation limit and reject
+  imports that would exceed it; keep Legacy's unbounded call unchanged. The
+  redesigned Classes content remains behaviorally accessible through the Next
+  detail pane. Batch 5 continues with #51, Schedule import/output; Phase 7 and
+  its preservation-matrix, visual, Windows, and full-suite gates remain open.
