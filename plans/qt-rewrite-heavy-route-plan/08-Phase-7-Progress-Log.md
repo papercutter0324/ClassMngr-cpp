@@ -1697,3 +1697,28 @@ Entries are preserved in their original document order.
 - Decision and next: retain one selected block per import and treat the 96
   candidates as five separate operations. Batch 5 continues with #52, the
   Document Catalog live-locale follow-up; Phase 7 remains in progress.
+
+### Candidate #52 — Document Catalog live-locale accepted (2026-10-30)
+
+- Commit: `b6af1279` (`Phase7 - Preserve Document Catalog locale state`). The
+  production Preferences flow now refreshes the active catalog tree and
+  retranslates the open document viewer on English ↔ Korean switches. Stable
+  document/folder IDs restore selection and expansion with selection signals
+  blocked. The viewer title updates from the localized projection without
+  reopening the PDF; visible controls retranslate on `LanguageChange`.
+- Verification: the affected macOS Debug targets built. Focused CTest passed
+  3/3: Document Catalog Navigation, Document Viewer, and Document Viewer Visual
+  Capture. The direct live Preferences integration case passed (3 QtTest entries
+  including setup and cleanup). It verifies translated labels, collapsed folder,
+  selected `DocumentId`, the same viewer/PDF objects, ready content reference,
+  page 2, 144% zoom, one initial body open, and no extra selection or viewer/PDF
+  lifecycle signals across English → Korean → English.
+- Evidence: the [C52 locale-switch package](../../docs/qt-rewrite/phase-7-evidence/c52-document-catalog-locale/README.md)
+  contains before/Korean/restored 1024×720 captures and their hash manifest.
+  The locale captures document tree and viewer UI state, not PDF canvas pixels;
+  the separate viewer visual capture test passed.
+- Limits: offscreen Qt emitted two `propagateSizeHints()` warnings; assertions
+  passed. No Windows or full-suite run was performed.
+- Decision and next: preserve the open document session while refreshing both
+  catalog and viewer language projections. Batch 5 continues with #53, Sub Prep
+  output text mapping and SQL-backed raster evidence; Phase 7 remains in progress.

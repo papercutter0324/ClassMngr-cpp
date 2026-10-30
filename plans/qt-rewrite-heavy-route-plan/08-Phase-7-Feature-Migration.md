@@ -38,19 +38,21 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-30
-- Current note: Candidate #51, Schedule import/output, is accepted in source
-  commit `03ec352f`; Batch 5 is active at #52, the Document Catalog
-  live-locale follow-up. The 96-candidate fixture exercises five separate
-  one-block imports with persisted rows and Schedule reloads verified. The
-  Schedule output dialog retranslates while open, and output from an imported
-  block is compared across Legacy and Next PDF paths. The post-Batch-4 hosted
-  Windows diagnostic artifact is invalid because the staged executable lacked
-  the Next resource catalog; #54 tracks packaging repair and a fresh run. The
-  remaining active Document Catalog locale, Sub Prep output, and broader 7A
-  evidence follow-ups are in the current tracker. Full-window empty/dialog/error
-  captures, the Legacy fallback-test failure, full-suite, Windows checks, C44
-  output/raster limitations, and the Phase 7 exit gate remain open. The Phase 9
-  packaged Release numeric memory gate is separate.
+- Current note: Candidate #52, Document Catalog live-locale behavior, is
+  accepted in source commit `b6af1279`; Batch 5 is active at #53, the Sub Prep
+  output follow-up. English ↔ Korean switches through Preferences now update
+  the active catalog and PDF viewer while preserving selected document,
+  collapsed folder, viewer/PDF instances, ready content, page, and zoom without
+  reopening the file. The C44 audit found two used but unmapped PDF characters
+  (the roster hyphen and header bullet); #53 tracks their text mapping and the
+  SQL-backed Windows raster check. The post-Batch-4 hosted Windows diagnostic
+  artifact is invalid because the staged executable lacked the Next resource
+  catalog; #54 tracks packaging repair and a fresh run. The remaining Sub Prep
+  output and broader 7A evidence follow-ups are in the current tracker.
+  Full-window Classes empty/dialog/error captures, the Legacy fallback-test
+  failure, full-suite, Windows checks, C44 output/raster limitations, and the
+  Phase 7 exit gate remain open. The Phase 9 packaged Release numeric memory
+  gate is separate.
 
 ### Slice batches
 

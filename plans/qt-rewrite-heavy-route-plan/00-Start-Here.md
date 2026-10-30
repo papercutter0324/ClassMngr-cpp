@@ -6,16 +6,17 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-30
-- Current milestone: Phase 7 remains in progress. Candidate #51, Schedule
-  import/output, is accepted in source commit `03ec352f`; Batch 5 is active at
-  #52, the Document Catalog live-locale follow-up. The 96-candidate Schedule
-  fixture now exercises five one-block applies in separate workspaces, with
-  persisted counts and Schedule reloads checked for each. The output dialog
-  retranslates while open, and imported Schedule output is compared across
-  Legacy and Next PDF paths. The post-Batch-4 hosted Windows diagnostic built
-  successfully but returned an invalid artifact because the staged executable
-  lacked the Next resource catalog; #54 tracks packaging repair and a fresh run.
-  See the [Phase 7 progress
+- Current milestone: Phase 7 remains in progress. Candidate #52, Document
+  Catalog live-locale behavior, is accepted in source commit `b6af1279`; Batch
+  5 is active at #53, the Sub Prep output follow-up. Switching English ↔ Korean
+  through Preferences now updates catalog labels and the open viewer while
+  preserving selected document, collapsed folder, PDF/viewer instances, ready
+  content, page, and zoom without reopening the file. The C44 audit found two
+  used but unmapped PDF characters (the roster hyphen and header bullet); #53
+  tracks their text mapping and the SQL-backed Windows raster check. The
+  post-Batch-4 hosted Windows diagnostic built successfully but returned an
+  invalid artifact because the staged executable lacked the Next resource
+  catalog; #54 tracks packaging repair and a fresh run. See the [Phase 7 progress
   log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md). The full project
   suite, Windows runs, 7A evidence, C44 output/raster limitations, and Phase 7

@@ -18,13 +18,17 @@
     switching in the output dialog preserves its open options. Imported
     Schedule output has matching one-page 150-DPI renders; font fallback and
     the offscreen Legacy-widget limitation are documented.
-52. **In progress — Document Catalog live-locale follow-up:** cover live
-    Preferences locale changes with a PDF open, including catalog labels,
-    selected-document identity, viewer title/controls and state, and preservation
-    of folder expansion; close the integration gap recorded by #42.
-53. **Discovered — Sub Prep output parity follow-up:** resolve the PDF
-    separator text-map limitation and determine ownership of the Windows
-    150-DPI raster check.
+52. **Accepted — Document Catalog live-locale follow-up** (`b6af1279`):
+    English/Korean Preferences switching updates catalog and open-viewer labels
+    while preserving document identity, folder expansion, PDF/viewer instances,
+    readiness, page, and zoom without reopening the file.
+53. **In progress — Sub Prep output parity follow-up:** C44's embedded ToUnicode
+    map omits used CID `0x001F` (roster U+002D hyphen, 2,400 uses) and CID
+    `0x0015` (header U+2022 bullet, 96 uses). Fix text extraction without
+    changing painted glyphs; compare expected SQL-derived text and map coverage.
+    Assign the 150-DPI all-page check to the SQL-backed Legacy/Next output pair;
+    the existing C44 raster is synthetic. The typed Sub Prep Gateway reads are
+    already committed; no Gateway extension is required.
 54. **Discovered — 7A evidence follow-up:** collect representative setup
     screenshots and feature-level lifecycle/memory evidence; repair packaging
     and rerun the Phase 7 Windows diagnostic after the Batch 4 push. Run
