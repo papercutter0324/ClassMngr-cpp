@@ -6,19 +6,22 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-10-30
-- Current milestone: Phase 7 remains in progress. Batch 4 (#41–48) is closed
-  with Candidate #48, Useful Links, accepted in source commit `7c1624d3`.
-  Batch 5 is active at #49, the Workspace Calendar parity follow-up. Next now
-  opens the seven existing Useful Links through typed external-link actions;
-  opening a link clears selection without changing the page or navigation
-  history. The preservation-matrix review identified remaining Phase 7
-  follow-ups for Classes/Schedule, active Document Catalog locale updates,
-  Sub Prep output, and broader 7A evidence. See the [Phase 7 progress
+- Current milestone: Phase 7 remains in progress. Candidate #49, Workspace
+  Calendar parity, is accepted in source commit `f00b9a17`; Batch 5 is active
+  at #50, the Classes parity and transfer-boundary follow-up. The embedded
+  Calendar restores Legacy's month grid, Upcoming scopes, filters, and
+  day-created event draft, with one heavy Calendar owner across route
+  transitions and workspace replacement/close. Its visible grid matches
+  Legacy across English/Korean and Light/Dark captures; the Korean Next shell
+  remains translated where Legacy's shell is English. The post-Batch-4 hosted
+  Windows diagnostic built successfully but returned an invalid artifact
+  because the staged executable lacked the Next resource catalog; #54 tracks
+  packaging repair and a fresh run. See the [Phase 7 progress
   log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md). The full project
-  suite, Windows runs, 7A evidence, C44 output/raster limitations, and the
-  Phase 7 exit gate remain open. The Phase 9 packaged-Next numeric memory gate
-  is separate.
+  suite, Windows runs, 7A evidence, C44 output/raster limitations, and Phase 7
+  exit gate remain open. The Phase 9 packaged-Next numeric memory gate is
+  separate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
@@ -40,7 +43,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — Batch 4 active | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — Batch 5 active | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

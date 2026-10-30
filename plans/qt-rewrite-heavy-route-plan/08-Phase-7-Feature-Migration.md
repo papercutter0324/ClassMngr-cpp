@@ -38,16 +38,20 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-10-30
-- Current note: Batch 4 (#41–48) is closed with Candidate #48, Useful Links,
-  accepted in source commit `7c1624d3`; Batch 5 is active at #49, the Workspace
-  Calendar parity follow-up. Next represents the seven existing destinations
-  as typed external-link actions, opens them through `QDesktopServices`, and
-  preserves the legacy no-page-navigation, cleared-selection behavior. The
-  matrix review found further Phase 7 follow-ups for Classes/Schedule, active
-  Document Catalog locale updates, Sub Prep output, and broader 7A evidence;
-  these are listed in the current tracker. The full suite, Windows runs, 7A
-  evidence, C44 output/raster limitations, and Phase 7 exit gate remain open.
-  The Phase 9 packaged Release numeric memory gate is separate.
+- Current note: Candidate #49, Workspace Calendar parity, is accepted in
+  source commit `f00b9a17`; Batch 5 is active at #50, the Classes parity and
+  transfer-boundary follow-up. The embedded Calendar restores Legacy's month
+  grid, Upcoming scopes, filters, and day-created event draft, with one heavy
+  Calendar owner through route transitions and workspace replacement/close.
+  Its visible grid matches Legacy across English/Korean and Light/Dark captures;
+  the Korean Next shell remains translated where Legacy's shell is English.
+  The post-Batch-4 hosted Windows diagnostic artifact is invalid because the
+  staged executable lacked the Next resource catalog; #54 tracks packaging
+  repair and a fresh run. The remaining Classes/Schedule, active Document
+  Catalog locale, Sub Prep output, and broader 7A evidence follow-ups are in
+  the current tracker. The full suite, Windows runs, C44 output/raster
+  limitations, and Phase 7 exit gate remain open. The Phase 9 packaged Release
+  numeric memory gate is separate.
 
 ### Slice batches
 

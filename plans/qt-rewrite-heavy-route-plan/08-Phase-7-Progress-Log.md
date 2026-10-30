@@ -1585,3 +1585,44 @@ Entries are preserved in their original document order.
   outside page history. Batch 4 is closed; Batch 5 begins with #49, the
   Workspace Calendar parity follow-up. The Phase 7 matrix, evidence, full-suite,
   and Windows exit gates remain open.
+
+### Phase 7 hosted Windows diagnostic after Batch 4 push (2026-10-30)
+
+- Run `41023184649` on
+  [GitHub Actions](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/41023184649)
+  completed with a successful Windows Release build. The uploaded diagnostic
+  artifact is invalid: its manifest reports that the Next resource catalog
+  was not installed beside the staged executable. `metrics.jsonl` is empty,
+  no scenarios were collected, and the summary has no evaluated threshold.
+- Decision and next: #54 owns the packaging repair and fresh hosted diagnostic
+  run. This result provides no Phase 7 memory measurement and does not satisfy
+  or claim the separate Phase 9 packaged-Next numeric memory gate.
+
+### Candidate #49 — Workspace Calendar parity accepted (2026-10-30)
+
+- Commit: `f00b9a17` (`Phase7 - Restore embedded Workspace Calendar parity`).
+  The My Workspace Calendar tab now includes the month grid, month navigation,
+  three Upcoming scopes, event-type filters, and day activation that opens a
+  dated event draft. It omits the standalone-only New Event and Preferences
+  header buttons. Heavy content releases on tab/page suspension; activation is
+  serialized after the previous page suspends, keeping at most one heavy
+  Calendar owner. The production workspace replacement/close flow refreshes or
+  clears both Calendar routes.
+- Verification: the macOS Debug Calendar, My Workspace, Bootstrap, and visual
+  capture targets built. Independent CTests passed 3/3: My Workspace (24 QtTest
+  cases), Calendar (27 QtTest cases), and visual capture. The direct Bootstrap
+  workspace-replacement/close flow passed (3 QtTest entries including setup
+  and cleanup). Capture assertions, resource inventory, and diff checks passed.
+  The focused rerun used the configured `build/macos-clang-debug` folder.
+- Visual evidence: the durable [C49 capture package](../../docs/qt-rewrite/visual-baseline/next/phase-7/workspace-calendar-c49/README.md)
+  contains eight 1024×768 Legacy/Next captures across English/Korean and
+  Light/Dark. The visible 834×441 grid area matches in all four pairs; viewport
+  and grid rectangles also match. In Korean, Next retains its translations
+  while Legacy's My Workspace shell labels remain English. No whole-shell
+  pixel-parity claim is made; Upcoming controls are below the captured viewport.
+- Limits: verification used macOS offscreen rendering. No Windows or full-suite
+  run was performed. The Phase 7 preservation matrix, Windows evidence, full
+  suite, C44 output/raster issues, and Phase 7 exit gates remain open.
+- Decision and next: keep the full embedded Calendar content and serialized
+  lifecycle. Batch 5 continues with #50, the Classes parity and transfer
+  boundary; Phase 7 remains in progress.
