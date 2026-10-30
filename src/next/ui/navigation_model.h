@@ -3,6 +3,7 @@
 #include "next/application/workspace_state.h"
 #include "next/ui/page_descriptor.h"
 
+#include <QUrl>
 #include <QStringList>
 
 #include <expected>
@@ -29,7 +30,8 @@ struct NavigationNode final
     {
         Group,
         Page,
-        Placeholder
+        Placeholder,
+        ExternalLink
     };
 
     Kind kind = Kind::Group;
@@ -39,6 +41,7 @@ struct NavigationNode final
     // Empty labels remain literal, such as names loaded from user data.
     QString labelTranslationSource;
     std::optional<PageId> pageId;
+    std::optional<QUrl> externalUrl;
     std::vector<NavigationNode> children;
     NavigationWorkspaceAvailability availability =
         NavigationWorkspaceAvailability::Always;
@@ -65,6 +68,15 @@ struct NavigationNode final
     [[nodiscard]] static NavigationNode placeholder(
         QString id,
         QString label,
+        NavigationWorkspaceAvailability availability =
+            NavigationWorkspaceAvailability::Always,
+        QString labelTranslationSource = {}
+        );
+
+    [[nodiscard]] static NavigationNode externalLink(
+        QString id,
+        QString label,
+        QUrl url,
         NavigationWorkspaceAvailability availability =
             NavigationWorkspaceAvailability::Always,
         QString labelTranslationSource = {}

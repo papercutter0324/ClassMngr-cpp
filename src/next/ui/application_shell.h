@@ -69,6 +69,7 @@ public:
         std::function<void(const Application::RecentWorkspacePath&)>;
     using DocumentCatalogProjectionLoader = std::function<
         Domain::Result<Application::DocumentCatalogProjection>(const QString&)>;
+    using ExternalUrlOpener = std::function<bool(const QUrl&)>;
 
     // The resource loader and preferences model are borrowed and must outlive this shell.
     explicit ApplicationShell(
@@ -92,6 +93,7 @@ public:
     void setCloseWorkspaceHandler(std::function<void()> handler);
     void setPreferencesHandler(std::function<void()> handler);
     void setManualUpdateHandler(std::function<void()> handler);
+    void setExternalUrlOpener(ExternalUrlOpener opener);
     void setCampusEditCapability(
         Application::CampusEditCapability capability
         );
@@ -224,6 +226,7 @@ private:
     std::function<void()> m_closeWorkspaceHandler;
     std::function<void()> m_preferencesHandler;
     std::function<void()> m_manualUpdateHandler;
+    ExternalUrlOpener m_externalUrlOpener;
     Application::CampusEditCapability m_campusEditCapability =
         Application::CampusEditCapability::readOnly();
     RecentWorkspaceHistoryLoader m_recentWorkspaceHistoryLoader;

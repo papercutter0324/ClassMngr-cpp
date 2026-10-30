@@ -444,6 +444,7 @@ target_compile_definitions(ClassMngrNextBootstrapTests
         CLASSMNGR_NEXT_VERSION="${PROJECT_VERSION}"
         CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
         CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_USEFUL_LINKS_CAPTURE_DIRECTORY="${CMAKE_CURRENT_BINARY_DIR}/useful-links-visual-captures"
 )
 target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
@@ -488,6 +489,46 @@ add_test(
 set_tests_properties(ClassMngrNextBootstrapTests
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+add_test(
+    NAME ClassMngrNextUsefulLinksSelectionBehavior
+    COMMAND ClassMngrNextBootstrapTests
+        createsVisibleShellAndReportsOnlyCompletedStartupStage
+)
+add_test(
+    NAME ClassMngrNextUsefulLinksEnglishLabelProjection
+    COMMAND ClassMngrNextBootstrapTests
+        shellAppearanceUsesSelectedThemeAndLanguage:english-light
+)
+add_test(
+    NAME ClassMngrNextUsefulLinksKoreanLabelProjection
+    COMMAND ClassMngrNextBootstrapTests
+        shellAppearanceUsesSelectedThemeAndLanguage:korean-light
+)
+foreach(_useful_links_capture IN ITEMS
+        "english-light;english-light"
+        "english-dark;english-dark"
+        "korean-light;korean-light"
+        "korean-dark;korean-dark")
+    list(GET _useful_links_capture 0 _capture_test_name)
+    list(GET _useful_links_capture 1 _capture_data_row)
+    add_test(
+        NAME "ClassMngrNextUsefulLinksVisualCapture_${_capture_test_name}"
+        COMMAND ClassMngrNextBootstrapTests
+            "usefulLinksVisualCapture:${_capture_data_row}"
+    )
+    set_tests_properties(
+        "ClassMngrNextUsefulLinksVisualCapture_${_capture_test_name}"
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+    )
+endforeach()
+set_tests_properties(
+    ClassMngrNextUsefulLinksSelectionBehavior
+    ClassMngrNextUsefulLinksEnglishLabelProjection
+    ClassMngrNextUsefulLinksKoreanLabelProjection
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
 # Temporary visual comparison harness for the legacy and Next teacher profile

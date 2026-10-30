@@ -71,6 +71,7 @@ NavigationNode NavigationNode::group(
         .label = std::move(label),
         .labelTranslationSource = std::move(labelTranslationSource),
         .pageId = std::nullopt,
+        .externalUrl = std::nullopt,
         .children = std::move(children),
         .availability = availability,
         .retainWhenEmpty = retainWhenEmpty
@@ -89,6 +90,7 @@ NavigationNode NavigationNode::page(
         .label = {},
         .labelTranslationSource = {},
         .pageId = std::move(pageId),
+        .externalUrl = std::nullopt,
         .children = {},
         .availability = availability,
         .retainWhenEmpty = false,
@@ -109,6 +111,28 @@ NavigationNode NavigationNode::placeholder(
         .label = std::move(label),
         .labelTranslationSource = std::move(labelTranslationSource),
         .pageId = std::nullopt,
+        .externalUrl = std::nullopt,
+        .children = {},
+        .availability = availability,
+        .retainWhenEmpty = false
+    };
+}
+
+NavigationNode NavigationNode::externalLink(
+    QString id,
+    QString label,
+    QUrl url,
+    const NavigationWorkspaceAvailability availability,
+    QString labelTranslationSource
+    )
+{
+    return NavigationNode{
+        .kind = Kind::ExternalLink,
+        .id = std::move(id),
+        .label = std::move(label),
+        .labelTranslationSource = std::move(labelTranslationSource),
+        .pageId = std::nullopt,
+        .externalUrl = std::move(url),
         .children = {},
         .availability = availability,
         .retainWhenEmpty = false
@@ -196,7 +220,7 @@ NavigationModelResult<NavigationModel> NavigationModel::create(
 
         if (node.kind == NavigationNode::Kind::Group)
         {
-            if (node.pageId || node.label.trimmed().isEmpty())
+            if (node.pageId || node.externalUrl || node.label.trimmed().isEmpty())
             {
                 return std::unexpected(failure(
                     NavigationModelErrorCode::InvalidNode, node.id,
@@ -216,7 +240,8 @@ NavigationModelResult<NavigationModel> NavigationModel::create(
 
         if (node.kind == NavigationNode::Kind::Placeholder)
         {
-            if (node.pageId || !node.children.empty() || node.label.trimmed().isEmpty()
+            if (node.pageId || node.externalUrl || !node.children.empty()
+                || node.label.trimmed().isEmpty()
                 || node.retainWhenEmpty)
             {
                 return std::unexpected(failure(
@@ -227,8 +252,27 @@ NavigationModelResult<NavigationModel> NavigationModel::create(
             return {};
         }
 
+        if (node.kind == NavigationNode::Kind::ExternalLink)
+        {
+            if (node.pageId || !node.externalUrl || !node.children.empty()
+                || node.label.trimmed().isEmpty() || node.retainWhenEmpty
+                || !node.externalUrl->isValid()
+                || node.externalUrl->scheme().compare(
+                    QStringLiteral("https"), Qt::CaseInsensitive) != 0
+                || node.externalUrl->host().isEmpty())
+            {
+                return std::unexpected(failure(
+                    NavigationModelErrorCode::InvalidNode, node.id,
+                    QStringLiteral(
+                        "external-link nodes need a label and an absolute HTTPS URL"
+                        )
+                    ));
+            }
+            return {};
+        }
+
         if (node.kind != NavigationNode::Kind::Page || !node.pageId
-            || !node.children.empty() || !node.label.isEmpty()
+            || node.externalUrl || !node.children.empty() || !node.label.isEmpty()
             || node.retainWhenEmpty || node.id != node.pageId->value())
         {
             return std::unexpected(failure(
@@ -317,7 +361,8 @@ std::vector<NavigationNode> NavigationModel::visibleNodes() const
                 ? std::optional<NavigationNode>(node)
                 : std::nullopt;
         }
-        if (node.kind == NavigationNode::Kind::Placeholder)
+        if (node.kind == NavigationNode::Kind::Placeholder
+            || node.kind == NavigationNode::Kind::ExternalLink)
         {
             return node;
         }

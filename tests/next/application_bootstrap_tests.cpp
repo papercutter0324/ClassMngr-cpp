@@ -149,6 +149,8 @@ private slots:
     void preferencesMenuRouteVisualCapture();
     void shellAppearanceUsesSelectedThemeAndLanguage_data();
     void shellAppearanceUsesSelectedThemeAndLanguage();
+    void usefulLinksVisualCapture_data();
+    void usefulLinksVisualCapture();
     void initialSetupPersonalDetailsAppearance_data();
     void initialSetupPersonalDetailsAppearance();
     void systemDefaultUsesFirstSupportedLocaleFromOrderedList();
@@ -2221,12 +2223,28 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         QStringLiteral("LMS Website"),
         QStringLiteral("Highlights Library")
     };
+    const QStringList usefulLinkUrls{
+        QStringLiteral("https://www.dropbox.com"),
+        QStringLiteral(
+            "https://docs.google.com/spreadsheets/d/14eL7sVctYRWXkyAFb7OePbHEdmZNTdxiv6dxd4Qo-fQ/"
+            ),
+        QStringLiteral(
+            "https://docs.google.com/spreadsheets/d/18O05g7nlnsoUwrWhArZkptJFp3LMbSytdgKDjNaoMU4/edit"
+            ),
+        QStringLiteral("https://sites.google.com/view/dybtraining/home"),
+        QStringLiteral("https://sites.google.com/view/dybnet/home"),
+        QStringLiteral("https://lms.choisun.co.kr/login/login.php"),
+        QStringLiteral("https://library.highlights.com/member/login/?sType=t")
+    };
     for (std::size_t index = 0; index < usefulLinkLabels.size(); ++index)
     {
         const Ui::NavigationNode& link = usefulLinks->children[index];
-        QCOMPARE(link.kind, Ui::NavigationNode::Kind::Placeholder);
+        QCOMPARE(link.kind, Ui::NavigationNode::Kind::ExternalLink);
         QCOMPARE(link.label, usefulLinkLabels[static_cast<qsizetype>(index)]);
         QVERIFY(!link.pageId.has_value());
+        QVERIFY(link.externalUrl.has_value());
+        QCOMPARE(link.externalUrl->toString(QUrl::FullyEncoded),
+                 usefulLinkUrls[static_cast<qsizetype>(index)]);
         QVERIFY(link.children.empty());
     }
 
@@ -2275,8 +2293,9 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         QStringLiteral("classMngrNextNavigationTree")
         );
     QVERIFY(navigationTree != nullptr);
+    std::vector<QTreeWidgetItem*> usefulLinkItems;
     QTreeWidgetItemIterator navigationItem(navigationTree);
-    std::size_t usefulPlaceholderCount = 0;
+    std::size_t usefulExternalLinkCount = 0;
     while (*navigationItem)
     {
         const Ui::NavigationNode::Kind kind = static_cast<Ui::NavigationNode::Kind>(
@@ -2286,16 +2305,59 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
         {
             QVERIFY((*navigationItem)->icon(0).isNull());
         }
-        else if (kind == Ui::NavigationNode::Kind::Placeholder)
+        else if (kind == Ui::NavigationNode::Kind::ExternalLink)
         {
-            ++usefulPlaceholderCount;
+            ++usefulExternalLinkCount;
             QVERIFY(usefulLinkLabels.contains((*navigationItem)->text(0)));
-            QVERIFY((*navigationItem)->data(0, Qt::UserRole + 1).toString().isEmpty());
+            const std::size_t linkIndex = usefulLinkItems.size();
+            QCOMPARE((*navigationItem)->data(0, Qt::UserRole + 4).toUrl().toString(
+                         QUrl::FullyEncoded),
+                     usefulLinkUrls[static_cast<qsizetype>(linkIndex)]);
             QVERIFY((*navigationItem)->icon(0).isNull());
+            usefulLinkItems.push_back(*navigationItem);
         }
         ++navigationItem;
     }
-    QCOMPARE(usefulPlaceholderCount, std::size_t(7));
+    QCOMPARE(usefulExternalLinkCount, std::size_t(7));
+    QCOMPARE(usefulLinkItems.size(), std::size_t(7));
+
+    std::vector<QUrl> openedUrls;
+    shell->setExternalUrlOpener([&openedUrls](const QUrl& url) {
+        openedUrls.push_back(url);
+        return false;
+    });
+    const std::optional<Ui::PageId> currentPageBeforeLinks =
+        shell->navigationModel()->currentPageId();
+    const std::vector<Ui::PageId> historyBeforeLinks =
+        shell->navigationModel()->history();
+    const std::optional<QString> activePageBeforeLinks =
+        shell->pageHost().activePageKey();
+    const std::size_t historyIndexBeforeLinks =
+        shell->navigationModel()->historyIndex().value_or(0);
+    for (std::size_t index = 0; index < usefulLinkItems.size(); ++index)
+    {
+        QTreeWidgetItem* const item = usefulLinkItems[index];
+        QVERIFY(item->parent() != nullptr);
+        item->parent()->setExpanded(true);
+        navigationTree->setCurrentItem(item);
+        QCOMPARE(openedUrls.size(), index + 1);
+        QCOMPARE(openedUrls.back().toString(QUrl::FullyEncoded),
+                 usefulLinkUrls[static_cast<qsizetype>(index)]);
+        QVERIFY(navigationTree->selectedItems().isEmpty());
+        QCOMPARE(navigationTree->currentItem(), nullptr);
+        QCOMPARE(shell->navigationModel()->currentPageId(), currentPageBeforeLinks);
+        QCOMPARE(shell->navigationModel()->history().size(), historyBeforeLinks.size());
+        QCOMPARE(shell->navigationModel()->historyIndex().value_or(0),
+                 historyIndexBeforeLinks);
+        for (std::size_t historyIndex = 0;
+             historyIndex < historyBeforeLinks.size(); ++historyIndex)
+        {
+            QCOMPARE(shell->navigationModel()->history()[historyIndex].value(),
+                     historyBeforeLinks[historyIndex].value());
+        }
+        QCOMPARE(shell->pageHost().activePageKey(), activePageBeforeLinks);
+        QCOMPARE(shell->statusBar()->currentMessage(), QString{});
+    }
 
     const auto classesPageId = Ui::PageId::fromString(QStringLiteral("classes"));
     QVERIFY(classesPageId.has_value());
@@ -3521,6 +3583,101 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage_data
         << QStringLiteral("dark") << static_cast<int>(Application::Theme::Dark);
 }
 
+void ApplicationBootstrapTests::usefulLinksVisualCapture_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<int>("storedLanguage");
+    QTest::addColumn<QString>("theme");
+    QTest::addColumn<int>("storedTheme");
+    QTest::addColumn<QString>("captureName");
+    QTest::newRow("english-light") << QStringLiteral("en_US") << 1
+        << QStringLiteral("light") << static_cast<int>(Application::Theme::Light)
+        << QStringLiteral("english-light.png");
+    QTest::newRow("english-dark") << QStringLiteral("en_US") << 1
+        << QStringLiteral("dark") << static_cast<int>(Application::Theme::Dark)
+        << QStringLiteral("english-dark.png");
+    QTest::newRow("korean-light") << QStringLiteral("ko_KR") << 5
+        << QStringLiteral("light") << static_cast<int>(Application::Theme::Light)
+        << QStringLiteral("korean-light.png");
+    QTest::newRow("korean-dark") << QStringLiteral("ko_KR") << 5
+        << QStringLiteral("dark") << static_cast<int>(Application::Theme::Dark)
+        << QStringLiteral("korean-dark.png");
+}
+
+void ApplicationBootstrapTests::usefulLinksVisualCapture()
+{
+    QFETCH(QString, locale);
+    QFETCH(int, storedLanguage);
+    QFETCH(QString, theme);
+    QFETCH(int, storedTheme);
+    QFETCH(QString, captureName);
+
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    GlobalPreferencesSettingsGuard globalPreferences;
+    StartupPreferencesGuard startupPreferences(storedLanguage, storedTheme, 0);
+    QVERIFY(Platform::SettingsManagerAutomaticUpdatePreferencesPort().write(
+        {.automaticChecksEnabled = false}));
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(locale, theme));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{QStringLiteral("useful-links-capture")};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application, {}, silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        QStringList{QStringLiteral("en-US")}, std::move(seams));
+    QVERIFY(bootstrap.start().succeeded());
+
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    shell->resize(1024, 720);
+    QTreeWidget* const tree = shell->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree"));
+    QVERIFY(tree);
+    QTreeWidgetItem* usefulLinks = nullptr;
+    QTreeWidgetItemIterator iterator(tree);
+    while (*iterator)
+    {
+        if ((*iterator)->data(0, Qt::UserRole + 2).toString()
+            == QStringLiteral("useful_links"))
+        {
+            usefulLinks = *iterator;
+            break;
+        }
+        ++iterator;
+    }
+    QVERIFY(usefulLinks);
+    QCOMPARE(usefulLinks->childCount(), 7);
+    usefulLinks->setExpanded(true);
+    tree->setCurrentItem(nullptr);
+    tree->scrollToItem(usefulLinks, QAbstractItemView::PositionAtTop);
+    QCoreApplication::processEvents();
+    for (int index = 0; index < usefulLinks->childCount(); ++index)
+    {
+        const QRect row = tree->visualItemRect(usefulLinks->child(index));
+        QVERIFY(!row.isEmpty());
+        QVERIFY(tree->viewport()->rect().intersects(row));
+    }
+
+    const QString outputDirectory = QString::fromUtf8(
+        CLASSMNGR_NEXT_USEFUL_LINKS_CAPTURE_DIRECTORY);
+    QVERIFY(QDir().mkpath(outputDirectory));
+    const QString capturePath = QDir(outputDirectory).filePath(captureName);
+    const QImage capture = fixedViewportCapture(*shell);
+    QVERIFY2(capture.save(capturePath, "PNG"),
+        qPrintable(QStringLiteral("could not capture %1").arg(capturePath)));
+    QVERIFY(QFileInfo(capturePath).size() > 0);
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
 void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance_data()
 {
     QTest::addColumn<QString>("locale");
@@ -3983,11 +4140,21 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
         {"campus_info", "Campus Directory", "캠퍼스 디렉터리"}
     };
     QMap<QString, QString> actualNodeLabels;
+    QMap<QString, QString> actualExternalUrls;
     std::function<void(const Ui::NavigationNode&)> collectLabels;
     collectLabels = [&](const Ui::NavigationNode& node) {
         if (node.kind != Ui::NavigationNode::Kind::Page)
         {
             actualNodeLabels.insert(node.id, node.label);
+        }
+        if (node.kind == Ui::NavigationNode::Kind::ExternalLink)
+        {
+            actualExternalUrls.insert(
+                node.id,
+                node.externalUrl
+                    ? node.externalUrl->toString(QUrl::FullyEncoded)
+                    : QString{}
+                );
         }
         for (const auto& child : node.children) collectLabels(child);
     };
@@ -3997,6 +4164,34 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
     {
         QCOMPARE(actualNodeLabels.value(QString::fromLatin1(expected.id)),
                  QString::fromUtf8(korean ? expected.korean : expected.english));
+    }
+    const QStringList expectedExternalLinkIds{
+        QStringLiteral("useful_dropbox"),
+        QStringLiteral("useful_vacation_calendar"),
+        QStringLiteral("useful_yearly_calendar"),
+        QStringLiteral("useful_training_website"),
+        QStringLiteral("useful_net_website"),
+        QStringLiteral("useful_lms_website"),
+        QStringLiteral("useful_highlights_library")
+    };
+    const QStringList expectedExternalLinkUrls{
+        QStringLiteral("https://www.dropbox.com"),
+        QStringLiteral(
+            "https://docs.google.com/spreadsheets/d/14eL7sVctYRWXkyAFb7OePbHEdmZNTdxiv6dxd4Qo-fQ/"
+            ),
+        QStringLiteral(
+            "https://docs.google.com/spreadsheets/d/18O05g7nlnsoUwrWhArZkptJFp3LMbSytdgKDjNaoMU4/edit"
+            ),
+        QStringLiteral("https://sites.google.com/view/dybtraining/home"),
+        QStringLiteral("https://sites.google.com/view/dybnet/home"),
+        QStringLiteral("https://lms.choisun.co.kr/login/login.php"),
+        QStringLiteral("https://library.highlights.com/member/login/?sType=t")
+    };
+    QCOMPARE(actualExternalUrls.size(), expectedExternalLinkIds.size());
+    for (qsizetype index = 0; index < expectedExternalLinkIds.size(); ++index)
+    {
+        QCOMPARE(actualExternalUrls.value(expectedExternalLinkIds[index]),
+                 expectedExternalLinkUrls[index]);
     }
 
     auto* const tree = shell->findChild<QTreeWidget*>(

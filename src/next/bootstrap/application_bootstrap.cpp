@@ -90,6 +90,7 @@
 
 #include <QApplication>
 #include <QCoreApplication>
+#include <QDesktopServices>
 #include <QDate>
 #include <QDebug>
 #include <QFile>
@@ -690,42 +691,55 @@ loadWorkspaceCampusChoices(
             QStringLiteral("useful_links"),
             navigationLabel("Useful Links"),
             {
-                NavigationNode::placeholder(
+                NavigationNode::externalLink(
                     QStringLiteral("useful_dropbox"), navigationLabel("Dropbox"),
+                    QUrl(QStringLiteral("https://www.dropbox.com")),
                     NavigationWorkspaceAvailability::Always,
                     QStringLiteral("Dropbox")
                     ),
-                NavigationNode::placeholder(
+                NavigationNode::externalLink(
                     QStringLiteral("useful_vacation_calendar"),
                     navigationLabel("Vacation Calendar"),
+                    QUrl(QStringLiteral(
+                        "https://docs.google.com/spreadsheets/d/14eL7sVctYRWXkyAFb7OePbHEdmZNTdxiv6dxd4Qo-fQ/"
+                        )),
                     NavigationWorkspaceAvailability::Always,
                     QStringLiteral("Vacation Calendar")
                     ),
-                NavigationNode::placeholder(
+                NavigationNode::externalLink(
                     QStringLiteral("useful_yearly_calendar"),
                     navigationLabel("Yearly Calendar"),
+                    QUrl(QStringLiteral(
+                        "https://docs.google.com/spreadsheets/d/18O05g7nlnsoUwrWhArZkptJFp3LMbSytdgKDjNaoMU4/edit"
+                        )),
                     NavigationWorkspaceAvailability::Always,
                     QStringLiteral("Yearly Calendar")
                     ),
-                NavigationNode::placeholder(
+                NavigationNode::externalLink(
                     QStringLiteral("useful_training_website"),
                     navigationLabel("Training Website"),
+                    QUrl(QStringLiteral("https://sites.google.com/view/dybtraining/home")),
                     NavigationWorkspaceAvailability::Always,
                     QStringLiteral("Training Website")
                     ),
-                NavigationNode::placeholder(
+                NavigationNode::externalLink(
                     QStringLiteral("useful_net_website"), navigationLabel("NET Website"),
+                    QUrl(QStringLiteral("https://sites.google.com/view/dybnet/home")),
                     NavigationWorkspaceAvailability::Always,
                     QStringLiteral("NET Website")
                     ),
-                NavigationNode::placeholder(
+                NavigationNode::externalLink(
                     QStringLiteral("useful_lms_website"), navigationLabel("LMS Website"),
+                    QUrl(QStringLiteral("https://lms.choisun.co.kr/login/login.php")),
                     NavigationWorkspaceAvailability::Always,
                     QStringLiteral("LMS Website")
                     ),
-                NavigationNode::placeholder(
+                NavigationNode::externalLink(
                     QStringLiteral("useful_highlights_library"),
                     navigationLabel("Highlights Library"),
+                    QUrl(QStringLiteral(
+                        "https://library.highlights.com/member/login/?sType=t"
+                        )),
                     NavigationWorkspaceAvailability::Always,
                     QStringLiteral("Highlights Library")
                     )
@@ -1272,6 +1286,9 @@ Application::StartupResult ApplicationBootstrap::start()
             m_coreServices->resourceLoader,
             m_coreServices->preferences
             );
+        m_shell->setExternalUrlOpener([](const QUrl& url) {
+            return QDesktopServices::openUrl(url);
+        });
         m_shell->setCampusEditCapability(
             campusEditCapabilityForArguments(m_application.arguments())
             );

@@ -41,6 +41,7 @@ constexpr int NodeKindRole = Qt::UserRole;
 constexpr int PageIdRole = Qt::UserRole + 1;
 constexpr int NodeIdRole = Qt::UserRole + 2;
 constexpr int TeacherIdRole = Qt::UserRole + 3;
+constexpr int ExternalUrlRole = Qt::UserRole + 4;
 constexpr auto KoreanTeacherGroupId = "teachers_all_korean";
 
 class NavigationTreeItemDelegate final : public QStyledItemDelegate
@@ -550,6 +551,28 @@ ApplicationShell::ApplicationShell(
             }
             return;
         }
+        if (current
+            && current->data(0, NodeKindRole).toInt()
+                == static_cast<int>(NavigationNode::Kind::ExternalLink))
+        {
+            const QUrl target = current->data(0, ExternalUrlRole).toUrl();
+            if (target.isValid() && m_externalUrlOpener)
+            {
+                try
+                {
+                    static_cast<void>(m_externalUrlOpener(target));
+                }
+                catch (...)
+                {
+                    // URL opening is best-effort; the legacy action ignored
+                    // open failures and always dismissed the tree selection.
+                }
+            }
+            const QSignalBlocker signalBlocker(m_navigationTree);
+            m_navigationTree->clearSelection();
+            m_navigationTree->setCurrentItem(nullptr);
+            return;
+        }
         if (!current
             || current->data(0, NodeKindRole).toInt()
                 != static_cast<int>(NavigationNode::Kind::Page))
@@ -651,6 +674,11 @@ void ApplicationShell::setCloseWorkspaceHandler(std::function<void()> handler)
 void ApplicationShell::setManualUpdateHandler(std::function<void()> handler)
 {
     m_manualUpdateHandler = std::move(handler);
+}
+
+void ApplicationShell::setExternalUrlOpener(ExternalUrlOpener opener)
+{
+    m_externalUrlOpener = std::move(opener);
 }
 
 void ApplicationShell::setPreferencesHandler(std::function<void()> handler)
@@ -1069,6 +1097,11 @@ void ApplicationShell::rebuildNavigationTree()
                         item->setIcon(0, *icon);
                     }
                 }
+            }
+            else if (node.kind == NavigationNode::Kind::ExternalLink
+                     && node.externalUrl)
+            {
+                item->setData(0, ExternalUrlRole, *node.externalUrl);
             }
             else if (node.kind == NavigationNode::Kind::Group)
             {
