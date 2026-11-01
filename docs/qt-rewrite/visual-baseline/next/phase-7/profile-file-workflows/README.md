@@ -59,6 +59,9 @@ in its profile filter. The dirty-close capture has Legacy's My Details tab and
 Next's My Schedule tab behind the prompt, although the same synthetic My
 Workspace name draft is dirty in both.
 
+In the Next Korean/dark `recent-cleared` capture, the empty Recent Files
+submenu displays the English label `(No Recent Files)`.
+
 The Korean/dark captures also show translation differences: Legacy translates
 the dirty-close prompt and its file filters, while Next leaves the dirty-close
 and new-profile confirmation text in English. Both applications display the

@@ -6,18 +6,20 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-01
-- Current milestone: Candidate #56 is accepted and Batch 7 found no other
-  feature slice. The fresh macOS build at `f5c23859` passed 5,422/5,422
-  actions; its unfiltered suite had 594 passes and 20 failures. The latest
-  unfiltered run at `de8640cb` passed 606/614 tests with zero skips; C53 and
-  loopback tests passed under their required configuration. Four Classes-page
-  fixture failures were corrected and independently rechecked; the full suite
-  must be rerun at that correction's SHA. Windows Release/C53 passed at f5 with
-  no production or C53/C54 test-source changes through de864; the de864 Phase 4
-  resource audit passed. Windows x64 Debug evidence remains open. See the
-  [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
-  and [current batch tracker](Current-Slice-Batches.md). The Phase 9
-  packaged-Release numeric memory gate is separate.
+- Current milestone: Phase 7 is Complete. At exact SHA `a60c727d`, the fresh
+  macOS all-target build completed in two invocations: the first ran
+  5,435/5,436 planned actions and triggered a CMake glob recheck; the
+  second exited 0 after generating the catalog. Unfiltered CTest ran all 615 registrations:
+  608 passed, 7 known Legacy/baseline or fixture failures, zero skipped, and
+  zero disabled. The `ClassMngrClassesPageTests` fixture repair, Initial Setup 460×680
+  capture, C53 startup, and new Testing Classes keyboard and Sub Prep
+  preference-failure checks passed. Exact-SHA Windows Release x64/ARM64, C53,
+  and Phase 4 resource checks passed. The Windows x64 Debug baseline was
+  cancelled at its 120-minute job limit during the clean build and produced no
+  test result; this supporting check is documented separately from the formal
+  Phase 7 feature-preservation gate. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md),
+  [phase plan](08-Phase-7-Feature-Migration.md), and [current batch tracker](Current-Slice-Batches.md).
+  The Phase 9 packaged-Release numeric memory gate is separate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
@@ -39,7 +41,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — C56 verification and exit evidence | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | Complete | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

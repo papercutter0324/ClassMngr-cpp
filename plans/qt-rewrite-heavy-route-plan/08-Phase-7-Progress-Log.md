@@ -2122,3 +2122,81 @@ Entries are preserved in their original document order.
   SQL/PDF audits passed at f5; those artifacts are source-equivalent through
   de864, but their recorded commit remains f5. The Windows x64 Debug baseline
   artifact is still outstanding; its workflow is running without a result.
+
+### Exact-SHA Phase 7 exit verification — a60c727d (2026-11-01)
+
+- At exact pushed SHA `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`, the
+  independent Tester emptied the isolated standard `build/macos-clang-debug`
+  directory, configured the macOS Debug preset, and validated ownership for
+  1,967 handwritten sources. The first Ninja invocation reported
+  5,435/5,436 planned actions after CMake's glob recheck. The subsequent
+  `cmake --build` invocation exited 0 after generating the 194-record runtime
+  resource catalog; the all-target build completed successfully.
+- Unfiltered CTest ran 615 registrations: 608 passed, 7 failed, zero skipped,
+  and zero disabled, in 1,552.46 seconds. Initial Setup's Legacy teacher-import
+  dialogs measured 460×680 in both locales. The C53 startup registration passed
+  and produced a 13-file inventory; all loopback-dependent registrations passed
+  under escalation. The new `ClassMngrNextSubPrepPageTests` and
+  `ClassMngrNextTestingClassesManagerTests` registrations passed, as did
+  `ClassMngrClassesPageTests` after its fixture repair.
+- The seven remaining failures were: Legacy Testing Classes roster assertions
+  with an unopened database; the previously recorded Legacy PageManager
+  timeout; the Legacy class-details test's expected continue-save behavior,
+  which conflicts with the accepted Phase 2 fail-closed contract; the known
+  Legacy teacher-warning wording mismatch; the campus-route matrix fixture that
+  does not establish its prior sidebar selection; the Legacy Sub Prep modal
+  timeout; and a stale source-text assertion expecting the pre-Phase 5
+  document-port member name. The Next Testing Classes integration now verifies
+  its roster keyboard trigger through Korean cell input. The Next Sub Prep test
+  verifies retained values, localized failure status, blocked writes, and save
+  recovery after a successful typed preference read. These failures are not
+  reported as a full-suite pass; the preservation-matrix and prohibited
+  Next-call-path reviews found no unresolved feature row.
+- CTest-generated profile-workflow/C44 images were snapshotted and hashed,
+  restored from the exact archive, and verified clean with `diff -qr` excluding
+  build output. The main worktree's separate Gateway edits and
+  `preferences_visual_captures/` remained untouched.
+- Exact-SHA Windows Phase 4 checks audited 193 resource files, 187 SHA-256
+  values, five generated QM files, and two QML catalog keys; its CTest passed
+  8/8. Windows Release x64 and ARM64, packaged startup smoke, memory/lifecycle
+  validators, and C53 SQL/PDF capture passed. C53 artifact `13085344715` is
+  10,812,158 bytes (SHA-256
+  `7900a7934986a87c44d673c554001217761fb10b762ede8ed930f64a2e4422c9`). The
+  x64 Release artifact `13086226893` is 99,357,786 bytes (SHA-256
+  `9b606ba7f570e35340a75ad8b39ff22ac4694962b5c278bce4e57998675c55bd`); ARM64
+  artifact `13084989435` is 77,398,923 bytes (SHA-256
+  `88340023716b02a11f1ce077f3a22dc380734403dd4d30bd34740170e14ba86c`). The
+  memory validator reported `valid` with no errors. The C54 lifecycle artifact
+  records seven checkpoints and no numeric threshold; the Phase 9 packaged
+  numeric memory gate remains separate.
+- The exact-SHA Windows x64 Debug baseline job was cancelled at its 120-minute
+  job limit while MSBuild was still compiling; it produced no Windows CTest
+  summary or baseline artifact. This supporting check is not named in the
+  formal Phase 7 exit gate. The exact-SHA Windows Release packages, memory and
+  lifecycle validators, startup smoke, Phase 4 resource tests, and C53 capture
+  all passed.
+
+### Phase 7 exit decision — Complete (2026-11-01)
+
+- Decision: accept the formal Phase 7 exit gate at exact pushed SHA
+  `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. The preservation-matrix review
+  found no unresolved v2 feature row, and the call-path audit found no migrated
+  feature requiring `DataService`, old page ownership, resource-pack leases, or
+  direct filesystem path guessing. The previously missing Testing Classes
+  roster keyboard interaction and Sub Prep preference-read failure behavior
+  now have focused v2 integration coverage; the Sub Prep failure path also
+  preserves values, reports a localized status, blocks writes, and recovers
+  after a successful typed read through the existing Gateway API.
+- CTest was not fully green: 608/615 registrations passed, with seven known
+  Legacy/baseline or fixture failures and zero skips/disabled registrations.
+  These include the Legacy Testing Classes unopened-database assertions, old
+  lifecycle/save tests, two known warning/navigation fixture mismatches, the
+  Legacy Sub Prep modal timeout, and a stale document-port source assertion.
+  This record does not claim a full-suite pass; the corresponding v2 behavior
+  evidence is recorded above.
+- Exact-SHA Windows Release x64/ARM64, C53, and Phase 4 resource checks passed.
+  The Windows x64 Debug baseline attempt ended at the workflow's 120-minute
+  timeout during compilation without running CTest. The phase plan does not
+  define this supporting Debug baseline as an exit condition; its missing result
+  remains an explicit platform-verification limitation. Phase 9 retains the
+  packaged Release numerical memory threshold.

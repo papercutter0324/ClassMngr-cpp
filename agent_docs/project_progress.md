@@ -2,34 +2,18 @@
 
 Active deployment plan: Qt Rewrite Phase 7 — Feature Migration.
 Current deployment: `phase7_batch4_resume_20261030`. Route: Heavy.
-Current milestone: Candidate #56, dynamic Co-Teachers sidebar navigation, is
-implemented in `248c498f`, with its clean-source compile repair in `346adb7c`.
-Focused C56 verification passed 4/4 CTests. A separate source-list issue in
-the standalone Staff Directory capture target was fixed in pushed commit
-`1e9bfae0`; that target built and its CTest passed 1/1. The full build at
-`1021a34d` stopped linking `ClassMngrNextTeacherDirectoryVisualCapture` because
-its object-library dependency closure was incomplete; CTest did not run. The
-narrow link repair now builds that target and passes both registered CTests;
-the full build at `76c1f497` then stopped linking
-`ClassMngrNextTeacherImportVisualCapture` because its target omits
-`workspace_store_schedule_actions.cpp`; CTest did not run. The one-line repair
-now builds that target and passes both registered CTests; the unfiltered suite
-remains open for a rerun at the resulting SHA. A bounded link-closure audit
-found no further standalone visual target that directly compiles the Gateway
-without its schedule-actions source.
-Batch 7 discovery found no other feature slice. The Initial Setup visual
-package is accepted after independent review of all 28 images and manifest
-records; its metadata identifies the base commit and the capture worktree
-revision remains a reproducibility limitation. The profile file-workflow
-package has independent visual acceptance: 38 images cover nine matched states
-and two Next-only confirmation captures with matching manifest integrity. It
-does not show successful outcomes or native-window parity. A focused Sub Prep
-call-path audit confirmed typed workspace reads already use the active Gateway
-store; the campus directory remains a packaged-resource read. C54's
-accepted Windows diagnostic and lifecycle artifacts
-on run `41274190210` have no numeric threshold; the Phase 9 memory gate is not
-claimed.
-Phases 0–6 are Complete; Phase 7 is in progress. F1514 added descriptor-based
+Current milestone: Phase 7 is Complete at exact pushed SHA
+`a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. The fresh macOS all-target build
+completed successfully. Unfiltered CTest ran 615 registrations: 608 passed,
+7 known Legacy/baseline or fixture failures, zero skipped, and zero disabled.
+The Initial Setup capture, C53 startup, corrected Classes-page fixtures, and
+new Testing Classes keyboard and Sub Prep preference-failure tests passed.
+Exact-SHA Windows Release x64/ARM64, Phase 4 resource checks, and C53 capture
+passed. The Windows x64 Debug baseline was cancelled at the 120-minute limit
+during clean compilation; it produced no test result or artifact and is
+recorded as a supporting-verification limitation. The Phase 9 numerical memory
+gate remains separate.
+Phases 0–7 are Complete; Phase 8 has not started. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;
 F1518 made history action state respect target visibility. F1519 added typed
@@ -216,28 +200,22 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-11-01 (C56 repair pushed; exit work active)
+### Current checkpoint — 2026-11-01 (Phase 7 complete)
 
-Candidate #56's typed assignment read uses the active WorkspaceStore Gateway.
-The first pushed implementation SHA `61b8d749` failed a clean compile because
-the adapter include was omitted from its staged Gateway hunk. Repair
-`346adb7c` is pushed, and focused C56 CTests passed 4/4. A separate full-build
-link failure in the Staff Directory capture target was repaired in `1e9bfae0`
-with a passing focused CTest. The full build at `1021a34d` stopped at the
-standalone Teacher Directory capture link before CTest; the focused link repair
-now passes its target build and 2/2 CTests. The full build at `76c1f497` then
-stopped at the Teacher Import capture target before CTest; a scoped source-list
-repair now passes that target build and 2/2 CTests. A capture-link audit found
-no further direct-Gateway omission. The unfiltered suite and latest-SHA Windows
-checks remain open.
-Batch 7 discovery found no other feature slice. The matrix/call-
-path audit found no unresolved row. The Initial Setup visual package is
-accepted; its capture worktree provenance is limited to the base commit
-recorded in metadata. Sub Prep's workspace-backed actions use the active
-Gateway; its campus list remains resource-backed. The profile file-workflow
-package is accepted for visual-state evidence; successful outcomes and
-native-window parity remain outside it. C54's diagnostic has no numeric
-threshold; Phase 9's packaged Release `<250 MiB` gate remains separate.
+At exact SHA `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`, the preservation-matrix
+and call-path reviews found no unresolved v2 feature row or prohibited Next
+dependency. Candidate #56 and Batch 7's no-additional-slice discovery are
+accepted. The clean macOS all-target build passed; unfiltered CTest reported
+608/615 passed, 7 known Legacy/baseline or fixture failures, and zero skips or
+disabled registrations. Focused v2 evidence now covers the Testing Classes
+roster keyboard integration and Sub Prep preference-read failure behavior.
+Exact-SHA Windows Release x64/ARM64, Phase 4 resource checks, and C53 passed.
+The Windows x64 Debug baseline timed out at the 120-minute workflow limit
+during compilation without producing a CTest result. This supporting check is
+not a formal Phase 7 exit condition. No additional Sub Prep Gateway API was
+added; its typed reads continue through the existing active-store Gateway.
+Phase 8 is not started. Phase 9 owns the numerical packaged-Release memory
+threshold.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.
@@ -628,15 +606,11 @@ user's response to the exact-payload approval request.
 
 ## Next Milestone
 
-Complete candidates #44–48; begin next-batch discovery when #47 starts. Push
-Batch 4 after #48, obtain and review a fresh Windows diagnostic artifact from
-that pushed head, and close the broader 7A evidence and Phase 7 exit gates
-before declaring Phase 7 complete;
-see the
-[Phase 7 plan](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Feature-Migration.md)
-and [progress log](../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).
+Phase 8, Platform and Output Adapters, is not started. Read its phase plan and
+the [Start Here guide](../plans/qt-rewrite-heavy-route-plan/00-Start-Here.md)
+before beginning new phase work.
 
-## Current Phase 2 position - 2026-09-26
+## Historical Phase 2 position - 2026-09-26
 
 F59 is committed as `7769912e1a8ccec02ecc3ace2de11ff98c719327` (`Phase2 -
 Type Schedule Import state validation IDs`). Its Qt-free apply-state

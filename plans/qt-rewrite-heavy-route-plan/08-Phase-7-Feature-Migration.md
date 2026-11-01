@@ -32,26 +32,25 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: In progress
+- Status: Complete
 - Default route: Heavy
 - Depends on: Phases 2 through 6
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-11-01
-- Current note: Candidate #56 is accepted and Batch 7 found no other feature
-  slice. The fresh macOS Debug build at `f5c23859` passed 5,422 actions. The
-  latest unfiltered CTest at `de8640cb` passed 606/614 with zero skipped or
-  disabled registrations; C53 and loopback tests passed when configured and
-  run with escalation. Seven residual CTest registrations are documented in
-  the progress log; the eighth, `ClassMngrClassesPageTests`, now passes focused
-  after fixture corrections independently rechecked at 7/7 cases and CTest
-  1/1. Rerun the unfiltered suite at the next commit. Windows Release/C53
-  artifacts passed at f5 and are source-equivalent through de864 (no production,
-  CMake, resource, workflow, or C53/C54 evidence-source changes); the de864
-  Windows resource audit passed. The x64 Debug recorder remains open. The
-  preservation-matrix and call-path audits found no unresolved feature row or
-  prohibited Next path. Sub Prep typed workspace reads use the active Gateway;
-  its campus directory remains resource-backed. The Phase 9 packaged-Release
+- Current note: Phase 7 is Complete at exact SHA
+  `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. Candidate #56 and Batch 7's
+  no-additional-slice discovery are accepted. The fresh macOS Debug all-target
+  build completed; unfiltered CTest ran all 615 registrations with 608 passed,
+  7 known Legacy/baseline or fixture failures, zero skipped, and zero disabled.
+  Focused v2 checks close the Testing Classes keyboard and Sub Prep
+  preference-read failure gaps. The preservation-matrix and prohibited-call-
+  path audits found no unresolved feature row. Exact-SHA Windows Release
+  x64/ARM64, C53, and Phase 4 resource checks passed. The Windows x64 Debug
+  baseline job was cancelled at its 120-minute limit during clean compilation;
+  it produced no Debug CTest result. This is a recorded supporting-verification
+  limit, not a formal Phase 7 exit condition. Sub Prep uses existing active-
+  Gateway typed reads; no extra API was added. The Phase 9 packaged-Release
   numeric memory gate remains separate.
 
 ### Slice batches

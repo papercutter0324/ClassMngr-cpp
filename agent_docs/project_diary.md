@@ -2,6 +2,32 @@
 
 ## Decisions and Lessons
 
+### Phase 7 feature migration exit — 2026-11-01
+
+Accepted the Phase 7 semantic gate at exact pushed SHA
+`a60c727d45d48fb4438dbb880dcdbd4a6f986b1a` after the preservation-matrix and
+call-path audits found no unresolved v2 feature or prohibited dependency. The
+macOS suite ran all 615 registrations with 608 passes and seven known
+Legacy/baseline or fixture failures; zero tests were skipped or disabled, so
+record the suite as incomplete rather than green. Windows Release x64/ARM64,
+Phase 4 resource checks, and C53 passed at that SHA. The x64 Debug baseline
+timed out during compilation at the workflow's 120-minute limit and produced no
+test result; Phase 7's formal gate does not require that supporting baseline.
+Keep Phase 9's packaged memory threshold separate.
+
+The final review found two narrow v2 gaps: Testing Classes' real roster
+keyboard trigger had not been exercised through Korean cell input, and Sub
+Prep silently ignored typed preference-read failure while still allowing
+writes. Add direct interaction coverage for the first. For the second, retain
+displayed settings, show a localized inline error, block writes until a
+successful reload, and verify recovery. Reuse the existing typed reads on the
+active WorkspaceStore Gateway; no extra API or store accessor was needed.
+
+The Initial Setup capture failure came from persisted dialog geometry. A fresh
+temporary `CLASSMNGR_SETTINGS_ROOT` per test executable made the existing
+460×680 assertion and captured images deterministic without changing product
+geometry.
+
 ### Phase 7 Gateway partial staging and clean-build check — 2026-11-01
 
 When a C56 adapter include shared a Gateway diff hunk with protected Schedule
