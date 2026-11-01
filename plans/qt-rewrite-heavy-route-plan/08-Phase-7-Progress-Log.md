@@ -2043,5 +2043,24 @@ Entries are preserved in their original document order.
   rechecks passed the F515 selector 3/3 and the signature capture CTest 1/1,
   with all eight signature manifest states visible. C53 also passed its direct
   selector 3/3 with the documented fresh output directory, application path,
-  and reference date. The Next Bootstrap warning assertion and final Windows
-  x64 Debug recorder remain open.
+  and reference date. The Next Bootstrap full-suite assertion was traced to a
+  fake Gateway causing a later unrelated notification to replace the status
+  text; the focused test now observes the warning signal before that replacement
+  and passed 3/3. No production notification change was made. Final-SHA full
+  CTest and Windows x64 Debug evidence remain open.
+
+### Next Bootstrap recent-history warning test — fixture observation corrected (2026-11-01)
+
+- `recentRestoreRemembersDirectoryWhenHistorySaveFails` previously failed only
+  at its final `QStatusBar::currentMessage()` check. Its recording gateway is
+  not a `WorkspaceStoreGateway`; post-open teacher-navigation refresh therefore
+  emits a separate “active workspace store unavailable” error after the history
+  warning, replacing the current message. The preceding profile-open, history
+  failure, and directory-preference assertions passed.
+- The test now spies on `QStatusBar::messageChanged` before triggering the
+  recent-profile action and asserts that the complete history-warning text was
+  emitted. It retains all existing open/session/history/directory assertions.
+  The focused selector passed 3/3, including setup and cleanup, on the standard
+  macOS Debug tree. This is a test-fixture observation correction; production
+  notification timing was unchanged. The final-SHA unfiltered CTest remains
+  open.

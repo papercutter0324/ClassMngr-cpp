@@ -46,8 +46,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   tests passed. Focused F515 re-entry and signature-capture checks pass with
   test-harness setup corrections; C53 passes when supplied its required output
   directory and reference date. Exact-SHA Windows Release/resource/C53 jobs
-  pass, while the x64 Debug recorder and one Next Bootstrap warning assertion
-  remain open. The preservation-matrix and call-path audits found no unresolved
+  pass; the Next Bootstrap warning assertion passes its focused signal-spy
+  check. The final-SHA unfiltered CTest and x64 Debug recorder remain open. The
+  preservation-matrix and call-path audits found no unresolved
   feature row or prohibited Next path. Sub Prep typed workspace reads use the
   active Gateway; its campus directory remains resource-backed. The Phase 9
   packaged-Release numeric memory gate remains separate.

@@ -13,9 +13,9 @@
   failed full-suite run. The C56 tests passed. Focused follow-ups verified the
   F515 class re-entry and signature capture harnesses, and the C53 selector
   with its required output settings. Exact-SHA Windows Release, resource, and
-  C53 jobs passed; Windows x64 Debug evidence and one Next Bootstrap warning assertion
-  remains open. The Phase 9 packaged-Release numeric memory
-  gate is separate. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md),
+  C53 jobs passed. The Next Bootstrap warning now passes a focused signal-spy
+  check; final-SHA unfiltered CTest and Windows x64 Debug evidence remain open.
+  The Phase 9 packaged-Release numeric memory gate is separate. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md),
   [phase plan](08-Phase-7-Feature-Migration.md), and
   [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate

@@ -108,6 +108,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSettings>
+#include <QSignalSpy>
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QTemporaryDir>
@@ -9568,6 +9569,9 @@ recentRestoreRemembersDirectoryWhenHistorySaveFails()
         Qt::DirectConnection
         ));
     QCOMPARE(menu->actions().at(0)->data().toString(), selectedPath);
+    QStatusBar* const statusBar = bootstrap.shell()->statusBar();
+    QSignalSpy statusMessageSpy(statusBar, &QStatusBar::messageChanged);
+    QVERIFY(statusMessageSpy.isValid());
     menu->actions().at(0)->trigger();
 
     QCOMPARE(gatewayProbe->openCalls, 1);
@@ -9578,9 +9582,19 @@ recentRestoreRemembersDirectoryWhenHistorySaveFails()
     QCOMPARE(historyProbe->history.paths.front(), recentPath);
     QCOMPARE(directoryPreference.read().value(),
              normalizedDirectory.toUtf8().toStdString());
-    QVERIFY(bootstrap.shell()->statusBar()->currentMessage().contains(
-        QStringLiteral("recent profile history could not be saved")
-        ));
+    const QString expectedHistoryWarning = QStringLiteral(
+        "Warning: The profile was opened, but recent profile history could not be saved: "
+        "injected recent history save failure"
+        );
+    const bool historyWarningWasEmitted = std::any_of(
+        statusMessageSpy.cbegin(),
+        statusMessageSpy.cend(),
+        [&expectedHistoryWarning](const QList<QVariant>& arguments) {
+            return !arguments.isEmpty()
+                && arguments.constFirst().toString() == expectedHistoryWarning;
+        }
+        );
+    QVERIFY(historyWarningWasEmitted);
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
