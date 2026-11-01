@@ -130,13 +130,38 @@ production changes:
   through the cache and model. This closes that boundary-coverage candidate;
   it does not claim a separate end-to-end Calendar Page parity comparison.
 
-F579 and F598 remain deferred pending a Windows process with an elevated
-Administrator token for their matched heap captures. F285 and its dependent
-Sidebar wide-ID transition, Batch 197 teacher-reassignment policy, the Class
-Analytics allocation policy, and the Dense Speaking Evaluation row policy
-remain open pending the product clarifications recorded in the Phase 2 plan.
+At this 2026-10-22 closeout, F579 and F598 remained deferred pending a Windows
+process with an elevated Administrator token for matched heap captures. F285
+and its dependent Sidebar wide-ID transition, Batch 197 teacher-reassignment
+policy, the Class Analytics allocation policy, and the Dense Speaking
+Evaluation row policy remain open pending the product clarifications recorded
+in the Phase 2 plan.
 F629 remains separate from Phase 2. This was a documentation-only closeout;
 no source changes or tests were run.
+
+## F579/F598 source-matched capture closeout — 2026-11-02
+
+F579 and F598 are resolved separately by the fresh elevated Windows x64
+optimized Release F564/WPR capture at clean source HEAD
+`fe25e2ff7a82b8da34d970a3591b64b3065aeb9e`. The retained ETL is
+`build/w753-f564-f598-final-capture-20261102/capture-attempt-1/classmngr-pdf-heap-snapshots.etl`
+(56,623,104 bytes, SHA-256
+`9a6301e0a68ce3947362b4107fb62d9856ed7a35c4b7d39e10fe323635b3eca2`); the
+`large_startup.tps` fixture SHA-256 is
+`c213ce96d85d927a4e2a4196c68be490f4517076079c069b475ec0ada872ffbb`.
+
+F579's matching app PDB resolves `main`, `qtEntryPoint`,
+`PageManager::showPage`, and `PageManager::ensurePage` in xperf. F598's three
+ordered same-run/PID markers have hash-bound acknowledgments and exactly one
+entry for each owner with all eight numeric F596 fields; zero values are valid,
+and final `after-view-destroyed` validation passed. xperf reports two invalid
+events for unrelated PID 4248 and total data count 406,489 versus processed
+reference count 359,697. These parser diagnostics limit completeness claims but
+do not negate named ClassMngr symbol resolution. The fail-closed source
+validator was code-reviewed; no focused negative-injection test was run. Heap
+allocation totals remain distinct from the separate Phase 9 working-set gate.
+See [the detailed capture record](sub-prep-class-information-memory-plan.md#f579f598-final-matched-capture).
+Phase 2 remains Complete; unrelated deferred product decisions are unchanged.
 
 ## Durable parity and product decisions
 

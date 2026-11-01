@@ -75,17 +75,25 @@ verification, decision, and gate evidence. F629's source-bound Windows x64
 layout trace and requalification remain outstanding separately from Phase 2
 and Phase 0's 2026-09-18 Complete declaration.
 
+### Resolved deferred candidates
+
+- F579 - Resolved by the source-matched Release F564/WPR capture at clean HEAD
+  `fe25e2ff7a82b8da34d970a3591b64b3065aeb9e`: xperf resolves `main`,
+  `qtEntryPoint`, `PageManager::showPage`, and `PageManager::ensurePage` with the
+  matching app PDB. Parser diagnostics limit completeness claims; see the
+  [detailed capture record](sub-prep-class-information-memory-plan.md#f579f598-final-matched-capture).
+- F598 - Resolved by that capture: all three ordered markers have one entry per
+  owner and all eight numeric F596 fields, hash-bound acknowledgments, and a
+  valid final `after-view-destroyed` state. Zero values are valid. Fail-closed
+  source-validator checks were code-reviewed; no focused negative-injection
+  test was run. Heap allocation totals do not establish the Phase 9 working-set
+  gate.
+
 ### Deferred candidates
 
 - F285 - Deferred before implementation: addTeacher() creates a blank
   teacher, but required-name validation rejects it before the profile read.
   Revisit after the blank-draft creation contract is clarified.
-- F579 - The user-directed review trigger is satisfied, but a fresh matched-symbol
-  heap capture remains blocked because this process lacks an elevated Administrator
-  token; resume when an elevated token is available.
-- F598 - Fresh matched WPR heap capture for the F596 Release route is blocked
-  because the current execution identity is not an Administrator; resume when
-  a Windows process with an elevated administrator token is available.
 - Batch 197 teacher reassignment parity - deferred until the stricter Next
   notes/schedule validation policy is resolved against current tests.
 - Class Analytics arbitrary roster-allocation cap and sparse representation

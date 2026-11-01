@@ -1,11 +1,10 @@
 # Latest Session Work
 
-## Current Deployment Handoff — phase75_windows_elevated_capture (blocked)
+## Current Deployment Handoff — phase75_windows_elevated_capture (Windows capture complete)
 
-- Heavy route; branch `Qt-Rewrite`. The initial pending changes were committed
-  as `e376deb9` (`build(windows): allow CMake generator discovery`), W7.5.1 as
-  `9f59e689`, and W7.5.2 as `9bf7f8f2`. These commits are local and await push
-  after the Windows follow-up work and deployment documentation are ready.
+- Heavy route; branch `Qt-Rewrite`. The pending CMake generator fix and the
+  W7.5.1, W7.5.2, and Windows capture work were committed as separate slices;
+  this branch is included in the requested final push.
 - W7.5.1 records the focused Windows x64 Sub Prep output result: pages 1–10
   matched the semantic oracle, pages 11–12 differed in teacher assignment, and
   all five roster pages matched. It transfers the unresolved page-break
@@ -19,24 +18,32 @@
   names/outcomes are therefore unconfirmed on current source. CMake selected
   SDK 10.0.28000.0; 10.0.26100.0 was separately added to PATH. Full details
   and evidence paths are in the [Phase 7.5 plan](../plans/qt-rewrite-heavy-route-plan/08.5-Phase-7.5-Cross-Platform-Follow-Ups.md).
-- W7.5.3 remains blocked. After the user selected an elevated relaunch, the
-  active tool process still had medium integrity (S-1-16-8192), and
-  `whoami /groups` had no `BUILTIN\Administrators` SID. The checkout was clean
-  at `e30c02950f73ac4c2c4f98677b9b3a8eded77c88`; no build, WPR stage, or
-  evidence directory was created. F579/F598 remain unresolved in Phase 2.
-- The independent acceptance review requires a fresh ETL from current source,
-  an optimized Release executable/PDB match (`/Zi`, `/DEBUG:FULL`) with app
-  symbol resolution, the F564 lifecycle route and all three ordered/hash-bound
-  checkpoints, successful WPR snapshots, and F598's three owner-labeled metric
-  records. One bundle may supply both candidates only if it meets each item's
-  evidence requirements; analyze and disposition F579 and F598 separately.
-  No heap pass threshold is defined and allocation totals are not the Phase 9
-  working-set measurement. Full criteria are in the [Phase 7.5
+- W7.5.3's F598 marker-metrics source slice is committed as `fe25e2ff`. Its
+  bounded Release build and focused serializer test passed; the supported F563
+  dry run passed with all three owners and eight numeric fields at each ordered
+  marker, hash-bound acknowledgments, and valid sample timing.
+- A fresh elevated F564/WPR capture at
+  `fe25e2ff7a82b8da34d970a3591b64b3065aeb9e` passed. The 56,623,104-byte ETL
+  SHA-256 is
+  `9a6301e0a68ce3947362b4107fb62d9856ed7a35c4b7d39e10fe323635b3eca2`.
+  Independent review resolved `ClassMngr.exe main`, `qtEntryPoint`,
+  `PageManager::showPage`, and `PageManager::ensurePage` against the matching
+  app PDB. The three F598 owners and eight numeric fields are present at every
+  checkpoint, including `after-view-destroyed`; all three acknowledgments bind
+  the complete marker hashes. F579 and F598 are separately resolved by this
+  evidence.
+- xperf reported two invalid events (#129117 and #129118, PID 4248) and a
+  processed-reference mismatch (406,489 total data counts versus 359,697
+  processed references). These parser diagnostics limit completeness claims;
+  they are not event or stack counts and do not negate the directly resolved
+  ClassMngr frames. The F598 fail-closed branches were reviewed, but no focused
+  negative-injection test was added. Heap allocations are not the Phase 9
+  working-set measurement, and no heap pass threshold was defined.
+- The Windows W7.5.3 work is complete. W7.5.2 remains incomplete because its
+  full Debug build timed out before CTest, and the page-break decision remains
+  assigned to Phase 10. Do not describe all Phase 7.5 follow-ups as complete.
+  Full evidence and remaining platform work are in the [Phase 7.5
   plan](../plans/qt-rewrite-heavy-route-plan/08.5-Phase-7.5-Cross-Platform-Follow-Ups.md).
-- Next: open this workspace in a process whose token actually has enabled
-  Administrator privileges, then resume W7.5.3. The four commits listed above
-  remain local and unpushed until the Windows follow-up is complete. Do not
-  describe Phase 7.5 as complete. Phases 0–7 remain at their accepted statuses.
 
 ## Current Deployment Handoff — phase6-shared-ui-20261026 (complete)
 

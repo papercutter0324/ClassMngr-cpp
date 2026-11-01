@@ -2,6 +2,18 @@
 
 ## Decisions and Lessons
 
+### Source-matched Windows heap capture and symbol review — 2026-11-02
+
+The elevated Windows run at source commit `fe25e2ff` completed the F564/WPR
+route with all three ordered lifecycle snapshots and clean WPR postflight. The
+same fresh bundle resolved F579's application-symbol criterion and F598's
+exact `after-view-destroyed` owner-metric requirement. Keep the two candidate
+dispositions separate. xperf reported two invalid events and a processed-
+reference mismatch; report these as parser/completeness limits, not event or
+stack counts. No heap threshold was added, and heap allocation totals remain
+separate from the Phase 9 working-set measurement. The F598 rejection checks
+were reviewed, but no focused negative-injection test was added.
+
 ### Verify elevated process state before WPR capture — 2026-11-02
 
 A user's choice to relaunch Codex elevated does not itself change the token of

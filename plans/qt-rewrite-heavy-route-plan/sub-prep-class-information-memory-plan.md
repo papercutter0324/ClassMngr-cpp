@@ -817,8 +817,9 @@ Pretendard (6,739,336 bytes); Stack ID 1417's 16 MiB and 8 MiB allocations
 fit those resource sizes, though exact allocation-to-file identity remains
 unverified without app symbols or resource-path data in the ETL. F577
 confirmed the current optimized Release build emits no app PDB. F578 built
-an optimized executable with an exactly matching app PDB; F579's fresh trace
-from that executable is deferred at the user's direction. F580 used the
+an optimized executable with an exactly matching app PDB; F579's fresh
+source-matched trace was later completed and resolved (see the
+[final capture record](#f579f598-final-matched-capture)). F580 used the
 retained F564 route and ETL to correlate 147 cumulative renderer creations
 with 30,349,468 bytes of all-checkpoint
 allocation signatures on Qt stack paths through `setCellWidget`, including
@@ -941,3 +942,56 @@ the existing `ScheduleWidgetRuntimeMetrics` value fields. Existing scalar
 the new collection records current values separately and omits owners not yet
 instantiated. Sub Prep should provide a value snapshot rather than expose its
 private widget. F596 implements the shape and verifies serialization/mapping.
+
+## F579/F598 final matched capture
+
+At clean source HEAD `fe25e2ff7a82b8da34d970a3591b64b3065aeb9e`, the elevated
+Windows x64 optimized Release F564/WPR capture passed with `dryRun=false`.
+The app was built with `/Zi` and `/DEBUG:FULL`; the supported lifecycle-sub-prep
+route used the page-render observer, `without-grabs`, and `large_startup.tps`.
+The retained bundle is
+`build/w753-f564-f598-final-capture-20261102/capture-attempt-1/`; run ID
+`6d028cab-6954-43a2-be78-6d6c91005deb` and PID `11472` are consistent across
+the ordered successful snapshots. The ETL is 56,623,104 bytes with SHA-256
+`9a6301e0a68ce3947362b4107fb62d9856ed7a35c4b7d39e10fe323635b3eca2`. The
+`large_startup.tps` fixture SHA-256 is
+`c213ce96d85d927a4e2a4196c68be490f4517076079c069b475ec0ada872ffbb`. WPR
+stopped successfully and heap snapshot configuration was disabled at postflight.
+
+The matching app PDB has GUID `240b7f20-a919-4891-9096-9c5d4a71e495`, age 4;
+its PDB Info stream matches the executable RSDS record. App executable/PDB
+SHA-256 values are `c5c660025758abac763308d9b8214f299d30f3b3fbd9b6b7a5ea4caa81b43585`
+and `fbd30407f2e606fc257836fbb9844b94c321035db38cbd9dd48157977daaf378`.
+The runner RSDS and PDB Info stream also match at GUID
+`80c3bf61-52fc-41a8-98ad-14128bce8319`, age 5; runner executable/PDB SHA-256
+values are `8722917e2cc2c744dd3d6a72cdc925a6b6e2ac386dd78f6983881236bb0b6bb3`
+and `bbc1e4976de9aff776c3427c87a6eadc44dd085992cfeba990dd5fc0688c1e80`.
+Independent xperf analysis resolves `ClassMngr.exe` frames `main`,
+`qtEntryPoint`, `PageManager::showPage`, and `PageManager::ensurePage` from that
+PDB. This closes F579's named-symbol capture requirement.
+
+xperf also reports Invalid Events #129117 and #129118 from unrelated PID 4248,
+and `Total data counts` 406,489 versus processed reference count 359,697. These
+are parser diagnostics, not event or stack counts. They limit completeness
+claims but do not negate the direct ClassMngr symbol resolutions.
+
+For F598, capture validation confirms the three markers use the same run/PID,
+have increasing timestamps, and each has one entry per owner with all eight
+numeric F596 fields (`modelRowCount`, `modelCellCount`, `modelEntryCount`,
+`tableRowCount`, `tableColumnCount`, `tableItemCount`,
+`tableCellWidgetCount`, and `visibleClassCount`). Zeros are valid. Every
+acknowledgment hash binds its marker; each sample range precedes its marker
+timestamp, and final `after-view-destroyed` validation passed:
+
+| Checkpoint | Marker SHA-256 | Acknowledgment SHA-256 |
+| --- | --- | --- |
+| `after-render` | `56f6ed7d7d2568a51d9890eab9d7b60a532cc5a6e9a643165bc31a19a6277a4f` | `637bb9201cce2d7a04706527a8aa0e13aad6db9b9a8fe1fb07ac65baf60e714d` |
+| `after-document-close` | `3e02e74cf8132faba8be97afa4722332300fc70e4198620238bde847dd760e2f` | `09eaab9e6aafe3687cdc88fbd79f64a2e6395a68ee6e6c91701d60bf50c1eab5` |
+| `after-view-destroyed` | `125e7ff1ac935a871d6839885d413c990ff360adacaab57541b716e1b2fbac45` | `09702db779cae291560bdba120daccaf8a45158f5fa56d2b639e27f13a9b83fd` |
+
+This resolves F598's fresh matched WPR and exact-marker owner-metrics criteria.
+The source validator's fail-closed checks were code-reviewed, but no focused
+negative-injection test was run. F579 and F598 are resolved separately from
+this bundle. Heap allocation totals are not process working set: no heap
+threshold is defined, and these results do not replace the separate Phase 9
+working-set gate.

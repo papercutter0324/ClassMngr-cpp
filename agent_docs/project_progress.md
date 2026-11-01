@@ -5,14 +5,17 @@ Current deployment: `phase75_windows_elevated_capture`. Route: Heavy, with
 Light used for the requested commit and push operations.
 Current milestone: W7.5.1 is recorded at `9f59e689`; W7.5.2 is recorded at
 `9bf7f8f2`. The current-source Windows x64 Debug configure passed, but the
-clean-first all-target build reached its 7,200-second timeout before CTest, so
-there is no current test result. W7.5.3 feasibility confirmed this session has
-no enabled Administrator token. After the user selected an elevated relaunch,
-the active tool process still reported medium integrity and no Administrators
-SID; no build or heap capture ran. F579/F598 remain pending until a process
-with an enabled Administrator token is available. The Windows Phase 7.5
-follow-up is not complete and remains unpushed. Preserve the accepted Phase
-0–7 statuses and the separate Phase 9 numerical memory gate.
+clean-first all-target build reached its 7,200-second timeout before CTest,
+so there is no current test result. The later elevated W7.5.3 run completed
+the F598 marker-metrics source slice at `fe25e2ff` and passed a fresh real
+F564/WPR capture. Independent review resolves F579's application symbols and
+F598's three-owner metrics separately. xperf's two invalid-event warnings and
+processed-reference mismatch limit completeness claims; they are not event or
+stack counts. The all-target Windows x64 Debug build remains incomplete
+because it timed out before CTest. Preserve the accepted Phase 0–7 statuses,
+the separate Phase 9 working-set gate, and the unresolved page-break decision
+assigned to Phase 10. See the [Phase 7.5 plan](../plans/qt-rewrite-heavy-route-plan/08.5-Phase-7.5-Cross-Platform-Follow-Ups.md)
+for capture hashes, artifacts, and remaining cross-platform work.
 Phase 7 remains Complete at its accepted semantic-gate SHA
 `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. Follow-up commit
 `033f8dd2` routes Next Schedule Page and Initial Setup Schedule Import reads
