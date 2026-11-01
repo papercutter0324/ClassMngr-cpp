@@ -6,9 +6,11 @@
     the missing Gateway adapter include was repaired in `346adb7c`. Focused
     C56 verification passed 4/4 CTests after the repair. A separate all-target
     build issue in `ClassMngrNextSharedStaffDirectoryVisualCapture` was fixed
-    at `1e9bfae0`; its focused target CTest passed 1/1. The unfiltered macOS
-    suite remains to run on the final capture-test source; exact-SHA Windows
-    checks remain open.
+    at `1e9bfae0`; its focused target CTest passed 1/1. The full build at
+    `1021a34d` stopped linking `ClassMngrNextTeacherDirectoryVisualCapture` on
+    missing object-library dependencies, before CTest. Its narrow CMake repair
+    now builds the target and passes both registered CTests. Rerun the
+    unfiltered suite and exact-SHA Windows checks at the repaired SHA.
 
 ## Batch 7 — discovered
 

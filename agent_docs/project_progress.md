@@ -6,8 +6,11 @@ Current milestone: Candidate #56, dynamic Co-Teachers sidebar navigation, is
 implemented in `248c498f`, with its clean-source compile repair in `346adb7c`.
 Focused C56 verification passed 4/4 CTests. A separate source-list issue in
 the standalone Staff Directory capture target was fixed in pushed commit
-`1e9bfae0`; that target built and its CTest passed 1/1. A full build at
-`346adb7c` stopped at that link failure, so the unfiltered suite remains open.
+`1e9bfae0`; that target built and its CTest passed 1/1. The full build at
+`1021a34d` stopped linking `ClassMngrNextTeacherDirectoryVisualCapture` because
+its object-library dependency closure was incomplete; CTest did not run. The
+narrow link repair now builds that target and passes both registered CTests;
+the unfiltered suite remains open for a rerun at the repaired SHA.
 Batch 7 discovery found no other feature slice. The Initial Setup visual
 package is accepted after independent review of all 28 images and manifest
 records; its metadata identifies the base commit and the capture worktree
@@ -214,8 +217,11 @@ The first pushed implementation SHA `61b8d749` failed a clean compile because
 the adapter include was omitted from its staged Gateway hunk. Repair
 `346adb7c` is pushed, and focused C56 CTests passed 4/4. A separate full-build
 link failure in the Staff Directory capture target was repaired in `1e9bfae0`
-with a passing focused CTest. The unfiltered suite and latest-SHA Windows checks
-remain open. Batch 7 discovery found no other feature slice. The matrix/call-
+with a passing focused CTest. The full build at `1021a34d` stopped at the
+standalone Teacher Directory capture link before CTest; the focused link repair
+now passes its target build and 2/2 CTests. The unfiltered suite and
+latest-SHA Windows checks remain open.
+Batch 7 discovery found no other feature slice. The matrix/call-
 path audit found no unresolved row. The Initial Setup visual package is
 accepted; its capture worktree provenance is limited to the base commit
 recorded in metadata. Sub Prep's workspace-backed actions use the active

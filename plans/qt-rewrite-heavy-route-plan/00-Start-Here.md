@@ -16,8 +16,11 @@
   4/4 CTests and the existing profile-activation test passed 3/3. Batch 7
   discovery found no other feature slice. A clean full build at `61b8d749`
   caught the missing adapter include; the subsequent build at `346adb7c` found
-  the capture-target link issue. Unfiltered macOS and Windows checks on the
-  latest source/test SHA are pending. Exit review found two visual evidence
+  the Staff Directory capture link issue. A full build at `1021a34d` stopped
+  linking `ClassMngrNextTeacherDirectoryVisualCapture` because its object-library
+  link closure is incomplete; CTest did not run. A narrow CMake repair is
+  now focused-verified: the target builds and both registered CTests pass.
+  Rerun the full suite and Windows checks at the repaired SHA. Exit review found two visual evidence
   gaps, now covered by independently reviewed packages. The Initial Setup
   package has 28 images with matching manifest records; its metadata names the
   base commit, so its capture worktree revision remains a reproducibility

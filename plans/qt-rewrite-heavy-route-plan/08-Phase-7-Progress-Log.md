@@ -1938,3 +1938,30 @@ Entries are preserved in their original document order.
   inspection. The README also omits the English “No Recent Files” label in one
   Korean/Next capture; this is a minor documentation omission, not a missing
   state. The unfiltered suite and exact-SHA Windows checks remain open.
+
+### Exact-SHA full-build attempt — Teacher Directory capture link failure (2026-11-01)
+
+- At pushed SHA `1021a34d967d1b363da64647b6fe114795d0c22f`, the independent
+  Tester refreshed its isolated clean source tree from `git archive`, matched
+  the remote tip, and reused its standard `build/macos-clang-debug` directory.
+  The all-target build stopped at action 4,588/4,965 while linking
+  `ClassMngrNextTeacherDirectoryVisualCapture`; no CTest tests ran.
+- The target links the `ClassMngrNextWorkspace` object library, but its
+  `cmake/tests/next.cmake` link closure omits dependencies for unresolved
+  `ColorUtils`, `FileNameUtils`, `ClassInfoConfig`, `StartupProfiler`, and
+  `ApplicationServicesSubPrep*` symbols. The previous Staff Directory
+  capture target linked successfully. The follow-on focused repair and its
+  verification are recorded below; rerun the all-target build and unfiltered
+  CTest at the repaired source/test SHA.
+
+### Teacher Directory capture link repair — focused verification passed (2026-11-01)
+
+- The standalone target now includes `ClassMngrNextWorkspaceProfilerCompat`
+  and `ClassMngrNextSubPrepProfilerCompat` objects and links
+  `ClassMngrSubPrepShared`, satisfying the missing object-library dependency
+  closure without changing production runtime targets.
+- In the isolated standard macOS build tree based on exact SHA `1021a34d`, the
+  focused target build succeeded and both registered capture CTests passed
+  (2/2); `git diff --check` passed. The fix remains uncommitted in the main
+  worktree. The all-target build and unfiltered CTest still need to run at the
+  pushed repair SHA, and Windows checks must be retargeted there.

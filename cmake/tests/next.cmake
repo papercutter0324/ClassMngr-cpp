@@ -1027,6 +1027,8 @@ endforeach()
 # and the Next Korean teacher sidebar tree. Captures only on explicit run.
 add_executable(ClassMngrNextTeacherDirectoryVisualCapture
     tests/next/korean_teacher_directory_visual_capture.cpp
+    $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
+    $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
     src/next/ui/application_shell.cpp
     src/next/ui/document_catalog_navigation.cpp
     src/next/ui/navigation_model.cpp
@@ -1066,6 +1068,7 @@ target_link_libraries(ClassMngrNextTeacherDirectoryVisualCapture
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNextWorkspaceDomain
+        ClassMngrSubPrepShared
         ClassMngrScheduleImportParser
         ClassMngrScheduleImportRules
         ClassMngrWorkspaceStore
