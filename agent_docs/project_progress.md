@@ -1,8 +1,17 @@
 # Project Progress
 
-Active deployment plan: Qt Rewrite Phase 7 — Feature Migration.
-Current deployment: `schedule_import_gateway_20261101`. Route: Heavy.
-Current milestone: Phase 7 remains Complete at its accepted semantic-gate SHA
+Active deployment plan: Qt Rewrite Phase 7.5 — Cross-Platform Follow-Ups.
+Current deployment: `phase75_windows_rollout`. Route: Heavy, with Light used
+for the requested commit and push operations.
+Current milestone: W7.5.1 is recorded at `9f59e689`; W7.5.2 is recorded at
+`9bf7f8f2`. The current-source Windows x64 Debug configure passed, but the
+clean-first all-target build reached its 7,200-second timeout before CTest, so
+there is no current test result. W7.5.3 feasibility confirmed this session has
+no enabled Administrator token; no matched heap captures were started, and
+F579/F598 remain pending until that execution environment is available. The
+Windows Phase 7.5 follow-up is not complete. Preserve the accepted Phase 0–7
+statuses and the separate Phase 9 numerical memory gate.
+Phase 7 remains Complete at its accepted semantic-gate SHA
 `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. Follow-up commit
 `033f8dd2` routes Next Schedule Page and Initial Setup Schedule Import reads
 and applies through the active `WorkspaceStoreGateway`, with active-profile
@@ -10,9 +19,7 @@ and pending-setup checks. The affected `ClassMngrNext` target built
 successfully; no tests were run for this follow-up. The original full-suite
 result remains 608/615 passed with seven known failures and zero skipped or
 disabled tests. Exact-SHA Windows Release x64/ARM64, Phase 4 resource checks,
-and C53 passed at the formal exit SHA. The Windows x64 Debug baseline timed out
-during compilation without a test result or artifact. The Phase 9 numerical
-memory gate remains separate.
+and C53 passed at the formal exit SHA.
 Phases 0–7 are Complete; Phase 8 has not started. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;

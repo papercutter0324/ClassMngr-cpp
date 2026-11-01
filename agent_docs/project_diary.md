@@ -2,6 +2,17 @@
 
 ## Decisions and Lessons
 
+### Phase 7.5 Windows follow-ups — 2026-11-02
+
+Classify a Windows Debug build timeout at the stage boundary: a 120-minute
+all-target build that never reaches CTest is incomplete evidence, not a test
+pass, and cannot confirm or refute historical test names. Keep host/toolchain
+facts explicit; in the W7.5.2 run CMake selected SDK 10.0.28000.0 while the
+environment separately added SDK 10.0.26100.0 to PATH. Matched F579/F598 heap
+captures require an enabled Administrator token; sandbox escalation did not
+provide one. Future capture work needs a source-matched optimized executable
+and PDB, and the F598 route owner metrics, before claiming results.
+
 ### Schedule Import Gateway follow-up — 2026-11-01
 
 After Phase 7's formal exit, finish the previously uncommitted Next

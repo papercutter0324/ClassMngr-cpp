@@ -1,5 +1,37 @@
 # Latest Session Work
 
+## Current Deployment Handoff — phase75_windows_rollout (in progress)
+
+- Heavy route; branch `Qt-Rewrite`. The initial pending changes were committed
+  as `e376deb9` (`build(windows): allow CMake generator discovery`), W7.5.1 as
+  `9f59e689`, and W7.5.2 as `9bf7f8f2`. These commits are local and await push
+  after the Windows follow-up work and deployment documentation are ready.
+- W7.5.1 records the focused Windows x64 Sub Prep output result: pages 1–10
+  matched the semantic oracle, pages 11–12 differed in teacher assignment, and
+  all five roster pages matched. It transfers the unresolved page-break
+  decision to Phase 10; the comparator and accepted Phase 0–7 statuses remain
+  unchanged.
+- W7.5.2 used source SHA
+  `9f59e68992b753bed1cad4546808fc708573b559`. Configure passed with
+  `BUILD_TESTING=ON` in 238.031 seconds. The clean-first all-target Windows x64
+  Debug build timed out after 7,200.108 seconds (exit 124), with 485 project
+  outputs recorded and no compiler diagnostic. CTest did not run; the Phase 5
+  names/outcomes are therefore unconfirmed on current source. CMake selected
+  SDK 10.0.28000.0; 10.0.26100.0 was separately added to PATH. Full details
+  and evidence paths are in the [Phase 7.5 plan](../plans/qt-rewrite-heavy-route-plan/08.5-Phase-7.5-Cross-Platform-Follow-Ups.md).
+- W7.5.3 remains pending. The available process token is medium integrity, with
+  the Administrator SID disabled even under sandbox escalation, so no heap
+  capture was started. Resume only with an enabled Administrator token. F579
+  needs a fresh ETL and matching optimized executable/PDB (`/Zi`,
+  `/DEBUG:FULL`, including F596/F1039); F598 also needs F596 owner metrics for
+  `standalone-schedule`, `workspace-schedule`, and `sub-prep-preview`. Keep the
+  F564 lifecycle checkpoints and matched capture artifacts documented in the
+  Phase 7.5 plan. F579/F598 remain unresolved in Phase 2.
+- Next: continue W7.5.3 when the elevated capture environment is available. Do
+  not describe Phase 7.5 or the Windows follow-up as complete or push until the
+  remaining disposition is recorded. Phases 0–7 remain at their accepted
+  statuses.
+
 ## Current Deployment Handoff — phase6-shared-ui-20261026 (complete)
 
 - Heavy route; branch `Qt-Rewrite`. Phase 6 is complete at F1528; Phase 7 is
