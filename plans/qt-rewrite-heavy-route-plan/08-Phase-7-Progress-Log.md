@@ -1856,3 +1856,47 @@ Entries are preserved in their original document order.
   checks, and final preservation-matrix/visual evidence review remain open.
   C54's accepted diagnostic evidence has no numeric threshold; the Phase 9
   packaged-Release memory gate remains separate.
+
+### Candidate #56 — clean-source repair and exit evidence review (2026-11-01)
+
+- A fresh clean-source build at pushed SHA `61b8d749` failed before CTest at
+  `WorkspaceStoreGateway::readClassTeacherAssignments()`: the C56 adapter
+  header had remained unstaged in a mixed Gateway hunk, so the dirty local
+  tree masked the omission. The user's separate Schedule Import edits were not
+  staged or modified.
+- The missing
+  `workspace_store_class_teacher_assignments_read_port.h` include was committed
+  as `346adb7c` and pushed. The standard incremental Bootstrap target rebuilt;
+  focused C56 CTests passed 4/4 and `git diff --check` passed. The unfiltered
+  macOS suite and corrected-SHA Windows workflows are under verification;
+  results at `61b8d749` are not the acceptance target.
+- The matrix/call-path audit found no unresolved feature row or prohibited
+  Next call path. Visual review found broader 7A evidence gaps: later Initial
+  Setup stages and whole-profile file/recovery workflows have no retained
+  matched Legacy/Next captures. Targeted capture work is active. C54's accepted
+  Windows diagnostic provides process/lifecycle observations without a
+  numeric threshold; no Phase 9 memory claim is made.
+
+### Phase 7 standalone capture-target link repair (2026-11-01)
+
+- The resumed all-target build at `346adb7c` advanced to action 4,950/5,327,
+  then failed while linking `ClassMngrNextSharedStaffDirectoryVisualCapture`.
+  Its `WorkspaceStoreGateway` source calls `readSchedulePageFromStore()`, but
+  the standalone target omitted its definition in
+  `workspace_store_schedule_actions.cpp`.
+- Added that source to the target in `cmake/tests/next.cmake`; commit
+  `1e9bfae0` is pushed. The focused capture target built and its registered
+  CTest passed 1/1. The linker emitted duplicate `ClassMngrWorkspaceStore`
+  warnings, but completed successfully. The full build and CTest have not yet
+  completed on this source.
+- The Initial Setup visual package now retains 14 matched state pairs (28
+  images) across seven stages; its focused Legacy/Next capture CTests passed
+  3/3. Independent visual review verified all 28 images and manifest records,
+  including dimensions, byte counts, SHA-256 values, and expected stage/locale/
+  theme/route coverage. The screenshots match the documented states and
+  synthetic values. Metadata names base commit `346adb7c`, while the capture
+  harness came from uncommitted worktree changes; that commit alone cannot
+  reproduce the package. Workbook preview/apply and native-window or
+  pixel-parity claims remain outside scope. The profile file-workflow visual
+  capture harness is active; the final unfiltered suite and exact-SHA Windows
+  checks will run after its source/test target is validated.

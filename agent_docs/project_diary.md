@@ -2,6 +2,24 @@
 
 ## Decisions and Lessons
 
+### Phase 7 Gateway partial staging and clean-build check — 2026-11-01
+
+When a C56 adapter include shared a Gateway diff hunk with protected Schedule
+Import additions, declining the mixed hunk omitted the C56 include as well.
+Focused tests passed only because the local dirty tree still contained it. For
+mixed-scope Gateway edits, inspect the cached file diff and validate a clean
+source commit before treating an incremental local build as acceptance.
+
+Standalone visual-capture targets that compile `WorkspaceStoreGateway` must
+include its path-scoped schedule-action source when the Gateway references
+`readSchedulePageFromStore()`. Keep that ownership narrow; the fix belongs in
+the test target source list rather than the production runtime dependency set.
+
+Retained visual evidence should identify both the source commit and whether
+the capture harness came from uncommitted worktree changes. A verified image
+manifest does not by itself make the capture reproducible from the named
+commit.
+
 ### Phase 7 Co-Teachers navigation — 2026-11-01
 
 Read assigned co-teacher IDs through a typed port on the active WorkspaceStore

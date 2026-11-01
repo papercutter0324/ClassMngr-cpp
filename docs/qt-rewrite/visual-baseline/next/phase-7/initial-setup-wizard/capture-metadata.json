@@ -1,0 +1,407 @@
+{
+  "taskId": "phase7_setup_visual_capture_01",
+  "capturedOn": "2026-11-01",
+  "sourceCommit": "346adb7cb0a7658da917d4c0053b793bc8df1ec0",
+  "platform": {
+    "os": "macOS 27.0.1",
+    "architecture": "arm64",
+    "qt": "6.12.0",
+    "compiler": "Apple LLVM 17.0.0",
+    "display": "Qt offscreen; scale factor 1"
+  },
+  "captureDirectory": "build/macos-clang-debug/initial-setup-visual-captures",
+  "testCases": [
+    "ClassMngrInitialSetupWizardVisualCapture",
+    "ClassMngrNextInitialSetupVisualCaptureEnglishLight",
+    "ClassMngrNextInitialSetupVisualCaptureKoreanDark"
+  ],
+  "commands": [
+    "cmake --build build/macos-clang-debug --target ClassMngrInitialSetupWizardTests ClassMngrNextBootstrapTests",
+    "ctest --test-dir build/macos-clang-debug --output-on-failure -R 'ClassMngrInitialSetupWizardVisualCapture|ClassMngrNextInitialSetupVisualCapture'"
+  ],
+  "summary": {
+    "stages": [
+      "teacher-import",
+      "teacher-import-dialog",
+      "teacher-entry",
+      "class-details",
+      "class-times",
+      "schedule-import",
+      "finish"
+    ],
+    "appearancePairs": [
+      {
+        "locale": "en_US",
+        "theme": "light"
+      },
+      {
+        "locale": "ko_KR",
+        "theme": "dark"
+      }
+    ],
+    "matchedStatePairs": 14,
+    "imageCount": 28,
+    "dimensions": {
+      "1024x720": 16,
+      "1080x720": 4,
+      "1240x720": 4,
+      "460x680": 4
+    }
+  },
+  "syntheticData": {
+    "teacher": {
+      "englishName": "Alex Kim",
+      "koreanName": "김선생님",
+      "preferredSpelling": "Kim Seonsaeng",
+      "room": "101"
+    },
+    "class": {
+      "grade": "E4",
+      "level": "Theseus",
+      "readingBook": "Reading Explorer 1",
+      "essayBook": "4A",
+      "color": "#123456",
+      "regularTime": "Wednesday 4:00 PM–4:55 PM"
+    },
+    "teacherImportDialog": "blank workbook selection; no workbook fixture or user data was loaded",
+    "temporaryStorage": "QTemporaryDir; automatically removed by the test process"
+  },
+  "captures": [
+    {
+      "file": "legacy-initial-setup-class-details-en_US-light.png",
+      "route": "legacy",
+      "stage": "class-details",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1024,
+      "height": 720,
+      "bytes": 31044,
+      "sha256": "3f077a7a0814961760b7ff3fded6d1bc4bda50bc2eb243bda838a7465135be24",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-class-details-ko_KR-dark.png",
+      "route": "legacy",
+      "stage": "class-details",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1024,
+      "height": 720,
+      "bytes": 31028,
+      "sha256": "dfc612a1b960f9b09e079d6db46ce103d7eda611f86203a55de97e6d8f2c943a",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-class-times-en_US-light.png",
+      "route": "legacy",
+      "stage": "class-times",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1080,
+      "height": 720,
+      "bytes": 34117,
+      "sha256": "38d0658e77076385712e2ee970ceb31341b14850f3b4c12fedd80a9414793c30",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-class-times-ko_KR-dark.png",
+      "route": "legacy",
+      "stage": "class-times",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1080,
+      "height": 720,
+      "bytes": 33804,
+      "sha256": "54ed0984c09f8c7d1be5650d278c9e75225b7ba4c18eec5ec2b68ae99fd578bf",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-finish-en_US-light.png",
+      "route": "legacy",
+      "stage": "finish",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1024,
+      "height": 720,
+      "bytes": 18782,
+      "sha256": "f86a02deb9269175eece5aecbb5e19b6d03be5f30c63a8f5b58486b0a71b692b",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-finish-ko_KR-dark.png",
+      "route": "legacy",
+      "stage": "finish",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1024,
+      "height": 720,
+      "bytes": 18162,
+      "sha256": "9edf67ecf1185d92b4b130c0fe1b9d0c8a15c6d965522b024aacb8a540817b06",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-schedule-import-en_US-light.png",
+      "route": "legacy",
+      "stage": "schedule-import",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1240,
+      "height": 720,
+      "bytes": 30051,
+      "sha256": "285c429289d066e866e8bd818bb779746f22e14fb1e1fafa5573ecfe352c0628",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-schedule-import-ko_KR-dark.png",
+      "route": "legacy",
+      "stage": "schedule-import",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1240,
+      "height": 720,
+      "bytes": 28759,
+      "sha256": "013c13567c10cb9e71cee8e706d2d5a020821820ace1ea3afe969a5f9c0ad0bd",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-teacher-entry-en_US-light.png",
+      "route": "legacy",
+      "stage": "teacher-entry",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1024,
+      "height": 720,
+      "bytes": 52212,
+      "sha256": "c72d31fc0cca3fbd0f89574d1fd17d0ae1e26deab13d61ccd7d8ed8d10081ea8",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-teacher-entry-ko_KR-dark.png",
+      "route": "legacy",
+      "stage": "teacher-entry",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1024,
+      "height": 720,
+      "bytes": 51010,
+      "sha256": "c98cc643df1c15289f9bb114ba8a2c9deae8bcd60d91d83882bba9a18bc8a8e2",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-teacher-import-dialog-en_US-light.png",
+      "route": "legacy",
+      "stage": "teacher-import-dialog",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 460,
+      "height": 680,
+      "bytes": 14492,
+      "sha256": "cade23d92b01f5ff80ab1d646719b3edfe3180588ea4472fef5268397cc78d5a",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-teacher-import-dialog-ko_KR-dark.png",
+      "route": "legacy",
+      "stage": "teacher-import-dialog",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 460,
+      "height": 680,
+      "bytes": 14191,
+      "sha256": "98cf6a60a1d37d93c03e6785b3b8d72971d29812216804df6688c051156badca",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-teacher-import-en_US-light.png",
+      "route": "legacy",
+      "stage": "teacher-import",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1024,
+      "height": 720,
+      "bytes": 27270,
+      "sha256": "26a9c3687f1825053f485e7c3b6a4f6e7a94db2f635e067e1371fbfed79ca737",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "legacy-initial-setup-teacher-import-ko_KR-dark.png",
+      "route": "legacy",
+      "stage": "teacher-import",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1024,
+      "height": 720,
+      "bytes": 25942,
+      "sha256": "8bdb3385f4efae8fbdf6e2cc01a006f670d771800aa4474b2300b0a897f778c6",
+      "source": "Legacy InitialSetupWizard and TeacherImportDialog test harness; temporary QTemporaryDir database with synthetic fixture values"
+    },
+    {
+      "file": "next-initial-setup-class-details-en_US-light.png",
+      "route": "next",
+      "stage": "class-details",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1024,
+      "height": 720,
+      "bytes": 143010,
+      "sha256": "0aa26a02035c1304571f33cbf909f20d837c58fb9d956e640a2fc6df13d55a8e",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-class-details-ko_KR-dark.png",
+      "route": "next",
+      "stage": "class-details",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1024,
+      "height": 720,
+      "bytes": 111406,
+      "sha256": "751b1bf28e54d5f88cc3288dfc22c662e5afd078feb8399df06221a3785221d9",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-class-times-en_US-light.png",
+      "route": "next",
+      "stage": "class-times",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1080,
+      "height": 720,
+      "bytes": 142995,
+      "sha256": "c50c5059b57bacbfd1e98018c25f925866d01a897752f7c717643c5f0be4f8f5",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-class-times-ko_KR-dark.png",
+      "route": "next",
+      "stage": "class-times",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1080,
+      "height": 720,
+      "bytes": 112521,
+      "sha256": "357f77689f052a00c4895c1a6d1bc917bddfa95b348208bb83cc2cfff9a6ba30",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-finish-en_US-light.png",
+      "route": "next",
+      "stage": "finish",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1024,
+      "height": 720,
+      "bytes": 99962,
+      "sha256": "7c917c30fc814cc852a1a29390ae77c40de1c1c199f0b5e10f3fc9ef65adac38",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-finish-ko_KR-dark.png",
+      "route": "next",
+      "stage": "finish",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1024,
+      "height": 720,
+      "bytes": 78195,
+      "sha256": "08ff7993db7efdb8cf8045e273589943f4e0b78d7b8c8866cfcde281b1ee0deb",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-schedule-import-en_US-light.png",
+      "route": "next",
+      "stage": "schedule-import",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1240,
+      "height": 720,
+      "bytes": 151767,
+      "sha256": "625379db3243f13c3983e3d6be72994d16d6fe962b397ee55bbb3353912cba73",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-schedule-import-ko_KR-dark.png",
+      "route": "next",
+      "stage": "schedule-import",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1240,
+      "height": 720,
+      "bytes": 127971,
+      "sha256": "f98d9f7981d42ce9e6fc1a323258e787b6d2b3a75b406c4d26580d9ae0d0ac63",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-teacher-entry-en_US-light.png",
+      "route": "next",
+      "stage": "teacher-entry",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1024,
+      "height": 720,
+      "bytes": 154730,
+      "sha256": "0fa079f0db7162b024a6af0b91b468021df04f9ae6081c5179f897671b311abd",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-teacher-entry-ko_KR-dark.png",
+      "route": "next",
+      "stage": "teacher-entry",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1024,
+      "height": 720,
+      "bytes": 120780,
+      "sha256": "e91a83ee9be931a2a18935e95790fe8ccc414a9ef23e407cea835cc6aabe2050",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-teacher-import-dialog-en_US-light.png",
+      "route": "next",
+      "stage": "teacher-import-dialog",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 460,
+      "height": 680,
+      "bytes": 24968,
+      "sha256": "361b23be5ddabf732f29a79ded235d9fc981991ec132894df4ce2bbfa9c254eb",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-teacher-import-dialog-ko_KR-dark.png",
+      "route": "next",
+      "stage": "teacher-import-dialog",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 460,
+      "height": 680,
+      "bytes": 20345,
+      "sha256": "2a29c81bd18d868b048f71bb7aeaa371d571cbea212f6c4acf266950f5eccac6",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-teacher-import-en_US-light.png",
+      "route": "next",
+      "stage": "teacher-import",
+      "locale": "en_US",
+      "theme": "light",
+      "width": 1024,
+      "height": 720,
+      "bytes": 142786,
+      "sha256": "78d4bb02b7fe7e81272bb3f62bbc7473acd2069f198f2b011b20099c0b6e26df",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    },
+    {
+      "file": "next-initial-setup-teacher-import-ko_KR-dark.png",
+      "route": "next",
+      "stage": "teacher-import",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "width": 1024,
+      "height": 720,
+      "bytes": 112610,
+      "sha256": "dd0295a5a5a308d6dcffd1ac3f5d65579a500e008b1b3b0a4799f6d463d3b4ad",
+      "source": "Next ApplicationBootstrap test harness; temporary profile created under QTemporaryDir with synthetic fixture values; profile path redacted in capture image"
+    }
+  ]
+}

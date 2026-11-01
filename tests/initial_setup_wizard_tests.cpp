@@ -3,6 +3,7 @@
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "data/repositories/teacher_repository.h"
+#include "features/teacher/ui/teacher_import_dialog.h"
 #include "features/setup/ui/initial_setup_wizard.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
@@ -115,9 +116,12 @@ QImage visualReviewSignature()
     return image;
 }
 
-QImage fixedViewportCapture(QWidget& widget)
+QImage fixedViewportCapture(
+    QWidget& widget,
+    const QSize viewport = QSize(1024, 720)
+    )
 {
-    QImage capture(QSize(1024, 720), QImage::Format_ARGB32_Premultiplied);
+    QImage capture(viewport, QImage::Format_ARGB32_Premultiplied);
     capture.fill(Qt::transparent);
     QPainter painter(&capture);
     widget.render(&painter);
@@ -380,6 +384,8 @@ private slots:
     void keyboardIsAvailableAtTextEntryStages();
     void personalNameFieldRetainsFocusWhileTyping();
     void capturesInitialSetupPersonalDetailsForVisualReview();
+    void capturesInitialSetupOtherStagesForVisualReview_data();
+    void capturesInitialSetupOtherStagesForVisualReview();
     void storedSignatureImagePreviewsAndSurvivesSaveWithoutReplacement();
     void missingInvalidAndUnavailableSignatureImagesStayEmpty();
     void storedDisplayNamePreservesUtf8AndWhitespace();
@@ -486,6 +492,196 @@ capturesInitialSetupPersonalDetailsForVisualReview()
             .arg(locale, theme);
         QVERIFY(capture.save(QDir(outputDirectory).filePath(filename), "PNG"));
     }
+}
+
+void InitialSetupWizardTests::
+capturesInitialSetupOtherStagesForVisualReview_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<QString>("theme");
+    QTest::newRow("english-light")
+        << QStringLiteral("en_US") << QStringLiteral("light");
+    QTest::newRow("korean-dark")
+        << QStringLiteral("ko_KR") << QStringLiteral("dark");
+}
+
+void InitialSetupWizardTests::
+capturesInitialSetupOtherStagesForVisualReview()
+{
+    QFETCH(QString, locale);
+    QFETCH(QString, theme);
+
+    const QString outputDirectory = qEnvironmentVariable(
+        "CLASSMNGR_INITIAL_SETUP_VISUAL_CAPTURE_DIR");
+    if (outputDirectory.isEmpty())
+    {
+        return;
+    }
+
+    QApplication& application = *qApp;
+    [[maybe_unused]] const ScopedCaptureBaseStyle baseStyle(
+        application, true);
+    [[maybe_unused]] const ScopedDefaultLocale defaultLocale(locale);
+
+    ApplicationServices services;
+    QVERIFY(openDatabase(services, m_directory));
+    ThemeService* const themeService = services.themeService();
+    QVERIFY(themeService);
+    const Theme selectedTheme = theme == QStringLiteral("dark")
+        ? Theme::Dark
+        : Theme::Light;
+    themeService->setTheme(selectedTheme);
+    QCOMPARE(themeService->currentTheme(), selectedTheme);
+
+    Teacher teacher;
+    teacher.teacherEn = QStringLiteral("Alex Kim");
+    teacher.teacherKr = QString::fromUtf8("김선생님");
+    teacher.preferredRomanization = QStringLiteral("Kim Seonsaeng");
+    teacher.preferredName = QStringLiteral("Alex Kim");
+    teacher.roomNumber = QStringLiteral("101");
+    TeacherRepository* const teacherRepository =
+        services.databaseSession()->teacherRepository();
+    QVERIFY(teacherRepository);
+    const auto teacherId = teacherRepository->createTeacher(teacher);
+    QVERIFY(teacherId);
+
+    ClassInfo draft;
+    draft.teacherId = *teacherId;
+    draft.teacherKr = teacher.teacherKr;
+    draft.teacherEn = teacher.teacherEn;
+    draft.teacherPreferredName = teacher.preferredName;
+    draft.roomNumber = teacher.roomNumber;
+    draft.classGrade = QStringLiteral("E4");
+    draft.classLevel = QStringLiteral("Theseus");
+    draft.readingBook = QStringLiteral("Reading Explorer 1");
+    draft.essayBook = QStringLiteral("4A");
+    draft.classColor = QStringLiteral("#123456");
+    draft.fontColor = QStringLiteral("#FFFFFF");
+    draft.classTimes = {ClassTime{
+        QStringLiteral("Wednesday"),
+        QStringLiteral("4:00 PM"),
+        QStringLiteral("4:50 PM")
+    }};
+
+    const auto captureStage = [&](InitialSetupWizard& wizard,
+                                  const QString& stage,
+                                  const QSize viewport = QSize(1024, 720)) {
+        wizard.resize(viewport);
+        QApplication::processEvents();
+        const QImage capture = fixedViewportCapture(wizard, viewport);
+        if (capture.isNull() || !QDir().mkpath(outputDirectory))
+        {
+            return false;
+        }
+        const QString filename = QStringLiteral(
+            "legacy-initial-setup-%1-%2-%3.png")
+            .arg(stage, locale, theme);
+        return capture.save(QDir(outputDirectory).filePath(filename), "PNG");
+    };
+
+    InitialSetupWizard teacherImportWizard(&services);
+    teacherImportWizard.setStartId(InitialSetupWizard::TeacherImportPage);
+    showSetupWizard(teacherImportWizard);
+    QCOMPARE(teacherImportWizard.currentId(),
+             InitialSetupWizard::TeacherImportPage);
+    QVERIFY(captureStage(teacherImportWizard, QStringLiteral("teacher-import")));
+
+    TeacherImportDialog teacherImportDialog(&teacherImportWizard);
+    teacherImportDialog.resize(460, 680);
+    teacherImportDialog.show();
+    QApplication::processEvents();
+    QCOMPARE(teacherImportDialog.size(), QSize(460, 680));
+    const QImage teacherImportDialogCapture = fixedViewportCapture(
+        teacherImportDialog, QSize(460, 680));
+    QVERIFY(!teacherImportDialogCapture.isNull());
+    QVERIFY(QDir().mkpath(outputDirectory));
+    QVERIFY(teacherImportDialogCapture.save(
+        QDir(outputDirectory).filePath(QStringLiteral(
+            "legacy-initial-setup-teacher-import-dialog-%1-%2.png")
+                .arg(locale, theme)),
+        "PNG"));
+    teacherImportDialog.done(QDialog::Accepted);
+
+    InitialSetupWizard teacherEntryWizard(&services);
+    teacherEntryWizard.setStartId(InitialSetupWizard::TeacherEntryPage);
+    showSetupWizard(teacherEntryWizard);
+    QCOMPARE(teacherEntryWizard.currentId(), InitialSetupWizard::TeacherEntryPage);
+    auto* const teacherEnglishName = teacherEntryWizard.findChild<QLineEdit*>(
+        QStringLiteral("setupTeacherEnglishName"));
+    auto* const teacherKoreanName = teacherEntryWizard.findChild<QLineEdit*>(
+        QStringLiteral("setupTeacherKoreanName"));
+    auto* const teacherPreferredSpelling = teacherEntryWizard.findChild<QLineEdit*>(
+        QStringLiteral("setupTeacherPreferredSpelling"));
+    auto* const teacherRoom = teacherEntryWizard.findChild<QLineEdit*>(
+        QStringLiteral("setupTeacherRoom"));
+    QVERIFY(teacherEnglishName && teacherKoreanName
+            && teacherPreferredSpelling && teacherRoom);
+    teacherEnglishName->setText(teacher.teacherEn);
+    teacherKoreanName->setText(teacher.teacherKr);
+    teacherPreferredSpelling->setText(teacher.preferredRomanization);
+    teacherRoom->setText(teacher.roomNumber);
+    QVERIFY(captureStage(teacherEntryWizard, QStringLiteral("teacher-entry")));
+
+    InitialSetupWizard classDetailsWizard(&services);
+    classDetailsWizard.setClassDraft(draft);
+    classDetailsWizard.setStartId(InitialSetupWizard::ClassDetailsPage);
+    showSetupWizard(classDetailsWizard);
+    QCOMPARE(classDetailsWizard.currentId(), InitialSetupWizard::ClassDetailsPage);
+    auto* const classTeacher = classDetailsWizard.findChild<QComboBox*>(
+        QStringLiteral("setupClassTeacher"));
+    auto* const readingBook = classDetailsWizard.findChild<QComboBox*>(
+        QStringLiteral("setupReadingBook"));
+    auto* const essayBook = classDetailsWizard.findChild<QComboBox*>(
+        QStringLiteral("setupEssayBook"));
+    QVERIFY(classTeacher && readingBook && essayBook);
+    QCOMPARE(classTeacher->count(), 1);
+    const int readingBookIndex = readingBook->findText(
+        QStringLiteral("Reading Explorer 1"));
+    const int essayBookIndex = essayBook->findText(QStringLiteral("4A"));
+    QVERIFY(readingBookIndex >= 0);
+    QVERIFY(essayBookIndex >= 0);
+    readingBook->setCurrentIndex(readingBookIndex);
+    essayBook->setCurrentIndex(essayBookIndex);
+    QVERIFY(selectInitialSetupColor(
+        classDetailsWizard, QColor(QStringLiteral("#123456"))));
+    QVERIFY(captureStage(classDetailsWizard, QStringLiteral("class-details")));
+
+    InitialSetupWizard classTimesWizard(&services);
+    classTimesWizard.setClassDraft(draft);
+    classTimesWizard.setStartId(InitialSetupWizard::ClassTimesPage);
+    showSetupWizard(classTimesWizard);
+    QCOMPARE(classTimesWizard.currentId(), InitialSetupWizard::ClassTimesPage);
+    auto* const classSchedules = classTimesWizard.findChild<ClassScheduleSection*>(
+        QStringLiteral("setupClassSchedules"));
+    QVERIFY(classSchedules);
+    QCOMPARE(classSchedules->regularRows().size(), 1);
+    ClassTimeRow* const regularRow = classSchedules->regularRows().constFirst();
+    QVERIFY(regularRow);
+    regularRow->dayCombo()->setCurrentText(QStringLiteral("Wednesday"));
+    regularRow->setStartTime(QStringLiteral("4:00 PM"));
+    regularRow->setEndTime(QStringLiteral("4:55 PM"));
+    QCOMPARE(regularRow->day(), QStringLiteral("Wednesday"));
+    QVERIFY(captureStage(
+        classTimesWizard,
+        QStringLiteral("class-times"),
+        QSize(1080, 720)));
+
+    InitialSetupWizard scheduleImportWizard(&services);
+    scheduleImportWizard.setStartId(InitialSetupWizard::ScheduleImportPage);
+    showSetupWizard(scheduleImportWizard);
+    QCOMPARE(scheduleImportWizard.currentId(),
+             InitialSetupWizard::ScheduleImportPage);
+    QVERIFY(captureStage(
+        scheduleImportWizard,
+        QStringLiteral("schedule-import"),
+        QSize(1240, 720)));
+
+    InitialSetupWizard completionWizard(&services);
+    completionWizard.setCreatedClassId(17);
+    completionWizard.setStartId(InitialSetupWizard::CompletionPage);
+    showSetupWizard(completionWizard);
+    QCOMPARE(completionWizard.currentId(), InitialSetupWizard::CompletionPage);
+    QVERIFY(captureStage(completionWizard, QStringLiteral("finish")));
 }
 
 void InitialSetupWizardTests::

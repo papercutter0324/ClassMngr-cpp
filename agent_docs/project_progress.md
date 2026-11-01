@@ -3,16 +3,19 @@
 Active deployment plan: Qt Rewrite Phase 7 — Feature Migration.
 Current deployment: `phase7_batch4_resume_20261030`. Route: Heavy.
 Current milestone: Candidate #56, dynamic Co-Teachers sidebar navigation, is
-accepted in `248c498f`; Batch 6 is complete. Its typed assignment read stays
-within the active WorkspaceStore Gateway, preserves Legacy ordering and
-assignment filtering, opens the selected teacher profile, and refreshes after
-assignment and workspace changes. Independent focused verification passed 4/4
-CTests and the profile-activation test passed 3/3. Batch 7 discovery found no
-other feature slice. Phase 7 exit verification is active: the unfiltered macOS
-suite, post-implementation Windows checks, and preservation-matrix/visual
-evidence review remain open. C54's accepted Windows diagnostic and lifecycle
-artifacts on run `41274190210` have no numeric threshold; the separate Phase 9
-memory gate is not claimed.
+implemented in `248c498f`, with its clean-source compile repair in `346adb7c`.
+Focused C56 verification passed 4/4 CTests. A separate source-list issue in
+the standalone Staff Directory capture target was fixed in pushed commit
+`1e9bfae0`; that target built and its CTest passed 1/1. A full build at
+`346adb7c` stopped at that link failure, so the unfiltered suite remains open.
+Batch 7 discovery found no other feature slice. The Initial Setup visual
+package is accepted after independent review of all 28 images and manifest
+records; its metadata identifies the base commit and the capture worktree
+revision remains a reproducibility limitation. Profile file/recovery workflows
+still need matched visual evidence; that package is active. C54's
+accepted Windows diagnostic and lifecycle artifacts
+on run `41274190210` have no numeric threshold; the Phase 9 memory gate is not
+claimed.
 Phases 0–6 are Complete; Phase 7 is in progress. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;
@@ -200,16 +203,20 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-11-01 (candidate #56 accepted; exit verification active)
+### Current checkpoint — 2026-11-01 (C56 repair pushed; exit work active)
 
-Candidate #56 is accepted in `248c498f`, and Batch 6 is complete. The typed
-assignment read uses the active WorkspaceStore Gateway; independent focused
-verification passed 4/4 CTests and the existing profile-activation test passed
-3/3. Batch 7 discovery found no other feature slice. The full macOS suite,
-post-implementation Windows checks, and final preservation-matrix/visual
-evidence review remain open. C54's repaired Windows diagnostic/lifecycle run
-`41274190210` remains accepted without a numeric threshold. The Phase 9
-packaged-Release `<250 MiB` gate remains separate.
+Candidate #56's typed assignment read uses the active WorkspaceStore Gateway.
+The first pushed implementation SHA `61b8d749` failed a clean compile because
+the adapter include was omitted from its staged Gateway hunk. Repair
+`346adb7c` is pushed, and focused C56 CTests passed 4/4. A separate full-build
+link failure in the Staff Directory capture target was repaired in `1e9bfae0`
+with a passing focused CTest. The unfiltered suite and latest-SHA Windows checks
+remain open. Batch 7 discovery found no other feature slice. The matrix/call-
+path audit found no unresolved row. The Initial Setup visual package is
+accepted; its capture worktree provenance is limited to the base commit
+recorded in metadata. Profile file/recovery visual work is active. C54's
+diagnostic has no numeric
+threshold; Phase 9's packaged Release `<250 MiB` gate remains separate.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

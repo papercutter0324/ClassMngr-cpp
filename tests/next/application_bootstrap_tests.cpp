@@ -22,6 +22,7 @@
 #include "next/ui/document_viewer_page.h"
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/initial_page.h"
+#include "next/ui/initial_setup_teacher_import_dialog.h"
 #include "next/ui/my_classes_page.h"
 #include "next/ui/my_workspace_page.h"
 #include "next/ui/page_host.h"
@@ -63,6 +64,7 @@
 #include <QInputDialog>
 #include <QCalendarWidget>
 #include <QCheckBox>
+#include <QColorDialog>
 #include <QContextMenuEvent>
 #include <QCryptographicHash>
 #include <QComboBox>
@@ -103,6 +105,8 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QSaveFile>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QSettings>
 #include <QStatusBar>
 #include <QTabWidget>
@@ -277,9 +281,12 @@ QImage visualReviewSignature()
     return image;
 }
 
-QImage fixedViewportCapture(QWidget& widget)
+QImage fixedViewportCapture(
+    QWidget& widget,
+    const QSize viewport = QSize(1024, 720)
+    )
 {
-    QImage capture(QSize(1024, 720), QImage::Format_ARGB32_Premultiplied);
+    QImage capture(viewport, QImage::Format_ARGB32_Premultiplied);
     capture.fill(Qt::transparent);
     QPainter painter(&capture);
     widget.render(&painter);
@@ -4482,6 +4489,11 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
     const QString visualCaptureDirectory = qEnvironmentVariable(
         "CLASSMNGR_INITIAL_SETUP_VISUAL_CAPTURE_DIR");
     const bool visualCaptureEnabled = !visualCaptureDirectory.isEmpty();
+    const bool captureOtherStages = visualCaptureEnabled
+        && ((locale == QStringLiteral("en_US")
+             && theme == QStringLiteral("light"))
+            || (locale == QStringLiteral("ko_KR")
+                && theme == QStringLiteral("dark")));
     [[maybe_unused]] const ScopedCaptureAppearance captureAppearance(
         application, visualCaptureEnabled);
     StartupPreferencesGuard preferences(storedLanguage, storedTheme, 0);
@@ -4673,6 +4685,12 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
             QDir(visualCaptureDirectory).filePath(filename), "PNG"));
     }
 
+    if (captureOtherStages)
+    {
+        saveDetails->click();
+        QApplication::processEvents();
+    }
+
     auto* const teacherEntryGroup = page->findChild<QGroupBox*>(
         QStringLiteral("classMngrNextInitialSetupTeacherEntry")
         );
@@ -4691,9 +4709,16 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
     auto* const teacherPreferredSpelling = page->findChild<QLineEdit*>(
         QStringLiteral("classMngrNextInitialSetupTeacherPreferredSpelling")
         );
+    auto* const teacherRoom = page->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherRoom")
+        );
+    auto* const importTeachers = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupImportTeachers")
+        );
     QVERIFY(teacherEntryGroup && teacherEnglishName);
     QVERIFY(addAnotherTeacher && continueTeacherEntry);
     QVERIFY(teacherKoreanName && teacherPreferredSpelling);
+    QVERIFY(teacherRoom && importTeachers);
     QCOMPARE(
         teacherEntryGroup->title(),
         korean ? QStringLiteral("교사 정보") : QStringLiteral("Teacher Information")
@@ -4752,6 +4777,97 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
     teacherEnglishName->setText(QStringLiteral("Alex Kim"));
     teacherKoreanName->setText(QString::fromUtf8("김선생님"));
     teacherPreferredSpelling->setText(QStringLiteral("Kim Seonsaeng"));
+    teacherRoom->setText(QStringLiteral("101"));
+    QScrollArea* setupScroll = nullptr;
+    const auto captureStage = [&](const QString& stage,
+                                  QWidget* visibleSection,
+                                  const QSize viewport = QSize(1024, 720),
+                                  const bool alignSectionBottom = false) {
+        if (!captureOtherStages)
+        {
+            return true;
+        }
+        if (!setupScroll)
+        {
+            return false;
+        }
+        shell->resize(viewport);
+        shell->activateWindow();
+        QApplication::processEvents();
+        if (visibleSection)
+        {
+            const int sectionTop = visibleSection->mapTo(
+                setupScroll->widget(), QPoint{}).y();
+            const int sectionBottom = sectionTop + visibleSection->height();
+            const int target = alignSectionBottom
+                ? sectionBottom - setupScroll->viewport()->height() + 16
+                : sectionTop - 16;
+            setupScroll->verticalScrollBar()->setValue(std::max(0, target));
+        }
+        else
+        {
+            setupScroll->verticalScrollBar()->setValue(0);
+        }
+        setupScroll->horizontalScrollBar()->setValue(0);
+        shell->repaint();
+        QApplication::processEvents();
+        auto* const profileLocation = page->findChild<QLabel*>(
+            QStringLiteral("classMngrNextInitialSetupProfileLocation"));
+        if (!profileLocation)
+        {
+            return false;
+        }
+        const QString profileLabelPrefix = profileLocation->text().section(
+            QLatin1Char(':'), 0, 0);
+        profileLocation->setText(
+            profileLabelPrefix + QStringLiteral(": setup-profile.tps"));
+        if (profileLocation->text().contains(temporaryDirectory.path()))
+        {
+            return false;
+        }
+        QApplication::processEvents();
+        const QImage capture = fixedViewportCapture(*shell, viewport);
+        if (capture.isNull() || !QDir().mkpath(visualCaptureDirectory))
+        {
+            return false;
+        }
+        const QString filename = QStringLiteral(
+            "next-initial-setup-%1-%2-%3.png")
+            .arg(stage, locale, theme);
+        return capture.save(
+            QDir(visualCaptureDirectory).filePath(filename), "PNG");
+    };
+    if (captureOtherStages)
+    {
+        setupScroll = page->findChild<QScrollArea*>(
+            QStringLiteral("classMngrNextInitialSetupDetailsScroll"));
+        QVERIFY(setupScroll);
+        QVERIFY(!teacherEntryGroup->isHidden());
+        teacherEnglishName->setFocus(Qt::OtherFocusReason);
+        QVERIFY(captureStage(
+            QStringLiteral("teacher-entry"), teacherEntryGroup));
+        QVERIFY(captureStage(
+            QStringLiteral("teacher-import"),
+            teacherEntryGroup,
+            QSize(1024, 720),
+            true));
+        Ui::InitialSetupTeacherImportDialog teacherImportDialog(
+            Ui::InitialSetupTeacherImportActions{}, page);
+        teacherImportDialog.resize(460, 680);
+        teacherImportDialog.show();
+        QApplication::processEvents();
+        QCOMPARE(teacherImportDialog.size(), QSize(460, 680));
+        const QImage teacherImportDialogCapture = fixedViewportCapture(
+            teacherImportDialog, QSize(460, 680));
+        QVERIFY(!teacherImportDialogCapture.isNull());
+        QVERIFY(QDir().mkpath(visualCaptureDirectory));
+        QVERIFY(teacherImportDialogCapture.save(
+            QDir(visualCaptureDirectory).filePath(QStringLiteral(
+                "next-initial-setup-teacher-import-dialog-%1-%2.png")
+                    .arg(locale, theme)),
+            "PNG"));
+        teacherImportDialog.done(QDialog::Accepted);
+    }
     continueTeacherEntry->click();
     QVERIFY(!classDetailsGroup->isHidden());
     QCOMPARE(
@@ -4773,8 +4889,15 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
     auto* const colorPreview = page->findChild<QLabel*>(
         QStringLiteral("classMngrNextInitialSetupClassColorPreview")
         );
+    auto* const readingBook = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupReadingBook"));
+    auto* const essayBook = page->findChild<QComboBox*>(
+        QStringLiteral("classMngrNextInitialSetupEssayBook"));
+    auto* const continueClassDetails = page->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsContinue")
+        );
     QVERIFY(classTeacher && chooseClassColor && classGrade && classLevel);
-    QVERIFY(colorPreview);
+    QVERIFY(colorPreview && readingBook && essayBook && continueClassDetails);
     QCOMPARE(classTeacher->count(), 1);
     QCOMPARE(classTeacher->currentData().toString(), QStringLiteral("1"));
     QCOMPARE(chooseClassColor->text(),
@@ -4800,6 +4923,75 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
     QVERIFY(classDetailsLabels.contains(
         korean ? QStringLiteral("읽기 교재") : QStringLiteral("Reading Book")
         ));
+    const int readingBookIndex = readingBook->findText(
+        QStringLiteral("Reading Explorer 1"));
+    const int essayBookIndex = essayBook->findText(QStringLiteral("4A"));
+    if (readingBookIndex >= 0)
+    {
+        readingBook->setCurrentIndex(readingBookIndex);
+    }
+    if (essayBookIndex >= 0)
+    {
+        essayBook->setCurrentIndex(essayBookIndex);
+    }
+    if (captureOtherStages)
+    {
+        bool colorDialogHandled = false;
+        QTimer::singleShot(0, &application, [&colorDialogHandled] {
+            auto* const dialog = qobject_cast<QColorDialog*>(
+                QApplication::activeModalWidget());
+            if (!dialog)
+            {
+                return;
+            }
+            dialog->setCurrentColor(QColor(QStringLiteral("#123456")));
+            dialog->accept();
+            colorDialogHandled = true;
+        });
+        chooseClassColor->click();
+        QVERIFY(colorDialogHandled);
+        QVERIFY(captureStage(
+            QStringLiteral("class-details"), classDetailsGroup));
+
+        continueClassDetails->click();
+        QApplication::processEvents();
+        auto* const classTimesGroup = page->findChild<QGroupBox*>(
+            QStringLiteral("classMngrNextInitialSetupClassTimes"));
+        auto* const continueClassTimes = page->findChild<QPushButton*>(
+            QStringLiteral("classMngrNextInitialSetupClassTimesContinue"));
+        QVERIFY(classTimesGroup && continueClassTimes);
+        QVERIFY(!classTimesGroup->isHidden());
+        auto* const classDay = page->findChild<QComboBox*>(
+            QStringLiteral("classMngrNextInitialSetupScheduleDay"));
+        QVERIFY(classDay);
+        if (classDay->count() > 2)
+        {
+            classDay->setCurrentIndex(2);
+        }
+        QVERIFY(captureStage(
+            QStringLiteral("class-times"),
+            classTimesGroup,
+            QSize(1080, 720)));
+
+        continueClassTimes->click();
+        QApplication::processEvents();
+        auto* const scheduleImportGroup = page->findChild<QGroupBox*>(
+            QStringLiteral("classMngrNextInitialSetupScheduleImport"));
+        auto* const skipScheduleAndFinish = page->findChild<QPushButton*>(
+            QStringLiteral("classMngrNextInitialSetupSkipScheduleAndFinish"));
+        QVERIFY(scheduleImportGroup && skipScheduleAndFinish);
+        QVERIFY(!scheduleImportGroup->isHidden());
+        QVERIFY(captureStage(
+            QStringLiteral("schedule-import"),
+            scheduleImportGroup,
+            QSize(1240, 720)));
+
+        skipScheduleAndFinish->click();
+        QApplication::processEvents();
+        QVERIFY(!page->findChild<QPushButton*>(
+            QStringLiteral("classMngrNextInitialSetupCreateProfile"))->isHidden());
+        QVERIFY(captureStage(QStringLiteral("finish"), nullptr));
+    }
     QCOMPARE(
         application.styleSheet(),
         readTextFile(QDir(resources.resourceRoot()).filePath(

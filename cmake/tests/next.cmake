@@ -493,6 +493,22 @@ set_tests_properties(ClassMngrNextBootstrapTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 add_test(
+    NAME ClassMngrNextInitialSetupVisualCaptureEnglishLight
+    COMMAND ClassMngrNextBootstrapTests
+        initialSetupPersonalDetailsAppearance:english-light
+)
+add_test(
+    NAME ClassMngrNextInitialSetupVisualCaptureKoreanDark
+    COMMAND ClassMngrNextBootstrapTests
+        initialSetupPersonalDetailsAppearance:korean-dark
+)
+set_tests_properties(
+    ClassMngrNextInitialSetupVisualCaptureEnglishLight
+    ClassMngrNextInitialSetupVisualCaptureKoreanDark
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1;CLASSMNGR_INITIAL_SETUP_VISUAL_CAPTURE_DIR=${CMAKE_CURRENT_BINARY_DIR}/initial-setup-visual-captures"
+)
+add_test(
     NAME ClassMngrNextUsefulLinksSelectionBehavior
     COMMAND ClassMngrNextBootstrapTests
         createsVisibleShellAndReportsOnlyCompletedStartupStage
