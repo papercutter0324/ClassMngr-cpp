@@ -43,6 +43,7 @@
 namespace
 {
 constexpr int StartupTimeoutMs = 60000;
+constexpr int SubPrepLifecycleCaptureChildTimeoutMs = 120000;
 constexpr int SubPrepOutputTimeoutMs = 180000;
 constexpr int SubPrepVisualTimeoutMs = 120000;
 constexpr qint64 Phase0FinalNormalWorkingSetTargetBytes =
@@ -4609,7 +4610,7 @@ void StartupPerformanceTests
         );
 
     const bool finished =
-        process.waitForFinished(StartupTimeoutMs);
+        process.waitForFinished(SubPrepLifecycleCaptureChildTimeoutMs);
     if (!finished)
     {
         process.kill();
