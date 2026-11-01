@@ -2,20 +2,15 @@
 
 Active deployment plan: Qt Rewrite Phase 7 — Feature Migration.
 Current deployment: `phase7_batch4_resume_20261030`. Route: Heavy.
-Current milestone: C53 Sub Prep PDF text mapping/output parity is accepted in
-`b6d8a0a1` and pushed. C54's Initial Setup lifecycle capture and diagnostic
-packaging repair are committed and pushed in `926b00fd`; the first native
-Windows x64 run (`41272522314`) failed evidence validation (incomplete memory
-scenarios and samples; lifecycle artifact missing), and repair is active.
-Candidate #55 has started: the Legacy fallback
-test now passes with a batch-only injected failure, and matched full-window
-Classes captures plus matrix/call-path reconciliation are underway. Independent
-Batch 6 scans found one proposed #56 for dynamic Co-Teachers sidebar navigation,
-subject to #55 reconciliation. Native Windows C53 evidence confirms 750
-SQL-derived names, 30 header records, zero unmapped/control codes in the Next
-roster, and zero changed pixels across 17 pages of both matched PDF pairs. The
-full Phase 7 suite/exit review and separate Phase 9 numeric memory gate remain
-open.
+Current milestone: Batch 5 is complete and pushed. Candidate #54's repaired
+native Windows x64 evidence passed on run `41274190210`: three scenarios with
+five samples each and seven Initial Setup whole-process lifecycle checkpoints,
+with no numeric threshold. Candidate #55's class-transfer fallback test,
+matched full-window Classes captures, and matrix/call-path reconciliation are
+complete; its implementation is committed as `5d1b02a2`. Candidate #56,
+dynamic Co-Teachers sidebar navigation, is the only remaining feature slice.
+The full Phase 7 suite, post-implementation Windows checks, and exit gate
+remain open; the separate Phase 9 numeric memory gate is not claimed.
 Phases 0–6 are Complete; Phase 7 is in progress. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;

@@ -1755,5 +1755,81 @@ Entries are preserved in their original document order.
 - Decision and next: keep the source-aware finalizer on the Next roster output
   path and fail closed outside the verified Qt 6.12 PDF structures. Batch 5
   continues with #54, the 7A evidence and Windows diagnostic follow-up;
-  Batch 6 discovery has started. Full-window Classes captures, the Legacy
-  fallback-test failure, the full suite, and the Phase 7 exit gate remain open.
+  Batch 6 discovery has started. At that point the full-window Classes captures
+  and Legacy fallback-test failure remained open; candidate #55's later entry
+  records their implementation and independent verification. The full suite
+  and Phase 7 exit gate remain open.
+
+### Candidate #55 implementation slice — Classes fallback and full-window states (2026-11-01)
+
+- Commit: `5d1b02a2` (`Phase7 - Capture matched Classes full-window states`).
+  `ClassImportDialog` accepts a typed teacher-name batch-read port for focused
+  failure injection; production constructors use the existing active-service
+  adapter, and individual profile reads remain on the production
+  `ApplicationServices` path. The regression test verifies the two requested
+  teacher IDs and preserves both displayed names after a batch-only failure.
+- Evidence: the package at
+  [matched Classes full-window states](../../docs/qt-rewrite/visual-baseline/next/phase-7/classes-navigation/matched-full-window-states/README.md)
+  contains 12 800×600 captures: empty, class 25 delete confirmation, and
+  Classes list-read error in `en_US`/light and `ko_KR`/dark. Legacy `MainWindow`
+  follows its sidebar route; Next `ApplicationBootstrap` follows its production
+  shell navigation tree. Each Legacy/Next pair uses the same temporary fixture
+  path and SHA-256. The error fixture omits `testing_classes` from a latest-v6
+  workspace. Modal captures combine the shell and visible modal grabs. The
+  package claims semantic state matching only, not pixel parity.
+- Verification: the focused capture target built and CTest passed 1/1; the
+  fallback case passed independently with 3 passed, 0 failed. A fresh capture
+  run reproduced all retained image hashes. Independent review verified every
+  PNG's SHA-256 and 800×600 dimensions, all six paired fixture hashes, and the
+  production routes. In the Korean error pair, Legacy retains its catalog's
+  English warning text while Next translates the heading and leaves technical
+  details in English; the manifest records that behavior.
+- Reconciliation: the Phase 0 matrix is a historical snapshot; its stale
+  `pending` notes are reconciled against accepted Phase 7 records. The Next
+  document viewer uses its own `ResourceLoader`/`PageHost` route. Legacy's
+  separate document parity route still uses its compatibility resource port,
+  pack lease, and `PageManager`, and is scheduled for Phase 12 removal. C41's
+  campus import is a fixed-root, opt-in historical-data migration, not runtime
+  path probing. No additional feature slice was found beyond #56, dynamic
+  Co-Teachers sidebar navigation. At this implementation checkpoint, C54's
+  repaired Windows x64 artifacts were still under review; its later acceptance
+  is recorded below. The post-implementation full suite/Windows checks remain
+  open; this is not Phase 7 exit acceptance and makes no Phase 9 memory claim.
+
+### Candidate #54 — Native Windows x64 evidence accepted (2026-11-01)
+
+- The repaired [Windows Release run 41274190210](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/41274190210)
+  matches commit `4fb12911f86a0bbe4289d1c8a8d09e1be65a1107`. Its x64 job
+  succeeded and uploaded both required artifacts. This replaces failed run
+  `41272522314`; the failure remains recorded as distinct history.
+- The memory artifact validates three completed scenarios—fresh Initial
+  Setup, schema-only blank workspace, and representative 96-class workspace—with
+  five samples each. It reports `validation: valid`, 15 total samples, no
+  errors, `resourceCatalogPresent: true`, `qtRuntimeDeployed: true`, and no
+  numeric threshold. Every scenario records the same staged x64 executable
+  path and SHA-256 `736786964ee97cbcf5d4595f20612fdcd5f3a891164a8e373576ba886e68b332`.
+- The Initial Setup lifecycle artifact reports `status: completed`, seven
+  ordered checkpoints, available whole-process memory snapshots, and no
+  numeric threshold. The workflow validator accepted its JSON and scope. Artifact
+  SHA-256 values: memory `05ba28a29df0c33377694f52eba136de7239b21c08918f7349a6f3691658d555`,
+  lifecycle `650b0c53422909c742626ab59fd0db8dea401f21104990e0d7fe756ee3acc122`.
+- Decision: accept C54's Windows x64 evidence follow-up. These are Phase 7
+  process/lifecycle observations, not a Phase 9 numeric memory result.
+
+### Batch 5 exit review — accepted; Batch 6 begins (2026-11-01)
+
+- C54's native x64 artifacts and C55's Legacy fallback, matched Classes
+  captures, and preservation-matrix/call-path reconciliation are accepted.
+  Matrix rows marked pending in the Phase 0 snapshot were checked against later
+  Phase 7 evidence; documented platform limits remain recorded in their owning
+  entries. The only remaining feature slice is #56, dynamic Co-Teachers
+  sidebar navigation.
+- Exit boundary: the Next document viewer opens content through its own
+  `ResourceLoader` and `PageHost` route. The Legacy parity route still uses its
+  compatibility content port, pack lease, and `PageManager`; Phase 12 owns its
+  removal. C41's historical campus import is fixed-root and opt-in, while
+  normal Next resource resolution uses the resource catalog.
+- Batch 5 is complete and pushed. Batch 6 starts with #56. Per the one-candidate
+  batch rule, Batch 7 discovery begins when work on #56 starts. Run the
+  unfiltered Phase 7 suite and final Windows checks after #56. Phase 7 remains
+  in progress, and the Phase 9 packaged-Release numeric memory gate is separate.

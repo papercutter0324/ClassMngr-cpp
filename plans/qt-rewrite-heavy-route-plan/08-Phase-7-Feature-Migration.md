@@ -48,15 +48,20 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   lifecycle evidence and diagnostic packaging repair are committed and pushed
   in `926b00fd`; its first native Windows x64 run (`41272522314`) failed
   evidence validation: the diagnostic stopped at two scenarios and five samples,
-  and lifecycle capture produced no JSON. C54 repair is active; ARM64 success
-  does not satisfy the x64 gate. Candidate #55 is active: the Legacy
-  batch-fallback test now injects a batch-only failure and
-  passes independently; matched full-window Classes empty, confirmation, and
-  error captures plus matrix/call-path reconciliation are underway. Independent
-  Batch 6 source and matrix scans found one proposed #56 for dynamic Co-Teachers
-  sidebar navigation; #55 will reconcile it with the exit review. The full
-  suite and Phase 7 exit gate remain open. The Phase 9 packaged Release numeric
-  memory gate is separate.
+  and lifecycle capture produced no JSON. Repair commit `4fb12911` is pushed,
+  and its new x64 run is pending artifact review. ARM64 success does not satisfy
+  the x64 gate. Candidate #54 passed on repaired native Windows x64 run
+  `41274190210`; its memory diagnostic validated 3×5 samples, and its Initial
+  Setup lifecycle artifact validated seven whole-process checkpoints with no
+  numeric threshold. Candidate #55's fallback regression test, 12 matched
+  production-path Classes captures, and matrix/call-path reconciliation are
+  complete; the implementation is committed in `5d1b02a2`. Candidate #56,
+  dynamic Co-Teachers sidebar navigation, is the only remaining feature slice.
+  The Next document viewer uses its own ResourceLoader/PageHost path; the
+  separate Legacy parity route remains scheduled for Phase 12 removal. C41's
+  fixed, opt-in historical campus import is not runtime path search. The full
+  suite, post-implementation Windows checks, and Phase 7 exit gate remain open.
+  The Phase 9 packaged Release numeric memory gate is separate.
 
 ### Slice batches
 

@@ -6,26 +6,18 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-01
-- Current milestone: Phase 7 remains in progress. Candidate #53, Next Sub Prep
-  PDF text mapping and output parity, is accepted in commit `b6d8a0a1`. Candidate
-  #54's Initial Setup lifecycle capture and diagnostic packaging repair are
-  committed and pushed in `926b00fd`; local focused checks pass. Its first
-  native Windows x64 run (`41272522314`) failed evidence validation: the
-  diagnostic stopped at two scenarios and five samples, and the lifecycle
-  capture produced no JSON. C54 repair is active; ARM64 success does not satisfy
-  the x64 gate. Candidate #55 has started: the Legacy
-  teacher-name fallback test now injects a batch-only read failure and passes
-  independently, while matched full-window Classes empty, delete-confirmation,
-  and error captures are being implemented. The #55 matrix review found one
-  proposed Batch 6 candidate, #56: restore dynamic Co-Teachers sidebar
-  navigation. The C44 fixture verifies 2,400 names, 96 bullets, 96 complete
-  headers, and zero changed pixels over 16 pages. The native Windows C53 run
-  verified 750 SQL-derived names, 30 headers, valid mapping for all used roster
-  codes, and zero changed pixels across all 17 pages of both matched PDF pairs.
-  See the [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
-  and [current batch tracker](Current-Slice-Batches.md). The full project
-  suite, 7A evidence, and Phase 7 exit gate remain open. The Phase 9
-  packaged-Next numeric memory gate is separate.
+- Current milestone: Phase 7 remains in progress. Batch 5 is complete and
+  pushed. Candidate #54's repaired native Windows x64 evidence passed on run
+  `41274190210`: the diagnostic validated three scenarios with five samples
+  each, and Initial Setup captured seven whole-process lifecycle checkpoints
+  with no numeric threshold. Candidate #55's Legacy teacher-name fallback test,
+  12 matched production-path Classes full-window captures, and matrix/call-path
+  reconciliation are complete; its implementation is in `5d1b02a2`. The only
+  remaining feature slice is #56, dynamic Co-Teachers sidebar navigation. The
+  full suite, post-implementation Windows checks, and Phase 7 exit gate remain
+  open. The Phase 9 packaged-Next numeric memory gate is separate. See the
+  [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
+  and [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
