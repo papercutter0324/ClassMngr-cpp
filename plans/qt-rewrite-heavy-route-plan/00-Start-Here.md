@@ -12,10 +12,11 @@
   each, and Initial Setup captured seven whole-process lifecycle checkpoints
   with no numeric threshold. Candidate #55's Legacy teacher-name fallback test,
   12 matched production-path Classes full-window captures, and matrix/call-path
-  reconciliation are complete; its implementation is in `5d1b02a2`. The only
-  remaining feature slice is #56, dynamic Co-Teachers sidebar navigation. The
-  full suite, post-implementation Windows checks, and Phase 7 exit gate remain
-  open. The Phase 9 packaged-Next numeric memory gate is separate. See the
+  reconciliation are complete; its implementation is in `5d1b02a2`. Batch 6
+  is active with #56, dynamic Co-Teachers sidebar navigation. Batch 7 discovery
+  found no other feature slice. The full suite, post-implementation Windows
+  checks, and Phase 7 exit gate remain open. The Phase 9 packaged-Next numeric
+  memory gate is separate. See the
   [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
@@ -39,7 +40,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — Batch 5 active (#54–55) | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — Batch 6 active (#56) | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

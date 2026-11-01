@@ -1829,7 +1829,8 @@ Entries are preserved in their original document order.
   compatibility content port, pack lease, and `PageManager`; Phase 12 owns its
   removal. C41's historical campus import is fixed-root and opt-in, while
   normal Next resource resolution uses the resource catalog.
-- Batch 5 is complete and pushed. Batch 6 starts with #56. Per the one-candidate
-  batch rule, Batch 7 discovery begins when work on #56 starts. Run the
-  unfiltered Phase 7 suite and final Windows checks after #56. Phase 7 remains
-  in progress, and the Phase 9 packaged-Release numeric memory gate is separate.
+- Batch 5 is complete and pushed. Batch 6 starts with #56. Batch 7 discovery
+  was triggered when work on #56 started; independent plan-first and code-first
+  scans found no other feature slice. Run the unfiltered Phase 7 suite and final
+  Windows checks after #56. Phase 7 remains in progress, and the Phase 9
+  packaged-Release numeric memory gate is separate.

@@ -55,8 +55,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   Setup lifecycle artifact validated seven whole-process checkpoints with no
   numeric threshold. Candidate #55's fallback regression test, 12 matched
   production-path Classes captures, and matrix/call-path reconciliation are
-  complete; the implementation is committed in `5d1b02a2`. Candidate #56,
-  dynamic Co-Teachers sidebar navigation, is the only remaining feature slice.
+  complete; the implementation is committed in `5d1b02a2`. Batch 6 is active
+  with candidate #56, dynamic Co-Teachers sidebar navigation. Batch 7 discovery
+  found no other feature slice.
   The Next document viewer uses its own ResourceLoader/PageHost path; the
   separate Legacy parity route remains scheduled for Phase 12 removal. C41's
   fixed, opt-in historical campus import is not runtime path search. The full

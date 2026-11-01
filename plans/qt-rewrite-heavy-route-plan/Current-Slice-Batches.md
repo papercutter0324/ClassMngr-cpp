@@ -11,10 +11,14 @@
     rows but not Co-Teachers. Legacy's sidebar refresh route is
     `src/app/controllers/sidebar_controller_refresh.cpp:127,140`.
 
-Batch 7 discovery begins when work on this one-candidate batch starts. The
-two independent source-first and preservation-matrix scans found no additional
-candidate after #55. The Phase 7 full suite and final Windows checks follow
-implementation.
+## Batch 7 — discovered
+
+No other slices were found.
+
+Batch 7 discovery was triggered when work on this one-candidate batch started.
+The two independent source-first and preservation-matrix scans found no
+additional candidate after #55. The Phase 7 full suite and final Windows checks
+follow implementation.
 
 Preserve the separate uncommitted Schedule Import edits in the Gateway pair
 and `preferences_visual_captures/`.

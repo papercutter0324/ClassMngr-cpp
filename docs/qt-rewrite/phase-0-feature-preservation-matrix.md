@@ -3,6 +3,11 @@
 Phase 0 status: Complete (user-declared 2026-09-18)
 Snapshot: `75755460`
 
+The status and evidence notes below record the Phase 0 snapshot; they are not
+the live Phase 7 status. Phase 7's accepted evidence and remaining gates are
+tracked in the [Phase 7 progress log](../../plans/qt-rewrite-heavy-route-plan/08-Phase-7-Progress-Log.md).
+A `pending` note here may have been superseded by later evidence.
+
 Every row is a required v2 vertical slice. A row is not accepted merely because
 its page renders: persistence, localization, permissions, resources, output,
 and failure behavior must be covered together.
