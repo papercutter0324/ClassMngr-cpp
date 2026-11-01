@@ -17,14 +17,19 @@
   discovery found no other feature slice. A clean full build at `61b8d749`
   caught the missing adapter include; the subsequent build at `346adb7c` found
   the capture-target link issue. Unfiltered macOS and Windows checks on the
-  latest source/test SHA are pending. Exit review found missing Legacy/Next
-  visual evidence for profile file workflows. The Initial Setup package has
-  been independently reviewed: all 28 images and manifest records match, with
-  the capture worktree revision noted as a reproducibility limitation. The
-  profile file-workflow package is active. Candidate #54's repaired Windows
-  x64 diagnostic and lifecycle artifacts remain accepted on run `41274190210`,
-  with no numeric threshold. The Phase 9 packaged-Next numeric memory gate is
-  separate. See the
+  latest source/test SHA are pending. Exit review found two visual evidence
+  gaps, now covered by independently reviewed packages. The Initial Setup
+  package has 28 images with matching manifest records; its metadata names the
+  base commit, so its capture worktree revision remains a reproducibility
+  limitation. The profile file-workflow package has 38 images covering nine
+  paired states and two Next-only confirmation captures, with no manifest
+  integrity errors. It does not show successful operation outcomes or
+  native-window parity. The Sub Prep call-path audit confirmed typed workspace
+  reads already use the active Gateway store; the campus directory remains a
+  packaged-resource read. Candidate #54's repaired
+  Windows x64 diagnostic and lifecycle artifacts remain accepted on run
+  `41274190210`, with no numeric threshold. The Phase 9 packaged-Next numeric
+  memory gate is separate. See the
   [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate

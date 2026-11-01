@@ -20,6 +20,11 @@ the capture harness came from uncommitted worktree changes. A verified image
 manifest does not by itself make the capture reproducible from the named
 commit.
 
+Repeated static-archive arguments in a link command are not by themselves
+evidence that object files were compiled or linked twice. Inspect the final
+target closure and direct object inputs; a mixed Legacy/Next visual harness may
+legitimately inherit an archive through the Runtime dependency graph.
+
 ### Phase 7 Co-Teachers navigation — 2026-11-01
 
 Read assigned co-teacher IDs through a typed port on the active WorkspaceStore

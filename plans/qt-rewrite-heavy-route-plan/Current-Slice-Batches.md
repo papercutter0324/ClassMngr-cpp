@@ -20,10 +20,15 @@ The preservation-matrix audit found no unresolved feature row or prohibited
 Next call path. The Initial Setup package retains matched Legacy/Next captures
 for seven remaining visible stages; independent review verified all 28 images
 and manifest records. Its metadata names the base commit, so the capture
-worktree revision remains a reproducibility limitation. Profile file/recovery
-workflows still need matched visual evidence; that package is active. Close
-these evidence gaps, the full-suite check, and latest-SHA Windows checks before
-Phase 7 completion.
+worktree revision remains a reproducibility limitation. The profile
+file-workflow package is independently accepted for visual-state evidence:
+38 images cover nine paired states plus two Next-only confirmation captures,
+with matching hashes, sizes, and dimensions. The images do not evidence
+successful outcomes or native-window parity. Close the full-suite check and
+latest-SHA Windows checks before Phase 7 completion. A focused Sub Prep
+call-path audit confirmed its typed
+workspace-backed actions already use the active WorkspaceStore Gateway; the
+campus directory still reads packaged JSON plus its app-data override.
 C54's accepted process observations have no numeric threshold; the
 packaged-Release threshold remains in Phase 9.
 

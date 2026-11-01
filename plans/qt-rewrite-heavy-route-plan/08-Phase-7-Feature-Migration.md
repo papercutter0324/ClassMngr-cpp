@@ -39,27 +39,26 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Codex (Heavy route)
 - Last updated: 2026-11-01
 - Current note: Candidate #56, dynamic Co-Teachers sidebar navigation, is
-  implemented in `248c498f`; a clean-source compile repair is pushed in
-  `346adb7c`, and Batch 6 is reopened for full verification. The typed
-  assignment read stays on the active WorkspaceStore. Navigation preserves
-  Legacy ordering, filters to assigned regular-class co-teachers, activates the
-  chosen profile, and refreshes after assignment and workspace changes.
-  Independent focused verification passed 4/4 CTests and the existing profile-activation test
-  passed 3/3. A clean build of initial pushed SHA `61b8d749` found the adapter
-  header missing from the committed Gateway; a later build at `346adb7c` found
-  a missing source in the standalone Staff Directory capture target, fixed in
-  `1e9bfae0`. Batch 7 discovery found no other feature slice. Visual review
-  found missing Legacy/Next visual evidence for profile file workflows. The
-  Initial Setup package is independently reviewed: all 28 images and manifest
-  records match; its capture worktree revision remains a reproducibility
-  limitation. Profile file-workflow evidence work is active. Candidate #54's
-  repaired Windows x64
-  diagnostic and lifecycle artifacts remain accepted on run `41274190210`,
-  with no numeric threshold. The Next document viewer uses its own
-  ResourceLoader/PageHost path; the separate Legacy parity route remains
-  scheduled for Phase 12 removal. C41's fixed, opt-in historical campus import
-  is not runtime path search. The Phase 9 packaged Release numeric memory gate
-  is separate.
+  implemented in `248c498f`; its clean-source compile repair is pushed in
+  `346adb7c`. Focused C56 verification passed 4/4 CTests and the existing
+  profile-activation test passed 3/3. The later standalone Staff Directory
+  capture-target link issue was fixed in pushed commit `1e9bfae0`; its focused
+  CTest passed 1/1. Batch 7 discovery found no additional feature slice.
+  Preservation-matrix and call-path audits found no unresolved feature row or
+  prohibited Next path. Sub Prep's workspace-backed actions already use typed
+  reads on the active Gateway; its campus directory remains resource-backed.
+  The Initial Setup visual package is independently accepted with 28 matching
+  images, with capture-worktree provenance limited to the metadata's base
+  commit. The profile file-workflow package is independently accepted for
+  visual-state evidence: 38 images cover nine paired states and two Next-only
+  confirmation captures, with matching hashes, sizes, and dimensions. These
+  captures do not claim successful outcomes or native-window/pixel parity.
+  The unfiltered macOS suite and exact-SHA Windows checks remain open. C54's
+  repaired Windows x64 diagnostic and lifecycle artifacts are accepted on run
+  `41274190210` without a numeric threshold. The Next document viewer uses its
+  own ResourceLoader/PageHost path; Legacy parity removal remains in Phase 12.
+  C41's campus import is fixed-root and opt-in. The Phase 9 packaged Release
+  numeric memory gate remains separate.
 
 ### Slice batches
 

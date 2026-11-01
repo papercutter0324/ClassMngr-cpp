@@ -262,6 +262,7 @@ if(BUILD_TESTING)
     include(cmake/tests/models_and_services.cmake)
     include(cmake/tests/platform_and_reports.cmake)
     include(cmake/tests/next.cmake)
+    include(cmake/tests/phase7_profile_file_workflow.cmake)
 
     classmngr_finalize_test_targets()
 endif()

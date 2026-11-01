@@ -1887,8 +1887,11 @@ Entries are preserved in their original document order.
 - Added that source to the target in `cmake/tests/next.cmake`; commit
   `1e9bfae0` is pushed. The focused capture target built and its registered
   CTest passed 1/1. The linker emitted duplicate `ClassMngrWorkspaceStore`
-  warnings, but completed successfully. The full build and CTest have not yet
-  completed on this source.
+  warnings, but completed successfully. A read-only final-command inspection
+  found two archive arguments inherited through the mixed Legacy/Next target's
+  direct and transitive link closure, with no direct WorkspaceStore object
+  files; the fixture-only one-archive rule does not require changing this
+  target. The full build and CTest have not yet completed on this source.
 - The Initial Setup visual package now retains 14 matched state pairs (28
   images) across seven stages; its focused Legacy/Next capture CTests passed
   3/3. Independent visual review verified all 28 images and manifest records,
@@ -1900,3 +1903,38 @@ Entries are preserved in their original document order.
   pixel-parity claims remain outside scope. The profile file-workflow visual
   capture harness is active; the final unfiltered suite and exact-SHA Windows
   checks will run after its source/test target is validated.
+
+### Phase 7 exit audit — Sub Prep active-store reads confirmed (2026-11-01)
+
+- A bounded call-path review confirmed that Sub Prep's typed schedule,
+  summaries, selected details, preferences, calendar intervals, print-source,
+  and roster-source operations are declared on `WorkspaceStoreGateway` and
+  implemented using its private active `WorkspaceStore`. Bootstrap wires those
+  page actions through the Gateway. Existing `ClassMngrNextSubPrepGatewayTests`
+  exercise workspace switching, unopened/closed state, invalid scope, and
+  repository failure.
+- The campus selector reads packaged `CampusJsonRepository` data plus the
+  app-data override; this is not a workspace-database path read. No missing
+  Sub Prep Gateway seam or additional feature candidate was found. No source
+  change was required; existing user Schedule Import edits in the Gateway pair
+  remain untouched.
+
+### Phase 7 exit evidence — profile file-workflow visual states accepted (2026-11-01)
+
+- The package contains nine Legacy/Next state pairs across English/light and
+  Korean/dark (36 images), plus two Next-only New Profile confirmation images.
+  It covers New/replacement, Open, dirty Close prompt, Save As, Export, recent
+  history before/after clear, interrupted-create recovery, and schema-v6 `.db`
+  selection. The focused capture target built and its CTest passed 1/1.
+- Independent review verified all 38 PNGs: inventory, 1024×720 dimensions,
+  byte counts, SHA-256 digests, state/appearance/route coverage, and visible
+  descriptions all matched. Dialog selections, recent-history states, recovery
+  candidate, and `.db` filter differences are visible as documented.
+- This package supplies visual-state evidence only. It captures dialogs and
+  prompts before cancellation; accepted operation outcomes and Recent Files
+  restore behavior remain covered by behavior tests. Qt offscreen/Fusion does
+  not capture native AppKit framing or establish pixel parity. Synthetic fixture
+  files are temporary and are not retained for independent schema-content
+  inspection. The README also omits the English “No Recent Files” label in one
+  Korean/Next capture; this is a minor documentation omission, not a missing
+  state. The unfiltered suite and exact-SHA Windows checks remain open.

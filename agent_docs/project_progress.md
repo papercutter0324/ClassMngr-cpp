@@ -11,8 +11,12 @@ the standalone Staff Directory capture target was fixed in pushed commit
 Batch 7 discovery found no other feature slice. The Initial Setup visual
 package is accepted after independent review of all 28 images and manifest
 records; its metadata identifies the base commit and the capture worktree
-revision remains a reproducibility limitation. Profile file/recovery workflows
-still need matched visual evidence; that package is active. C54's
+revision remains a reproducibility limitation. The profile file-workflow
+package has independent visual acceptance: 38 images cover nine matched states
+and two Next-only confirmation captures with matching manifest integrity. It
+does not show successful outcomes or native-window parity. A focused Sub Prep
+call-path audit confirmed typed workspace reads already use the active Gateway
+store; the campus directory remains a packaged-resource read. C54's
 accepted Windows diagnostic and lifecycle artifacts
 on run `41274190210` have no numeric threshold; the Phase 9 memory gate is not
 claimed.
@@ -214,8 +218,10 @@ with a passing focused CTest. The unfiltered suite and latest-SHA Windows checks
 remain open. Batch 7 discovery found no other feature slice. The matrix/call-
 path audit found no unresolved row. The Initial Setup visual package is
 accepted; its capture worktree provenance is limited to the base commit
-recorded in metadata. Profile file/recovery visual work is active. C54's
-diagnostic has no numeric
+recorded in metadata. Sub Prep's workspace-backed actions use the active
+Gateway; its campus list remains resource-backed. The profile file-workflow
+package is accepted for visual-state evidence; successful outcomes and
+native-window parity remain outside it. C54's diagnostic has no numeric
 threshold; Phase 9's packaged Release `<250 MiB` gate remains separate.
 
 The following checkpoint records are historical; canonical current state is
