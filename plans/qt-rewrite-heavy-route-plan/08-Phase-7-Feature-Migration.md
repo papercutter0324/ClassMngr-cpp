@@ -38,15 +38,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-11-01
-- Current note: Candidate #56 is accepted and Batch 7 discovery found no
-  other feature slice. Phase 7 exit verification is active. The all-target
-  macOS build at `bb6d4507` stopped linking the Classes Details/Co-Teacher
-  visual capture. The focused CMake repair now builds the Details, Notes, and
-  Analytics captures and passes all three registered CTests. The full macOS
-  build, unfiltered CTest, and Windows verification at the final SHA remain
-  open. Sub Prep typed workspace reads use the active Gateway store; the
-  campus directory remains resource-backed. The separate Phase 9 packaged-
-  Release numeric memory gate remains open.
+- Current note: Candidate #56 is accepted and Batch 7 found no other feature
+  slice. The clean macOS Debug build at pushed SHA `f5c23859` passed all
+  5,422 actions. Unfiltered CTest completed 594/614 with 20 failed CTest
+  registrations and no CTest-skipped or disabled registrations; failure groups
+  and focused follow-ups are recorded in the progress log. C56's registered
+  tests passed. Focused F515 re-entry and signature-capture checks pass with
+  test-harness setup corrections; C53 passes when supplied its required output
+  directory and reference date. Exact-SHA Windows Release/resource/C53 jobs
+  pass, while the x64 Debug recorder and one Next Bootstrap warning assertion
+  remain open. The preservation-matrix and call-path audits found no unresolved
+  feature row or prohibited Next path. Sub Prep typed workspace reads use the
+  active Gateway; its campus directory remains resource-backed. The Phase 9
+  packaged-Release numeric memory gate remains separate.
 
 ### Slice batches
 

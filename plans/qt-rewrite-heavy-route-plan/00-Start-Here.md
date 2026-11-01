@@ -6,19 +6,18 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-01
-- Current milestone: Candidate #56, dynamic Co-Teachers sidebar navigation,
-  is accepted and Batch 7 discovery found no other feature slice. Phase 7
-  exit verification is active. The all-target macOS build at `bb6d4507`
-  stopped linking the Classes Details/Co-Teacher visual capture. A focused
-  CMake repair now builds the Details, Notes, and Analytics capture targets
-  and passes their three registered CTests. The full macOS build and unfiltered
-  CTest, plus Windows verification at the final SHA, remain open. The Sub Prep
-  call-path audit confirmed typed workspace reads already use the active
-  Gateway store; the campus directory remains a packaged-resource read. The
-  accepted Windows process observations have no numeric threshold; the Phase 9
-  packaged-Release memory gate is separate. See the
-  [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
-  and [current batch tracker](Current-Slice-Batches.md).
+- Current milestone: Candidate #56 is accepted and Batch 7 found no other
+  feature slice. Phase 7 exit verification is active. A fresh macOS Debug
+  all-target build passed at `f5c23859` (5,422/5,422 actions); unfiltered
+  CTest completed with 594 passes and 20 failures, so it is recorded as a
+  failed full-suite run. The C56 tests passed. Focused follow-ups verified the
+  F515 class re-entry and signature capture harnesses, and the C53 selector
+  with its required output settings. Exact-SHA Windows Release, resource, and
+  C53 jobs passed; Windows x64 Debug evidence and one Next Bootstrap warning assertion
+  remains open. The Phase 9 packaged-Release numeric memory
+  gate is separate. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md),
+  [phase plan](08-Phase-7-Feature-Migration.md), and
+  [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

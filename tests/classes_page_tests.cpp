@@ -1166,6 +1166,8 @@ resetPolicyReadFailuresPreserveStoredPreferencesAndPageState()
 
 void ClassesPageTests::navigationReleaseCachesSnapshotAndEditorsAcrossReentry()
 {
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(prompts);
     ApplicationServices services;
     ClassMngr::Next::Platform::
         ApplicationServicesClassSelectionResetPolicyPort selectionPolicy(

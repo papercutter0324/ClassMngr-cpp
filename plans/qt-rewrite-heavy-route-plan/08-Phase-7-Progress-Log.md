@@ -2013,3 +2013,35 @@ Entries are preserved in their original document order.
   CTests passed 3/3 in 11.23 seconds; `git diff --check` passed. Duplicate
   WorkspaceStore archive warnings were non-fatal. The all-target build,
   unfiltered CTest, and final-SHA Windows verification remain open.
+
+### Exact-SHA macOS full build and unfiltered CTest (2026-11-01)
+
+- At pushed SHA `f5c23859c7d36d80193a5a923c05bf83390de2c4`, the independent
+  Tester refreshed the isolated archive, emptied the standard
+  `build/macos-clang-debug` directory, configured the macOS preset, and ran the
+  source-ownership validator. Configure passed and ownership validation found
+  one explicit owner for 1,966 handwritten source files. The fresh all-target
+  build passed 5,422/5,422 actions.
+- Unfiltered CTest completed 614 registrations: 594 passed, 20 failed, zero
+  CTest-skipped, zero disabled, in 2,197.04 seconds. Fourteen optional QtTest
+  subcases were skipped inside the failed `ClassMngrStartupPerformanceTests`
+  registration; that CTest itself failed because no C53 output directory was
+  supplied. The other failures include three loopback-server targets, two
+  no-screen GUI targets, three Qt/macOS wizard `NSBundle` aborts, and five
+  QtTest timeouts. The six assertion/visual failures in that run include
+  four Legacy Testing Classes baseline assertions, a Legacy teacher-warning
+  mismatch previously reproduced against baseline, a Legacy campus-navigation
+  fixture that does not establish prior tree selection, an existing Next
+  Bootstrap warning-status assertion, the signature capture lazy-tab setup,
+  and a stale Legacy document-port source-name assertion. None of the C56
+  registered tests failed. The test run is not reported as a full-suite pass.
+- The initial failure lists and outputs are retained only in the temporary
+  verification workspace. Follow-up source/history audits found the F515 cache
+  selector blocked by an unopened test stub and modal Notes warning, and the
+  signature capture skipped the lazy-loaded My Details tab. These were repaired
+  only in their test harnesses without removing assertions; independent serial
+  rechecks passed the F515 selector 3/3 and the signature capture CTest 1/1,
+  with all eight signature manifest states visible. C53 also passed its direct
+  selector 3/3 with the documented fresh output directory, application path,
+  and reference date. The Next Bootstrap warning assertion and final Windows
+  x64 Debug recorder remain open.

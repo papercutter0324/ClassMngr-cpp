@@ -23,6 +23,7 @@
 #include <QJsonObject>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QTabBar>
 #include <QTemporaryDir>
 #include <QTranslator>
 
@@ -399,6 +400,18 @@ bool captureNext(
         }
         host.resize(Viewport);
         host.show();
+        QApplication::processEvents();
+        auto* const workspaceTabBar = page->findChild<QTabBar*>(
+            QStringLiteral("nextMyWorkspaceTabBar"));
+        if (!workspaceTabBar)
+        {
+            if (error)
+            {
+                *error = QStringLiteral("The Next My Details tab is missing.");
+            }
+            return false;
+        }
+        workspaceTabBar->setCurrentIndex(0);
         QApplication::processEvents();
         auto* const footer = page->findChild<QWidget*>(
             QStringLiteral("nextMyWorkspaceStatusFooter"));
