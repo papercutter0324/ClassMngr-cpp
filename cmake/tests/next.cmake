@@ -4167,6 +4167,14 @@ set_target_properties(ClassMngrNextTestingClassesManagerTests
         AUTOUIC OFF
         AUTORCC OFF
 )
+qt_add_resources(ClassMngrNextTestingClassesManagerTests
+    testing_classes_manager_test_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
+)
 set_property(TARGET ClassMngrNextTestingClassesManagerTests
     PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
 )

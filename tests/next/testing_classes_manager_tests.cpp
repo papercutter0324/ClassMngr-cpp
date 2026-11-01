@@ -13,6 +13,7 @@
 #include "next/ui/roster_table_model.h"
 #include "next/ui/testing_classes_manager_page.h"
 #include "preferences_test_ports.h"
+#include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QApplication>
 #include <QFile>
@@ -960,6 +961,58 @@ rosterEntryIsLazyUsesTestingModeAndActiveWorkspacePath()
     QVERIFY(page->rosterEditor()->isLoaded());
     QVERIFY(page->rosterEditor()->tableView()->isColumnHidden(2));
     QVERIFY(!page->rosterEditor()->tableView()->isColumnHidden(0));
+
+    Ui::RosterEditorWidget* const roster = page->rosterEditor();
+    Ui::RosterTableModel* const model = roster->model();
+    QTableView* const table = roster->tableView();
+    int koreanColumn = -1;
+    for (int column = 0; column < model->columnCount(); ++column)
+    {
+        if (model->columnName(column) == QStringLiteral("Korean"))
+        {
+            koreanColumn = column;
+            break;
+        }
+    }
+    QVERIFY(koreanColumn >= 0);
+    const QModelIndex koreanNameCell = model->index(0, koreanColumn);
+    QVERIFY(koreanNameCell.isValid());
+    table->setCurrentIndex(koreanNameCell);
+    QCOMPARE(table->currentIndex(), koreanNameCell);
+
+    QPushButton* const keyboardButton = roster->findChild<QPushButton*>(
+        QStringLiteral("nextRosterKoreanKeyboard"));
+    QVERIFY(keyboardButton);
+    keyboardButton->click();
+    QApplication::processEvents();
+
+    OnScreenKeyboard* const keyboard =
+        roster->findChild<OnScreenKeyboard*>();
+    QVERIFY(keyboard);
+    QVERIFY(!keyboardButton->icon().isNull());
+    QVERIFY(keyboard->isVisible());
+    QVERIFY(keyboard->isKoreanLayout());
+    QCOMPARE(table->currentIndex(), koreanNameCell);
+    auto* const targetEditor = qobject_cast<QLineEdit*>(keyboard->target());
+    QVERIFY(targetEditor);
+    QVERIFY(table->isAncestorOf(targetEditor));
+    QCOMPARE(table->findChild<QLineEdit*>(), targetEditor);
+
+    QPushButton* const consonant = keyboard->findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardKey_r"));
+    QPushButton* const vowel = keyboard->findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardKey_k"));
+    QPushButton* const enter = keyboard->findChild<QPushButton*>(
+        QStringLiteral("onScreenKeyboardEnter"));
+    QVERIFY(consonant);
+    QVERIFY(vowel);
+    QVERIFY(enter);
+    consonant->click();
+    vowel->click();
+    enter->click();
+    QApplication::processEvents();
+
+    QCOMPARE(model->data(koreanNameCell).toString(), QStringLiteral("가"));
 }
 
 void TestingClassesManagerTests::rosterSectionSuspensionReleasesTestingModel()
