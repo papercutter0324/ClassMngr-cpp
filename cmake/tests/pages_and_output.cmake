@@ -198,6 +198,16 @@ qt_add_resources(
         resources/assets/icons/keyboard_light.svg
 )
 
+add_test(
+    NAME ClassMngrInitialSetupWizardVisualCapture
+    COMMAND ClassMngrInitialSetupWizardTests
+        capturesInitialSetupOtherStagesForVisualReview
+)
+set_tests_properties(ClassMngrInitialSetupWizardVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1;CLASSMNGR_INITIAL_SETUP_VISUAL_CAPTURE_DIR=${CMAKE_CURRENT_BINARY_DIR}/initial-setup-visual-captures"
+)
+
 classmngr_add_qt_test(
     NAME ClassNotesPageReadParity
     SOURCES
