@@ -35,6 +35,10 @@ The Start Here file contains:
 7. [Phase 6 — Shared UI Rewrite](qt-rewrite-heavy-route-plan/07-Phase-6-Shared-UI-Rewrite.md)
 8. [Phase 7 — Feature Migration](qt-rewrite-heavy-route-plan/08-Phase-7-Feature-Migration.md)
 
+### Post-feature follow-ups
+
+[Phase 7.5 — Cross-Platform Follow-Ups and Deferred Decisions](qt-rewrite-heavy-route-plan/08.5-Phase-7.5-Cross-Platform-Follow-Ups.md)
+
 ### Platform, quality, and release
 
 9. [Phase 8 — Platform and Output Adapters](qt-rewrite-heavy-route-plan/09-Phase-8-Platform-and-Output-Adapters.md)

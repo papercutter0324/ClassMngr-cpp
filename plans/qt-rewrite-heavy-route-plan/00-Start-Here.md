@@ -6,15 +6,12 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-01
-- Current milestone: Phase 7's formal semantic exit remains Complete at exact
-  SHA `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. The pushed Schedule Import
-  Gateway follow-up at `033f8dd23a2902591ab0486747144acb9b32a3dc` is post-exit
-  and does not reopen Phase 7. It updates Next Schedule Page and Next Initial
-  Setup to use typed active-Gateway reads and applies with active-session
-  validation; the `ClassMngrNext` build passed and tests were not run. Phase 8
-  has not started. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
-  for the follow-up details and exact-SHA exit evidence, the [phase plan](08-Phase-7-Feature-Migration.md),
-  and [current batch tracker](Current-Slice-Batches.md).
+- Current milestone: Phases 0–7 are Complete. Phase 7.5 records outstanding
+  platform verification, source/output comparison, and deferred product
+  decisions without reopening those accepted phase gates. Phase 8 has not
+  started. See the [Phase 7.5 plan](08.5-Phase-7.5-Cross-Platform-Follow-Ups.md),
+  [Phase 7 progress log](08-Phase-7-Progress-Log.md), and
+  [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
@@ -37,6 +34,7 @@
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
 | 7 | 08-Phase-7-Feature-Migration.md | Complete | Heavy | 2–6 |
+| 7.5 | 08.5-Phase-7.5-Cross-Platform-Follow-Ups.md | Not started | Light | 0–7 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |
