@@ -2080,3 +2080,45 @@ Entries are preserved in their original document order.
   This test-harness correction makes the intended Phase 7 error-path assertions
   reachable; no production change was made. Final-SHA unfiltered CTest remains
   open.
+
+### Exact-SHA macOS suite and residual test attribution at de864 (2026-11-01)
+
+- At exact pushed SHA `de8640cb5ce9557a16564e1ce6c0bbc715337c20`, the
+  independent Tester refreshed the source archive, reconfigured the existing
+  standard `build/macos-clang-debug` tree, and validated one explicit owner for
+  1,966 handwritten files. The all-target build passed. Unfiltered CTest ran
+  under escalation with `QT_QPA_PLATFORM=offscreen` and the required C53 output
+  directory/reference date: 606 passed, 8 failed, zero skipped, zero disabled,
+  in 1,524.50 seconds. C53 passed and generated its 13-file inventory; all three
+  loopback CTests passed. The isolated run's 35 generated visual-baseline/C44
+  changes were restored from the source archive and the archive/source match
+  reverified.
+- The eight failed registrations were `ClassMngrTestingClassesPageTests`
+  (four pre-existing Legacy assertions whose database is unopened),
+  `ClassMngrPageManagerTests::registeredPagesAreCreatedOnFirstUse` (a timeout
+  previously recorded), `ClassMngrClassDetailsSavePageTests` (its expected
+  continue-save behavior conflicts with the accepted Phase 2 fail-closed
+  contract and blocks on a warning), `ClassMngrNavigationTeacherReadTests`
+  (the warning mismatch reproduces against baseline),
+  `ClassMngrCampusRouteNavigationParityTests` (the matrix fixture sets current
+  keys without establishing prior sidebar selection; the real click-path test
+  passed), `ClassMngrClassesPageTests` (four fixture failures),
+  `ClassMngrSubPrepPageTests::unavailablePreferenceLoadsPreservePageValues`
+  (a previously recorded modal timeout), and
+  `ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests` (a stale
+  source-string assertion for a Legacy compatibility member already renamed in
+  Phase 5). The F515 selector, signature capture, Schedule initial-read path,
+  Bootstrap warning observation, and all C56 tests pass focused checks.
+- The four `ClassMngrClassesPageTests` failures were traced to stale test
+  stubs for the current detailed subtitle adapter and missing database/record
+  prerequisites for speaking-evaluation and standalone-roster controls. The
+  test-only fixture repair is independently verified: five selectors passed
+  7/7 QtTest cases, and the registered CTest passed 1/1. The full suite must be
+  rerun at the correction commit. This does not alter `src/**`; f5-to-de864 has
+  no production, CMake, resource, workflow, C53/C54 test-source, fixture, or
+  evidence-script diff.
+- Windows Phase 4 resource-layout CTests passed 8/8 at de864. Windows Release
+  x64/ARM64, startup smoke, C54 lifecycle/memory observations, and C53 capture/
+  SQL/PDF audits passed at f5; those artifacts are source-equivalent through
+  de864, but their recorded commit remains f5. The Windows x64 Debug baseline
+  artifact is still outstanding; its workflow is running without a result.

@@ -7,18 +7,17 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-01
 - Current milestone: Candidate #56 is accepted and Batch 7 found no other
-  feature slice. Phase 7 exit verification is active. A fresh macOS Debug
-  all-target build passed at `f5c23859` (5,422/5,422 actions); unfiltered
-  CTest completed with 594 passes and 20 failures, so it is recorded as a
-  failed full-suite run. The C56 tests passed. Focused follow-ups verified the
-  F515 class re-entry and signature capture harnesses, the Schedule initial-
-  read failure path, and the C53 selector with its required output settings.
-  Exact-SHA Windows Release, resource, and C53 jobs passed. The Next Bootstrap
-  warning passes a focused signal-spy check; final-SHA unfiltered CTest and
-  Windows x64 Debug evidence remain open.
-  The Phase 9 packaged-Release numeric memory gate is separate. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md),
-  [phase plan](08-Phase-7-Feature-Migration.md), and
-  [current batch tracker](Current-Slice-Batches.md).
+  feature slice. The fresh macOS build at `f5c23859` passed 5,422/5,422
+  actions; its unfiltered suite had 594 passes and 20 failures. The latest
+  unfiltered run at `de8640cb` passed 606/614 tests with zero skips; C53 and
+  loopback tests passed under their required configuration. Four Classes-page
+  fixture failures were corrected and independently rechecked; the full suite
+  must be rerun at that correction's SHA. Windows Release/C53 passed at f5 with
+  no production or C53/C54 test-source changes through de864; the de864 Phase 4
+  resource audit passed. Windows x64 Debug evidence remains open. See the
+  [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
+  and [current batch tracker](Current-Slice-Batches.md). The Phase 9
+  packaged-Release numeric memory gate is separate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

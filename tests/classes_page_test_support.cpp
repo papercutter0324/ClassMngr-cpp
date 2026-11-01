@@ -38,6 +38,22 @@ ClassInfoRepository::loadClassDetailsPageRecordDetailed(const int classId)
     };
 }
 
+RepositoryResult<ClassSubtitleReadOutcome>
+ClassInfoRepository::loadClassSubtitleRecordDetailed(const int classId)
+{
+    const RepositoryResult<ClassSubtitleReadRecord> loaded =
+        loadClassSubtitleRecord(classId);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    return ClassSubtitleReadOutcome{
+        .record = *loaded,
+        .parentMissing = false
+    };
+}
+
 RepositoryResult<TeacherDisplayNameReadRecord>
 TeacherRepository::lookupTeacherDisplayName(const qint64 teacherId)
 {
@@ -53,23 +69,7 @@ TeacherRepository::lookupTeacherDisplayName(const qint64 teacherId)
         });
     }
 
-    const Result<Teacher> loaded = DataService().getTeacher(
-        static_cast<int>(teacherId)
-        );
-    if (!loaded)
-    {
-        return std::unexpected(RepositoryError{
-            RepositoryErrorCode::Technical,
-            loaded.error()
-        });
-    }
-
-    return TeacherDisplayNameReadRecord{
-        .teacherKr = loaded->teacherKr,
-        .teacherEn = loaded->teacherEn,
-        .preferredRomanization = loaded->preferredRomanization,
-        .preferredName = loaded->preferredName
-    };
+    return loadTeacherDisplayNameFields(static_cast<int>(teacherId));
 }
 
 RepositoryResult<int> RosterRepository::getRosterStudentCount(const int classId)

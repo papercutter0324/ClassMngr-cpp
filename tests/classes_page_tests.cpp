@@ -117,6 +117,103 @@ bool openDatabase(
     return services.openDatabase(databasePath(directory)).has_value();
 }
 
+bool seedClassAndRoster(
+    ApplicationServices& services,
+    QString* error
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    if (!session || !session->isOpen())
+    {
+        *error = QStringLiteral("The test database is not open.");
+        return false;
+    }
+
+    QSqlQuery query(session->database());
+    query.prepare(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (?, ?)"
+        ));
+    query.addBindValue(42);
+    query.addBindValue(QStringLiteral("Class 42"));
+    if (!query.exec())
+    {
+        *error = query.lastError().text();
+        return false;
+    }
+
+    const QStringList rosterColumns{
+        QStringLiteral("English"),
+        QStringLiteral("Korean")
+    };
+    for (int column = 0; column < rosterColumns.size(); ++column)
+    {
+        query.prepare(QStringLiteral(
+            "INSERT INTO roster_columns (class_id, name, position, width) "
+            "VALUES (?, ?, ?, ?)"
+            ));
+        query.addBindValue(42);
+        query.addBindValue(rosterColumns.at(column));
+        query.addBindValue(column);
+        query.addBindValue(0);
+        if (!query.exec())
+        {
+            *error = query.lastError().text();
+            return false;
+        }
+    }
+
+    const QStringList studentNames{
+        QStringLiteral("Amy"),
+        QStringLiteral("김아미")
+    };
+    for (int column = 0; column < studentNames.size(); ++column)
+    {
+        query.prepare(QStringLiteral(
+            "INSERT INTO roster_data (class_id, row_index, col_index, value) "
+            "VALUES (?, ?, ?, ?)"
+            ));
+        query.addBindValue(42);
+        query.addBindValue(0);
+        query.addBindValue(column);
+        query.addBindValue(studentNames.at(column));
+        if (!query.exec())
+        {
+            *error = query.lastError().text();
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool seedSpeakingEvaluation(
+    ApplicationServices& services,
+    QString* error
+    )
+{
+    DatabaseSession* const session = services.databaseSession();
+    SpeakingEvalRepository* const repository =
+        session ? session->speakingEvalRepository() : nullptr;
+    if (!repository)
+    {
+        *error = QStringLiteral("The speaking evaluation repository is unavailable.");
+        return false;
+    }
+
+    const RepositoryStatus saved = repository->saveSpeakingEval(
+        42,
+        QStringLiteral("Winter"),
+        SpeakingEval::emptyRows()
+        );
+    if (!saved)
+    {
+        *error = saved.error().diagnostic;
+        return false;
+    }
+
+    return true;
+}
+
 class UserPromptServiceScope final
 {
 public:
@@ -2696,7 +2793,20 @@ void ClassesPageTests::classInfoShowsInlineValidationAndBlocksManualSave()
 
 void ClassesPageTests::speakingEvaluationShowsInlineValidationAndBlocksManualSave()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QString fixtureError;
+    QVERIFY2(
+        seedClassAndRoster(services, &fixtureError),
+        qPrintable(fixtureError)
+        );
+    QVERIFY2(
+        seedSpeakingEvaluation(services, &fixtureError),
+        qPrintable(fixtureError)
+        );
+
     SpeakingEvalPage page(&services, true);
     page.setSaveMode(SaveMode::Manual);
     page.loadEvaluation(Classroom(QStringLiteral("Class 42"), 42), QStringLiteral("Winter"));
@@ -2905,7 +3015,16 @@ void ClassesPageTests::
 
 void ClassesPageTests::headerKeyboardReplacesEmbeddedRosterButton()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(openDatabase(services, directory));
+    QString fixtureError;
+    QVERIFY2(
+        seedClassAndRoster(services, &fixtureError),
+        qPrintable(fixtureError)
+        );
+
     ClassesPage page(&services);
     page.resize(1200, 800);
     QVERIFY(page.openClass(42, ClassesSection::Roster));

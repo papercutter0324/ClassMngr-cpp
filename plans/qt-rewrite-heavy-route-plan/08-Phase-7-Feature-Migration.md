@@ -39,20 +39,20 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Codex (Heavy route)
 - Last updated: 2026-11-01
 - Current note: Candidate #56 is accepted and Batch 7 found no other feature
-  slice. The clean macOS Debug build at pushed SHA `f5c23859` passed all
-  5,422 actions. Unfiltered CTest completed 594/614 with 20 failed CTest
-  registrations and no CTest-skipped or disabled registrations; failure groups
-  and focused follow-ups are recorded in the progress log. C56's registered
-  tests passed. Focused F515 re-entry and signature-capture checks pass with
-  test-harness setup corrections; the Schedule initial-read error-path selector
-  also passes. C53 passes when supplied its required output directory and
-  reference date. Exact-SHA Windows Release/resource/C53 jobs pass; the Next
-  Bootstrap warning assertion passes its focused signal-spy check. The
-  final-SHA unfiltered CTest and x64 Debug recorder remain open. The
-  preservation-matrix and call-path audits found no unresolved
-  feature row or prohibited Next path. Sub Prep typed workspace reads use the
-  active Gateway; its campus directory remains resource-backed. The Phase 9
-  packaged-Release numeric memory gate remains separate.
+  slice. The fresh macOS Debug build at `f5c23859` passed 5,422 actions. The
+  latest unfiltered CTest at `de8640cb` passed 606/614 with zero skipped or
+  disabled registrations; C53 and loopback tests passed when configured and
+  run with escalation. Seven residual CTest registrations are documented in
+  the progress log; the eighth, `ClassMngrClassesPageTests`, now passes focused
+  after fixture corrections independently rechecked at 7/7 cases and CTest
+  1/1. Rerun the unfiltered suite at the next commit. Windows Release/C53
+  artifacts passed at f5 and are source-equivalent through de864 (no production,
+  CMake, resource, workflow, or C53/C54 evidence-source changes); the de864
+  Windows resource audit passed. The x64 Debug recorder remains open. The
+  preservation-matrix and call-path audits found no unresolved feature row or
+  prohibited Next path. Sub Prep typed workspace reads use the active Gateway;
+  its campus directory remains resource-backed. The Phase 9 packaged-Release
+  numeric memory gate remains separate.
 
 ### Slice batches
 
