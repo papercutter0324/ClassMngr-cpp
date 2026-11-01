@@ -39,7 +39,9 @@
 #include <algorithm>
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
 namespace
 {
@@ -344,6 +346,31 @@ std::optional<qlonglong> sqliteTotalChanges(
     }
     return query.value(0).toLongLong();
 }
+
+class RecordingFailingTeacherDisplayNameBatchReadPort final
+    : public ClassMngr::Next::Application::TeacherDisplayNameBatchReadPort
+{
+public:
+    using TeacherId = ClassMngr::Next::Domain::TeacherId;
+    using ReadResult =
+        ClassMngr::Next::Application::TeacherDisplayNameBatchReadResult;
+
+    [[nodiscard]] ReadResult readTeacherDisplayNames(
+        const std::vector<TeacherId>& teacherIds
+        ) const override
+    {
+        ++callCount;
+        requestedTeacherIds = teacherIds;
+        return ReadResult::failure({
+            .code = ClassMngr::Next::Domain::ErrorCode::Technical,
+            .message = "Injected teacher display name batch failure.",
+            .recoverable = true
+        });
+    }
+
+    mutable int callCount = 0;
+    mutable std::vector<TeacherId> requestedTeacherIds;
+};
 }
 
 class ClassTransferTests : public QObject
@@ -5592,17 +5619,6 @@ importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure()
         &applicationServicesError
         );
     QVERIFY2(applicationServices, qPrintable(applicationServicesError));
-    DatabaseSession* const session = applicationServices->databaseSession();
-    QVERIFY(session);
-    TeacherRepository* const teacherRepository = session->teacherRepository();
-    QVERIFY(teacherRepository);
-    const TeacherDisplayNameBatchReadMetrics before =
-        teacherRepository->teacherDisplayNameBatchReadMetrics();
-
-    QSqlQuery renameColumn(session->database());
-    QVERIFY2(renameColumn.exec(QStringLiteral(
-        "ALTER TABLE teachers RENAME COLUMN preferred_name TO old_preferred_name"
-        )), qPrintable(renameColumn.lastError().text()));
 
     ClassTransferPackage package;
     package.teachers.append({
@@ -5615,7 +5631,9 @@ importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure()
         QList<qint64>{romanizedId, englishId}
     });
 
-    ClassImportDialog dialog(applicationServices.get(), package, preview);
+    RecordingFailingTeacherDisplayNameBatchReadPort batchReadPort;
+    ClassImportDialog dialog(
+        applicationServices.get(), package, preview, batchReadPort);
     auto* teacherChoice = dialog.findChild<QComboBox*>(
         QStringLiteral("teacherImportChoice_incoming"));
     QVERIFY(teacherChoice);
@@ -5629,11 +5647,12 @@ importDialogFallsBackToIndividualTeacherProfilesAfterBatchFailure()
     QCOMPARE(teacherChoice->itemText(5),
              QStringLiteral("Replace local: English Two"));
 
-    const TeacherDisplayNameBatchReadMetrics after =
-        teacherRepository->teacherDisplayNameBatchReadMetrics();
-    QCOMPARE(after.callCount - before.callCount, 1);
-    QCOMPARE(after.requestedTeacherCount - before.requestedTeacherCount, 2);
-    QCOMPARE(after.statementCount - before.statementCount, 1);
+    QCOMPARE(batchReadPort.callCount, 1);
+    QCOMPARE(batchReadPort.requestedTeacherIds.size(), std::size_t{2});
+    QCOMPARE(batchReadPort.requestedTeacherIds[0].value(),
+             std::to_string(romanizedId));
+    QCOMPARE(batchReadPort.requestedTeacherIds[1].value(),
+             std::to_string(englishId));
 }
 
 void ClassTransferTests::importDialogUsesDefaultFormattingWhenClassFieldsCannotLoad()

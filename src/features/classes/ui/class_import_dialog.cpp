@@ -215,7 +215,9 @@ using DestinationTeacherDisplayNames = std::unordered_map<qint64, QString>;
 DestinationTeacherDisplayNames destinationTeacherDisplayNames(
     ApplicationServices* applicationServices,
     const ClassTransferPackage& package,
-    const ClassImportPreview& preview
+    const ClassImportPreview& preview,
+    const ClassMngr::Next::Application::
+        TeacherDisplayNameBatchReadPort& batchReadPort
     )
 {
     std::vector<ClassMngr::Next::Domain::TeacherId> teacherIds;
@@ -249,12 +251,8 @@ DestinationTeacherDisplayNames destinationTeacherDisplayNames(
         >> batchRecords;
     try
     {
-        ClassMngr::Next::Platform::
-            ApplicationServicesTeacherDisplayNameBatchReadPort readPort(
-                applicationServices
-                );
         const ClassMngr::Next::Application::
-            TeacherDisplayNameBatchReadQuery query(readPort);
+            TeacherDisplayNameBatchReadQuery query(batchReadPort);
         const auto loaded = query.execute(teacherIds);
         if (loaded)
         {
@@ -411,6 +409,27 @@ ClassImportDialog::ClassImportDialog(
     const ClassImportPreview& preview,
     QWidget* parent
     )
+    : ClassImportDialog(
+        applicationServices,
+        package,
+        preview,
+        ClassMngr::Next::Platform::
+            ApplicationServicesTeacherDisplayNameBatchReadPort(
+                applicationServices
+                ),
+        parent
+        )
+{
+}
+
+ClassImportDialog::ClassImportDialog(
+    ApplicationServices* applicationServices,
+    const ClassTransferPackage& package,
+    const ClassImportPreview& preview,
+    const ClassMngr::Next::Application::
+        TeacherDisplayNameBatchReadPort& teacherDisplayNameBatchReadPort,
+    QWidget* parent
+    )
     : DialogShell(QStringLiteral("classImport"), parent)
     , m_package(package)
     , m_preview(preview)
@@ -552,7 +571,8 @@ ClassImportDialog::ClassImportDialog(
         destinationTeacherDisplayNames(
             applicationServices,
             package,
-            preview
+            preview,
+            teacherDisplayNameBatchReadPort
             );
 
     for (const ClassImportTeacherPreview& teacherPreview : preview.teachers)
@@ -672,7 +692,29 @@ ClassImportDialog::ClassImportDialog(
     : ClassImportDialog(
         applicationServices,
         package,
+        preview,
+        ClassMngr::Next::Platform::
+            ApplicationServicesTeacherDisplayNameBatchReadPort(
+                applicationServices
+                ),
+        parent
+        )
+{
+}
+
+ClassImportDialog::ClassImportDialog(
+    ApplicationServices* applicationServices,
+    const ClassTransferPackage& package,
+    const ClassMngr::Next::Application::ClassTransferPreviewResult& preview,
+    const ClassMngr::Next::Application::
+        TeacherDisplayNameBatchReadPort& teacherDisplayNameBatchReadPort,
+    QWidget* parent
+    )
+    : ClassImportDialog(
+        applicationServices,
+        package,
         ClassMngr::Next::Platform::legacyClassTransferPreview(preview),
+        teacherDisplayNameBatchReadPort,
         parent
         )
 {

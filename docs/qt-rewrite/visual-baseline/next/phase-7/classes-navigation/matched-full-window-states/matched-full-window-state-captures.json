@@ -1,0 +1,310 @@
+{
+    "captures": [
+        {
+            "fixture": {
+                "classCount": 0,
+                "fileName": "classes-empty.tps",
+                "provenance": "Created as a new empty v6 .tps by Legacy ApplicationServices::openDatabase; no class rows were inserted.",
+                "schemaVersion": 6,
+                "sha256": "85c23437621fe67361b38157bb53acdb19e78573ebaa0297fad769b71ad0c9e9",
+                "temporary": true,
+                "testingClassesTablePresent": true
+            },
+            "legacy": {
+                "fixtureSha256": "85c23437621fe67361b38157bb53acdb19e78573ebaa0297fad769b71ad0c9e9",
+                "fullWindow": true,
+                "image": "empty/en_US-light/legacy.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab.",
+                    "detailedText": "",
+                    "informativeText": "",
+                    "message": "No class rows in the shared v6 fixture.",
+                    "title": "empty-state"
+                },
+                "sha256": "f61f29251ba99bc8002acde6bb3d12bb628daab397e9051703894042a9f95faa"
+            },
+            "locale": "en_US",
+            "next": {
+                "fixtureSha256": "85c23437621fe67361b38157bb53acdb19e78573ebaa0297fad769b71ad0c9e9",
+                "fullWindow": true,
+                "image": "empty/en_US-light/next.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab.",
+                    "detailedText": "",
+                    "informativeText": "",
+                    "message": "No class rows in the shared v6 fixture.",
+                    "title": "empty-state"
+                },
+                "sha256": "6e0d7143e7f53ab00a72770f0b4837be3387d738a6ea52f469f686919587a1a7"
+            },
+            "selectedClassId": 0,
+            "state": "empty",
+            "theme": "light",
+            "viewport": {
+                "height": 600,
+                "width": 800
+            }
+        },
+        {
+            "fixture": {
+                "classCount": 96,
+                "fileName": "classes-delete-confirmation.tps",
+                "provenance": "Temporary copy of the tracked 96-class visual fixture.",
+                "schemaVersion": 6,
+                "sha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+                "source": "docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps",
+                "sourceSha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+                "temporary": true,
+                "testingClassesTablePresent": true
+            },
+            "legacy": {
+                "fixtureSha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+                "fullWindow": true,
+                "image": "delete-confirmation/en_US-light/legacy.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab with the visible top-level QMessageBox grab composited at its shell-relative location.",
+                    "detailedText": "",
+                    "informativeText": "",
+                    "message": "Delete 'E4 Level 02 • Teacher 01 • Fri/Mon/Tues/Wed/Thurs/Fri/Mon/Tues (5:00 / 6:00 / 3:00 / 4:00 / 5:00 / 6:00 / 3:00 / 4:00)'?",
+                    "title": "Delete Class"
+                },
+                "sha256": "d8f7ca6c9b2709f5bc6cc7bece49955a06b8fac1831e463b54d41b2ca1154451"
+            },
+            "locale": "en_US",
+            "next": {
+                "fixtureSha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+                "fullWindow": true,
+                "image": "delete-confirmation/en_US-light/next.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab with the visible top-level QMessageBox grab composited at its shell-relative location.",
+                    "detailedText": "",
+                    "informativeText": "",
+                    "message": "Delete E4 Level 02 • Th/F 5:00; M/F 6:00; M/T 3:00; T/W 4:00 • Teacher 01? This cannot be undone.",
+                    "title": ""
+                },
+                "sha256": "5ca8ed337dbc2aae84a4d5b58144c92e92986f0f1a01f610dc46984c5ac76d3f"
+            },
+            "selectedClassId": 25,
+            "state": "delete-confirmation",
+            "theme": "light",
+            "viewport": {
+                "height": 600,
+                "width": 800
+            }
+        },
+        {
+            "fixture": {
+                "classCount": 96,
+                "fileName": "classes-list-read-error.tps",
+                "productionListReadDiagnostic": "Loading bounded classes navigation failed: Parameter count mismatch",
+                "provenance": "Temporary copy of the tracked 96-class visual fixture. The temporary copy was altered by dropping testing_classes; WorkspaceStore::openExisting accepted the reopened latest-v6 file without recreating that table, and the production Classes list read returned an error.",
+                "schemaVersion": 6,
+                "sha256": "103f9bc61086f280f2bfdc3225256413e6d84064ef2df9e6eaa4208b03daeceb",
+                "source": "docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps",
+                "sourceSha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+                "temporary": true,
+                "testingClassesTablePresent": false
+            },
+            "legacy": {
+                "fixtureSha256": "103f9bc61086f280f2bfdc3225256413e6d84064ef2df9e6eaa4208b03daeceb",
+                "fullWindow": true,
+                "image": "list-read-error/en_US-light/legacy.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab with the visible top-level QMessageBox grab composited at its shell-relative location; the Legacy modal was presented from the PromptRequest emitted by production Classes navigation for deterministic offscreen capture.",
+                    "detailedText": "Loading classes failed: no such table: testing_classes Unable to execute statement (database error 1)",
+                    "informativeText": "",
+                    "message": "Classes could not be loaded.",
+                    "title": "Load Classes"
+                },
+                "sha256": "156358dc3460823477a2829941a0b0bd906b0592364010a45d611869447fd30b"
+            },
+            "locale": "en_US",
+            "next": {
+                "fixtureSha256": "103f9bc61086f280f2bfdc3225256413e6d84064ef2df9e6eaa4208b03daeceb",
+                "fullWindow": true,
+                "image": "list-read-error/en_US-light/next.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab; the Classes read error is shown inline and has no modal window.",
+                    "detailedText": "",
+                    "informativeText": "",
+                    "message": "The class list could not be loaded. Retry this page.\nLoading bounded classes navigation failed: Parameter count mismatch",
+                    "title": "inline-status"
+                },
+                "sha256": "7f7511e3f42685db0f6722ef6062ca3e584563f5e3f8d79c0a6fb7d8aab18ed0"
+            },
+            "selectedClassId": 0,
+            "state": "list-read-error",
+            "theme": "light",
+            "viewport": {
+                "height": 600,
+                "width": 800
+            }
+        },
+        {
+            "fixture": {
+                "classCount": 0,
+                "fileName": "classes-empty.tps",
+                "provenance": "Created as a new empty v6 .tps by Legacy ApplicationServices::openDatabase; no class rows were inserted.",
+                "schemaVersion": 6,
+                "sha256": "85c23437621fe67361b38157bb53acdb19e78573ebaa0297fad769b71ad0c9e9",
+                "temporary": true,
+                "testingClassesTablePresent": true
+            },
+            "legacy": {
+                "fixtureSha256": "85c23437621fe67361b38157bb53acdb19e78573ebaa0297fad769b71ad0c9e9",
+                "fullWindow": true,
+                "image": "empty/ko_KR-dark/legacy.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab.",
+                    "detailedText": "",
+                    "informativeText": "",
+                    "message": "No class rows in the shared v6 fixture.",
+                    "title": "empty-state"
+                },
+                "sha256": "4f4dd33a8d56cb58634f09504c1254418d2e09f91ef654b0195d0c13eabcac40"
+            },
+            "locale": "ko_KR",
+            "next": {
+                "fixtureSha256": "85c23437621fe67361b38157bb53acdb19e78573ebaa0297fad769b71ad0c9e9",
+                "fullWindow": true,
+                "image": "empty/ko_KR-dark/next.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab.",
+                    "detailedText": "",
+                    "informativeText": "",
+                    "message": "No class rows in the shared v6 fixture.",
+                    "title": "empty-state"
+                },
+                "sha256": "79654b51c999fe9436145207341f62bd7203d4576fec2d6bf5d0900acee74749"
+            },
+            "selectedClassId": 0,
+            "state": "empty",
+            "theme": "dark",
+            "viewport": {
+                "height": 600,
+                "width": 800
+            }
+        },
+        {
+            "fixture": {
+                "classCount": 96,
+                "fileName": "classes-delete-confirmation.tps",
+                "provenance": "Temporary copy of the tracked 96-class visual fixture.",
+                "schemaVersion": 6,
+                "sha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+                "source": "docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps",
+                "sourceSha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+                "temporary": true,
+                "testingClassesTablePresent": true
+            },
+            "legacy": {
+                "fixtureSha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+                "fullWindow": true,
+                "image": "delete-confirmation/ko_KR-dark/legacy.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab with the visible top-level QMessageBox grab composited at its shell-relative location.",
+                    "detailedText": "",
+                    "informativeText": "",
+                    "message": "'E4 Level 02 • Teacher 01 • Fri/Mon/Tues/Wed/Thurs/Fri/Mon/Tues (5:00 / 6:00 / 3:00 / 4:00 / 5:00 / 6:00 / 3:00 / 4:00)'을(를) 삭제할까요?",
+                    "title": "수업 삭제"
+                },
+                "sha256": "2ba56908c84a4c247d8db3034943cb6149d7d7f529a513f3ca22468b3363a614"
+            },
+            "locale": "ko_KR",
+            "next": {
+                "fixtureSha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+                "fullWindow": true,
+                "image": "delete-confirmation/ko_KR-dark/next.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab with the visible top-level QMessageBox grab composited at its shell-relative location.",
+                    "detailedText": "",
+                    "informativeText": "",
+                    "message": "E4 Level 02 • Th/F 5:00; M/F 6:00; M/T 3:00; T/W 4:00 • Teacher 01 수업을 삭제하시겠습니까? 실행 취소할 수 없습니다.",
+                    "title": ""
+                },
+                "sha256": "58b059a9f21fd2dd22bb193c964f2be273d9819528ed1a822c1d4d0ad9038eb8"
+            },
+            "selectedClassId": 25,
+            "state": "delete-confirmation",
+            "theme": "dark",
+            "viewport": {
+                "height": 600,
+                "width": 800
+            }
+        },
+        {
+            "fixture": {
+                "classCount": 96,
+                "fileName": "classes-list-read-error.tps",
+                "productionListReadDiagnostic": "Loading bounded classes navigation failed: Parameter count mismatch",
+                "provenance": "Temporary copy of the tracked 96-class visual fixture. The temporary copy was altered by dropping testing_classes; WorkspaceStore::openExisting accepted the reopened latest-v6 file without recreating that table, and the production Classes list read returned an error.",
+                "schemaVersion": 6,
+                "sha256": "103f9bc61086f280f2bfdc3225256413e6d84064ef2df9e6eaa4208b03daeceb",
+                "source": "docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps",
+                "sourceSha256": "dadd8dcfb7abbbb291e5975286413cf1c489c793c8e640d33c181112df38835f",
+                "temporary": true,
+                "testingClassesTablePresent": false
+            },
+            "legacy": {
+                "fixtureSha256": "103f9bc61086f280f2bfdc3225256413e6d84064ef2df9e6eaa4208b03daeceb",
+                "fullWindow": true,
+                "image": "list-read-error/ko_KR-dark/legacy.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab with the visible top-level QMessageBox grab composited at its shell-relative location; the Legacy modal was presented from the PromptRequest emitted by production Classes navigation for deterministic offscreen capture.",
+                    "detailedText": "Loading classes failed: no such table: testing_classes Unable to execute statement (database error 1)",
+                    "informativeText": "",
+                    "message": "Classes could not be loaded.",
+                    "title": "Load Classes"
+                },
+                "sha256": "0c8ff8b3367c969e7770f430446a58e65b64f227c550a1624f166328b6dbe931"
+            },
+            "locale": "ko_KR",
+            "next": {
+                "fixtureSha256": "103f9bc61086f280f2bfdc3225256413e6d84064ef2df9e6eaa4208b03daeceb",
+                "fullWindow": true,
+                "image": "list-read-error/ko_KR-dark/next.png",
+                "modal": {
+                    "captureComposition": "Full-window QWidget grab; the Classes read error is shown inline and has no modal window.",
+                    "detailedText": "",
+                    "informativeText": "",
+                    "message": "수업 목록을 불러오지 못했습니다. 이 페이지에서 다시 시도하세요.\nLoading bounded classes navigation failed: Parameter count mismatch",
+                    "title": "inline-status"
+                },
+                "sha256": "d4265622cc671f9107976be756e4c29ad30566f2e933d7c7df0695cdfe083d54"
+            },
+            "selectedClassId": 0,
+            "state": "list-read-error",
+            "theme": "dark",
+            "viewport": {
+                "height": 600,
+                "width": 800
+            }
+        }
+    ],
+    "comparisonScope": "Semantic state matching only. The Legacy and Next navigation and page presentations differ, so these captures do not claim pixel parity.",
+    "fixturePairing": "Each Legacy/Next pair used the same temporary .tps path and fixture SHA-256; fixtures were discarded with QTemporaryDir after both applications closed.",
+    "legacyComposition": "Production MainWindow opened the temporary .tps and navigated through the real sidebar Classes route.",
+    "localesAndThemes": [
+        {
+            "locale": "en_US",
+            "theme": "light"
+        },
+        {
+            "locale": "ko_KR",
+            "theme": "dark"
+        }
+    ],
+    "modalCapture": "For modal images, the shell and visible top-level QMessageBox were grabbed separately, then composited at the QMessageBox shell-relative location for deterministic Qt offscreen capture.",
+    "nextComposition": "Production ApplicationBootstrap opened the same temporary .tps and navigated through its production ApplicationShell navigation tree to Classes.",
+    "parityClaim": false,
+    "purpose": "Matched empty, delete-confirmation, and Classes list-read-error full-window captures from the production Legacy MainWindow and Next ApplicationBootstrap navigation paths.",
+    "states": [
+        "empty",
+        "delete-confirmation",
+        "list-read-error"
+    ],
+    "viewport": {
+        "height": 600,
+        "width": 800
+    }
+}

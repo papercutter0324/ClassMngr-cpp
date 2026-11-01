@@ -3,6 +3,7 @@
 #include "domain/models/class_transfer.h"
 #include "next/application/class_transfer_apply_request.h"
 #include "next/application/class_transfer_preview_query.h"
+#include "next/application/teacher_display_name_batch_read_port.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 
 #include <QList>
@@ -25,10 +26,28 @@ public:
         QWidget* parent = nullptr
         );
 
+    ClassImportDialog(
+        ApplicationServices* applicationServices,
+        const ClassTransferPackage& package,
+        const ClassImportPreview& preview,
+        const ClassMngr::Next::Application::
+            TeacherDisplayNameBatchReadPort& teacherDisplayNameBatchReadPort,
+        QWidget* parent = nullptr
+        );
+
     explicit ClassImportDialog(
         ApplicationServices* applicationServices,
         const ClassTransferPackage& package,
         const ClassMngr::Next::Application::ClassTransferPreviewResult& preview,
+        QWidget* parent = nullptr
+        );
+
+    ClassImportDialog(
+        ApplicationServices* applicationServices,
+        const ClassTransferPackage& package,
+        const ClassMngr::Next::Application::ClassTransferPreviewResult& preview,
+        const ClassMngr::Next::Application::
+            TeacherDisplayNameBatchReadPort& teacherDisplayNameBatchReadPort,
         QWidget* parent = nullptr
         );
 

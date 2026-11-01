@@ -4469,6 +4469,88 @@ set_tests_properties(ClassMngrNextClassesFullShellVisualCapture
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
+# Capture the matched empty, delete-confirmation, and list-read-error states
+# through the production Legacy MainWindow and Next ApplicationBootstrap shell.
+add_executable(ClassMngrNextClassesFullWindowStateVisualCapture
+    tests/next/classes_full_window_state_visual_capture.cpp
+    ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
+    $<TARGET_OBJECTS:ClassMngrSettings>
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
+)
+target_compile_features(ClassMngrNextClassesFullWindowStateVisualCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextClassesFullWindowStateVisualCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextClassesFullWindowStateVisualCapture
+    PRIVATE
+        CLASSMNGR_CLASSES_NAVIGATOR_FIXTURE="${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/release/large-classes-visual-states/generated-large-classes-visual.tps"
+        CLASSMNGR_NEXT_VERSION="${PROJECT_VERSION}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextClassesFullWindowStateVisualCapture
+    PRIVATE
+        ClassMngrRuntime
+        ClassMngrClassTransferSupport
+        ClassMngrNextCalendarUi
+        ClassMngrSubPrepShared
+        ClassMngrNextScheduleOutput
+        ClassMngrNextRosterOutput
+        ClassMngrNextSpeakingEvaluationOutput
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrNext::DocumentCatalog
+        ClassMngrWorkspaceStore
+        ClassMngrQtPdfPrint
+        ClassMngrNextStartupUpdates
+        ClassMngrTeacherImportParser
+        ClassMngrScheduleImportParser
+        Qt6::Concurrent
+        Qt6::Sql
+        Qt6::Test
+        Qt6::PdfWidgets
+        Qt6::Network
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextClassesFullWindowStateVisualCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextClassesFullWindowStateVisualCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextClassesFullWindowStateVisualCapture
+    ClassMngrNextResourcePackage
+    ClassMngrNextTranslationOutputs
+)
+qt_add_resources(ClassMngrNextClassesFullWindowStateVisualCapture
+    classes_full_window_state_visual_capture_icons
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_light.svg
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/combo_arrow_light.svg
+        resources/assets/icons/combo_arrow_dark.svg
+)
+add_test(
+    NAME ClassMngrNextClassesFullWindowStateVisualCapture
+    COMMAND ClassMngrNextClassesFullWindowStateVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/classes-full-window-state-visual-capture"
+)
+set_tests_properties(ClassMngrNextClassesFullWindowStateVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 add_executable(ClassMngrNextClassesNavigatorVisualCapture
     tests/next/classes_navigator_visual_capture.cpp
     src/core/process_memory_snapshot.cpp
