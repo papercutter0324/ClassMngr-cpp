@@ -22,14 +22,15 @@
     English/Korean Preferences switching updates catalog and open-viewer labels
     while preserving document identity, folder expansion, PDF/viewer instances,
     readiness, page, and zoom without reopening the file.
-53. **In progress — Sub Prep output parity follow-up:** C44's embedded ToUnicode
-    map omits used CID `0x001F` (roster U+002D hyphen, 2,400 uses) and CID
-    `0x0015` (header U+2022 bullet, 96 uses). Fix text extraction without
-    changing painted glyphs; compare expected SQL-derived text and map coverage.
-    Assign the 150-DPI all-page check to the SQL-backed Legacy/Next output pair;
-    the existing C44 raster is synthetic. The typed Sub Prep Gateway reads are
-    already committed; no Gateway extension is required.
-54. **Discovered — 7A evidence follow-up:** collect representative setup
+53. **Accepted — Sub Prep PDF text mapping and output parity** (`b6d8a0a1`):
+    the Next-only Qt 6.12 finalizer maps emitted codes from captured render
+    source while preserving painting and the Legacy path. C44 verifies 2,400
+    exact names, 96 bullets and unique complete headers, with zero changed
+    pixels across 16 pages. Native Windows SQL evidence independently verifies
+    750 names, 30 headers, valid used-code mappings, and zero changes across
+    all 17 pages of both matched PDFs. See the C53 evidence README and
+    [Windows run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/41268987161).
+54. **In progress — 7A evidence follow-up:** collect representative setup
     screenshots and feature-level lifecycle/memory evidence; repair packaging
     and rerun the Phase 7 Windows diagnostic after the Batch 4 push. Run
     `41023184649` built Windows Release successfully, but its diagnostic
@@ -42,8 +43,11 @@
     gaps, resolve the current Legacy class-transfer fallback-test failure, then
     run the required full suite and Windows checks after implementation.
 
-Begin Batch 6 discovery when #54 starts. The typed Sub Prep print and roster
-reads are already committed in `WorkspaceStoreGateway`; Candidate #53 needs no
-Gateway extension unless source review identifies a missing operation.
+## Batch 6 discovery — in progress
+
+Two complementary source and preservation-matrix scans are underway for up to
+20 ordered candidates after #55. Add their reconciled candidate list when both
+reports return; the current Batch 5 order remains #54, then #55.
+
 Preserve the separate uncommitted Schedule Import edits in the Gateway pair
 and `preferences_visual_captures/`.

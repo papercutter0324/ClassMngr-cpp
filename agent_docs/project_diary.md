@@ -2,6 +2,16 @@
 
 ## Decisions and Lessons
 
+### Phase 7 Sub Prep PDF text mapping — 2026-11-01
+
+Qt 6.12's PDF writer can emit shaped glyph codes whose `ToUnicode` reverse map
+does not preserve the text sent to the painter. PDF-to-PDF text equality can
+hide shared corruption. For the Next roster route, capture the actual Qt text
+items, derive mappings from source order and emitted codes, and rewrite only
+`ToUnicode`; fail closed on unsupported structures, clusters, or conflicting
+aliases. Prove both exact source-derived text and same-renderer zero-pixel
+parity. Keep this repair out of the Legacy writer path.
+
 ### Phase 7 document viewer lifecycle and QML scan scope — 2026-10-29
 
 Keep the selected PDF body in one file-backed viewer session; the catalog and

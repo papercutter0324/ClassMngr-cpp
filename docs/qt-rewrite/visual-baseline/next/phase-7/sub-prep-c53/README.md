@@ -2,6 +2,11 @@
 
 Task ID: `phase7_c53_subprep_finalizer_implementation_02`.
 
+## Current status
+
+C53 is accepted after independent local and native Windows verification. Local
+evidence and the hosted Windows run are recorded below.
+
 The accepted implementation adds a source-aware, fail-closed finalizer to the
 shared Next Sub Prep output path. `SubPrepPackageService::generateForNext()`
 captures the `QTextItem` strings passed to Qt while the existing roster painter
@@ -129,10 +134,25 @@ harness on native Windows x64 with Qt 6.12, runs the SQL oracle and strict used
 code audit, and uploads the PDFs, manifests, SQL oracle, all-page raster PNGs,
 diff images, and comparison reports as `c53-matched-sql-windows-x64`.
 
+## Accepted local evidence
+
 The same flow was reproduced locally with macOS Qt 6.12. The Legacy capture
 passed; the SQL oracle found 750/750 exact names and 30/30 expected header
 records; the Next used-code audit passed; and all 17 matched page pairs
 (12 information-sheet pages plus 5 roster pages) had zero changed pixels.
-This is harness validation only. No native Windows run or hosted artifact has
-been collected yet, so the C53 hosted gate remains open until that workflow
-publishes its artifact.
+
+## Hosted Windows evidence
+
+The [native Windows run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/41268987161)
+used commit `b6d8a0a18b42e23da8d455dc8989f9b5cbd3658f` on Windows Server 2022
+x64 with Qt 6.12.0 at 150 DPI and strict zero tolerance. The read-only SQL
+oracle verified 750 exact names and 30 header records. The Next roster
+used-code audit covered 5 pages and 15 page-font records, with zero unmapped
+codes and zero control mappings. Both matched PDF pairs passed all 17 pages
+(12-page Sub Prep and 5-page By Day roster): dimensions match and total changed
+pixels are zero. The run also verified the same SQL snapshot and embedded
+fonts.
+
+The run uploaded `c53-matched-sql-windows-x64` (73 files, 10,811,991 bytes;
+SHA-256 `1bc44fe9124182a9b97b6e1d74f2f47c878bb8114a30298290d4b00519e6b961`).
+The workflow retains the artifact for 90 days.

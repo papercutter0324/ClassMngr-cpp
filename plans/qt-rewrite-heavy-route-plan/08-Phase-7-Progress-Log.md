@@ -1722,3 +1722,38 @@ Entries are preserved in their original document order.
 - Decision and next: preserve the open document session while refreshing both
   catalog and viewer language projections. Batch 5 continues with #53, Sub Prep
   output text mapping and SQL-backed raster evidence; Phase 7 remains in progress.
+
+### Candidate #53 — Sub Prep PDF text mapping and output parity accepted (2026-11-01)
+
+- Commit: `b6d8a0a1` (`Phase7 - Repair Sub Prep PDF text mappings`). The Next
+  `SubPrepPackageService::generateForNext()` route captures the source strings
+  sent to Qt's PDF writer and repairs only the emitted `ToUnicode` mappings.
+  It rejects unsupported PDF structures, shaping, and conflicting mappings;
+  the Legacy generator remains on its original writer path. Painted content
+  and embedded glyph streams remain unchanged.
+- C44 evidence: the source-derived 96-class fixture extracts all 2,400 exact
+  student names once, all 96 U+2022 bullets, and each of 96 complete headers
+  exactly once. The all-page used-code audit covers 64 page/font records with
+  no unmapped or control-character codes. The 16-page 150-DPI before/after
+  raster comparison has zero changed pixels.
+- Native Windows evidence: [run 41268987161](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/41268987161)
+  completed successfully on Windows Server 2022 x64 with Qt 6.12.0. Artifact
+  `c53-matched-sql-windows-x64` (ID `13068619210`, 73 files) records the
+  retained SQL snapshot and embedded font/resource provenance. The independent
+  read-only SQL oracle validates 750 exact names and 30 By Day header records;
+  the Next roster audit covers 15 page/font records with no unmapped or
+  control-character codes. Both PDFs match by page count and dimensions:
+  12-page `Sub Prep.pdf` and 5-page `Rosters - By Day.pdf`. All 17 page pairs
+  render at 150 DPI with zero changed pixels. The artifact SHA-256 is
+  `1bc44fe9124182a9b97b6e1d74f2f47c878bb8114a30298290d4b00519e6b961`.
+- Verification: on macOS Debug/Qt 6.12.0, the independent focused finalizer
+  and package-service suites passed 20 and 15 QtTest cases; the matched SQL
+  capture passed, with 750/750 exact names, 30/30 header records, and zero
+  changed pixels across both output pairs. Windows YAML/action setup and the
+  artifact-producing workflow passed. This is focused evidence, not a Phase 7
+  full-suite result or a Phase 9 numeric memory claim.
+- Decision and next: keep the source-aware finalizer on the Next roster output
+  path and fail closed outside the verified Qt 6.12 PDF structures. Batch 5
+  continues with #54, the 7A evidence and Windows diagnostic follow-up;
+  Batch 6 discovery has started. Full-window Classes captures, the Legacy
+  fallback-test failure, the full suite, and the Phase 7 exit gate remain open.

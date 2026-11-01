@@ -37,22 +37,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2 through 6
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
-- Last updated: 2026-10-30
-- Current note: Candidate #52, Document Catalog live-locale behavior, is
-  accepted in source commit `b6af1279`; Batch 5 is active at #53, the Sub Prep
-  output follow-up. English ↔ Korean switches through Preferences now update
-  the active catalog and PDF viewer while preserving selected document,
-  collapsed folder, viewer/PDF instances, ready content, page, and zoom without
-  reopening the file. The C44 audit found two used but unmapped PDF characters
-  (the roster hyphen and header bullet); #53 tracks their text mapping and the
-  SQL-backed Windows raster check. The post-Batch-4 hosted Windows diagnostic
-  artifact is invalid because the staged executable lacked the Next resource
-  catalog; #54 tracks packaging repair and a fresh run. The remaining Sub Prep
-  output and broader 7A evidence follow-ups are in the current tracker.
-  Full-window Classes empty/dialog/error captures, the Legacy fallback-test
-  failure, full-suite, Windows checks, C44 output/raster limitations, and the
-  Phase 7 exit gate remain open. The Phase 9 packaged Release numeric memory
-  gate is separate.
+- Last updated: 2026-11-01
+- Current note: Candidate #53, Next Sub Prep PDF text mapping and output parity,
+  is accepted in commit `b6d8a0a1`. Its Next-only Qt 6.12 finalizer derives
+  ToUnicode mappings from captured render source, fails closed on unsupported
+  inputs, changes no painted content, and leaves Legacy generation unchanged.
+  C44 exact-text and zero-pixel evidence passed; the native Windows SQL-backed
+  run also verified 750 names, 30 headers, the roster code map, and all 17
+  pages across both matched PDF pairs at zero changed pixels. Batch 5 is active
+  at #54, the 7A evidence and Windows diagnostic follow-up; Batch 6 discovery
+  has started. #54 owns repair/re-run after the earlier staged Next executable
+  omitted its resource catalog. Full-window Classes captures, the Legacy
+  fallback-test failure, the full suite, and the Phase 7 exit gate remain open.
+  The Phase 9 packaged Release numeric memory gate is separate.
 
 ### Slice batches
 

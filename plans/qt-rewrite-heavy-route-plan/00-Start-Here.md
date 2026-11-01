@@ -5,24 +5,24 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-10-30
-- Current milestone: Phase 7 remains in progress. Candidate #52, Document
-  Catalog live-locale behavior, is accepted in source commit `b6af1279`; Batch
-  5 is active at #53, the Sub Prep output follow-up. Switching English ↔ Korean
-  through Preferences now updates catalog labels and the open viewer while
-  preserving selected document, collapsed folder, PDF/viewer instances, ready
-  content, page, and zoom without reopening the file. The C44 audit found two
-  used but unmapped PDF characters (the roster hyphen and header bullet); #53
-  tracks their text mapping and the SQL-backed Windows raster check. The
-  post-Batch-4 hosted Windows diagnostic built successfully but returned an
-  invalid artifact because the staged executable lacked the Next resource
-  catalog; #54 tracks packaging repair and a fresh run. See the [Phase 7 progress
-  log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
+- Last updated: 2026-11-01
+- Current milestone: Phase 7 remains in progress. Candidate #53, Next Sub Prep
+  PDF text mapping and output parity, is accepted in commit `b6d8a0a1`; Batch 5
+  is active at #54, the 7A evidence and Windows diagnostic follow-up. The
+  Next-only Qt 6.12 finalizer repairs ToUnicode text from captured render
+  source, keeps painted pages unchanged, and leaves Legacy generation intact.
+  The C44 fixture verifies 2,400 names, 96 bullets, 96 complete headers, and
+  zero changed pixels over 16 pages. The native Windows C53 run verified
+  750 SQL-derived names, 30 headers, valid mapping for all used roster codes,
+  and zero changed pixels across all 17 pages of both matched PDF pairs.
+  Batch 6 discovery has started alongside #54. The earlier hosted Windows
+  diagnostic remains invalid and #54 owns packaging repair and fresh evidence.
+  See the [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md). The full project
-  suite, Windows runs, 7A evidence, C44 output/raster limitations, and Phase 7
-  exit gate remain open. One Legacy class-transfer fallback test still fails in
-  the offscreen aggregate; #55 must resolve it before reporting a full-suite
-  pass. The Phase 9 packaged-Next numeric memory gate is separate.
+  suite, 7A evidence, and Phase 7 exit gate remain open. One Legacy
+  class-transfer fallback test still fails in the offscreen aggregate; #55
+  must resolve it before a full-suite claim. The Phase 9 packaged-Next numeric
+  memory gate is separate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
@@ -44,7 +44,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — Batch 5 active | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — Batch 5 active (#54) | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |
