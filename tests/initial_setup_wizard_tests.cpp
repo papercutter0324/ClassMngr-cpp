@@ -381,6 +381,7 @@ class InitialSetupWizardTests : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void keyboardIsAvailableAtTextEntryStages();
     void personalNameFieldRetainsFocusWhileTyping();
     void capturesInitialSetupPersonalDetailsForVisualReview();
@@ -413,8 +414,20 @@ private slots:
     void aggregateSaveComposesTypedReadsWithoutDataLoss();
 
 private:
+    QTemporaryDir m_settingsRoot;
     QTemporaryDir m_directory;
 };
+
+void InitialSetupWizardTests::initTestCase()
+{
+    QVERIFY(m_settingsRoot.isValid());
+    QVERIFY(
+        qputenv(
+            "CLASSMNGR_SETTINGS_ROOT",
+            m_settingsRoot.path().toUtf8()
+            )
+        );
+}
 
 void InitialSetupWizardTests::
 capturesInitialSetupPersonalDetailsForVisualReview()
