@@ -44,14 +44,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   inputs, changes no painted content, and leaves Legacy generation unchanged.
   C44 exact-text and zero-pixel evidence passed; the native Windows SQL-backed
   run also verified 750 names, 30 headers, the roster code map, and all 17
-  pages across both matched PDF pairs at zero changed pixels. Batch 5 is active
-  at #54, the 7A evidence and Windows diagnostic follow-up. Independent Batch 6
-  source and matrix scans found one proposed #56 for dynamic Co-Teachers
-  sidebar navigation; #55 will reconcile it with the exit review. #54 owns
-  repair/re-run after the earlier staged Next executable omitted its resource
-  catalog. Full-window Classes captures, the Legacy
-  fallback-test failure, the full suite, and the Phase 7 exit gate remain open.
-  The Phase 9 packaged Release numeric memory gate is separate.
+  pages across both matched PDF pairs at zero changed pixels. Candidate #54's
+  lifecycle evidence and diagnostic packaging repair are committed and pushed
+  in `926b00fd`; its first native Windows x64 run (`41272522314`) failed
+  evidence validation: the diagnostic stopped at two scenarios and five samples,
+  and lifecycle capture produced no JSON. C54 repair is active; ARM64 success
+  does not satisfy the x64 gate. Candidate #55 is active: the Legacy
+  batch-fallback test now injects a batch-only failure and
+  passes independently; matched full-window Classes empty, confirmation, and
+  error captures plus matrix/call-path reconciliation are underway. Independent
+  Batch 6 source and matrix scans found one proposed #56 for dynamic Co-Teachers
+  sidebar navigation; #55 will reconcile it with the exit review. The full
+  suite and Phase 7 exit gate remain open. The Phase 9 packaged Release numeric
+  memory gate is separate.
 
 ### Slice batches
 

@@ -60,6 +60,7 @@ if (-not (Test-Path -LiteralPath $ValidatorPath -PathType Leaf)) {
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 public static class Phase7NativeProcessChecks
 {
@@ -74,6 +75,31 @@ public static class Phase7NativeProcessChecks
 
     [DllImport("user32.dll")]
     public static extern bool IsWindowVisible(IntPtr window);
+
+    [DllImport(
+        "kernel32.dll",
+        EntryPoint = "QueryFullProcessImageNameW",
+        ExactSpelling = true,
+        SetLastError = true,
+        CharSet = CharSet.Unicode)]
+    private static extern bool QueryFullProcessImageNameW(
+        IntPtr process,
+        uint flags,
+        StringBuilder executablePath,
+        ref int pathLength);
+
+    public static string GetProcessImagePath(IntPtr process)
+    {
+        StringBuilder executablePath = new StringBuilder(32768);
+        int pathLength = executablePath.Capacity;
+        if (!QueryFullProcessImageNameW(
+                process, 0, executablePath, ref pathLength))
+        {
+            throw new System.ComponentModel.Win32Exception(
+                Marshal.GetLastWin32Error(), "QueryFullProcessImageNameW failed.");
+        }
+        return executablePath.ToString();
+    }
 
     public static bool IsNativeX64Process(IntPtr process)
     {
@@ -285,7 +311,9 @@ function Invoke-NextScenario {
         $process.Refresh()
         $processCreatedAt = $process.StartTime.ToUniversalTime()
         $processCreatedAtUtc = ConvertTo-UtcTimestamp $processCreatedAt
-        $canonicalProcessPath = [System.IO.Path]::GetFullPath($process.MainModule.FileName)
+        $canonicalProcessPath = [System.IO.Path]::GetFullPath(
+            [Phase7NativeProcessChecks]::GetProcessImagePath($process.Handle)
+        )
         if (-not [string]::Equals(
             $canonicalProcessPath,
             $ApplicationPath,
@@ -380,7 +408,9 @@ function Invoke-NextScenario {
             if ($process.HasExited) {
                 throw "ClassMngrNext.exe exited during external memory sampling."
             }
-            $currentProcessPath = [System.IO.Path]::GetFullPath($process.MainModule.FileName)
+            $currentProcessPath = [System.IO.Path]::GetFullPath(
+                [Phase7NativeProcessChecks]::GetProcessImagePath($process.Handle)
+            )
             if (-not [string]::Equals(
                 $currentProcessPath,
                 $canonicalProcessPath,

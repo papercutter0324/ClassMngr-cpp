@@ -42,12 +42,18 @@
     checks. The local Initial Setup capture passed 3/3 on macOS, and Phase 7
     Python tests passed 13/13 (seven lifecycle-validator and six memory-
     validator cases); the native Windows rerun remains pending. The setup
-    schedule-import build prerequisite was repaired in `80f7f1c6`; do not
-    claim the Phase 9 numeric memory gate.
-55. **Discovered — Phase 7 exit review:** reconcile every preservation-matrix
-    row and old call path, close full-window Classes empty/dialog/error capture
-    gaps, resolve the current Legacy class-transfer fallback-test failure, then
-    run the required full suite and Windows checks after implementation.
+    schedule-import build prerequisite was repaired in `80f7f1c6`. Implementation
+    commit `926b00fd` is pushed. Windows x64 run `41272522314` failed the gate:
+    the memory diagnostic stopped at two scenarios and five samples after a
+    PowerShell `FileName` property error; the lifecycle capture exited 1 and
+    produced no JSON. ARM64 success does not satisfy x64 evidence. C54 repair is
+    underway; do not claim the Phase 9 numeric memory gate.
+55. **In progress — Phase 7 exit review:** the preservation-matrix and CI maps
+    are complete. The Legacy class-transfer fallback test now injects a
+    batch-only read failure, preserves both expected teacher names, and passes
+    independently. Add matched full-window Classes empty, delete-confirmation,
+    and error captures; reconcile every matrix row and old call path; reconcile
+    #56; then run the required full suite and Windows checks after implementation.
 
 ## Batch 6 — discovered
 

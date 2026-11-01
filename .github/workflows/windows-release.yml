@@ -294,16 +294,48 @@ jobs:
           $evidencePath = Join-Path $evidenceDirectory 'initial-setup-lifecycle.json'
           $evidenceExecutable = Join-Path $Env:GITHUB_WORKSPACE `
             'build\windows-x64-release\Release\ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests.exe'
+          $qtBin = Join-Path $Env:QT_MSVC_X64_PREFIX 'bin'
+          $qtPlatforms = Join-Path $Env:QT_MSVC_X64_PREFIX 'plugins\platforms'
+          $oldPath = [Environment]::GetEnvironmentVariable(
+            'PATH', [EnvironmentVariableTarget]::Process
+          )
+          $oldQpaPlatform = [Environment]::GetEnvironmentVariable(
+            'QT_QPA_PLATFORM', [EnvironmentVariableTarget]::Process
+          )
+          $oldQpaPluginPath = [Environment]::GetEnvironmentVariable(
+            'QT_QPA_PLATFORM_PLUGIN_PATH', [EnvironmentVariableTarget]::Process
+          )
           $env:CLASSMNGR_PHASE7_INITIAL_SETUP_LIFECYCLE_EVIDENCE_OUTPUT = `
             [System.IO.Path]::GetFullPath($evidencePath)
           try {
+            [Environment]::SetEnvironmentVariable(
+              'PATH', "$qtBin;$oldPath", [EnvironmentVariableTarget]::Process
+            )
+            [Environment]::SetEnvironmentVariable(
+              'QT_QPA_PLATFORM', 'offscreen', [EnvironmentVariableTarget]::Process
+            )
+            [Environment]::SetEnvironmentVariable(
+              'QT_QPA_PLATFORM_PLUGIN_PATH', $qtPlatforms, [EnvironmentVariableTarget]::Process
+            )
             & $evidenceExecutable initialSetupLifecycleEvidenceCapture
-            if ($LASTEXITCODE -ne 0) { throw "Initial Setup lifecycle evidence capture failed." }
+            $captureExitCode = $LASTEXITCODE
+            if ($captureExitCode -ne 0) {
+              throw "Initial Setup lifecycle evidence capture failed with exit code $captureExitCode."
+            }
 
             python scripts\phase7\validate_initial_setup_lifecycle_evidence.py `
               --artifact $evidencePath
             if ($LASTEXITCODE -ne 0) { throw "Initial Setup lifecycle evidence validation failed." }
           } finally {
+            [Environment]::SetEnvironmentVariable(
+              'PATH', $oldPath, [EnvironmentVariableTarget]::Process
+            )
+            [Environment]::SetEnvironmentVariable(
+              'QT_QPA_PLATFORM', $oldQpaPlatform, [EnvironmentVariableTarget]::Process
+            )
+            [Environment]::SetEnvironmentVariable(
+              'QT_QPA_PLATFORM_PLUGIN_PATH', $oldQpaPluginPath, [EnvironmentVariableTarget]::Process
+            )
             Remove-Item Env:CLASSMNGR_PHASE7_INITIAL_SETUP_LIFECYCLE_EVIDENCE_OUTPUT `
               -ErrorAction SilentlyContinue
           }

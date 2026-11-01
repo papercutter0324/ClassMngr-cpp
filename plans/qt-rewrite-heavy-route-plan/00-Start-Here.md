@@ -7,24 +7,25 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-01
 - Current milestone: Phase 7 remains in progress. Candidate #53, Next Sub Prep
-  PDF text mapping and output parity, is accepted in commit `b6d8a0a1`; Batch 5
-  is active at #54, the 7A evidence and Windows diagnostic follow-up. The
-  Next-only Qt 6.12 finalizer repairs ToUnicode text from captured render
-  source, keeps painted pages unchanged, and leaves Legacy generation intact.
-  The C44 fixture verifies 2,400 names, 96 bullets, 96 complete headers, and
-  zero changed pixels over 16 pages. The native Windows C53 run verified
-  750 SQL-derived names, 30 headers, valid mapping for all used roster codes,
-  and zero changed pixels across all 17 pages of both matched PDF pairs.
-  Independent Batch 6 source and matrix scans found one proposed #56: restore
-  dynamic Co-Teachers sidebar navigation. Candidate #55 will reconcile it with
-  the exit review before implementation. The earlier hosted Windows diagnostic
-  remains invalid; #54 owns packaging repair and fresh evidence.
+  PDF text mapping and output parity, is accepted in commit `b6d8a0a1`. Candidate
+  #54's Initial Setup lifecycle capture and diagnostic packaging repair are
+  committed and pushed in `926b00fd`; local focused checks pass. Its first
+  native Windows x64 run (`41272522314`) failed evidence validation: the
+  diagnostic stopped at two scenarios and five samples, and the lifecycle
+  capture produced no JSON. C54 repair is active; ARM64 success does not satisfy
+  the x64 gate. Candidate #55 has started: the Legacy
+  teacher-name fallback test now injects a batch-only read failure and passes
+  independently, while matched full-window Classes empty, delete-confirmation,
+  and error captures are being implemented. The #55 matrix review found one
+  proposed Batch 6 candidate, #56: restore dynamic Co-Teachers sidebar
+  navigation. The C44 fixture verifies 2,400 names, 96 bullets, 96 complete
+  headers, and zero changed pixels over 16 pages. The native Windows C53 run
+  verified 750 SQL-derived names, 30 headers, valid mapping for all used roster
+  codes, and zero changed pixels across all 17 pages of both matched PDF pairs.
   See the [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md). The full project
-  suite, 7A evidence, and Phase 7 exit gate remain open. One Legacy
-  class-transfer fallback test still fails in the offscreen aggregate; #55
-  must resolve it before a full-suite claim. The Phase 9 packaged-Next numeric
-  memory gate is separate.
+  suite, 7A evidence, and Phase 7 exit gate remain open. The Phase 9
+  packaged-Next numeric memory gate is separate.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
@@ -46,7 +47,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — Batch 5 active (#54) | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — Batch 5 active (#54–55) | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |
