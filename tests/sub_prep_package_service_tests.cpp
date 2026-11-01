@@ -1,5 +1,6 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
+#include "core/fontmanager.h"
 #include "domain/models/roster.h"
 #include "domain/models/teacher.h"
 #include "features/roster/services/roster_template_print_service.h"
@@ -10,6 +11,7 @@
 
 #include <QDir>
 #include <QByteArray>
+#include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
@@ -19,6 +21,7 @@
 #include <QJsonObject>
 #include <QPdfDocument>
 #include <QTemporaryDir>
+#include <QRegularExpression>
 
 #include <algorithm>
 #include <charconv>
@@ -292,6 +295,55 @@ void populateHeavyOutputData()
         }
         g_rosters.insert(classId, roster);
     }
+}
+
+QList<RosterTemplateRenderer::RosterClassData> heavyRendererClasses()
+{
+    QList<RosterTemplateRenderer::RosterClassData> result;
+    result.reserve(HeavyClassCount);
+    for (int classIndex = 0; classIndex < HeavyClassCount; ++classIndex)
+    {
+        const int classId = 1000 + classIndex;
+        const ClassInfo& sourceInfo = g_classInfo[classId];
+        const Roster& sourceRoster = g_rosters[classId];
+        RosterTemplateRenderer::RosterClassData data;
+        data.classroom = {classId, g_classes.at(classIndex).name};
+        data.classInfo.classGrade = sourceInfo.classGrade;
+        data.classInfo.classLevel = sourceInfo.classLevel;
+        data.classInfo.teacherEn = sourceInfo.teacherEn;
+        data.classInfo.teacherKr = sourceInfo.teacherKr;
+        data.classInfo.roomNumber = sourceInfo.roomNumber;
+        data.classInfo.zoomId = sourceInfo.zoomId;
+        data.classInfo.zoomPassword = sourceInfo.zoomPassword;
+        for (const ClassTime& time : sourceInfo.classTimes)
+        {
+            data.classInfo.regularSchedule.append(
+                {time.day, time.startTime, time.endTime});
+        }
+        data.roster = {sourceRoster.columns, sourceRoster.rows};
+        result.append(std::move(data));
+    }
+    return result;
+}
+
+RosterTemplateRenderer::Fonts heavyRendererFonts()
+{
+    QFont ui = FontManager::getUiFont(-1);
+    QFont korean = FontManager::getKoreanFont(-1);
+    korean.setStyleName(QStringLiteral("Regular"));
+    if (const auto axis = QFont::Tag::fromString(QStringLiteral("wght")))
+    {
+        korean.setVariableAxis(*axis, static_cast<float>(QFont::Normal));
+    }
+    return {std::move(ui), std::move(korean)};
+}
+
+QString imageSha256(const QImage& image)
+{
+    const QByteArray bytes(reinterpret_cast<const char*>(image.constBits()),
+        static_cast<qsizetype>(image.sizeInBytes()));
+    return QString::fromLatin1(
+        QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex());
 }
 
 namespace
@@ -894,6 +946,7 @@ private slots:
     void printOnlyUsesPacketOrderAndReportsCancellation();
     void rosterSourceFailuresDoNotCommitPartialPackages();
     void largePackageGeneratesOutputReferenceWhenConfigured();
+    void nextLargePackageFinalizesSourceTextAndPreservesAllPixels();
 };
 
 void SubPrepPackageServiceTests::init()
@@ -1024,6 +1077,15 @@ void SubPrepPackageServiceTests
             );
 
     QCOMPARE(result.status, SubPrepPackageService::Status::Completed);
+    QVERIFY(result.documentPaths.size() >= 2);
+    QPdfDocument nextRoster;
+    QCOMPARE(nextRoster.load(result.documentPaths.last()), QPdfDocument::Error::None);
+    QVERIFY(nextRoster.pageCount() > 0);
+    const QString nextRosterText = nextRoster.getAllText(0).text();
+    QVERIFY2(nextRosterText.contains(QStringLiteral("Alex")), qPrintable(nextRosterText));
+    QVERIFY(!nextRosterText.contains(QChar(0x0009)));
+    QVERIFY(!nextRosterText.contains(QChar(0x001f)));
+    QVERIFY(!nextRosterText.contains(QChar(0x0015)));
     QCOMPARE(g_rosterOutputSourceReadPort.loadCount, 1);
     QCOMPARE(
         g_rosterOutputSourceReadPort.lastRequest.selectedClassIds,
@@ -1803,6 +1865,140 @@ void SubPrepPackageServiceTests
                 ) > 0
             );
         manifestFile.close();
+    }
+}
+
+void SubPrepPackageServiceTests
+    ::nextLargePackageFinalizesSourceTextAndPreservesAllPixels()
+{
+    populateHeavyOutputData();
+    const auto classes = heavyRendererClasses();
+    QString cellValueError;
+    const auto values = RosterTemplateRenderer::buildDailyCellValues(
+        classes, &cellValueError);
+    QVERIFY2(cellValueError.isEmpty(), qPrintable(cellValueError));
+    QVERIFY(!values.isEmpty());
+
+    QTemporaryDir temporaryRoot;
+    QVERIFY(temporaryRoot.isValid());
+    const auto fonts = heavyRendererFonts();
+    const QString beforePath = temporaryRoot.filePath(QStringLiteral("C44-before.pdf"));
+    const auto beforeResult = RosterTemplateRenderer::saveCellValuesPdf(
+        beforePath, RosterTemplateRenderer::TemplateId::Daily,
+        RosterTemplateRenderer::templateOrientation(RosterTemplateRenderer::TemplateId::Daily),
+        values, fonts);
+    QVERIFY2(beforeResult.status == RosterTemplateRenderer::Status::Sent,
+        qPrintable(beforeResult.message));
+
+    const QString packageRoot = QDir(temporaryRoot.path()).filePath(QStringLiteral("next-package"));
+    const auto generated = SubPrepPackageService::generateForNext(
+        heavyPackageRequest(packageRoot));
+    QVERIFY2(generated.status == SubPrepPackageService::Status::Completed,
+        qPrintable(generated.message));
+    QCOMPARE(generated.documentPaths.size(), 2);
+    QCOMPARE(QFileInfo(generated.documentPaths.last()).fileName(),
+        QStringLiteral("Rosters - Daily.pdf"));
+
+    QPdfDocument before, after;
+    QCOMPARE(before.load(beforePath), QPdfDocument::Error::None);
+    QCOMPARE(after.load(generated.documentPaths.last()), QPdfDocument::Error::None);
+    QCOMPARE(before.pageCount(), 16);
+    QCOMPARE(after.pageCount(), before.pageCount());
+    QString extracted;
+    QJsonArray pageAudit;
+    for (int page = 0; page < before.pageCount(); ++page)
+    {
+        const QSizeF points = before.pagePointSize(page);
+        QCOMPARE(points, after.pagePointSize(page));
+        const QSize size(qRound(points.width() * 150.0 / 72.0),
+            qRound(points.height() * 150.0 / 72.0));
+        const QImage original = before.render(page, size);
+        const QImage fixed = after.render(page, size);
+        QVERIFY(!original.isNull());
+        QVERIFY(!fixed.isNull());
+        QCOMPARE(original, fixed);
+        const QString pageText = after.getAllText(page).text();
+        extracted += pageText;
+        extracted += QLatin1Char('\n');
+        pageAudit.append(QJsonObject{
+            {QStringLiteral("page"), page + 1},
+            {QStringLiteral("widthPt"), points.width()},
+            {QStringLiteral("heightPt"), points.height()},
+            {QStringLiteral("widthPxAt150Dpi"), size.width()},
+            {QStringLiteral("heightPxAt150Dpi"), size.height()},
+            {QStringLiteral("changedPixels"), 0},
+            {QStringLiteral("beforeRasterSha256"), imageSha256(original)},
+            {QStringLiteral("afterRasterSha256"), imageSha256(fixed)}
+        });
+    }
+
+    int studentNameCount = 0;
+    for (int classIndex = 0; classIndex < HeavyClassCount; ++classIndex)
+    {
+        for (int studentIndex = 0; studentIndex < 25; ++studentIndex)
+        {
+            const QString expected = QStringLiteral("Student %1-%2")
+                .arg(classIndex + 1).arg(studentIndex + 1);
+            const QRegularExpression exact(QStringLiteral("(?<![A-Za-z0-9-])%1(?![A-Za-z0-9-])")
+                .arg(QRegularExpression::escape(expected)));
+            auto matches = exact.globalMatch(extracted);
+            int occurrences = 0;
+            while (matches.hasNext()) { matches.next(); ++occurrences; }
+            QVERIFY2(occurrences == 1, qPrintable(expected));
+            ++studentNameCount;
+        }
+    }
+    QCOMPARE(studentNameCount, 2400);
+    QCOMPARE(extracted.count(QChar(0x2022)), 96);
+
+    int headerCount = 0;
+    for (int classIndex = 0; classIndex < HeavyClassCount; ++classIndex)
+    {
+        const int teacherIndex = classIndex / HeavyClassesPerTeacher;
+        const int hour = 4 + (classIndex % 8);
+        const QString expectedHeader = QStringLiteral("%1 (%2 p.m. / Teacher %3 / Room %4 / Zoom: zoom.%5 • PW zoom-%5)")
+            .arg(heavyClassLabel(classIndex))
+            .arg(hour)
+            .arg(teacherIndex + 1, 2, 10, QLatin1Char('0'))
+            .arg(401 + teacherIndex)
+            .arg(teacherIndex + 1);
+        const int exactOccurrences = extracted.count(expectedHeader);
+        QVERIFY2(exactOccurrences == 1, qPrintable(expectedHeader));
+        ++headerCount;
+    }
+    QCOMPARE(headerCount, 96);
+    for (const QChar forbidden : {QChar(0x0009), QChar(0x001f), QChar(0x0015), QChar(0x000c)})
+        QVERIFY(!extracted.contains(forbidden));
+
+    const QString evidenceRoot = qEnvironmentVariable("CLASSMNGR_SUB_PREP_C53_EVIDENCE_DIR").trimmed();
+    if (!evidenceRoot.isEmpty())
+    {
+        QVERIFY(QDir().mkpath(evidenceRoot));
+        const QString retainedBefore = QDir(evidenceRoot).filePath(QStringLiteral("C44-before.pdf"));
+        const QString retainedAfter = QDir(evidenceRoot).filePath(QStringLiteral("C44-after.pdf"));
+        QFile::remove(retainedBefore);
+        QFile::remove(retainedAfter);
+        QVERIFY(QFile::copy(beforePath, retainedBefore));
+        QVERIFY(QFile::copy(generated.documentPaths.last(), retainedAfter));
+        QJsonObject audit{
+            {QStringLiteral("taskId"), QStringLiteral("phase7_c53_subprep_finalizer_implementation_02")},
+            {QStringLiteral("entryPoint"), QStringLiteral("SubPrepPackageService::generateForNext")},
+            {QStringLiteral("sourceFixture"), QStringLiteral("populateHeavyOutputData(): 96 classes x 25 Student n-n English names")},
+            {QStringLiteral("expectedStudentNames"), 2400},
+            {QStringLiteral("foundStudentNames"), studentNameCount},
+            {QStringLiteral("expectedHeaderBullets"), 96},
+            {QStringLiteral("foundHeaderBullets"), extracted.count(QChar(0x2022))},
+            {QStringLiteral("expectedHeaderStrings"), 96},
+            {QStringLiteral("foundHeaderStrings"), headerCount},
+            {QStringLiteral("sourceTextPass"), true},
+            {QStringLiteral("renderer"), QStringLiteral("Qt QPdfDocument on pre-finalizer and Next output PDFs")},
+            {QStringLiteral("dpi"), 150},
+            {QStringLiteral("changedPixelsPerPage"), 0},
+            {QStringLiteral("pages"), pageAudit}
+        };
+        QFile auditFile(QDir(evidenceRoot).filePath(QStringLiteral("C44-raster-source-audit.json")));
+        QVERIFY(auditFile.open(QIODevice::WriteOnly | QIODevice::Text));
+        QVERIFY(auditFile.write(QJsonDocument(audit).toJson(QJsonDocument::Indented)) > 0);
     }
 }
 

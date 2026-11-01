@@ -1,0 +1,242 @@
+{
+    "derivedSubstitutions": [
+        {
+            "cmapGlyph": 13241,
+            "deltaX": 0,
+            "deltaY": -0.8125,
+            "shapedGlyph": 13252,
+            "translatedOutlineEqual": true,
+            "unicode": 45
+        },
+        {
+            "cmapGlyph": 13155,
+            "deltaX": 0,
+            "deltaY": -1.15625,
+            "shapedGlyph": 13207,
+            "translatedOutlineEqual": true,
+            "unicode": 8226
+        }
+    ],
+    "fontFamily": "Pretendard Variable",
+    "fontSha256": "3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22",
+    "fontStyle": "Regular",
+    "fontWeightAxis": 400,
+    "platformPlugin": "offscreen",
+    "qtVersion": "6.12.0",
+    "retainedC44IndependentChecks": [
+        {
+            "actualHeaderBullets": 0,
+            "exactStudentNamesFound": 0,
+            "expectedHeaderBullets": 96,
+            "expectedStudentNames": 2400,
+            "independentSourceTextPass": false,
+            "missingStudentNames": 2400,
+            "pages": [
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                }
+            ],
+            "path": "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44/font-axis-repair/C44-Rosters-Daily.pdf",
+            "sha256": "e080d3ad2551c8ebb82f30df2ed42408b52e7f3a5c3b97bb25e963a8df1b4927"
+        },
+        {
+            "actualHeaderBullets": 0,
+            "exactStudentNamesFound": 0,
+            "expectedHeaderBullets": 96,
+            "expectedStudentNames": 2400,
+            "independentSourceTextPass": false,
+            "missingStudentNames": 2400,
+            "pages": [
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                },
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                }
+            ],
+            "path": "docs/qt-rewrite/visual-baseline/release/sub-prep-output/reference/Rosters - Daily.pdf",
+            "sha256": "8f18e89a0d199063c6b56ada5b825e6588bdd6ceadbe4239a7a386894fc3ccae"
+        }
+    ],
+    "taskId": "phase7_c53_subprep_output_implementation_01",
+    "variants": [
+        {
+            "actualText": "Student 1\t1 E4 \f Hercules - normal",
+            "exactTextPass": false,
+            "expectedText": "Student 1-1 E4 • Hercules - normal",
+            "pages": [
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                }
+            ],
+            "path": "original.pdf",
+            "sha256": "cf7ce23f8c9705ca68058f405081a6922319915b8e445213147bb571d8802243"
+        },
+        {
+            "actualText": "Student 1-1 E4 • Hercules - normal",
+            "exactTextPass": true,
+            "expectedText": "Student 1-1 E4 • Hercules - normal",
+            "pages": [
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                }
+            ],
+            "path": "no-shaping.pdf",
+            "rasterVersusOriginal": {
+                "changedPixels": 2079,
+                "dpi": 150,
+                "exactRasterPass": false,
+                "height": 1754,
+                "maximumChannelDelta": 254,
+                "meanAbsoluteChannelDelta": 0.008278083275094715,
+                "toleranceChangedPixels": 0,
+                "width": 1240
+            },
+            "sha256": "062bc0bf951eea57c53b477c5808c00efb880eedc03ac3fdce4b0860bfc3f2db"
+        },
+        {
+            "actualText": "Student 1-1 E4 • Hercules - normal",
+            "exactTextPass": true,
+            "expectedText": "Student 1-1 E4 • Hercules - normal",
+            "pages": [
+                {
+                    "heightPt": 842,
+                    "widthPt": 595
+                }
+            ],
+            "path": "canonical-outline-trial.pdf",
+            "rasterVersusOriginal": {
+                "changedPixels": 66,
+                "dpi": 150,
+                "exactRasterPass": false,
+                "height": 1754,
+                "maximumChannelDelta": 154,
+                "meanAbsoluteChannelDelta": 0.00047633059918343325,
+                "toleranceChangedPixels": 0,
+                "width": 1240
+            },
+            "sha256": "15592563a40299738d2c263729fd9e0f3e471aafe101fe5d84a1dab6419d8038"
+        }
+    ]
+}

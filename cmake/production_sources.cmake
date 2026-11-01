@@ -645,6 +645,8 @@ set(CLASSMNGR_APP_SERVICES_SOURCES
 list(APPEND CLASSMNGR_FEATURES_SOURCES
     "src/features/roster/services/roster_template_print_private_service.inc")
 set(CLASSMNGR_ROSTER_TEMPLATE_RENDERER_SOURCES
+    "src/shared/roster/sub_prep_pdf_text_finalizer.cpp"
+    "src/shared/roster/sub_prep_pdf_text_finalizer.h"
     "src/shared/roster/roster_template_renderer.cpp"
     "src/shared/roster/roster_template_renderer.h"
     "src/shared/roster/roster_template_print_by_day_template.inc"

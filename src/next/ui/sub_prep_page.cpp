@@ -1258,7 +1258,7 @@ void SubPrepPage::generateSubPrep()
                 operationError(savedName.error()));
         }
     }
-    const SubPrepPackageService::Result generated = SubPrepPackageService::generate(
+    const SubPrepPackageService::Result generated = SubPrepPackageService::generateForNext(
         std::move(packageRequest));
     if (generated.status == SubPrepPackageService::Status::Completed)
     {

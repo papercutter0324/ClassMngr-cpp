@@ -79,7 +79,8 @@ RosterTemplateRenderer::Result saveRosterPdf(
     const RosterTemplateRenderer::TemplateId templateId,
     const QStringList& selectedExtraColumns = {},
     const QPageLayout::Orientation perClassOrientation =
-        QPageLayout::Portrait
+        QPageLayout::Portrait,
+    const bool finalizeText = false
     )
 {
     if (documentPath.trimmed().isEmpty())
@@ -111,15 +112,17 @@ RosterTemplateRenderer::Result saveRosterPdf(
         };
     }
 
-    return RosterTemplateRenderer::saveCellValuesPdf(
-        documentPath,
-        templateId,
+    const auto orientation =
         templateId == RosterTemplateRenderer::TemplateId::PerClassWithExtraInfo
             ? perClassOrientation
-            : RosterTemplateRenderer::templateOrientation(templateId),
-        values,
-        subPrepRosterFonts()
-        );
+            : RosterTemplateRenderer::templateOrientation(templateId);
+    if (finalizeText)
+    {
+        return RosterTemplateRenderer::saveCellValuesPdfForNextSubPrep(
+            documentPath, templateId, orientation, values, subPrepRosterFonts());
+    }
+    return RosterTemplateRenderer::saveCellValuesPdf(
+        documentPath, templateId, orientation, values, subPrepRosterFonts());
 }
 
 class TypedSourceReleaseGuard
@@ -744,7 +747,8 @@ QList<PackageClass> loadPackageClasses(
 GeneratedPackage generateAt(
     Request& request,
     const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
-    const QString& packageDirectory
+    const QString& packageDirectory,
+    const bool finalizeRosterText
     )
 {
     if (!QDir().mkpath(packageDirectory))
@@ -842,7 +846,8 @@ GeneratedPackage generateAt(
                     QDir(packageDirectory).filePath(relativePath),
                     request.rosterTemplate,
                     selectedExtraColumns,
-                    request.perClassOrientation
+                request.perClassOrientation,
+                finalizeRosterText
                     );
 
             if (rosterResult.status != DocumentOutputStatus::Sent)
@@ -860,7 +865,10 @@ GeneratedPackage generateAt(
         const auto rosterResult = saveRosterPdf(
                 rosterClasses,
                 QDir(packageDirectory).filePath(relativePath),
-                request.rosterTemplate
+                request.rosterTemplate,
+                {},
+                QPageLayout::Portrait,
+                finalizeRosterText
                 );
 
         if (rosterResult.status != DocumentOutputStatus::Sent)
@@ -1172,6 +1180,12 @@ QList<int> classIdsForDays(
     return ids;
 }
 
+static Result generateWithPlan(
+    Request request,
+    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
+    const bool finalizeRosterText
+    );
+
 Result generate(
     Request request
     )
@@ -1183,12 +1197,25 @@ Result generate(
         return failed(preflightFailureMessage(planned.reason));
     }
 
-    return generate(std::move(request), *planned.plan);
+    return generateWithPlan(std::move(request), *planned.plan, false);
 }
 
-Result generate(
+Result generateForNext(Request request)
+{
+    const auto planned = ClassMngr::Next::Application::
+        planSubPrepGeneration(generationPlanRequest(request));
+    if (!planned.isValid() || !planned.plan)
+    {
+        return failed(preflightFailureMessage(planned.reason));
+    }
+
+    return generateWithPlan(std::move(request), *planned.plan, true);
+}
+
+static Result generateWithPlan(
     Request request,
-    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan
+    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
+    const bool finalizeRosterText
     )
 {
     const bool createFolder = plan.output.createFolder;
@@ -1259,7 +1286,7 @@ Result generate(
         }
 
         const GeneratedPackage generated =
-            generateAt(request, plan, stagingDirectory.path());
+            generateAt(request, plan, stagingDirectory.path(), finalizeRosterText);
         if (!generated.success)
         {
             return failed(generated.message);
@@ -1324,7 +1351,7 @@ Result generate(
         }
 
         const GeneratedPackage generated =
-            generateAt(request, plan, printOnlyDirectory->path());
+            generateAt(request, plan, printOnlyDirectory->path(), finalizeRosterText);
         if (!generated.success)
         {
             return failed(generated.message);
@@ -1420,5 +1447,13 @@ Result generate(
         folderCreated,
         printCanceled
     };
+}
+
+Result generate(
+    Request request,
+    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan
+    )
+{
+    return generateWithPlan(std::move(request), plan, false);
 }
 }

@@ -1888,6 +1888,7 @@ private slots:
     void capturesLargeSpeakingEvaluationBoundaryWhenConfigured();
     void capturesLargeStaffDirectoryBoundaryWhenConfigured();
     void capturesLargeSubPrepOutputBoundaryWhenConfigured();
+    void capturesMatchedSqlSubPrepForC53();
     void capturesLargeSubPrepVisualStatesWhenConfigured();
     void capturesLargeResourceTraceWhenConfigured();
     void capturesLargePdfViewerVisualStatesWhenConfigured();
@@ -10284,6 +10285,235 @@ void StartupPerformanceTests::capturesLargeStaffDirectoryBoundaryWhenConfigured(
         );
 }
 
+void StartupPerformanceTests::capturesMatchedSqlSubPrepForC53()
+{
+    const QString configuredOutputRoot = qEnvironmentVariable(
+        "CLASSMNGR_C53_SQL_GATE_REFERENCE_DIR").trimmed();
+    QVERIFY2(
+        !configuredOutputRoot.isEmpty(),
+        "CLASSMNGR_C53_SQL_GATE_REFERENCE_DIR was not provided."
+        );
+    const QString outputRoot = QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QVERIFY2(
+        !QDir(outputRoot).exists()
+            || QDir(outputRoot).entryList(
+                QDir::NoDotAndDotDot | QDir::AllEntries).isEmpty(),
+        "The C53 SQL capture output directory must be new or empty."
+        );
+    QVERIFY2(
+        QDir().mkpath(outputRoot),
+        qPrintable(QStringLiteral("Unable to create C53 evidence root: %1")
+            .arg(outputRoot))
+        );
+
+    const QString appPath =
+        qEnvironmentVariable("CLASSMNGR_TEST_APP_PATH").trimmed();
+    QVERIFY2(!appPath.isEmpty(), "CLASSMNGR_TEST_APP_PATH was not provided.");
+    QVERIFY2(QFileInfo::exists(appPath), qPrintable(appPath));
+    const QString sourceRoot = QStringLiteral(CLASSMNGR_SOURCE_DIR);
+    const QString sqlFixturePath = QDir(sourceRoot).filePath(
+        QStringLiteral("tests/fixtures/workspaces/large_startup.sql"));
+    const QByteArray sqlFixtureSha256 = sha256File(sqlFixturePath);
+    QCOMPARE(sqlFixtureSha256.size(), 64);
+
+    const QString configuredReferenceDate = qEnvironmentVariable(
+        "CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE").trimmed();
+    const QDate referenceDate = QDate::fromString(
+        configuredReferenceDate, Qt::ISODate);
+    QCOMPARE(referenceDate, QDate(2026, 9, 14));
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString fixturePath = directory.filePath(
+        QStringLiteral("large-sub-prep-output.tps"));
+    QString fixtureError;
+    QVERIFY2(createLargeStartupFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError));
+    QVERIFY2(prepareLargeSubPrepOutputFixture(fixturePath, &fixtureError),
+        qPrintable(fixtureError));
+    QJsonObject fixtureCounts;
+    QVERIFY2(inspectLargeSubPrepOutputFixture(
+        fixturePath, &fixtureCounts, &fixtureError), qPrintable(fixtureError));
+    QCOMPARE(fixtureCounts.value(QStringLiteral("classCount")).toInt(), 96);
+    QCOMPARE(fixtureCounts.value(QStringLiteral("weekdayClassCount")).toInt(), 30);
+    QCOMPARE(fixtureCounts.value(QStringLiteral("saturdayClassCount")).toInt(), 66);
+
+    const QString settingsRoot = directory.filePath(QStringLiteral("settings"));
+    QVERIFY2(writeRepresentativeStartupSettings(settingsRoot),
+        "Unable to write deterministic C53 Legacy settings.");
+    const QByteArray preparedDatabaseSha256 = sha256File(fixturePath);
+    QCOMPARE(preparedDatabaseSha256.size(), 64);
+    const QString retainedDatabasePath = QDir(outputRoot).filePath(
+        QStringLiteral("generated-large-sub-prep-output.tps"));
+    QVERIFY2(QFile::copy(fixturePath, retainedDatabasePath),
+        "Unable to retain the prepared C53 database snapshot.");
+    QCOMPARE(sha256File(retainedDatabasePath), preparedDatabaseSha256);
+
+    const QString targetRoot = QDir(outputRoot).filePath(
+        QStringLiteral("output-target"));
+    const QString metricsPath = QDir(outputRoot).filePath(
+        QStringLiteral("large-sub-prep-output-workflow.json"));
+    const QString tracePath = QDir(outputRoot).filePath(
+        QStringLiteral("workflow-trace.txt"));
+    QProcess process;
+    QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+    environment.insert(QStringLiteral("CLASSMNGR_SETTINGS_ROOT"), settingsRoot);
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH"), tracePath);
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_TARGET_ROOT"),
+        targetRoot);
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE"),
+        QStringLiteral("2026-09-14"));
+    environment.insert(QStringLiteral("LC_ALL"), QStringLiteral("en_US.UTF-8"));
+    environment.insert(QStringLiteral("LANG"), QStringLiteral("en_US.UTF-8"));
+    environment.insert(QStringLiteral("QT_QPA_PLATFORM"), QStringLiteral("offscreen"));
+    process.setProcessEnvironment(environment);
+    process.start(appPath, {
+        QStringLiteral("--startup-performance-test"),
+        QStringLiteral("--startup-performance-workflow"),
+        QStringLiteral("--startup-performance-sub-prep-output-lifecycle"),
+        QStringLiteral("--startup-performance-scenario"),
+        QStringLiteral("representative"),
+        QStringLiteral("--startup-performance-settle-ms"),
+        QStringLiteral("5000"),
+        QStringLiteral("--startup-performance-output"),
+        metricsPath,
+        fixturePath
+    });
+    QVERIFY2(process.waitForStarted(StartupTimeoutMs),
+        qPrintable(process.errorString()));
+    const bool finished = process.waitForFinished(SubPrepOutputTimeoutMs);
+    if (!finished)
+    {
+        process.kill();
+        QVERIFY(process.waitForFinished(SubPrepOutputTimeoutMs));
+    }
+    const QByteArray standardOutput = process.readAllStandardOutput();
+    const QByteArray standardError = process.readAllStandardError();
+    QString diagnosticError;
+    QVERIFY2(writeDiagnosticFile(
+        QDir(outputRoot).filePath(QStringLiteral("process-stdout.txt")),
+        standardOutput, &diagnosticError), qPrintable(diagnosticError));
+    QVERIFY2(writeDiagnosticFile(
+        QDir(outputRoot).filePath(QStringLiteral("process-stderr.txt")),
+        standardError, &diagnosticError), qPrintable(diagnosticError));
+    QVERIFY2(finished, qPrintable(processOutput(process)));
+    QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(process.exitCode(), 0);
+    QCOMPARE(sha256File(retainedDatabasePath), preparedDatabaseSha256);
+    const QByteArray databaseSha256AfterLegacyGeneration = sha256File(fixturePath);
+    QCOMPARE(databaseSha256AfterLegacyGeneration.size(), 64);
+    const QString legacyWorkspaceAfterPath = QDir(outputRoot).filePath(
+        QStringLiteral("legacy-workspace-after-generation.tps"));
+    QVERIFY2(QFile::copy(fixturePath, legacyWorkspaceAfterPath),
+        "Unable to retain the Legacy workspace after generation.");
+
+    QFile traceFile(tracePath);
+    QVERIFY2(traceFile.open(QIODevice::ReadOnly | QIODevice::Text),
+        qPrintable(traceFile.errorString()));
+    const QStringList traceLines = QString::fromUtf8(traceFile.readAll())
+        .split(QChar('\n'), Qt::SkipEmptyParts);
+    QVERIFY2(std::any_of(traceLines.cbegin(), traceLines.cend(),
+        [](const QString& line) {
+            return line.startsWith(QStringLiteral("sub-prep-output-generated"));
+        }), "Legacy app did not record successful Sub Prep package generation.");
+
+    const QString packageDirectory = QDir(targetRoot).filePath(
+        QStringLiteral("Teacher 01 (14 - 18 Sep 2026)"));
+    const QStringList expectedPdfNames{
+        QStringLiteral("Rosters - By Day.pdf"), QStringLiteral("Sub Prep.pdf")
+    };
+    const QStringList actualPdfNames = QDir(packageDirectory).entryList(
+        {QStringLiteral("*.pdf")}, QDir::Files, QDir::Name);
+    QStringList sortedExpectedPdfNames = expectedPdfNames;
+    std::sort(sortedExpectedPdfNames.begin(), sortedExpectedPdfNames.end());
+    QCOMPARE(actualPdfNames, sortedExpectedPdfNames);
+
+    QJsonArray pdfs;
+    int totalPages = 0;
+    for (const QString& pdfName : expectedPdfNames)
+    {
+        const QString pdfPath = QDir(packageDirectory).filePath(pdfName);
+        SubPrepPdfSnapshot snapshot;
+        QString snapshotError;
+        QVERIFY2(readSubPrepPdfSnapshot(pdfPath, &snapshot, &snapshotError),
+            qPrintable(snapshotError));
+        QVERIFY(!snapshot.pages.isEmpty());
+        totalPages += snapshot.pages.size();
+        pdfs.append(QJsonObject{
+            {QStringLiteral("name"), pdfName},
+            {QStringLiteral("relativePath"), QDir(outputRoot).relativeFilePath(pdfPath)},
+            {QStringLiteral("sha256"), QString::fromLatin1(snapshot.sha256)},
+            {QStringLiteral("pageCount"), snapshot.pages.size()},
+            {QStringLiteral("bytes"), snapshot.bytes}
+        });
+    }
+    QCOMPARE(totalPages, 17);
+    const QByteArray fontInterSha256 = sha256File(QDir(sourceRoot).filePath(
+        QStringLiteral("resources/assets/fonts/Inter.ttc")));
+    const QByteArray fontPretendardSha256 = sha256File(QDir(sourceRoot).filePath(
+        QStringLiteral("resources/assets/fonts/PretendardVariable.ttf")));
+    QCOMPARE(fontInterSha256.size(), 64);
+    QCOMPARE(fontPretendardSha256.size(), 64);
+    const QJsonObject captureManifest{
+        {QStringLiteral("taskId"), QStringLiteral(
+            "phase7_c53_subprep_finalizer_implementation_02")},
+        {QStringLiteral("schema"), QStringLiteral(
+            "classmngr-sub-prep-c53-legacy-sql-capture-v1")},
+        {QStringLiteral("route"), QStringLiteral(
+            "startup-performance-sub-prep-output-lifecycle")},
+        {QStringLiteral("sourceFixture"), QJsonObject{
+            {QStringLiteral("path"), QStringLiteral(
+                "tests/fixtures/workspaces/large_startup.sql")},
+            {QStringLiteral("sha256"), QString::fromLatin1(sqlFixtureSha256)}
+        }},
+        {QStringLiteral("preparedDatabase"), QJsonObject{
+            {QStringLiteral("path"), QStringLiteral(
+                "generated-large-sub-prep-output.tps")},
+            {QStringLiteral("sha256BeforeLegacyGeneration"),
+                QString::fromLatin1(preparedDatabaseSha256)},
+            {QStringLiteral("retainedSnapshotSha256"),
+                QString::fromLatin1(sha256File(retainedDatabasePath))},
+            {QStringLiteral("sha256AfterLegacyGeneration"),
+                QString::fromLatin1(databaseSha256AfterLegacyGeneration)},
+            {QStringLiteral("workspaceAfterGenerationPath"),
+                QFileInfo(legacyWorkspaceAfterPath).fileName()},
+            {QStringLiteral("legacyGenerationChangedWorkspaceBytes"),
+                databaseSha256AfterLegacyGeneration != preparedDatabaseSha256},
+            {QStringLiteral("classCounts"), fixtureCounts}
+        }},
+        {QStringLiteral("selection"), QJsonObject{
+            {QStringLiteral("teacherFolderName"), QStringLiteral("Teacher 01")},
+            {QStringLiteral("startDate"), QStringLiteral("2026-09-14")},
+            {QStringLiteral("endDate"), QStringLiteral("2026-09-18")},
+            {QStringLiteral("weekdays"), QJsonArray{
+                QStringLiteral("Monday"), QStringLiteral("Tuesday"),
+                QStringLiteral("Wednesday"), QStringLiteral("Thursday"),
+                QStringLiteral("Friday")}},
+            {QStringLiteral("locale"), QStringLiteral("en_US")},
+            {QStringLiteral("rosterTemplate"), QStringLiteral("By Day")},
+            {QStringLiteral("mode"), QStringLiteral("Regular")}
+        }},
+        {QStringLiteral("fonts"), QJsonObject{
+            {QStringLiteral("InterSha256"), QString::fromLatin1(fontInterSha256)},
+            {QStringLiteral("PretendardSha256"),
+                QString::fromLatin1(fontPretendardSha256)},
+            {QStringLiteral("source"), QStringLiteral(
+                "same ClassMngrSubPrepShared embedded qrc resources")}
+        }},
+        {QStringLiteral("pdfs"), pdfs},
+        {QStringLiteral("totalPages"), totalPages}
+    };
+    QFile manifestFile(QDir(outputRoot).filePath(
+        QStringLiteral("legacy-capture.json")));
+    QVERIFY2(manifestFile.open(QIODevice::WriteOnly | QIODevice::Text),
+        qPrintable(manifestFile.errorString()));
+    QVERIFY(manifestFile.write(
+        QJsonDocument(captureManifest).toJson(QJsonDocument::Indented)) > 0);
+}
+
 void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
 {
     const QString configuredOutputRoot =
@@ -10455,6 +10685,27 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
             QVERIFY(QFile::remove(path));
         }
     }
+
+    // Retain the exact prepared state before the Legacy application opens it.
+    // The Next SQL parity capture consumes this snapshot so both runtimes start
+    // from identical database bytes.
+    const QString retainedFixturePath =
+        QDir(outputRoot).filePath(
+            QStringLiteral("generated-large-sub-prep-output.tps")
+            );
+    QVERIFY2(
+        QFile::copy(fixturePath, retainedFixturePath),
+        qPrintable(
+            QStringLiteral("Unable to retain the prepared SQL fixture: %1")
+                .arg(retainedFixturePath)
+        )
+    );
+    const QByteArray retainedDatabaseSha256BeforeGeneration =
+        sha256File(retainedFixturePath);
+    QCOMPARE(
+        retainedDatabaseSha256BeforeGeneration,
+        generatedDatabaseSha256BeforeLaunch
+        );
 
     QProcess process;
     QProcessEnvironment environment =
@@ -11273,22 +11524,6 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
     }
     QCOMPARE(firstPageCaptureCount, pdfPaths.size());
 
-    const QString retainedFixturePath =
-        QDir(outputRoot).filePath(
-            QStringLiteral("generated-large-sub-prep-output.tps")
-            );
-    if (QFileInfo::exists(retainedFixturePath))
-    {
-        QVERIFY(QFile::remove(retainedFixturePath));
-    }
-    QVERIFY2(
-        QFile::copy(fixturePath, retainedFixturePath),
-        qPrintable(
-            QStringLiteral("Unable to retain the generated fixture: %1")
-                .arg(retainedFixturePath)
-            )
-        );
-
     const QString expectedFolderName =
         QStringLiteral("Teacher 01 (14 - 18 Sep 2026)");
     const QString packageDirectory =
@@ -11568,6 +11803,10 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
         sha256File(fixturePath);
     const QByteArray retainedDatabaseSha256 =
         sha256File(retainedFixturePath);
+    QCOMPARE(
+        retainedDatabaseSha256,
+        retainedDatabaseSha256BeforeGeneration
+        );
     const bool sourceIdentityMatches =
         sourceIdentityBefore.value(QStringLiteral("sourceTreeSha256"))
             == sourceIdentityAfter.value(QStringLiteral("sourceTreeSha256"))
@@ -11632,6 +11871,8 @@ void StartupPerformanceTests::capturesLargeSubPrepOutputBoundaryWhenConfigured()
                     QString::fromLatin1(generatedDatabaseSha256AfterRunForManifest)},
                 {QStringLiteral("retainedDatabaseSha256"),
                     QString::fromLatin1(retainedDatabaseSha256)},
+                {QStringLiteral("preparedSnapshotCapturedBeforeLegacyGeneration"),
+                    true},
                 {QStringLiteral("classCounts"), fixtureClassCounts}
             }
         },

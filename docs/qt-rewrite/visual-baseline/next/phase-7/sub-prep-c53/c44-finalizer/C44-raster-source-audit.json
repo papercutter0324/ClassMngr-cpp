@@ -1,0 +1,177 @@
+{
+    "changedPixelsPerPage": 0,
+    "dpi": 150,
+    "entryPoint": "SubPrepPackageService::generateForNext",
+    "expectedHeaderBullets": 96,
+    "expectedHeaderStrings": 96,
+    "expectedStudentNames": 2400,
+    "foundHeaderBullets": 96,
+    "foundHeaderStrings": 96,
+    "foundStudentNames": 2400,
+    "pages": [
+        {
+            "afterRasterSha256": "21a9081e26b02bb910e2cdfa13eb2fc9e84b6fe14195fa111e2e897385c2bf68",
+            "beforeRasterSha256": "21a9081e26b02bb910e2cdfa13eb2fc9e84b6fe14195fa111e2e897385c2bf68",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 1,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "2bb71197d5b842581c269946f7f19e1385795b3cca53bd83e91f9198f4903586",
+            "beforeRasterSha256": "2bb71197d5b842581c269946f7f19e1385795b3cca53bd83e91f9198f4903586",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 2,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "af6d2449cad804e47657dc1c99d8b80a64033b0d98592328fb36627f05bceb81",
+            "beforeRasterSha256": "af6d2449cad804e47657dc1c99d8b80a64033b0d98592328fb36627f05bceb81",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 3,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "13bbd8b5e0f0bed41860f92e3bbbd2085c2b1aa0bc92de5307e3878840916216",
+            "beforeRasterSha256": "13bbd8b5e0f0bed41860f92e3bbbd2085c2b1aa0bc92de5307e3878840916216",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 4,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "55dbeb5d0e1cc6b7e0e863bee3555f0ab67943a53e9d5225e98cd5e4dd4469d1",
+            "beforeRasterSha256": "55dbeb5d0e1cc6b7e0e863bee3555f0ab67943a53e9d5225e98cd5e4dd4469d1",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 5,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "3b51c31283ff9b07e68ffc7623a71c82f190d14297026cc9a1f3fa20df3a4527",
+            "beforeRasterSha256": "3b51c31283ff9b07e68ffc7623a71c82f190d14297026cc9a1f3fa20df3a4527",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 6,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "eefe06480888197f27c71917dc5d7fc817b80c17dba40b5720ebdab4016ea21c",
+            "beforeRasterSha256": "eefe06480888197f27c71917dc5d7fc817b80c17dba40b5720ebdab4016ea21c",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 7,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "532df1e28a12a3fb5391bd2e5266e261a18409fecdfa0ada7cbbf508bf91770a",
+            "beforeRasterSha256": "532df1e28a12a3fb5391bd2e5266e261a18409fecdfa0ada7cbbf508bf91770a",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 8,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "19b490ff6ab21bb82d0ccec1f8e80b1c994a857fc6b672f0873acff8592ef27a",
+            "beforeRasterSha256": "19b490ff6ab21bb82d0ccec1f8e80b1c994a857fc6b672f0873acff8592ef27a",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 9,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "47d07229a099bf6c38fe0c00136e88c9df4ec68c600d0f4a2a37b0e0c6315000",
+            "beforeRasterSha256": "47d07229a099bf6c38fe0c00136e88c9df4ec68c600d0f4a2a37b0e0c6315000",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 10,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "7c21c84db2d3d0b571b4b73dd0012b7deec964020262d471bd1d87106e6717da",
+            "beforeRasterSha256": "7c21c84db2d3d0b571b4b73dd0012b7deec964020262d471bd1d87106e6717da",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 11,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "4da6858d2b79cd8ab5547e7e6b281b3da4ebe6e80267aaaec9e935c68d8ed8cf",
+            "beforeRasterSha256": "4da6858d2b79cd8ab5547e7e6b281b3da4ebe6e80267aaaec9e935c68d8ed8cf",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 12,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "c4c0459c40a15582f564b2fb81bdbadfd155617aee566775f5ee651ee274dda2",
+            "beforeRasterSha256": "c4c0459c40a15582f564b2fb81bdbadfd155617aee566775f5ee651ee274dda2",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 13,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "011c3abe38ebac2bab0cc8b8a1c7a6b5684dceaa186c21414045e6b73e5c1330",
+            "beforeRasterSha256": "011c3abe38ebac2bab0cc8b8a1c7a6b5684dceaa186c21414045e6b73e5c1330",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 14,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "6f69a39c7e5013766ec768b939dba646ebcb3be654b01219af940e521fd2ad40",
+            "beforeRasterSha256": "6f69a39c7e5013766ec768b939dba646ebcb3be654b01219af940e521fd2ad40",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 15,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        },
+        {
+            "afterRasterSha256": "7ef0f5464968071c1cc7ba0b311267274ef4d5529ddf4ef7df4102a2ba5b7be8",
+            "beforeRasterSha256": "7ef0f5464968071c1cc7ba0b311267274ef4d5529ddf4ef7df4102a2ba5b7be8",
+            "changedPixels": 0,
+            "heightPt": 842,
+            "heightPxAt150Dpi": 1754,
+            "page": 16,
+            "widthPt": 595,
+            "widthPxAt150Dpi": 1240
+        }
+    ],
+    "renderer": "Qt QPdfDocument on pre-finalizer and Next output PDFs",
+    "sourceFixture": "populateHeavyOutputData(): 96 classes x 25 Student n-n English names",
+    "sourceTextPass": true,
+    "taskId": "phase7_c53_subprep_finalizer_implementation_02"
+}

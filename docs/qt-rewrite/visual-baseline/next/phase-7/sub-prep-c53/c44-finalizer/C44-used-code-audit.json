@@ -1,0 +1,909 @@
+{
+  "taskId": "phase7_c53_subprep_finalizer_implementation_02",
+  "documents": [
+    {
+      "path": "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/c44-finalizer/C44-after.pdf",
+      "sha256": "9c67de8c4cbf54bb6e6fd8e56613ba505bbaa3b3c7e745897a4b07ff06fee35d",
+      "pageCount": 16,
+      "pageFonts": [
+        {
+          "page": 1,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 1,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 1,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2202,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 1,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 2,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 2,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 2,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 2,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 3,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 3,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 3,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2227,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 3,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 4,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 4,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 4,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 4,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 5,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 5,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 5,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2227,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 5,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 6,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 6,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 6,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 6,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 7,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 7,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 7,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2227,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 7,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 8,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 8,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 8,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 8,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 9,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 9,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 9,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2229,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 9,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 10,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 10,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 10,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 10,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 11,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 11,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 11,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2229,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 11,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 12,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 12,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 12,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 12,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 13,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 13,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 13,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2235,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 13,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 14,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 14,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 14,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2268,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 14,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 15,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 15,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 15,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2235,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 15,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 16,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 16,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 12,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 16,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2268,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 228,
+            "U+002D": 156,
+            "U+2022": 6
+          }
+        },
+        {
+          "page": 16,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        }
+      ],
+      "allUsedCodesMappedToNonControlUnicode": true
+    }
+  ]
+}

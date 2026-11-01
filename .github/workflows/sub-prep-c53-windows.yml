@@ -1,0 +1,217 @@
+name: C53 Matched SQL Sub Prep PDFs (Windows x64)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - Qt-Rewrite
+    paths:
+      - ".github/workflows/sub-prep-c53-windows.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/assets/fonts/**"
+      - "scripts/phase7/c53_sub_prep_sql_oracle.py"
+      - "src/core/fontmanager.*"
+      - "src/features/schedule/ui/schedule_builder.*"
+      - "src/features/schedule/ui/schedule_view_model.*"
+      - "src/features/sub_prep/**"
+      - "src/next/application/**"
+      - "src/next/platform/workspace_store_gateway.*"
+      - "src/next/ui/sub_prep_page.*"
+      - "src/shared/roster/**"
+      - "tests/fixtures/workspaces/large_startup.sql"
+      - "tests/next/sub_prep_sql_parity_capture.cpp"
+      - "tests/sub_prep_package_service_tests.cpp"
+      - "tests/sub_prep_pdf_text_finalizer_tests.cpp"
+      - "tests/startup_performance_tests.cpp"
+      - "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/writer-probe/check_used_codes.py"
+  pull_request:
+    paths:
+      - ".github/workflows/sub-prep-c53-windows.yml"
+      - "CMakeLists.txt"
+      - "CMakePresets.json"
+      - "cmake/**"
+      - "resources/assets/fonts/**"
+      - "scripts/phase7/c53_sub_prep_sql_oracle.py"
+      - "src/core/fontmanager.*"
+      - "src/features/schedule/ui/schedule_builder.*"
+      - "src/features/schedule/ui/schedule_view_model.*"
+      - "src/features/sub_prep/**"
+      - "src/next/application/**"
+      - "src/next/platform/workspace_store_gateway.*"
+      - "src/next/ui/sub_prep_page.*"
+      - "src/shared/roster/**"
+      - "tests/fixtures/workspaces/large_startup.sql"
+      - "tests/next/sub_prep_sql_parity_capture.cpp"
+      - "tests/sub_prep_package_service_tests.cpp"
+      - "tests/sub_prep_pdf_text_finalizer_tests.cpp"
+      - "tests/startup_performance_tests.cpp"
+      - "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/writer-probe/check_used_codes.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: c53-sub-prep-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CMAKE_GENERATOR: "Visual Studio 17 2022"
+  QT_VERSION: "6.12.0"
+  QT_ROOT: "C:\\Qt"
+  QT_MSVC_X64_PREFIX: "C:\\Qt\\6.12.0\\msvc2022_64"
+
+jobs:
+  matched-sql:
+    name: Matched SQL capture, text audit, and all-page raster comparison
+    runs-on: windows-2022
+    timeout-minutes: 120
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install aqtinstall with Qt 6.12 Windows support
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check "aqtinstall @ git+https://github.com/miurahr/aqtinstall.git@8c3695d4a4e1ceabf6a74dc6c79681656dc6b74b"
+
+      - name: Install Qt 6.12 x64 and Qt PDF
+        shell: pwsh
+        run: |
+          $arguments = @(
+            "-m", "aqt", "install-qt", "windows", "desktop",
+            $env:QT_VERSION, "win64_msvc2022_64",
+            "--outputdir", $env:QT_ROOT,
+            "--base", "https://download.qt.io",
+            "--timeout", "30",
+            "--modules", "qtpdf"
+          )
+          $maxAttempts = 3
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            & python @arguments
+            if ($LASTEXITCODE -eq 0) { break }
+            if ($attempt -eq $maxAttempts) {
+              throw "Qt installation failed after $maxAttempts attempts."
+            }
+            Start-Sleep -Seconds (10 * $attempt)
+          }
+          if (-not (Test-Path (Join-Path $env:QT_MSVC_X64_PREFIX "bin\qt-cmake.bat"))) {
+            throw "Qt x64 installation is incomplete."
+          }
+
+      - name: Configure Windows x64 Release tests
+        shell: pwsh
+        run: |
+          cmake --fresh --preset windows-x64-release `
+            "-DCMAKE_PREFIX_PATH=$env:QT_MSVC_X64_PREFIX" `
+            -DBUILD_TESTING=ON
+
+      - name: Build Legacy app and matched Next capture harness
+        shell: pwsh
+        run: |
+          cmake --build build\windows-x64-release --config Release `
+            --target ClassMngrStartupPerformanceTests `
+              ClassMngrNextSubPrepSqlParityCapture `
+            --parallel
+          if ($LASTEXITCODE -ne 0) { throw "C53 Windows targets failed to build." }
+
+      - name: Generate Legacy package from the prepared SQL snapshot
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:GITHUB_WORKSPACE "artifacts\phase7\c53\windows-x64"
+          New-Item -ItemType Directory -Force -Path $evidence | Out-Null
+          $legacyCapture = Join-Path $evidence "legacy-capture"
+          $env:CLASSMNGR_C53_SQL_GATE_REFERENCE_DIR = $legacyCapture
+          $env:CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE = "2026-09-14"
+          $env:CLASSMNGR_TEST_APP_PATH = Join-Path $env:GITHUB_WORKSPACE `
+            "build\windows-x64-release\Release\ClassMngr.exe"
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $env:QT_PLUGIN_PATH = Join-Path $env:QT_MSVC_X64_PREFIX "plugins"
+          $env:QT_QPA_PLATFORM_PLUGIN_PATH = Join-Path $env:QT_MSVC_X64_PREFIX `
+            "plugins\platforms"
+          $env:PATH = (Join-Path $env:QT_MSVC_X64_PREFIX "bin") + ";" + $env:PATH
+
+          & build\windows-x64-release\Release\ClassMngrStartupPerformanceTests.exe `
+            capturesMatchedSqlSubPrepForC53
+          if ($LASTEXITCODE -ne 0) { throw "Legacy SQL-backed Sub Prep capture failed." }
+
+      - name: Derive the independent SQL text oracle
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:GITHUB_WORKSPACE "artifacts\phase7\c53\windows-x64"
+          $legacyCapture = Join-Path $evidence "legacy-capture"
+          $legacyManifest = Get-Content -LiteralPath `
+            (Join-Path $legacyCapture "legacy-capture.json") -Raw | ConvertFrom-Json
+          $databaseHash = $legacyManifest.preparedDatabase.sha256BeforeLegacyGeneration
+          if ($legacyManifest.preparedDatabase.retainedSnapshotSha256 -cne $databaseHash) {
+            throw "Retained prepared SQL snapshot does not match the pre-Legacy hash."
+          }
+          $database = Join-Path $legacyCapture "generated-large-sub-prep-output.tps"
+          $afterLegacyDatabase = Join-Path $legacyCapture `
+            $legacyManifest.preparedDatabase.workspaceAfterGenerationPath
+          $oracle = Join-Path $evidence "sql-oracle.json"
+          python scripts/phase7/c53_sub_prep_sql_oracle.py `
+            --database $database `
+            --after-legacy-database $afterLegacyDatabase `
+            --expected-database-sha256 $databaseHash `
+            --output $oracle
+          if ($LASTEXITCODE -ne 0) { throw "SQL-derived C53 oracle generation failed." }
+
+      - name: Generate Next package from the identical SQL snapshot
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:GITHUB_WORKSPACE "artifacts\phase7\c53\windows-x64"
+          $legacyCapture = Join-Path $evidence "legacy-capture"
+          $database = Join-Path $legacyCapture "generated-large-sub-prep-output.tps"
+          $legacyPackage = Join-Path $legacyCapture `
+            "output-target\Teacher 01 (14 - 18 Sep 2026)"
+          $legacyRoster = Join-Path $legacyPackage "Rosters - By Day.pdf"
+          $legacyManifest = Join-Path $legacyCapture "legacy-capture.json"
+          $nextEvidence = Join-Path $evidence "next-capture"
+          New-Item -ItemType Directory -Path $nextEvidence | Out-Null
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $env:QT_PLUGIN_PATH = Join-Path $env:QT_MSVC_X64_PREFIX "plugins"
+          $env:QT_QPA_PLATFORM_PLUGIN_PATH = Join-Path $env:QT_MSVC_X64_PREFIX `
+            "plugins\platforms"
+          $env:PATH = (Join-Path $env:QT_MSVC_X64_PREFIX "bin") + ";" + $env:PATH
+
+          & build\windows-x64-release\Release\ClassMngrNextSubPrepSqlParityCapture.exe `
+            --matched-sql $database $legacyRoster $legacyManifest `
+            (Join-Path $evidence "sql-oracle.json") $nextEvidence
+          if ($LASTEXITCODE -ne 0) { throw "Next matched SQL capture or page comparison failed." }
+
+      - name: Audit every By Day roster code on every page/font
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:GITHUB_WORKSPACE "artifacts\phase7\c53\windows-x64"
+          $legacyCapture = Join-Path $evidence "legacy-capture"
+          $legacyPackage = Join-Path $legacyCapture `
+            "output-target\Teacher 01 (14 - 18 Sep 2026)"
+          $nextPackage = Join-Path $evidence `
+            "next-capture\next-output\Teacher 01 (14 - 18 Sep 2026)"
+          $auditor = "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/writer-probe/check_used_codes.py"
+          python $auditor `
+            --output (Join-Path $evidence "legacy-used-code-audit.json") `
+            (Join-Path $legacyPackage "Sub Prep.pdf") `
+            (Join-Path $legacyPackage "Rosters - By Day.pdf")
+          if ($LASTEXITCODE -ne 0) { throw "Legacy used-code audit failed to parse." }
+          python $auditor --require-valid `
+            --output (Join-Path $evidence "next-used-code-audit.json") `
+            (Join-Path $nextPackage "Rosters - By Day.pdf")
+          if ($LASTEXITCODE -ne 0) { throw "Next By Day roster audit found an unmapped/control code." }
+
+      - name: Upload C53 matched SQL evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: c53-matched-sql-windows-x64
+          path: artifacts/phase7/c53/windows-x64/
+          if-no-files-found: warn
+          retention-days: 90

@@ -115,4 +115,8 @@ Result savePagesPdf(const QString&, TemplateId, QPageLayout::Orientation,
     const PageProducer&, const Fonts& = {}, const PageReleased& = {});
 Result saveCellValuesPdf(const QString&, TemplateId, QPageLayout::Orientation,
     const QList<RosterCellValue>&, const Fonts& = {});
+// Source-aware post-write text-map repair is reserved for the Next Sub Prep
+// package route. Legacy output continues to use saveCellValuesPdf().
+Result saveCellValuesPdfForNextSubPrep(const QString&, TemplateId,
+    QPageLayout::Orientation, const QList<RosterCellValue>&, const Fonts& = {});
 }

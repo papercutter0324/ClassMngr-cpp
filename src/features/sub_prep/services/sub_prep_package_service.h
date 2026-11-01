@@ -82,6 +82,8 @@ struct Result
 // Takes ownership of this operation snapshot and releases its Sub Prep
 // information-sheet input immediately after that PDF is rendered.
 [[nodiscard]] Result generate(Request request);
+// Next owns the source-aware roster text-map finalization path.
+[[nodiscard]] Result generateForNext(Request request);
 [[nodiscard]] Result generate(
     Request request,
     const ClassMngr::Next::Application::SubPrepGenerationPlan& plan

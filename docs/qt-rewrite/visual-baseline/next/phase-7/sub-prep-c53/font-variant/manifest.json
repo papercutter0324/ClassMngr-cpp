@@ -1,0 +1,1651 @@
+{
+    "allPageRasterComparison": [
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 1,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 2,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 3,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 4,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 5,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 6,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 7,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 8,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 9,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 10,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 11,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 12,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 13,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 14,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 15,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        },
+        {
+            "changedPixels": 0,
+            "dpi": 150,
+            "exactRasterPass": true,
+            "height": 1754,
+            "page": 16,
+            "toleranceChangedPixels": 0,
+            "width": 1240
+        }
+    ],
+    "derivedSubstitutions": [
+        {
+            "cmapGlyph": 13241,
+            "shapedGlyph": 13252,
+            "unicode": 45
+        },
+        {
+            "cmapGlyph": 13155,
+            "shapedGlyph": 13207,
+            "unicode": 8226
+        }
+    ],
+    "fontSha256": "3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22",
+    "originalGlyphEvidence": {
+        "context": "Student 1-1 E4 • Hercules - normal / zoom-1 / wifi-2 / 14 - 18",
+        "derivedSubstitutions": [
+            {
+                "cmapGlyph": 13241,
+                "shapedGlyph": 13252,
+                "unicode": 45
+            },
+            {
+                "cmapGlyph": 13155,
+                "shapedGlyph": 13207,
+                "unicode": 8226
+            }
+        ],
+        "family": "Pretendard Variable",
+        "rawCmap": [
+            {
+                "glyph": 0,
+                "unicode": 0
+            },
+            {
+                "glyph": 0,
+                "unicode": 1
+            },
+            {
+                "glyph": 0,
+                "unicode": 2
+            },
+            {
+                "glyph": 0,
+                "unicode": 3
+            },
+            {
+                "glyph": 0,
+                "unicode": 4
+            },
+            {
+                "glyph": 0,
+                "unicode": 5
+            },
+            {
+                "glyph": 0,
+                "unicode": 6
+            },
+            {
+                "glyph": 0,
+                "unicode": 7
+            },
+            {
+                "glyph": 0,
+                "unicode": 8
+            },
+            {
+                "glyph": 2,
+                "unicode": 9
+            },
+            {
+                "glyph": 2,
+                "unicode": 10
+            },
+            {
+                "glyph": 0,
+                "unicode": 11
+            },
+            {
+                "glyph": 0,
+                "unicode": 12
+            },
+            {
+                "glyph": 2,
+                "unicode": 13
+            },
+            {
+                "glyph": 0,
+                "unicode": 14
+            },
+            {
+                "glyph": 0,
+                "unicode": 15
+            },
+            {
+                "glyph": 0,
+                "unicode": 16
+            },
+            {
+                "glyph": 0,
+                "unicode": 17
+            },
+            {
+                "glyph": 0,
+                "unicode": 18
+            },
+            {
+                "glyph": 0,
+                "unicode": 19
+            },
+            {
+                "glyph": 0,
+                "unicode": 20
+            },
+            {
+                "glyph": 0,
+                "unicode": 21
+            },
+            {
+                "glyph": 0,
+                "unicode": 22
+            },
+            {
+                "glyph": 0,
+                "unicode": 23
+            },
+            {
+                "glyph": 0,
+                "unicode": 24
+            },
+            {
+                "glyph": 0,
+                "unicode": 25
+            },
+            {
+                "glyph": 0,
+                "unicode": 26
+            },
+            {
+                "glyph": 0,
+                "unicode": 27
+            },
+            {
+                "glyph": 0,
+                "unicode": 28
+            },
+            {
+                "glyph": 0,
+                "unicode": 29
+            },
+            {
+                "glyph": 0,
+                "unicode": 30
+            },
+            {
+                "glyph": 0,
+                "unicode": 31
+            },
+            {
+                "glyph": 2,
+                "unicode": 32
+            },
+            {
+                "glyph": 13241,
+                "unicode": 45
+            },
+            {
+                "glyph": 13155,
+                "unicode": 8226
+            }
+        ],
+        "rawFontValid": true,
+        "shapedGlyphs": [
+            {
+                "glyph": 231,
+                "sourceIndex": 0,
+                "unicode": 83,
+                "x": 0,
+                "y": 11.421875
+            },
+            {
+                "glyph": 723,
+                "sourceIndex": 1,
+                "unicode": 116,
+                "x": 7.28125,
+                "y": 11.421875
+            },
+            {
+                "glyph": 744,
+                "sourceIndex": 2,
+                "unicode": 117,
+                "x": 11.359375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 471,
+                "sourceIndex": 3,
+                "unicode": 100,
+                "x": 17.984375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 489,
+                "sourceIndex": 4,
+                "unicode": 101,
+                "x": 25.0625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 630,
+                "sourceIndex": 5,
+                "unicode": 110,
+                "x": 31.6875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 723,
+                "sourceIndex": 6,
+                "unicode": 116,
+                "x": 38.359375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 7,
+                "unicode": 32,
+                "x": 42.4375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13002,
+                "sourceIndex": 8,
+                "unicode": 49,
+                "x": 45.4375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13252,
+                "sourceIndex": 9,
+                "unicode": 45,
+                "x": 50.6875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13002,
+                "sourceIndex": 10,
+                "unicode": 49,
+                "x": 55.875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 11,
+                "unicode": 32,
+                "x": 61.125,
+                "y": 11.421875
+            },
+            {
+                "glyph": 64,
+                "sourceIndex": 12,
+                "unicode": 69,
+                "x": 64.125,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13005,
+                "sourceIndex": 13,
+                "unicode": 52,
+                "x": 70.921875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 14,
+                "unicode": 32,
+                "x": 78.40625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13207,
+                "sourceIndex": 15,
+                "unicode": 8226,
+                "x": 81.40625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 16,
+                "unicode": 32,
+                "x": 87.515625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 110,
+                "sourceIndex": 17,
+                "unicode": 72,
+                "x": 90.515625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 489,
+                "sourceIndex": 18,
+                "unicode": 101,
+                "x": 98.984375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 692,
+                "sourceIndex": 19,
+                "unicode": 114,
+                "x": 105.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 461,
+                "sourceIndex": 20,
+                "unicode": 99,
+                "x": 109.59375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 744,
+                "sourceIndex": 21,
+                "unicode": 117,
+                "x": 115.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 605,
+                "sourceIndex": 22,
+                "unicode": 108,
+                "x": 122.5625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 489,
+                "sourceIndex": 23,
+                "unicode": 101,
+                "x": 125.171875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 707,
+                "sourceIndex": 24,
+                "unicode": 115,
+                "x": 131.796875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 25,
+                "unicode": 32,
+                "x": 137.75,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13241,
+                "sourceIndex": 26,
+                "unicode": 45,
+                "x": 140.75,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 27,
+                "unicode": 32,
+                "x": 145.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 630,
+                "sourceIndex": 28,
+                "unicode": 110,
+                "x": 148.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 645,
+                "sourceIndex": 29,
+                "unicode": 111,
+                "x": 155.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 692,
+                "sourceIndex": 30,
+                "unicode": 114,
+                "x": 162.40625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 623,
+                "sourceIndex": 31,
+                "unicode": 109,
+                "x": 166.59375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 416,
+                "sourceIndex": 32,
+                "unicode": 97,
+                "x": 176.59375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 605,
+                "sourceIndex": 33,
+                "unicode": 108,
+                "x": 183.015625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 34,
+                "unicode": 32,
+                "x": 185.625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13178,
+                "sourceIndex": 35,
+                "unicode": 47,
+                "x": 188.625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 36,
+                "unicode": 32,
+                "x": 192.625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 838,
+                "sourceIndex": 37,
+                "unicode": 122,
+                "x": 195.625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 645,
+                "sourceIndex": 38,
+                "unicode": 111,
+                "x": 201.578125,
+                "y": 11.421875
+            },
+            {
+                "glyph": 645,
+                "sourceIndex": 39,
+                "unicode": 111,
+                "x": 208.375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 623,
+                "sourceIndex": 40,
+                "unicode": 109,
+                "x": 215.171875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13241,
+                "sourceIndex": 41,
+                "unicode": 45,
+                "x": 225.171875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13002,
+                "sourceIndex": 42,
+                "unicode": 49,
+                "x": 230.359375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 43,
+                "unicode": 32,
+                "x": 235.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13178,
+                "sourceIndex": 44,
+                "unicode": 47,
+                "x": 238.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 45,
+                "unicode": 32,
+                "x": 242.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 813,
+                "sourceIndex": 46,
+                "unicode": 119,
+                "x": 245.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 570,
+                "sourceIndex": 47,
+                "unicode": 105,
+                "x": 254.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 532,
+                "sourceIndex": 48,
+                "unicode": 102,
+                "x": 257.546875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 570,
+                "sourceIndex": 49,
+                "unicode": 105,
+                "x": 261.578125,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13241,
+                "sourceIndex": 50,
+                "unicode": 45,
+                "x": 264.1875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13003,
+                "sourceIndex": 51,
+                "unicode": 50,
+                "x": 268.984375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 52,
+                "unicode": 32,
+                "x": 276.015625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13178,
+                "sourceIndex": 53,
+                "unicode": 47,
+                "x": 279.015625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 54,
+                "unicode": 32,
+                "x": 283.015625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13002,
+                "sourceIndex": 55,
+                "unicode": 49,
+                "x": 286.015625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13005,
+                "sourceIndex": 56,
+                "unicode": 52,
+                "x": 291.265625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 57,
+                "unicode": 32,
+                "x": 298.75,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13252,
+                "sourceIndex": 58,
+                "unicode": 45,
+                "x": 301.75,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 59,
+                "unicode": 32,
+                "x": 306.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13002,
+                "sourceIndex": 60,
+                "unicode": 49,
+                "x": 309.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13009,
+                "sourceIndex": 61,
+                "unicode": 56,
+                "x": 315.1875,
+                "y": 11.421875
+            }
+        ],
+        "style": "Regular"
+    },
+    "originalPdf": {
+        "bulletCount": 0,
+        "exactContextCopies": 0,
+        "expectedBulletCountIncludingContexts": 112,
+        "expectedContextCopies": 16,
+        "expectedHeaderCount": 96,
+        "expectedStudentNameCount": 2400,
+        "headersWithExactSourceFragment": 0,
+        "missingExpectedStudentNames": 2400,
+        "pages": [
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            }
+        ],
+        "sha256": "39d6a93fa0eeeb8932167406fb37e472a1a77a5c765eee04993f3baf31d55240",
+        "sourceTextPass": false
+    },
+    "platformPlugin": "offscreen",
+    "qtVersion": "6.12.0",
+    "rawCmap": [
+        {
+            "glyph": 0,
+            "unicode": 0
+        },
+        {
+            "glyph": 0,
+            "unicode": 1
+        },
+        {
+            "glyph": 0,
+            "unicode": 2
+        },
+        {
+            "glyph": 0,
+            "unicode": 3
+        },
+        {
+            "glyph": 0,
+            "unicode": 4
+        },
+        {
+            "glyph": 0,
+            "unicode": 5
+        },
+        {
+            "glyph": 0,
+            "unicode": 6
+        },
+        {
+            "glyph": 0,
+            "unicode": 7
+        },
+        {
+            "glyph": 0,
+            "unicode": 8
+        },
+        {
+            "glyph": 2,
+            "unicode": 9
+        },
+        {
+            "glyph": 2,
+            "unicode": 10
+        },
+        {
+            "glyph": 0,
+            "unicode": 11
+        },
+        {
+            "glyph": 0,
+            "unicode": 12
+        },
+        {
+            "glyph": 2,
+            "unicode": 13
+        },
+        {
+            "glyph": 0,
+            "unicode": 14
+        },
+        {
+            "glyph": 0,
+            "unicode": 15
+        },
+        {
+            "glyph": 0,
+            "unicode": 16
+        },
+        {
+            "glyph": 0,
+            "unicode": 17
+        },
+        {
+            "glyph": 0,
+            "unicode": 18
+        },
+        {
+            "glyph": 0,
+            "unicode": 19
+        },
+        {
+            "glyph": 0,
+            "unicode": 20
+        },
+        {
+            "glyph": 0,
+            "unicode": 21
+        },
+        {
+            "glyph": 0,
+            "unicode": 22
+        },
+        {
+            "glyph": 0,
+            "unicode": 23
+        },
+        {
+            "glyph": 0,
+            "unicode": 24
+        },
+        {
+            "glyph": 0,
+            "unicode": 25
+        },
+        {
+            "glyph": 0,
+            "unicode": 26
+        },
+        {
+            "glyph": 0,
+            "unicode": 27
+        },
+        {
+            "glyph": 0,
+            "unicode": 28
+        },
+        {
+            "glyph": 0,
+            "unicode": 29
+        },
+        {
+            "glyph": 0,
+            "unicode": 30
+        },
+        {
+            "glyph": 0,
+            "unicode": 31
+        },
+        {
+            "glyph": 2,
+            "unicode": 32
+        },
+        {
+            "glyph": 13241,
+            "unicode": 45
+        },
+        {
+            "glyph": 13155,
+            "unicode": 8226
+        }
+    ],
+    "sameShapedGlyphsAndPositions": true,
+    "taskId": "phase7_c53_subprep_output_implementation_01",
+    "variantFontSha256": "6d5f3fee5103aa4a47d8994d5ec7377b9504ab55673fea21958fbd3c9d1ad5d8",
+    "variantGlyphEvidence": {
+        "context": "Student 1-1 E4 • Hercules - normal / zoom-1 / wifi-2 / 14 - 18",
+        "derivedSubstitutions": [
+            {
+                "cmapGlyph": 13252,
+                "shapedGlyph": 13241,
+                "unicode": 45
+            }
+        ],
+        "family": "ClassMngrPdfProbe Variable",
+        "rawCmap": [
+            {
+                "glyph": 0,
+                "unicode": 0
+            },
+            {
+                "glyph": 0,
+                "unicode": 1
+            },
+            {
+                "glyph": 0,
+                "unicode": 2
+            },
+            {
+                "glyph": 0,
+                "unicode": 3
+            },
+            {
+                "glyph": 0,
+                "unicode": 4
+            },
+            {
+                "glyph": 0,
+                "unicode": 5
+            },
+            {
+                "glyph": 0,
+                "unicode": 6
+            },
+            {
+                "glyph": 0,
+                "unicode": 7
+            },
+            {
+                "glyph": 0,
+                "unicode": 8
+            },
+            {
+                "glyph": 1,
+                "unicode": 9
+            },
+            {
+                "glyph": 1,
+                "unicode": 10
+            },
+            {
+                "glyph": 0,
+                "unicode": 11
+            },
+            {
+                "glyph": 0,
+                "unicode": 12
+            },
+            {
+                "glyph": 1,
+                "unicode": 13
+            },
+            {
+                "glyph": 0,
+                "unicode": 14
+            },
+            {
+                "glyph": 0,
+                "unicode": 15
+            },
+            {
+                "glyph": 0,
+                "unicode": 16
+            },
+            {
+                "glyph": 0,
+                "unicode": 17
+            },
+            {
+                "glyph": 0,
+                "unicode": 18
+            },
+            {
+                "glyph": 0,
+                "unicode": 19
+            },
+            {
+                "glyph": 0,
+                "unicode": 20
+            },
+            {
+                "glyph": 0,
+                "unicode": 21
+            },
+            {
+                "glyph": 0,
+                "unicode": 22
+            },
+            {
+                "glyph": 0,
+                "unicode": 23
+            },
+            {
+                "glyph": 0,
+                "unicode": 24
+            },
+            {
+                "glyph": 0,
+                "unicode": 25
+            },
+            {
+                "glyph": 0,
+                "unicode": 26
+            },
+            {
+                "glyph": 0,
+                "unicode": 27
+            },
+            {
+                "glyph": 0,
+                "unicode": 28
+            },
+            {
+                "glyph": 0,
+                "unicode": 29
+            },
+            {
+                "glyph": 0,
+                "unicode": 30
+            },
+            {
+                "glyph": 0,
+                "unicode": 31
+            },
+            {
+                "glyph": 2,
+                "unicode": 32
+            },
+            {
+                "glyph": 13252,
+                "unicode": 45
+            },
+            {
+                "glyph": 13207,
+                "unicode": 8226
+            }
+        ],
+        "rawFontValid": true,
+        "shapedGlyphs": [
+            {
+                "glyph": 231,
+                "sourceIndex": 0,
+                "unicode": 83,
+                "x": 0,
+                "y": 11.421875
+            },
+            {
+                "glyph": 723,
+                "sourceIndex": 1,
+                "unicode": 116,
+                "x": 7.28125,
+                "y": 11.421875
+            },
+            {
+                "glyph": 744,
+                "sourceIndex": 2,
+                "unicode": 117,
+                "x": 11.359375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 471,
+                "sourceIndex": 3,
+                "unicode": 100,
+                "x": 17.984375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 489,
+                "sourceIndex": 4,
+                "unicode": 101,
+                "x": 25.0625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 630,
+                "sourceIndex": 5,
+                "unicode": 110,
+                "x": 31.6875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 723,
+                "sourceIndex": 6,
+                "unicode": 116,
+                "x": 38.359375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 7,
+                "unicode": 32,
+                "x": 42.4375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13002,
+                "sourceIndex": 8,
+                "unicode": 49,
+                "x": 45.4375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13252,
+                "sourceIndex": 9,
+                "unicode": 45,
+                "x": 50.6875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13002,
+                "sourceIndex": 10,
+                "unicode": 49,
+                "x": 55.875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 11,
+                "unicode": 32,
+                "x": 61.125,
+                "y": 11.421875
+            },
+            {
+                "glyph": 64,
+                "sourceIndex": 12,
+                "unicode": 69,
+                "x": 64.125,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13005,
+                "sourceIndex": 13,
+                "unicode": 52,
+                "x": 70.921875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 14,
+                "unicode": 32,
+                "x": 78.40625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13207,
+                "sourceIndex": 15,
+                "unicode": 8226,
+                "x": 81.40625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 16,
+                "unicode": 32,
+                "x": 87.515625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 110,
+                "sourceIndex": 17,
+                "unicode": 72,
+                "x": 90.515625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 489,
+                "sourceIndex": 18,
+                "unicode": 101,
+                "x": 98.984375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 692,
+                "sourceIndex": 19,
+                "unicode": 114,
+                "x": 105.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 461,
+                "sourceIndex": 20,
+                "unicode": 99,
+                "x": 109.59375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 744,
+                "sourceIndex": 21,
+                "unicode": 117,
+                "x": 115.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 605,
+                "sourceIndex": 22,
+                "unicode": 108,
+                "x": 122.5625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 489,
+                "sourceIndex": 23,
+                "unicode": 101,
+                "x": 125.171875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 707,
+                "sourceIndex": 24,
+                "unicode": 115,
+                "x": 131.796875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 25,
+                "unicode": 32,
+                "x": 137.75,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13241,
+                "sourceIndex": 26,
+                "unicode": 45,
+                "x": 140.75,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 27,
+                "unicode": 32,
+                "x": 145.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 630,
+                "sourceIndex": 28,
+                "unicode": 110,
+                "x": 148.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 645,
+                "sourceIndex": 29,
+                "unicode": 111,
+                "x": 155.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 692,
+                "sourceIndex": 30,
+                "unicode": 114,
+                "x": 162.40625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 623,
+                "sourceIndex": 31,
+                "unicode": 109,
+                "x": 166.59375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 416,
+                "sourceIndex": 32,
+                "unicode": 97,
+                "x": 176.59375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 605,
+                "sourceIndex": 33,
+                "unicode": 108,
+                "x": 183.015625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 34,
+                "unicode": 32,
+                "x": 185.625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13178,
+                "sourceIndex": 35,
+                "unicode": 47,
+                "x": 188.625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 36,
+                "unicode": 32,
+                "x": 192.625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 838,
+                "sourceIndex": 37,
+                "unicode": 122,
+                "x": 195.625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 645,
+                "sourceIndex": 38,
+                "unicode": 111,
+                "x": 201.578125,
+                "y": 11.421875
+            },
+            {
+                "glyph": 645,
+                "sourceIndex": 39,
+                "unicode": 111,
+                "x": 208.375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 623,
+                "sourceIndex": 40,
+                "unicode": 109,
+                "x": 215.171875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13241,
+                "sourceIndex": 41,
+                "unicode": 45,
+                "x": 225.171875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13002,
+                "sourceIndex": 42,
+                "unicode": 49,
+                "x": 230.359375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 43,
+                "unicode": 32,
+                "x": 235.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13178,
+                "sourceIndex": 44,
+                "unicode": 47,
+                "x": 238.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 45,
+                "unicode": 32,
+                "x": 242.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 813,
+                "sourceIndex": 46,
+                "unicode": 119,
+                "x": 245.609375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 570,
+                "sourceIndex": 47,
+                "unicode": 105,
+                "x": 254.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 532,
+                "sourceIndex": 48,
+                "unicode": 102,
+                "x": 257.546875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 570,
+                "sourceIndex": 49,
+                "unicode": 105,
+                "x": 261.578125,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13241,
+                "sourceIndex": 50,
+                "unicode": 45,
+                "x": 264.1875,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13003,
+                "sourceIndex": 51,
+                "unicode": 50,
+                "x": 268.984375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 52,
+                "unicode": 32,
+                "x": 276.015625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13178,
+                "sourceIndex": 53,
+                "unicode": 47,
+                "x": 279.015625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 54,
+                "unicode": 32,
+                "x": 283.015625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13002,
+                "sourceIndex": 55,
+                "unicode": 49,
+                "x": 286.015625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13005,
+                "sourceIndex": 56,
+                "unicode": 52,
+                "x": 291.265625,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 57,
+                "unicode": 32,
+                "x": 298.75,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13252,
+                "sourceIndex": 58,
+                "unicode": 45,
+                "x": 301.75,
+                "y": 11.421875
+            },
+            {
+                "glyph": 2,
+                "sourceIndex": 59,
+                "unicode": 32,
+                "x": 306.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13002,
+                "sourceIndex": 60,
+                "unicode": 49,
+                "x": 309.9375,
+                "y": 11.421875
+            },
+            {
+                "glyph": 13009,
+                "sourceIndex": 61,
+                "unicode": 56,
+                "x": 315.1875,
+                "y": 11.421875
+            }
+        ],
+        "style": "Regular"
+    },
+    "variantPdf": {
+        "bulletCount": 112,
+        "exactContextCopies": 0,
+        "expectedBulletCountIncludingContexts": 112,
+        "expectedContextCopies": 16,
+        "expectedHeaderCount": 96,
+        "expectedStudentNameCount": 2400,
+        "headersWithExactSourceFragment": 0,
+        "missingExpectedStudentNames": 0,
+        "pages": [
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            },
+            {
+                "heightPt": 842,
+                "widthPt": 595
+            }
+        ],
+        "sha256": "81387c19ceb8fbd34fe158918e1fdcd5aa792e5694873a9469bbb1eff032a4cc",
+        "sourceTextPass": false
+    }
+}

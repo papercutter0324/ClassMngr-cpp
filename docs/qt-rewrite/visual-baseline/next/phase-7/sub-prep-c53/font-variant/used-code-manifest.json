@@ -1,0 +1,67 @@
+{
+  "taskId": "phase7_c53_subprep_output_implementation_01",
+  "documents": [
+    {
+      "path": "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/font-variant/original.pdf",
+      "sha256": "39d6a93fa0eeeb8932167406fb37e472a1a77a5c765eee04993f3baf31d55240",
+      "fonts": [
+        {
+          "fontObject": 11,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 43,
+          "textCodeUses": 34775,
+          "unmappedUsedCodes": [
+            {
+              "cidHex": "000F",
+              "uses": 112
+            },
+            {
+              "cidHex": "0019",
+              "uses": 2432
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "cidHex": "0003",
+              "uses": 3296,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 144,
+            "U+2022": 0
+          }
+        }
+      ],
+      "allUsedCodesMappedToNonControlUnicode": false
+    },
+    {
+      "path": "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/font-variant/variant.pdf",
+      "sha256": "81387c19ceb8fbd34fe158918e1fdcd5aa792e5694873a9469bbb1eff032a4cc",
+      "fonts": [
+        {
+          "fontObject": 11,
+          "baseFont": "ClassMngrPdfProbeVariable-Regular",
+          "usedCodeCount": 43,
+          "textCodeUses": 34775,
+          "unmappedUsedCodes": [
+            {
+              "cidHex": "0012",
+              "uses": 144
+            }
+          ],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 3296,
+            "U+002D": 2432,
+            "U+2022": 112
+          }
+        }
+      ],
+      "allUsedCodesMappedToNonControlUnicode": false
+    }
+  ]
+}

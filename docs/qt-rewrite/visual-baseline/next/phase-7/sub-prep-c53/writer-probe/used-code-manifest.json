@@ -1,0 +1,211 @@
+{
+  "taskId": "phase7_c53_subprep_output_implementation_01",
+  "documents": [
+    {
+      "path": "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/writer-probe/original.pdf",
+      "sha256": "cf7ce23f8c9705ca68058f405081a6922319915b8e445213147bb571d8802243",
+      "fonts": [
+        {
+          "fontObject": 11,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 21,
+          "textCodeUses": 34,
+          "unmappedUsedCodes": [
+            {
+              "cidHex": "0009",
+              "uses": 1
+            },
+            {
+              "cidHex": "000C",
+              "uses": 1
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "cidHex": "0007",
+              "uses": 6,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ]
+        }
+      ],
+      "allUsedCodesMappedToNonControlUnicode": false
+    },
+    {
+      "path": "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/writer-probe/no-shaping.pdf",
+      "sha256": "062bc0bf951eea57c53b477c5808c00efb880eedc03ac3fdce4b0860bfc3f2db",
+      "fonts": [
+        {
+          "fontObject": 11,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 20,
+          "textCodeUses": 34,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "cidHex": "0007",
+              "uses": 6,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ]
+        }
+      ],
+      "allUsedCodesMappedToNonControlUnicode": false
+    },
+    {
+      "path": "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/writer-probe/canonical-outline-trial.pdf",
+      "sha256": "15592563a40299738d2c263729fd9e0f3e471aafe101fe5d84a1dab6419d8038",
+      "fonts": [
+        {
+          "fontObject": 11,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 20,
+          "textCodeUses": 34,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "cidHex": "0007",
+              "uses": 6,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ]
+        }
+      ],
+      "allUsedCodesMappedToNonControlUnicode": false
+    },
+    {
+      "path": "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44/font-axis-repair/C44-Rosters-Daily.pdf",
+      "sha256": "e080d3ad2551c8ebb82f30df2ed42408b52e7f3a5c3b97bb25e963a8df1b4927",
+      "fonts": [
+        {
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 112,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": []
+        },
+        {
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 12,
+          "textCodeUses": 960,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "cidHex": "0003",
+              "uses": 192,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ]
+        },
+        {
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 35919,
+          "unmappedUsedCodes": [
+            {
+              "cidHex": "0015",
+              "uses": 96
+            },
+            {
+              "cidHex": "001F",
+              "uses": 2400
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "cidHex": "0003",
+              "uses": 3648,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ]
+        },
+        {
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 768,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": []
+        }
+      ],
+      "allUsedCodesMappedToNonControlUnicode": false
+    },
+    {
+      "path": "docs/qt-rewrite/visual-baseline/release/sub-prep-output/reference/Rosters - Daily.pdf",
+      "sha256": "8f18e89a0d199063c6b56ada5b825e6588bdd6ceadbe4239a7a386894fc3ccae",
+      "fonts": [
+        {
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 224,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": []
+        },
+        {
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 12,
+          "textCodeUses": 1920,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "cidHex": "0003",
+              "uses": 384,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ]
+        },
+        {
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 35919,
+          "unmappedUsedCodes": [
+            {
+              "cidHex": "0015",
+              "uses": 96
+            },
+            {
+              "cidHex": "001F",
+              "uses": 2400
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "cidHex": "0003",
+              "uses": 3648,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ]
+        },
+        {
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 768,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": []
+        }
+      ],
+      "allUsedCodesMappedToNonControlUnicode": false
+    }
+  ]
+}

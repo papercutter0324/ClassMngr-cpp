@@ -1,4 +1,6 @@
 #include "shared/roster/roster_template_renderer.h"
+#include "shared/roster/sub_prep_pdf_text_finalizer.h"
+#include <QBuffer>
 #include <QColor>
 #include <QAtomicInteger>
 #include <QFontMetricsF>
@@ -794,16 +796,33 @@ QImage previewPage(TemplateId id, const Page& page, const QSize& size,
     FontScope scope(fonts);
     return renderPreviewImage(id, size, page.key, valuesForDay(page.values, page.key), orientation);
 }
-Result savePagesPdf(const QString& path, TemplateId id, QPageLayout::Orientation orientation,
-    const PageProducer& produce, const Fonts& fonts, const PageReleased& released)
+namespace {
+Result savePagesPdfImpl(const QString& path, TemplateId id,
+    QPageLayout::Orientation orientation, const PageProducer& produce,
+    const Fonts& fonts, const PageReleased& released, bool finalizeText)
 {
     if (path.trimmed().isEmpty() || !produce) return failed(QObject::tr("No roster print file path was provided."));
     FontScope scope(fonts);
+    QByteArray generatedPdf;
+    QBuffer generatedBuffer(&generatedPdf);
     QSaveFile file(path);
-    if (!file.open(QIODevice::WriteOnly)) return failed(QObject::tr("Unable to create the roster print file."));
+    QIODevice* writerOutput = nullptr;
+    if (finalizeText)
     {
-        QPdfWriter writer(&file);
+        if (!generatedBuffer.open(QIODevice::WriteOnly))
+            return failed(QObject::tr("Unable to create the roster print file."));
+        writerOutput = &generatedBuffer;
+    }
+    else
+    {
+        if (!file.open(QIODevice::WriteOnly)) return failed(QObject::tr("Unable to create the roster print file."));
+        writerOutput = &file;
+    }
+    SubPrepPdfText::SourceJournal source;
+    {
+        QPdfWriter writer(writerOutput);
         if (!configureRosterPdfWriter(writer, id, orientation)) return failed(QObject::tr("Unable to configure the roster print file."));
+        std::unique_ptr<SubPrepPdfText::CaptureDevice> capture;
         QPainter painter;
         qsizetype pages = 0;
         while (true)
@@ -814,8 +833,19 @@ Result savePagesPdf(const QString& path, TemplateId id, QPageLayout::Orientation
                 if (!next) return failed(next.error());
                 if (!*next) break;
                 const auto& page = **next;
-                if (pages == 0 && !painter.begin(&writer)) return failed(QObject::tr("Unable to create the roster print file."));
-                if (pages > 0 && !writer.newPage()) return failed(QObject::tr("Unable to add a roster print page."));
+                if (pages == 0)
+                {
+                    QPaintDevice* paintDevice = &writer;
+                    if (finalizeText)
+                    {
+                        capture = std::make_unique<SubPrepPdfText::CaptureDevice>(writer, source);
+                        paintDevice = capture.get();
+                    }
+                    if (!painter.begin(paintDevice)) return failed(QObject::tr("Unable to create the roster print file."));
+                }
+                if (pages > 0
+                    && !(capture ? capture->newPage() : writer.newPage()))
+                    return failed(QObject::tr("Unable to add a roster print page."));
                 const QRectF rect = rosterPdfPageRect(writer);
                 paintTemplateDay(id, painter, page.key, valuesForDay(page.values, page.key), rect,
                     templateContentRect(id, rect, writer.resolution()), writer.resolution());
@@ -826,9 +856,26 @@ Result savePagesPdf(const QString& path, TemplateId id, QPageLayout::Orientation
         }
         if (!pages) return failed(QObject::tr("No selected classes match the roster print layout."));
         if (!painter.end()) return failed(QObject::tr("The roster print file could not be completed."));
+        if (capture && !capture->finish()) return failed(QObject::tr("The roster print file could not be completed."));
     }
-    if (!file.commit()) return failed(QObject::tr("The roster print file could not be completed."));
+    if (finalizeText)
+    {
+        const auto finalized = SubPrepPdfText::finalize(generatedPdf, source);
+        if (!finalized) return failed(finalized.error());
+        QSaveFile finalizedFile(path);
+        if (!finalizedFile.open(QIODevice::WriteOnly)
+            || finalizedFile.write(*finalized) != finalized->size()
+            || !finalizedFile.commit())
+            return failed(QObject::tr("The roster print file could not be completed."));
+    }
+    else if (!file.commit()) return failed(QObject::tr("The roster print file could not be completed."));
     return {Status::Sent, QObject::tr("Roster PDF created.")};
+}
+}
+Result savePagesPdf(const QString& path, TemplateId id, QPageLayout::Orientation orientation,
+    const PageProducer& produce, const Fonts& fonts, const PageReleased& released)
+{
+    return savePagesPdfImpl(path, id, orientation, produce, fonts, released, false);
 }
 Result saveCellValuesPdf(const QString& path, TemplateId id, QPageLayout::Orientation orientation,
     const QList<RosterCellValue>& values, const Fonts& fonts)
@@ -841,5 +888,19 @@ Result saveCellValuesPdf(const QString& path, TemplateId id, QPageLayout::Orient
         for (const auto& value : values) if (value.day == page.key) page.values.append(value);
         return std::optional<Page>(std::move(page));
     }, fonts);
+}
+Result saveCellValuesPdfForNextSubPrep(const QString& path, TemplateId id,
+    QPageLayout::Orientation orientation, const QList<RosterCellValue>& values,
+    const Fonts& fonts)
+{
+    const auto days = daysWithValues(id, values);
+    qsizetype index = 0;
+    return savePagesPdfImpl(path, id, orientation, [&]() -> PageResult {
+        if (index >= days.size()) return std::optional<Page>{};
+        Page page{days.at(index++), {}};
+        for (const auto& value : values)
+            if (value.day == page.key) page.values.append(value);
+        return std::optional<Page>(std::move(page));
+    }, fonts, {}, true);
 }
 }

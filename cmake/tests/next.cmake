@@ -3890,6 +3890,54 @@ set_tests_properties(ClassMngrNextSubPrepVisualCapture
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
+# Produce a matched Legacy/Next SQL-backed Sub Prep package and compare every
+# page through the same Qt PDF renderer. The Windows C53 workflow supplies the
+# prepared snapshot, Legacy package, and independent SQL oracle.
+add_executable(ClassMngrNextSubPrepSqlParityCapture
+    tests/next/sub_prep_sql_parity_capture.cpp
+    $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
+    $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
+)
+target_compile_features(ClassMngrNextSubPrepSqlParityCapture
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextSubPrepSqlParityCapture
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_compile_definitions(ClassMngrNextSubPrepSqlParityCapture
+    PRIVATE
+        CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+)
+target_link_libraries(ClassMngrNextSubPrepSqlParityCapture
+    PRIVATE
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrSubPrepShared
+        ClassMngrWorkspaceStore
+        Qt6::Pdf
+        Qt6::PrintSupport
+        Qt6::Sql
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextSubPrepSqlParityCapture
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextSubPrepSqlParityCapture
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+set_property(GLOBAL APPEND PROPERTY CLASSMNGR_TEST_SUPPORT_TARGETS
+    ClassMngrNextSubPrepSqlParityCapture
+)
+add_dependencies(ClassMngrNextSubPrepSqlParityCapture
+    ClassMngrNextResourcePackage
+)
+
 # Exercise the path-scoped Next Speaking Evaluation page, exact changed-cell
 # persistence, one-matrix lifecycle, roster import, and presentation captures.
 add_executable(ClassMngrNextSpeakingEvaluationPageTests

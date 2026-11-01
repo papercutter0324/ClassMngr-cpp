@@ -1,0 +1,86 @@
+{
+  "sourceCmapTabGlyph": null,
+  "requestedCmap": {
+    "U+002D": 13252,
+    "U+2022": 13207,
+    "U+0009": 1,
+    "U+000A": 1,
+    "U+000D": 1
+  },
+  "sfntChecksumValid": true,
+  "tablesBeforeHeadAdjustment": [
+    {
+      "tag": "GDEF",
+      "sha256": "7d4a20de26ab611a4bebc9efac4292cb18335ec788b38caeea8247f52e95fa3f"
+    },
+    {
+      "tag": "GPOS",
+      "sha256": "8b860ac9ddc934641c15c6718ea4827c7840561b66016088013ac9aaef8d77dd"
+    },
+    {
+      "tag": "GSUB",
+      "sha256": "5ad23aeb4ec68b0aef1823dce58abd755363e3bde1f6bf7ba344d94e2c2d6163"
+    },
+    {
+      "tag": "OS/2",
+      "sha256": "f3507cb8fda17e0d6581c6b14e8008a9f84d38d2d57227b5168c2c3cfa3d6837"
+    },
+    {
+      "tag": "STAT",
+      "sha256": "992c9de74f5c42cd4979c4e85ed30ba480ba31adca44039c944750ba3a191328"
+    },
+    {
+      "tag": "cmap",
+      "sha256": "33bb1281d3b8a964a394311a990053a6067c2d1b19d55ed5afa34fdd6f44611a"
+    },
+    {
+      "tag": "fvar",
+      "sha256": "247a992f70fbda5945fab891f35ad4386f957d25b6016f19510d82478bf95f24"
+    },
+    {
+      "tag": "glyf",
+      "sha256": "fe49eb19e461fdbc385bfcc59f61aa27ac47dd8a9e509442cd4a27648db39ac7"
+    },
+    {
+      "tag": "gvar",
+      "sha256": "49edb5687f212d48f79c5e803c26152c949c245ad1f5fb94c42ed653ef2dd128"
+    },
+    {
+      "tag": "head",
+      "sha256": "8880d9b843836aadfa31ba24b1772f2ddb7b261e41befbdfe50e2769c1a257c9"
+    },
+    {
+      "tag": "hhea",
+      "sha256": "499cb5bb08fcdd351928e45ae64e87aeea7ebc928555160b807e24e57ab9b40d"
+    },
+    {
+      "tag": "hmtx",
+      "sha256": "6795bd3964ca90d484638ad93c8fac1b12b5b4b2a40e79c82d587aa4b518df47"
+    },
+    {
+      "tag": "loca",
+      "sha256": "57c31f963bedc01b4d116bb96c4c65c65cb6e8cefd4cbd831f11d6943bf57886"
+    },
+    {
+      "tag": "maxp",
+      "sha256": "54a6a21c42b7357678888aca1b62266a46c0c57b46e88757c3c53cbea64f8f1e"
+    },
+    {
+      "tag": "name",
+      "sha256": "dcd869f1b329b0556fd0a8c4be7016ed5b12a1360efb16aeffba12ff5c8701db"
+    },
+    {
+      "tag": "post",
+      "sha256": "e1a7ba718794bc40869405fd3414174a799e826050825d5500685083a35d7b4d"
+    }
+  ],
+  "changedTables": [
+    "cmap",
+    "name",
+    "head"
+  ],
+  "derivativeFamily": "ClassMngrPdfProbe Variable",
+  "sourceSha256": "3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22",
+  "variantSha256": "6d5f3fee5103aa4a47d8994d5ec7377b9504ab55673fea21958fbd3c9d1ad5d8",
+  "variantBytes": 6750084
+}

@@ -147,6 +147,13 @@ qt_add_executable(ClassMngrBasePageTests
         COMMAND ClassMngrSchedulePrintPdfTests
     )
 
+    qt_add_executable(ClassMngrSubPrepPdfTextFinalizerTests tests/sub_prep_pdf_text_finalizer_tests.cpp)
+    target_compile_features(ClassMngrSubPrepPdfTextFinalizerTests PRIVATE cxx_std_23)
+    target_include_directories(ClassMngrSubPrepPdfTextFinalizerTests PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    target_link_libraries(ClassMngrSubPrepPdfTextFinalizerTests PRIVATE ClassMngrRosterTemplateRenderer Qt6::Pdf Qt6::Test)
+    add_test(NAME ClassMngrSubPrepPdfTextFinalizerTests COMMAND ClassMngrSubPrepPdfTextFinalizerTests)
+    set_tests_properties(ClassMngrSubPrepPdfTextFinalizerTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen" WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
+
     qt_add_executable(ClassMngrSubPrepPrintPdfTests
         tests/sub_prep_print_pdf_tests.cpp
         src/core/fontmanager.cpp
@@ -238,6 +245,7 @@ qt_add_executable(ClassMngrBasePageTests
             Qt6::Test
             Qt6::Widgets
             ClassMngrNext::Application
+            ClassMngrRosterTemplateRenderer
     )
 
     add_test(

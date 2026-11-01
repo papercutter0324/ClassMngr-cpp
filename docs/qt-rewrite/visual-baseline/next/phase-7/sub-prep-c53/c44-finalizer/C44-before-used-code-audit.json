@@ -1,0 +1,1309 @@
+{
+  "taskId": "phase7_c53_subprep_finalizer_implementation_02",
+  "documents": [
+    {
+      "path": "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/c44-finalizer/C44-before.pdf",
+      "sha256": "54c304847922612fa4f559cb2f63d5a2e564a366673876b3409a7296194d56e8",
+      "pageCount": 16,
+      "pageFonts": [
+        {
+          "page": 1,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 1,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 1,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2202,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 1,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 2,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 2,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 2,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 2,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 3,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 3,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 3,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2227,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 3,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 4,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 4,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 4,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 4,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 5,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 5,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 5,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2227,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 5,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 6,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 6,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 6,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 6,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 7,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 7,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 7,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2227,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 7,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 8,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 8,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 8,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 8,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 9,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 9,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 9,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2229,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 9,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 10,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 10,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 10,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 10,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 11,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 11,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 11,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2229,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 11,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 12,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 12,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 12,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2262,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 12,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 13,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 13,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 13,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2235,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 13,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 14,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 14,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 14,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2268,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 14,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 15,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 15,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 10,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 15,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2235,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 15,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 16,
+          "fontObject": 11,
+          "baseFont": "Inter-Black",
+          "usedCodeCount": 7,
+          "textCodeUses": 7,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 16,
+          "fontObject": 12,
+          "baseFont": "PretendardVariable-Bold",
+          "usedCodeCount": 9,
+          "textCodeUses": 60,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 12,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 16,
+          "fontObject": 13,
+          "baseFont": "PretendardVariable-Regular",
+          "usedCodeCount": 38,
+          "textCodeUses": 2268,
+          "unmappedUsedCodes": [
+            {
+              "codeHex": "0015",
+              "uses": 6
+            },
+            {
+              "codeHex": "001F",
+              "uses": 150
+            }
+          ],
+          "mappedControlCodes": [
+            {
+              "codeHex": "0003",
+              "uses": 228,
+              "unicode": [
+                "U+0009"
+              ]
+            }
+          ],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 6,
+            "U+2022": 0
+          }
+        },
+        {
+          "page": 16,
+          "fontObject": 14,
+          "baseFont": "Inter-Regular",
+          "usedCodeCount": 3,
+          "textCodeUses": 48,
+          "unmappedUsedCodes": [],
+          "mappedControlCodes": [],
+          "punctuationAndSpaceUses": {
+            "U+0020": 0,
+            "U+002D": 0,
+            "U+2022": 0
+          }
+        }
+      ],
+      "allUsedCodesMappedToNonControlUnicode": false
+    }
+  ]
+}
