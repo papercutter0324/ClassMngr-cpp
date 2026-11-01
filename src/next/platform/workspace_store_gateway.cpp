@@ -40,6 +40,7 @@
 
 #include "next/application/my_classes_page_read_query.h"
 #include "next/platform/workspace_store_my_classes_page_read_port.h"
+#include "next/platform/workspace_store_class_teacher_assignments_read_port.h"
 #include "next/platform/application_services_sub_prep_schedule_summary_port.h"
 #include "next/platform/application_services_sub_prep_class_details_port.h"
 #include "next/platform/application_services_sub_prep_print_source_port.h"
