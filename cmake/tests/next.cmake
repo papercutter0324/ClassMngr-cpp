@@ -1162,6 +1162,7 @@ set_tests_properties(ClassMngrNextTeacherImportWorkflowTests
 add_executable(ClassMngrNextTeacherImportVisualCapture
     tests/next/teacher_import_visual_capture.cpp
     src/next/platform/workspace_store_gateway.cpp
+    src/next/platform/workspace_store_schedule_actions.cpp
     src/next/platform/workspace_store_custom_color_palette_preferences_port.cpp
     src/next/ui/initial_setup_teacher_import_dialog.cpp
     src/next/ui/teacher_import_request_mapper.cpp

@@ -56,8 +56,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   The full build at `1021a34d` stopped at the standalone
   `ClassMngrNextTeacherDirectoryVisualCapture` link; CTest did not run. Its
   narrow CMake fix now builds the target and passes both registered CTests.
-  Unfiltered macOS verification and exact-SHA Windows checks at the repaired
-  SHA remain open. C54's
+  The full build at `76c1f497` stopped linking
+  `ClassMngrNextTeacherImportVisualCapture` because its target omits the
+  schedule-action source; CTest did not run. Its targeted repair now builds
+  the target and passes both registered CTests; a read-only audit found no
+  further direct-Gateway capture-target omission. The all-target build and
+  exact-SHA Windows checks remain open at the resulting SHA. C54's
   repaired Windows x64 diagnostic and lifecycle artifacts are accepted on run
   `41274190210` without a numeric threshold. The Next document viewer uses its
   own ResourceLoader/PageHost path; Legacy parity removal remains in Phase 12.

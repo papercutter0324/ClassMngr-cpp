@@ -1962,6 +1962,35 @@ Entries are preserved in their original document order.
   closure without changing production runtime targets.
 - In the isolated standard macOS build tree based on exact SHA `1021a34d`, the
   focused target build succeeded and both registered capture CTests passed
-  (2/2); `git diff --check` passed. The fix remains uncommitted in the main
-  worktree. The all-target build and unfiltered CTest still need to run at the
-  pushed repair SHA, and Windows checks must be retargeted there.
+  (2/2); `git diff --check` passed. The fix is committed and pushed as
+  `76c1f497`. The all-target build and unfiltered CTest are now running at that
+  SHA; the Windows checks have also been retargeted.
+
+### Exact-SHA full-build attempt — Teacher Import capture link failure (2026-11-01)
+
+- At pushed SHA `76c1f497b7be7136c7560945b258694a167b13de`, the independent
+  Tester refreshed the isolated source tree to the remote tip and reused its
+  standard `build/macos-clang-debug` directory. The incremental all-target
+  build stopped at action 4,590/4,965 while linking
+  `ClassMngrNextTeacherImportVisualCapture`; CTest did not run.
+- The target includes `workspace_store_gateway.cpp`, which calls
+  `readSchedulePageFromStore(WorkspaceStore&)`, but does not list
+  `workspace_store_schedule_actions.cpp`, where that function is defined. A
+  focused CMake repair is recorded below.
+
+### Teacher Import capture link repair — focused verification passed (2026-11-01)
+
+- Added `src/next/platform/workspace_store_schedule_actions.cpp` to the
+  `ClassMngrNextTeacherImportVisualCapture` source list. In the isolated
+  standard macOS build tree based on `76c1f497`, the target build succeeded and
+  both registered Teacher Import capture CTests passed (2/2); `git diff --check`
+  passed. The linker emitted duplicate `libClassMngrWorkspaceStore.a`
+  arguments, but linked successfully.
+- A bounded read-only audit found Shared Staff Directory and Teacher Import
+  are the only standalone visual-capture targets that directly compile
+  `workspace_store_gateway.cpp`; Shared Staff already listed the actions source
+  and the Teacher Import repair now does too. Other workspace-linked capture
+  targets consume the source through `ClassMngrNextWorkspace`; no further
+  direct-Gateway omission was found.
+- The all-target build and unfiltered CTest remain to run at the resulting
+  source/test SHA. Exact-SHA Windows checks also remain open.

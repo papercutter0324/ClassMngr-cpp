@@ -10,7 +10,12 @@
     `1021a34d` stopped linking `ClassMngrNextTeacherDirectoryVisualCapture` on
     missing object-library dependencies, before CTest. Its narrow CMake repair
     now builds the target and passes both registered CTests. Rerun the
-    unfiltered suite and exact-SHA Windows checks at the repaired SHA.
+    full build at `76c1f497` then stopped at the Teacher Import capture target,
+    which lacked `workspace_store_schedule_actions.cpp`; CTest did not run.
+    The one-line repair now builds that target and passes both registered
+    CTests. A read-only audit found no further direct-Gateway visual-capture
+    omissions; rerun the full build and exact-SHA Windows checks at the
+    resulting SHA.
 
 ## Batch 7 — discovered
 

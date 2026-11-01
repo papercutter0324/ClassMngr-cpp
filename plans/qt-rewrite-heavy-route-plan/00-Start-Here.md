@@ -20,7 +20,12 @@
   linking `ClassMngrNextTeacherDirectoryVisualCapture` because its object-library
   link closure is incomplete; CTest did not run. A narrow CMake repair is
   now focused-verified: the target builds and both registered CTests pass.
-  Rerun the full suite and Windows checks at the repaired SHA. Exit review found two visual evidence
+  The full build at `76c1f497` then stopped linking
+  `ClassMngrNextTeacherImportVisualCapture` because it lacks the schedule-action
+  definition; CTest did not run. The targeted repair now passes its focused
+  build and both registered CTests, and the audit found no further direct-
+  Gateway capture-target omission. The all-target build and final Windows
+  check must use the resulting SHA. Exit review found two visual evidence
   gaps, now covered by independently reviewed packages. The Initial Setup
   package has 28 images with matching manifest records; its metadata names the
   base commit, so its capture worktree revision remains a reproducibility

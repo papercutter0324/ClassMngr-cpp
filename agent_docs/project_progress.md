@@ -10,7 +10,13 @@ the standalone Staff Directory capture target was fixed in pushed commit
 `1021a34d` stopped linking `ClassMngrNextTeacherDirectoryVisualCapture` because
 its object-library dependency closure was incomplete; CTest did not run. The
 narrow link repair now builds that target and passes both registered CTests;
-the unfiltered suite remains open for a rerun at the repaired SHA.
+the full build at `76c1f497` then stopped linking
+`ClassMngrNextTeacherImportVisualCapture` because its target omits
+`workspace_store_schedule_actions.cpp`; CTest did not run. The one-line repair
+now builds that target and passes both registered CTests; the unfiltered suite
+remains open for a rerun at the resulting SHA. A bounded link-closure audit
+found no further standalone visual target that directly compiles the Gateway
+without its schedule-actions source.
 Batch 7 discovery found no other feature slice. The Initial Setup visual
 package is accepted after independent review of all 28 images and manifest
 records; its metadata identifies the base commit and the capture worktree
@@ -219,8 +225,11 @@ the adapter include was omitted from its staged Gateway hunk. Repair
 link failure in the Staff Directory capture target was repaired in `1e9bfae0`
 with a passing focused CTest. The full build at `1021a34d` stopped at the
 standalone Teacher Directory capture link before CTest; the focused link repair
-now passes its target build and 2/2 CTests. The unfiltered suite and
-latest-SHA Windows checks remain open.
+now passes its target build and 2/2 CTests. The full build at `76c1f497` then
+stopped at the Teacher Import capture target before CTest; a scoped source-list
+repair now passes that target build and 2/2 CTests. A capture-link audit found
+no further direct-Gateway omission. The unfiltered suite and latest-SHA Windows
+checks remain open.
 Batch 7 discovery found no other feature slice. The matrix/call-
 path audit found no unresolved row. The Initial Setup visual package is
 accepted; its capture worktree provenance is limited to the base commit
