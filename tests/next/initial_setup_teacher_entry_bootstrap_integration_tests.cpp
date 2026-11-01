@@ -1,4 +1,5 @@
 #include "core/settingsmanager.h"
+#include "core/process_memory_snapshot.h"
 #include "data/database/workspace_store.h"
 #include "next/bootstrap/application_bootstrap.h"
 #include "next/bootstrap/startup_update_dispatcher.h"
@@ -22,9 +23,11 @@
 #include <QDir>
 #include <QDialog>
 #include <QEvent>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QGroupBox>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
@@ -35,6 +38,7 @@
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSaveFile>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTranslator>
@@ -871,12 +875,606 @@ class InitialSetupTeacherEntryBootstrapIntegrationTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void initialSetupLifecycleEvidenceCapture();
     void initialSetupPageCreatesTeacherThroughWorkspaceStore();
     void importedTeacherTimesPersistBeforeCancelRestoresOriginal();
     void scheduleImportIsTransactionalAndFinishIsExplicit();
     void classTimesLabelsAndBehavior_data();
     void classTimesLabelsAndBehavior();
 };
+
+void InitialSetupTeacherEntryBootstrapIntegrationTests::
+initialSetupLifecycleEvidenceCapture()
+{
+    QTemporaryDir settingsRoot;
+    QVERIFY(settingsRoot.isValid());
+    SettingsRootEnvironmentGuard settingsRootGuard;
+    qputenv("CLASSMNGR_SETTINGS_ROOT", settingsRoot.path().toUtf8());
+    SettingsPreferenceGuard preferences;
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        QStringLiteral("en_US"), QStringLiteral("light")
+        ));
+    ApplicationStyleSheetGuard styleSheetGuard(*qApp);
+
+    const QString evidenceOutputPath = qEnvironmentVariable(
+        "CLASSMNGR_PHASE7_INITIAL_SETUP_LIFECYCLE_EVIDENCE_OUTPUT"
+        );
+    QTemporaryDir temporaryEvidenceDirectory;
+    QVERIFY(temporaryEvidenceDirectory.isValid());
+    const QString outputPath = evidenceOutputPath.isEmpty()
+        ? temporaryEvidenceDirectory.filePath(
+              QStringLiteral("initial-setup-lifecycle.json")
+              )
+        : QFileInfo(evidenceOutputPath).absoluteFilePath();
+    QVERIFY2(!QFileInfo::exists(outputPath),
+             "Refusing to overwrite Initial Setup lifecycle evidence.");
+
+    QTemporaryDir setupWorkspaceRoot;
+    QVERIFY(setupWorkspaceRoot.isValid());
+    const QString setupProfilePath = setupWorkspaceRoot.filePath(
+        QStringLiteral("c54-synthetic-setup.tps")
+        );
+    const QString setupRecoveryJournalPath = setupWorkspaceRoot.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    auto setupHistoryProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams setupSeams;
+    setupSeams.commandLineArguments = QStringList{
+        QStringLiteral("c54-initial-setup-lifecycle-evidence")
+    };
+    setupSeams.recentAutoOpenEnabled = false;
+    setupSeams.initialSetupRecoveryJournalPath = setupRecoveryJournalPath;
+    setupSeams.recentWorkspaceHistoryPortFactory = [setupHistoryProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(
+            setupHistoryProbe
+            );
+    };
+    setupSeams.initialSetupFileDialogPortFactory = [setupProfilePath] {
+        return std::make_unique<SelectedProfileFileDialog>(setupProfilePath);
+    };
+
+    const QString startedAtUtc = QDateTime::currentDateTimeUtc().toString(
+        Qt::ISODateWithMs
+        );
+    QElapsedTimer elapsed;
+    elapsed.start();
+    QJsonArray checkpoints;
+    PlatformProcessMemorySnapshotProvider memoryProvider;
+
+    const auto captureCheckpoint = [
+        &checkpoints,
+        &elapsed,
+        &memoryProvider
+        ](
+        const QString& checkpointId,
+        Bootstrap::ApplicationBootstrap& bootstrap,
+        Ui::InitialPage& page,
+        const QString& profilePath,
+        const QString& recoveryJournalPath,
+        const QJsonObject& additionalState = QJsonObject{}
+        ) {
+        const ProcessMemorySnapshot memory = memoryProvider.snapshot();
+        const auto session = bootstrap.workspaceStateSnapshot().session();
+        const auto widgetGroup = [&page](const QString& objectName) {
+            QGroupBox* const group = page.findChild<QGroupBox*>(objectName);
+            int widgetCount = 0;
+            int visibleWidgetCount = 0;
+            if (group)
+            {
+                widgetCount = 1 + group->findChildren<QWidget*>(
+                    QString{}, Qt::FindChildrenRecursively
+                    ).size();
+                visibleWidgetCount = group->isVisible() ? 1 : 0;
+                for (QWidget* const child : group->findChildren<QWidget*>(
+                         QString{}, Qt::FindChildrenRecursively
+                         ))
+                {
+                    if (child->isVisible())
+                    {
+                        ++visibleWidgetCount;
+                    }
+                }
+            }
+            return QJsonObject{
+                {QStringLiteral("present"), group != nullptr},
+                {QStringLiteral("visible"), group && group->isVisible()},
+                {QStringLiteral("widgetCount"), widgetCount},
+                {QStringLiteral("visibleWidgetCount"), visibleWidgetCount}
+            };
+        };
+        const auto visibleButton = [&page](const QString& objectName) {
+            const QPushButton* const button = page.findChild<QPushButton*>(objectName);
+            return button && button->isVisible();
+        };
+        const auto countRows = [
+            &page
+            ](const QString& groupName, const QString& rowName) {
+            QGroupBox* const group = page.findChild<QGroupBox*>(groupName);
+            if (!group)
+            {
+                return 0;
+            }
+            int count = 0;
+            for (QWidget* const row : group->findChildren<QWidget*>(rowName))
+            {
+                if (row->isVisible())
+                {
+                    ++count;
+                }
+            }
+            return count;
+        };
+        const auto databaseRowCount = [
+            &session,
+            &profilePath
+            ](const QString& tableName) -> QJsonValue {
+            if (!session.has_value())
+            {
+                return QJsonValue(QJsonValue::Null);
+            }
+            const std::optional<int> count = tableRowCount(profilePath, tableName);
+            return count.has_value()
+                ? QJsonValue(*count)
+                : QJsonValue(QJsonValue::Null);
+        };
+        const auto originalBackupExists = [&recoveryJournalPath] {
+            QFile journal(recoveryJournalPath);
+            if (!journal.open(QIODevice::ReadOnly))
+            {
+                return false;
+            }
+            const QJsonDocument record = QJsonDocument::fromJson(journal.readAll());
+            const QString backup = record.object().value(
+                QStringLiteral("originalBackup")
+                ).toString();
+            return !backup.isEmpty() && QFileInfo::exists(backup);
+        };
+
+        const QList<QWidget*> descendants = page.findChildren<QWidget*>(
+            QString{}, Qt::FindChildrenRecursively
+            );
+        int visiblePageWidgetCount = page.isVisible() ? 1 : 0;
+        for (QWidget* const child : descendants)
+        {
+            if (child->isVisible())
+            {
+                ++visiblePageWidgetCount;
+            }
+        }
+        const int pageWidgetCount = 1 + descendants.size();
+        const QJsonObject actions{
+            {QStringLiteral("createProfileVisible"), visibleButton(
+                 QStringLiteral("classMngrNextInitialSetupCreateProfile"))},
+            {QStringLiteral("resumeSetupVisible"), visibleButton(
+                 QStringLiteral("classMngrNextInitialSetupResume"))},
+            {QStringLiteral("restoreSetupVisible"), visibleButton(
+                 QStringLiteral("classMngrNextInitialSetupRestore"))},
+            {QStringLiteral("cancelSetupVisible"), visibleButton(
+                 QStringLiteral("classMngrNextInitialSetupCancel"))},
+            {QStringLiteral("skipScheduleAndFinishVisible"), visibleButton(
+                 QStringLiteral("classMngrNextInitialSetupSkipScheduleAndFinish"))},
+            {QStringLiteral("finishSetupVisible"), visibleButton(
+                 QStringLiteral("classMngrNextInitialSetupFinish"))}
+        };
+        int visibleActionCount = 0;
+        for (auto it = actions.constBegin(); it != actions.constEnd(); ++it)
+        {
+            if (it.value().toBool())
+            {
+                ++visibleActionCount;
+            }
+        }
+
+        QJsonObject state{
+            {QStringLiteral("setupPending"), actions.value(
+                 QStringLiteral("cancelSetupVisible")).toBool()},
+            {QStringLiteral("recoveryAvailable"),
+             actions.value(QStringLiteral("resumeSetupVisible")).toBool()
+                 && actions.value(QStringLiteral("restoreSetupVisible")).toBool()},
+            {QStringLiteral("workspaceSessionActive"), session.has_value()},
+            {QStringLiteral("profileExists"), QFileInfo::exists(profilePath)},
+            {QStringLiteral("recoveryJournalExists"),
+             QFileInfo::exists(recoveryJournalPath)},
+            {QStringLiteral("originalBackupExists"), originalBackupExists()},
+            {QStringLiteral("classDetailsDraftAvailable"),
+             bootstrap.initialSetupClassDetailsDraft().has_value()},
+            {QStringLiteral("databaseRows"), QJsonObject{
+                {QStringLiteral("teachers"), databaseRowCount(QStringLiteral("teachers"))},
+                {QStringLiteral("classes"), databaseRowCount(QStringLiteral("classes"))},
+                {QStringLiteral("classInfo"), databaseRowCount(QStringLiteral("class_info"))},
+                {QStringLiteral("regularTimes"), databaseRowCount(QStringLiteral("class_times"))},
+                {QStringLiteral("intensiveTimes"), databaseRowCount(QStringLiteral("class_intensive_times"))}
+            }}
+        };
+        for (auto it = additionalState.constBegin();
+             it != additionalState.constEnd();
+             ++it)
+        {
+            state.insert(it.key(), it.value());
+        }
+
+        const QJsonObject featureCounts{
+            {QStringLiteral("pageWidgetCount"), pageWidgetCount},
+            {QStringLiteral("visiblePageWidgetCount"), visiblePageWidgetCount},
+            {QStringLiteral("sectionWidgets"), QJsonObject{
+                {QStringLiteral("personalDetails"), widgetGroup(
+                     QStringLiteral("classMngrNextInitialSetupPersonalDetails"))},
+                {QStringLiteral("teacherEntry"), widgetGroup(
+                     QStringLiteral("classMngrNextInitialSetupTeacherEntry"))},
+                {QStringLiteral("classDetails"), widgetGroup(
+                     QStringLiteral("classMngrNextInitialSetupClassDetails"))},
+                {QStringLiteral("classTimes"), widgetGroup(
+                     QStringLiteral("classMngrNextInitialSetupClassTimes"))}
+            }},
+            {QStringLiteral("visibleActionCount"), visibleActionCount},
+            {QStringLiteral("scheduleRows"), QJsonObject{
+                {QStringLiteral("regular"), countRows(
+                    QStringLiteral("classMngrNextInitialSetupClassTimes"),
+                    QStringLiteral("classMngrNextInitialSetupRegularScheduleRow"))},
+                {QStringLiteral("intensive"), countRows(
+                    QStringLiteral("classMngrNextInitialSetupClassTimes"),
+                    QStringLiteral("classMngrNextInitialSetupIntensiveScheduleRow"))}
+            }}
+        };
+        const QJsonObject memoryRecord{
+            {QStringLiteral("scope"), QStringLiteral("whole-process")},
+            {QStringLiteral("platform"), memory.platform},
+            {QStringLiteral("isAvailable"), memory.isAvailable},
+            {QStringLiteral("capturedAtUtc"), memory.capturedAt.toUTC().toString(
+                 Qt::ISODateWithMs)},
+            {QStringLiteral("workingSetBytes"), static_cast<qint64>(memory.workingSetBytes)},
+            {QStringLiteral("peakWorkingSetBytes"), static_cast<qint64>(memory.peakWorkingSetBytes)},
+            {QStringLiteral("privateUsageBytes"), static_cast<qint64>(memory.privateUsageBytes)},
+            {QStringLiteral("pagefileUsageBytes"), static_cast<qint64>(memory.pagefileUsageBytes)},
+            {QStringLiteral("privateWorkingSetBytes"), static_cast<qint64>(memory.privateWorkingSetBytes)},
+            {QStringLiteral("privateDirtyBytes"), static_cast<qint64>(memory.privateDirtyBytes)},
+            {QStringLiteral("handleCount"), static_cast<int>(memory.handleCount)},
+            {QStringLiteral("threadCount"), static_cast<int>(memory.threadCount)}
+        };
+        checkpoints.append(QJsonObject{
+            {QStringLiteral("id"), checkpointId},
+            {QStringLiteral("elapsedMs"), elapsed.elapsed()},
+            {QStringLiteral("state"), state},
+            {QStringLiteral("featureCounts"), featureCounts},
+            {QStringLiteral("processMemory"), memoryRecord}
+        });
+        return memory;
+    };
+
+    Bootstrap::ApplicationBootstrap setupBootstrap(
+        *qApp,
+        {},
+        {},
+        resolverForRoot(resources.root()),
+        QStringList{QStringLiteral("en-US")},
+        std::move(setupSeams),
+        [] { return std::make_unique<SilentUpdateDispatcher>(); }
+        );
+    QVERIFY2(setupBootstrap.start().succeeded(),
+             "ApplicationBootstrap failed to start Initial Setup evidence flow.");
+    auto* setupPage = dynamic_cast<Ui::InitialPage*>(
+        setupBootstrap.shell()->pageHost().pageInstance(QStringLiteral("initial_setup"))
+        );
+    QVERIFY(setupPage);
+    auto* const createProfile = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        );
+    auto* const cancelSetup = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCancel")
+        );
+    QVERIFY(createProfile && cancelSetup);
+    QVERIFY(createProfile->isVisible());
+    QVERIFY(cancelSetup->isHidden());
+    QVERIFY(!QFileInfo::exists(setupProfilePath));
+    QVERIFY(!QFileInfo::exists(setupRecoveryJournalPath));
+    QVERIFY(!setupBootstrap.workspaceStateSnapshot().session().has_value());
+
+    ProcessMemorySnapshot capturedMemory = captureCheckpoint(
+        QStringLiteral("entry.initial-setup"),
+        setupBootstrap,
+        *setupPage,
+        setupProfilePath,
+        setupRecoveryJournalPath
+        );
+    QVERIFY2(capturedMemory.isAvailable,
+             "Initial Setup entry has no supported process memory snapshot.");
+    QVERIFY(capturedMemory.workingSetBytes > 0);
+
+    createProfile->click();
+    QVERIFY(QFileInfo::exists(setupProfilePath));
+    QVERIFY(QFileInfo::exists(setupRecoveryJournalPath));
+    QVERIFY(setupBootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(!cancelSetup->isHidden());
+    capturedMemory = captureCheckpoint(
+        QStringLiteral("setup.active"),
+        setupBootstrap,
+        *setupPage,
+        setupProfilePath,
+        setupRecoveryJournalPath
+        );
+    QVERIFY(capturedMemory.isAvailable);
+    QVERIFY(capturedMemory.workingSetBytes > 0);
+
+    auto* const personalName = setupPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalName")
+        );
+    auto* const savePersonalDetails = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupPersonalDetailsSave")
+        );
+    QVERIFY(personalName && savePersonalDetails);
+    personalName->setText(QStringLiteral("C54 Example"));
+    savePersonalDetails->click();
+    QCOMPARE(readAppSetting(setupProfilePath, QStringLiteral("myInfo/name")),
+             std::optional<QString>{QStringLiteral("C54 Example")});
+
+    auto* const teacherEnglishName = setupPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEnglishName")
+        );
+    auto* const teacherKoreanName = setupPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherKoreanName")
+        );
+    auto* const teacherPreferredSpelling = setupPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherPreferredSpelling")
+        );
+    auto* const teacherRoom = setupPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherRoom")
+        );
+    auto* const continueTeacher = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupContinueTeacherEntry")
+        );
+    QVERIFY(teacherEnglishName && teacherKoreanName && teacherPreferredSpelling
+            && teacherRoom && continueTeacher);
+    auto* const teacherWifiName = setupPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherWifiName")
+        );
+    auto* const teacherWifiPassword = setupPage->findChild<QLineEdit*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherWifiPassword")
+        );
+    auto* const teacherEntryStatus = setupPage->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupTeacherEntryStatus")
+        );
+    QVERIFY(teacherWifiName && teacherWifiPassword && teacherEntryStatus);
+    teacherEnglishName->setText(QStringLiteral("Alex Kim"));
+    teacherKoreanName->setText(QString::fromUtf8("김선생님"));
+    teacherPreferredSpelling->setText(QStringLiteral("Kim Seonsaeng"));
+    teacherRoom->setText(QStringLiteral("Room 12"));
+    teacherWifiName->setText(QStringLiteral("Synthetic Teacher WiFi"));
+    teacherWifiPassword->setText(QStringLiteral("synthetic-only-password"));
+    continueTeacher->click();
+    QCOMPARE(teacherEntryStatus->text(),
+             QStringLiteral("Teacher saved. Setup remains pending."));
+    QCOMPARE(tableRowCount(setupProfilePath, QStringLiteral("teachers")),
+             std::optional<int>{1});
+
+    auto* const classColor = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassColorChoose")
+        );
+    auto* const continueClassDetails = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassDetailsContinue")
+        );
+    QVERIFY(classColor && continueClassDetails);
+    bool classColorAccepted = false;
+    chooseColorInNextModalDialog(
+        QColor(QStringLiteral("#345678")), &classColorAccepted
+        );
+    classColor->click();
+    QVERIFY(classColorAccepted);
+    continueClassDetails->click();
+    QVERIFY(setupBootstrap.initialSetupClassDetailsDraft().has_value());
+
+    auto* const classTimesGroup = setupPage->findChild<QGroupBox*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimes")
+        );
+    auto* const continueClassTimes = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimesContinue")
+        );
+    auto* const classTimesStatus = setupPage->findChild<QLabel*>(
+        QStringLiteral("classMngrNextInitialSetupClassTimesStatus")
+        );
+    QVERIFY(classTimesGroup && continueClassTimes && classTimesStatus);
+    const QString failClassCreateTrigger = QStringLiteral(
+        "CREATE TRIGGER fail_c54_initial_setup_class_create "
+        "BEFORE INSERT ON classes BEGIN "
+        "SELECT RAISE(ABORT, 'synthetic C54 class-create failure'); END"
+        );
+    QVERIFY(executeWorkspaceSql(setupProfilePath, failClassCreateTrigger));
+    continueClassTimes->click();
+    QVERIFY(classTimesStatus->text().contains(QStringLiteral("retry")));
+    QCOMPARE(tableRowCount(setupProfilePath, QStringLiteral("classes")),
+             std::optional<int>{0});
+    QVERIFY(setupBootstrap.initialSetupClassDetailsDraft().has_value());
+    QVERIFY(!cancelSetup->isHidden());
+
+    capturedMemory = captureCheckpoint(
+        QStringLiteral("save-failure.draft-retained"),
+        setupBootstrap,
+        *setupPage,
+        setupProfilePath,
+        setupRecoveryJournalPath
+        );
+    QVERIFY(capturedMemory.isAvailable);
+    QVERIFY(capturedMemory.workingSetBytes > 0);
+    QVERIFY(executeWorkspaceSql(setupProfilePath, QStringLiteral(
+        "DROP TRIGGER fail_c54_initial_setup_class_create"
+        )));
+    continueClassTimes->click();
+    QCOMPARE(tableRowCount(setupProfilePath, QStringLiteral("classes")),
+             std::optional<int>{1});
+    QCOMPARE(tableRowCount(setupProfilePath, QStringLiteral("class_info")),
+             std::optional<int>{1});
+    QCOMPARE(tableRowCount(setupProfilePath, QStringLiteral("class_times")),
+             std::optional<int>{1});
+
+    auto* const skipScheduleAndFinish = setupPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupSkipScheduleAndFinish")
+        );
+    QVERIFY(skipScheduleAndFinish);
+    QVERIFY(skipScheduleAndFinish->isVisible());
+    skipScheduleAndFinish->click();
+    QVERIFY(!cancelSetup->isVisible());
+    QVERIFY(QFileInfo::exists(setupProfilePath));
+    QVERIFY(!QFileInfo::exists(setupRecoveryJournalPath));
+    QCOMPARE(setupHistoryProbe->saveCount, 1);
+    capturedMemory = captureCheckpoint(
+        QStringLiteral("setup.completed"),
+        setupBootstrap,
+        *setupPage,
+        setupProfilePath,
+        setupRecoveryJournalPath
+        );
+    QVERIFY(capturedMemory.isAvailable);
+    QVERIFY(capturedMemory.workingSetBytes > 0);
+    const Application::ShutdownResult setupShutdown = setupBootstrap.shutdown();
+    QVERIFY(setupShutdown.shutdownRequested);
+
+    QTemporaryDir cancelWorkspaceRoot;
+    QVERIFY(cancelWorkspaceRoot.isValid());
+    const QString cancelProfilePath = cancelWorkspaceRoot.filePath(
+        QStringLiteral("c54-synthetic-replacement.tps")
+        );
+    const QString cancelRecoveryJournalPath = cancelWorkspaceRoot.filePath(
+        QStringLiteral("initial-setup-recovery.json")
+        );
+    const QByteArray originalProfileBytes(
+        "c54 synthetic original profile marker\n"
+        );
+    {
+        QFile originalProfile(cancelProfilePath);
+        QVERIFY(originalProfile.open(QIODevice::WriteOnly));
+        QCOMPARE(originalProfile.write(originalProfileBytes),
+                 originalProfileBytes.size());
+    }
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams cancelSeams;
+    cancelSeams.commandLineArguments = QStringList{
+        QStringLiteral("c54-initial-setup-cancel-evidence")
+    };
+    cancelSeams.recentAutoOpenEnabled = false;
+    cancelSeams.initialSetupRecoveryJournalPath = cancelRecoveryJournalPath;
+    cancelSeams.initialSetupFileDialogPortFactory = [cancelProfilePath] {
+        return std::make_unique<SelectedProfileFileDialog>(cancelProfilePath);
+    };
+    Bootstrap::ApplicationBootstrap cancelBootstrap(
+        *qApp,
+        {},
+        {},
+        resolverForRoot(resources.root()),
+        QStringList{QStringLiteral("en-US")},
+        std::move(cancelSeams),
+        [] { return std::make_unique<SilentUpdateDispatcher>(); }
+        );
+    QVERIFY2(cancelBootstrap.start().succeeded(),
+             "ApplicationBootstrap failed to start cancellation evidence flow.");
+    auto* cancelPage = dynamic_cast<Ui::InitialPage*>(
+        cancelBootstrap.shell()->pageHost().pageInstance(QStringLiteral("initial_setup"))
+        );
+    QVERIFY(cancelPage);
+    auto* const replaceProfile = cancelPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCreateProfile")
+        );
+    auto* const cancelButton = cancelPage->findChild<QPushButton*>(
+        QStringLiteral("classMngrNextInitialSetupCancel")
+        );
+    QVERIFY(replaceProfile && cancelButton);
+    QVERIFY(replaceProfile->isVisible());
+    capturedMemory = captureCheckpoint(
+        QStringLiteral("replacement.entry"),
+        cancelBootstrap,
+        *cancelPage,
+        cancelProfilePath,
+        cancelRecoveryJournalPath
+        );
+    QVERIFY(capturedMemory.isAvailable);
+
+    replaceProfile->click();
+    QVERIFY(QFileInfo::exists(cancelRecoveryJournalPath));
+    QVERIFY(!cancelButton->isHidden());
+    capturedMemory = captureCheckpoint(
+        QStringLiteral("replacement.active"),
+        cancelBootstrap,
+        *cancelPage,
+        cancelProfilePath,
+        cancelRecoveryJournalPath
+        );
+    QVERIFY(capturedMemory.isAvailable);
+
+    cancelButton->click();
+    QVERIFY(QFileInfo::exists(cancelProfilePath));
+    QVERIFY(!QFileInfo::exists(cancelRecoveryJournalPath));
+    QVERIFY(!cancelBootstrap.workspaceStateSnapshot().session().has_value());
+    QFile restoredProfile(cancelProfilePath);
+    QVERIFY(restoredProfile.open(QIODevice::ReadOnly));
+    const bool originalProfileBytesPreserved =
+        restoredProfile.readAll() == originalProfileBytes;
+    QVERIFY(originalProfileBytesPreserved);
+    QVERIFY(replaceProfile->isVisible());
+    QVERIFY(cancelButton->isHidden());
+    capturedMemory = captureCheckpoint(
+        QStringLiteral("cancel.restored-original-profile"),
+        cancelBootstrap,
+        *cancelPage,
+        cancelProfilePath,
+        cancelRecoveryJournalPath,
+        QJsonObject{
+            {QStringLiteral("originalProfileBytesPreserved"),
+             originalProfileBytesPreserved}
+        }
+        );
+    QVERIFY(capturedMemory.isAvailable);
+    QVERIFY(cancelBootstrap.shutdown().shutdownRequested);
+
+    const QJsonObject evidence{
+        {QStringLiteral("schema"), QStringLiteral(
+             "classmngr-phase7-initial-setup-lifecycle-v1")},
+        {QStringLiteral("taskId"), QStringLiteral(
+             "P7A-C54-INITIAL-SETUP-LIFECYCLE")},
+        {QStringLiteral("status"), QStringLiteral("completed")},
+        {QStringLiteral("feature"), QStringLiteral("Initial Setup")},
+        {QStringLiteral("startedAtUtc"), startedAtUtc},
+        {QStringLiteral("completedAtUtc"), QDateTime::currentDateTimeUtc().toString(
+             Qt::ISODateWithMs)},
+        {QStringLiteral("fixture"), QJsonObject{
+            {QStringLiteral("id"), QStringLiteral("c54-synthetic-initial-setup-v1")},
+            {QStringLiteral("syntheticDataOnly"), true},
+            {QStringLiteral("screenshotCaptured"), false},
+            {QStringLiteral("successfulProfileCount"), 1},
+            {QStringLiteral("replacementCancelCount"), 1}
+        }},
+        {QStringLiteral("measurementScope"), QJsonObject{
+            {QStringLiteral("featureCounts"), QStringLiteral(
+                 "Initial Setup page widgets, visible setup sections, actions, schedule rows, and persisted setup rows")},
+            {QStringLiteral("processMemory"), QStringLiteral(
+                 "Whole-process ProcessMemorySnapshot observations from the integration-test process; not page-attributed and not a per-page memory ceiling")}
+        }},
+        {QStringLiteral("numericMemoryPassThreshold"), QJsonValue(QJsonValue::Null)},
+        {QStringLiteral("checkpointCount"), checkpoints.size()},
+        {QStringLiteral("checkpoints"), checkpoints}
+    };
+    const QByteArray serialized = QJsonDocument(evidence).toJson(
+        QJsonDocument::Compact
+        ) + '\n';
+    QVERIFY(QDir().mkpath(QFileInfo(outputPath).absolutePath()));
+    QSaveFile output(outputPath);
+    QVERIFY2(output.open(QIODevice::WriteOnly), qPrintable(output.errorString()));
+    QCOMPARE(output.write(serialized), serialized.size());
+    QVERIFY2(output.commit(), qPrintable(output.errorString()));
+
+    QFile writtenArtifact(outputPath);
+    QVERIFY(writtenArtifact.open(QIODevice::ReadOnly));
+    const QJsonDocument parsedArtifact = QJsonDocument::fromJson(
+        writtenArtifact.readAll()
+        );
+    QVERIFY(parsedArtifact.isObject());
+    QCOMPARE(parsedArtifact.object().value(QStringLiteral("schema")).toString(),
+             QStringLiteral("classmngr-phase7-initial-setup-lifecycle-v1"));
+    QCOMPARE(parsedArtifact.object().value(QStringLiteral("checkpointCount")).toInt(),
+             7);
+    QCOMPARE(parsedArtifact.object().value(QStringLiteral("checkpoints")).toArray().size(),
+             7);
+    QVERIFY(parsedArtifact.object().value(
+        QStringLiteral("numericMemoryPassThreshold")).isNull());
+}
 
 void InitialSetupTeacherEntryBootstrapIntegrationTests::
 initialSetupPageCreatesTeacherThroughWorkspaceStore()

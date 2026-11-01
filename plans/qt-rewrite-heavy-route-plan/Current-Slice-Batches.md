@@ -30,24 +30,39 @@
     750 names, 30 headers, valid used-code mappings, and zero changes across
     all 17 pages of both matched PDFs. See the C53 evidence README and
     [Windows run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/41268987161).
-54. **In progress — 7A evidence follow-up:** collect representative setup
-    screenshots and feature-level lifecycle/memory evidence; repair packaging
-    and rerun the Phase 7 Windows diagnostic after the Batch 4 push. Run
-    `41023184649` built Windows Release successfully, but its diagnostic
-    artifact is invalid: the staged executable lacked the Next resource
-    catalog, no scenarios were collected, and no memory threshold was
-    evaluated. The setup schedule-import build prerequisite was repaired in
-    `80f7f1c6`; do not claim the Phase 9 numeric memory gate.
+54. **In progress — 7A evidence follow-up:** the eight English/Korean ×
+    light/dark Personal Details captures cover the representative screenshot
+    subgate. Add setup entry/completion/cancel-recovery lifecycle and
+    process-memory observations, repair packaging, and rerun the Windows
+    diagnostic. Runs `41023184649` and `41268987055` built Windows Release
+    successfully but produced invalid diagnostics because the staged
+    executable lacked the Next resource catalog; no scenarios were collected
+    and no memory threshold was evaluated. The runner now locates the unique
+    catalog at CMake's actual install path while retaining strict resource
+    checks. The local Initial Setup capture passed 3/3 on macOS, and Phase 7
+    Python tests passed 13/13 (seven lifecycle-validator and six memory-
+    validator cases); the native Windows rerun remains pending. The setup
+    schedule-import build prerequisite was repaired in `80f7f1c6`; do not
+    claim the Phase 9 numeric memory gate.
 55. **Discovered — Phase 7 exit review:** reconcile every preservation-matrix
     row and old call path, close full-window Classes empty/dialog/error capture
     gaps, resolve the current Legacy class-transfer fallback-test failure, then
     run the required full suite and Windows checks after implementation.
 
-## Batch 6 discovery — in progress
+## Batch 6 — discovered
 
-Two complementary source and preservation-matrix scans are underway for up to
-20 ordered candidates after #55. Add their reconciled candidate list when both
-reports return; the current Batch 5 order remains #54, then #55.
+56. **Discovered — Dynamic Co-Teachers sidebar navigation:** Next defines the
+    Co-Teachers group but does not populate it from class assignments; Legacy
+    lists assigned teachers there and opens the selected teacher profile.
+    Rebuild from the active workspace's assigned co-teacher IDs, preserve
+    Legacy ordering, open the matching profile, and refresh on assignment and
+    workspace changes. Evidence: `application_bootstrap.cpp:654,6574`,
+    `application_shell.cpp:1190`, and Legacy
+    `sidebar_controller_refresh.cpp:127,140`.
+
+Independent source-first and preservation-matrix scans found no other
+candidate after #55. Candidate #55 must reconcile #56 against the full exit
+review and prior decisions before the next batch starts.
 
 Preserve the separate uncommitted Schedule Import edits in the Gateway pair
 and `preferences_visual_captures/`.

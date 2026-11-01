@@ -277,6 +277,45 @@ jobs:
             artifacts/phase7/windows-x64-next-memory/validator-output.txt
           if-no-files-found: warn
 
+      - name: Build and collect Phase 7 Initial Setup lifecycle evidence
+        if: github.ref == 'refs/heads/Qt-Rewrite' && matrix.architecture == 'x64'
+        shell: pwsh
+        run: |
+          Set-Location $Env:GITHUB_WORKSPACE
+
+          cmake --build build\windows-x64-release --config Release --target `
+            ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests `
+            --parallel
+          if ($LASTEXITCODE -ne 0) { throw "Initial Setup lifecycle evidence target failed to build." }
+
+          $evidenceDirectory = Join-Path $Env:GITHUB_WORKSPACE `
+            'docs\qt-rewrite\visual-baseline\next\phase-7\initial-setup-lifecycle'
+          New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
+          $evidencePath = Join-Path $evidenceDirectory 'initial-setup-lifecycle.json'
+          $evidenceExecutable = Join-Path $Env:GITHUB_WORKSPACE `
+            'build\windows-x64-release\Release\ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests.exe'
+          $env:CLASSMNGR_PHASE7_INITIAL_SETUP_LIFECYCLE_EVIDENCE_OUTPUT = `
+            [System.IO.Path]::GetFullPath($evidencePath)
+          try {
+            & $evidenceExecutable initialSetupLifecycleEvidenceCapture
+            if ($LASTEXITCODE -ne 0) { throw "Initial Setup lifecycle evidence capture failed." }
+
+            python scripts\phase7\validate_initial_setup_lifecycle_evidence.py `
+              --artifact $evidencePath
+            if ($LASTEXITCODE -ne 0) { throw "Initial Setup lifecycle evidence validation failed." }
+          } finally {
+            Remove-Item Env:CLASSMNGR_PHASE7_INITIAL_SETUP_LIFECYCLE_EVIDENCE_OUTPUT `
+              -ErrorAction SilentlyContinue
+          }
+
+      - name: Upload Phase 7 Initial Setup lifecycle evidence
+        if: always() && github.ref == 'refs/heads/Qt-Rewrite' && matrix.architecture == 'x64'
+        uses: actions/upload-artifact@v7
+        with:
+          name: phase7-next-initial-setup-lifecycle-windows-x64
+          path: docs/qt-rewrite/visual-baseline/next/phase-7/initial-setup-lifecycle/initial-setup-lifecycle.json
+          if-no-files-found: warn
+
       - name: Smoke test packaged application startup
         if: matrix.architecture == 'x64'
         shell: pwsh

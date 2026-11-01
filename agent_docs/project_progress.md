@@ -4,8 +4,9 @@ Active deployment plan: Qt Rewrite Phase 7 — Feature Migration.
 Current deployment: `phase7_batch4_resume_20261030`. Route: Heavy.
 Current milestone: C53 Sub Prep PDF text mapping/output parity is accepted in
 `b6d8a0a1` and pushed. Batch 5 is active at #54, the 7A evidence and Windows
-diagnostic follow-up; Batch 6 discovery has started. Native Windows C53
-evidence confirms 750 SQL-derived names, 30 header records, zero unmapped or
+diagnostic follow-up. Independent Batch 6 scans found a proposed #56 for
+dynamic Co-Teachers sidebar navigation, subject to #55 reconciliation. Native
+Windows C53 evidence confirms 750 SQL-derived names, 30 header records, zero unmapped or
 control codes in the Next roster, and zero changed pixels across 17 pages of
 both matched PDF pairs. Full Phase 7 suite/exit review and the separate Phase 9
 numeric memory gate remain open.

@@ -45,9 +45,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   C44 exact-text and zero-pixel evidence passed; the native Windows SQL-backed
   run also verified 750 names, 30 headers, the roster code map, and all 17
   pages across both matched PDF pairs at zero changed pixels. Batch 5 is active
-  at #54, the 7A evidence and Windows diagnostic follow-up; Batch 6 discovery
-  has started. #54 owns repair/re-run after the earlier staged Next executable
-  omitted its resource catalog. Full-window Classes captures, the Legacy
+  at #54, the 7A evidence and Windows diagnostic follow-up. Independent Batch 6
+  source and matrix scans found one proposed #56 for dynamic Co-Teachers
+  sidebar navigation; #55 will reconcile it with the exit review. #54 owns
+  repair/re-run after the earlier staged Next executable omitted its resource
+  catalog. Full-window Classes captures, the Legacy
   fallback-test failure, the full suite, and the Phase 7 exit gate remain open.
   The Phase 9 packaged Release numeric memory gate is separate.
 

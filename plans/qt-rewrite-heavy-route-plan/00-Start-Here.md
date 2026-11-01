@@ -15,8 +15,10 @@
   zero changed pixels over 16 pages. The native Windows C53 run verified
   750 SQL-derived names, 30 headers, valid mapping for all used roster codes,
   and zero changed pixels across all 17 pages of both matched PDF pairs.
-  Batch 6 discovery has started alongside #54. The earlier hosted Windows
-  diagnostic remains invalid and #54 owns packaging repair and fresh evidence.
+  Independent Batch 6 source and matrix scans found one proposed #56: restore
+  dynamic Co-Teachers sidebar navigation. Candidate #55 will reconcile it with
+  the exit review before implementation. The earlier hosted Windows diagnostic
+  remains invalid; #54 owns packaging repair and fresh evidence.
   See the [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md). The full project
   suite, 7A evidence, and Phase 7 exit gate remain open. One Legacy

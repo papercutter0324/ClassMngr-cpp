@@ -161,18 +161,6 @@ function Get-PeArchitecture {
     }
 }
 
-function Get-CMakeCacheValue {
-    param([string]$CachePath, [string]$Name, [string]$DefaultValue)
-    if (-not (Test-Path -LiteralPath $CachePath -PathType Leaf)) {
-        throw "CMake cache was not found: $CachePath"
-    }
-    $line = Get-Content -LiteralPath $CachePath |
-        Where-Object { $_ -match "^$([regex]::Escape($Name)):[^=]+=.*$" } |
-        Select-Object -Last 1
-    if ($null -eq $line) { return $DefaultValue }
-    return (($line -split "=", 2)[1]).Trim()
-}
-
 function Invoke-CheckedCommand {
     param([string]$FilePath, [string[]]$Arguments, [string]$Description)
     & $FilePath @Arguments
@@ -548,17 +536,8 @@ try {
     if ((Get-PeArchitecture -Path $releaseExecutable) -ne "x64") {
         throw "Release ClassMngrNext.exe is not a PE x64 image."
     }
-    $cachePath = Join-Path $BuildDirectory "CMakeCache.txt"
-    $installBindir = Get-CMakeCacheValue -CachePath $cachePath -Name "CMAKE_INSTALL_BINDIR" -DefaultValue "bin"
-    if ([System.IO.Path]::IsPathRooted($installBindir) -or ($installBindir -split "[\\/]") -contains "..") {
-        throw "CMAKE_INSTALL_BINDIR must be a relative install directory."
-    }
-    $installBindir = $installBindir.Replace("/", "\").Trim("\")
-    if ([string]::IsNullOrWhiteSpace($installBindir)) { $installBindir = "bin" }
-
     $stageRoot = Join-Path $TemporaryRoot "staged-next"
-    $stageDirectory = Join-Path $stageRoot $installBindir
-    [void][System.IO.Directory]::CreateDirectory($stageDirectory)
+    [void][System.IO.Directory]::CreateDirectory($stageRoot)
 
     Invoke-CheckedCommand -FilePath "cmake" -Arguments @(
         "--install", $BuildDirectory,
@@ -566,6 +545,29 @@ try {
         "--prefix", $stageRoot,
         "--component", "ClassMngrNextResources"
     ) -Description "Installing ClassMngrNext resources into the temporary stage"
+
+    # The Windows deploy configuration overrides CMAKE_INSTALL_BINDIR in normal
+    # scope, so CMakeCache.txt can report a different directory than install used.
+    # Anchor the staged executable to the installed component's actual catalog.
+    $resourceCatalogs = @(
+        Get-ChildItem -LiteralPath $stageRoot -Filter "resource-catalog.json" -File -Recurse
+    )
+    if ($resourceCatalogs.Count -ne 1) {
+        throw "Expected exactly one installed ClassMngrNext resource catalog; found $($resourceCatalogs.Count)."
+    }
+    $resourceCatalog = $resourceCatalogs[0].FullName
+    $resourceDirectory = Split-Path -Parent $resourceCatalog
+    if ([System.IO.Path]::GetFileName($resourceDirectory) -ne "resources") {
+        throw "The installed ClassMngrNext resource catalog is not under a resources directory."
+    }
+    $stageDirectory = [System.IO.Path]::GetFullPath((Split-Path -Parent $resourceDirectory))
+    $stageRootFullPath = [System.IO.Path]::GetFullPath($stageRoot)
+    $stageRelativePath = [System.IO.Path]::GetRelativePath($stageRootFullPath, $stageDirectory)
+    if ([System.IO.Path]::IsPathRooted($stageRelativePath) -or
+        $stageRelativePath -eq ".." -or
+        $stageRelativePath.StartsWith("..$([System.IO.Path]::DirectorySeparatorChar)", [System.StringComparison]::Ordinal)) {
+        throw "The installed ClassMngrNext resource catalog resolved outside the temporary stage."
+    }
 
     $stagedExecutable = Join-Path $stageDirectory "ClassMngrNext.exe"
     Copy-Item -LiteralPath $releaseExecutable -Destination $stagedExecutable
@@ -579,8 +581,8 @@ try {
     }
 
     $resourceDirectory = Join-Path $stageDirectory "resources"
-    $resourceCatalog = Join-Path $resourceDirectory "resource-catalog.json"
-    if (-not (Test-Path -LiteralPath $resourceCatalog -PathType Leaf)) {
+    if (-not (Test-Path -LiteralPath $resourceCatalog -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $resourceDirectory -PathType Container)) {
         throw "The ClassMngrNext resource catalog was not installed beside the staged executable."
     }
     if (@(Get-ChildItem -LiteralPath $resourceDirectory -File -Recurse).Count -lt 1) {

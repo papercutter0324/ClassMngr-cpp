@@ -649,10 +649,12 @@ set_tests_properties(ClassMngrMyDetailsSignatureVisualCapture
 # process so unrelated QApplication test state cannot affect the bootstrap.
 add_executable(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
     tests/next/initial_setup_teacher_entry_bootstrap_integration_tests.cpp
+    src/core/process_memory_snapshot.cpp
     ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
     $<TARGET_OBJECTS:ClassMngrSettings>
     $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
     $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
+    $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
 )
 target_compile_features(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
     PRIVATE
@@ -672,6 +674,7 @@ target_link_libraries(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationT
     PRIVATE
         ClassMngrClassTransferSupport
         ClassMngrNextCalendarUi
+        ClassMngrSubPrepShared
         ClassMngrNextScheduleOutput
         ClassMngrNextRosterOutput
         ClassMngrNextSpeakingEvaluationOutput
