@@ -17,6 +17,8 @@
 #include "next/application/korean_teacher_birthday_directory_read_port.h"
 #include "next/application/native_english_teacher_birthday_directory_read_port.h"
 #include "next/application/gs_team_birthday_directory_read_port.h"
+#include "next/application/schedule_import_apply_request.h"
+#include "next/application/schedule_import_state_snapshot.h"
 #include "next/application/schedule_page_read.h"
 #include "next/application/sub_prep_calendar_event_intervals_query.h"
 #include "next/application/sub_prep_class_details_query.h"
@@ -152,6 +154,12 @@ public:
     readNativeEnglishTeacherBirthdayDirectory() const override;
     [[nodiscard]] Application::GsTeamBirthdayDirectoryReadResult
     readGsTeamBirthdayDirectory() const override;
+    [[nodiscard]] Application::ScheduleImportStateSnapshotOutcome
+    loadScheduleImportState() const;
+    [[nodiscard]] Application::ScheduleImportApplyResult
+    applyScheduleImport(
+        const Application::ScheduleImportApplyRequest& request
+        ) const;
     [[nodiscard]] Application::NativeEnglishTeacherDirectoryReadResult
     readNativeEnglishTeacherDirectory() const;
     [[nodiscard]] Application::NativeEnglishTeacherDirectorySaveOutcome

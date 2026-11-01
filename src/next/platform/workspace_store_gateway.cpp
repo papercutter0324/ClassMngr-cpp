@@ -23,12 +23,16 @@
 #include "next/platform/teacher_validator_teacher_profile_validation_policy.h"
 #include "next/platform/workspace_store_teacher_profile_port.h"
 #include "next/platform/workspace_store_teacher_directory_port.h"
+#include "next/platform/workspace_store_schedule_import_state_snapshot_port.h"
+#include "next/platform/workspace_store_schedule_import_apply_port.h"
 #include "next/platform/workspace_store_native_english_teacher_directory_port.h"
 #include "next/platform/workspace_store_gs_team_directory_port.h"
 #include "next/platform/workspace_store_upcoming_birthday_directory_read_ports.h"
 #include "next/application/korean_teacher_birthday_directory_read_query.h"
 #include "next/application/native_english_teacher_birthday_directory_read_query.h"
 #include "next/application/gs_team_birthday_directory_read_query.h"
+#include "next/application/schedule_import_apply_use_case.h"
+#include "next/application/schedule_import_state_snapshot.h"
 
 #include <QByteArray>
 #include <QDate>
@@ -523,6 +527,25 @@ WorkspaceStoreGateway::readGsTeamBirthdayDirectory() const
     WorkspaceStoreUpcomingBirthdayDirectoryReadPorts port(*m_store);
     const Application::GsTeamBirthdayDirectoryReadQuery query(port);
     return query.execute();
+}
+
+Application::ScheduleImportStateSnapshotOutcome
+WorkspaceStoreGateway::loadScheduleImportState() const
+{
+    WorkspaceStoreScheduleImportStateSnapshotPort port(*m_store);
+    return Application::ScheduleImportStateSnapshotQueryHandler::execute(
+        Application::ScheduleImportStateSnapshotQuery{},
+        port
+        );
+}
+
+Application::ScheduleImportApplyResult
+WorkspaceStoreGateway::applyScheduleImport(
+    const Application::ScheduleImportApplyRequest& request
+    ) const
+{
+    WorkspaceStoreScheduleImportApplyPort port(*m_store);
+    return Application::ScheduleImportApplyUseCase::execute(request, port);
 }
 
 Application::NativeEnglishTeacherDirectoryReadResult

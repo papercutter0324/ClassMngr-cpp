@@ -13,6 +13,8 @@
 #include "next/application/teacher_import_latest_source_date_read_query.h"
 #include "next/application/unsaved_changes_resolution_flow.h"
 #include "next/application/initial_setup_class_details_requirements.h"
+#include "next/application/schedule_import_apply_request.h"
+#include "next/application/schedule_import_state_snapshot.h"
 #include "next/application/positive_decimal_id_validation.h"
 #include "next/application/class_teacher_assignments_read_query.h"
 #include "next/application/assigned_teacher_directory_projection.h"
@@ -51,7 +53,6 @@
 #include "next/platform/campus_directory_repository_adapter.h"
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "next/platform/qt_schedule_output_adapter.h"
-#include "next/platform/workspace_store_schedule_import_actions.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -212,6 +213,29 @@ Result withActiveWorkspacePath(
         static_cast<qsizetype>(session->location().value().size())
         );
     return std::forward<Read>(read)(databasePath);
+}
+
+[[nodiscard]] Application::ScheduleImportStateSnapshotOutcome
+scheduleImportStateFailure(const Domain::OperationError& error)
+{
+    return Application::ScheduleImportStateSnapshotFailure{
+        Application::ScheduleImportStateSnapshotFailureKind::
+            ActiveSessionUnavailable,
+        Application::ScheduleImportStateSnapshotFailureSource::Session,
+        error.message
+    };
+}
+
+[[nodiscard]] Application::ScheduleImportApplyResult
+scheduleImportApplyFailure(const Domain::OperationError& error)
+{
+    const QString message = QString::fromUtf8(
+        error.message.data(), static_cast<qsizetype>(error.message.size())
+        );
+    Application::ScheduleImportApplyFailure failure;
+    failure.message = message.toStdU16String();
+    failure.code = error.code;
+    return std::unexpected(std::move(failure));
 }
 
 [[nodiscard]] bool isSupportedStartupWorkspacePath(const QString& path)
@@ -2414,6 +2438,63 @@ Application::StartupResult ApplicationBootstrap::start()
             const Ui::PageHostResult<void> registration =
                 m_shell->pageHost().registerPage(schedulePageDescriptor([this] {
                     Ui::SchedulePageActions actions;
+                    const auto resolveScheduleImportGatewayForPath = [this](
+                        const QString& expectedPath
+                        ) -> Domain::Result<Platform::WorkspaceStoreGateway*> {
+                        if (!m_applicationRuntime)
+                        {
+                            return Domain::Result<
+                                Platform::WorkspaceStoreGateway*>::failure({
+                                .code = Domain::ErrorCode::NotFound,
+                                .message = "The active workspace is unavailable.",
+                                .recoverable = true
+                            });
+                        }
+
+                        const auto session = m_applicationRuntime
+                            ->workspaceState().snapshot().session();
+                        if (!session)
+                        {
+                            return Domain::Result<
+                                Platform::WorkspaceStoreGateway*>::failure({
+                                .code = Domain::ErrorCode::NotFound,
+                                .message = "The active workspace is unavailable.",
+                                .recoverable = true
+                            });
+                        }
+
+                        const std::string& activePath =
+                            session->location().value();
+                        const QString activePathText = QString::fromUtf8(
+                            activePath.data(),
+                            static_cast<qsizetype>(activePath.size())
+                            );
+                        if (expectedPath.isEmpty()
+                            || expectedPath != activePathText)
+                        {
+                            return Domain::Result<
+                                Platform::WorkspaceStoreGateway*>::failure({
+                                .code = Domain::ErrorCode::Conflict,
+                                .message = "The active workspace changed while Schedule Import was open.",
+                                .recoverable = true
+                            });
+                        }
+
+                        auto* const gateway =
+                            dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                                m_workspaceGateway.get());
+                        if (!gateway)
+                        {
+                            return Domain::Result<
+                                Platform::WorkspaceStoreGateway*>::failure({
+                                .code = Domain::ErrorCode::NotFound,
+                                .message = "The active workspace store is unavailable.",
+                                .recoverable = true
+                            });
+                        }
+                        return Domain::Result<
+                            Platform::WorkspaceStoreGateway*>::success(gateway);
+                    };
                     actions.activeWorkspacePath = [this] {
                         if (!m_applicationRuntime)
                         {
@@ -2534,14 +2615,30 @@ Application::StartupResult ApplicationBootstrap::start()
                             timeoutPreferences;
                         return timeoutPreferences.read().normalizedSeconds() * 1000;
                     };
-                    actions.readScheduleImportState = [](
+                    actions.readScheduleImportState = [
+                        resolveScheduleImportGatewayForPath
+                        ](
                         const QString& path) {
-                        return Platform::readScheduleImportStateAtPath(path);
+                        const auto gateway =
+                            resolveScheduleImportGatewayForPath(path);
+                        if (!gateway)
+                        {
+                            return scheduleImportStateFailure(gateway.error());
+                        }
+                        return gateway.value()->loadScheduleImportState();
                     };
-                    actions.applyScheduleImport = [](
+                    actions.applyScheduleImport = [
+                        resolveScheduleImportGatewayForPath
+                        ](
                         const QString& path,
                         const Application::ScheduleImportApplyRequest& request) {
-                        return Platform::applyScheduleImportAtPath(path, request);
+                        const auto gateway =
+                            resolveScheduleImportGatewayForPath(path);
+                        if (!gateway)
+                        {
+                            return scheduleImportApplyFailure(gateway.error());
+                        }
+                        return gateway.value()->applyScheduleImport(request);
                     };
                     actions.openClassDetails = [this](
                         const Domain::ClassId& classId) {
@@ -2787,26 +2884,71 @@ Application::StartupResult ApplicationBootstrap::start()
 
         if (initialPageFailure.isEmpty())
         {
-            const auto initialSetupProfilePath = [this] {
+            const auto resolveInitialSetupScheduleImportGateway = [this]()
+                -> Domain::Result<Platform::WorkspaceStoreGateway*> {
+                if (!m_initialSetupLifecycle
+                    || !m_initialSetupLifecycle->hasPendingSetup())
+                {
+                    return Domain::Result<
+                        Platform::WorkspaceStoreGateway*>::failure({
+                        .code = Domain::ErrorCode::NotFound,
+                        .message = "No setup profile is active.",
+                        .recoverable = true
+                    });
+                }
                 if (!m_applicationRuntime)
                 {
-                    return QString{};
+                    return Domain::Result<
+                        Platform::WorkspaceStoreGateway*>::failure({
+                        .code = Domain::ErrorCode::NotFound,
+                        .message = "The active setup profile is unavailable.",
+                        .recoverable = true
+                    });
                 }
+
                 const auto session = m_applicationRuntime
                     ->workspaceState().snapshot().session();
                 if (!session)
                 {
-                    return QString{};
+                    return Domain::Result<
+                        Platform::WorkspaceStoreGateway*>::failure({
+                        .code = Domain::ErrorCode::NotFound,
+                        .message = "The active setup profile is unavailable.",
+                        .recoverable = true
+                    });
                 }
-                const std::string& path = session->location().value();
-                return QString::fromUtf8(
-                    path.data(), static_cast<qsizetype>(path.size())
-                    );
+
+                if (session->location()
+                    != m_initialSetupLifecycle->pendingProfile())
+                {
+                    return Domain::Result<
+                        Platform::WorkspaceStoreGateway*>::failure({
+                        .code = Domain::ErrorCode::Conflict,
+                        .message = "The active workspace no longer matches the setup profile.",
+                        .recoverable = true
+                    });
+                }
+
+                auto* const gateway =
+                    dynamic_cast<Platform::WorkspaceStoreGateway*>(
+                        m_workspaceGateway.get());
+                if (!gateway)
+                {
+                    return Domain::Result<
+                        Platform::WorkspaceStoreGateway*>::failure({
+                        .code = Domain::ErrorCode::NotFound,
+                        .message = "The active workspace store is unavailable.",
+                        .recoverable = true
+                    });
+                }
+
+                return Domain::Result<
+                    Platform::WorkspaceStoreGateway*>::success(gateway);
             };
             const Ui::PageHostResult<void> registration =
                 m_shell->pageHost().registerPage(initialSetupPageDescriptor([
                     this,
-                    initialSetupProfilePath
+                    resolveInitialSetupScheduleImportGateway
                     ] {
                     return Ui::InitialSetupPageActions{
                         .state = [this] { return initialSetupPageState(); },
@@ -2852,17 +2994,31 @@ Application::StartupResult ApplicationBootstrap::start()
                             .chooseWorkbook = [this] {
                                 return chooseInitialSetupScheduleImportWorkbook();
                             },
-                            .readState = [initialSetupProfilePath] {
-                                return Platform::readScheduleImportStateAtPath(
-                                    initialSetupProfilePath()
-                                    );
+                            .readState = [
+                                resolveInitialSetupScheduleImportGateway
+                                ] {
+                                const auto gateway =
+                                    resolveInitialSetupScheduleImportGateway();
+                                if (!gateway)
+                                {
+                                    return scheduleImportStateFailure(
+                                        gateway.error());
+                                }
+                                return gateway.value()->loadScheduleImportState();
                             },
-                            .apply = [initialSetupProfilePath](
+                            .apply = [
+                                resolveInitialSetupScheduleImportGateway
+                                ](
                                 const Application::ScheduleImportApplyRequest& request
                                 ) {
-                                return Platform::applyScheduleImportAtPath(
-                                    initialSetupProfilePath(), request
-                                    );
+                                const auto gateway =
+                                    resolveInitialSetupScheduleImportGateway();
+                                if (!gateway)
+                                {
+                                    return scheduleImportApplyFailure(
+                                        gateway.error());
+                                }
+                                return gateway.value()->applyScheduleImport(request);
                             },
                             .validationTimeoutMilliseconds = [] {
                                 const Platform::SettingsManagerExcelImportTimeoutPort
