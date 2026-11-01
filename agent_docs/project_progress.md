@@ -1,16 +1,18 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 7.5 — Cross-Platform Follow-Ups.
-Current deployment: `phase75_windows_rollout`. Route: Heavy, with Light used
-for the requested commit and push operations.
+Current deployment: `phase75_windows_elevated_capture`. Route: Heavy, with
+Light used for the requested commit and push operations.
 Current milestone: W7.5.1 is recorded at `9f59e689`; W7.5.2 is recorded at
 `9bf7f8f2`. The current-source Windows x64 Debug configure passed, but the
 clean-first all-target build reached its 7,200-second timeout before CTest, so
 there is no current test result. W7.5.3 feasibility confirmed this session has
-no enabled Administrator token; no matched heap captures were started, and
-F579/F598 remain pending until that execution environment is available. The
-Windows Phase 7.5 follow-up is not complete. Preserve the accepted Phase 0–7
-statuses and the separate Phase 9 numerical memory gate.
+no enabled Administrator token. After the user selected an elevated relaunch,
+the active tool process still reported medium integrity and no Administrators
+SID; no build or heap capture ran. F579/F598 remain pending until a process
+with an enabled Administrator token is available. The Windows Phase 7.5
+follow-up is not complete and remains unpushed. Preserve the accepted Phase
+0–7 statuses and the separate Phase 9 numerical memory gate.
 Phase 7 remains Complete at its accepted semantic-gate SHA
 `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. Follow-up commit
 `033f8dd2` routes Next Schedule Page and Initial Setup Schedule Import reads

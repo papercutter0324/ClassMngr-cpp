@@ -1,6 +1,6 @@
 # Latest Session Work
 
-## Current Deployment Handoff — phase75_windows_rollout (in progress)
+## Current Deployment Handoff — phase75_windows_elevated_capture (blocked)
 
 - Heavy route; branch `Qt-Rewrite`. The initial pending changes were committed
   as `e376deb9` (`build(windows): allow CMake generator discovery`), W7.5.1 as
@@ -19,18 +19,24 @@
   names/outcomes are therefore unconfirmed on current source. CMake selected
   SDK 10.0.28000.0; 10.0.26100.0 was separately added to PATH. Full details
   and evidence paths are in the [Phase 7.5 plan](../plans/qt-rewrite-heavy-route-plan/08.5-Phase-7.5-Cross-Platform-Follow-Ups.md).
-- W7.5.3 remains pending. The available process token is medium integrity, with
-  the Administrator SID disabled even under sandbox escalation, so no heap
-  capture was started. Resume only with an enabled Administrator token. F579
-  needs a fresh ETL and matching optimized executable/PDB (`/Zi`,
-  `/DEBUG:FULL`, including F596/F1039); F598 also needs F596 owner metrics for
-  `standalone-schedule`, `workspace-schedule`, and `sub-prep-preview`. Keep the
-  F564 lifecycle checkpoints and matched capture artifacts documented in the
-  Phase 7.5 plan. F579/F598 remain unresolved in Phase 2.
-- Next: continue W7.5.3 when the elevated capture environment is available. Do
-  not describe Phase 7.5 or the Windows follow-up as complete or push until the
-  remaining disposition is recorded. Phases 0–7 remain at their accepted
-  statuses.
+- W7.5.3 remains blocked. After the user selected an elevated relaunch, the
+  active tool process still had medium integrity (S-1-16-8192), and
+  `whoami /groups` had no `BUILTIN\Administrators` SID. The checkout was clean
+  at `e30c02950f73ac4c2c4f98677b9b3a8eded77c88`; no build, WPR stage, or
+  evidence directory was created. F579/F598 remain unresolved in Phase 2.
+- The independent acceptance review requires a fresh ETL from current source,
+  an optimized Release executable/PDB match (`/Zi`, `/DEBUG:FULL`) with app
+  symbol resolution, the F564 lifecycle route and all three ordered/hash-bound
+  checkpoints, successful WPR snapshots, and F598's three owner-labeled metric
+  records. One bundle may supply both candidates only if it meets each item's
+  evidence requirements; analyze and disposition F579 and F598 separately.
+  No heap pass threshold is defined and allocation totals are not the Phase 9
+  working-set measurement. Full criteria are in the [Phase 7.5
+  plan](../plans/qt-rewrite-heavy-route-plan/08.5-Phase-7.5-Cross-Platform-Follow-Ups.md).
+- Next: open this workspace in a process whose token actually has enabled
+  Administrator privileges, then resume W7.5.3. The four commits listed above
+  remain local and unpushed until the Windows follow-up is complete. Do not
+  describe Phase 7.5 as complete. Phases 0–7 remain at their accepted statuses.
 
 ## Current Deployment Handoff — phase6-shared-ui-20261026 (complete)
 

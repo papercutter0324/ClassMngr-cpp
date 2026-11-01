@@ -2,6 +2,17 @@
 
 ## Decisions and Lessons
 
+### Verify elevated process state before WPR capture — 2026-11-02
+
+A user's choice to relaunch Codex elevated does not itself change the token of
+the active tool process. Check the actual process integrity and enabled
+Administrator group immediately before Windows Performance Recorder work; if
+the process remains medium-integrity, stop before build or capture. For F579
+and F598, one fresh bundle may be analyzed for both only when it independently
+meets each item's route, matched-symbol, and owner-metric requirements; assess
+the two deferred items separately. Heap allocation totals are not working-set
+measurements, and the records define no new heap pass threshold.
+
 ### Phase 7.5 Windows follow-ups — 2026-11-02
 
 Classify a Windows Debug build timeout at the stage boundary: a 120-minute
