@@ -93,7 +93,7 @@ cmake --build --preset windows-x64-release
 cmake --build --preset windows-x64-release-install
 ```
 
-The Windows presets use the Visual Studio 2022 generator so CMake can apply the selected x64 or ARM64 target architecture. If an existing Windows build directory was configured with another generator, refresh its cache once before building, for example `cmake --fresh --preset windows-x64-release`.
+The Windows presets leave the generator unspecified, so CMake uses its normal discovery and selects the newest installed Visual Studio generator supported by that CMake version. CMake 4.2 or newer is required for Visual Studio 18 (2026); Visual Studio 17 (2022) remains supported by earlier CMake versions. The presets still select the requested x64 or ARM64 target architecture. To pin a specific Visual Studio generator, pass `-G` when configuring. If an existing Windows build directory was configured with another generator, refresh its cache once before building, for example `cmake --fresh --preset windows-x64-release`.
 
 Release presets run `windeployqt` after building. The install preset copies the standalone app under `dist/ClassMngr-windows-x64`. Run and distribute the whole installed directory, keeping `ClassMngr.exe` together with the copied Qt DLLs, plugins, QML files, and license files.
 
@@ -113,7 +113,7 @@ To build every locally available Windows installer and its SHA-256 checksum file
 
 Installers are written under `dist` as `ClassMngr-<version>-win-{x64,arm64}.exe`. They install the matching Visual C++ runtime prerequisite and support in-place upgrades through a shared application identity.
 
-The Windows presets use the Visual Studio generator configured in `CMakePresets.json`. If CMake reports that the generator is not installed, either install the matching Visual Studio or Build Tools version, or update the preset to the Visual Studio generator installed on your machine.
+If CMake reports that no Visual Studio generator is available, install the matching Visual Studio or Build Tools version and use a CMake release that supports it.
 
 ## macOS
 
