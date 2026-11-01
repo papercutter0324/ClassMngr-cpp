@@ -1,18 +1,18 @@
 # Project Progress
 
 Active deployment plan: Qt Rewrite Phase 7 — Feature Migration.
-Current deployment: `phase7_batch4_resume_20261030`. Route: Heavy.
-Current milestone: Phase 7 is Complete at exact pushed SHA
-`a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. The fresh macOS all-target build
-completed successfully. Unfiltered CTest ran 615 registrations: 608 passed,
-7 known Legacy/baseline or fixture failures, zero skipped, and zero disabled.
-The Initial Setup capture, C53 startup, corrected Classes-page fixtures, and
-new Testing Classes keyboard and Sub Prep preference-failure tests passed.
-Exact-SHA Windows Release x64/ARM64, Phase 4 resource checks, and C53 capture
-passed. The Windows x64 Debug baseline was cancelled at the 120-minute limit
-during clean compilation; it produced no test result or artifact and is
-recorded as a supporting-verification limitation. The Phase 9 numerical memory
-gate remains separate.
+Current deployment: `schedule_import_gateway_20261101`. Route: Heavy.
+Current milestone: Phase 7 remains Complete at its accepted semantic-gate SHA
+`a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. Follow-up commit
+`033f8dd2` routes Next Schedule Page and Initial Setup Schedule Import reads
+and applies through the active `WorkspaceStoreGateway`, with active-profile
+and pending-setup checks. The affected `ClassMngrNext` target built
+successfully; no tests were run for this follow-up. The original full-suite
+result remains 608/615 passed with seven known failures and zero skipped or
+disabled tests. Exact-SHA Windows Release x64/ARM64, Phase 4 resource checks,
+and C53 passed at the formal exit SHA. The Windows x64 Debug baseline timed out
+during compilation without a test result or artifact. The Phase 9 numerical
+memory gate remains separate.
 Phases 0–7 are Complete; Phase 8 has not started. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;
@@ -200,7 +200,7 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-11-01 (Phase 7 complete)
+### Current checkpoint — 2026-11-01 (Phase 7 complete; Gateway follow-up pushed)
 
 At exact SHA `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`, the preservation-matrix
 and call-path reviews found no unresolved v2 feature row or prohibited Next
@@ -216,6 +216,14 @@ not a formal Phase 7 exit condition. No additional Sub Prep Gateway API was
 added; its typed reads continue through the existing active-store Gateway.
 Phase 8 is not started. Phase 9 owns the numerical packaged-Release memory
 threshold.
+
+Post-exit follow-up commit `033f8dd2` routes both Next Schedule Import flows
+through the active `WorkspaceStoreGateway`. The normal Schedule Page validates
+the expected profile path against the active session; Initial Setup requires a
+pending profile matching that session. Typed read/apply failures are returned
+when the Gateway or matching session is unavailable. The Gateway keeps its
+store private, and Legacy remains unchanged. The affected `ClassMngrNext`
+target built successfully; no tests were run for this requested integration.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

@@ -38,20 +38,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-11-01
-- Current note: Phase 7 is Complete at exact SHA
-  `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. Candidate #56 and Batch 7's
-  no-additional-slice discovery are accepted. The fresh macOS Debug all-target
-  build completed; unfiltered CTest ran all 615 registrations with 608 passed,
-  7 known Legacy/baseline or fixture failures, zero skipped, and zero disabled.
-  Focused v2 checks close the Testing Classes keyboard and Sub Prep
-  preference-read failure gaps. The preservation-matrix and prohibited-call-
-  path audits found no unresolved feature row. Exact-SHA Windows Release
-  x64/ARM64, C53, and Phase 4 resource checks passed. The Windows x64 Debug
-  baseline job was cancelled at its 120-minute limit during clean compilation;
-  it produced no Debug CTest result. This is a recorded supporting-verification
-  limit, not a formal Phase 7 exit condition. Sub Prep uses existing active-
-  Gateway typed reads; no extra API was added. The Phase 9 packaged-Release
-  numeric memory gate remains separate.
+- Current note: Phase 7's formal semantic exit remains Complete at exact SHA
+  `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. The Schedule Import Gateway
+  follow-up at `033f8dd23a2902591ab0486747144acb9b32a3dc` is post-exit and does
+  not reopen the phase. See the progress log for its behavior and build
+  evidence, and for the exact-SHA Phase 7 results and limitations. Phase 8 has
+  not started.
 
 ### Slice batches
 

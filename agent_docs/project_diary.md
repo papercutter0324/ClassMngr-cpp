@@ -2,6 +2,17 @@
 
 ## Decisions and Lessons
 
+### Schedule Import Gateway follow-up — 2026-11-01
+
+After Phase 7's formal exit, finish the previously uncommitted Next
+Schedule Import Gateway wiring at pushed commit `033f8dd2`. Route normal
+Schedule Page and Initial Setup reads/applies through the active
+`WorkspaceStoreGateway`; keep the Gateway store private and retain path/session
+and pending-setup guards. Initial Setup already opens its pending profile via
+the same runtime Gateway before enabling import. The affected `ClassMngrNext`
+target built successfully. No tests were run for this follow-up. Leave the
+Legacy Schedule Import path unchanged.
+
 ### Phase 7 feature migration exit — 2026-11-01
 
 Accepted the Phase 7 semantic gate at exact pushed SHA

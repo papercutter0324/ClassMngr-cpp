@@ -6,20 +6,15 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-01
-- Current milestone: Phase 7 is Complete. At exact SHA `a60c727d`, the fresh
-  macOS all-target build completed in two invocations: the first ran
-  5,435/5,436 planned actions and triggered a CMake glob recheck; the
-  second exited 0 after generating the catalog. Unfiltered CTest ran all 615 registrations:
-  608 passed, 7 known Legacy/baseline or fixture failures, zero skipped, and
-  zero disabled. The `ClassMngrClassesPageTests` fixture repair, Initial Setup 460×680
-  capture, C53 startup, and new Testing Classes keyboard and Sub Prep
-  preference-failure checks passed. Exact-SHA Windows Release x64/ARM64, C53,
-  and Phase 4 resource checks passed. The Windows x64 Debug baseline was
-  cancelled at its 120-minute job limit during the clean build and produced no
-  test result; this supporting check is documented separately from the formal
-  Phase 7 feature-preservation gate. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md),
-  [phase plan](08-Phase-7-Feature-Migration.md), and [current batch tracker](Current-Slice-Batches.md).
-  The Phase 9 packaged-Release numeric memory gate is separate.
+- Current milestone: Phase 7's formal semantic exit remains Complete at exact
+  SHA `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. The pushed Schedule Import
+  Gateway follow-up at `033f8dd23a2902591ab0486747144acb9b32a3dc` is post-exit
+  and does not reopen Phase 7. It updates Next Schedule Page and Next Initial
+  Setup to use typed active-Gateway reads and applies with active-session
+  validation; the `ClassMngrNext` build passed and tests were not run. Phase 8
+  has not started. See the [Phase 7 progress log](08-Phase-7-Progress-Log.md)
+  for the follow-up details and exact-SHA exit evidence, the [phase plan](08-Phase-7-Feature-Migration.md),
+  and [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

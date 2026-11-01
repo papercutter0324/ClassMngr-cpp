@@ -2200,3 +2200,18 @@ Entries are preserved in their original document order.
   define this supporting Debug baseline as an exit condition; its missing result
   remains an explicit platform-verification limitation. Phase 9 retains the
   packaged Release numerical memory threshold.
+
+### Schedule Import Gateway follow-up — post-exit (2026-11-01)
+
+- Code commit `033f8dd23a2902591ab0486747144acb9b32a3dc` was pushed after the
+  formal Phase 7 exit at `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. This is
+  a post-exit follow-up: Phase 7 remains Complete, and Phase 8 has not started.
+- Next Schedule Page and Next Initial Setup reads/applies now use typed methods
+  on the active `WorkspaceStoreGateway`. The normal flow validates its expected
+  profile path against the active session; Initial Setup validates its pending
+  profile against that session. Unavailable or mismatched Gateway/session
+  states return typed failures. The Gateway keeps its store private, and Legacy
+  is unchanged.
+- `cmake --build build/macos-clang-debug --target ClassMngrNext -j2` passed.
+  Tests were not run. The previous Phase 7 exact-SHA suite results and
+  verification limitations remain recorded above at `a60c727d`.
