@@ -38,31 +38,21 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-11-01
-- Current note: Candidate #53, Next Sub Prep PDF text mapping and output parity,
-  is accepted in commit `b6d8a0a1`. Its Next-only Qt 6.12 finalizer derives
-  ToUnicode mappings from captured render source, fails closed on unsupported
-  inputs, changes no painted content, and leaves Legacy generation unchanged.
-  C44 exact-text and zero-pixel evidence passed; the native Windows SQL-backed
-  run also verified 750 names, 30 headers, the roster code map, and all 17
-  pages across both matched PDF pairs at zero changed pixels. Candidate #54's
-  lifecycle evidence and diagnostic packaging repair are committed and pushed
-  in `926b00fd`; its first native Windows x64 run (`41272522314`) failed
-  evidence validation: the diagnostic stopped at two scenarios and five samples,
-  and lifecycle capture produced no JSON. Repair commit `4fb12911` is pushed,
-  and its new x64 run is pending artifact review. ARM64 success does not satisfy
-  the x64 gate. Candidate #54 passed on repaired native Windows x64 run
-  `41274190210`; its memory diagnostic validated 3×5 samples, and its Initial
-  Setup lifecycle artifact validated seven whole-process checkpoints with no
-  numeric threshold. Candidate #55's fallback regression test, 12 matched
-  production-path Classes captures, and matrix/call-path reconciliation are
-  complete; the implementation is committed in `5d1b02a2`. Batch 6 is active
-  with candidate #56, dynamic Co-Teachers sidebar navigation. Batch 7 discovery
-  found no other feature slice.
-  The Next document viewer uses its own ResourceLoader/PageHost path; the
-  separate Legacy parity route remains scheduled for Phase 12 removal. C41's
-  fixed, opt-in historical campus import is not runtime path search. The full
-  suite, post-implementation Windows checks, and Phase 7 exit gate remain open.
-  The Phase 9 packaged Release numeric memory gate is separate.
+- Current note: Candidate #56, dynamic Co-Teachers sidebar navigation, is
+  accepted in `248c498f`; Batch 6 is complete. The typed assignment read stays
+  on the active WorkspaceStore, and the navigation preserves Legacy ordering,
+  filters to assigned regular-class co-teachers, activates the chosen profile,
+  and refreshes after assignment and workspace changes. Independent focused
+  verification passed 4/4 CTests and the existing profile-activation test
+  passed 3/3. Batch 7 discovery found no other feature slice. Phase 7 exit
+  verification is active: the unfiltered macOS suite, post-implementation
+  Windows checks, and final preservation-matrix/visual evidence review remain
+  open. Candidate #54's repaired Windows x64 diagnostic and lifecycle artifacts
+  remain accepted on run `41274190210`, with no numeric threshold. The Next
+  document viewer uses its own ResourceLoader/PageHost path; the separate
+  Legacy parity route remains scheduled for Phase 12 removal. C41's fixed,
+  opt-in historical campus import is not runtime path search. The Phase 9
+  packaged Release numeric memory gate is separate.
 
 ### Slice batches
 

@@ -6,17 +6,18 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-01
-- Current milestone: Phase 7 remains in progress. Batch 5 is complete and
-  pushed. Candidate #54's repaired native Windows x64 evidence passed on run
-  `41274190210`: the diagnostic validated three scenarios with five samples
-  each, and Initial Setup captured seven whole-process lifecycle checkpoints
-  with no numeric threshold. Candidate #55's Legacy teacher-name fallback test,
-  12 matched production-path Classes full-window captures, and matrix/call-path
-  reconciliation are complete; its implementation is in `5d1b02a2`. Batch 6
-  is active with #56, dynamic Co-Teachers sidebar navigation. Batch 7 discovery
-  found no other feature slice. The full suite, post-implementation Windows
-  checks, and Phase 7 exit gate remain open. The Phase 9 packaged-Next numeric
-  memory gate is separate. See the
+- Current milestone: Candidate #56, dynamic Co-Teachers sidebar navigation,
+  is accepted in `248c498f`; Batch 6 is complete. The slice uses a typed
+  active-WorkspaceStore assignment read, preserves Legacy ordering and
+  assignment filtering, opens the selected teacher profile, and refreshes on
+  assignment and workspace changes. Independent focused verification passed
+  4/4 CTests and the existing profile-activation test passed 3/3. Batch 7
+  discovery found no other feature slice. Phase 7 exit verification is active:
+  the unfiltered macOS suite, post-implementation Windows checks, and final
+  preservation-matrix/visual evidence review remain open. Candidate #54's
+  repaired Windows x64 diagnostic and lifecycle artifacts remain accepted on
+  run `41274190210`; they carry no numeric threshold. The Phase 9 packaged-Next
+  numeric memory gate is separate. See the
   [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
@@ -40,7 +41,7 @@
 | 4 | 05-Phase-4-Resource-Loader-and-Packaging.md | Complete | Heavy | 1 |
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
-| 7 | 08-Phase-7-Feature-Migration.md | In progress — Batch 6 active (#56) | Heavy | 2–6 |
+| 7 | 08-Phase-7-Feature-Migration.md | In progress — exit verification | Heavy | 2–6 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Not started | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

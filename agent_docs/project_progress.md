@@ -2,16 +2,17 @@
 
 Active deployment plan: Qt Rewrite Phase 7 — Feature Migration.
 Current deployment: `phase7_batch4_resume_20261030`. Route: Heavy.
-Current milestone: Batch 5 is complete and pushed. Candidate #54's repaired
-native Windows x64 evidence passed on run `41274190210`: three scenarios with
-five samples each and seven Initial Setup whole-process lifecycle checkpoints,
-with no numeric threshold. Candidate #55's class-transfer fallback test,
-matched full-window Classes captures, and matrix/call-path reconciliation are
-complete; its implementation is committed as `5d1b02a2`. Batch 6 is active
-with candidate #56, dynamic Co-Teachers sidebar navigation. Independent Batch
-7 plan-first and code-first scans found no other feature slice. The full Phase 7
-suite, post-implementation Windows checks, and exit gate remain open; the
-separate Phase 9 numeric memory gate is not claimed.
+Current milestone: Candidate #56, dynamic Co-Teachers sidebar navigation, is
+accepted in `248c498f`; Batch 6 is complete. Its typed assignment read stays
+within the active WorkspaceStore Gateway, preserves Legacy ordering and
+assignment filtering, opens the selected teacher profile, and refreshes after
+assignment and workspace changes. Independent focused verification passed 4/4
+CTests and the profile-activation test passed 3/3. Batch 7 discovery found no
+other feature slice. Phase 7 exit verification is active: the unfiltered macOS
+suite, post-implementation Windows checks, and preservation-matrix/visual
+evidence review remain open. C54's accepted Windows diagnostic and lifecycle
+artifacts on run `41274190210` have no numeric threshold; the separate Phase 9
+memory gate is not claimed.
 Phases 0–6 are Complete; Phase 7 is in progress. F1514 added descriptor-based
 lazy registration, F1515 added explicit page lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;
@@ -199,30 +200,16 @@ the staged-package report probe passed. Cross-platform CI and local
 
 ## Current Position
 
-### Current checkpoint — 2026-10-29 (candidate #43 accepted; candidate #44 active)
+### Current checkpoint — 2026-11-01 (candidate #56 accepted; exit verification active)
 
-Candidate #43, Document viewer lifecycle/actions, is accepted in source commit
-`3ac8fea4`. The Next shell opens only the selected catalog PDF in a file-backed
-session, releases QtPdf consumers before the borrowed stream/session, and
-recreates empty wrappers after the deterministic timeout fallback. Independent
-focused CTest passed 14/14; the Next launch check passed 1/1. The paired
-English/Korean × Light/Dark captures cover ready/error/closed/reopened; all 32
-PNG files matched fresh captures, with no material content/state mismatch.
-The capture package makes no pixel-parity claim and its memory reading is
-process-wide. C43 moved the executable target into `cmake/next_app` so Qt 6.12's
-QML import scan no longer walks staged applications under the repository root.
-
-Batch 4 continues with #44, 7J.1 Sub Prep. It owns the complete Next-shell
-96-class class-information and output route; existing bounded projections and
-output services are reusable but legacy captures are reference inputs only.
-The Initial Setup schedule-import prerequisite repair is committed in
-`80f7f1c6`, leaving the protected WorkspaceStore Gateway edits outside the
-commit. Windows Release run `40914914018` completed at the pushed SHA, but its
-x64 diagnostic prerequisite failed and produced no collector artifact. A fresh
-hosted run is pending the Batch 4 push. Broader 7A visual/lifecycle evidence,
-hosted memory evidence, and the Windows packaged-Next memory gate remain open.
-The `<250 MiB` threshold remains a separate Phase 9 gate. The 7A and Phase 7
-exit gates are not yet passed.
+Candidate #56 is accepted in `248c498f`, and Batch 6 is complete. The typed
+assignment read uses the active WorkspaceStore Gateway; independent focused
+verification passed 4/4 CTests and the existing profile-activation test passed
+3/3. Batch 7 discovery found no other feature slice. The full macOS suite,
+post-implementation Windows checks, and final preservation-matrix/visual
+evidence review remain open. C54's repaired Windows diagnostic/lifecycle run
+`41274190210` remains accepted without a numeric threshold. The Phase 9
+packaged-Release `<250 MiB` gate remains separate.
 
 The following checkpoint records are historical; canonical current state is
 in the Phase 7 plan, progress log, and slice-batch tracker.

@@ -2,6 +2,16 @@
 
 ## Decisions and Lessons
 
+### Phase 7 Co-Teachers navigation — 2026-11-01
+
+Read assigned co-teacher IDs through a typed port on the active WorkspaceStore
+Gateway, and project only assigned regular-class teachers into the sidebar.
+Preserve the existing ordering and profile activation path. Refresh only after
+a successful assignment save or workspace lifecycle transition; clear both
+groups if the assignment read fails. Keep the localized Next fallback label
+and describe partial appearance captures as examples rather than full parity
+evidence.
+
 ### Phase 7 Sub Prep PDF text mapping — 2026-11-01
 
 Qt 6.12's PDF writer can emit shaped glyph codes whose `ToUnicode` reverse map

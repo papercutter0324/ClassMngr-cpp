@@ -1834,3 +1834,25 @@ Entries are preserved in their original document order.
   scans found no other feature slice. Run the unfiltered Phase 7 suite and final
   Windows checks after #56. Phase 7 remains in progress, and the Phase 9
   packaged-Release numeric memory gate is separate.
+
+### Candidate #56 — dynamic Co-Teachers navigation accepted (2026-11-01)
+
+- Commit: `248c498f` (`Phase7 - Restore dynamic Co-Teachers navigation`). The
+  Next sidebar now reads assigned co-teachers through a typed read port on the
+  active `WorkspaceStoreGateway`, projects Legacy-compatible ordering and
+  regular-class assignment filtering, opens the selected teacher profile, and
+  refreshes after successful assignment and workspace lifecycle changes. The
+  Next localized fallback label is retained. The English/light and Korean/dark
+  captures are examples, not a complete appearance matrix.
+- Independent Tester passed the focused projection, assignment/lifecycle, and
+  two capture CTests (4/4), plus the existing profile-activation test (3/3).
+  Failure injection verifies the groups clear after assignment-read failure
+  following workspace replacement; failed assignment saves do not trigger a
+  refresh. Build and `git diff --check` passed. The directory-read failure
+  branch was source-inspected; assignment-read failure was injected.
+- Decision: accept C56 and close Batch 6. Batch 7's independent plan-first and
+  code-first scans found no further feature slice. Phase 7 exit verification
+  is now active. The unfiltered macOS suite, post-implementation Windows
+  checks, and final preservation-matrix/visual evidence review remain open.
+  C54's accepted diagnostic evidence has no numeric threshold; the Phase 9
+  packaged-Release memory gate remains separate.
