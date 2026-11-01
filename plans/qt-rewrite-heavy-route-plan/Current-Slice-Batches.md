@@ -2,21 +2,17 @@
 
 ## Batch 6 — exact-source verification active
 
-56. **Dynamic Co-Teachers sidebar navigation:** implementation is in `248c498f`;
-    the missing Gateway adapter include was repaired in `346adb7c`. Focused
-    C56 verification passed 4/4 CTests after the repair. A separate all-target
-    build issue in `ClassMngrNextSharedStaffDirectoryVisualCapture` was fixed
-    at `1e9bfae0`; its focused target CTest passed 1/1. The full build at
-    `1021a34d` stopped linking `ClassMngrNextTeacherDirectoryVisualCapture` on
-    missing object-library dependencies, before CTest. Its narrow CMake repair
-    now builds the target and passes both registered CTests. Rerun the
-    full build at `76c1f497` then stopped at the Teacher Import capture target,
-    which lacked `workspace_store_schedule_actions.cpp`; CTest did not run.
-    The one-line repair now builds that target and passes both registered
-    CTests. A read-only audit found no further direct-Gateway visual-capture
-    omissions; rerun the full build and exact-SHA Windows checks at the
-    resulting SHA.
-
+56. **Dynamic Co-Teachers sidebar navigation:** implementation is in
+    `248c498f`; the missing Gateway adapter include was repaired in `346adb7c`.
+    Focused C56 verification passed 4/4 CTests. The prior full builds exposed
+    standalone capture-target link omissions, repaired and focused-verified at
+    `1e9bfae0`, `76c1f497`, and `bb6d4507` (Staff Directory, Teacher Directory,
+    and Teacher Import targets respectively). The all-target build at
+    `bb6d4507` stopped at the Classes Details/Co-Teacher capture due to missing
+    roster editor implementations and output-library linkage. The current
+    repair covers the Details, Notes, and Analytics capture targets; their
+    focused build and registered CTests passed 3/3. Rerun the all-target build
+    and exact-SHA Windows checks after pushing this repair.
 ## Batch 7 — discovered
 
 No other feature slices were found.

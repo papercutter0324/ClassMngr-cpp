@@ -38,35 +38,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final parity, memory hardening, and cutover
 - Owner: Codex (Heavy route)
 - Last updated: 2026-11-01
-- Current note: Candidate #56, dynamic Co-Teachers sidebar navigation, is
-  implemented in `248c498f`; its clean-source compile repair is pushed in
-  `346adb7c`. Focused C56 verification passed 4/4 CTests and the existing
-  profile-activation test passed 3/3. The later standalone Staff Directory
-  capture-target link issue was fixed in pushed commit `1e9bfae0`; its focused
-  CTest passed 1/1. Batch 7 discovery found no additional feature slice.
-  Preservation-matrix and call-path audits found no unresolved feature row or
-  prohibited Next path. Sub Prep's workspace-backed actions already use typed
-  reads on the active Gateway; its campus directory remains resource-backed.
-  The Initial Setup visual package is independently accepted with 28 matching
-  images, with capture-worktree provenance limited to the metadata's base
-  commit. The profile file-workflow package is independently accepted for
-  visual-state evidence: 38 images cover nine paired states and two Next-only
-  confirmation captures, with matching hashes, sizes, and dimensions. These
-  captures do not claim successful outcomes or native-window/pixel parity.
-  The full build at `1021a34d` stopped at the standalone
-  `ClassMngrNextTeacherDirectoryVisualCapture` link; CTest did not run. Its
-  narrow CMake fix now builds the target and passes both registered CTests.
-  The full build at `76c1f497` stopped linking
-  `ClassMngrNextTeacherImportVisualCapture` because its target omits the
-  schedule-action source; CTest did not run. Its targeted repair now builds
-  the target and passes both registered CTests; a read-only audit found no
-  further direct-Gateway capture-target omission. The all-target build and
-  exact-SHA Windows checks remain open at the resulting SHA. C54's
-  repaired Windows x64 diagnostic and lifecycle artifacts are accepted on run
-  `41274190210` without a numeric threshold. The Next document viewer uses its
-  own ResourceLoader/PageHost path; Legacy parity removal remains in Phase 12.
-  C41's campus import is fixed-root and opt-in. The Phase 9 packaged Release
-  numeric memory gate remains separate.
+- Current note: Candidate #56 is accepted and Batch 7 discovery found no
+  other feature slice. Phase 7 exit verification is active. The all-target
+  macOS build at `bb6d4507` stopped linking the Classes Details/Co-Teacher
+  visual capture. The focused CMake repair now builds the Details, Notes, and
+  Analytics captures and passes all three registered CTests. The full macOS
+  build, unfiltered CTest, and Windows verification at the final SHA remain
+  open. Sub Prep typed workspace reads use the active Gateway store; the
+  campus directory remains resource-backed. The separate Phase 9 packaged-
+  Release numeric memory gate remains open.
 
 ### Slice batches
 

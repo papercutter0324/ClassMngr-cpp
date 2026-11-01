@@ -7,37 +7,16 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-01
 - Current milestone: Candidate #56, dynamic Co-Teachers sidebar navigation,
-  is implemented in `248c498f`, with the clean-source compile repair in
-  `346adb7c`; its focused tests pass. A second full-build issue in the
-  standalone Staff Directory capture target was fixed in `1e9bfae0`. The slice
-  uses a typed active-WorkspaceStore assignment read, preserves Legacy ordering
-  and assignment filtering, opens the selected teacher profile, and refreshes
-  on assignment and workspace changes. Independent focused verification passed
-  4/4 CTests and the existing profile-activation test passed 3/3. Batch 7
-  discovery found no other feature slice. A clean full build at `61b8d749`
-  caught the missing adapter include; the subsequent build at `346adb7c` found
-  the Staff Directory capture link issue. A full build at `1021a34d` stopped
-  linking `ClassMngrNextTeacherDirectoryVisualCapture` because its object-library
-  link closure is incomplete; CTest did not run. A narrow CMake repair is
-  now focused-verified: the target builds and both registered CTests pass.
-  The full build at `76c1f497` then stopped linking
-  `ClassMngrNextTeacherImportVisualCapture` because it lacks the schedule-action
-  definition; CTest did not run. The targeted repair now passes its focused
-  build and both registered CTests, and the audit found no further direct-
-  Gateway capture-target omission. The all-target build and final Windows
-  check must use the resulting SHA. Exit review found two visual evidence
-  gaps, now covered by independently reviewed packages. The Initial Setup
-  package has 28 images with matching manifest records; its metadata names the
-  base commit, so its capture worktree revision remains a reproducibility
-  limitation. The profile file-workflow package has 38 images covering nine
-  paired states and two Next-only confirmation captures, with no manifest
-  integrity errors. It does not show successful operation outcomes or
-  native-window parity. The Sub Prep call-path audit confirmed typed workspace
-  reads already use the active Gateway store; the campus directory remains a
-  packaged-resource read. Candidate #54's repaired
-  Windows x64 diagnostic and lifecycle artifacts remain accepted on run
-  `41274190210`, with no numeric threshold. The Phase 9 packaged-Next numeric
-  memory gate is separate. See the
+  is accepted and Batch 7 discovery found no other feature slice. Phase 7
+  exit verification is active. The all-target macOS build at `bb6d4507`
+  stopped linking the Classes Details/Co-Teacher visual capture. A focused
+  CMake repair now builds the Details, Notes, and Analytics capture targets
+  and passes their three registered CTests. The full macOS build and unfiltered
+  CTest, plus Windows verification at the final SHA, remain open. The Sub Prep
+  call-path audit confirmed typed workspace reads already use the active
+  Gateway store; the campus directory remains a packaged-resource read. The
+  accepted Windows process observations have no numeric threshold; the Phase 9
+  packaged-Release memory gate is separate. See the
   [Phase 7 progress log](08-Phase-7-Progress-Log.md), [phase plan](08-Phase-7-Feature-Migration.md),
   and [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate

@@ -4678,6 +4678,8 @@ add_executable(ClassMngrNextClassesDetailsCoTeacherVisualCapture
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
     src/next/ui/selected_class_analytics_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
@@ -4703,6 +4705,7 @@ target_link_libraries(ClassMngrNextClassesDetailsCoTeacherVisualCapture
     PRIVATE
         ClassMngrRuntime
         ClassMngrNext::Application
+        ClassMngrNextRosterOutput
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore
@@ -4741,6 +4744,8 @@ add_executable(ClassMngrNextClassesNotesVisualCapture
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
     src/next/ui/selected_class_analytics_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
@@ -4766,6 +4771,7 @@ target_link_libraries(ClassMngrNextClassesNotesVisualCapture
     PRIVATE
         ClassMngrRuntime
         ClassMngrNext::Application
+        ClassMngrNextRosterOutput
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore
@@ -4805,6 +4811,8 @@ add_executable(ClassMngrNextClassesAnalyticsVisualCapture
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
+    src/next/ui/roster_editor_widget.cpp
+    src/next/ui/roster_table_model.cpp
     src/next/ui/selected_class_analytics_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/page.h
@@ -4830,6 +4838,7 @@ target_link_libraries(ClassMngrNextClassesAnalyticsVisualCapture
     PRIVATE
         ClassMngrRuntime
         ClassMngrNext::Application
+        ClassMngrNextRosterOutput
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
         ClassMngrWorkspaceStore

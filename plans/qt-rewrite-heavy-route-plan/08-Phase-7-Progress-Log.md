@@ -1994,3 +1994,22 @@ Entries are preserved in their original document order.
   direct-Gateway omission was found.
 - The all-target build and unfiltered CTest remain to run at the resulting
   source/test SHA. Exact-SHA Windows checks also remain open.
+
+### Exact-SHA full-build attempt — Classes capture link closure (2026-11-01)
+
+- At pushed SHA `bb6d4507e49d26aef81fb34e78d5e371f5735a97`, the independent
+  Tester refreshed its isolated source tree to the exact remote tip and reused
+  the standard `build/macos-clang-debug` directory. Configure and ownership
+  validation passed; the incremental all-target build stopped at action
+  4,687/4,966 linking `ClassMngrNextClassesDetailsCoTeacherVisualCapture`.
+  `selected_class_editor.cpp` constructs `RosterEditorWidget`; the target
+  lacked the widget and table-model implementations and its roster-output
+  library dependency. CTest did not run.
+- A read-only scan found the same missing implementations and library in the
+  standalone Classes Notes and Analytics captures. The focused repair adds
+  `roster_editor_widget.cpp`, `roster_table_model.cpp`, and
+  `ClassMngrNextRosterOutput` to all three target closures. In the isolated
+  standard macOS Debug tree, all three targets built and their registered
+  CTests passed 3/3 in 11.23 seconds; `git diff --check` passed. Duplicate
+  WorkspaceStore archive warnings were non-fatal. The all-target build,
+  unfiltered CTest, and final-SHA Windows verification remain open.
