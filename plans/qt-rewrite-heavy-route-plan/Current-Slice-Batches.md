@@ -10,9 +10,10 @@
     actions. Its unfiltered CTest completed 594/614 with 20 failures, detailed
     in the Phase 7 progress log. F515 re-entry and signature capture selectors
     now pass focused rechecks; the C53 selector passes with its required
-    directory/date configuration. The Next Bootstrap warning was observed by
-    a focused signal-spy recheck; no production change was needed. Final-SHA
-    unfiltered CTest and Windows x64 Debug evidence remain open.
+    directory/date configuration. The Schedule initial-read failure selector
+    now verifies both warnings and zero writes. The Next Bootstrap warning was
+    observed by a focused signal-spy recheck; no production change was needed.
+    Final-SHA unfiltered CTest and Windows x64 Debug evidence remain open.
 ## Batch 7 — discovered
 
 No other feature slices were found.
@@ -27,9 +28,11 @@ covers visual states, not successful operation outcomes or native-window
 parity. The fresh macOS build passed at `f5c23859`; unfiltered CTest returned
 594 passes and 20 failures, with no CTest skips or disabled registrations.
 Loopback, screen/AppKit, timeout, stale-contract, and fixture failures are
-classified in the progress log. The F515 and signature focused rechecks and
-configured C53 selector passed. The Next Bootstrap warning passes a focused
-signal-spy check; final-SHA CTest and Windows x64 Debug evidence remain open. Sub Prep's typed workspace reads use
+classified in the progress log. The F515, signature, and Schedule initial-read
+failure selectors pass focused rechecks; the configured C53 selector also
+passed. The Next Bootstrap warning
+passes a focused signal-spy check. Final-SHA CTest and Windows x64 Debug
+evidence remain open. Sub Prep's typed workspace reads use
 the active Gateway, and its campus directory is resource-backed. C54 process
 observations have no numeric threshold; the packaged-Release memory gate
 remains in Phase 9.

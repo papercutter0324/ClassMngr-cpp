@@ -44,10 +44,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   registrations and no CTest-skipped or disabled registrations; failure groups
   and focused follow-ups are recorded in the progress log. C56's registered
   tests passed. Focused F515 re-entry and signature-capture checks pass with
-  test-harness setup corrections; C53 passes when supplied its required output
-  directory and reference date. Exact-SHA Windows Release/resource/C53 jobs
-  pass; the Next Bootstrap warning assertion passes its focused signal-spy
-  check. The final-SHA unfiltered CTest and x64 Debug recorder remain open. The
+  test-harness setup corrections; the Schedule initial-read error-path selector
+  also passes. C53 passes when supplied its required output directory and
+  reference date. Exact-SHA Windows Release/resource/C53 jobs pass; the Next
+  Bootstrap warning assertion passes its focused signal-spy check. The
+  final-SHA unfiltered CTest and x64 Debug recorder remain open. The
   preservation-matrix and call-path audits found no unresolved
   feature row or prohibited Next path. Sub Prep typed workspace reads use the
   active Gateway; its campus directory remains resource-backed. The Phase 9

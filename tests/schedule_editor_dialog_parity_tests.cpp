@@ -4,6 +4,7 @@
 #include "domain/models/class_info.h"
 #include "domain/models/teacher.h"
 #include "features/schedule/ui/schedule_editor_dialog.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/widgets/clickable_color_preview.h"
 
@@ -289,6 +290,35 @@ bool renameClassInfoTable(
     return false;
 }
 
+class UserPromptServiceScope final
+{
+public:
+    explicit UserPromptServiceScope(IUserPromptService* service)
+    {
+        DialogServices::setUserPromptServiceForTesting(service);
+    }
+
+    ~UserPromptServiceScope()
+    {
+        DialogServices::setUserPromptServiceForTesting(nullptr);
+    }
+};
+
+qint64 totalChanges(const QSqlDatabase& database, QString* error)
+{
+    QSqlQuery query(database);
+    if (!query.exec(QStringLiteral("SELECT total_changes()"))
+        || !query.next())
+    {
+        if (error)
+        {
+            *error = query.lastError().text();
+        }
+        return -1;
+    }
+    return query.value(0).toLongLong();
+}
+
 }
 
 class ScheduleEditorDialogParityTests final : public QObject
@@ -504,7 +534,17 @@ void ScheduleEditorDialogParityTests::transientInitialReadFailureBlocksSave()
         QStringLiteral("class_info_transient"),
         &renameError
         ), qPrintable(renameError));
+
+    FakeUserPromptService prompts;
+    const UserPromptServiceScope promptScope(&prompts);
     ScheduleEditorDialog dialog(&services, seed->classId);
+    QCOMPARE(prompts.messages.size(), 1);
+    QCOMPARE(
+        prompts.messages.at(0).title,
+        QStringLiteral("Load Class Information")
+        );
+    QCOMPARE(prompts.messages.at(0).severity, PromptSeverity::Warning);
+    QVERIFY(!prompts.messages.at(0).message.isEmpty());
     QVERIFY2(renameClassInfoTable(
         services.databaseSession()->database(),
         QStringLiteral("class_info_transient"),
@@ -519,22 +559,42 @@ void ScheduleEditorDialogParityTests::transientInitialReadFailureBlocksSave()
     QVERIFY(!DialogServices::promptTestDriver().activePrompt().has_value());
     dialog.show();
     QTRY_VERIFY(dialog.isVisible());
-    WarningObservation warning;
-    acceptNextWarning(&warning);
+    QSignalSpy savedSpy(&dialog, &ScheduleEditorDialog::saved);
+    QVERIFY(savedSpy.isValid());
+    QString changesError;
+    const qint64 changesBefore = totalChanges(
+        services.databaseSession()->database(),
+        &changesError
+        );
+    QVERIFY2(changesBefore >= 0, qPrintable(changesError));
     QVERIFY(clickNamedButton(dialog, QStringLiteral("Save")));
 
+    QCOMPARE(prompts.messages.size(), 2);
+    QCOMPARE(
+        prompts.messages.at(1).title,
+        QStringLiteral("Could Not Save")
+        );
+    QCOMPARE(
+        prompts.messages.at(1).message,
+        QStringLiteral("The class information could not be saved.")
+        );
+    QCOMPARE(prompts.messages.at(1).severity, PromptSeverity::Warning);
     const auto after = services.classService()->classInfo(seed->classId);
     QVERIFY(after.has_value());
     QVERIFY(sameClassInfo(*after, seed->expected));
-    QVERIFY(warning.accepted);
-    QCOMPARE(warning.title, QStringLiteral("Could Not Save"));
-    QCOMPARE(warning.text,
-        QStringLiteral("The class information could not be saved."));
+    QCOMPARE(savedSpy.size(), 0);
+    const qint64 changesAfter = totalChanges(
+        services.databaseSession()->database(),
+        &changesError
+        );
+    QVERIFY2(changesAfter >= 0, qPrintable(changesError));
+    QCOMPARE(changesAfter, changesBefore);
     QVERIFY(dialog.isVisible());
     emitTranscript(
         QStringLiteral("transient-read-failure"),
         QStringLiteral(
-            "warning=Could Not Save,open=1,unchanged=1"
+            "warnings=Load Class Information+Could Not Save,open=1,"
+            "unchanged=1,writes=0"
             )
         );
 }

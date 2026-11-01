@@ -2064,3 +2064,19 @@ Entries are preserved in their original document order.
   macOS Debug tree. This is a test-fixture observation correction; production
   notification timing was unchanged. The final-SHA unfiltered CTest remains
   open.
+
+### Schedule editor initial-read error test — prompt setup corrected (2026-11-01)
+
+- `transientInitialReadFailureBlocksSave` previously armed warning dismissal
+  after dialog construction, but construction itself synchronously presented
+  the initial read warning and blocked. The test now installs
+  `FakeUserPromptService` before construction and captures both the initial
+  load warning and the later Save warning. It verifies no `saved` signal,
+  unchanged class data and SQLite `total_changes`, and that the dialog remains
+  open.
+- The target and exact selector passed independently (3/3 including setup and
+  cleanup) in the standard macOS Debug tree. The transcript recorded
+  `warnings=Load Class Information+Could Not Save,open=1,unchanged=1,writes=0`.
+  This test-harness correction makes the intended Phase 7 error-path assertions
+  reachable; no production change was made. Final-SHA unfiltered CTest remains
+  open.
