@@ -10,6 +10,7 @@
 #include "next/application/teacher_create_use_case.h"
 #include "next/application/teacher_delete_use_case.h"
 #include "next/application/teacher_directory_read_query.h"
+#include "next/application/class_teacher_assignments_read_query.h"
 #include "next/application/teacher_profile_edit_use_case.h"
 #include "next/application/teacher_profile_read_query.h"
 #include "next/application/class_create_use_case.h"
@@ -313,6 +314,13 @@ WorkspaceStoreGateway::readTeacherDirectory() const
     WorkspaceStoreTeacherDirectoryPort port(*m_store);
     const Application::TeacherDirectoryReadQuery query(port);
     return query.execute();
+}
+
+Application::ClassTeacherAssignmentsReadResult
+WorkspaceStoreGateway::readClassTeacherAssignments() const
+{
+    WorkspaceStoreClassTeacherAssignmentsReadPort port(*m_store);
+    return Application::ClassTeacherAssignmentsReadQuery(port).execute();
 }
 
 Application::TeacherCreateResult WorkspaceStoreGateway::createTeacher(

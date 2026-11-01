@@ -14,6 +14,8 @@
 #include "next/application/unsaved_changes_resolution_flow.h"
 #include "next/application/initial_setup_class_details_requirements.h"
 #include "next/application/positive_decimal_id_validation.h"
+#include "next/application/class_teacher_assignments_read_query.h"
+#include "next/application/assigned_teacher_directory_projection.h"
 #include "next/application/my_classes_page_read.h"
 #include "next/application/campus_dashboard_campus_save_use_case.h"
 #include "next/application/campus_directory_read_query.h"
@@ -1453,6 +1455,11 @@ Application::StartupResult ApplicationBootstrap::start()
                 deleteKoreanTeacherFromSidebar(teacherId);
             }
         });
+        m_shell->setCoTeacherNavigationActions({
+            .openTeacherProfile = [this](const Domain::TeacherId& teacherId) {
+                return openTeacherProfileImpl(teacherId, false, true);
+            }
+        });
         m_shell->setNavigationGuard([this](
             const Ui::NavigationGuardRequest& request
             ) {
@@ -1720,12 +1727,18 @@ Application::StartupResult ApplicationBootstrap::start()
                         return Platform::saveClassDetailsAtPath(
                             databasePath, request);
                     };
-                    actions.saveClassCoTeacher = [](
+                    actions.saveClassCoTeacher = [this](
                         const QString& databasePath,
                         const Application::ClassCoTeacherAssignmentRequest& request
                         ) {
-                        return Platform::assignClassCoTeacherAtPath(
-                            databasePath, request);
+                        const Domain::Result<void> saved =
+                            Platform::assignClassCoTeacherAtPath(
+                                databasePath, request);
+                        if (saved)
+                        {
+                            static_cast<void>(refreshTeacherNavigationRows());
+                        }
+                        return saved;
                     };
                     actions.saveClassNotes = [](
                         const QString& databasePath,
@@ -2925,7 +2938,7 @@ Application::StartupResult ApplicationBootstrap::start()
                 else
                 {
                     initialPageActivated = true;
-                    static_cast<void>(refreshKoreanTeacherNavigationRows());
+                    static_cast<void>(refreshTeacherNavigationRows());
                 }
             }
         }
@@ -3878,7 +3891,7 @@ void ApplicationBootstrap::createNewTeacherProfile()
             m_applicationRuntime->workspaceState().snapshot().lifecycle(),
             std::nullopt
             );
-        static_cast<void>(refreshKoreanTeacherNavigationRows());
+        static_cast<void>(refreshTeacherNavigationRows());
     }
 }
 
@@ -4046,7 +4059,7 @@ void ApplicationBootstrap::openTeacherProfile(
         m_applicationRuntime->workspaceState().snapshot().lifecycle(),
         std::nullopt
         );
-    static_cast<void>(refreshKoreanTeacherNavigationRows());
+    static_cast<void>(refreshTeacherNavigationRows());
     if (!m_shell->navigateTo(
             pageId(QStringLiteral("my_workspace")),
             Ui::NavigationCause::Selection
@@ -4243,7 +4256,7 @@ void ApplicationBootstrap::recoverInterruptedTeacherProfile()
         m_applicationRuntime->workspaceState().snapshot().lifecycle(),
         std::nullopt
         );
-    static_cast<void>(refreshKoreanTeacherNavigationRows());
+    static_cast<void>(refreshTeacherNavigationRows());
     if (!m_shell->navigateTo(
             pageId(QStringLiteral("my_workspace")),
             Ui::NavigationCause::Selection
@@ -4776,11 +4789,12 @@ void ApplicationBootstrap::importTeachersFromWorkspace()
 
     const Application::TeacherImportUseCaseResult& summary = *imported;
     QStringList refreshFailures;
-    const bool teacherRowsRefreshed = refreshKoreanTeacherNavigationRows(false);
+    const bool teacherRowsRefreshed = refreshTeacherNavigationRows(false);
     if (!teacherRowsRefreshed)
     {
-        m_shell->setKoreanTeacherNavigationRows({});
+        m_shell->setTeacherNavigationRows({}, {});
         refreshFailures.append(teacherImportText("Korean Teachers list"));
+        refreshFailures.append(teacherImportText("Co-Teachers list"));
     }
 
     if (summary.koreanTeachers.updated.rawValue() > 0
@@ -4939,7 +4953,7 @@ void ApplicationBootstrap::closeWorkspaceFromMenu()
         Application::WorkspaceLifecycleState::Closed,
         std::nullopt
         );
-    static_cast<void>(refreshKoreanTeacherNavigationRows());
+    static_cast<void>(refreshTeacherNavigationRows());
     if (!m_shell->navigateTo(
             pageId(QStringLiteral("initial_setup")),
             Ui::NavigationCause::Selection
@@ -6354,7 +6368,8 @@ bool ApplicationBootstrap::openTeacherProfile(
 
 bool ApplicationBootstrap::openTeacherProfileImpl(
     const Domain::TeacherId& teacherId,
-    const bool notifyReadFailure
+    const bool notifyReadFailure,
+    const bool selectedFromCoTeacherRow
     )
 {
     if (!m_shell)
@@ -6375,6 +6390,18 @@ bool ApplicationBootstrap::openTeacherProfileImpl(
             ));
         return false;
     }
+
+    const auto selectTeacherRow = [this, selectedFromCoTeacherRow](
+                                     const Domain::TeacherId& id) {
+        if (selectedFromCoTeacherRow)
+        {
+            m_shell->selectCoTeacherNavigationRow(id);
+        }
+        else
+        {
+            m_shell->selectKoreanTeacherNavigationRow(id);
+        }
+    };
 
     // Read first so an invalid or missing requested profile cannot disturb the
     // currently selected page or its in-memory draft.
@@ -6414,7 +6441,7 @@ bool ApplicationBootstrap::openTeacherProfileImpl(
         if (profilePage->selectedTeacherId()
             == std::optional<Domain::TeacherId>(teacherId))
         {
-            m_shell->selectKoreanTeacherNavigationRow(teacherId);
+            selectTeacherRow(teacherId);
             return true;
         }
 
@@ -6429,7 +6456,7 @@ bool ApplicationBootstrap::openTeacherProfileImpl(
         {
             return false;
         }
-        m_shell->selectKoreanTeacherNavigationRow(teacherId);
+        selectTeacherRow(teacherId);
         return true;
     }
 
@@ -6456,7 +6483,7 @@ bool ApplicationBootstrap::openTeacherProfileImpl(
             ));
         return false;
     }
-    m_shell->selectKoreanTeacherNavigationRow(teacherId);
+    selectTeacherRow(teacherId);
     return true;
 }
 
@@ -6545,7 +6572,7 @@ ApplicationBootstrap::koreanTeacherDirectoryActionPorts()
         });
     };
     ports.refreshTeacherRows = [this] {
-        return refreshKoreanTeacherNavigationRows();
+        return refreshTeacherNavigationRows();
     };
     ports.openCreatedTeacherProfile = [this](
         const Domain::TeacherId& teacherId
@@ -6571,7 +6598,7 @@ ApplicationBootstrap::koreanTeacherDirectoryActionPorts()
     return ports;
 }
 
-bool ApplicationBootstrap::refreshKoreanTeacherNavigationRows(
+bool ApplicationBootstrap::refreshTeacherNavigationRows(
     const bool notifyFailure
     )
 {
@@ -6582,29 +6609,24 @@ bool ApplicationBootstrap::refreshKoreanTeacherNavigationRows(
     if (m_applicationRuntime->workspaceState().snapshot().lifecycle()
         != Application::WorkspaceLifecycleState::Open)
     {
-        m_shell->setKoreanTeacherNavigationRows({});
+        m_shell->setTeacherNavigationRows({}, {});
         return true;
     }
 
+    const auto clearRows = [this] {
+        m_shell->setTeacherNavigationRows({}, {});
+    };
     auto* const gateway = dynamic_cast<Platform::WorkspaceStoreGateway*>(
         m_workspaceGateway.get()
         );
     if (!gateway)
     {
-        return false;
-    }
-    const Application::TeacherDirectoryReadResult loaded =
-        gateway->readTeacherDirectory();
-    if (!loaded)
-    {
+        clearRows();
         if (notifyFailure)
         {
             static_cast<void>(m_shell->notificationPort().show(
                 Application::NotificationRequest{
-                    .message = std::string(
-                        loaded.error().message.data(),
-                        loaded.error().message.size()
-                        ),
+                    .message = "The active workspace store for teacher navigation is unavailable.",
                     .severity = Application::NotificationSeverity::Error
                 }
                 ));
@@ -6612,11 +6634,48 @@ bool ApplicationBootstrap::refreshKoreanTeacherNavigationRows(
         return false;
     }
 
-    std::vector<Ui::KoreanTeacherNavigationRow> rows;
-    rows.reserve(loaded.value().teachers.size());
-    for (const Application::TeacherDirectoryEntry& teacher :
-         loaded.value().teachers)
+    const auto failRefresh = [this, notifyFailure, &clearRows](
+                                 const std::string& message) {
+        clearRows();
+        if (notifyFailure)
+        {
+            static_cast<void>(m_shell->notificationPort().show(
+                Application::NotificationRequest{
+                    .message = message,
+                    .severity = Application::NotificationSeverity::Error
+                }
+                ));
+        }
+        return false;
+    };
+
+    const Application::ClassTeacherAssignmentsReadResult assignments =
+        m_startupWorkspaceSeams.classTeacherAssignmentsReadForNavigationForTesting
+            ? m_startupWorkspaceSeams
+                  .classTeacherAssignmentsReadForNavigationForTesting(*gateway)
+            : gateway->readClassTeacherAssignments();
+    if (!assignments)
     {
+        return failRefresh(assignments.error().message);
+    }
+
+    const Application::TeacherDirectoryReadResult loaded =
+        gateway->readTeacherDirectory();
+    if (!loaded)
+    {
+        return failRefresh(loaded.error().message);
+    }
+
+    const std::vector<Application::TeacherDirectoryEntry> assignedTeachers =
+        Application::assignedTeacherDirectoryEntries(
+            loaded.value(), assignments.value()
+            );
+    std::vector<Ui::KoreanTeacherNavigationRow> koreanRows;
+    std::vector<Ui::CoTeacherNavigationRow> coTeacherRows;
+    koreanRows.reserve(loaded.value().teachers.size());
+    coTeacherRows.reserve(assignedTeachers.size());
+    const auto labelForTeacher = [](
+                                  const Application::TeacherDirectoryEntry& teacher) {
         const Domain::TeacherDisplayName displayName =
             Domain::TeacherDisplayName::select(
                 teacher.preferredName,
@@ -6632,12 +6691,27 @@ bool ApplicationBootstrap::refreshKoreanTeacherNavigationRows(
                 "New Teacher"
                 );
         }
-        rows.push_back({
+        return label;
+    };
+    for (const Application::TeacherDirectoryEntry& teacher :
+         loaded.value().teachers)
+    {
+        koreanRows.push_back({
             .teacherId = teacher.teacherId,
-            .label = std::move(label)
+            .label = labelForTeacher(teacher)
         });
     }
-    m_shell->setKoreanTeacherNavigationRows(std::move(rows));
+    for (const Application::TeacherDirectoryEntry& teacher : assignedTeachers)
+    {
+        coTeacherRows.push_back({
+            .teacherId = teacher.teacherId,
+            .label = labelForTeacher(teacher)
+            });
+    }
+    m_shell->setTeacherNavigationRows(
+        std::move(koreanRows),
+        std::move(coTeacherRows)
+        );
     return true;
 }
 

@@ -55,6 +55,22 @@ struct KoreanTeacherNavigationActions final
     std::function<void(std::optional<Domain::TeacherId>)> deleteTeacher;
 };
 
+struct CoTeacherNavigationRow final
+{
+    Domain::TeacherId teacherId;
+    QString label;
+
+    friend bool operator==(
+        const CoTeacherNavigationRow&,
+        const CoTeacherNavigationRow&
+        ) = default;
+};
+
+struct CoTeacherNavigationActions final
+{
+    std::function<bool(const Domain::TeacherId&)> openTeacherProfile;
+};
+
 class ApplicationShell final : public QMainWindow
 {
 public:
@@ -134,6 +150,12 @@ public:
     void setKoreanTeacherNavigationRows(
         std::vector<KoreanTeacherNavigationRow> rows
         );
+    void setCoTeacherNavigationActions(CoTeacherNavigationActions actions);
+    void setCoTeacherNavigationRows(std::vector<CoTeacherNavigationRow> rows);
+    void setTeacherNavigationRows(
+        std::vector<KoreanTeacherNavigationRow> koreanTeacherRows,
+        std::vector<CoTeacherNavigationRow> coTeacherRows
+        );
     void setDocumentCatalogProjection(
         Application::DocumentCatalogProjection projection
         );
@@ -157,6 +179,7 @@ public:
     void selectKoreanTeacherNavigationRow(
         const Domain::TeacherId& teacherId
         );
+    void selectCoTeacherNavigationRow(const Domain::TeacherId& teacherId);
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -216,8 +239,11 @@ private:
         m_documentCatalogSelectionHandler;
     std::function<void()> m_documentCatalogSelectionClearedHandler;
     std::vector<KoreanTeacherNavigationRow> m_koreanTeacherNavigationRows;
+    std::vector<CoTeacherNavigationRow> m_coTeacherNavigationRows;
     std::optional<Domain::TeacherId> m_lastOpenedKoreanTeacherId;
+    std::optional<Domain::TeacherId> m_lastOpenedCoTeacherId;
     KoreanTeacherNavigationActions m_koreanTeacherNavigationActions;
+    CoTeacherNavigationActions m_coTeacherNavigationActions;
     QHash<QString, QIcon> m_navigationIcons;
     std::vector<Resources::ScopedResource<QImage>> m_navigationIconImages;
     NavigationGuard m_navigationGuard;

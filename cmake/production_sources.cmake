@@ -188,6 +188,7 @@ set(CLASSMNGR_NEXT_WORKSPACE_SOURCES
     "src/next/platform/workspace_store_creation_lifecycle_adapter.h"
     "src/next/platform/workspace_store_initial_setup_teacher_entry_port.h"
     "src/next/platform/workspace_store_teacher_directory_port.h"
+    "src/next/platform/workspace_store_class_teacher_assignments_read_port.h"
     "src/next/platform/workspace_store_native_english_teacher_directory_port.h"
     "src/next/platform/workspace_store_gs_team_directory_port.h"
     "src/next/platform/workspace_store_teacher_profile_port.h"
@@ -768,6 +769,7 @@ set(CLASSMNGR_NEXT_MAIN_SOURCE "src/next/main.cpp")
 set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/bootstrap/application_bootstrap.cpp"
     "src/next/bootstrap/application_bootstrap.h"
+    "src/next/application/assigned_teacher_directory_projection.h"
     "src/next/bootstrap/campus_edit_operation_actions.h"
     "src/next/bootstrap/campus_edit_capability_arguments.h"
     "src/next/bootstrap/startup_diagnostics_sink.h"

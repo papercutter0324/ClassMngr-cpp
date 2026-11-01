@@ -1,0 +1,28 @@
+{
+  "taskId": "phase7_batch6_c56_dynamic_coteacher_implementation_01",
+  "capturedOn": "2026-11-01",
+  "captureTarget": "ClassMngrNextBootstrapTests",
+  "captureTestPattern": "ClassMngrNextCoTeacherSidebarVisualCapture_(english-light|korean-dark)",
+  "scenario": "Production ApplicationBootstrap with a temporary workspace fixture and the Co-Teachers navigation group expanded",
+  "environment": {
+    "qtPlatform": "offscreen",
+    "scaleFactor": 1,
+    "imageSize": "1024x720"
+  },
+  "captures": [
+    {
+      "file": "english-light.png",
+      "locale": "en_US",
+      "theme": "light",
+      "bytes": 159656,
+      "sha256": "c0667de0ed2b12a104dfd3b22ab13b8ecdfcbdd100a06ba39927931f46c2388d"
+    },
+    {
+      "file": "korean-dark.png",
+      "locale": "ko_KR",
+      "theme": "dark",
+      "bytes": 121604,
+      "sha256": "e04c6720601ae8b41e7507c02e39e04d717a4ad5feafe303daedfbd15ac1e806"
+    }
+  ]
+}

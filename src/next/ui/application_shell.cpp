@@ -252,6 +252,27 @@ private:
     Domain::TeacherId m_teacherId;
 };
 
+class CoTeacherNavigationItem final : public QTreeWidgetItem
+{
+public:
+    CoTeacherNavigationItem(
+        QString label,
+        Domain::TeacherId teacherId
+        )
+        : QTreeWidgetItem(QStringList{std::move(label)})
+        , m_teacherId(std::move(teacherId))
+    {
+    }
+
+    [[nodiscard]] const Domain::TeacherId& teacherId() const noexcept
+    {
+        return m_teacherId;
+    }
+
+private:
+    Domain::TeacherId m_teacherId;
+};
+
 [[nodiscard]] NavigationModelError shellError(
     const NavigationModelErrorCode code,
     const QString& message
@@ -541,13 +562,34 @@ ApplicationShell::ApplicationShell(
                 dynamic_cast<KoreanTeacherNavigationItem*>(current))
         {
             const auto previousTeacherId = m_lastOpenedKoreanTeacherId;
+            const auto previousCoTeacherId = m_lastOpenedCoTeacherId;
             m_lastOpenedKoreanTeacherId = teacherItem->teacherId();
+            m_lastOpenedCoTeacherId.reset();
             if (!m_koreanTeacherNavigationActions.openTeacherProfile
                 || !m_koreanTeacherNavigationActions.openTeacherProfile(
                     teacherItem->teacherId()
                     ))
             {
                 m_lastOpenedKoreanTeacherId = previousTeacherId;
+                m_lastOpenedCoTeacherId = previousCoTeacherId;
+                synchronizeNavigationSelection();
+            }
+            return;
+        }
+        if (auto* const teacherItem =
+                dynamic_cast<CoTeacherNavigationItem*>(current))
+        {
+            const auto previousTeacherId = m_lastOpenedKoreanTeacherId;
+            const auto previousCoTeacherId = m_lastOpenedCoTeacherId;
+            m_lastOpenedKoreanTeacherId.reset();
+            m_lastOpenedCoTeacherId = teacherItem->teacherId();
+            if (!m_coTeacherNavigationActions.openTeacherProfile
+                || !m_coTeacherNavigationActions.openTeacherProfile(
+                    teacherItem->teacherId()
+                    ))
+            {
+                m_lastOpenedKoreanTeacherId = previousTeacherId;
+                m_lastOpenedCoTeacherId = previousCoTeacherId;
                 synchronizeNavigationSelection();
             }
             return;
@@ -931,6 +973,78 @@ void ApplicationShell::setKoreanTeacherNavigationRows(
     rebuildNavigationTree();
 }
 
+void ApplicationShell::setCoTeacherNavigationActions(
+    CoTeacherNavigationActions actions
+    )
+{
+    m_coTeacherNavigationActions = std::move(actions);
+}
+
+void ApplicationShell::setCoTeacherNavigationRows(
+    std::vector<CoTeacherNavigationRow> rows
+    )
+{
+    if (m_coTeacherNavigationRows == rows)
+    {
+        return;
+    }
+    m_coTeacherNavigationRows = std::move(rows);
+    if (m_lastOpenedCoTeacherId
+        && std::none_of(
+            m_coTeacherNavigationRows.begin(),
+            m_coTeacherNavigationRows.end(),
+            [this](const CoTeacherNavigationRow& row) {
+                return row.teacherId == *m_lastOpenedCoTeacherId;
+            }
+            ))
+    {
+        m_lastOpenedCoTeacherId.reset();
+    }
+    rebuildNavigationTree();
+}
+
+void ApplicationShell::setTeacherNavigationRows(
+    std::vector<KoreanTeacherNavigationRow> koreanTeacherRows,
+    std::vector<CoTeacherNavigationRow> coTeacherRows
+    )
+{
+    if (m_koreanTeacherNavigationRows == koreanTeacherRows
+        && m_coTeacherNavigationRows == coTeacherRows)
+    {
+        return;
+    }
+    m_koreanTeacherNavigationRows = std::move(koreanTeacherRows);
+    m_coTeacherNavigationRows = std::move(coTeacherRows);
+
+    const auto containsTeacher = [](const auto& rows,
+                                    const Domain::TeacherId& teacherId) {
+        return std::any_of(
+            rows.begin(),
+            rows.end(),
+            [&teacherId](const auto& row) {
+                return row.teacherId == teacherId;
+            }
+            );
+    };
+    if (m_lastOpenedKoreanTeacherId
+        && !containsTeacher(
+            m_koreanTeacherNavigationRows,
+            *m_lastOpenedKoreanTeacherId
+            ))
+    {
+        m_lastOpenedKoreanTeacherId.reset();
+    }
+    if (m_lastOpenedCoTeacherId
+        && !containsTeacher(
+            m_coTeacherNavigationRows,
+            *m_lastOpenedCoTeacherId
+            ))
+    {
+        m_lastOpenedCoTeacherId.reset();
+    }
+    rebuildNavigationTree();
+}
+
 void ApplicationShell::setDocumentCatalogProjection(
     Application::DocumentCatalogProjection projection
     )
@@ -1025,6 +1139,16 @@ void ApplicationShell::selectKoreanTeacherNavigationRow(
     )
 {
     m_lastOpenedKoreanTeacherId = teacherId;
+    m_lastOpenedCoTeacherId.reset();
+    synchronizeNavigationSelection();
+}
+
+void ApplicationShell::selectCoTeacherNavigationRow(
+    const Domain::TeacherId& teacherId
+    )
+{
+    m_lastOpenedKoreanTeacherId.reset();
+    m_lastOpenedCoTeacherId = teacherId;
     synchronizeNavigationSelection();
 }
 
@@ -1204,6 +1328,23 @@ void ApplicationShell::rebuildNavigationTree()
                         item->addChild(teacherItem);
                     }
                 }
+                else if (node.id == QStringLiteral("co_teachers"))
+                {
+                    for (const CoTeacherNavigationRow& teacher :
+                         m_coTeacherNavigationRows)
+                    {
+                        auto* const teacherItem = new CoTeacherNavigationItem(
+                            teacher.label,
+                            teacher.teacherId
+                            );
+                        teacherItem->setData(
+                            0,
+                            TeacherIdRole,
+                            QString::fromStdString(teacher.teacherId.value())
+                            );
+                        item->addChild(teacherItem);
+                    }
+                }
             }
         };
 
@@ -1276,6 +1417,22 @@ void ApplicationShell::synchronizeNavigationSelection()
             return;
         }
         ++iterator;
+    }
+    if (m_lastOpenedCoTeacherId)
+    {
+        QTreeWidgetItemIterator teacherIterator(m_navigationTree);
+        while (*teacherIterator)
+        {
+            auto* const teacherItem =
+                dynamic_cast<CoTeacherNavigationItem*>(*teacherIterator);
+            if (teacherItem
+                && teacherItem->teacherId() == *m_lastOpenedCoTeacherId)
+            {
+                m_navigationTree->setCurrentItem(teacherItem);
+                return;
+            }
+            ++teacherIterator;
+        }
     }
     if (m_lastOpenedKoreanTeacherId)
     {

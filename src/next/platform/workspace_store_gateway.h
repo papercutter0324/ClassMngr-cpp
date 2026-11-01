@@ -13,6 +13,7 @@
 #include "next/application/teacher_create.h"
 #include "next/application/teacher_delete.h"
 #include "next/application/teacher_directory_read_port.h"
+#include "next/application/class_teacher_assignments_read_port.h"
 #include "next/application/korean_teacher_birthday_directory_read_port.h"
 #include "next/application/native_english_teacher_birthday_directory_read_port.h"
 #include "next/application/gs_team_birthday_directory_read_port.h"
@@ -47,6 +48,7 @@ namespace ClassMngr::Next::Platform
 // adapter borrows the single WorkspaceStore owned by the composition root.
 class WorkspaceStoreGateway final
     : public Application::WorkspaceGateway,
+      public Application::ClassTeacherAssignmentsReadPort,
       public Application::KoreanTeacherBirthdayDirectoryReadPort,
       public Application::NativeEnglishTeacherBirthdayDirectoryReadPort,
       public Application::GsTeamBirthdayDirectoryReadPort
@@ -113,6 +115,8 @@ public:
         ) const;
     [[nodiscard]] Application::TeacherDirectoryReadResult
     readTeacherDirectory() const;
+    [[nodiscard]] Application::ClassTeacherAssignmentsReadResult
+    readClassTeacherAssignments() const override;
     [[nodiscard]] Application::TeacherCreateResult createTeacher(
         const Application::TeacherCreateRequest& request
         ) const;

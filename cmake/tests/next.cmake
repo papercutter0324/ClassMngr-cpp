@@ -445,6 +445,7 @@ target_compile_definitions(ClassMngrNextBootstrapTests
         CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
         CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
         CLASSMNGR_NEXT_USEFUL_LINKS_CAPTURE_DIRECTORY="${CMAKE_CURRENT_BINARY_DIR}/useful-links-visual-captures"
+        CLASSMNGR_NEXT_COTEACHERS_CAPTURE_DIRECTORY="${CMAKE_CURRENT_BINARY_DIR}/co-teachers-visual-captures"
 )
 target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
@@ -506,6 +507,16 @@ add_test(
     COMMAND ClassMngrNextBootstrapTests
         shellAppearanceUsesSelectedThemeAndLanguage:korean-light
 )
+add_test(
+    NAME ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle
+    COMMAND ClassMngrNextBootstrapTests
+        coTeacherSidebarShowsUniqueAssignmentsAndTracksWorkspaceLifecycle
+)
+add_test(
+    NAME ClassMngrNextCoTeacherProjection
+    COMMAND ClassMngrNextBootstrapTests
+        coTeacherProjectionKeepsDirectoryOrderAndDropsInvalidReferences
+)
 foreach(_useful_links_capture IN ITEMS
         "english-light;english-light"
         "english-dark;english-dark"
@@ -524,10 +535,28 @@ foreach(_useful_links_capture IN ITEMS
             ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
     )
 endforeach()
+foreach(_co_teacher_capture IN ITEMS
+        "english-light;english-light"
+        "korean-dark;korean-dark")
+    list(GET _co_teacher_capture 0 _capture_test_name)
+    list(GET _co_teacher_capture 1 _capture_data_row)
+    add_test(
+        NAME "ClassMngrNextCoTeacherSidebarVisualCapture_${_capture_test_name}"
+        COMMAND ClassMngrNextBootstrapTests
+            "coTeacherSidebarVisualCapture:${_capture_data_row}"
+    )
+    set_tests_properties(
+        "ClassMngrNextCoTeacherSidebarVisualCapture_${_capture_test_name}"
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+    )
+endforeach()
 set_tests_properties(
     ClassMngrNextUsefulLinksSelectionBehavior
     ClassMngrNextUsefulLinksEnglishLabelProjection
     ClassMngrNextUsefulLinksKoreanLabelProjection
+    ClassMngrNextCoTeacherProjection
+    ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )

@@ -14,6 +14,7 @@
 #include "next/application/custom_color_palette_preferences.h"
 #include "next/application/personal_details_save.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
+#include "next/application/class_teacher_assignments_read_port.h"
 #include "next/application/interrupted_workspace_recovery_flow.h"
 #include "next/application/teacher_import_use_case.h"
 #include "next/application/teacher_create.h"
@@ -72,6 +73,11 @@ public:
             afterStartupWorkspaceOpenedForTesting;
         std::function<std::unique_ptr<Application::WorkspaceGateway>()>
             workspaceGatewayFactory;
+        // Allows focused navigation tests to observe reads or inject a typed
+        // assignment-read failure while retaining the active Gateway port.
+        std::function<Application::ClassTeacherAssignmentsReadResult(
+            const Application::ClassTeacherAssignmentsReadPort&)>
+            classTeacherAssignmentsReadForNavigationForTesting;
         std::function<std::unique_ptr<Application::RecentWorkspaceHistoryPort>()>
             recentWorkspaceHistoryPortFactory;
         // Keeps the visible Initial Setup save action testable without
@@ -182,7 +188,8 @@ private:
         );
     [[nodiscard]] bool openTeacherProfileImpl(
         const Domain::TeacherId& teacherId,
-        bool notifyReadFailure
+        bool notifyReadFailure,
+        bool selectedFromCoTeacherRow = false
         );
     void createKoreanTeacherFromSidebar();
     void deleteKoreanTeacherFromSidebar(
@@ -190,7 +197,7 @@ private:
         );
     [[nodiscard]] Ui::KoreanTeacherDirectoryActionPorts
     koreanTeacherDirectoryActionPorts();
-    [[nodiscard]] bool refreshKoreanTeacherNavigationRows(
+    [[nodiscard]] bool refreshTeacherNavigationRows(
         bool notifyFailure = true
         );
     void clearRecentWorkspaceHistory();

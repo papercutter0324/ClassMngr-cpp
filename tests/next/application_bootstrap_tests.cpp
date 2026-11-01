@@ -1,5 +1,6 @@
 #include "next/application/shutdown_coordinator.h"
 #include "next/application/startup_coordinator.h"
+#include "next/application/assigned_teacher_directory_projection.h"
 #include "next/application/file_dialog_port.h"
 #include "next/application/language_preferences_port.h"
 #include "next/application/theme_preferences_port.h"
@@ -158,6 +159,8 @@ private slots:
     void shellAppearanceUsesSelectedThemeAndLanguage();
     void usefulLinksVisualCapture_data();
     void usefulLinksVisualCapture();
+    void coTeacherSidebarVisualCapture_data();
+    void coTeacherSidebarVisualCapture();
     void initialSetupPersonalDetailsAppearance_data();
     void initialSetupPersonalDetailsAppearance();
     void systemDefaultUsesFirstSupportedLocaleFromOrderedList();
@@ -202,6 +205,8 @@ private slots:
     void recentRestoreRemembersDirectoryWhenHistorySaveFails();
     void clearRecentHistoryPreservesClosedAndOpenWorkspaceState();
     void teacherProfileUsesTypedOpenAndStaticPageHistory();
+    void coTeacherProjectionKeepsDirectoryOrderAndDropsInvalidReferences();
+    void coTeacherSidebarShowsUniqueAssignmentsAndTracksWorkspaceLifecycle();
     void saveAsActionUsesNextGatewayAndPreservesActiveSessionIdentity();
     void exportActionUsesNextGatewayWithoutResolvingDirtyPage();
     void saveAndCloseProfileActionsUseNextGateway();
@@ -1277,6 +1282,24 @@ QTreeWidgetItem* findDocumentCatalogItem(
     return nullptr;
 }
 
+QTreeWidgetItem* findNavigationItem(QTreeWidget* tree, const QString& nodeId)
+{
+    if (!tree)
+    {
+        return nullptr;
+    }
+    QTreeWidgetItemIterator iterator(tree);
+    while (*iterator)
+    {
+        if ((*iterator)->data(0, Qt::UserRole + 2).toString() == nodeId)
+        {
+            return *iterator;
+        }
+        ++iterator;
+    }
+    return nullptr;
+}
+
 class StartupPreferencesGuard final
 {
 public:
@@ -1790,6 +1813,34 @@ bool createWorkspaceWithFixture(
         store.close();
     }
     return executeWorkspaceFixture(profilePath, fixtureName, errorMessage);
+}
+
+bool configureCoTeacherSidebarWorkspace(const QString& profilePath)
+{
+    return executeWorkspaceSql(
+               profilePath,
+               QStringLiteral("UPDATE class_info SET teacher_id=NULL")
+               )
+        && executeWorkspaceSql(
+               profilePath,
+               QStringLiteral("UPDATE class_info SET teacher_id=3 WHERE class_id=1")
+               )
+        && executeWorkspaceSql(
+               profilePath,
+               QStringLiteral("UPDATE class_info SET teacher_id=1 WHERE class_id IN (2, 3)")
+               )
+        && executeWorkspaceSql(
+               profilePath,
+               QStringLiteral("INSERT INTO classes (id, name) VALUES (9, 'Testing Only')")
+               )
+        && executeWorkspaceSql(
+               profilePath,
+               QStringLiteral("INSERT INTO class_info (class_id, teacher_id) VALUES (9, 4)")
+               )
+        && executeWorkspaceSql(
+               profilePath,
+               QStringLiteral("INSERT INTO testing_classes (class_id, room) VALUES (9, 'Testing')")
+               );
 }
 
 struct RepresentativeProfileRecords final
@@ -4296,6 +4347,103 @@ void ApplicationBootstrapTests::usefulLinksVisualCapture()
 
     const QString outputDirectory = QString::fromUtf8(
         CLASSMNGR_NEXT_USEFUL_LINKS_CAPTURE_DIRECTORY);
+    QVERIFY(QDir().mkpath(outputDirectory));
+    const QString capturePath = QDir(outputDirectory).filePath(captureName);
+    const QImage capture = fixedViewportCapture(*shell);
+    QVERIFY2(capture.save(capturePath, "PNG"),
+        qPrintable(QStringLiteral("could not capture %1").arg(capturePath)));
+    QVERIFY(QFileInfo(capturePath).size() > 0);
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::coTeacherSidebarVisualCapture_data()
+{
+    QTest::addColumn<QString>("locale");
+    QTest::addColumn<int>("storedLanguage");
+    QTest::addColumn<QString>("theme");
+    QTest::addColumn<int>("storedTheme");
+    QTest::addColumn<QString>("captureName");
+    QTest::newRow("english-light") << QStringLiteral("en_US") << 1
+        << QStringLiteral("light") << static_cast<int>(Application::Theme::Light)
+        << QStringLiteral("english-light.png");
+    QTest::newRow("korean-dark") << QStringLiteral("ko_KR") << 5
+        << QStringLiteral("dark") << static_cast<int>(Application::Theme::Dark)
+        << QStringLiteral("korean-dark.png");
+}
+
+void ApplicationBootstrapTests::coTeacherSidebarVisualCapture()
+{
+    QFETCH(QString, locale);
+    QFETCH(int, storedLanguage);
+    QFETCH(QString, theme);
+    QFETCH(int, storedTheme);
+    QFETCH(QString, captureName);
+
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    GlobalPreferencesSettingsGuard globalPreferences;
+    StartupPreferencesGuard preferences(storedLanguage, storedTheme, 0);
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(locale, theme));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString profilePath = temporaryDirectory.filePath(
+        QStringLiteral("co-teacher-sidebar-capture.tps"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 profilePath,
+                 QStringLiteral("representative_startup.sql"),
+                 &fixtureError
+                 ), qPrintable(fixtureError));
+    QVERIFY(configureCoTeacherSidebarWorkspace(profilePath));
+
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("co-teacher-sidebar-capture"), profilePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        QStringList{QStringLiteral("en-US")},
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    shell->resize(1024, 720);
+    QTreeWidget* const tree = shell->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree"));
+    QVERIFY(tree);
+    QTreeWidgetItem* const coTeachers = findNavigationItem(
+        tree, QStringLiteral("co_teachers"));
+    QVERIFY(coTeachers);
+    QCOMPARE(coTeachers->childCount(), 2);
+    QCOMPARE(coTeachers->child(0)->text(0), QStringLiteral("Dana"));
+    QCOMPARE(coTeachers->child(1)->text(0), QStringLiteral("Minseo"));
+    coTeachers->setExpanded(true);
+    tree->setCurrentItem(nullptr);
+    tree->scrollToItem(coTeachers, QAbstractItemView::PositionAtTop);
+    QCoreApplication::processEvents();
+    for (int index = 0; index < coTeachers->childCount(); ++index)
+    {
+        const QRect row = tree->visualItemRect(coTeachers->child(index));
+        QVERIFY(!row.isEmpty());
+        QVERIFY(tree->viewport()->rect().intersects(row));
+    }
+
+    const QString outputDirectory = QString::fromUtf8(
+        CLASSMNGR_NEXT_COTEACHERS_CAPTURE_DIRECTORY);
     QVERIFY(QDir().mkpath(outputDirectory));
     const QString capturePath = QDir(outputDirectory).filePath(captureName);
     const QImage capture = fixedViewportCapture(*shell);
@@ -12771,6 +12919,363 @@ void ApplicationBootstrapTests::teacherProfileUsesTypedOpenAndStaticPageHistory(
     QCOMPARE(englishName->text(), QStringLiteral("Locale draft"));
     QVERIFY(page->hasUnsavedChanges());
 
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+coTeacherProjectionKeepsDirectoryOrderAndDropsInvalidReferences()
+{
+    using Application::ClassTeacherAssignmentReadRow;
+    using Application::ClassTeacherAssignmentsReadSnapshot;
+    using Application::TeacherDirectoryEntry;
+    using Application::TeacherDirectoryReadSnapshot;
+
+    const auto teacherId = [](const char* value) {
+        return Domain::TeacherId::fromString(value).value();
+    };
+    const auto teacher = [&teacherId](const char* id, const char16_t* preferredName) {
+        return TeacherDirectoryEntry{
+            .teacherId = teacherId(id),
+            .teacherKr = u"Korean",
+            .teacherEn = u"English",
+            .preferredRomanization = u"Romanized",
+            .preferredName = preferredName
+        };
+    };
+    const TeacherDirectoryReadSnapshot directory{
+        .teachers = {
+            teacher("3", u"Third"),
+            teacher("1", u"First"),
+            teacher("2", u"Second"),
+            teacher("1", u"Duplicate first"),
+            teacher("4", u"Unassigned")
+        }
+    };
+    const ClassTeacherAssignmentsReadSnapshot assignments{
+        .assignments = {
+            ClassTeacherAssignmentReadRow{.teacherId = teacherId("2")},
+            ClassTeacherAssignmentReadRow{.teacherId = teacherId("3")},
+            ClassTeacherAssignmentReadRow{.teacherId = teacherId("3")},
+            ClassTeacherAssignmentReadRow{.teacherId = teacherId("999")},
+            ClassTeacherAssignmentReadRow{.teacherId = std::nullopt},
+            ClassTeacherAssignmentReadRow{.teacherId = teacherId("1")}
+        }
+    };
+
+    const std::vector<TeacherDirectoryEntry> projected =
+        Application::assignedTeacherDirectoryEntries(directory, assignments);
+
+    QCOMPARE(projected.size(), std::size_t(3));
+    QCOMPARE(projected[0].teacherId.value(), std::string("3"));
+    QCOMPARE(projected[1].teacherId.value(), std::string("1"));
+    QCOMPARE(projected[2].teacherId.value(), std::string("2"));
+    QCOMPARE(projected[1].preferredName, std::u16string(u"First"));
+}
+
+void ApplicationBootstrapTests::
+coTeacherSidebarShowsUniqueAssignmentsAndTracksWorkspaceLifecycle()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupSaveModeGuard saveMode(static_cast<int>(Application::SaveMode::Manual));
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")));
+    QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
+    QVERIFY(resources.addResource(QStringLiteral("assets/icons/keyboard_light.svg")));
+    QVERIFY(resources.addResource(QStringLiteral("assets/icons/keyboard_dark.svg")));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString firstProfilePath = temporaryDirectory.filePath(
+        QStringLiteral("co-teacher-first.tps"));
+    const QString emptyProfilePath = temporaryDirectory.filePath(
+        QStringLiteral("co-teacher-empty.tps"));
+    const QString repeatedEmptyProfilePath = temporaryDirectory.filePath(
+        QStringLiteral("co-teacher-repeated-empty.tps"));
+    QString fixtureError;
+    for (const QString& profilePath : {
+             firstProfilePath, emptyProfilePath, repeatedEmptyProfilePath})
+    {
+        QVERIFY2(createWorkspaceWithFixture(
+                     profilePath,
+                     QStringLiteral("representative_startup.sql"),
+                     &fixtureError
+                     ), qPrintable(fixtureError));
+    }
+    QVERIFY(configureCoTeacherSidebarWorkspace(firstProfilePath));
+    QVERIFY(executeWorkspaceSql(
+        emptyProfilePath,
+        QStringLiteral("UPDATE class_info SET teacher_id=NULL")
+        ));
+    QVERIFY(executeWorkspaceSql(
+        repeatedEmptyProfilePath,
+        QStringLiteral("UPDATE class_info SET teacher_id=NULL")
+        ));
+
+    auto openFileDialogProbe = std::make_shared<InitialSetupFileDialogProbe>();
+    openFileDialogProbe->openPath = Application::FileDialogPath(
+        emptyProfilePath.toUtf8().toStdString());
+    auto recentHistoryProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    recentHistoryProbe->mutateOnSave = true;
+    auto promptProbe = std::make_shared<UnsavedChangesPromptProbe>();
+    std::size_t assignmentReadCount = 0;
+    bool failNextAssignmentRead = false;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("co-teacher-sidebar-test"), firstProfilePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    seams.classTeacherAssignmentsReadForNavigationForTesting =
+        [&assignmentReadCount, &failNextAssignmentRead](
+            const Application::ClassTeacherAssignmentsReadPort& reader
+            ) {
+            ++assignmentReadCount;
+            if (failNextAssignmentRead)
+            {
+                failNextAssignmentRead = false;
+                return Application::ClassTeacherAssignmentsReadResult::failure({
+                    .code = Domain::ErrorCode::Technical,
+                    .message = "injected co-teacher assignment read failure",
+                    .recoverable = false
+                });
+            }
+            return reader.readClassTeacherAssignments();
+        };
+    seams.openProfileFileDialogPortFactory = [openFileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            openFileDialogProbe);
+    };
+    seams.openProfileRecentWorkspaceHistoryPortFactory = [recentHistoryProbe] {
+        return std::make_unique<RecordingRecentWorkspaceHistoryPort>(
+            recentHistoryProbe);
+    };
+    seams.workspaceLifecycleUserPromptPortFactory = [promptProbe] {
+        return std::make_unique<RecordingWorkspaceLifecycleUserPrompt>(
+            promptProbe);
+    };
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    QTreeWidget* const tree = shell->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree"));
+    QVERIFY(tree);
+    const auto findTeacherRow = [tree](QTreeWidgetItem* group,
+                                       const QString& teacherId) {
+        if (!group)
+        {
+            return static_cast<QTreeWidgetItem*>(nullptr);
+        }
+        for (int index = 0; index < group->childCount(); ++index)
+        {
+            if (group->child(index)->data(0, Qt::UserRole + 3).toString()
+                == teacherId)
+            {
+                return group->child(index);
+            }
+        }
+        return static_cast<QTreeWidgetItem*>(nullptr);
+    };
+    const auto coTeacherIds = [tree] {
+        QStringList ids;
+        QTreeWidgetItem* const group = findNavigationItem(
+            tree, QStringLiteral("co_teachers"));
+        if (group)
+        {
+            for (int index = 0; index < group->childCount(); ++index)
+            {
+                ids.append(group->child(index)->data(
+                    0, Qt::UserRole + 3).toString());
+            }
+        }
+        return ids;
+    };
+
+    QTreeWidgetItem* const coTeachers = findNavigationItem(
+        tree, QStringLiteral("co_teachers"));
+    QVERIFY(coTeachers);
+    QCOMPARE(coTeachers->childCount(), 2);
+    QCOMPARE(coTeacherIds(), QStringList({QStringLiteral("1"), QStringLiteral("3")}));
+    QCOMPARE(coTeachers->child(0)->text(0), QStringLiteral("Dana"));
+    QCOMPARE(coTeachers->child(1)->text(0), QStringLiteral("Minseo"));
+    QTreeWidgetItem* const campusStaff = findNavigationItem(
+        tree, QStringLiteral("campus_staff"));
+    QVERIFY(campusStaff);
+    QTreeWidgetItem* const koreanTeachers = findNavigationItem(
+        tree, QStringLiteral("teachers_all_korean"));
+    QVERIFY(koreanTeachers);
+    QCOMPARE(koreanTeachers->childCount(), 4);
+
+    coTeachers->setExpanded(true);
+    tree->scrollToItem(coTeachers, QAbstractItemView::PositionAtTop);
+    QCoreApplication::processEvents();
+    QTreeWidgetItem* const thirdTeacherRow = findTeacherRow(
+        coTeachers, QStringLiteral("3"));
+    QTreeWidgetItem* const firstTeacherRow = findTeacherRow(
+        coTeachers, QStringLiteral("1"));
+    QVERIFY(thirdTeacherRow && firstTeacherRow);
+    const QPoint coTeacherPosition = tree->visualItemRect(
+        thirdTeacherRow).center();
+    QContextMenuEvent coTeacherContextEvent(
+        QContextMenuEvent::Mouse,
+        coTeacherPosition,
+        tree->viewport()->mapToGlobal(coTeacherPosition)
+        );
+    QApplication::sendEvent(tree->viewport(), &coTeacherContextEvent);
+    QVERIFY(!QApplication::activePopupWidget());
+
+    tree->setCurrentItem(thirdTeacherRow);
+    auto* profilePage = dynamic_cast<Ui::TeacherProfilePage*>(
+        shell->pageHost().pageInstance(QStringLiteral("teacher_profile")));
+    QVERIFY(profilePage);
+    QCOMPARE(profilePage->selectedTeacherId(),
+        std::optional{Domain::TeacherId::fromString("3").value()});
+    QCOMPARE(profilePage->findChild<QLineEdit*>(QStringLiteral("teacherEnEdit"))
+                 ->text(),
+        QStringLiteral("Minseo Park"));
+
+    QLineEdit* const profileEnglishName = profilePage->findChild<QLineEdit*>(
+        QStringLiteral("teacherEnEdit"));
+    QVERIFY(profileEnglishName);
+    profileEnglishName->setText(QStringLiteral("Co-Teacher dirty guard draft"));
+    QVERIFY(profilePage->hasUnsavedChanges());
+    promptProbe->action = Application::UnsavedChangesAction::Cancel;
+    const std::size_t promptsBeforeCancel = promptProbe->requests.size();
+    tree->setCurrentItem(firstTeacherRow);
+    QCOMPARE(promptProbe->requests.size(), promptsBeforeCancel + std::size_t(1));
+    QCOMPARE(profilePage->selectedTeacherId(),
+        std::optional{Domain::TeacherId::fromString("3").value()});
+    QCOMPARE(tree->currentItem()->data(0, Qt::UserRole + 3).toString(),
+        QStringLiteral("3"));
+    QVERIFY(profilePage->discardChanges());
+
+    QVERIFY(shell->pageHost().activatePage(QStringLiteral("classes")));
+    auto* const classes = dynamic_cast<Ui::ClassesNavigatorPage*>(
+        shell->pageHost().pageInstance(QStringLiteral("classes")));
+    QVERIFY(classes);
+    const Domain::ClassId fifthClass =
+        Domain::ClassId::fromString("5").value();
+    const QModelIndex fifthClassIndex =
+        classes->model()->indexForClassId(fifthClass);
+    QVERIFY(fifthClassIndex.isValid());
+    classes->classList()->setCurrentIndex(fifthClassIndex);
+    Ui::SelectedClassEditor* const editor = classes->selectedClassEditor();
+    QVERIFY(editor && editor->isLoaded());
+    QCOMPARE(editor->classId(), std::optional{fifthClass});
+    editor->sections()->setCurrentIndex(1);
+    QComboBox* const teacherChoice = editor->coTeacherChoice();
+    QVERIFY(teacherChoice);
+    QPushButton* const saveCoTeacher = editor->findChild<QPushButton*>(
+        QStringLiteral("classEditorSaveCoTeacher"));
+    QVERIFY(saveCoTeacher);
+    const int jordanIndex = teacherChoice->findData(QStringLiteral("2"));
+    QVERIFY(jordanIndex >= 0);
+    teacherChoice->setCurrentIndex(jordanIndex);
+    QVERIFY(editor->hasUnsavedChanges());
+    QVERIFY(executeWorkspaceSql(
+        firstProfilePath,
+        QStringLiteral(
+            "CREATE TRIGGER reject_co_teacher_sidebar_save "
+            "BEFORE UPDATE OF teacher_id ON class_info WHEN NEW.class_id=5 "
+            "BEGIN SELECT RAISE(ABORT, 'forced co-teacher assignment failure'); END"
+            )
+        ));
+    const std::size_t readsBeforeFailedSave = assignmentReadCount;
+    saveCoTeacher->click();
+    QVERIFY(editor->hasUnsavedChanges());
+    QCOMPARE(assignmentReadCount, readsBeforeFailedSave);
+    QCOMPARE(coTeacherIds(), QStringList({QStringLiteral("1"), QStringLiteral("3")}));
+    QVERIFY(executeWorkspaceSql(
+        firstProfilePath,
+        QStringLiteral("DROP TRIGGER reject_co_teacher_sidebar_save")
+        ));
+
+    saveCoTeacher->click();
+    QVERIFY(!editor->hasUnsavedChanges());
+    QCOMPARE(coTeacherIds(), QStringList({
+        QStringLiteral("1"), QStringLiteral("2"), QStringLiteral("3")}));
+
+    const auto saveTeacherChoice = [&](const QString& teacherId) {
+        const int index = teacherChoice->findData(teacherId);
+        if (index < 0)
+        {
+            return false;
+        }
+        teacherChoice->setCurrentIndex(index);
+        saveCoTeacher->click();
+        return !editor->hasUnsavedChanges();
+    };
+    QVERIFY(saveTeacherChoice(QStringLiteral("4")));
+    QCOMPARE(coTeacherIds(), QStringList({
+        QStringLiteral("1"), QStringLiteral("4"), QStringLiteral("3")}));
+    QVERIFY(saveTeacherChoice(QStringLiteral("2")));
+    QCOMPARE(coTeacherIds(), QStringList({
+        QStringLiteral("1"), QStringLiteral("2"), QStringLiteral("3")}));
+    QVERIFY(saveTeacherChoice(QString{}));
+    QCOMPARE(coTeacherIds(), QStringList({QStringLiteral("1"), QStringLiteral("3")}));
+
+    QAction* const openAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextOpenTeacherProfile"));
+    QVERIFY(openAction);
+    const std::size_t readsBeforeFailedWorkspaceRefresh = assignmentReadCount;
+    failNextAssignmentRead = true;
+    openFileDialogProbe->openPath = Application::FileDialogPath(
+        emptyProfilePath.toUtf8().toStdString());
+    openAction->trigger();
+    QCOMPARE(openFileDialogProbe->openCount, 1);
+    QCOMPARE(assignmentReadCount, readsBeforeFailedWorkspaceRefresh + std::size_t(1));
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location().value(),
+        QFileInfo(emptyProfilePath).canonicalFilePath().toStdString());
+    QCOMPARE(coTeacherIds(), QStringList{});
+    QCOMPARE(findNavigationItem(tree, QStringLiteral("co_teachers"))->childCount(), 0);
+    QCOMPARE(findNavigationItem(tree, QStringLiteral("teachers_all_korean"))
+                 ->childCount(),
+        0);
+
+    openFileDialogProbe->openPath = Application::FileDialogPath(
+        firstProfilePath.toUtf8().toStdString());
+    openAction->trigger();
+    QCOMPARE(openFileDialogProbe->openCount, 2);
+    QCOMPARE(coTeacherIds(), QStringList({QStringLiteral("1"), QStringLiteral("3")}));
+
+    openFileDialogProbe->openPath = Application::FileDialogPath(
+        repeatedEmptyProfilePath.toUtf8().toStdString());
+    openAction->trigger();
+    QCOMPARE(openFileDialogProbe->openCount, 3);
+    QCOMPARE(bootstrap.workspaceStateSnapshot().session()->location().value(),
+        QFileInfo(repeatedEmptyProfilePath).canonicalFilePath().toStdString());
+    QCOMPARE(coTeacherIds(), QStringList{});
+    QCOMPARE(findNavigationItem(tree, QStringLiteral("co_teachers"))->childCount(), 0);
+    QCOMPARE(findNavigationItem(tree, QStringLiteral("teachers_all_korean"))
+                 ->childCount(),
+        4);
+
+    QAction* const closeAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextCloseWorkspace"));
+    QVERIFY(closeAction);
+    closeAction->trigger();
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
+    QVERIFY(!findNavigationItem(tree, QStringLiteral("co_teachers")));
+    QVERIFY(!findNavigationItem(tree, QStringLiteral("teachers_all_korean")));
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);
 }
