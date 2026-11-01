@@ -1201,6 +1201,82 @@ constexpr auto StartupPdfLifecycleCheckpointControlDirectoryEnvironmentVariable 
     "CLASSMNGR_STARTUP_PDF_LIFECYCLE_CHECKPOINT_CONTROL_DIR";
 constexpr int StartupPdfLifecycleCheckpointAckTimeoutMilliseconds = 30000;
 
+bool validateStartupPdfLifecycleOwnerMetrics(
+    const QJsonArray& scheduleWidgetMetrics,
+    QString* errorMessage
+    )
+{
+    const QStringList requiredOwners{
+        QStringLiteral("standalone-schedule"),
+        QStringLiteral("workspace-schedule"),
+        QStringLiteral("sub-prep-preview")
+    };
+    const QStringList requiredFields{
+        QStringLiteral("modelRowCount"),
+        QStringLiteral("modelCellCount"),
+        QStringLiteral("modelEntryCount"),
+        QStringLiteral("tableRowCount"),
+        QStringLiteral("tableColumnCount"),
+        QStringLiteral("tableItemCount"),
+        QStringLiteral("tableCellWidgetCount"),
+        QStringLiteral("visibleClassCount")
+    };
+
+    for (const QString& requiredOwner : requiredOwners)
+    {
+        int matchCount = 0;
+        QJsonObject matchedMetrics;
+        for (const QJsonValue& value : scheduleWidgetMetrics)
+        {
+            if (!value.isObject())
+            {
+                continue;
+            }
+
+            const QJsonObject ownerMetrics = value.toObject();
+            if (
+                ownerMetrics.value(QStringLiteral("ownerKey")).toString()
+                != requiredOwner
+                )
+            {
+                continue;
+            }
+
+            ++matchCount;
+            matchedMetrics = ownerMetrics;
+        }
+
+        if (matchCount != 1)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QStringLiteral(
+                    "Expected exactly one current metrics record for owner %1; found %2."
+                    )
+                    .arg(requiredOwner, QString::number(matchCount));
+            }
+            return false;
+        }
+
+        for (const QString& requiredField : requiredFields)
+        {
+            if (!matchedMetrics.value(requiredField).isDouble())
+            {
+                if (errorMessage)
+                {
+                    *errorMessage = QStringLiteral(
+                        "Current metrics record for owner %1 is missing numeric field %2."
+                        )
+                        .arg(requiredOwner, requiredField);
+                }
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 class StartupPdfLifecycleCheckpointHandshake
 {
 public:
@@ -1334,6 +1410,28 @@ public:
                 );
         }
 
+        const qint64 metricsSampleStartNanoseconds = m_timer.nsecsElapsed();
+        const QJsonArray scheduleWidgetMetrics =
+            StartupProfiler::currentScheduleWidgetMetricsSnapshot();
+        const qint64 metricsSampleEndNanoseconds = m_timer.nsecsElapsed();
+        if (m_nextCheckpointOrder == 3)
+        {
+            QString metricsError;
+            if (!validateStartupPdfLifecycleOwnerMetrics(
+                    scheduleWidgetMetrics,
+                    &metricsError
+                    ))
+            {
+                return fail(
+                    checkpoint,
+                    QStringLiteral(
+                        "after-view-destroyed owner metrics are incomplete: %1"
+                        )
+                        .arg(metricsError)
+                    );
+            }
+        }
+
         const QJsonObject marker{
             {QStringLiteral("schema"), QStringLiteral("classmngr-f563-checkpoint-v1")},
             {QStringLiteral("runId"), m_runId},
@@ -1359,7 +1457,23 @@ public:
                 QStringLiteral("readyPageRenderCallbackCount"),
                 readyPageRenderCallbackCount
             },
-            {QStringLiteral("guiProcessingDrained"), guiProcessingDrained}
+            {QStringLiteral("guiProcessingDrained"), guiProcessingDrained},
+            {
+                QStringLiteral("scheduleWidgetMetrics"),
+                scheduleWidgetMetrics
+            },
+            {
+                QStringLiteral(
+                    "scheduleWidgetMetricsSampleStartMonotonicTimestampNanoseconds"
+                    ),
+                static_cast<double>(metricsSampleStartNanoseconds)
+            },
+            {
+                QStringLiteral(
+                    "scheduleWidgetMetricsSampleEndMonotonicTimestampNanoseconds"
+                    ),
+                static_cast<double>(metricsSampleEndNanoseconds)
+            }
         };
         const QByteArray markerBytes =
             QJsonDocument(marker).toJson(QJsonDocument::Indented);
@@ -10750,6 +10864,63 @@ int main(int argc, char *argv[])
         }
         );
     MainWindow& window = *windowOwner;
+    if (startupPerformance.pdfLifecycleCheckpointHandshake)
+    {
+        StartupProfiler::setActiveScheduleWidgetMetricsProvider(
+            [&window]()
+            {
+                QList<StartupScheduleWidgetMetrics> metrics;
+                PageManager* const pages = window.pageManager();
+                if (!pages)
+                {
+                    return metrics;
+                }
+
+                const auto appendMetrics =
+                    [&metrics](
+                        const QString& ownerKey,
+                        const ScheduleWidgetRuntimeMetrics& source
+                        )
+                {
+                    StartupScheduleWidgetMetrics ownerMetrics;
+                    ownerMetrics.ownerKey = ownerKey;
+                    ownerMetrics.modelRowCount = source.modelRowCount;
+                    ownerMetrics.modelCellCount = source.modelCellCount;
+                    ownerMetrics.modelEntryCount = source.modelEntryCount;
+                    ownerMetrics.tableRowCount = source.tableRowCount;
+                    ownerMetrics.tableColumnCount = source.tableColumnCount;
+                    ownerMetrics.tableItemCount = source.tableItemCount;
+                    ownerMetrics.tableCellWidgetCount =
+                        source.tableCellWidgetCount;
+                    ownerMetrics.visibleClassCount = source.visibleClassCount;
+                    metrics.append(ownerMetrics);
+                };
+
+                if (SchedulePage* const page = pages->schedulePage())
+                {
+                    appendMetrics(
+                        QStringLiteral("standalone-schedule"),
+                        page->runtimeMetrics()
+                        );
+                }
+                if (SchedulePage* const page = pages->mySchedulePage())
+                {
+                    appendMetrics(
+                        QStringLiteral("workspace-schedule"),
+                        page->runtimeMetrics()
+                        );
+                }
+                if (SubPrepPage* const page = pages->subPrepPage())
+                {
+                    appendMetrics(
+                        QStringLiteral("sub-prep-preview"),
+                        page->scheduleWidgetRuntimeMetrics()
+                        );
+                }
+                return metrics;
+            }
+            );
+    }
 
     // =====================================================
     // Finish Startup
@@ -11064,6 +11235,23 @@ int main(int argc, char *argv[])
     // =====================================================
 
     const int eventLoopExitCode = app.exec();
+    if (
+        startupPerformance.pdfLifecycleCheckpointHandshake
+        && !startupPerformance.pdfLifecycleCheckpointHandshake->hasFailed()
+        && startupPerformance.pdfLifecycleCheckpointHandshake->nextCheckpointOrder()
+            == 3
+        )
+    {
+        PageManager* const pages = window.pageManager();
+        PdfViewerPage* const pdfViewerPage =
+            pages ? pages->pdfViewerPage() : nullptr;
+        if (pages && pdfViewerPage)
+        {
+            // Keep the schedule owners alive for the final live metrics sample.
+            pages->removeWidget(pdfViewerPage);
+            delete pdfViewerPage;
+        }
+    }
     windowOwner.reset();
     if (startupPerformance.pdfLifecycleCheckpointHandshake)
     {

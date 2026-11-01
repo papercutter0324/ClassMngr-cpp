@@ -16,6 +16,7 @@
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QPdfDocument>
+#include <QSaveFile>
 #include <QSettings>
 #include <QSqlDatabase>
 #include <QSqlError>
@@ -1901,37 +1902,65 @@ void StartupPerformanceTests
     ::scheduleWidgetMetricsAreSerializedPerOwnerAndOmitMissingOwners()
 {
     StartupProfiler profiler;
+    QList<StartupScheduleWidgetMetrics> providerScheduleWidgetMetrics;
+    StartupScheduleWidgetMetrics providerStandalone;
+    providerStandalone.ownerKey = QStringLiteral("standalone-schedule");
+    providerStandalone.modelRowCount = 8;
+    providerStandalone.modelCellCount = 48;
+    providerStandalone.modelEntryCount = 768;
+    providerStandalone.tableRowCount = 9;
+    providerStandalone.tableColumnCount = 6;
+    providerStandalone.tableItemCount = 55;
+    providerStandalone.tableCellWidgetCount = 49;
+    providerStandalone.visibleClassCount = 96;
+    providerScheduleWidgetMetrics.append(providerStandalone);
+
+    StartupScheduleWidgetMetrics providerWorkspace;
+    providerWorkspace.ownerKey = QStringLiteral("workspace-schedule");
+    providerWorkspace.modelRowCount = 3;
+    providerWorkspace.modelCellCount = 15;
+    providerWorkspace.modelEntryCount = 42;
+    providerWorkspace.tableRowCount = 4;
+    providerWorkspace.tableColumnCount = 5;
+    providerWorkspace.tableItemCount = 19;
+    providerWorkspace.tableCellWidgetCount = 17;
+    providerWorkspace.visibleClassCount = 12;
+    providerScheduleWidgetMetrics.append(providerWorkspace);
+
     profiler.setApplicationMetricsProvider(
-        []()
+        [providerScheduleWidgetMetrics]()
         {
             StartupApplicationMetrics metrics;
             metrics.scheduleTableCellWidgetCount = 49;
-
-            StartupScheduleWidgetMetrics standalone;
-            standalone.ownerKey = QStringLiteral("standalone-schedule");
-            standalone.modelRowCount = 8;
-            standalone.modelCellCount = 48;
-            standalone.modelEntryCount = 768;
-            standalone.tableRowCount = 9;
-            standalone.tableColumnCount = 6;
-            standalone.tableItemCount = 55;
-            standalone.tableCellWidgetCount = 49;
-            standalone.visibleClassCount = 96;
-            metrics.scheduleWidgetMetrics.append(standalone);
-
-            StartupScheduleWidgetMetrics workspace;
-            workspace.ownerKey = QStringLiteral("workspace-schedule");
-            workspace.modelRowCount = 3;
-            workspace.modelCellCount = 15;
-            workspace.modelEntryCount = 42;
-            workspace.tableRowCount = 4;
-            workspace.tableColumnCount = 5;
-            workspace.tableItemCount = 19;
-            workspace.tableCellWidgetCount = 17;
-            workspace.visibleClassCount = 12;
-            metrics.scheduleWidgetMetrics.append(workspace);
+            metrics.scheduleWidgetMetrics = providerScheduleWidgetMetrics;
             return metrics;
         }
+        );
+    profiler.setScheduleWidgetMetricsProvider(
+        [providerScheduleWidgetMetrics]()
+        {
+            return providerScheduleWidgetMetrics;
+        }
+        );
+
+    StartupProfiler::activate(&profiler);
+    const QJsonArray currentScheduleWidgetMetrics =
+        StartupProfiler::currentScheduleWidgetMetricsSnapshot();
+    StartupProfiler::activate(nullptr);
+    QCOMPARE(currentScheduleWidgetMetrics.size(), 2);
+    QCOMPARE(
+        currentScheduleWidgetMetrics.at(0)
+            .toObject()
+            .value(QStringLiteral("ownerKey"))
+            .toString(),
+        QStringLiteral("standalone-schedule")
+        );
+    QCOMPARE(
+        currentScheduleWidgetMetrics.at(1)
+            .toObject()
+            .value(QStringLiteral("ownerKey"))
+            .toString(),
+        QStringLiteral("workspace-schedule")
         );
 
     profiler.checkpoint(QStringLiteral("schedule-owner-snapshot"));
@@ -4572,6 +4601,37 @@ void StartupPerformanceTests
         );
     traceOutput.close();
 
+    const bool externallyControlledCheckpointHandshake =
+        qEnvironmentVariable(
+            "CLASSMNGR_STARTUP_PDF_LIFECYCLE_CHECKPOINT_HANDSHAKE"
+            ).trimmed() == QStringLiteral("1");
+    QString checkpointControlDirectory = qEnvironmentVariable(
+        "CLASSMNGR_STARTUP_PDF_LIFECYCLE_CHECKPOINT_CONTROL_DIR"
+        ).trimmed();
+    if (externallyControlledCheckpointHandshake)
+    {
+        QVERIFY2(
+            QDir(checkpointControlDirectory).exists(),
+            qPrintable(
+                QStringLiteral(
+                    "The external F563 controller directory does not exist: %1"
+                    )
+                    .arg(checkpointControlDirectory)
+                )
+            );
+    }
+    else
+    {
+        checkpointControlDirectory = QDir(outputRoot).filePath(
+            QStringLiteral("f563-checkpoints-%1")
+                .arg(QUuid::createUuid().toString(QUuid::WithoutBraces))
+            );
+        QVERIFY2(
+            QDir().mkpath(checkpointControlDirectory),
+            qPrintable(QStringLiteral("Unable to create %1").arg(checkpointControlDirectory))
+            );
+    }
+
     QProcess process;
     QProcessEnvironment environment =
         QProcessEnvironment::systemEnvironment();
@@ -4587,6 +4647,29 @@ void StartupPerformanceTests
         QStringLiteral("QT_QPA_PLATFORM"),
         QStringLiteral("offscreen")
         );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM"),
+        QStringLiteral("without-grabs")
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_INNER_BOUNDARIES"),
+        QStringLiteral("1")
+        );
+    environment.insert(
+        QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_PAGE_RENDER_OBSERVER"),
+        QStringLiteral("1")
+        );
+    if (!externallyControlledCheckpointHandshake)
+    {
+        environment.insert(
+            QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_CHECKPOINT_HANDSHAKE"),
+            QStringLiteral("1")
+            );
+        environment.insert(
+            QStringLiteral("CLASSMNGR_STARTUP_PDF_LIFECYCLE_CHECKPOINT_CONTROL_DIR"),
+            checkpointControlDirectory
+            );
+    }
     process.setProcessEnvironment(environment);
     process.start(
         appPath,
@@ -4609,8 +4692,143 @@ void StartupPerformanceTests
         qPrintable(process.errorString())
         );
 
-    const bool finished =
-        process.waitForFinished(SubPrepLifecycleCaptureChildTimeoutMs);
+    const QStringList checkpointNames{
+        QStringLiteral("after-render"),
+        QStringLiteral("after-document-close"),
+        QStringLiteral("after-view-destroyed")
+    };
+    QString checkpointProtocolError;
+    QJsonObject afterViewDestroyedMarker;
+    int acknowledgedCheckpointCount = 0;
+    QElapsedTimer routeTimer;
+    routeTimer.start();
+    bool finished = externallyControlledCheckpointHandshake
+        && process.waitForFinished(SubPrepLifecycleCaptureChildTimeoutMs);
+    while (
+        !externallyControlledCheckpointHandshake
+        &&
+        routeTimer.elapsed() < SubPrepLifecycleCaptureChildTimeoutMs
+        && checkpointProtocolError.isEmpty()
+        )
+    {
+        if (process.state() == QProcess::NotRunning)
+        {
+            finished = true;
+            break;
+        }
+
+        process.waitForFinished(25);
+        if (acknowledgedCheckpointCount < checkpointNames.size())
+        {
+            const int order = acknowledgedCheckpointCount + 1;
+            const QString checkpoint = checkpointNames.at(
+                acknowledgedCheckpointCount
+                );
+            const QString markerPath = QDir(checkpointControlDirectory).filePath(
+                QStringLiteral("ready-%1-%2.json")
+                    .arg(order, 2, 10, QLatin1Char('0'))
+                    .arg(checkpoint)
+                );
+            QFile markerFile(markerPath);
+            if (markerFile.open(QIODevice::ReadOnly))
+            {
+                const QByteArray markerBytes = markerFile.readAll();
+                markerFile.close();
+                QJsonParseError parseError;
+                const QJsonDocument markerDocument =
+                    QJsonDocument::fromJson(markerBytes, &parseError);
+                if (
+                    parseError.error != QJsonParseError::NoError
+                    || !markerDocument.isObject()
+                    )
+                {
+                    checkpointProtocolError = QStringLiteral(
+                        "Invalid JSON checkpoint marker %1."
+                        )
+                        .arg(markerPath);
+                }
+                else
+                {
+                    const QJsonObject marker = markerDocument.object();
+                    if (
+                        marker.value(QStringLiteral("checkpointOrder")).toInt()
+                            != order
+                        || marker.value(QStringLiteral("checkpoint")).toString()
+                            != checkpoint
+                        )
+                    {
+                        checkpointProtocolError = QStringLiteral(
+                            "Checkpoint marker order/name mismatch at %1."
+                            )
+                            .arg(markerPath);
+                    }
+                    else if (order == 3)
+                    {
+                        afterViewDestroyedMarker = marker;
+                    }
+
+                    const QString ackPath = QDir(
+                        checkpointControlDirectory
+                        ).filePath(
+                            QStringLiteral("ack-%1-%2.json")
+                                .arg(order, 2, 10, QLatin1Char('0'))
+                                .arg(checkpoint)
+                            );
+                    QSaveFile ackFile(ackPath);
+                    if (!ackFile.open(QIODevice::WriteOnly | QIODevice::Text))
+                    {
+                        checkpointProtocolError = QStringLiteral(
+                            "Unable to create checkpoint acknowledgment %1: %2"
+                            )
+                            .arg(ackPath, ackFile.errorString());
+                    }
+                    else
+                    {
+                        const QJsonObject ack{
+                            {QStringLiteral("schema"), QStringLiteral("classmngr-f563-checkpoint-ack-v1")},
+                            {QStringLiteral("runId"), marker.value(QStringLiteral("runId"))},
+                            {QStringLiteral("processId"), marker.value(QStringLiteral("processId"))},
+                            {QStringLiteral("checkpoint"), checkpoint},
+                            {QStringLiteral("checkpointOrder"), order},
+                            {
+                                QStringLiteral("markerSha256"),
+                                QString::fromLatin1(
+                                    QCryptographicHash::hash(
+                                        markerBytes,
+                                        QCryptographicHash::Sha256
+                                        ).toHex()
+                                    )
+                            },
+                            {
+                                QStringLiteral("acknowledgedAtUtc"),
+                                QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)
+                            }
+                        };
+                        const QByteArray ackBytes =
+                            QJsonDocument(ack).toJson(QJsonDocument::Indented);
+                        if (
+                            ackFile.write(ackBytes) != ackBytes.size()
+                            || !ackFile.commit()
+                            )
+                        {
+                            checkpointProtocolError = QStringLiteral(
+                                "Unable to commit checkpoint acknowledgment %1: %2"
+                                )
+                                .arg(ackPath, ackFile.errorString());
+                        }
+                        else
+                        {
+                            ++acknowledgedCheckpointCount;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (process.state() == QProcess::NotRunning)
+    {
+        finished = true;
+    }
     if (!finished)
     {
         process.kill();
@@ -4639,6 +4857,164 @@ void StartupPerformanceTests
             ),
         qPrintable(diagnosticError)
         );
+
+    acknowledgedCheckpointCount = 0;
+    for (int index = 0; index < checkpointNames.size(); ++index)
+    {
+        const int order = index + 1;
+        const QString checkpoint = checkpointNames.at(index);
+        const QString markerPath = QDir(checkpointControlDirectory).filePath(
+            QStringLiteral("ready-%1-%2.json")
+                .arg(order, 2, 10, QLatin1Char('0'))
+                .arg(checkpoint)
+            );
+        const QString ackPath = QDir(checkpointControlDirectory).filePath(
+            QStringLiteral("ack-%1-%2.json")
+                .arg(order, 2, 10, QLatin1Char('0'))
+                .arg(checkpoint)
+            );
+        QFile markerFile(markerPath);
+        QFile ackFile(ackPath);
+        if (
+            !markerFile.open(QIODevice::ReadOnly)
+            || !ackFile.open(QIODevice::ReadOnly)
+            )
+        {
+            checkpointProtocolError = QStringLiteral(
+                "Missing marker or acknowledgment for %1."
+                )
+                .arg(checkpoint);
+            break;
+        }
+
+        const QByteArray markerBytes = markerFile.readAll();
+        const QJsonDocument markerDocument =
+            QJsonDocument::fromJson(markerBytes);
+        const QJsonDocument ackDocument =
+            QJsonDocument::fromJson(ackFile.readAll());
+        if (!markerDocument.isObject() || !ackDocument.isObject())
+        {
+            checkpointProtocolError = QStringLiteral(
+                "Invalid marker or acknowledgment JSON for %1."
+                )
+                .arg(checkpoint);
+            break;
+        }
+
+        const QJsonObject marker = markerDocument.object();
+        const QJsonObject ack = ackDocument.object();
+        const QString markerHash = QString::fromLatin1(
+            QCryptographicHash::hash(
+                markerBytes,
+                QCryptographicHash::Sha256
+                ).toHex()
+            );
+        if (
+            marker.value(QStringLiteral("checkpointOrder")).toInt() != order
+            || marker.value(QStringLiteral("checkpoint")).toString() != checkpoint
+            || ack.value(QStringLiteral("schema")).toString()
+                != QStringLiteral("classmngr-f563-checkpoint-ack-v1")
+            || ack.value(QStringLiteral("runId")).toString()
+                != marker.value(QStringLiteral("runId")).toString()
+            || ack.value(QStringLiteral("processId")).toDouble()
+                != marker.value(QStringLiteral("processId")).toDouble()
+            || ack.value(QStringLiteral("checkpoint")).toString() != checkpoint
+            || ack.value(QStringLiteral("checkpointOrder")).toInt() != order
+            || ack.value(QStringLiteral("markerSha256")).toString() != markerHash
+            )
+        {
+            checkpointProtocolError = QStringLiteral(
+                "Marker/acknowledgment binding failed for %1."
+                )
+                .arg(checkpoint);
+            break;
+        }
+
+        if (order == 3)
+        {
+            afterViewDestroyedMarker = marker;
+        }
+        ++acknowledgedCheckpointCount;
+    }
+
+    QVERIFY2(
+        checkpointProtocolError.isEmpty(),
+        qPrintable(
+            QStringLiteral("F563 checkpoint protocol failed: %1. Artifacts: %2")
+                .arg(checkpointProtocolError, checkpointControlDirectory)
+            )
+        );
+    QCOMPARE(acknowledgedCheckpointCount, 3);
+    QCOMPARE(
+        afterViewDestroyedMarker.value(QStringLiteral("checkpointOrder")).toInt(),
+        3
+        );
+    QCOMPARE(
+        afterViewDestroyedMarker.value(QStringLiteral("checkpoint")).toString(),
+        QStringLiteral("after-view-destroyed")
+        );
+    const QJsonArray afterViewDestroyedScheduleMetrics =
+        afterViewDestroyedMarker.value(QStringLiteral("scheduleWidgetMetrics"))
+            .toArray();
+    const QStringList requiredScheduleOwners{
+        QStringLiteral("standalone-schedule"),
+        QStringLiteral("workspace-schedule"),
+        QStringLiteral("sub-prep-preview")
+    };
+    const QStringList requiredScheduleFields{
+        QStringLiteral("modelRowCount"),
+        QStringLiteral("modelCellCount"),
+        QStringLiteral("modelEntryCount"),
+        QStringLiteral("tableRowCount"),
+        QStringLiteral("tableColumnCount"),
+        QStringLiteral("tableItemCount"),
+        QStringLiteral("tableCellWidgetCount"),
+        QStringLiteral("visibleClassCount")
+    };
+    for (const QString& owner : requiredScheduleOwners)
+    {
+        int ownerMatchCount = 0;
+        QJsonObject ownerMetrics;
+        for (const QJsonValue& value : afterViewDestroyedScheduleMetrics)
+        {
+            const QJsonObject candidate = value.toObject();
+            if (candidate.value(QStringLiteral("ownerKey")).toString() == owner)
+            {
+                ++ownerMatchCount;
+                ownerMetrics = candidate;
+            }
+        }
+        QCOMPARE(ownerMatchCount, 1);
+        for (const QString& field : requiredScheduleFields)
+        {
+            QVERIFY2(
+                ownerMetrics.value(field).isDouble(),
+                qPrintable(
+                    QStringLiteral("Marker owner %1 has no numeric %2 field.")
+                        .arg(owner, field)
+                    )
+                );
+        }
+    }
+    const QJsonValue sampleStartValue = afterViewDestroyedMarker.value(
+        QStringLiteral(
+            "scheduleWidgetMetricsSampleStartMonotonicTimestampNanoseconds"
+            )
+        );
+    const QJsonValue sampleEndValue = afterViewDestroyedMarker.value(
+        QStringLiteral(
+            "scheduleWidgetMetricsSampleEndMonotonicTimestampNanoseconds"
+            )
+        );
+    const QJsonValue markerTimestampValue = afterViewDestroyedMarker.value(
+        QStringLiteral("monotonicTimestampNanoseconds")
+        );
+    QVERIFY(sampleStartValue.isDouble());
+    QVERIFY(sampleEndValue.isDouble());
+    QVERIFY(markerTimestampValue.isDouble());
+    QVERIFY(sampleStartValue.toDouble() >= 0.0);
+    QVERIFY(sampleEndValue.toDouble() >= sampleStartValue.toDouble());
+    QVERIFY(markerTimestampValue.toDouble() >= sampleEndValue.toDouble());
 
     QByteArray traceContents;
     QFile traceFile(tracePath);

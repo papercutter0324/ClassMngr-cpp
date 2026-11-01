@@ -3,6 +3,7 @@
 #include "process_memory_snapshot.h"
 
 #include <QElapsedTimer>
+#include <QJsonArray>
 #include <QList>
 #include <QJsonObject>
 #include <QString>
@@ -347,9 +348,17 @@ public:
     static void setActiveApplicationMetricsProvider(
         std::function<StartupApplicationMetrics()> provider
         );
+    static void setActiveScheduleWidgetMetricsProvider(
+        std::function<QList<StartupScheduleWidgetMetrics>()> provider
+        );
+    // Samples the active GUI-thread provider synchronously and retains no widgets.
+    [[nodiscard]] static QJsonArray currentScheduleWidgetMetricsSnapshot();
 
     void setApplicationMetricsProvider(
         std::function<StartupApplicationMetrics()> provider
+        );
+    void setScheduleWidgetMetricsProvider(
+        std::function<QList<StartupScheduleWidgetMetrics>()> provider
         );
     void checkpoint(
         const QString& name,
@@ -653,6 +662,8 @@ private:
     QElapsedTimer m_timer;
     ProcessMemorySnapshotProvider* m_memoryProvider = nullptr;
     std::function<StartupApplicationMetrics()> m_applicationMetricsProvider;
+    std::function<QList<StartupScheduleWidgetMetrics>()>
+        m_scheduleWidgetMetricsProvider;
     QList<StartupCheckpoint> m_checkpoints;
     QList<StartupProfilingEvent> m_events;
     QList<StartupProcessMemorySample> m_processMemorySamples;

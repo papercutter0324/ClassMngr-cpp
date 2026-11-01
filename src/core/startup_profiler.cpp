@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QThread>
 
 #include <utility>
 
@@ -59,11 +60,12 @@ void appendProfilerWorkflowTrace(const QString& message)
     }
 }
 
-QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
+QJsonArray scheduleWidgetMetricsJson(
+    const QList<StartupScheduleWidgetMetrics>& metrics
+    )
 {
     QJsonArray scheduleWidgetMetrics;
-    for (const StartupScheduleWidgetMetrics& scheduleMetrics :
-         metrics.scheduleWidgetMetrics)
+    for (const StartupScheduleWidgetMetrics& scheduleMetrics : metrics)
     {
         scheduleWidgetMetrics.append(
             QJsonObject{
@@ -85,6 +87,14 @@ QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
             }
             );
     }
+
+    return scheduleWidgetMetrics;
+}
+
+QJsonObject applicationMetricsJson(const StartupApplicationMetrics& metrics)
+{
+    const QJsonArray scheduleWidgetMetrics =
+        scheduleWidgetMetricsJson(metrics.scheduleWidgetMetrics);
 
     return {
         {QStringLiteral("widgetCount"), metrics.widgetCount},
@@ -1252,11 +1262,51 @@ void StartupProfiler::setActiveApplicationMetricsProvider(
     }
 }
 
+void StartupProfiler::setActiveScheduleWidgetMetricsProvider(
+    std::function<QList<StartupScheduleWidgetMetrics>()> provider
+    )
+{
+    if (StartupProfiler* profiler = activeProfiler())
+    {
+        profiler->setScheduleWidgetMetricsProvider(std::move(provider));
+    }
+}
+
+QJsonArray StartupProfiler::currentScheduleWidgetMetricsSnapshot()
+{
+    StartupProfiler* const profiler = activeProfiler();
+    QCoreApplication* const application = QCoreApplication::instance();
+    if (
+        !profiler
+        || !application
+        || QThread::currentThread() != application->thread()
+        )
+    {
+        return {};
+    }
+
+    if (!profiler->m_scheduleWidgetMetricsProvider)
+    {
+        return {};
+    }
+
+    return scheduleWidgetMetricsJson(
+        profiler->m_scheduleWidgetMetricsProvider()
+        );
+}
+
 void StartupProfiler::setApplicationMetricsProvider(
     std::function<StartupApplicationMetrics()> provider
     )
 {
     m_applicationMetricsProvider = std::move(provider);
+}
+
+void StartupProfiler::setScheduleWidgetMetricsProvider(
+    std::function<QList<StartupScheduleWidgetMetrics>()> provider
+    )
+{
+    m_scheduleWidgetMetricsProvider = std::move(provider);
 }
 
 void StartupProfiler::checkpoint(
