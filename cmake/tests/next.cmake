@@ -3878,6 +3878,71 @@ set_tests_properties(ClassMngrNextSubPrepGatewayTests
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 
+# Exercise Sub Prep preferences failures independently from the production
+# workspace gateway and verify that schedule summaries remain usable.
+add_executable(ClassMngrNextSubPrepPageTests
+    tests/next/sub_prep_page_tests.cpp
+    src/next/ui/sub_prep_page.cpp
+    src/next/ui/sub_prep_page.h
+    src/next/ui/page_host.cpp
+    src/next/ui/page_host.h
+    src/next/ui/page.h
+    $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
+    $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
+)
+target_compile_features(ClassMngrNextSubPrepPageTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextSubPrepPageTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+        "${PROJECT_SOURCE_DIR}/tests/next"
+)
+target_compile_definitions(ClassMngrNextSubPrepPageTests
+    PRIVATE
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+)
+target_link_libraries(ClassMngrNextSubPrepPageTests
+    PRIVATE
+        ClassMngrNext::Application
+        ClassMngrNext::Resources
+        ClassMngrNextWorkspace
+        ClassMngrNextWorkspaceDomain
+        ClassMngrSubPrepShared
+        ClassMngrWorkspaceStore
+        Qt6::Pdf
+        Qt6::PrintSupport
+        Qt6::Sql
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextSubPrepPageTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextSubPrepPageTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextSubPrepPageTests
+    ClassMngrNextResourcePackage
+)
+classmngr_next_add_mode_combo_arrow_resources(
+    ClassMngrNextSubPrepPageTests
+)
+add_test(
+    NAME ClassMngrNextSubPrepPageTests
+    COMMAND ClassMngrNextSubPrepPageTests
+)
+set_tests_properties(ClassMngrNextSubPrepPageTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Capture the 96-class Next Sub Prep route in English/Korean and Light/Dark,
 # including selected, empty, and generated-output states with bounded metrics.
 add_executable(ClassMngrNextSubPrepVisualCapture

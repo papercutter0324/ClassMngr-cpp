@@ -120,7 +120,7 @@ private:
     [[nodiscard]] std::vector<Application::SubPrepWeekday>
         selectedWeekdays() const;
     void refreshSummaryScope();
-    void refreshSummaryScopeWithSchedule(
+    [[nodiscard]] bool refreshSummaryScopeWithSchedule(
         Application::SchedulePageReadSnapshot schedule
         );
     void renderSelectedDetails(
@@ -168,6 +168,7 @@ private:
     bool m_loading = false;
     bool m_active = false;
     bool m_modeInitialized = false;
+    bool m_preferencesLoadFailed = false;
 };
 
 } // namespace ClassMngr::Next::Ui

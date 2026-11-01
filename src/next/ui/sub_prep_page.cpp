@@ -61,6 +61,13 @@ constexpr std::array<const char*, 7> DayNames{
     return QCoreApplication::translate("SubPrepPage", source);
 }
 
+[[nodiscard]] QString preferencesLoadFailureText()
+{
+    return pageText(
+        "Sub Prep settings could not be loaded. Refresh the page before saving."
+        );
+}
+
 [[nodiscard]] QString printDialogText(const char* source)
 {
     return QCoreApplication::translate("SubPrepPrintDialog", source);
@@ -522,6 +529,7 @@ bool SubPrepPage::reload(QString* error)
         auto preferences = m_actions.readPreferences();
         if (preferences)
         {
+            m_preferencesLoadFailed = false;
             m_preferences = std::move(preferences.value());
             m_classMaterials->setPlainText(fromUtf8(m_preferences.classMaterials));
             m_gradingInstructions->setPlainText(m_preferences.bookReportGrading
@@ -530,9 +538,21 @@ bool SubPrepPage::reload(QString* error)
                 ? fromUtf8(*m_preferences.bookReportSpecialInstructions) : QString{});
             m_subComments->setPlainText(fromUtf8(m_preferences.subComments));
         }
+        else
+        {
+            m_preferencesLoadFailed = true;
+        }
     }
     m_loading = false;
-    refreshSummaryScopeWithSchedule(std::move(schedule.value()));
+    const bool summariesLoaded =
+        refreshSummaryScopeWithSchedule(std::move(schedule.value()));
+    if (m_preferencesLoadFailed)
+    {
+        const QString message = preferencesLoadFailureText();
+        if (summariesLoaded) { setStatus(message, true); }
+        if (error) { *error = message; }
+        return false;
+    }
     if (error) { error->clear(); }
     return true;
 }
@@ -552,10 +572,10 @@ void SubPrepPage::refreshSummaryScope()
         clearPageData();
         return;
     }
-    refreshSummaryScopeWithSchedule(std::move(schedule.value()));
+    static_cast<void>(refreshSummaryScopeWithSchedule(std::move(schedule.value())));
 }
 
-void SubPrepPage::refreshSummaryScopeWithSchedule(
+bool SubPrepPage::refreshSummaryScopeWithSchedule(
     Application::SchedulePageReadSnapshot schedule
     )
 {
@@ -615,7 +635,7 @@ void SubPrepPage::refreshSummaryScopeWithSchedule(
         m_detailPanel->hide();
         clearSelectedDetail();
         setStatus(message, true);
-        return;
+        return false;
     }
 
     auto nextState = m_informationState.refreshScope(summaries);
@@ -678,8 +698,11 @@ void SubPrepPage::refreshSummaryScopeWithSchedule(
         m_informationState = {};
         m_detailPanel->hide();
         clearSelectedDetail();
-        setStatus(pageText("No scheduled class information available."));
-        return;
+        setStatus(m_preferencesLoadFailed
+            ? preferencesLoadFailureText()
+            : pageText("No scheduled class information available."),
+            m_preferencesLoadFailed);
+        return true;
     }
     m_detailPanel->show();
     setStatus(QString{});
@@ -700,6 +723,11 @@ void SubPrepPage::refreshSummaryScopeWithSchedule(
             }
         }
     }
+    if (m_preferencesLoadFailed)
+    {
+        setStatus(preferencesLoadFailureText(), true);
+    }
+    return true;
 }
 
 void SubPrepPage::handleGradeChanged(const int index)
@@ -866,6 +894,12 @@ std::vector<Application::SubPrepWeekday> SubPrepPage::selectedWeekdays() const
 
 void SubPrepPage::savePreferences()
 {
+    if (m_preferencesLoadFailed)
+    {
+        setStatus(preferencesLoadFailureText(), true);
+        return;
+    }
+
     Application::SubPrepPreferences updated{
         .classMaterials = toUtf8(m_classMaterials->toPlainText()),
         .bookReportGrading = toUtf8(m_gradingInstructions->toPlainText()),

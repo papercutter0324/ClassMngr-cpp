@@ -8606,6 +8606,11 @@ Comments: Please leave a comment about what the student did well and what they n
         <translation>N/A</translation>
     </message>
     <message>
+        <location filename="../../../src/next/ui/sub_prep_page.cpp"/>
+        <source>Sub Prep settings could not be loaded. Refresh the page before saving.</source>
+        <translation>Sub Prep settings could not be loaded. Refresh the page before saving.</translation>
+    </message>
+    <message>
         <location filename="../../../src/features/sub_prep/ui/sub_prep_page_settings.cpp"/>
         <source>Sub Prep settings could not be saved. Your changes are still here.</source>
         <translation>Sub Prep settings could not be saved. Your changes are still here.</translation>
