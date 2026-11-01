@@ -923,6 +923,7 @@ set_tests_properties(ClassMngrNextSharedStaffDirectoryTests
 add_executable(ClassMngrNextSharedStaffDirectoryVisualCapture
     tests/next/shared_staff_directory_visual_capture.cpp
     src/next/platform/workspace_store_gateway.cpp
+    src/next/platform/workspace_store_schedule_actions.cpp
     src/next/platform/workspace_store_custom_color_palette_preferences_port.cpp
     src/next/ui/shared_staff_directory_page.cpp
     src/next/ui/shared_staff_directory_table_model.cpp
