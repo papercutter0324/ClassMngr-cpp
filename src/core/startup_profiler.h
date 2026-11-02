@@ -353,6 +353,10 @@ public:
         );
     // Samples the active GUI-thread provider synchronously and retains no widgets.
     [[nodiscard]] static QJsonArray currentScheduleWidgetMetricsSnapshot();
+    [[nodiscard]] static bool validatePdfLifecycleOwnerMetrics(
+        const QJsonArray& scheduleWidgetMetrics,
+        QString* errorMessage
+        );
 
     void setApplicationMetricsProvider(
         std::function<StartupApplicationMetrics()> provider

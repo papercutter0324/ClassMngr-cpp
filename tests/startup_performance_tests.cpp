@@ -1867,6 +1867,8 @@ class StartupPerformanceTests : public QObject
     Q_OBJECT
 
 private slots:
+    void pdfLifecycleOwnerMetricsValidatorIsFailClosed_data();
+    void pdfLifecycleOwnerMetricsValidatorIsFailClosed();
     void scheduleWidgetMetricsAreSerializedPerOwnerAndOmitMissingOwners();
     void checkpointsBracketOneApplicationMetricsTraversal();
     void representativeStartupFixtureIsCompleteAndDeterministic();
@@ -1897,6 +1899,97 @@ private slots:
     void capturesVisualLanguageAndThemeVariants();
     void capturesRepresentativeVisualVariants();
 };
+
+void StartupPerformanceTests
+    ::pdfLifecycleOwnerMetricsValidatorIsFailClosed_data()
+{
+    QTest::addColumn<QJsonArray>("metrics");
+    QTest::addColumn<bool>("expectedValid");
+    QTest::addColumn<QString>("expectedDiagnostic");
+
+    const QStringList owners{
+        QStringLiteral("standalone-schedule"),
+        QStringLiteral("workspace-schedule"),
+        QStringLiteral("sub-prep-preview")
+    };
+    const QStringList fields{
+        QStringLiteral("modelRowCount"),
+        QStringLiteral("modelCellCount"),
+        QStringLiteral("modelEntryCount"),
+        QStringLiteral("tableRowCount"),
+        QStringLiteral("tableColumnCount"),
+        QStringLiteral("tableItemCount"),
+        QStringLiteral("tableCellWidgetCount"),
+        QStringLiteral("visibleClassCount")
+    };
+    QJsonArray validMetrics;
+    for (const QString& owner : owners)
+    {
+        QJsonObject metrics;
+        metrics.insert(QStringLiteral("ownerKey"), owner);
+        for (const QString& field : fields)
+        {
+            metrics.insert(field, 0);
+        }
+        validMetrics.append(metrics);
+    }
+
+    QTest::newRow("complete-zero-valued-snapshot")
+        << validMetrics << true << QString();
+
+    QJsonArray missingOwner = validMetrics;
+    missingOwner.removeAt(0);
+    QTest::newRow("missing-owner")
+        << missingOwner << false
+        << QStringLiteral("standalone-schedule; found 0");
+
+    QJsonArray duplicateOwner = validMetrics;
+    duplicateOwner.append(validMetrics.at(1));
+    QTest::newRow("duplicate-owner")
+        << duplicateOwner << false
+        << QStringLiteral("workspace-schedule; found 2");
+
+    QJsonArray missingNumericField = validMetrics;
+    QJsonObject missingFieldOwner = missingNumericField.at(2).toObject();
+    missingFieldOwner.remove(QStringLiteral("tableCellWidgetCount"));
+    missingNumericField.replace(2, missingFieldOwner);
+    QTest::newRow("missing-numeric-field")
+        << missingNumericField << false
+        << QStringLiteral("sub-prep-preview; tableCellWidgetCount");
+
+    QJsonArray nonNumericField = validMetrics;
+    QJsonObject nonNumericFieldOwner = nonNumericField.at(0).toObject();
+    nonNumericFieldOwner.insert(QStringLiteral("modelRowCount"), QStringLiteral("0"));
+    nonNumericField.replace(0, nonNumericFieldOwner);
+    QTest::newRow("non-numeric-field")
+        << nonNumericField << false
+        << QStringLiteral("standalone-schedule; modelRowCount");
+}
+
+void StartupPerformanceTests::pdfLifecycleOwnerMetricsValidatorIsFailClosed()
+{
+    QFETCH(QJsonArray, metrics);
+    QFETCH(bool, expectedValid);
+    QFETCH(QString, expectedDiagnostic);
+
+    QString errorMessage;
+    const bool valid = StartupProfiler::validatePdfLifecycleOwnerMetrics(
+        metrics,
+        &errorMessage
+        );
+    QCOMPARE(valid, expectedValid);
+    if (expectedValid)
+    {
+        QVERIFY(errorMessage.isEmpty());
+    }
+    else
+    {
+        QVERIFY2(
+            errorMessage.contains(expectedDiagnostic),
+            qPrintable(errorMessage)
+            );
+    }
+}
 
 void StartupPerformanceTests
     ::scheduleWidgetMetricsAreSerializedPerOwnerAndOmitMissingOwners()

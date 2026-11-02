@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QFileInfo>
 #include <QJsonArray>
+#include <QStringList>
 #include <QThread>
 
 #include <utility>
@@ -1223,6 +1224,82 @@ QJsonObject peakMemoryJson(
         );
     return result;
 }
+}
+
+bool StartupProfiler::validatePdfLifecycleOwnerMetrics(
+    const QJsonArray& scheduleWidgetMetrics,
+    QString* errorMessage
+    )
+{
+    const QStringList requiredOwners{
+        QStringLiteral("standalone-schedule"),
+        QStringLiteral("workspace-schedule"),
+        QStringLiteral("sub-prep-preview")
+    };
+    const QStringList requiredFields{
+        QStringLiteral("modelRowCount"),
+        QStringLiteral("modelCellCount"),
+        QStringLiteral("modelEntryCount"),
+        QStringLiteral("tableRowCount"),
+        QStringLiteral("tableColumnCount"),
+        QStringLiteral("tableItemCount"),
+        QStringLiteral("tableCellWidgetCount"),
+        QStringLiteral("visibleClassCount")
+    };
+
+    for (const QString& requiredOwner : requiredOwners)
+    {
+        int matchCount = 0;
+        QJsonObject matchedMetrics;
+        for (const QJsonValue& value : scheduleWidgetMetrics)
+        {
+            if (!value.isObject())
+            {
+                continue;
+            }
+
+            const QJsonObject ownerMetrics = value.toObject();
+            if (
+                ownerMetrics.value(QStringLiteral("ownerKey")).toString()
+                != requiredOwner
+                )
+            {
+                continue;
+            }
+
+            ++matchCount;
+            matchedMetrics = ownerMetrics;
+        }
+
+        if (matchCount != 1)
+        {
+            if (errorMessage)
+            {
+                *errorMessage = QStringLiteral(
+                    "Expected exactly one current metrics record for owner %1; found %2."
+                    )
+                    .arg(requiredOwner, QString::number(matchCount));
+            }
+            return false;
+        }
+
+        for (const QString& requiredField : requiredFields)
+        {
+            if (!matchedMetrics.value(requiredField).isDouble())
+            {
+                if (errorMessage)
+                {
+                    *errorMessage = QStringLiteral(
+                        "Current metrics record for owner %1 is missing numeric field %2."
+                        )
+                        .arg(requiredOwner, requiredField);
+                }
+                return false;
+            }
+        }
+    }
+
+    return true;
 }
 
 StartupProfiler::StartupProfiler(
