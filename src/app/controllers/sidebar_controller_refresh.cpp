@@ -192,3 +192,35 @@ void SidebarController::handleTeacherSaved(
         m_sidebar->selectTeacher(teacherId);
     }
 }
+
+void SidebarController::handleTeacherCreationDiscarded(
+    qint64 teacherId
+    )
+{
+    if (!m_sidebar)
+    {
+        return;
+    }
+
+    QStringList selectionKeys = m_sidebar->selectedKeys();
+    qint64 selectedTeacherId = m_sidebar->getSelectedTeacherId();
+    if (selectedTeacherId == teacherId)
+    {
+        selectionKeys = m_teacherCreationReturnSelection;
+        selectedTeacherId = m_teacherCreationReturnTeacherId;
+    }
+
+    refreshTeacherSidebar();
+
+    if (!selectionKeys.isEmpty())
+    {
+        m_sidebar->selectByKeys(selectionKeys, selectedTeacherId);
+    }
+    else
+    {
+        m_sidebar->restorePreviousSelection();
+    }
+
+    m_teacherCreationReturnSelection.clear();
+    m_teacherCreationReturnTeacherId = -1;
+}

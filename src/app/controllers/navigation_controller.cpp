@@ -166,6 +166,15 @@ void NavigationController::handleTeacher(
         return;
     }
 
+    const TeacherInfoPage* const currentTeacherPage =
+        m_pages->teacherPage();
+    if (m_pages->isCurrentPage(PageType::TeacherInfo)
+        && currentTeacherPage
+        && currentTeacherPage->teacherId() == data.teacherId)
+    {
+        return;
+    }
+
     const ClassMngr::Next::Platform::
         ApplicationServicesTeacherProfileReadPort port(m_services);
     const ClassMngr::Next::Application::TeacherProfileReadQuery query(port);

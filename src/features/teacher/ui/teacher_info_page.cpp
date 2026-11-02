@@ -18,8 +18,11 @@
 #include "core/utils/sidebar_node_naming.h"
 #include "next/application/teacher_profile_edit_use_case.h"
 #include "next/application/teacher_profile_read_query.h"
+#include "next/application/teacher_delete_use_case.h"
 #include "next/domain/teacher_profile.h"
+#include "next/domain/domain_types.h"
 #include "next/application/preferred_name_selection_policy.h"
+#include "next/platform/application_services_teacher_delete_port.h"
 #include "next/platform/application_services_teacher_profile_edit_persistence_port.h"
 
 #include <QCalendarWidget>
@@ -301,6 +304,7 @@ void setComboTextWithFallback(
 
 namespace NextApplication = ClassMngr::Next::Application;
 namespace NextDomain = ClassMngr::Next::Domain;
+namespace NextPlatform = ClassMngr::Next::Platform;
 
 std::optional<int> legacyTeacherId(const NextDomain::TeacherId& id)
 {
@@ -1229,6 +1233,120 @@ void TeacherInfoPage::loadTeacher(const Teacher& teacher, const qint64 teacherId
     clearDirty();
 }
 
+void TeacherInfoPage::markCreatedTeacherPendingConfirmation()
+{
+    m_createdTeacherNeedsConfirmation = true;
+}
+
+bool TeacherInfoPage::confirmCreatedTeacherCanLeave()
+{
+    if (!m_createdTeacherNeedsConfirmation)
+    {
+        return true;
+    }
+
+    const Teacher current = teacherFromForm();
+    const QString defaultEnglishName = QStringLiteral("New Teacher");
+    const QString defaultKoreanName = QStringLiteral("선생님");
+    if (current.teacherEn != defaultEnglishName
+        && current.teacherKr != defaultKoreanName)
+    {
+        return true;
+    }
+
+    const QString action = DialogServices::prompts().chooseAction(
+        ActionPromptRequest{
+            .prompt = PromptRequest{
+                .parent = this,
+                .title = tr("Confirm Teacher Names"),
+                .message = tr(
+                    "One or both teacher names still use the default. Is this correct?"
+                    ),
+                .severity = PromptSeverity::Information
+            },
+            .informativeText = tr("English name: %1\nKorean name: %2")
+                .arg(current.teacherEn, current.teacherKr),
+            .actions = {
+                {
+                    QStringLiteral("yes"),
+                    tr("Yes"),
+                    PromptActionRole::Accept
+                },
+                {
+                    QStringLiteral("no"),
+                    tr("No"),
+                    PromptActionRole::Reject
+                },
+                {
+                    QStringLiteral("discard"),
+                    tr("Discard"),
+                    PromptActionRole::Destructive
+                }
+            },
+            .defaultActionId = QStringLiteral("no"),
+            .escapeActionId = QStringLiteral("no")
+        }
+        );
+
+    if (action == QStringLiteral("yes"))
+    {
+        if (!saveChanges())
+        {
+            return false;
+        }
+
+        m_createdTeacherNeedsConfirmation = false;
+        return true;
+    }
+
+    if (action != QStringLiteral("discard"))
+    {
+        return false;
+    }
+
+    const auto typedTeacherId = NextDomain::TeacherId::fromString(
+        std::to_string(m_teacherId)
+        );
+    if (!m_services || !typedTeacherId)
+    {
+        return false;
+    }
+
+    NextPlatform::ApplicationServicesTeacherDeletePort deletePort(m_services);
+    const NextApplication::TeacherDeleteResult deleted =
+        NextApplication::TeacherDeleteUseCase::execute(
+            NextApplication::TeacherDeleteRequest{
+                .teacherId = *typedTeacherId
+            },
+            deletePort
+            );
+    if (!deleted)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Discard New Teacher"),
+            tr("The new teacher could not be discarded."),
+            QString::fromUtf8(
+                deleted.error().message.data(),
+                static_cast<qsizetype>(deleted.error().message.size())
+                )
+            );
+        return false;
+    }
+
+    const qint64 discardedTeacherId = m_teacherId;
+    m_autosave->cancelPendingSave();
+    m_createdTeacherNeedsConfirmation = false;
+    loadTeacher(Teacher{}, -1);
+    emit createdTeacherDiscarded(discardedTeacherId);
+    return true;
+}
+
+void TeacherInfoPage::finishCreatedTeacherNavigation()
+{
+    m_createdTeacherNeedsConfirmation = false;
+}
+
 bool TeacherInfoPage::reloadTeacherProfile(
     const ClassMngr::Next::Application::TeacherProfileReadPort& readPort
     )
@@ -1773,6 +1891,7 @@ void TeacherInfoPage::refresh()
 
 void TeacherInfoPage::clearDatabaseState()
 {
+    m_createdTeacherNeedsConfirmation = false;
     loadTeacher({});
     retranslateUi();
 }

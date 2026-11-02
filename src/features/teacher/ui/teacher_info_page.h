@@ -42,6 +42,10 @@ public:
     void loadTeacher(const Teacher& fields, qint64 teacherId);
     [[nodiscard]] qint64 teacherId() const { return m_teacherId; }
 
+    void markCreatedTeacherPendingConfirmation();
+    [[nodiscard]] bool confirmCreatedTeacherCanLeave();
+    void finishCreatedTeacherNavigation();
+
     // Reload the current profile through the typed read contract. On failure,
     // the visible profile is retained and the page requires a fresh load.
     [[nodiscard]] bool reloadTeacherProfile(
@@ -73,6 +77,8 @@ signals:
 
     // Active Sidebar and navigation consumers use this full identity.
     void teacherIdentitySaved(qint64 teacherId);
+
+    void createdTeacherDiscarded(qint64 teacherId);
 
 protected:
 
@@ -126,6 +132,7 @@ private:
 
     Teacher m_teacher;
     qint64 m_teacherId = -1;
+    bool m_createdTeacherNeedsConfirmation = false;
     bool m_reloadRequired = false;
     bool m_automaticSaveFailureStatusActive = false;
     AutosaveCoordinator* m_autosave = nullptr;

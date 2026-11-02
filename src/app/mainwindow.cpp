@@ -1315,6 +1315,16 @@ void MainWindow::connectSignals()
                     }
                 }
                 );
+
+            if (m_sidebarController)
+            {
+                connect(
+                    page,
+                    &TeacherInfoPage::createdTeacherDiscarded,
+                    m_sidebarController.get(),
+                    &SidebarController::handleTeacherCreationDiscarded
+                    );
+            }
         };
 
     const auto connectCampusDashboard =

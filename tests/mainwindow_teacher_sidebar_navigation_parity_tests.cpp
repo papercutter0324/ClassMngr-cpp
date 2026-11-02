@@ -342,7 +342,7 @@ private slots:
     void wideTeacherSidebarRoundTrip_data();
     void wideTeacherSidebarRoundTrip();
     void initTestCase();
-    void addTeacherActionPreservesRequiredNameValidationOutcome();
+    void addTeacherActionCreatesDefaultNamedTeacher();
     void manualTeacherSavePreservesSelectedDuplicateOccurrence();
     void refreshedTeacherLeavesDispatchCancelAndDiscard();
     void failedTeacherProfileReadRestoresSidebarSelection_data();
@@ -374,7 +374,7 @@ void MainWindowTeacherSidebarNavigationParityTests::initTestCase()
 }
 
 void MainWindowTeacherSidebarNavigationParityTests::
-addTeacherActionPreservesRequiredNameValidationOutcome()
+addTeacherActionCreatesDefaultNamedTeacher()
 {
     QTemporaryDir workspaceRoot;
     QVERIFY(workspaceRoot.isValid());
@@ -443,40 +443,34 @@ addTeacherActionPreservesRequiredNameValidationOutcome()
     addTeacherAction->trigger();
     QApplication::processEvents();
 
-    QCOMPARE(prompts.messages.size(), 1);
-    const PromptRequest& warning = prompts.messages.constFirst();
-    QCOMPARE(warning.severity, PromptSeverity::Warning);
-    QCOMPARE(warning.title, QStringLiteral("Add Teacher"));
-    QCOMPARE(
-        warning.message,
-        QStringLiteral("The teacher could not be created.")
-        );
-    QCOMPARE(
-        warning.details,
-        QStringLiteral(
-            "Teacher validation failed: teacherEn: teacher.name.required"
-            )
-        );
+    QVERIFY(prompts.messages.isEmpty());
     QVERIFY(prompts.asynchronousMessages.isEmpty());
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.actionPrompts.isEmpty());
 
     const auto teachersAfter = repository->getAllTeachers();
     QVERIFY(teachersAfter);
-    QCOMPARE(teachersAfter->size(), teachersBefore->size());
-    QCOMPARE(teachersAfter->size(), 0);
+    QCOMPARE(teachersAfter->size(), 1);
+    const Teacher& createdTeacher = teachersAfter->constFirst();
+    QCOMPARE(createdTeacher.teacherEn, QStringLiteral("New Teacher"));
+    QCOMPARE(createdTeacher.teacherKr, QStringLiteral("선생님"));
     QCOMPARE(services->currentDatabasePath(), workspacePath);
     QCOMPARE(services->databaseSession(), activeSession);
-    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
-    QCOMPARE(pages->currentWidget(), currentPageWidget);
-    QCOMPARE(pages->currentPageIdentifier(), pageIdentifier);
-    QCOMPARE(pages->instantiatedPageCount(), instantiatedPageCount);
+    QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
+    QVERIFY(pages->currentWidget() != currentPageWidget);
     QCOMPARE(
-        pages->isPageInstantiated(PageType::TeacherInfo),
-        teacherInfoPageInstantiated
+        pages->currentPageIdentifier(),
+        PageManager::pageTypeIdentifier(PageType::TeacherInfo)
         );
-    QCOMPARE(sidebar->selectedKeys(), selectedKeys);
-    QCOMPARE(sidebar->getSelectedTeacherId(), -1);
+    QCOMPARE(pages->instantiatedPageCount(), instantiatedPageCount + 1);
+    QVERIFY(pages->isPageInstantiated(PageType::TeacherInfo));
+    QVERIFY(!teacherInfoPageInstantiated);
+    QVERIFY(!pageIdentifier.isEmpty());
+    QCOMPARE(sidebar->getSelectedTeacherId(), createdTeacher.id);
+    QVERIFY(sidebar->selectedKeys() != selectedKeys);
+    TeacherInfoPage* const teacherPage = pages->teacherPage();
+    QVERIFY(teacherPage);
+    QCOMPARE(teacherPage->teacherId(), static_cast<qint64>(createdTeacher.id));
 }
 
 void MainWindowTeacherSidebarNavigationParityTests::

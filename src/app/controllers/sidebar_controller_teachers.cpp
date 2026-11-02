@@ -10,6 +10,7 @@
 #include "next/platform/application_services_teacher_profile_read_port.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
+#include <limits>
 #include <string>
 
 using namespace SidebarControllerPrivate;
@@ -26,15 +27,26 @@ Teacher SidebarController::getTeacherById(int teacherId) const
 
 void SidebarController::addTeacher()
 {
-    auto* teachers =
-        openTeacherService(m_services);
+    if (!m_pages || !m_pages->confirmCurrentPageCanLeave())
+    {
+        return;
+    }
 
-    if (!teachers)
+    m_teacherCreationReturnSelection = m_sidebar
+        ? m_sidebar->selectedKeys()
+        : QStringList{};
+    m_teacherCreationReturnTeacherId = m_sidebar
+        ? m_sidebar->getSelectedTeacherId()
+        : -1;
+
+    if (!openTeacherService(m_services))
     {
         return;
     }
 
     ClassMngr::Next::Application::TeacherCreateRequest request;
+    request.fields.teacherEn = u"New Teacher";
+    request.fields.teacherKr = u"선생님";
     ClassMngr::Next::Platform::
         TeacherValidatorTeacherCreateValidationPolicy validationPolicy;
     ClassMngr::Next::Platform::ApplicationServicesTeacherCreatePort createPort(
@@ -61,8 +73,8 @@ void SidebarController::addTeacher()
     }
 
     bool teacherIdOk = false;
-    const int teacherId = QString::fromStdString(created.value().value())
-        .toInt(&teacherIdOk);
+    const qint64 teacherId = QString::fromStdString(created.value().value())
+        .toLongLong(&teacherIdOk);
     if (!teacherIdOk || teacherId <= 0)
     {
         DialogServices::showWarning(
@@ -73,24 +85,60 @@ void SidebarController::addTeacher()
         return;
     }
 
-    refreshTeacherSidebar();
-
-    const Result<Teacher> teacher =
-        teachers->teacher(
-            teacherId
+    const auto typedTeacherId =
+        ClassMngr::Next::Domain::TeacherId::fromString(
+            created.value().value()
             );
+    if (!typedTeacherId)
+    {
+        DialogServices::showWarning(
+            m_sidebar,
+            tr("Add Teacher"),
+            tr("The created teacher could not be loaded.")
+            );
+        return;
+    }
 
-    if (!teacher)
+    ClassMngr::Next::Platform::
+        ApplicationServicesTeacherProfileReadPort readPort(m_services);
+    const ClassMngr::Next::Application::TeacherProfileReadQuery query(readPort);
+    const auto profile = query.execute(*typedTeacherId);
+    if (!profile)
     {
         DialogServices::showWarning(
             m_sidebar,
             tr("Add Teacher"),
             tr("The created teacher could not be loaded."),
-            teacher.error()
+            QString::fromUtf8(
+                profile.error().message.data(),
+                static_cast<qsizetype>(profile.error().message.size())
+                )
             );
         return;
     }
 
+    const auto& fields = profile.value().fields;
+    Teacher teacher;
+    teacher.id = teacherId <= std::numeric_limits<int>::max()
+        ? static_cast<int>(teacherId)
+        : -1;
+    teacher.teacherKr = QString::fromStdU16String(fields.teacherKr);
+    teacher.teacherEn = QString::fromStdU16String(fields.teacherEn);
+    teacher.preferredRomanization = QString::fromStdU16String(
+        fields.preferredRomanization);
+    teacher.preferredName = QString::fromStdU16String(fields.preferredName);
+    teacher.roomNumber = QString::fromStdU16String(fields.roomNumber);
+    teacher.birthday = QString::fromStdU16String(fields.birthday);
+    teacher.phoneNumber = QString::fromStdU16String(fields.phoneNumber);
+    teacher.wifiName = QString::fromStdU16String(fields.wifiName);
+    teacher.wifiPassword = QString::fromStdU16String(fields.wifiPassword);
+    teacher.internetType = QString::fromStdU16String(fields.internetType);
+    teacher.zoomId = QString::fromStdU16String(fields.zoomId);
+    teacher.zoomPassword = QString::fromStdU16String(fields.zoomPassword);
+    teacher.projectionType = QString::fromStdU16String(fields.projectionType);
+    teacher.notes = QString::fromStdU16String(fields.notes);
+
+    refreshTeacherSidebar();
     m_sidebar->selectTeacher(
         teacherId
         );
@@ -103,8 +151,10 @@ void SidebarController::addTeacher()
     }
 
     page->loadTeacher(
-        *teacher
+        teacher,
+        teacherId
         );
+    page->markCreatedTeacherPendingConfirmation();
 
     m_pages->showPage(
         PageType::TeacherInfo

@@ -91,9 +91,12 @@ and Phase 0's 2026-09-18 Complete declaration.
 
 ### Deferred candidates
 
-- F285 - Deferred before implementation: addTeacher() creates a blank
-  teacher, but required-name validation rejects it before the profile read.
-  Revisit after the blank-draft creation contract is clarified.
+- F285 - Product decision recorded 2026-11-02: create teachers with English
+  name `New Teacher` and Korean name `선생님`. When leaving the newly created
+  teacher page while either name remains at its default, offer Yes, No, and
+  Discard. Yes confirms and saves before leaving, No stays for editing, and
+  Discard deletes the new teacher. Keep the created teacher identity wide
+  through Sidebar selection and the profile page.
 - Batch 197 teacher reassignment policy - decided 2026-11-02: preserve legacy
   behavior. Existing notes or schedules that are not being edited must not
   block reassignment or be rewritten by it. Apply their validation when those
@@ -105,9 +108,6 @@ and Phase 0's 2026-09-18 Complete declaration.
   not introduce arbitrary 4,096- or 25-row limits.
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
-- Sidebar Add/post-create wide-ID transition - deferred under F285: blank-draft
-  Add is rejected before persistence, so revisit create-path identity propagation
-  only after the draft-creation contract is clarified.
 
 ## Objective
 

@@ -15,6 +15,8 @@
 #include "features/my_info/ui/my_workspace_page.h"
 #include "features/my_info/ui/personal_details_page.h"
 #include "domain/models/class_info.h"
+#include "domain/models/teacher.h"
+#include "features/teacher/ui/teacher_info_page.h"
 #include "fakes/fake_file_dialog_service.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
@@ -377,7 +379,7 @@ private slots:
     void importClassesActionReviewsAndAppliesJsonPackage();
     void exportClassesActionReachesJsonPickerAndCancellationIsSilent();
     void exportClassesActionWritesSelectedClassPackage();
-    void newTeacherActionShowsRequiredNameWarningWithoutNavigation();
+    void newTeacherActionCreatesDefaultNamedTeacher();
 
 private:
     QTemporaryDir m_settingsDirectory;
@@ -1789,7 +1791,7 @@ exportClassesActionReachesJsonPickerAndCancellationIsSilent()
 }
 
 void MainWindowCloseFileParityTests::
-newTeacherActionShowsRequiredNameWarningWithoutNavigation()
+newTeacherActionCreatesDefaultNamedTeacher()
 {
     QTemporaryDir workspaceRoot;
     QVERIFY(workspaceRoot.isValid());
@@ -1855,11 +1857,7 @@ newTeacherActionShowsRequiredNameWarningWithoutNavigation()
     newTeacherAction->trigger();
     QApplication::processEvents();
 
-    QCOMPARE(prompts.messages.size(), 1);
-    const PromptRequest& warning = prompts.messages.constFirst();
-    QCOMPARE(warning.title, QStringLiteral("Add Teacher"));
-    QCOMPARE(warning.severity, PromptSeverity::Warning);
-    QVERIFY(warning.details.contains(QStringLiteral("teacher.name.required")));
+    QVERIFY(prompts.messages.isEmpty());
     QVERIFY(prompts.asynchronousMessages.isEmpty());
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.unsavedChangesConfirmations.isEmpty());
@@ -1871,15 +1869,24 @@ newTeacherActionShowsRequiredNameWarningWithoutNavigation()
 
     const auto teachersAfter = teacherService->teachers();
     QVERIFY(teachersAfter);
-    QVERIFY(teachersAfter->isEmpty());
+    QCOMPARE(teachersAfter->size(), 1);
+    const Teacher& createdTeacher = teachersAfter->constFirst();
+    QCOMPARE(createdTeacher.teacherEn, QStringLiteral("New Teacher"));
+    QCOMPARE(createdTeacher.teacherKr, QStringLiteral("선생님"));
 
-    QVERIFY(!pages->isCurrentPage(PageType::TeacherInfo));
-    QVERIFY(!pages->isPageInstantiated(PageType::TeacherInfo));
-    QVERIFY(pages->teacherPage() == nullptr);
-    QVERIFY(pages->isCurrentPage(PageType::MyWorkspace));
-    QCOMPARE(pages->currentWidget(), currentWidget);
-    QCOMPARE(pages->currentPageIdentifier(), currentPageIdentifier);
-    QCOMPARE(sidebar->selectedKeys(), sidebarKeys);
+    QVERIFY(pages->isCurrentPage(PageType::TeacherInfo));
+    QVERIFY(pages->isPageInstantiated(PageType::TeacherInfo));
+    TeacherInfoPage* const teacherPage = pages->teacherPage();
+    QVERIFY(teacherPage);
+    QCOMPARE(teacherPage->teacherId(), static_cast<qint64>(createdTeacher.id));
+    QVERIFY(pages->currentWidget() != currentWidget);
+    QCOMPARE(
+        pages->currentPageIdentifier(),
+        PageManager::pageTypeIdentifier(PageType::TeacherInfo)
+        );
+    QVERIFY(!currentPageIdentifier.isEmpty());
+    QCOMPARE(sidebar->getSelectedTeacherId(), createdTeacher.id);
+    QVERIFY(sidebar->selectedKeys() != sidebarKeys);
     QVERIFY(services->hasOpenDatabase());
     QCOMPARE(services->databaseSession(), activeSession);
     QCOMPARE(services->currentDatabasePath(), workspacePath);

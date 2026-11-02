@@ -329,6 +329,18 @@ void PageManager::showPage(
     PageType type
     )
 {
+    if (!isCurrentPage(type))
+    {
+        auto* leavingTeacherPage = qobject_cast<TeacherInfoPage*>(
+            currentWidget()
+            );
+        if (leavingTeacherPage
+            && !leavingTeacherPage->confirmCreatedTeacherCanLeave())
+        {
+            return;
+        }
+    }
+
     const bool wasInstantiated = m_pages.contains(type);
     BasePage* page = ensurePage(type);
 
@@ -354,6 +366,11 @@ void PageManager::showPage(
 
     if (pageChanged)
     {
+        if (auto* teacherPage = qobject_cast<TeacherInfoPage*>(leavingPage))
+        {
+            teacherPage->finishCreatedTeacherNavigation();
+        }
+
         if (leavingPage)
         {
             StartupProfiler::recordPageLeft(
@@ -515,6 +532,12 @@ bool PageManager::confirmCurrentPageCanLeave(
         qobject_cast<BasePage*>(
             currentWidget()
             );
+
+    auto* teacherPage = qobject_cast<TeacherInfoPage*>(page);
+    if (teacherPage && !teacherPage->confirmCreatedTeacherCanLeave())
+    {
+        return false;
+    }
 
     if (
         !page

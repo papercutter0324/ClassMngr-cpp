@@ -6,6 +6,7 @@
 #include <QList>
 #include <QObject>
 #include <QString>
+#include <QStringList>
 
 #include <memory>
 #include <optional>
@@ -59,6 +60,8 @@ public slots:
     void handleTeacherSaved(
         qint64 teacherId
         );
+
+    void handleTeacherCreationDiscarded(qint64 teacherId);
 
 private slots:
 
@@ -134,4 +137,7 @@ private:
 
     ClassMngr::Next::Application::UpcomingBirthdayDismissalPort*
         m_upcomingBirthdayDismissalPort{};
+
+    QStringList m_teacherCreationReturnSelection;
+    qint64 m_teacherCreationReturnTeacherId = -1;
 };

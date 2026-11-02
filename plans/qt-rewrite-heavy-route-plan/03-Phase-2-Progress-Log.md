@@ -168,7 +168,6 @@ Phase 2 remains Complete; unrelated deferred product decisions are unchanged.
 - Batch 197 teacher reassignment policy (decided 2026-11-02): preserve legacy
   behavior. Existing, unchanged notes and schedules do not gate reassignment
   and are not rewritten by it; validate them when those fields are edited.
-
 - Class Details save fails closed on validation-context read failure or class-ID
   mismatch. This user-directed behavior is an explicit exception to pinned
   legacy behavior, which could save default teacher assignment, notes, and
