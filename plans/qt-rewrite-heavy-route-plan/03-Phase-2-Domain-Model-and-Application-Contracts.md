@@ -94,8 +94,11 @@ and Phase 0's 2026-09-18 Complete declaration.
 - F285 - Deferred before implementation: addTeacher() creates a blank
   teacher, but required-name validation rejects it before the profile read.
   Revisit after the blank-draft creation contract is clarified.
-- Batch 197 teacher reassignment parity - deferred until the stricter Next
-  notes/schedule validation policy is resolved against current tests.
+- Batch 197 teacher reassignment policy - decided 2026-11-02: preserve legacy
+  behavior. Existing notes or schedules that are not being edited must not
+  block reassignment or be rewritten by it. Apply their validation when those
+  fields are edited, and preserve the established assignment checks and
+  failure behavior.
 - Class Analytics arbitrary roster-allocation cap and sparse representation
   change - deferred: F794 covers integer representability only; large
   int-representable rows retain existing vector allocation/catch behavior. Do
