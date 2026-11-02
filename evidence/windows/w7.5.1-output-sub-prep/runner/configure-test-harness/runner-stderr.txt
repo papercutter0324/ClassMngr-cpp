@@ -1,0 +1,3136 @@
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrInitialSetupWizardTeacherCreateParityTests.dir/./
+
+  has 178 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_initial_setup_teacher_create_parity_keyboard_test_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrCalendarPreferencesRestoreDefaultsTests.dir/./
+
+  has 175 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_calendar_preferences_event_reset_keyboard_test_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrStaffDirectoryClosedSessionNavigationParityTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/staff_directory_closed_session_navigation_parity_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrStaffDirectoryOpenSessionNavigationParityTests.dir/./
+
+  has 182 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_staff_directory_open_session_navigation_parity_keyboard_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowDocumentCatalogRetranslationParityTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/mainwindow_document_catalog_retranslation_parity_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowRecentWorkspaceReopenParityTests.dir/./
+
+  has 178 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_ClassMngrMainWindowRecentWorkspaceReopenParityTests_translations.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowMyWorkspaceSidebarRootNavigationTests.dir/./
+
+  has 183 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_mainwindow_my_workspace_sidebar_root_navigation_keyboard_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowClassesSidebarRootNavigationTests.dir/./
+
+  has 179 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_mainwindow_classes_sidebar_root_navigation_keyboard_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowSubPrepSidebarRootNavigationTests.dir/./
+
+  has 179 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_mainwindow_subprep_sidebar_root_navigation_keyboard_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowInitialSetupEmptyStateNavigationTests.dir/./
+
+  has 183 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_mainwindow_initial_setup_empty_state_keyboard_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowCampusSidebarNavigationTests.dir/./
+
+  has 174 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_ClassMngrMainWindowCampusSidebarNavigationTests_translations.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowExitConfirmationParityTests.dir/./
+
+  has 173 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_ClassMngrMainWindowExitConfirmationParityTests_translations.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowCheckForUpdatesActionParityTests.dir/./
+
+  has 178 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_mainwindow_check_for_updates_action_keyboard_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowAutomaticUpdatePreferenceActionParityTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_mainwindow_automatic_update_preference_action_keyboard_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowClassVisibilityPreferencesFailureTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/mainwindow_class_visibility_preferences_failure_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowDocumentViewerBackgroundActionParityTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/mainwindow_document_viewer_background_action_parity_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowDocumentViewerPageSpacingActionParityTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/mainwindow_document_viewer_page_spacing_action_parity_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowSidebarOverflowTooltipsActionParityTests.dir/./
+
+  has 186 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/mainwindow_sidebar_overflow_tooltips_action_parity_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowAiCommentVoiceActionParityTests.dir/./
+
+  has 177 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_ClassMngrMainWindowAiCommentVoiceActionParityTests_translations.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowCustomWebsiteAiCommentProviderActionParityTests.dir/./
+
+  has 193 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/mainwindow_custom_website_ai_comment_provider_action_parity_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowAiCommentProviderActionParityTests.dir/./
+
+  has 180 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_mainwindow_ai_comment_provider_action_keyboard_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowScheduleTestingClassesHandoffParityTests.dir/./
+
+  has 186 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/mainwindow_schedule_testing_classes_handoff_parity_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrMainWindowTeacherSidebarNavigationParityTests.dir/./
+
+  has 181 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    .qt/rcc/qrc_mainwindow_teacher_sidebar_navigation_keyboard_resources.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_report_template_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_class_analytics_dashboard_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests.dir/./
+
+  has 192 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_class_analytics_criterion_extrema_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_class_analytics_ranking_order_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests.dir/./
+
+  has 203 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_analytics_dashboard_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_campus_dashboard_selected_campus_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationCampusDashboardCampusSavePortTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_campus_dashboard_campus_save_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationCampusDashboardCampusIdentitySavePolicyTests.dir/./
+
+  has 195 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_campus_dashboard_campus_identity_save_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_roster_print_class_info_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests.dir/./
+
+  has 190 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_roster_template_print_source_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationRosterCustomColumnNamePolicyTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_roster_custom_column_name_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_roster_custom_column_removal_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationRosterRowTransferPreparationTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_roster_row_transfer_preparation_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationRosterTransferTargetEligibilityTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_roster_transfer_target_eligibility_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_student_korean_name_suffix_suggestion_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationRosterNameImportPlanTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_roster_name_import_plan_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_roster_names_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests.dir/./
+
+  has 199 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_roster_score_row_assignments_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests.dir/./
+
+  has 192 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_ai_batch_eligibility_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_ai_comment_prompt_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSpeakingEvaluationQtTextMatchPortTests.dir/./
+
+  has 186 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_speaking_evaluation_qt_text_match_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationReportContentTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_report_content_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests.dir/./
+
+  has 197 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_schedule_label_projection_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests.dir/./
+
+  has 195 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_ai_batch_comment_quality_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests.dir/./
+
+  has 200 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_ai_batch_accepted_comment_plan_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_private_notes_split_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests.dir/./
+
+  has 193 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_initial_setup_teacher_identity_validation_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_automatic_update_startup_eligibility_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests.dir/./
+
+  has 199 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_qsettings_file_dialog_directory_preferences_adapter_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationRecentWorkspaceHistoryUseCaseTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_recent_workspace_history_use_case_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_upcoming_birthday_schedule_use_case_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepPackageRequestValidationTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_package_request_validation_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_class_information_selection_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepMeetingTimeGroupingPolicyTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_meeting_time_grouping_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_navigation_metadata_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests.dir/./
+
+  has 192 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_navigation_schedule_order_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_visible_class_ordering_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_class_tab_navigation_ordering_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationTestingClassesOrderingPolicyTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_testing_classes_ordering_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationPreferredNameSelectionPolicyTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_preferred_name_selection_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests.dir/./
+
+  has 183 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_schedule_summary_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationClassCoTeacherPageReadQueryTests.dir/./
+
+  has 183 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_class_co_teacher_page_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationClassCoTeacherTeacherChoicesReadQueryTests.dir/./
+
+  has 193 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_class_co_teacher_teacher_choices_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSelectedClassGradeReadQueryTests.dir/./
+
+  has 183 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_selected_class_grade_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests.dir/./
+
+  has 186 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_selected_class_subtitle_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_selected_class_subtitle_batch_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_class_details_schedule_conflict_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationClassDetailsValidationContextQueryTests.dir/./
+
+  has 190 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_class_details_validation_context_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationClassDetailsValidationPolicyTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_class_details_validation_policy_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationRosterColumnNamesBatchReadQueryTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_roster_column_names_batch_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_roster_availability_batch_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_builder_source_snapshot_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_by_id_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassesListReadPortTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_classes_list_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_save_use_case_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_speaking_evaluation_roster_score_import_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests.dir/./
+
+  has 195 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_my_classes_class_information_batch_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationMyClassesClassSummaryBatchReadQueryTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_my_classes_class_summary_batch_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests.dir/./
+
+  has 193 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_my_classes_teacher_profile_batch_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_my_classes_student_count_batch_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleEditorClassInfoQueryTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_editor_class_info_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests.dir/./
+
+  has 186 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_roster_output_source_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepClassInformationStateTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_class_information_state_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_transfer_apply_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationCalendarEventImportSignatureTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_calendar_event_import_signature_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleImportStateValidationTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_import_state_validation_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleImportMatchingProjectionTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_import_matching_projection_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleImportReviewDecisionsTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_import_review_decisions_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleImportReviewReadinessTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_import_review_readiness_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests.dir/./
+
+  has 190 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_import_apply_review_decisions_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests.dir/./
+
+  has 193 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_import_review_summary_projection_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests.dir/./
+
+  has 196 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_import_schedules_cleared_projection_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleImportPlanValidationTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_import_plan_validation_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_native_english_teacher_import_update_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationTeacherImportMatchCardinalityTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_teacher_import_match_cardinality_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationTeacherDisplayNameBatchReadQueryTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_teacher_display_name_batch_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationTeacherImportLatestSourceDateReadQueryTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_teacher_import_latest_source_date_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationNativeEnglishTeacherDirectoryReadQueryTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_native_english_teacher_directory_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationNativeEnglishTeacherBirthdayDirectoryReadQueryTests.dir/./
+
+  has 202 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_native_english_teacher_birthday_directory_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationKoreanTeacherBirthdayDirectoryReadQueryTests.dir/./
+
+  has 195 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_korean_teacher_birthday_directory_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_native_english_teacher_directory_save_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationGsTeamBirthdayDirectoryReadQueryTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_gs_team_birthday_directory_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepCampusDirectoryQueryTests.dir/./
+
+  has 183 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_campus_directory_query_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationCalendarEventImportSignatureQueryPortTests.dir/./
+
+  has 193 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_calendar_event_import_signature_query_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerExcelImportTimeoutPortTests.dir/./
+
+  has 190 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_excel_import_timeout_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerAutomaticUpdatePreferencesPortTests.dir/./
+
+  has 198 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_automatic_update_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerAiCommentCustomWebsitePortTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_ai_comment_custom_website_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerAiCommentVoicePreferencesPortTests.dir/./
+
+  has 197 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_ai_comment_voice_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerAiCommentProviderPreferencesPortTests.dir/./
+
+  has 200 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_ai_comment_provider_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_font_size_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerDocumentViewerBackgroundPreferencesPortTests.dir/./
+
+  has 207 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_document_viewer_background_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests.dir/./
+
+  has 202 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_document_page_spacing_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerSaveModePreferencesPortTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_save_mode_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_theme_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerDialogGeometryPreferencesPortTests.dir/./
+
+  has 197 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_dialog_geometry_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerLanguagePreferencesPortTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_language_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerUpcomingBirthdayDismissalPortTests.dir/./
+
+  has 197 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_upcoming_birthday_dismissal_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerSkippedUpdateVersionPortTests.dir/./
+
+  has 192 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_skipped_update_version_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerPowerPointDataAccessNoticePortTests.dir/./
+
+  has 198 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_powerpoint_data_access_notice_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests.dir/./
+
+  has 197 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_sidebar_display_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerRecentWorkspaceHistoryPortTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_recent_workspace_history_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests.dir/./
+
+  has 190 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_last_selected_campus_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSettingsManagerLastDatabaseDirectoryPortTests.dir/./
+
+  has 193 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_settings_manager_last_database_directory_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesWorkspacePortTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_workspace_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_document_catalog_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_sub_prep_print_source_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests.dir/./
+
+  has 190 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_sub_prep_calendar_event_intervals_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_notes_page_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests.dir/./
+
+  has 198 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_selected_class_grade_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests.dir/./
+
+  has 190 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_notes_save_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests.dir/./
+
+  has 192 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_details_save_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests.dir/./
+
+  has 204 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_details_schedule_conflict_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests.dir/./
+
+  has 205 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_details_validation_context_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesRosterSavePortTests.dir/./
+
+  has 186 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_roster_save_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesRosterReadPortTests.dir/./
+
+  has 186 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_roster_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests.dir/./
+
+  has 209 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_speaking_evaluation_roster_names_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesRosterColumnNamesBatchReadPortTests.dir/./
+
+  has 202 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_roster_column_names_batch_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassesNavigationReadPortTests.dir/./
+
+  has 197 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_classes_navigation_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests.dir/./
+
+  has 198 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_speaking_evaluation_save_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests.dir/./
+
+  has 198 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_speaking_evaluation_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests.dir/./
+
+  has 196 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_details_page_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests.dir/./
+
+  has 210 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_my_classes_class_information_batch_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests.dir/./
+
+  has 208 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_my_classes_teacher_profile_batch_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests.dir/./
+
+  has 206 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_my_classes_student_count_batch_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests.dir/./
+
+  has 201 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_selected_class_subtitle_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests.dir/./
+
+  has 206 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_selected_class_subtitle_batch_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests.dir/./
+
+  has 200 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_roster_print_class_info_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests.dir/./
+
+  has 205 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_roster_template_print_source_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests.dir/./
+
+  has 203 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_editor_class_info_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests.dir/./
+
+  has 198 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_co_teacher_page_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPortTests.dir/./
+
+  has 208 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_co_teacher_teacher_choices_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests.dir/./
+
+  has 205 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_teacher_profile_edit_persistence_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_teacher_profile_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTeacherDisplayNameBatchReadPortTests.dir/./
+
+  has 203 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_teacher_display_name_batch_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests.dir/./
+
+  has 209 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_teacher_import_latest_source_date_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_teacher_import_apply_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests.dir/./
+
+  has 209 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_native_english_teacher_directory_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPortTests.dir/./
+
+  has 217 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_native_english_teacher_birthday_directory_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests.dir/./
+
+  has 210 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_korean_teacher_birthday_directory_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests.dir/./
+
+  has 209 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_native_english_teacher_directory_save_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesGsTeamDirectorySavePortTests.dir/./
+
+  has 195 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_gs_team_directory_save_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests.dir/./
+
+  has 195 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_gs_team_directory_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesGsTeamBirthdayDirectoryReadPortTests.dir/./
+
+  has 203 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_gs_team_birthday_directory_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests.dir/./
+
+  has 200 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_co_teacher_assignment_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationMyInfoCampusDirectoryQueryPortTests.dir/./
+
+  has 186 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_my_info_campus_directory_query_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests.dir/./
+
+  has 201 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_sub_prep_roster_output_source_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformSubPrepCampusDirectoryQueryAdapterTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_sub_prep_campus_directory_query_adapter_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesCalendarEventPortTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_calendar_event_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests.dir/./
+
+  has 207 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_calendar_event_display_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests.dir/./
+
+  has 209 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_calendar_first_day_of_week_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests.dir/./
+
+  has 211 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_academic_calendar_schedule_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests.dir/./
+
+  has 209 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_calendar_event_type_color_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests.dir/./
+
+  has 205 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_custom_color_palette_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests.dir/./
+
+  has 200 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_current_campus_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformCalendarEventImportCampusCodeQueryTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_calendar_event_import_campus_code_query_adapter_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests.dir/./
+
+  has 185 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_calendar_page_campus_directory_query_adapter_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformCampusDashboardSelectedCampusReadAdapterTests.dir/./
+
+  has 193 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_campus_dashboard_selected_campus_read_adapter_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_campus_dashboard_campus_repository_adapter_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformMyInfoCampusDirectoryQueryAdapterTests.dir/./
+
+  has 186 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_my_info_campus_directory_query_adapter_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests.dir/./
+
+  has 206 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_personal_display_name_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests.dir/./
+
+  has 195 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_personal_details_save_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests.dir/./
+
+  has 198 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_personal_signature_image_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests.dir/./
+
+  has 204 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_personal_signature_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_sub_prep_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests.dir/./
+
+  has 206 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_sub_prep_personal_zoom_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests.dir/./
+
+  has 190 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_testing_assignment_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests.dir/./
+
+  has 192 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_testing_class_choices_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationTestingClassDetailsReadQueryTests.dir/./
+
+  has 184 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_testing_class_details_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_testing_class_details_update_use_case_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleTestingAssignmentSaveUseCaseTests.dir/./
+
+  has 192 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_testing_assignment_save_use_case_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationScheduleTestingLayoutClearUseCaseTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_schedule_testing_layout_clear_use_case_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests.dir/./
+
+  has 197 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_slot_state_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests.dir/./
+
+  has 205 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_testing_assignment_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests.dir/./
+
+  has 207 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_testing_class_choices_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationTestingTeacherChoicesReadQueryTests.dir/./
+
+  has 186 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_testing_teacher_choices_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests.dir/./
+
+  has 201 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_testing_teacher_choices_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests.dir/./
+
+  has 191 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_initial_setup_teacher_choices_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests.dir/./
+
+  has 188 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_application_class_teacher_assignments_read_query_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests.dir/./
+
+  has 206 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_initial_setup_teacher_choices_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests.dir/./
+
+  has 203 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_teacher_assignments_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests.dir/./
+
+  has 199 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_testing_class_details_read_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests.dir/./
+
+  has 201 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_testing_class_details_update_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_testing_class_create_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassCreatePortTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_create_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTestingClassDeletePortTests.dir/./
+
+  has 194 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_testing_class_delete_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassDeletePortTests.dir/./
+
+  has 187 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_delete_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTeacherDeletePortTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_teacher_delete_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesTeacherCreatePortTests.dir/./
+
+  has 189 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_teacher_create_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests.dir/./
+
+  has 205 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_testing_assignment_save_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleTestingLayoutClearPortTests.dir/./
+
+  has 202 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_testing_layout_clear_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests.dir/./
+
+  has 197 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_slot_state_save_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests.dir/./
+
+  has 197 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_builder_source_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests.dir/./
+
+  has 203 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_import_state_snapshot_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests.dir/./
+
+  has 195 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_import_apply_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests.dir/./
+
+  has 202 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_display_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests.dir/./
+
+  has 206 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_schedule_display_mode_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests.dir/./
+
+  has 199 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_evaluation_default_policy_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests.dir/./
+
+  has 201 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_day_filter_reset_policy_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests.dir/./
+
+  has 201 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_selection_reset_policy_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests.dir/./
+
+  has 202 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_class_visibility_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+
+CMake Warning in CMakeLists.txt:
+  The object file directory
+
+    C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/CMakeFiles/ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests.dir/./
+
+  has 208 characters.  The maximum full path to an object file is 250
+  characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+
+    tests/next_platform_application_services_middle_school_analytics_preferences_port_tests.cpp.obj
+
+  cannot be safely placed under this directory.  The build may not work
+  correctly.
+
+

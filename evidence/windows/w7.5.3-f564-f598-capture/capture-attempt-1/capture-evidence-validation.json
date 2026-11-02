@@ -1,0 +1,187 @@
+﻿{
+    "schema":  "w753-f564-f598-final-capture-validation-v1",
+    "taskId":  "W753-F564-F598-FINAL-CAPTURE",
+    "sourceHead":  "fe25e2ff7a82b8da34d970a3591b64b3065aeb9e",
+    "workingTreeClean":  true,
+    "captureStatus":  "passed",
+    "dryRun":  false,
+    "runId":  "6d028cab-6954-43a2-be78-6d6c91005deb",
+    "processId":  11472,
+    "routeRunnerExitCode":  0,
+    "f563ControllerWprInvoked":  false,
+    "route":  "Debug lifecycle-sub-prep with PDF page-render observer opt-in",
+    "testSlot":  "capturesLargeSubPrepBoundaryWhenConfigured",
+    "routeWorkflowCompleted":  true,
+    "routeTimedOut":  false,
+    "fixturePath":  "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\localappdata\\Temp\\ClassMngr-F563-Checkpoint-DryRun-20261101T234254Z-12440\\lifecycle-sub-prep\\large_startup.tps",
+    "fixtureSha256":  "c213ce96d85d927a4e2a4196c68be490f4517076079c069b475ec0ada872ffbb",
+    "checkpoints":  [
+                        {
+                            "checkpoint":  "after-render",
+                            "checkpointOrder":  1,
+                            "processId":  11472,
+                            "snapshotCommandSucceeded":  true,
+                            "markerSha256":  "56f6ed7d7d2568a51d9890eab9d7b60a532cc5a6e9a643165bc31a19a6277a4f",
+                            "ackSha256":  "637bb9201cce2d7a04706527a8aa0e13aad6db9b9a8fe1fb07ac65baf60e714d",
+                            "ackBindsMarker":  true,
+                            "metricsSampleStartMonotonicTimestampNanoseconds":  54048665800,
+                            "metricsSampleEndMonotonicTimestampNanoseconds":  54050064900,
+                            "checkpointMonotonicTimestampNanoseconds":  54050140100,
+                            "ownerMetrics":  [
+                                                 {
+                                                     "modelCellCount":  49,
+                                                     "modelEntryCount":  768,
+                                                     "modelRowCount":  7,
+                                                     "ownerKey":  "standalone-schedule",
+                                                     "tableCellWidgetCount":  0,
+                                                     "tableColumnCount":  8,
+                                                     "tableItemCount":  56,
+                                                     "tableRowCount":  7,
+                                                     "visibleClassCount":  96
+                                                 },
+                                                 {
+                                                     "modelCellCount":  0,
+                                                     "modelEntryCount":  0,
+                                                     "modelRowCount":  0,
+                                                     "ownerKey":  "workspace-schedule",
+                                                     "tableCellWidgetCount":  0,
+                                                     "tableColumnCount":  8,
+                                                     "tableItemCount":  0,
+                                                     "tableRowCount":  0,
+                                                     "visibleClassCount":  0
+                                                 },
+                                                 {
+                                                     "modelCellCount":  0,
+                                                     "modelEntryCount":  0,
+                                                     "modelRowCount":  0,
+                                                     "ownerKey":  "sub-prep-preview",
+                                                     "tableCellWidgetCount":  0,
+                                                     "tableColumnCount":  8,
+                                                     "tableItemCount":  0,
+                                                     "tableRowCount":  0,
+                                                     "visibleClassCount":  0
+                                                 }
+                                             ]
+                        },
+                        {
+                            "checkpoint":  "after-document-close",
+                            "checkpointOrder":  2,
+                            "processId":  11472,
+                            "snapshotCommandSucceeded":  true,
+                            "markerSha256":  "3e02e74cf8132faba8be97afa4722332300fc70e4198620238bde847dd760e2f",
+                            "ackSha256":  "09eaab9e6aafe3687cdc88fbd79f64a2e6395a68ee6e6c91701d60bf50c1eab5",
+                            "ackBindsMarker":  true,
+                            "metricsSampleStartMonotonicTimestampNanoseconds":  58219272800,
+                            "metricsSampleEndMonotonicTimestampNanoseconds":  58221459100,
+                            "checkpointMonotonicTimestampNanoseconds":  58221566200,
+                            "ownerMetrics":  [
+                                                 {
+                                                     "modelCellCount":  49,
+                                                     "modelEntryCount":  768,
+                                                     "modelRowCount":  7,
+                                                     "ownerKey":  "standalone-schedule",
+                                                     "tableCellWidgetCount":  0,
+                                                     "tableColumnCount":  8,
+                                                     "tableItemCount":  56,
+                                                     "tableRowCount":  7,
+                                                     "visibleClassCount":  96
+                                                 },
+                                                 {
+                                                     "modelCellCount":  0,
+                                                     "modelEntryCount":  0,
+                                                     "modelRowCount":  0,
+                                                     "ownerKey":  "workspace-schedule",
+                                                     "tableCellWidgetCount":  0,
+                                                     "tableColumnCount":  8,
+                                                     "tableItemCount":  0,
+                                                     "tableRowCount":  0,
+                                                     "visibleClassCount":  0
+                                                 },
+                                                 {
+                                                     "modelCellCount":  0,
+                                                     "modelEntryCount":  0,
+                                                     "modelRowCount":  0,
+                                                     "ownerKey":  "sub-prep-preview",
+                                                     "tableCellWidgetCount":  0,
+                                                     "tableColumnCount":  8,
+                                                     "tableItemCount":  0,
+                                                     "tableRowCount":  0,
+                                                     "visibleClassCount":  0
+                                                 }
+                                             ]
+                        },
+                        {
+                            "checkpoint":  "after-view-destroyed",
+                            "checkpointOrder":  3,
+                            "processId":  11472,
+                            "snapshotCommandSucceeded":  true,
+                            "markerSha256":  "125e7ff1ac935a871d6839885d413c990ff360adacaab57541b716e1b2fbac45",
+                            "ackSha256":  "09702db779cae291560bdba120daccaf8a45158f5fa56d2b639e27f13a9b83fd",
+                            "ackBindsMarker":  true,
+                            "metricsSampleStartMonotonicTimestampNanoseconds":  69199205200,
+                            "metricsSampleEndMonotonicTimestampNanoseconds":  69200041400,
+                            "checkpointMonotonicTimestampNanoseconds":  69200138000,
+                            "ownerMetrics":  [
+                                                 {
+                                                     "modelCellCount":  49,
+                                                     "modelEntryCount":  768,
+                                                     "modelRowCount":  7,
+                                                     "ownerKey":  "standalone-schedule",
+                                                     "tableCellWidgetCount":  0,
+                                                     "tableColumnCount":  8,
+                                                     "tableItemCount":  56,
+                                                     "tableRowCount":  7,
+                                                     "visibleClassCount":  96
+                                                 },
+                                                 {
+                                                     "modelCellCount":  49,
+                                                     "modelEntryCount":  768,
+                                                     "modelRowCount":  7,
+                                                     "ownerKey":  "workspace-schedule",
+                                                     "tableCellWidgetCount":  0,
+                                                     "tableColumnCount":  8,
+                                                     "tableItemCount":  56,
+                                                     "tableRowCount":  7,
+                                                     "visibleClassCount":  96
+                                                 },
+                                                 {
+                                                     "modelCellCount":  0,
+                                                     "modelEntryCount":  0,
+                                                     "modelRowCount":  0,
+                                                     "ownerKey":  "sub-prep-preview",
+                                                     "tableCellWidgetCount":  0,
+                                                     "tableColumnCount":  8,
+                                                     "tableItemCount":  0,
+                                                     "tableRowCount":  0,
+                                                     "visibleClassCount":  0
+                                                 }
+                                             ]
+                        }
+                    ],
+    "etlPath":  "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\capture-attempt-1\\classmngr-pdf-heap-snapshots.etl",
+    "etlBytes":  56623104,
+    "etlSha256":  "9a6301e0a68ce3947362b4107fb62d9856ed7a35c4b7d39e10fe323635b3eca2",
+    "wprInitialSnapshotConfiguration":  "disabled",
+    "wprFinalSnapshotConfiguration":  "disabled",
+    "wprAllCommandsSucceeded":  true,
+    "wprPostStatus":  "Microsoft Windows Performance Recorder Version 10.0.26100 (CoreSystem)\nCopyright (c) 2024 Microsoft Corporation. All rights reserved.\n\nWPR is not recording",
+    "wprPostSnapshotConfiguration":  "Heap snapshot is disabled for process ClassMngr.exe.",
+    "wprCleanupErrors":  [
+
+                         ],
+    "binaryHashes":  {
+                         "ClassMngr.exe":  "c5c660025758abac763308d9b8214f299d30f3b3fbd9b6b7a5ea4caa81b43585",
+                         "ClassMngr.pdb":  "fbd30407f2e606fc257836fbb9844b94c321035db38cbd9dd48157977daaf378",
+                         "ClassMngrStartupPerformanceTests.exe":  "8722917e2cc2c744dd3d6a72cdc925a6b6e2ac386dd78f6983881236bb0b6bb3",
+                         "ClassMngrStartupPerformanceTests.pdb":  "bbc1e4976de9aff776c3427c87a6eadc44dd085992cfeba990dd5fc0688c1e80"
+                     },
+    "appPdbGuidAge":  "app RSDS {240B7F20-A919-4891-9096-9C5D4A71E495} age 4; PDB Info stream matches",
+    "runnerPdbGuidAge":  "runner RSDS {80C3BF61-52FC-41A8-98AD-14128BCE8319} age 5; PDB Info stream matches",
+    "buildEvidenceSummary":  "build/w753-f598-marker-metrics-20261102/build-evidence-summary.txt",
+    "tokenPreflight":  "build/w753-f564-f598-final-capture-20261102/token-preflight.txt: elevated Admin SID enabled, high integrity",
+    "tokenPostflight":  "build/w753-f564-f598-final-capture-20261102/token-postflight.txt: elevated Admin SID enabled, high integrity",
+    "errors":  [
+
+               ],
+    "validationPassed":  true
+}

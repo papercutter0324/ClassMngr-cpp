@@ -1,0 +1,13 @@
+﻿{
+    "method":  "scripts/record_refactoring_baseline.py in detached checkout",
+    "configure":  "cmake --fresh --preset windows-x64-debug -B build/windows-x64-debug",
+    "build":  "cmake --build build/windows-x64-debug --clean-first --parallel 2 --config Debug (all targets)",
+    "ctest":  "ctest --test-dir build/windows-x64-debug --output-on-failure --output-junit Testing/refactoring-baseline.junit.xml --timeout 120 --build-config Debug (no test filter)",
+    "per_stage_timeout_seconds":  7200,
+    "per_stage_timeout_mechanism":  "temporary external Python sitecustomize adds 7200-second subprocess timeout for cmake/ctest; returns exit 124 on timeout so recorder can persist distinct stage status",
+    "job_timeout_seconds":  21600,
+    "parallelism":  "2 clean-build jobs as refactoring-baseline CI; the CI runner baseline script leaves CTest parallelism at its default",
+    "source_checkout":  "detached clone in temporary evidence root",
+    "expected_build_testing":  "ON via preset",
+    "source_not_modified":  true
+}

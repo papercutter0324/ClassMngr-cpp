@@ -1,0 +1,21 @@
+Teacher 22
+English Name
+Teacher 22
+Room
+322
+WiFi Name
+HeavyFixture-WiFi-22
+Zoom ID
+heavy-fixture-22
+Internet Type
+Both
+Projection Type
+Any
+WiFi Password
+fixture-only
+Zoom Password
+fixture-only
+Classes
+E5 Level 07 Tues 8pm) - 25 Students
+Notes: Synthetic large startup fixture class. Co-Teacher Notes
+Synthetic large startup fixture teacher.

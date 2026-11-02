@@ -1,0 +1,9 @@
+{
+  "schema": "classmngr-f563-checkpoint-ack-v1",
+  "runId": "6d028cab-6954-43a2-be78-6d6c91005deb",
+  "processId": 11472,
+  "checkpoint": "after-view-destroyed",
+  "checkpointOrder": 3,
+  "markerSha256": "125e7ff1ac935a871d6839885d413c990ff360adacaab57541b716e1b2fbac45",
+  "acknowledgedAtUtc": "2026-11-01T23:44:04.093989+00:00"
+}

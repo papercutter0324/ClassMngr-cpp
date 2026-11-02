@@ -1,0 +1,383 @@
+{
+    "schema":  "classmngr-phase0-evidence-run-v1",
+    "taskId":  "QT0-EVIDENCE-AUTOMATION",
+    "runnerTaskId":  "QT0-AUTO-RUNNER",
+    "recordedAtUtc":  "2026-11-01T18:03:32.6633579Z",
+    "status":  "failed",
+    "scenario":  "Phase 0 packaged Release evidence automation",
+    "fixture":  "packaged Release Windows x64",
+    "supportedPlatform":  "windows-x64",
+    "supportedPlatforms":  [
+                               "windows-x64",
+                               "macos-universal"
+                           ],
+    "deferredPlatforms":  [
+                              "windows-arm64",
+                              "linux"
+                          ],
+    "platformCoverage":  [
+                             {
+                                 "name":  "windows-x64",
+                                 "supported":  true,
+                                 "status":  "runnable-on-this-host"
+                             },
+                             {
+                                 "name":  "macos-universal",
+                                 "supported":  true,
+                                 "status":  "supported-but-not-run-on-this-host"
+                             }
+                         ],
+    "platform":  {
+                     "name":  "windows-x64",
+                     "supported":  true,
+                     "acceptanceScope":  "Windows x64 is runnable here; macOS universal remains supported and is not run by this Windows-hosted runner."
+                 },
+    "source":  {
+                   "status":  "available",
+                   "commit":  "31a71e90f304400fd99b70698f986d64eb7e8a01",
+                   "statusPorcelain":  [
+
+                                       ],
+                   "workingTreeClean":  true,
+                   "error":  null,
+                   "buildMode":  "built-from-repository",
+                   "artifactSource":  "repository-build",
+                   "afterBuildSnapshot":  {
+                                              "status":  "available",
+                                              "commit":  "31a71e90f304400fd99b70698f986d64eb7e8a01",
+                                              "statusPorcelain":  [
+
+                                                                  ],
+                                              "workingTreeClean":  true
+                                          },
+                   "finalSnapshot":  {
+                                         "status":  "available",
+                                         "commit":  "31a71e90f304400fd99b70698f986d64eb7e8a01",
+                                         "statusPorcelain":  [
+
+                                                             ],
+                                         "workingTreeClean":  true
+                                     },
+                   "workingTreeChangedDuringRun":  false
+               },
+    "requestedRoutes":  [
+                            "output-sub-prep"
+                        ],
+    "paths":  {
+                  "repositoryRoot":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                  "applicationPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+                  "testExecutable":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test\\ClassMngrStartupPerformanceTests.exe",
+                  "releaseBuildDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\release",
+                  "testBuildDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test",
+                  "installDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package",
+                  "qtPrefix":  "C:\\Qt\\6.12.0\\msvc2022_64",
+                  "qtBinPath":  "C:\\Qt\\6.12.0\\msvc2022_64\\bin",
+                  "evidenceRoot":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep"
+              },
+    "options":  {
+                    "plan":  false,
+                    "skipBuild":  false,
+                    "skipRun":  false,
+                    "skipValidation":  false,
+                    "allowExistingRoot":  false,
+                    "enablePdfCapture":  true,
+                    "parallel":  2,
+                    "timeoutSeconds":  3600,
+                    "routes":  [
+                                   "output-sub-prep"
+                               ]
+                },
+    "requiredOptInEnvironmentVariables":  [
+                                              "QT_QPA_PLATFORM",
+                                              "CLASSMNGR_TEST_APP_PATH",
+                                              "CLASSMNGR_SETTINGS_ROOT",
+                                              "CLASSMNGR_LARGE_STARTUP_FIXTURE_OUTPUT_PATH",
+                                              "CLASSMNGR_STARTUP_WORKFLOW_TRACE_PATH",
+                                              "CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR",
+                                              "CLASSMNGR_STARTUP_PDF_LIFECYCLE_GRAB_ARM",
+                                              "CLASSMNGR_VISUAL_BASELINE_OUTPUT_DIR",
+                                              "CLASSMNGR_LARGE_CLASSES_VISUAL_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_SUB_PREP_VISUAL_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_PDF_VIEWER_VISUAL_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_SUB_PREP_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_CLASSES_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_SCHEDULE_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_SCHEDULE_IMPORT_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_SCHEDULE_IMPORT_APPLY_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_CALENDAR_IMPORT_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_CALENDAR_IMPORT_ERROR_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_CLASS_TRANSFER_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_SPEAKING_EVALUATION_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_STAFF_DIRECTORY_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_LARGE_SUB_PREP_OUTPUT_BOUNDARY_REFERENCE_DIR",
+                                              "CLASSMNGR_STARTUP_RESOURCE_TRACE_PATH"
+                                          ],
+    "memoryContract":  {
+                           "legacyResidentTargetBytes":  262144000,
+                           "legacyResidentTargetMiB":  250,
+                           "temporaryDiagnosticCeilingBytes":  536870912,
+                           "temporaryDiagnosticCeilingMiB":  512,
+                           "legacy250MiBIsPhase0Failure":  false,
+                           "temporary512MiBIsPhase0Failure":  false
+                       },
+    "commands":  [
+                     {
+                         "id":  "configure-release",
+                         "kind":  "external",
+                         "command":  [
+                                         "cmake",
+                                         "-S",
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                                         "-B",
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\release",
+                                         "-G",
+                                         "Ninja",
+                                         "-DQt6_DIR=C:\\Qt\\6.12.0\\msvc2022_64\\lib\\cmake\\Qt6",
+                                         "-DBUILD_TESTING=OFF",
+                                         "-DCMAKE_BUILD_TYPE=Release",
+                                         "-DCLASSMNGR_UPDATE_CHECK_ON_STARTUP=OFF",
+                                         "-DCLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP=OFF",
+                                         "-DCMAKE_INSTALL_PREFIX=C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package"
+                                     ],
+                         "commandLine":  "cmake -S C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s -B C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\release -G Ninja -DQt6_DIR=C:\\Qt\\6.12.0\\msvc2022_64\\lib\\cmake\\Qt6 -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DCLASSMNGR_UPDATE_CHECK_ON_STARTUP=OFF -DCLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP=OFF -DCMAKE_INSTALL_PREFIX=C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package",
+                         "workingDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                         "environment":  {
+                                             "CLASSMNGR_TEST_APP_PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+                                             "PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package;C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8.1 Tools\\x64\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\Tools\\;C:\\Users\\wfelt\\.codex\\tmp\\arg0\\codex-arg0B1QFja;C:\\Python314\\Scripts\\;C:\\Python314\\;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files\\CMake\\bin;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files\\nodejs\\;C:\\ProgramData\\chocolatey\\bin;C:\\Program Files\\GitHub CLI\\;C:\\Program Files\\Microsoft VS Code\\bin\\copilot-shim;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Users\\wfelt\\AppData\\Roaming\\npm;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Tools\\NuGet;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Microsoft.NuGet_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\\Users\\wfelt\\AppData\\Local\\GitHubDesktop\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja\\;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Program Files\\CMake\\bin\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\;C:\\Program Files\\GitHub CLI\\;c:\\Users\\wfelt\\.vscode\\extensions\\openai.chatgpt-26.1007.21434-win32-x64\\bin\\windows-x86_64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\vcpkg",
+                                             "QT_QPA_PLATFORM":  "offscreen"
+                                         },
+                         "status":  "completed",
+                         "processFinished":  true,
+                         "exitStatus":  "normal",
+                         "exitCode":  0,
+                         "timedOut":  false,
+                         "stdoutPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\configure-release\\runner-stdout.txt",
+                         "stderrPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\configure-release\\runner-stderr.txt",
+                         "durationSeconds":  9.134
+                     },
+                     {
+                         "id":  "build-release",
+                         "kind":  "external",
+                         "command":  [
+                                         "cmake",
+                                         "--build",
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\release",
+                                         "--config",
+                                         "Release",
+                                         "--parallel",
+                                         "2"
+                                     ],
+                         "commandLine":  "cmake --build C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\release --config Release --parallel 2",
+                         "workingDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                         "environment":  {
+                                             "CLASSMNGR_TEST_APP_PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+                                             "PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package;C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8.1 Tools\\x64\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\Tools\\;C:\\Users\\wfelt\\.codex\\tmp\\arg0\\codex-arg0B1QFja;C:\\Python314\\Scripts\\;C:\\Python314\\;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files\\CMake\\bin;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files\\nodejs\\;C:\\ProgramData\\chocolatey\\bin;C:\\Program Files\\GitHub CLI\\;C:\\Program Files\\Microsoft VS Code\\bin\\copilot-shim;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Users\\wfelt\\AppData\\Roaming\\npm;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Tools\\NuGet;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Microsoft.NuGet_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\\Users\\wfelt\\AppData\\Local\\GitHubDesktop\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja\\;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Program Files\\CMake\\bin\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\;C:\\Program Files\\GitHub CLI\\;c:\\Users\\wfelt\\.vscode\\extensions\\openai.chatgpt-26.1007.21434-win32-x64\\bin\\windows-x86_64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\vcpkg",
+                                             "QT_QPA_PLATFORM":  "offscreen"
+                                         },
+                         "status":  "completed",
+                         "processFinished":  true,
+                         "exitStatus":  "normal",
+                         "exitCode":  0,
+                         "timedOut":  false,
+                         "stdoutPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\build-release\\runner-stdout.txt",
+                         "stderrPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\build-release\\runner-stderr.txt",
+                         "durationSeconds":  1466.744
+                     },
+                     {
+                         "id":  "install-release",
+                         "kind":  "external",
+                         "command":  [
+                                         "cmake",
+                                         "--install",
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\release",
+                                         "--config",
+                                         "Release"
+                                     ],
+                         "commandLine":  "cmake --install C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\release --config Release",
+                         "workingDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                         "environment":  {
+                                             "CLASSMNGR_TEST_APP_PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+                                             "PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package;C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8.1 Tools\\x64\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\Tools\\;C:\\Users\\wfelt\\.codex\\tmp\\arg0\\codex-arg0B1QFja;C:\\Python314\\Scripts\\;C:\\Python314\\;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files\\CMake\\bin;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files\\nodejs\\;C:\\ProgramData\\chocolatey\\bin;C:\\Program Files\\GitHub CLI\\;C:\\Program Files\\Microsoft VS Code\\bin\\copilot-shim;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Users\\wfelt\\AppData\\Roaming\\npm;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Tools\\NuGet;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Microsoft.NuGet_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\\Users\\wfelt\\AppData\\Local\\GitHubDesktop\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja\\;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Program Files\\CMake\\bin\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\;C:\\Program Files\\GitHub CLI\\;c:\\Users\\wfelt\\.vscode\\extensions\\openai.chatgpt-26.1007.21434-win32-x64\\bin\\windows-x86_64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\vcpkg",
+                                             "QT_QPA_PLATFORM":  "offscreen"
+                                         },
+                         "status":  "completed",
+                         "processFinished":  true,
+                         "exitStatus":  "normal",
+                         "exitCode":  0,
+                         "timedOut":  false,
+                         "stdoutPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\install-release\\runner-stdout.txt",
+                         "stderrPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\install-release\\runner-stderr.txt",
+                         "durationSeconds":  4.481
+                     },
+                     {
+                         "id":  "configure-test-harness",
+                         "kind":  "external",
+                         "command":  [
+                                         "cmake",
+                                         "-S",
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                                         "-B",
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test",
+                                         "-G",
+                                         "Ninja",
+                                         "-DQt6_DIR=C:\\Qt\\6.12.0\\msvc2022_64\\lib\\cmake\\Qt6",
+                                         "-DBUILD_TESTING=ON",
+                                         "-DCMAKE_BUILD_TYPE=Debug",
+                                         "-DCLASSMNGR_UPDATE_CHECK_ON_STARTUP=OFF",
+                                         "-DCLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP=OFF"
+                                     ],
+                         "commandLine":  "cmake -S C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s -B C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test -G Ninja -DQt6_DIR=C:\\Qt\\6.12.0\\msvc2022_64\\lib\\cmake\\Qt6 -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DCLASSMNGR_UPDATE_CHECK_ON_STARTUP=OFF -DCLASSMNGR_RESOURCE_PACK_CHECK_ON_STARTUP=OFF",
+                         "workingDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                         "environment":  {
+                                             "CLASSMNGR_TEST_APP_PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+                                             "PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package;C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8.1 Tools\\x64\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\Tools\\;C:\\Users\\wfelt\\.codex\\tmp\\arg0\\codex-arg0B1QFja;C:\\Python314\\Scripts\\;C:\\Python314\\;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files\\CMake\\bin;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files\\nodejs\\;C:\\ProgramData\\chocolatey\\bin;C:\\Program Files\\GitHub CLI\\;C:\\Program Files\\Microsoft VS Code\\bin\\copilot-shim;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Users\\wfelt\\AppData\\Roaming\\npm;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Tools\\NuGet;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Microsoft.NuGet_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\\Users\\wfelt\\AppData\\Local\\GitHubDesktop\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja\\;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Program Files\\CMake\\bin\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\;C:\\Program Files\\GitHub CLI\\;c:\\Users\\wfelt\\.vscode\\extensions\\openai.chatgpt-26.1007.21434-win32-x64\\bin\\windows-x86_64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\vcpkg",
+                                             "QT_QPA_PLATFORM":  "offscreen"
+                                         },
+                         "status":  "completed",
+                         "processFinished":  true,
+                         "exitStatus":  "normal",
+                         "exitCode":  0,
+                         "timedOut":  false,
+                         "stdoutPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\configure-test-harness\\runner-stdout.txt",
+                         "stderrPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\configure-test-harness\\runner-stderr.txt",
+                         "durationSeconds":  103.443
+                     },
+                     {
+                         "id":  "build-test-harness",
+                         "kind":  "external",
+                         "command":  [
+                                         "cmake",
+                                         "--build",
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test",
+                                         "--config",
+                                         "Debug",
+                                         "--target",
+                                         "ClassMngrStartupPerformanceTests",
+                                         "--parallel",
+                                         "2"
+                                     ],
+                         "commandLine":  "cmake --build C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test --config Debug --target ClassMngrStartupPerformanceTests --parallel 2",
+                         "workingDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                         "environment":  {
+                                             "CLASSMNGR_TEST_APP_PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+                                             "PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package;C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8.1 Tools\\x64\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\Tools\\;C:\\Users\\wfelt\\.codex\\tmp\\arg0\\codex-arg0B1QFja;C:\\Python314\\Scripts\\;C:\\Python314\\;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files\\CMake\\bin;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files\\nodejs\\;C:\\ProgramData\\chocolatey\\bin;C:\\Program Files\\GitHub CLI\\;C:\\Program Files\\Microsoft VS Code\\bin\\copilot-shim;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Users\\wfelt\\AppData\\Roaming\\npm;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Tools\\NuGet;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Microsoft.NuGet_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\\Users\\wfelt\\AppData\\Local\\GitHubDesktop\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja\\;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Program Files\\CMake\\bin\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\;C:\\Program Files\\GitHub CLI\\;c:\\Users\\wfelt\\.vscode\\extensions\\openai.chatgpt-26.1007.21434-win32-x64\\bin\\windows-x86_64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\vcpkg",
+                                             "QT_QPA_PLATFORM":  "offscreen"
+                                         },
+                         "status":  "completed",
+                         "processFinished":  true,
+                         "exitStatus":  "normal",
+                         "exitCode":  0,
+                         "timedOut":  false,
+                         "stdoutPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\build-test-harness\\runner-stdout.txt",
+                         "stderrPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\build-test-harness\\runner-stderr.txt",
+                         "durationSeconds":  1135.411
+                     },
+                     {
+                         "id":  "output-sub-prep",
+                         "kind":  "route",
+                         "command":  [
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test\\ClassMngrStartupPerformanceTests.exe",
+                                         "capturesLargeSubPrepOutputBoundaryWhenConfigured"
+                                     ],
+                         "commandLine":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test\\ClassMngrStartupPerformanceTests.exe capturesLargeSubPrepOutputBoundaryWhenConfigured",
+                         "workingDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                         "environment":  {
+                                             "CLASSMNGR_LARGE_SUB_PREP_OUTPUT_BOUNDARY_REFERENCE_DIR":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\output\\sub-prep",
+                                             "CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\output\\sub-prep\\pdf-captures",
+                                             "CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE":  "2026-09-14",
+                                             "CLASSMNGR_TEST_APP_PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+                                             "PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package;C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8.1 Tools\\x64\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\Tools\\;C:\\Users\\wfelt\\.codex\\tmp\\arg0\\codex-arg0B1QFja;C:\\Python314\\Scripts\\;C:\\Python314\\;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files\\CMake\\bin;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files\\nodejs\\;C:\\ProgramData\\chocolatey\\bin;C:\\Program Files\\GitHub CLI\\;C:\\Program Files\\Microsoft VS Code\\bin\\copilot-shim;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Users\\wfelt\\AppData\\Roaming\\npm;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Tools\\NuGet;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Microsoft.NuGet_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\\Users\\wfelt\\AppData\\Local\\GitHubDesktop\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja\\;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Program Files\\CMake\\bin\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\;C:\\Program Files\\GitHub CLI\\;c:\\Users\\wfelt\\.vscode\\extensions\\openai.chatgpt-26.1007.21434-win32-x64\\bin\\windows-x86_64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\vcpkg",
+                                             "QT_QPA_PLATFORM":  "offscreen"
+                                         },
+                         "status":  "failed",
+                         "processFinished":  true,
+                         "exitStatus":  "normal",
+                         "exitCode":  1,
+                         "timedOut":  false,
+                         "stdoutPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\output\\sub-prep\\runner\\runner-stdout.txt",
+                         "stderrPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\output\\sub-prep\\runner\\runner-stderr.txt",
+                         "durationSeconds":  37.775
+                     },
+                     {
+                         "id":  "validate-evidence",
+                         "kind":  "validator",
+                         "command":  [
+                                         "python",
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s\\scripts\\phase0\\validate_phase0_evidence.py",
+                                         "--evidence-root",
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep",
+                                         "--summary-output",
+                                         "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\validation-summary.json"
+                                     ],
+                         "commandLine":  "python C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s\\scripts\\phase0\\validate_phase0_evidence.py --evidence-root C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep --summary-output C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\validation-summary.json",
+                         "workingDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                         "environment":  {
+                                             "CLASSMNGR_TEST_APP_PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+                                             "PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package;C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8.1 Tools\\x64\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\Tools\\;C:\\Users\\wfelt\\.codex\\tmp\\arg0\\codex-arg0B1QFja;C:\\Python314\\Scripts\\;C:\\Python314\\;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files\\CMake\\bin;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files\\nodejs\\;C:\\ProgramData\\chocolatey\\bin;C:\\Program Files\\GitHub CLI\\;C:\\Program Files\\Microsoft VS Code\\bin\\copilot-shim;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Users\\wfelt\\AppData\\Roaming\\npm;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Tools\\NuGet;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Microsoft.NuGet_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\\Users\\wfelt\\AppData\\Local\\GitHubDesktop\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja\\;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Program Files\\CMake\\bin\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\;C:\\Program Files\\GitHub CLI\\;c:\\Users\\wfelt\\.vscode\\extensions\\openai.chatgpt-26.1007.21434-win32-x64\\bin\\windows-x86_64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\vcpkg",
+                                             "QT_QPA_PLATFORM":  "offscreen"
+                                         },
+                         "status":  "failed",
+                         "processFinished":  true,
+                         "exitStatus":  "normal",
+                         "exitCode":  1,
+                         "timedOut":  false,
+                         "stdoutPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\validation\\runner-stdout.txt",
+                         "stderrPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\validation\\runner-stderr.txt",
+                         "durationSeconds":  0.852
+                     }
+                 ],
+    "routes":  [
+                   {
+                       "schema":  "classmngr-phase0-route-v1",
+                       "taskId":  "QT0-EVIDENCE-AUTOMATION",
+                       "routeId":  "output-sub-prep",
+                       "category":  "output",
+                       "scenario":  "large Sub Prep generated PDF output and validation-error evidence",
+                       "fixture":  "large_startup.sql",
+                       "artifactPath":  "output/sub-prep",
+                       "status":  "failed",
+                       "invocation":  {
+                                          "label":  "output-sub-prep",
+                                          "command":  [
+                                                          "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test\\ClassMngrStartupPerformanceTests.exe",
+                                                          "capturesLargeSubPrepOutputBoundaryWhenConfigured"
+                                                      ],
+                                          "commandLine":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test\\ClassMngrStartupPerformanceTests.exe capturesLargeSubPrepOutputBoundaryWhenConfigured",
+                                          "workingDirectory":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\s",
+                                          "environment":  {
+                                                              "CLASSMNGR_LARGE_SUB_PREP_OUTPUT_BOUNDARY_REFERENCE_DIR":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\output\\sub-prep",
+                                                              "CLASSMNGR_STARTUP_PDF_CAPTURE_OUTPUT_DIR":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\output\\sub-prep\\pdf-captures",
+                                                              "CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE":  "2026-09-14",
+                                                              "CLASSMNGR_TEST_APP_PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+                                                              "PATH":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package;C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\_build\\test;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Microsoft SDKs\\Windows\\v10.0A\\bin\\NETFX 4.8.1 Tools\\x64\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Team Tools\\DiagnosticsHub\\Collector;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\Extensions\\Microsoft\\CodeCoverage.Console;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\\\x64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\\\x64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\\\MSBuild\\Current\\Bin\\amd64;C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\Tools\\;C:\\Users\\wfelt\\.codex\\tmp\\arg0\\codex-arg0B1QFja;C:\\Python314\\Scripts\\;C:\\Python314\\;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Git\\cmd;C:\\Program Files\\Microsoft VS Code\\bin;C:\\Program Files\\CMake\\bin;C:\\Program Files\\dotnet\\;C:\\Program Files (x86)\\Windows Kits\\10\\Windows Performance Toolkit\\;C:\\Program Files\\nodejs\\;C:\\ProgramData\\chocolatey\\bin;C:\\Program Files\\GitHub CLI\\;C:\\Program Files\\Microsoft VS Code\\bin\\copilot-shim;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Qt\\6.12.0\\msvc2022_64\\bin;C:\\Users\\wfelt\\AppData\\Roaming\\npm;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Tools\\NuGet;C:\\Users\\wfelt\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Microsoft.NuGet_Microsoft.Winget.Source_8wekyb3d8bbwe;C:\\Users\\wfelt\\AppData\\Local\\GitHubDesktop\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja\\;C:\\Users\\wfelt\\.dotnet\\tools;C:\\Program Files\\CMake\\bin\\;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\;C:\\Program Files\\GitHub CLI\\;c:\\Users\\wfelt\\.vscode\\extensions\\openai.chatgpt-26.1007.21434-win32-x64\\bin\\windows-x86_64;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\VC\\Linux\\bin\\ConnectionManagerExe;C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\vcpkg",
+                                                              "QT_QPA_PLATFORM":  "offscreen"
+                                                          },
+                                          "startedAtUtc":  "2026-11-01T18:02:53.8219536Z",
+                                          "stdoutPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\output\\sub-prep\\runner\\runner-stdout.txt",
+                                          "stderrPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\output\\sub-prep\\runner\\runner-stderr.txt",
+                                          "processFinished":  true,
+                                          "exitStatus":  "normal",
+                                          "exitCode":  1,
+                                          "timedOut":  false,
+                                          "durationSeconds":  37.775
+                                      }
+                   }
+               ],
+    "failures":  [
+                     {
+                         "code":  "validator-failed",
+                         "message":  "Exit-gate validator returned 1.",
+                         "stderrPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\runner\\validation\\runner-stderr.txt"
+                     }
+                 ],
+    "warnings":  [
+
+                 ],
+    "validation":  {
+                       "summaryPath":  "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\validation-summary.json",
+                       "processFinished":  true,
+                       "exitStatus":  "normal",
+                       "exitCode":  1,
+                       "timedOut":  false
+                   }
+}

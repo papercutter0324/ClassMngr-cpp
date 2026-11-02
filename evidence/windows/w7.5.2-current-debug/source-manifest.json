@@ -1,0 +1,13 @@
+{
+  "task_id": "W752-CURRENT-DEBUG-RUN",
+  "evidence_root": "C:\\w752-current-debug-9f59",
+  "source_root": "C:\\w752-current-debug-9f59\\s",
+  "original_source_sha": "9f59e68992b753bed1cad4546808fc708573b559",
+  "original_initial_status": "clean",
+  "original_initial_branch": "Qt-Rewrite",
+  "detached_source_sha": "9f59e68992b753bed1cad4546808fc708573b559",
+  "detached_initial_status": "clean",
+  "detached_head_detached": true,
+  "captured_at": "2026-11-01T18:26:00.4888315Z",
+  "relocation_note": "Moved from %TEMP% to a short non-temp path after MSBuild FileTracker denied compiler probes under Windows Temporary; source commit/content remain unchanged."
+}

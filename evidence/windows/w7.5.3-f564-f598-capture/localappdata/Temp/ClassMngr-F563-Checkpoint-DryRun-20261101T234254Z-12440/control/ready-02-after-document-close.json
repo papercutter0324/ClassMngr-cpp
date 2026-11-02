@@ -1,0 +1,52 @@
+{
+    "checkpoint": "after-document-close",
+    "checkpointOrder": 2,
+    "documentAlive": true,
+    "documentStatus": "Null",
+    "guiProcessingDrained": true,
+    "monotonicTimestampNanoseconds": 58221566200,
+    "processId": 11472,
+    "readyPageRenderCallbackCount": 0,
+    "runId": "6d028cab-6954-43a2-be78-6d6c91005deb",
+    "scheduleWidgetMetrics": [
+        {
+            "modelCellCount": 49,
+            "modelEntryCount": 768,
+            "modelRowCount": 7,
+            "ownerKey": "standalone-schedule",
+            "tableCellWidgetCount": 0,
+            "tableColumnCount": 8,
+            "tableItemCount": 56,
+            "tableRowCount": 7,
+            "visibleClassCount": 96
+        },
+        {
+            "modelCellCount": 0,
+            "modelEntryCount": 0,
+            "modelRowCount": 0,
+            "ownerKey": "workspace-schedule",
+            "tableCellWidgetCount": 0,
+            "tableColumnCount": 8,
+            "tableItemCount": 0,
+            "tableRowCount": 0,
+            "visibleClassCount": 0
+        },
+        {
+            "modelCellCount": 0,
+            "modelEntryCount": 0,
+            "modelRowCount": 0,
+            "ownerKey": "sub-prep-preview",
+            "tableCellWidgetCount": 0,
+            "tableColumnCount": 8,
+            "tableItemCount": 0,
+            "tableRowCount": 0,
+            "visibleClassCount": 0
+        }
+    ],
+    "scheduleWidgetMetricsSampleEndMonotonicTimestampNanoseconds": 58221459100,
+    "scheduleWidgetMetricsSampleStartMonotonicTimestampNanoseconds": 58219272800,
+    "schema": "classmngr-f563-checkpoint-v1",
+    "viewAlive": true,
+    "viewAttachedToDocument": true,
+    "viewDestroyed": false
+}

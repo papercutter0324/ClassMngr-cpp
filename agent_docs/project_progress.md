@@ -15,7 +15,9 @@ stack counts. The all-target Windows x64 Debug build remains incomplete
 because it timed out before CTest. Preserve the accepted Phase 0–7 statuses,
 the separate Phase 9 working-set gate, and the unresolved page-break decision
 assigned to Phase 10. See the [Phase 7.5 plan](../plans/qt-rewrite-heavy-route-plan/08.5-Phase-7.5-Cross-Platform-Follow-Ups.md)
-for capture hashes, artifacts, and remaining cross-platform work.
+for capture hashes and remaining cross-platform work. The selected W7.5.1–W7.5.3
+evidence bundles are listed in the [Windows evidence index](../evidence/windows/README.md);
+each bundle has a README and SHA-256 manifest.
 Phase 7 remains Complete at its accepted semantic-gate SHA
 `a60c727d45d48fb4438dbb880dcdbd4a6f986b1a`. Follow-up commit
 `033f8dd2` routes Next Schedule Page and Initial Setup Schedule Import reads

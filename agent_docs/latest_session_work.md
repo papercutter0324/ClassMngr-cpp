@@ -5,11 +5,16 @@
 - Heavy route; branch `Qt-Rewrite`. The pending CMake generator fix and the
   W7.5.1, W7.5.2, and Windows capture work were committed as separate slices;
   this branch is included in the requested final push.
+- Shareable Windows evidence for W7.5.1–W7.5.3 is indexed in the [evidence
+  directory](../evidence/windows/README.md); each bundle includes its own
+  README and checksum manifest.
 - W7.5.1 records the focused Windows x64 Sub Prep output result: pages 1–10
   matched the semantic oracle, pages 11–12 differed in teacher assignment, and
   all five roster pages matched. It transfers the unresolved page-break
   decision to Phase 10; the comparator and accepted Phase 0–7 statuses remain
-  unchanged.
+  unchanged. The raw PDFs, workflow trace, comparisons, screenshots, and run
+  records are tracked in the [W7.5.1 evidence bundle](../evidence/windows/w7.5.1-output-sub-prep/README.md)
+  with a checksum manifest.
 - W7.5.2 used source SHA
   `9f59e68992b753bed1cad4546808fc708573b559`. Configure passed with
   `BUILD_TESTING=ON` in 238.031 seconds. The clean-first all-target Windows x64
@@ -18,6 +23,8 @@
   names/outcomes are therefore unconfirmed on current source. CMake selected
   SDK 10.0.28000.0; 10.0.26100.0 was separately added to PATH. Full details
   and evidence paths are in the [Phase 7.5 plan](../plans/qt-rewrite-heavy-route-plan/08.5-Phase-7.5-Cross-Platform-Follow-Ups.md).
+  Selected baseline, toolchain, comparison, status, and launcher records are in
+  the [W7.5.2 evidence bundle](../evidence/windows/w7.5.2-current-debug/README.md).
 - W7.5.3's F598 marker-metrics source slice is committed as `fe25e2ff`. Its
   bounded Release build and focused serializer test passed; the supported F563
   dry run passed with all three owners and eight numeric fields at each ordered
@@ -25,7 +32,9 @@
 - A fresh elevated F564/WPR capture at
   `fe25e2ff7a82b8da34d970a3591b64b3065aeb9e` passed. The 56,623,104-byte ETL
   SHA-256 is
-  `9a6301e0a68ce3947362b4107fb62d9856ed7a35c4b7d39e10fe323635b3eca2`.
+  `9a6301e0a68ce3947362b4107fb62d9856ed7a35c4b7d39e10fe323635b3eca2`. The
+  raw ETL, fixture snapshot, token pre/postflight records, and capture sidecars
+  are tracked in the [W7.5.3 evidence bundle](../evidence/windows/w7.5.3-f564-f598-capture/README.md).
   Independent review resolved `ClassMngr.exe main`, `qtEntryPoint`,
   `PageManager::showPage`, and `PageManager::ensurePage` against the matching
   app PDB. The three F598 owners and eight numeric fields are present at every

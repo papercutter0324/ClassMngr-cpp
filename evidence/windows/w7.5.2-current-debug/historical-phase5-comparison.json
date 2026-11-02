@@ -1,0 +1,68 @@
+﻿{
+    "task_id":  "W752-CURRENT-DEBUG-RUN",
+    "historical_source_sha":  "6bbff54abc524723e23911d65130b1b198dde2b3",
+    "historical_run_url":  "https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/40301659920",
+    "historical_job_id":  121501049949,
+    "historical_artifact_id":  12645618009,
+    "historical_artifact_name":  "refactoring-baseline-windows-x64-debug",
+    "historical_artifact_sha256":  "9968ae731784da0497ed385b0eb4f2bc1a0c79976244392742304903bcdd6b7a",
+    "historical_summary":  "97% tests passed, 14 tests failed out of 512",
+    "failures":  [
+                     {
+                         "test":  "ClassMngrDialogServicesTests",
+                         "outcome":  "Timeout"
+                     },
+                     {
+                         "test":  "ClassMngrClassTransferTests",
+                         "outcome":  "Failed"
+                     },
+                     {
+                         "test":  "ClassMngrTestingClassesPageTests",
+                         "outcome":  "Failed"
+                     },
+                     {
+                         "test":  "ClassMngrPageManagerTests",
+                         "outcome":  "Timeout"
+                     },
+                     {
+                         "test":  "ClassMngrClassDetailsSavePageTests",
+                         "outcome":  "Timeout"
+                     },
+                     {
+                         "test":  "ClassMngrNavigationTeacherReadTests",
+                         "outcome":  "Failed"
+                     },
+                     {
+                         "test":  "ClassMngrCampusRouteNavigationParityTests",
+                         "outcome":  "Failed"
+                     },
+                     {
+                         "test":  "ClassMngrClassesPageTests",
+                         "outcome":  "Timeout"
+                     },
+                     {
+                         "test":  "ClassMngrSubPrepPageTests",
+                         "outcome":  "Timeout"
+                     },
+                     {
+                         "test":  "ClassMngrStartupPerformanceTests",
+                         "outcome":  "Timeout"
+                     },
+                     {
+                         "test":  "ClassMngrNextScheduleEditorDialogParityTests",
+                         "outcome":  "Timeout"
+                     },
+                     {
+                         "test":  "ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests",
+                         "outcome":  "Failed"
+                     },
+                     {
+                         "test":  "ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests",
+                         "outcome":  "Failed"
+                     },
+                     {
+                         "test":  "ClassMngrFileControllerWorkspaceLifecycleTests",
+                         "outcome":  "Failed"
+                     }
+                 ]
+}

@@ -1,0 +1,181 @@
+{
+  "recorded_at_utc": "2026-11-01T20:37:20.878109+00:00",
+  "git_commit": "9f59e68992b753bed1cad4546808fc708573b559",
+  "git_commit_start": "9f59e68992b753bed1cad4546808fc708573b559",
+  "git_commit_end": "9f59e68992b753bed1cad4546808fc708573b559",
+  "git_dirty_start": false,
+  "git_dirty_end": false,
+  "source_fingerprint_start": "a6fe42cb6d78c1fda9162c5b3e744d4a29560bcfade5c13a3fe6f72147b88972",
+  "source_fingerprint_end": "a6fe42cb6d78c1fda9162c5b3e744d4a29560bcfade5c13a3fe6f72147b88972",
+  "source_stable_during_run": true,
+  "platform": "Windows-11-10.0.26300-SP0",
+  "python": "3.14.7",
+  "cmake": "cmake version 4.4.2",
+  "preset": "windows-x64-debug",
+  "configuration": "Debug",
+  "parallel_build_jobs": 2,
+  "test_timeout_seconds": 120,
+  "results": {
+    "configure_exit_code": 0,
+    "build_exit_code": 124,
+    "test_exit_code": -1,
+    "tests": null
+  },
+  "duration_seconds": {
+    "configure": 238.031,
+    "clean_build": 7200.108,
+    "tests": 0.0
+  },
+  "root_cmake_lines": 273,
+  "application": {
+    "path": null,
+    "size_bytes": null
+  },
+  "next_executable": {
+    "path": null,
+    "size_bytes": null
+  },
+  "resource_packs": {
+    "packs": [
+      {
+        "id": "campuses",
+        "path": "resource-packs\\campuses.rcc",
+        "size_bytes": 5065441
+      },
+      {
+        "id": "documents",
+        "path": "resource-packs\\documents.rcc",
+        "size_bytes": 32704490
+      },
+      {
+        "id": "files",
+        "path": "resource-packs\\files.rcc",
+        "size_bytes": 39339
+      },
+      {
+        "id": "images",
+        "path": "resource-packs\\images.rcc",
+        "size_bytes": 10049
+      },
+      {
+        "id": "templates",
+        "path": "resource-packs\\templates.rcc",
+        "size_bytes": 1380806
+      }
+    ],
+    "total_size_bytes": 39200125
+  },
+  "linked_qt_modules": {
+    "ClassMngrNext": [
+      "Qt6::Concurrent",
+      "Qt6::Core",
+      "Qt6::Gui",
+      "Qt6::Network",
+      "Qt6::Pdf",
+      "Qt6::PdfWidgets",
+      "Qt6::Platform",
+      "Qt6::PrintSupport",
+      "Qt6::Qml",
+      "Qt6::Quick",
+      "Qt6::QuickWidgets",
+      "Qt6::Sql",
+      "Qt6::Widgets"
+    ],
+    "ClassMngr": [
+      "Qt6::Concurrent",
+      "Qt6::Core",
+      "Qt6::Gui",
+      "Qt6::Network",
+      "Qt6::Pdf",
+      "Qt6::PdfWidgets",
+      "Qt6::Platform",
+      "Qt6::PrintSupport",
+      "Qt6::Qml",
+      "Qt6::Quick",
+      "Qt6::QuickControls2",
+      "Qt6::QuickWidgets",
+      "Qt6::Sql",
+      "Qt6::Widgets"
+    ],
+    "ClassMngrRuntime": [
+      "Qt6::Concurrent",
+      "Qt6::Core",
+      "Qt6::Gui",
+      "Qt6::Network",
+      "Qt6::Pdf",
+      "Qt6::PdfWidgets",
+      "Qt6::Platform",
+      "Qt6::PrintSupport",
+      "Qt6::Qml",
+      "Qt6::Quick",
+      "Qt6::QuickControls2",
+      "Qt6::QuickWidgets",
+      "Qt6::Sql",
+      "Qt6::Widgets"
+    ],
+    "ClassMngrStudentName": [
+      "Qt6::Core"
+    ],
+    "ClassMngrSignature": [
+      "Qt6::Core",
+      "Qt6::Gui"
+    ],
+    "ClassMngrCore": [
+      "Qt6::Core",
+      "Qt6::Gui",
+      "Qt6::Network",
+      "Qt6::Sql",
+      "Qt6::Widgets"
+    ],
+    "ClassMngrData": [
+      "Qt6::Core",
+      "Qt6::Gui",
+      "Qt6::Sql"
+    ],
+    "ClassMngrDomain": [
+      "Qt6::Core",
+      "Qt6::Gui"
+    ],
+    "ClassMngrUiShared": [
+      "Qt6::Core",
+      "Qt6::Gui",
+      "Qt6::Network",
+      "Qt6::Pdf",
+      "Qt6::PdfWidgets",
+      "Qt6::PrintSupport",
+      "Qt6::Widgets"
+    ],
+    "ClassMngrOnScreenKeyboard": [
+      "Qt6::Core",
+      "Qt6::Widgets"
+    ],
+    "ClassMngrFeatures": [
+      "Qt6::Concurrent",
+      "Qt6::Core",
+      "Qt6::Gui",
+      "Qt6::Network",
+      "Qt6::Pdf",
+      "Qt6::Qml",
+      "Qt6::Quick",
+      "Qt6::QuickWidgets",
+      "Qt6::Sql",
+      "Qt6::Widgets"
+    ],
+    "ClassMngrAppServices": [
+      "Qt6::Core",
+      "Qt6::Gui",
+      "Qt6::Network",
+      "Qt6::Sql",
+      "Qt6::Widgets"
+    ],
+    "ClassMngrCalendarImportParser": [
+      "Qt6::Core"
+    ]
+  },
+  "compilation": {
+    "compile_commands": null,
+    "production_entries": null,
+    "unique_production_sources": null,
+    "recompiled_production_sources": null
+  }
+}

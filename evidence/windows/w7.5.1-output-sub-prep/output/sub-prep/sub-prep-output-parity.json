@@ -1,0 +1,697 @@
+{
+    "artifacts": {
+        "applicationPath": "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+        "applicationSha256": "4bc1c45d6a6916a7dfd19062e0a8636177712883f0da0524e798d58b6aa84d34",
+        "generatedPdfFileNames": [
+            "Rosters - By Day.pdf",
+            "Sub Prep.pdf"
+        ],
+        "harnessPath": "C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/ClassMngrStartupPerformanceTests.exe",
+        "harnessSha256": "bda3e171beccdf8ce06b535cb6e2573b1710cbcb3ebae2cd19f296497e819aaf",
+        "outputDirectory": "Teacher 01 (14 - 18 Sep 2026)",
+        "packageDocumentOrder": [
+            "Sub Prep.pdf",
+            "Rosters - By Day.pdf"
+        ]
+    },
+    "fixture": {
+        "classCounts": {
+            "classCount": 96,
+            "dayCounts": {
+                "Friday": 6,
+                "Monday": 6,
+                "Saturday": 66,
+                "Thursday": 6,
+                "Tuesday": 6,
+                "Wednesday": 6
+            },
+            "saturdayClassCount": 66,
+            "weekdayClassCount": 30
+        },
+        "generatedDatabasePath": "generated-large-sub-prep-output.tps",
+        "generatedDatabaseSha256AfterRun": "4b190baa546508ec076158ac6f668c11a1fdff6884c77f909068247887431667",
+        "generatedDatabaseSha256BeforeLaunch": "c036a9c86fc889d577bcf0374ef0e48b448f8b8dc03ba66eba6c3446830afb47",
+        "retainedDatabaseSha256": "4b190baa546508ec076158ac6f668c11a1fdff6884c77f909068247887431667",
+        "sourcePath": "tests/fixtures/workspaces/large_startup.sql",
+        "sourceSha256": "1c5759f9df9f20849939aeb8a3f1932c95f256485cb5eb2bfd0f384a93dab8b4"
+    },
+    "generatedOutput": {
+        "pageCount": 17,
+        "pdfBytes": 140383,
+        "pdfCount": 2
+    },
+    "historicalReference": {
+        "pageCount": 17,
+        "path": "docs/qt-rewrite/visual-baseline/release/large-sub-prep-output-boundary/output-target/Teacher 01 (14 - 18 Sep 2026)",
+        "pdfBytes": 139650,
+        "pdfCount": 2,
+        "pdfFileNames": [
+            "Rosters - By Day.pdf",
+            "Sub Prep.pdf"
+        ],
+        "semanticOracleOnly": true,
+        "sourceBound": false
+    },
+    "pdfByteEqualityRequired": false,
+    "pdfPageComparisons": [
+        {
+            "fileName": "Sub Prep.pdf",
+            "generatedBytes": 63487,
+            "generatedLoaded": true,
+            "generatedPageCount": 12,
+            "generatedSha256": "db27f3fdfb53b9e5377379449af5ddb07bea6f7e4b66b6008ca1f76f504c5411",
+            "historicalBytes": 62754,
+            "historicalLoaded": true,
+            "historicalPageCount": 12,
+            "historicalSha256": "a2cfb89af58e50e59256e61dc3538dc139e551f13af4598be2f3c51621b344af",
+            "pages": [
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Sub Prep Thank you for subbing for me! Important Information Campus Information Office Number 418 Office WiFi Native Room_5G WiFi Password dyb418000 Photocopier Code N/A Personal Zoom Information Zoom Login ID fixture-only Zoom Password fixture-only Class Materials & Lesson Notes Materials Location N/A Detailed Class & Lesson Notes N/A Book Report Grading Grading Instructions Scoring: 0 / 20 / 40 / 60 / 80 / 100 Comments: Please leave a comment about what the student did well and what they need to work on. Special Instructions N/A Schedule Time Monday Tuesday Wednesday Thursday Friday 400 - 450 PM Teacher 01 301 E4  Level 02 Teacher 02 302 E5  Level 03 Teacher 03 303 M1  Level 04 Teacher 04 304 M2  Level 05 Teacher 05 305 E4  Level 06 500 - 550 PM Teacher 06 306 E5  Level 07 Teacher 07 307 M1  Level 08 Teacher 08 308 M2  Level 01 Teacher 09 309 E4  Level 02 Teacher 10 310 E5  Level 03 600 - 650 PM Teacher 11 311 M1  Level 04 Teacher 12 312 M2  Level 05 Teacher 13 313 E4  Level 06 Teacher 14 314 E5  Level 07 Teacher 15 315 M1  Level 08 700 - 750 PM Teacher 16 316 M2  Level 01 Teacher 17 317 E4  Level 02 Teacher 18 318 E5  Level 03 Teacher 19 319 M1  Level 04 Teacher 20 320 M2  Level 05 800 - 850 PM Teacher 21 321 E4  Level 06 Teacher 22 322 E5  Level 07 Teacher 23 323 M1  Level 08 Teacher 24 324 M2  Level 01 Teacher 01 301 E4  Level 02 900 - 950 PM Teacher 02 302 E5  Level 03 Teacher 03 303 M1  Level 04 Teacher 04 304 M2  Level 05 Teacher 05 305 E4  Level 06 Teacher 06 306 E5  Level 07",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Sub Prep Thank you for subbing for me! Important Information Campus Information Office Number 418 Office WiFi Native Room_5G WiFi Password dyb418000 Photocopier Code N/A Personal Zoom Information Zoom Login ID fixture-only Zoom Password fixture-only Class Materials & Lesson Notes Materials Location N/A Detailed Class & Lesson Notes N/A Book Report Grading Grading Instructions Scoring: 0 / 20 / 40 / 60 / 80 / 100 Comments: Please leave a comment about what the student did well and what they need to work on. Special Instructions N/A Schedule Time Monday Tuesday Wednesday Thursday Friday 400 - 450 PM Teacher 01 301 E4  Level 02 Teacher 02 302 E5  Level 03 Teacher 03 303 M1  Level 04 Teacher 04 304 M2  Level 05 Teacher 05 305 E4  Level 06 500 - 550 PM Teacher 06 306 E5  Level 07 Teacher 07 307 M1  Level 08 Teacher 08 308 M2  Level 01 Teacher 09 309 E4  Level 02 Teacher 10 310 E5  Level 03 600 - 650 PM Teacher 11 311 M1  Level 04 Teacher 12 312 M2  Level 05 Teacher 13 313 E4  Level 06 Teacher 14 314 E5  Level 07 Teacher 15 315 M1  Level 08 700 - 750 PM Teacher 16 316 M2  Level 01 Teacher 17 317 E4  Level 02 Teacher 18 318 E5  Level 03 Teacher 19 319 M1  Level 04 Teacher 20 320 M2  Level 05 800 - 850 PM Teacher 21 321 E4  Level 06 Teacher 22 322 E5  Level 07 Teacher 23 323 M1  Level 08 Teacher 24 324 M2  Level 01 Teacher 01 301 E4  Level 02 900 - 950 PM Teacher 02 302 E5  Level 03 Teacher 03 303 M1  Level 04 Teacher 04 304 M2  Level 05 Teacher 05 305 E4  Level 06 Teacher 06 306 E5  Level 07",
+                    "normalizedTextMatches": true,
+                    "page": 1
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 01 English Name Teacher 01 Room 301 WiFi Name HeavyFixture-WiFi-01 Zoom ID heavy-fixture-01 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 02 Mon 4pm) - 25 Students Notes: Synthetic large startup fixture class. E4 Level 02 Fri 8pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 02 English Name Teacher 02 Room 302 WiFi Name HeavyFixture-WiFi-02 Zoom ID heavy-fixture-02 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 03 Mon 9pm) - 25 Students Notes: Synthetic large startup fixture class. E5 Level 03 Tues 4pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 03 English Name Teacher 03 Room 303 WiFi Name HeavyFixture-WiFi-03 Zoom ID heavy-fixture-03 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 04 Tues 9pm) - 25 Students Notes: Synthetic large startup fixture class. M1 Level 04 Wed 4pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Teacher 01 English Name Teacher 01 Room 301 WiFi Name HeavyFixture-WiFi-01 Zoom ID heavy-fixture-01 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 02 Mon 4pm) - 25 Students Notes: Synthetic large startup fixture class. E4 Level 02 Fri 8pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 02 English Name Teacher 02 Room 302 WiFi Name HeavyFixture-WiFi-02 Zoom ID heavy-fixture-02 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 03 Mon 9pm) - 25 Students Notes: Synthetic large startup fixture class. E5 Level 03 Tues 4pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 03 English Name Teacher 03 Room 303 WiFi Name HeavyFixture-WiFi-03 Zoom ID heavy-fixture-03 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 04 Tues 9pm) - 25 Students Notes: Synthetic large startup fixture class. M1 Level 04 Wed 4pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "normalizedTextMatches": true,
+                    "page": 2
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 04 English Name Teacher 04 Room 304 WiFi Name HeavyFixture-WiFi-04 Zoom ID heavy-fixture-04 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 05 Wed 9pm) - 25 Students Notes: Synthetic large startup fixture class. M2 Level 05 Thurs 4pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 05 English Name Teacher 05 Room 305 WiFi Name HeavyFixture-WiFi-05 Zoom ID heavy-fixture-05 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 06 Thurs 9pm) - 25 Students Notes: Synthetic large startup fixture class. E4 Level 06 Fri 4pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 06 English Name Teacher 06 Room 306 WiFi Name HeavyFixture-WiFi-06 Zoom ID heavy-fixture-06 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 07 Mon 5pm) - 25 Students Notes: Synthetic large startup fixture class. E5 Level 07 Fri 9pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Teacher 04 English Name Teacher 04 Room 304 WiFi Name HeavyFixture-WiFi-04 Zoom ID heavy-fixture-04 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 05 Wed 9pm) - 25 Students Notes: Synthetic large startup fixture class. M2 Level 05 Thurs 4pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 05 English Name Teacher 05 Room 305 WiFi Name HeavyFixture-WiFi-05 Zoom ID heavy-fixture-05 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 06 Thurs 9pm) - 25 Students Notes: Synthetic large startup fixture class. E4 Level 06 Fri 4pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 06 English Name Teacher 06 Room 306 WiFi Name HeavyFixture-WiFi-06 Zoom ID heavy-fixture-06 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 07 Mon 5pm) - 25 Students Notes: Synthetic large startup fixture class. E5 Level 07 Fri 9pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "normalizedTextMatches": true,
+                    "page": 3
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 07 English Name Teacher 07 Room 307 WiFi Name HeavyFixture-WiFi-07 Zoom ID heavy-fixture-07 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 08 Tues 5pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 08 English Name Teacher 08 Room 308 WiFi Name HeavyFixture-WiFi-08 Zoom ID heavy-fixture-08 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 01 Wed 5pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 09 English Name Teacher 09 Room 309 WiFi Name HeavyFixture-WiFi-09 Zoom ID heavy-fixture-09 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 02 Thurs 5pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Teacher 07 English Name Teacher 07 Room 307 WiFi Name HeavyFixture-WiFi-07 Zoom ID heavy-fixture-07 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 08 Tues 5pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 08 English Name Teacher 08 Room 308 WiFi Name HeavyFixture-WiFi-08 Zoom ID heavy-fixture-08 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 01 Wed 5pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 09 English Name Teacher 09 Room 309 WiFi Name HeavyFixture-WiFi-09 Zoom ID heavy-fixture-09 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 02 Thurs 5pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "normalizedTextMatches": true,
+                    "page": 4
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 10 English Name Teacher 10 Room 310 WiFi Name HeavyFixture-WiFi-10 Zoom ID heavy-fixture-10 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 03 Fri 5pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Teacher 10 English Name Teacher 10 Room 310 WiFi Name HeavyFixture-WiFi-10 Zoom ID heavy-fixture-10 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 03 Fri 5pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "normalizedTextMatches": true,
+                    "page": 5
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 11 English Name Teacher 11 Room 311 WiFi Name HeavyFixture-WiFi-11 Zoom ID heavy-fixture-11 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 04 Mon 6pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 12 English Name Teacher 12 Room 312 WiFi Name HeavyFixture-WiFi-12 Zoom ID heavy-fixture-12 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 05 Tues 6pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 13 English Name Teacher 13 Room 313 WiFi Name HeavyFixture-WiFi-13 Zoom ID heavy-fixture-13 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 06 Wed 6pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Teacher 11 English Name Teacher 11 Room 311 WiFi Name HeavyFixture-WiFi-11 Zoom ID heavy-fixture-11 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 04 Mon 6pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 12 English Name Teacher 12 Room 312 WiFi Name HeavyFixture-WiFi-12 Zoom ID heavy-fixture-12 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 05 Tues 6pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 13 English Name Teacher 13 Room 313 WiFi Name HeavyFixture-WiFi-13 Zoom ID heavy-fixture-13 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 06 Wed 6pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "normalizedTextMatches": true,
+                    "page": 6
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 14 English Name Teacher 14 Room 314 WiFi Name HeavyFixture-WiFi-14 Zoom ID heavy-fixture-14 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 07 Thurs 6pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Teacher 14 English Name Teacher 14 Room 314 WiFi Name HeavyFixture-WiFi-14 Zoom ID heavy-fixture-14 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 07 Thurs 6pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "normalizedTextMatches": true,
+                    "page": 7
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 15 English Name Teacher 15 Room 315 WiFi Name HeavyFixture-WiFi-15 Zoom ID heavy-fixture-15 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 08 Fri 6pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 16 English Name Teacher 16 Room 316 WiFi Name HeavyFixture-WiFi-16 Zoom ID heavy-fixture-16 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 01 Mon 7pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 17 English Name Teacher 17 Room 317 WiFi Name HeavyFixture-WiFi-17 Zoom ID heavy-fixture-17 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 02 Tues 7pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Teacher 15 English Name Teacher 15 Room 315 WiFi Name HeavyFixture-WiFi-15 Zoom ID heavy-fixture-15 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 08 Fri 6pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 16 English Name Teacher 16 Room 316 WiFi Name HeavyFixture-WiFi-16 Zoom ID heavy-fixture-16 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 01 Mon 7pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 17 English Name Teacher 17 Room 317 WiFi Name HeavyFixture-WiFi-17 Zoom ID heavy-fixture-17 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 02 Tues 7pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "normalizedTextMatches": true,
+                    "page": 8
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 18 English Name Teacher 18 Room 318 WiFi Name HeavyFixture-WiFi-18 Zoom ID heavy-fixture-18 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 03 Wed 7pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Teacher 18 English Name Teacher 18 Room 318 WiFi Name HeavyFixture-WiFi-18 Zoom ID heavy-fixture-18 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 03 Wed 7pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "normalizedTextMatches": true,
+                    "page": 9
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 19 English Name Teacher 19 Room 319 WiFi Name HeavyFixture-WiFi-19 Zoom ID heavy-fixture-19 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 04 Thurs 7pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 20 English Name Teacher 20 Room 320 WiFi Name HeavyFixture-WiFi-20 Zoom ID heavy-fixture-20 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 05 Fri 7pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 21 English Name Teacher 21 Room 321 WiFi Name HeavyFixture-WiFi-21 Zoom ID heavy-fixture-21 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 06 Mon 8pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Teacher 19 English Name Teacher 19 Room 319 WiFi Name HeavyFixture-WiFi-19 Zoom ID heavy-fixture-19 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 04 Thurs 7pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 20 English Name Teacher 20 Room 320 WiFi Name HeavyFixture-WiFi-20 Zoom ID heavy-fixture-20 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 05 Fri 7pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 21 English Name Teacher 21 Room 321 WiFi Name HeavyFixture-WiFi-21 Zoom ID heavy-fixture-21 Internet Type LAN Projection Type Zoom WiFi Password fixture-only Zoom Password fixture-only Classes E4 Level 06 Mon 8pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "normalizedTextMatches": true,
+                    "page": 10
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 22 English Name Teacher 22 Room 322 WiFi Name HeavyFixture-WiFi-22 Zoom ID heavy-fixture-22 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 07 Tues 8pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Teacher 22 English Name Teacher 22 Room 322 WiFi Name HeavyFixture-WiFi-22 Zoom ID heavy-fixture-22 Internet Type Both Projection Type Any WiFi Password fixture-only Zoom Password fixture-only Classes E5 Level 07 Tues 8pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 23 English Name Teacher 23 Room 323 WiFi Name HeavyFixture-WiFi-23 Zoom ID heavy-fixture-23 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 08 Wed 8pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 24 English Name Teacher 24 Room 324 WiFi Name HeavyFixture-WiFi-24 Zoom ID heavy-fixture-24 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 01 Thurs 8pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher.",
+                    "normalizedTextMatches": false,
+                    "page": 11
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "generatedNormalizedText": "Teacher 23 English Name Teacher 23 Room 323 WiFi Name HeavyFixture-WiFi-23 Zoom ID heavy-fixture-23 Internet Type N/A Projection Type N/A WiFi Password fixture-only Zoom Password fixture-only Classes M1 Level 08 Wed 8pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Teacher 24 English Name Teacher 24 Room 324 WiFi Name HeavyFixture-WiFi-24 Zoom ID heavy-fixture-24 Internet Type WiFi Projection Type HDMI WiFi Password fixture-only Zoom Password fixture-only Classes M2 Level 01 Thurs 8pm) - 25 Students Notes: Synthetic large startup fixture class. Co-Teacher Notes Synthetic large startup fixture teacher. Sub Notes If there is anything important that you want me to know, please leave me some notes.",
+                    "historicalDimensionsPoints": [
+                        595,
+                        842
+                    ],
+                    "historicalNormalizedText": "Sub Notes If there is anything important that you want me to know, please leave me some notes.",
+                    "normalizedTextMatches": false,
+                    "page": 12
+                }
+            ],
+            "semanticMatch": false
+        },
+        {
+            "fileName": "Rosters - By Day.pdf",
+            "generatedBytes": 76896,
+            "generatedLoaded": true,
+            "generatedPageCount": 5,
+            "generatedSha256": "d3fe366653c166f524f63650331cb5d0a10e7d0b10c9c5614f2e9c1d5403ca23",
+            "historicalBytes": 76896,
+            "historicalLoaded": true,
+            "historicalPageCount": 5,
+            "historicalSha256": "6e61c10ca12ebe56bdbdfc637a7df098317b284a44cef04ff1d1d349ddac1e41",
+            "pages": [
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        842,
+                        595
+                    ],
+                    "generatedNormalizedText": "Monday Time 4pm 5pm 6pm 7pm 8pm 9pm Level KT / Rm E4 Level 02 Teacher 01 301 E5 Level 07 Teacher 06 306 M1 Level 04 Teacher 11 311 M2 Level 01 Teacher 16 316 E4 Level 06 Teacher 21 321 E5 Level 03 Teacher 02 302 1 Student 00101 School 02 Student 00601 School 07 Student 01101 School 12 Student 01601 School 05 Student 02101 School 10 Student 02601 School 03 2 Student 00102 School 02 Student 00602 School 07 Student 01102 School 12 Student 01602 School 05 Student 02102 School 10 Student 02602 School 03 3 Student 00103 School 02 Student 00603 School 07 Student 01103 School 12 Student 01603 School 05 Student 02103 School 10 Student 02603 School 03 4 Student 00104 School 02 Student 00604 School 07 Student 01104 School 12 Student 01604 School 05 Student 02104 School 10 Student 02604 School 03 5 Student 00105 School 02 Student 00605 School 07 Student 01105 School 12 Student 01605 School 05 Student 02105 School 10 Student 02605 School 03 6 Student 00106 School 02 Student 00606 School 07 Student 01106 School 12 Student 01606 School 05 Student 02106 School 10 Student 02606 School 03 7 Student 00107 School 02 Student 00607 School 07 Student 01107 School 12 Student 01607 School 05 Student 02107 School 10 Student 02607 School 03 8 Student 00108 School 02 Student 00608 School 07 Student 01108 School 12 Student 01608 School 05 Student 02108 School 10 Student 02608 School 03 9 Student 00109 School 02 Student 00609 School 07 Student 01109 School 12 Student 01609 School 05 Student 02109 School 10 Student 02609 School 03 10 Student 00110 School 02 Student 00610 School 07 Student 01110 School 12 Student 01610 School 05 Student 02110 School 10 Student 02610 School 03 11 Student 00111 School 02 Student 00611 School 07 Student 01111 School 12 Student 01611 School 05 Student 02111 School 10 Student 02611 School 03 12 Student 00112 School 02 Student 00612 School 07 Student 01112 School 12 Student 01612 School 05 Student 02112 School 10 Student 02612 School 03 13 Student 00113 School 02 Student 00613 School 07 Student 01113 School 12 Student 01613 School 05 Student 02113 School 10 Student 02613 School 03 14 Student 00114 School 02 Student 00614 School 07 Student 01114 School 12 Student 01614 School 05 Student 02114 School 10 Student 02614 School 03 15 Student 00115 School 02 Student 00615 School 07 Student 01115 School 12 Student 01615 School 05 Student 02115 School 10 Student 02615 School 03 16 Student 00116 School 02 Student 00616 School 07 Student 01116 School 12 Student 01616 School 05 Student 02116 School 10 Student 02616 School 03 17 Student 00117 School 02 Student 00617 School 07 Student 01117 School 12 Student 01617 School 05 Student 02117 School 10 Student 02617 School 03 18 Student 00118 School 02 Student 00618 School 07 Student 01118 School 12 Student 01618 School 05 Student 02118 School 10 Student 02618 School 03 19 Student 00119 School 02 Student 00619 School 07 Student 01119 School 12 Student 01619 School 05 Student 02119 School 10 Student 02619 School 03 20 Student 00120 School 02 Student 00620 School 07 Student 01120 School 12 Student 01620 School 05 Student 02120 School 10 Student 02620 School 03 21 Student 00121 School 02 Student 00621 School 07 Student 01121 School 12 Student 01621 School 05 Student 02121 School 10 Student 02621 School 03 22 Student 00122 School 02 Student 00622 School 07 Student 01122 School 12 Student 01622 School 05 Student 02122 School 10 Student 02622 School 03 23 Student 00123 School 02 Student 00623 School 07 Student 01123 School 12 Student 01623 School 05 Student 02123 School 10 Student 02623 School 03 24 Student 00124 School 02 Student 00624 School 07 Student 01124 School 12 Student 01624 School 05 Student 02124 School 10 Student 02624 School 03 25 Student 00125 School 02 Student 00625 School 07 Student 01125 School 12 Student 01625 School 05 Student 02125 School 10 Student 02625 School 03 Wi-Fi HeavyFixture-WiFi-01 HeavyFixture-WiFi-06 HeavyFixture-WiFi-11 HeavyFixture-WiFi-16 HeavyFixture-WiFi-21 HeavyFixture-WiFi-02 Wi-Fi PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only Zoom heavy-fixture-01 heavy-fixture-06 heavy-fixture-11 heavy-fixture-16 heavy-fixture-21 heavy-fixture-02 Zoom PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only",
+                    "historicalDimensionsPoints": [
+                        842,
+                        595
+                    ],
+                    "historicalNormalizedText": "Monday Time 4pm 5pm 6pm 7pm 8pm 9pm Level KT / Rm E4 Level 02 Teacher 01 301 E5 Level 07 Teacher 06 306 M1 Level 04 Teacher 11 311 M2 Level 01 Teacher 16 316 E4 Level 06 Teacher 21 321 E5 Level 03 Teacher 02 302 1 Student 00101 School 02 Student 00601 School 07 Student 01101 School 12 Student 01601 School 05 Student 02101 School 10 Student 02601 School 03 2 Student 00102 School 02 Student 00602 School 07 Student 01102 School 12 Student 01602 School 05 Student 02102 School 10 Student 02602 School 03 3 Student 00103 School 02 Student 00603 School 07 Student 01103 School 12 Student 01603 School 05 Student 02103 School 10 Student 02603 School 03 4 Student 00104 School 02 Student 00604 School 07 Student 01104 School 12 Student 01604 School 05 Student 02104 School 10 Student 02604 School 03 5 Student 00105 School 02 Student 00605 School 07 Student 01105 School 12 Student 01605 School 05 Student 02105 School 10 Student 02605 School 03 6 Student 00106 School 02 Student 00606 School 07 Student 01106 School 12 Student 01606 School 05 Student 02106 School 10 Student 02606 School 03 7 Student 00107 School 02 Student 00607 School 07 Student 01107 School 12 Student 01607 School 05 Student 02107 School 10 Student 02607 School 03 8 Student 00108 School 02 Student 00608 School 07 Student 01108 School 12 Student 01608 School 05 Student 02108 School 10 Student 02608 School 03 9 Student 00109 School 02 Student 00609 School 07 Student 01109 School 12 Student 01609 School 05 Student 02109 School 10 Student 02609 School 03 10 Student 00110 School 02 Student 00610 School 07 Student 01110 School 12 Student 01610 School 05 Student 02110 School 10 Student 02610 School 03 11 Student 00111 School 02 Student 00611 School 07 Student 01111 School 12 Student 01611 School 05 Student 02111 School 10 Student 02611 School 03 12 Student 00112 School 02 Student 00612 School 07 Student 01112 School 12 Student 01612 School 05 Student 02112 School 10 Student 02612 School 03 13 Student 00113 School 02 Student 00613 School 07 Student 01113 School 12 Student 01613 School 05 Student 02113 School 10 Student 02613 School 03 14 Student 00114 School 02 Student 00614 School 07 Student 01114 School 12 Student 01614 School 05 Student 02114 School 10 Student 02614 School 03 15 Student 00115 School 02 Student 00615 School 07 Student 01115 School 12 Student 01615 School 05 Student 02115 School 10 Student 02615 School 03 16 Student 00116 School 02 Student 00616 School 07 Student 01116 School 12 Student 01616 School 05 Student 02116 School 10 Student 02616 School 03 17 Student 00117 School 02 Student 00617 School 07 Student 01117 School 12 Student 01617 School 05 Student 02117 School 10 Student 02617 School 03 18 Student 00118 School 02 Student 00618 School 07 Student 01118 School 12 Student 01618 School 05 Student 02118 School 10 Student 02618 School 03 19 Student 00119 School 02 Student 00619 School 07 Student 01119 School 12 Student 01619 School 05 Student 02119 School 10 Student 02619 School 03 20 Student 00120 School 02 Student 00620 School 07 Student 01120 School 12 Student 01620 School 05 Student 02120 School 10 Student 02620 School 03 21 Student 00121 School 02 Student 00621 School 07 Student 01121 School 12 Student 01621 School 05 Student 02121 School 10 Student 02621 School 03 22 Student 00122 School 02 Student 00622 School 07 Student 01122 School 12 Student 01622 School 05 Student 02122 School 10 Student 02622 School 03 23 Student 00123 School 02 Student 00623 School 07 Student 01123 School 12 Student 01623 School 05 Student 02123 School 10 Student 02623 School 03 24 Student 00124 School 02 Student 00624 School 07 Student 01124 School 12 Student 01624 School 05 Student 02124 School 10 Student 02624 School 03 25 Student 00125 School 02 Student 00625 School 07 Student 01125 School 12 Student 01625 School 05 Student 02125 School 10 Student 02625 School 03 Wi-Fi HeavyFixture-WiFi-01 HeavyFixture-WiFi-06 HeavyFixture-WiFi-11 HeavyFixture-WiFi-16 HeavyFixture-WiFi-21 HeavyFixture-WiFi-02 Wi-Fi PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only Zoom heavy-fixture-01 heavy-fixture-06 heavy-fixture-11 heavy-fixture-16 heavy-fixture-21 heavy-fixture-02 Zoom PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only",
+                    "normalizedTextMatches": true,
+                    "page": 1
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        842,
+                        595
+                    ],
+                    "generatedNormalizedText": "Tuesday Time 4pm 5pm 6pm 7pm 8pm 9pm Level KT / Rm E5 Level 03 Teacher 02 302 M1 Level 08 Teacher 07 307 M2 Level 05 Teacher 12 312 E4 Level 02 Teacher 17 317 E5 Level 07 Teacher 22 322 M1 Level 04 Teacher 03 303 1 Student 00201 School 03 Student 00701 School 08 Student 01201 School 01 Student 01701 School 06 Student 02201 School 11 Student 02701 School 04 2 Student 00202 School 03 Student 00702 School 08 Student 01202 School 01 Student 01702 School 06 Student 02202 School 11 Student 02702 School 04 3 Student 00203 School 03 Student 00703 School 08 Student 01203 School 01 Student 01703 School 06 Student 02203 School 11 Student 02703 School 04 4 Student 00204 School 03 Student 00704 School 08 Student 01204 School 01 Student 01704 School 06 Student 02204 School 11 Student 02704 School 04 5 Student 00205 School 03 Student 00705 School 08 Student 01205 School 01 Student 01705 School 06 Student 02205 School 11 Student 02705 School 04 6 Student 00206 School 03 Student 00706 School 08 Student 01206 School 01 Student 01706 School 06 Student 02206 School 11 Student 02706 School 04 7 Student 00207 School 03 Student 00707 School 08 Student 01207 School 01 Student 01707 School 06 Student 02207 School 11 Student 02707 School 04 8 Student 00208 School 03 Student 00708 School 08 Student 01208 School 01 Student 01708 School 06 Student 02208 School 11 Student 02708 School 04 9 Student 00209 School 03 Student 00709 School 08 Student 01209 School 01 Student 01709 School 06 Student 02209 School 11 Student 02709 School 04 10 Student 00210 School 03 Student 00710 School 08 Student 01210 School 01 Student 01710 School 06 Student 02210 School 11 Student 02710 School 04 11 Student 00211 School 03 Student 00711 School 08 Student 01211 School 01 Student 01711 School 06 Student 02211 School 11 Student 02711 School 04 12 Student 00212 School 03 Student 00712 School 08 Student 01212 School 01 Student 01712 School 06 Student 02212 School 11 Student 02712 School 04 13 Student 00213 School 03 Student 00713 School 08 Student 01213 School 01 Student 01713 School 06 Student 02213 School 11 Student 02713 School 04 14 Student 00214 School 03 Student 00714 School 08 Student 01214 School 01 Student 01714 School 06 Student 02214 School 11 Student 02714 School 04 15 Student 00215 School 03 Student 00715 School 08 Student 01215 School 01 Student 01715 School 06 Student 02215 School 11 Student 02715 School 04 16 Student 00216 School 03 Student 00716 School 08 Student 01216 School 01 Student 01716 School 06 Student 02216 School 11 Student 02716 School 04 17 Student 00217 School 03 Student 00717 School 08 Student 01217 School 01 Student 01717 School 06 Student 02217 School 11 Student 02717 School 04 18 Student 00218 School 03 Student 00718 School 08 Student 01218 School 01 Student 01718 School 06 Student 02218 School 11 Student 02718 School 04 19 Student 00219 School 03 Student 00719 School 08 Student 01219 School 01 Student 01719 School 06 Student 02219 School 11 Student 02719 School 04 20 Student 00220 School 03 Student 00720 School 08 Student 01220 School 01 Student 01720 School 06 Student 02220 School 11 Student 02720 School 04 21 Student 00221 School 03 Student 00721 School 08 Student 01221 School 01 Student 01721 School 06 Student 02221 School 11 Student 02721 School 04 22 Student 00222 School 03 Student 00722 School 08 Student 01222 School 01 Student 01722 School 06 Student 02222 School 11 Student 02722 School 04 23 Student 00223 School 03 Student 00723 School 08 Student 01223 School 01 Student 01723 School 06 Student 02223 School 11 Student 02723 School 04 24 Student 00224 School 03 Student 00724 School 08 Student 01224 School 01 Student 01724 School 06 Student 02224 School 11 Student 02724 School 04 25 Student 00225 School 03 Student 00725 School 08 Student 01225 School 01 Student 01725 School 06 Student 02225 School 11 Student 02725 School 04 Wi-Fi HeavyFixture-WiFi-02 HeavyFixture-WiFi-07 HeavyFixture-WiFi-12 HeavyFixture-WiFi-17 HeavyFixture-WiFi-22 HeavyFixture-WiFi-03 Wi-Fi PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only Zoom heavy-fixture-02 heavy-fixture-07 heavy-fixture-12 heavy-fixture-17 heavy-fixture-22 heavy-fixture-03 Zoom PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only",
+                    "historicalDimensionsPoints": [
+                        842,
+                        595
+                    ],
+                    "historicalNormalizedText": "Tuesday Time 4pm 5pm 6pm 7pm 8pm 9pm Level KT / Rm E5 Level 03 Teacher 02 302 M1 Level 08 Teacher 07 307 M2 Level 05 Teacher 12 312 E4 Level 02 Teacher 17 317 E5 Level 07 Teacher 22 322 M1 Level 04 Teacher 03 303 1 Student 00201 School 03 Student 00701 School 08 Student 01201 School 01 Student 01701 School 06 Student 02201 School 11 Student 02701 School 04 2 Student 00202 School 03 Student 00702 School 08 Student 01202 School 01 Student 01702 School 06 Student 02202 School 11 Student 02702 School 04 3 Student 00203 School 03 Student 00703 School 08 Student 01203 School 01 Student 01703 School 06 Student 02203 School 11 Student 02703 School 04 4 Student 00204 School 03 Student 00704 School 08 Student 01204 School 01 Student 01704 School 06 Student 02204 School 11 Student 02704 School 04 5 Student 00205 School 03 Student 00705 School 08 Student 01205 School 01 Student 01705 School 06 Student 02205 School 11 Student 02705 School 04 6 Student 00206 School 03 Student 00706 School 08 Student 01206 School 01 Student 01706 School 06 Student 02206 School 11 Student 02706 School 04 7 Student 00207 School 03 Student 00707 School 08 Student 01207 School 01 Student 01707 School 06 Student 02207 School 11 Student 02707 School 04 8 Student 00208 School 03 Student 00708 School 08 Student 01208 School 01 Student 01708 School 06 Student 02208 School 11 Student 02708 School 04 9 Student 00209 School 03 Student 00709 School 08 Student 01209 School 01 Student 01709 School 06 Student 02209 School 11 Student 02709 School 04 10 Student 00210 School 03 Student 00710 School 08 Student 01210 School 01 Student 01710 School 06 Student 02210 School 11 Student 02710 School 04 11 Student 00211 School 03 Student 00711 School 08 Student 01211 School 01 Student 01711 School 06 Student 02211 School 11 Student 02711 School 04 12 Student 00212 School 03 Student 00712 School 08 Student 01212 School 01 Student 01712 School 06 Student 02212 School 11 Student 02712 School 04 13 Student 00213 School 03 Student 00713 School 08 Student 01213 School 01 Student 01713 School 06 Student 02213 School 11 Student 02713 School 04 14 Student 00214 School 03 Student 00714 School 08 Student 01214 School 01 Student 01714 School 06 Student 02214 School 11 Student 02714 School 04 15 Student 00215 School 03 Student 00715 School 08 Student 01215 School 01 Student 01715 School 06 Student 02215 School 11 Student 02715 School 04 16 Student 00216 School 03 Student 00716 School 08 Student 01216 School 01 Student 01716 School 06 Student 02216 School 11 Student 02716 School 04 17 Student 00217 School 03 Student 00717 School 08 Student 01217 School 01 Student 01717 School 06 Student 02217 School 11 Student 02717 School 04 18 Student 00218 School 03 Student 00718 School 08 Student 01218 School 01 Student 01718 School 06 Student 02218 School 11 Student 02718 School 04 19 Student 00219 School 03 Student 00719 School 08 Student 01219 School 01 Student 01719 School 06 Student 02219 School 11 Student 02719 School 04 20 Student 00220 School 03 Student 00720 School 08 Student 01220 School 01 Student 01720 School 06 Student 02220 School 11 Student 02720 School 04 21 Student 00221 School 03 Student 00721 School 08 Student 01221 School 01 Student 01721 School 06 Student 02221 School 11 Student 02721 School 04 22 Student 00222 School 03 Student 00722 School 08 Student 01222 School 01 Student 01722 School 06 Student 02222 School 11 Student 02722 School 04 23 Student 00223 School 03 Student 00723 School 08 Student 01223 School 01 Student 01723 School 06 Student 02223 School 11 Student 02723 School 04 24 Student 00224 School 03 Student 00724 School 08 Student 01224 School 01 Student 01724 School 06 Student 02224 School 11 Student 02724 School 04 25 Student 00225 School 03 Student 00725 School 08 Student 01225 School 01 Student 01725 School 06 Student 02225 School 11 Student 02725 School 04 Wi-Fi HeavyFixture-WiFi-02 HeavyFixture-WiFi-07 HeavyFixture-WiFi-12 HeavyFixture-WiFi-17 HeavyFixture-WiFi-22 HeavyFixture-WiFi-03 Wi-Fi PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only Zoom heavy-fixture-02 heavy-fixture-07 heavy-fixture-12 heavy-fixture-17 heavy-fixture-22 heavy-fixture-03 Zoom PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only",
+                    "normalizedTextMatches": true,
+                    "page": 2
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        842,
+                        595
+                    ],
+                    "generatedNormalizedText": "Wednesday Time 4pm 5pm 6pm 7pm 8pm 9pm Level KT / Rm M1 Level 04 Teacher 03 303 M2 Level 01 Teacher 08 308 E4 Level 06 Teacher 13 313 E5 Level 03 Teacher 18 318 M1 Level 08 Teacher 23 323 M2 Level 05 Teacher 04 304 1 Student 00301 School 04 Student 00801 School 09 Student 01301 School 02 Student 01801 School 07 Student 02301 School 12 Student 02801 School 05 2 Student 00302 School 04 Student 00802 School 09 Student 01302 School 02 Student 01802 School 07 Student 02302 School 12 Student 02802 School 05 3 Student 00303 School 04 Student 00803 School 09 Student 01303 School 02 Student 01803 School 07 Student 02303 School 12 Student 02803 School 05 4 Student 00304 School 04 Student 00804 School 09 Student 01304 School 02 Student 01804 School 07 Student 02304 School 12 Student 02804 School 05 5 Student 00305 School 04 Student 00805 School 09 Student 01305 School 02 Student 01805 School 07 Student 02305 School 12 Student 02805 School 05 6 Student 00306 School 04 Student 00806 School 09 Student 01306 School 02 Student 01806 School 07 Student 02306 School 12 Student 02806 School 05 7 Student 00307 School 04 Student 00807 School 09 Student 01307 School 02 Student 01807 School 07 Student 02307 School 12 Student 02807 School 05 8 Student 00308 School 04 Student 00808 School 09 Student 01308 School 02 Student 01808 School 07 Student 02308 School 12 Student 02808 School 05 9 Student 00309 School 04 Student 00809 School 09 Student 01309 School 02 Student 01809 School 07 Student 02309 School 12 Student 02809 School 05 10 Student 00310 School 04 Student 00810 School 09 Student 01310 School 02 Student 01810 School 07 Student 02310 School 12 Student 02810 School 05 11 Student 00311 School 04 Student 00811 School 09 Student 01311 School 02 Student 01811 School 07 Student 02311 School 12 Student 02811 School 05 12 Student 00312 School 04 Student 00812 School 09 Student 01312 School 02 Student 01812 School 07 Student 02312 School 12 Student 02812 School 05 13 Student 00313 School 04 Student 00813 School 09 Student 01313 School 02 Student 01813 School 07 Student 02313 School 12 Student 02813 School 05 14 Student 00314 School 04 Student 00814 School 09 Student 01314 School 02 Student 01814 School 07 Student 02314 School 12 Student 02814 School 05 15 Student 00315 School 04 Student 00815 School 09 Student 01315 School 02 Student 01815 School 07 Student 02315 School 12 Student 02815 School 05 16 Student 00316 School 04 Student 00816 School 09 Student 01316 School 02 Student 01816 School 07 Student 02316 School 12 Student 02816 School 05 17 Student 00317 School 04 Student 00817 School 09 Student 01317 School 02 Student 01817 School 07 Student 02317 School 12 Student 02817 School 05 18 Student 00318 School 04 Student 00818 School 09 Student 01318 School 02 Student 01818 School 07 Student 02318 School 12 Student 02818 School 05 19 Student 00319 School 04 Student 00819 School 09 Student 01319 School 02 Student 01819 School 07 Student 02319 School 12 Student 02819 School 05 20 Student 00320 School 04 Student 00820 School 09 Student 01320 School 02 Student 01820 School 07 Student 02320 School 12 Student 02820 School 05 21 Student 00321 School 04 Student 00821 School 09 Student 01321 School 02 Student 01821 School 07 Student 02321 School 12 Student 02821 School 05 22 Student 00322 School 04 Student 00822 School 09 Student 01322 School 02 Student 01822 School 07 Student 02322 School 12 Student 02822 School 05 23 Student 00323 School 04 Student 00823 School 09 Student 01323 School 02 Student 01823 School 07 Student 02323 School 12 Student 02823 School 05 24 Student 00324 School 04 Student 00824 School 09 Student 01324 School 02 Student 01824 School 07 Student 02324 School 12 Student 02824 School 05 25 Student 00325 School 04 Student 00825 School 09 Student 01325 School 02 Student 01825 School 07 Student 02325 School 12 Student 02825 School 05 Wi-Fi HeavyFixture-WiFi-03 HeavyFixture-WiFi-08 HeavyFixture-WiFi-13 HeavyFixture-WiFi-18 HeavyFixture-WiFi-23 HeavyFixture-WiFi-04 Wi-Fi PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only Zoom heavy-fixture-03 heavy-fixture-08 heavy-fixture-13 heavy-fixture-18 heavy-fixture-23 heavy-fixture-04 Zoom PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only",
+                    "historicalDimensionsPoints": [
+                        842,
+                        595
+                    ],
+                    "historicalNormalizedText": "Wednesday Time 4pm 5pm 6pm 7pm 8pm 9pm Level KT / Rm M1 Level 04 Teacher 03 303 M2 Level 01 Teacher 08 308 E4 Level 06 Teacher 13 313 E5 Level 03 Teacher 18 318 M1 Level 08 Teacher 23 323 M2 Level 05 Teacher 04 304 1 Student 00301 School 04 Student 00801 School 09 Student 01301 School 02 Student 01801 School 07 Student 02301 School 12 Student 02801 School 05 2 Student 00302 School 04 Student 00802 School 09 Student 01302 School 02 Student 01802 School 07 Student 02302 School 12 Student 02802 School 05 3 Student 00303 School 04 Student 00803 School 09 Student 01303 School 02 Student 01803 School 07 Student 02303 School 12 Student 02803 School 05 4 Student 00304 School 04 Student 00804 School 09 Student 01304 School 02 Student 01804 School 07 Student 02304 School 12 Student 02804 School 05 5 Student 00305 School 04 Student 00805 School 09 Student 01305 School 02 Student 01805 School 07 Student 02305 School 12 Student 02805 School 05 6 Student 00306 School 04 Student 00806 School 09 Student 01306 School 02 Student 01806 School 07 Student 02306 School 12 Student 02806 School 05 7 Student 00307 School 04 Student 00807 School 09 Student 01307 School 02 Student 01807 School 07 Student 02307 School 12 Student 02807 School 05 8 Student 00308 School 04 Student 00808 School 09 Student 01308 School 02 Student 01808 School 07 Student 02308 School 12 Student 02808 School 05 9 Student 00309 School 04 Student 00809 School 09 Student 01309 School 02 Student 01809 School 07 Student 02309 School 12 Student 02809 School 05 10 Student 00310 School 04 Student 00810 School 09 Student 01310 School 02 Student 01810 School 07 Student 02310 School 12 Student 02810 School 05 11 Student 00311 School 04 Student 00811 School 09 Student 01311 School 02 Student 01811 School 07 Student 02311 School 12 Student 02811 School 05 12 Student 00312 School 04 Student 00812 School 09 Student 01312 School 02 Student 01812 School 07 Student 02312 School 12 Student 02812 School 05 13 Student 00313 School 04 Student 00813 School 09 Student 01313 School 02 Student 01813 School 07 Student 02313 School 12 Student 02813 School 05 14 Student 00314 School 04 Student 00814 School 09 Student 01314 School 02 Student 01814 School 07 Student 02314 School 12 Student 02814 School 05 15 Student 00315 School 04 Student 00815 School 09 Student 01315 School 02 Student 01815 School 07 Student 02315 School 12 Student 02815 School 05 16 Student 00316 School 04 Student 00816 School 09 Student 01316 School 02 Student 01816 School 07 Student 02316 School 12 Student 02816 School 05 17 Student 00317 School 04 Student 00817 School 09 Student 01317 School 02 Student 01817 School 07 Student 02317 School 12 Student 02817 School 05 18 Student 00318 School 04 Student 00818 School 09 Student 01318 School 02 Student 01818 School 07 Student 02318 School 12 Student 02818 School 05 19 Student 00319 School 04 Student 00819 School 09 Student 01319 School 02 Student 01819 School 07 Student 02319 School 12 Student 02819 School 05 20 Student 00320 School 04 Student 00820 School 09 Student 01320 School 02 Student 01820 School 07 Student 02320 School 12 Student 02820 School 05 21 Student 00321 School 04 Student 00821 School 09 Student 01321 School 02 Student 01821 School 07 Student 02321 School 12 Student 02821 School 05 22 Student 00322 School 04 Student 00822 School 09 Student 01322 School 02 Student 01822 School 07 Student 02322 School 12 Student 02822 School 05 23 Student 00323 School 04 Student 00823 School 09 Student 01323 School 02 Student 01823 School 07 Student 02323 School 12 Student 02823 School 05 24 Student 00324 School 04 Student 00824 School 09 Student 01324 School 02 Student 01824 School 07 Student 02324 School 12 Student 02824 School 05 25 Student 00325 School 04 Student 00825 School 09 Student 01325 School 02 Student 01825 School 07 Student 02325 School 12 Student 02825 School 05 Wi-Fi HeavyFixture-WiFi-03 HeavyFixture-WiFi-08 HeavyFixture-WiFi-13 HeavyFixture-WiFi-18 HeavyFixture-WiFi-23 HeavyFixture-WiFi-04 Wi-Fi PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only Zoom heavy-fixture-03 heavy-fixture-08 heavy-fixture-13 heavy-fixture-18 heavy-fixture-23 heavy-fixture-04 Zoom PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only",
+                    "normalizedTextMatches": true,
+                    "page": 3
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        842,
+                        595
+                    ],
+                    "generatedNormalizedText": "Thursday Time 4pm 5pm 6pm 7pm 8pm 9pm Level KT / Rm M2 Level 05 Teacher 04 304 E4 Level 02 Teacher 09 309 E5 Level 07 Teacher 14 314 M1 Level 04 Teacher 19 319 M2 Level 01 Teacher 24 324 E4 Level 06 Teacher 05 305 1 Student 00401 School 05 Student 00901 School 10 Student 01401 School 03 Student 01901 School 08 Student 02401 School 01 Student 02901 School 06 2 Student 00402 School 05 Student 00902 School 10 Student 01402 School 03 Student 01902 School 08 Student 02402 School 01 Student 02902 School 06 3 Student 00403 School 05 Student 00903 School 10 Student 01403 School 03 Student 01903 School 08 Student 02403 School 01 Student 02903 School 06 4 Student 00404 School 05 Student 00904 School 10 Student 01404 School 03 Student 01904 School 08 Student 02404 School 01 Student 02904 School 06 5 Student 00405 School 05 Student 00905 School 10 Student 01405 School 03 Student 01905 School 08 Student 02405 School 01 Student 02905 School 06 6 Student 00406 School 05 Student 00906 School 10 Student 01406 School 03 Student 01906 School 08 Student 02406 School 01 Student 02906 School 06 7 Student 00407 School 05 Student 00907 School 10 Student 01407 School 03 Student 01907 School 08 Student 02407 School 01 Student 02907 School 06 8 Student 00408 School 05 Student 00908 School 10 Student 01408 School 03 Student 01908 School 08 Student 02408 School 01 Student 02908 School 06 9 Student 00409 School 05 Student 00909 School 10 Student 01409 School 03 Student 01909 School 08 Student 02409 School 01 Student 02909 School 06 10 Student 00410 School 05 Student 00910 School 10 Student 01410 School 03 Student 01910 School 08 Student 02410 School 01 Student 02910 School 06 11 Student 00411 School 05 Student 00911 School 10 Student 01411 School 03 Student 01911 School 08 Student 02411 School 01 Student 02911 School 06 12 Student 00412 School 05 Student 00912 School 10 Student 01412 School 03 Student 01912 School 08 Student 02412 School 01 Student 02912 School 06 13 Student 00413 School 05 Student 00913 School 10 Student 01413 School 03 Student 01913 School 08 Student 02413 School 01 Student 02913 School 06 14 Student 00414 School 05 Student 00914 School 10 Student 01414 School 03 Student 01914 School 08 Student 02414 School 01 Student 02914 School 06 15 Student 00415 School 05 Student 00915 School 10 Student 01415 School 03 Student 01915 School 08 Student 02415 School 01 Student 02915 School 06 16 Student 00416 School 05 Student 00916 School 10 Student 01416 School 03 Student 01916 School 08 Student 02416 School 01 Student 02916 School 06 17 Student 00417 School 05 Student 00917 School 10 Student 01417 School 03 Student 01917 School 08 Student 02417 School 01 Student 02917 School 06 18 Student 00418 School 05 Student 00918 School 10 Student 01418 School 03 Student 01918 School 08 Student 02418 School 01 Student 02918 School 06 19 Student 00419 School 05 Student 00919 School 10 Student 01419 School 03 Student 01919 School 08 Student 02419 School 01 Student 02919 School 06 20 Student 00420 School 05 Student 00920 School 10 Student 01420 School 03 Student 01920 School 08 Student 02420 School 01 Student 02920 School 06 21 Student 00421 School 05 Student 00921 School 10 Student 01421 School 03 Student 01921 School 08 Student 02421 School 01 Student 02921 School 06 22 Student 00422 School 05 Student 00922 School 10 Student 01422 School 03 Student 01922 School 08 Student 02422 School 01 Student 02922 School 06 23 Student 00423 School 05 Student 00923 School 10 Student 01423 School 03 Student 01923 School 08 Student 02423 School 01 Student 02923 School 06 24 Student 00424 School 05 Student 00924 School 10 Student 01424 School 03 Student 01924 School 08 Student 02424 School 01 Student 02924 School 06 25 Student 00425 School 05 Student 00925 School 10 Student 01425 School 03 Student 01925 School 08 Student 02425 School 01 Student 02925 School 06 Wi-Fi HeavyFixture-WiFi-04 HeavyFixture-WiFi-09 HeavyFixture-WiFi-14 HeavyFixture-WiFi-19 HeavyFixture-WiFi-24 HeavyFixture-WiFi-05 Wi-Fi PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only Zoom heavy-fixture-04 heavy-fixture-09 heavy-fixture-14 heavy-fixture-19 heavy-fixture-24 heavy-fixture-05 Zoom PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only",
+                    "historicalDimensionsPoints": [
+                        842,
+                        595
+                    ],
+                    "historicalNormalizedText": "Thursday Time 4pm 5pm 6pm 7pm 8pm 9pm Level KT / Rm M2 Level 05 Teacher 04 304 E4 Level 02 Teacher 09 309 E5 Level 07 Teacher 14 314 M1 Level 04 Teacher 19 319 M2 Level 01 Teacher 24 324 E4 Level 06 Teacher 05 305 1 Student 00401 School 05 Student 00901 School 10 Student 01401 School 03 Student 01901 School 08 Student 02401 School 01 Student 02901 School 06 2 Student 00402 School 05 Student 00902 School 10 Student 01402 School 03 Student 01902 School 08 Student 02402 School 01 Student 02902 School 06 3 Student 00403 School 05 Student 00903 School 10 Student 01403 School 03 Student 01903 School 08 Student 02403 School 01 Student 02903 School 06 4 Student 00404 School 05 Student 00904 School 10 Student 01404 School 03 Student 01904 School 08 Student 02404 School 01 Student 02904 School 06 5 Student 00405 School 05 Student 00905 School 10 Student 01405 School 03 Student 01905 School 08 Student 02405 School 01 Student 02905 School 06 6 Student 00406 School 05 Student 00906 School 10 Student 01406 School 03 Student 01906 School 08 Student 02406 School 01 Student 02906 School 06 7 Student 00407 School 05 Student 00907 School 10 Student 01407 School 03 Student 01907 School 08 Student 02407 School 01 Student 02907 School 06 8 Student 00408 School 05 Student 00908 School 10 Student 01408 School 03 Student 01908 School 08 Student 02408 School 01 Student 02908 School 06 9 Student 00409 School 05 Student 00909 School 10 Student 01409 School 03 Student 01909 School 08 Student 02409 School 01 Student 02909 School 06 10 Student 00410 School 05 Student 00910 School 10 Student 01410 School 03 Student 01910 School 08 Student 02410 School 01 Student 02910 School 06 11 Student 00411 School 05 Student 00911 School 10 Student 01411 School 03 Student 01911 School 08 Student 02411 School 01 Student 02911 School 06 12 Student 00412 School 05 Student 00912 School 10 Student 01412 School 03 Student 01912 School 08 Student 02412 School 01 Student 02912 School 06 13 Student 00413 School 05 Student 00913 School 10 Student 01413 School 03 Student 01913 School 08 Student 02413 School 01 Student 02913 School 06 14 Student 00414 School 05 Student 00914 School 10 Student 01414 School 03 Student 01914 School 08 Student 02414 School 01 Student 02914 School 06 15 Student 00415 School 05 Student 00915 School 10 Student 01415 School 03 Student 01915 School 08 Student 02415 School 01 Student 02915 School 06 16 Student 00416 School 05 Student 00916 School 10 Student 01416 School 03 Student 01916 School 08 Student 02416 School 01 Student 02916 School 06 17 Student 00417 School 05 Student 00917 School 10 Student 01417 School 03 Student 01917 School 08 Student 02417 School 01 Student 02917 School 06 18 Student 00418 School 05 Student 00918 School 10 Student 01418 School 03 Student 01918 School 08 Student 02418 School 01 Student 02918 School 06 19 Student 00419 School 05 Student 00919 School 10 Student 01419 School 03 Student 01919 School 08 Student 02419 School 01 Student 02919 School 06 20 Student 00420 School 05 Student 00920 School 10 Student 01420 School 03 Student 01920 School 08 Student 02420 School 01 Student 02920 School 06 21 Student 00421 School 05 Student 00921 School 10 Student 01421 School 03 Student 01921 School 08 Student 02421 School 01 Student 02921 School 06 22 Student 00422 School 05 Student 00922 School 10 Student 01422 School 03 Student 01922 School 08 Student 02422 School 01 Student 02922 School 06 23 Student 00423 School 05 Student 00923 School 10 Student 01423 School 03 Student 01923 School 08 Student 02423 School 01 Student 02923 School 06 24 Student 00424 School 05 Student 00924 School 10 Student 01424 School 03 Student 01924 School 08 Student 02424 School 01 Student 02924 School 06 25 Student 00425 School 05 Student 00925 School 10 Student 01425 School 03 Student 01925 School 08 Student 02425 School 01 Student 02925 School 06 Wi-Fi HeavyFixture-WiFi-04 HeavyFixture-WiFi-09 HeavyFixture-WiFi-14 HeavyFixture-WiFi-19 HeavyFixture-WiFi-24 HeavyFixture-WiFi-05 Wi-Fi PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only Zoom heavy-fixture-04 heavy-fixture-09 heavy-fixture-14 heavy-fixture-19 heavy-fixture-24 heavy-fixture-05 Zoom PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only",
+                    "normalizedTextMatches": true,
+                    "page": 4
+                },
+                {
+                    "dimensionsMatch": true,
+                    "generatedDimensionsPoints": [
+                        842,
+                        595
+                    ],
+                    "generatedNormalizedText": "Friday Time 4pm 5pm 6pm 7pm 8pm 9pm Level KT / Rm E4 Level 06 Teacher 05 305 E5 Level 03 Teacher 10 310 M1 Level 08 Teacher 15 315 M2 Level 05 Teacher 20 320 E4 Level 02 Teacher 01 301 E5 Level 07 Teacher 06 306 1 Student 00501 School 06 Student 01001 School 11 Student 01501 School 04 Student 02001 School 09 Student 02501 School 02 Student 03001 School 07 2 Student 00502 School 06 Student 01002 School 11 Student 01502 School 04 Student 02002 School 09 Student 02502 School 02 Student 03002 School 07 3 Student 00503 School 06 Student 01003 School 11 Student 01503 School 04 Student 02003 School 09 Student 02503 School 02 Student 03003 School 07 4 Student 00504 School 06 Student 01004 School 11 Student 01504 School 04 Student 02004 School 09 Student 02504 School 02 Student 03004 School 07 5 Student 00505 School 06 Student 01005 School 11 Student 01505 School 04 Student 02005 School 09 Student 02505 School 02 Student 03005 School 07 6 Student 00506 School 06 Student 01006 School 11 Student 01506 School 04 Student 02006 School 09 Student 02506 School 02 Student 03006 School 07 7 Student 00507 School 06 Student 01007 School 11 Student 01507 School 04 Student 02007 School 09 Student 02507 School 02 Student 03007 School 07 8 Student 00508 School 06 Student 01008 School 11 Student 01508 School 04 Student 02008 School 09 Student 02508 School 02 Student 03008 School 07 9 Student 00509 School 06 Student 01009 School 11 Student 01509 School 04 Student 02009 School 09 Student 02509 School 02 Student 03009 School 07 10 Student 00510 School 06 Student 01010 School 11 Student 01510 School 04 Student 02010 School 09 Student 02510 School 02 Student 03010 School 07 11 Student 00511 School 06 Student 01011 School 11 Student 01511 School 04 Student 02011 School 09 Student 02511 School 02 Student 03011 School 07 12 Student 00512 School 06 Student 01012 School 11 Student 01512 School 04 Student 02012 School 09 Student 02512 School 02 Student 03012 School 07 13 Student 00513 School 06 Student 01013 School 11 Student 01513 School 04 Student 02013 School 09 Student 02513 School 02 Student 03013 School 07 14 Student 00514 School 06 Student 01014 School 11 Student 01514 School 04 Student 02014 School 09 Student 02514 School 02 Student 03014 School 07 15 Student 00515 School 06 Student 01015 School 11 Student 01515 School 04 Student 02015 School 09 Student 02515 School 02 Student 03015 School 07 16 Student 00516 School 06 Student 01016 School 11 Student 01516 School 04 Student 02016 School 09 Student 02516 School 02 Student 03016 School 07 17 Student 00517 School 06 Student 01017 School 11 Student 01517 School 04 Student 02017 School 09 Student 02517 School 02 Student 03017 School 07 18 Student 00518 School 06 Student 01018 School 11 Student 01518 School 04 Student 02018 School 09 Student 02518 School 02 Student 03018 School 07 19 Student 00519 School 06 Student 01019 School 11 Student 01519 School 04 Student 02019 School 09 Student 02519 School 02 Student 03019 School 07 20 Student 00520 School 06 Student 01020 School 11 Student 01520 School 04 Student 02020 School 09 Student 02520 School 02 Student 03020 School 07 21 Student 00521 School 06 Student 01021 School 11 Student 01521 School 04 Student 02021 School 09 Student 02521 School 02 Student 03021 School 07 22 Student 00522 School 06 Student 01022 School 11 Student 01522 School 04 Student 02022 School 09 Student 02522 School 02 Student 03022 School 07 23 Student 00523 School 06 Student 01023 School 11 Student 01523 School 04 Student 02023 School 09 Student 02523 School 02 Student 03023 School 07 24 Student 00524 School 06 Student 01024 School 11 Student 01524 School 04 Student 02024 School 09 Student 02524 School 02 Student 03024 School 07 25 Student 00525 School 06 Student 01025 School 11 Student 01525 School 04 Student 02025 School 09 Student 02525 School 02 Student 03025 School 07 Wi-Fi HeavyFixture-WiFi-05 HeavyFixture-WiFi-10 HeavyFixture-WiFi-15 HeavyFixture-WiFi-20 HeavyFixture-WiFi-01 HeavyFixture-WiFi-06 Wi-Fi PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only Zoom heavy-fixture-05 heavy-fixture-10 heavy-fixture-15 heavy-fixture-20 heavy-fixture-01 heavy-fixture-06 Zoom PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only",
+                    "historicalDimensionsPoints": [
+                        842,
+                        595
+                    ],
+                    "historicalNormalizedText": "Friday Time 4pm 5pm 6pm 7pm 8pm 9pm Level KT / Rm E4 Level 06 Teacher 05 305 E5 Level 03 Teacher 10 310 M1 Level 08 Teacher 15 315 M2 Level 05 Teacher 20 320 E4 Level 02 Teacher 01 301 E5 Level 07 Teacher 06 306 1 Student 00501 School 06 Student 01001 School 11 Student 01501 School 04 Student 02001 School 09 Student 02501 School 02 Student 03001 School 07 2 Student 00502 School 06 Student 01002 School 11 Student 01502 School 04 Student 02002 School 09 Student 02502 School 02 Student 03002 School 07 3 Student 00503 School 06 Student 01003 School 11 Student 01503 School 04 Student 02003 School 09 Student 02503 School 02 Student 03003 School 07 4 Student 00504 School 06 Student 01004 School 11 Student 01504 School 04 Student 02004 School 09 Student 02504 School 02 Student 03004 School 07 5 Student 00505 School 06 Student 01005 School 11 Student 01505 School 04 Student 02005 School 09 Student 02505 School 02 Student 03005 School 07 6 Student 00506 School 06 Student 01006 School 11 Student 01506 School 04 Student 02006 School 09 Student 02506 School 02 Student 03006 School 07 7 Student 00507 School 06 Student 01007 School 11 Student 01507 School 04 Student 02007 School 09 Student 02507 School 02 Student 03007 School 07 8 Student 00508 School 06 Student 01008 School 11 Student 01508 School 04 Student 02008 School 09 Student 02508 School 02 Student 03008 School 07 9 Student 00509 School 06 Student 01009 School 11 Student 01509 School 04 Student 02009 School 09 Student 02509 School 02 Student 03009 School 07 10 Student 00510 School 06 Student 01010 School 11 Student 01510 School 04 Student 02010 School 09 Student 02510 School 02 Student 03010 School 07 11 Student 00511 School 06 Student 01011 School 11 Student 01511 School 04 Student 02011 School 09 Student 02511 School 02 Student 03011 School 07 12 Student 00512 School 06 Student 01012 School 11 Student 01512 School 04 Student 02012 School 09 Student 02512 School 02 Student 03012 School 07 13 Student 00513 School 06 Student 01013 School 11 Student 01513 School 04 Student 02013 School 09 Student 02513 School 02 Student 03013 School 07 14 Student 00514 School 06 Student 01014 School 11 Student 01514 School 04 Student 02014 School 09 Student 02514 School 02 Student 03014 School 07 15 Student 00515 School 06 Student 01015 School 11 Student 01515 School 04 Student 02015 School 09 Student 02515 School 02 Student 03015 School 07 16 Student 00516 School 06 Student 01016 School 11 Student 01516 School 04 Student 02016 School 09 Student 02516 School 02 Student 03016 School 07 17 Student 00517 School 06 Student 01017 School 11 Student 01517 School 04 Student 02017 School 09 Student 02517 School 02 Student 03017 School 07 18 Student 00518 School 06 Student 01018 School 11 Student 01518 School 04 Student 02018 School 09 Student 02518 School 02 Student 03018 School 07 19 Student 00519 School 06 Student 01019 School 11 Student 01519 School 04 Student 02019 School 09 Student 02519 School 02 Student 03019 School 07 20 Student 00520 School 06 Student 01020 School 11 Student 01520 School 04 Student 02020 School 09 Student 02520 School 02 Student 03020 School 07 21 Student 00521 School 06 Student 01021 School 11 Student 01521 School 04 Student 02021 School 09 Student 02521 School 02 Student 03021 School 07 22 Student 00522 School 06 Student 01022 School 11 Student 01522 School 04 Student 02022 School 09 Student 02522 School 02 Student 03022 School 07 23 Student 00523 School 06 Student 01023 School 11 Student 01523 School 04 Student 02023 School 09 Student 02523 School 02 Student 03023 School 07 24 Student 00524 School 06 Student 01024 School 11 Student 01524 School 04 Student 02024 School 09 Student 02524 School 02 Student 03024 School 07 25 Student 00525 School 06 Student 01025 School 11 Student 01525 School 04 Student 02025 School 09 Student 02525 School 02 Student 03025 School 07 Wi-Fi HeavyFixture-WiFi-05 HeavyFixture-WiFi-10 HeavyFixture-WiFi-15 HeavyFixture-WiFi-20 HeavyFixture-WiFi-01 HeavyFixture-WiFi-06 Wi-Fi PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only Zoom heavy-fixture-05 heavy-fixture-10 heavy-fixture-15 heavy-fixture-20 heavy-fixture-01 heavy-fixture-06 Zoom PW fixture-only fixture-only fixture-only fixture-only fixture-only fixture-only",
+                    "normalizedTextMatches": true,
+                    "page": 5
+                }
+            ],
+            "semanticMatch": true
+        }
+    ],
+    "pdfSnapshotErrors": [
+    ],
+    "route": "output-sub-prep",
+    "saturdayExclusion": {
+        "allMarkersAbsent": true,
+        "fixtureClassCount": 66,
+        "generatedStudentMarkersFound": 0
+    },
+    "scenario": "packaged-ui-sql-route-semantic-parity",
+    "schema": "classmngr-sub-prep-output-route-parity-v1",
+    "selection": {
+        "createFolder": true,
+        "mode": "By Day",
+        "openFolderAfterGeneration": false,
+        "printPaperCopies": false,
+        "referenceDate": "2026-09-14",
+        "selectedDays": [
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday"
+        ],
+        "teacherName": "Teacher 01",
+        "weekEnd": "2026-09-18",
+        "weekStart": "2026-09-14"
+    },
+    "semanticParity": "mismatch",
+    "sourceIdentity": {
+        "phase0RunManifestRelativePath": "../../run-manifest.json",
+        "sourceAfter": {
+            "applicationPath": "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+            "applicationSha256": "4bc1c45d6a6916a7dfd19062e0a8636177712883f0da0524e798d58b6aa84d34",
+            "available": true,
+            "harnessPath": "C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/ClassMngrStartupPerformanceTests.exe",
+            "harnessSha256": "bda3e171beccdf8ce06b535cb6e2573b1710cbcb3ebae2cd19f296497e819aaf",
+            "sourceFileCount": 1093,
+            "sourceTreeSha256": "8f36c04ced6aad17e2ae6f93ec56a8c4410c66599431682519a6b6d0fdd18fbb"
+        },
+        "sourceBefore": {
+            "applicationPath": "C:\\Users\\wfelt\\AppData\\Local\\Temp\\w751f-20261101T171718Z\\e\\w751-31a71e90-windows-output-sub-prep\\package\\ClassMngr.exe",
+            "applicationSha256": "4bc1c45d6a6916a7dfd19062e0a8636177712883f0da0524e798d58b6aa84d34",
+            "available": true,
+            "harnessPath": "C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/test/ClassMngrStartupPerformanceTests.exe",
+            "harnessSha256": "bda3e171beccdf8ce06b535cb6e2573b1710cbcb3ebae2cd19f296497e819aaf",
+            "sourceFileCount": 1093,
+            "sourceTreeSha256": "8f36c04ced6aad17e2ae6f93ec56a8c4410c66599431682519a6b6d0fdd18fbb"
+        },
+        "unchangedDuringRoute": true
+    },
+    "weekdayClassMarkers": {
+        "allMatchExpectedDayClassTeacherStudentOnOnePage": true,
+        "checkedCount": 30,
+        "classes": [
+            {
+                "classId": 1,
+                "classMarker": "E4 Level 02",
+                "day": "Monday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 1,
+                "studentMarker": "Student 001",
+                "teacherMarker": "Teacher 01"
+            },
+            {
+                "classId": 2,
+                "classMarker": "E5 Level 03",
+                "day": "Tuesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 2,
+                "studentMarker": "Student 002",
+                "teacherMarker": "Teacher 02"
+            },
+            {
+                "classId": 3,
+                "classMarker": "M1 Level 04",
+                "day": "Wednesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 3,
+                "studentMarker": "Student 003",
+                "teacherMarker": "Teacher 03"
+            },
+            {
+                "classId": 4,
+                "classMarker": "M2 Level 05",
+                "day": "Thursday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 4,
+                "studentMarker": "Student 004",
+                "teacherMarker": "Teacher 04"
+            },
+            {
+                "classId": 5,
+                "classMarker": "E4 Level 06",
+                "day": "Friday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 5,
+                "studentMarker": "Student 005",
+                "teacherMarker": "Teacher 05"
+            },
+            {
+                "classId": 6,
+                "classMarker": "E5 Level 07",
+                "day": "Monday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 1,
+                "studentMarker": "Student 006",
+                "teacherMarker": "Teacher 06"
+            },
+            {
+                "classId": 7,
+                "classMarker": "M1 Level 08",
+                "day": "Tuesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 2,
+                "studentMarker": "Student 007",
+                "teacherMarker": "Teacher 07"
+            },
+            {
+                "classId": 8,
+                "classMarker": "M2 Level 01",
+                "day": "Wednesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 3,
+                "studentMarker": "Student 008",
+                "teacherMarker": "Teacher 08"
+            },
+            {
+                "classId": 9,
+                "classMarker": "E4 Level 02",
+                "day": "Thursday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 4,
+                "studentMarker": "Student 009",
+                "teacherMarker": "Teacher 09"
+            },
+            {
+                "classId": 10,
+                "classMarker": "E5 Level 03",
+                "day": "Friday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 5,
+                "studentMarker": "Student 010",
+                "teacherMarker": "Teacher 10"
+            },
+            {
+                "classId": 11,
+                "classMarker": "M1 Level 04",
+                "day": "Monday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 1,
+                "studentMarker": "Student 011",
+                "teacherMarker": "Teacher 11"
+            },
+            {
+                "classId": 12,
+                "classMarker": "M2 Level 05",
+                "day": "Tuesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 2,
+                "studentMarker": "Student 012",
+                "teacherMarker": "Teacher 12"
+            },
+            {
+                "classId": 13,
+                "classMarker": "E4 Level 06",
+                "day": "Wednesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 3,
+                "studentMarker": "Student 013",
+                "teacherMarker": "Teacher 13"
+            },
+            {
+                "classId": 14,
+                "classMarker": "E5 Level 07",
+                "day": "Thursday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 4,
+                "studentMarker": "Student 014",
+                "teacherMarker": "Teacher 14"
+            },
+            {
+                "classId": 15,
+                "classMarker": "M1 Level 08",
+                "day": "Friday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 5,
+                "studentMarker": "Student 015",
+                "teacherMarker": "Teacher 15"
+            },
+            {
+                "classId": 16,
+                "classMarker": "M2 Level 01",
+                "day": "Monday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 1,
+                "studentMarker": "Student 016",
+                "teacherMarker": "Teacher 16"
+            },
+            {
+                "classId": 17,
+                "classMarker": "E4 Level 02",
+                "day": "Tuesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 2,
+                "studentMarker": "Student 017",
+                "teacherMarker": "Teacher 17"
+            },
+            {
+                "classId": 18,
+                "classMarker": "E5 Level 03",
+                "day": "Wednesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 3,
+                "studentMarker": "Student 018",
+                "teacherMarker": "Teacher 18"
+            },
+            {
+                "classId": 19,
+                "classMarker": "M1 Level 04",
+                "day": "Thursday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 4,
+                "studentMarker": "Student 019",
+                "teacherMarker": "Teacher 19"
+            },
+            {
+                "classId": 20,
+                "classMarker": "M2 Level 05",
+                "day": "Friday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 5,
+                "studentMarker": "Student 020",
+                "teacherMarker": "Teacher 20"
+            },
+            {
+                "classId": 21,
+                "classMarker": "E4 Level 06",
+                "day": "Monday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 1,
+                "studentMarker": "Student 021",
+                "teacherMarker": "Teacher 21"
+            },
+            {
+                "classId": 22,
+                "classMarker": "E5 Level 07",
+                "day": "Tuesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 2,
+                "studentMarker": "Student 022",
+                "teacherMarker": "Teacher 22"
+            },
+            {
+                "classId": 23,
+                "classMarker": "M1 Level 08",
+                "day": "Wednesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 3,
+                "studentMarker": "Student 023",
+                "teacherMarker": "Teacher 23"
+            },
+            {
+                "classId": 24,
+                "classMarker": "M2 Level 01",
+                "day": "Thursday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 4,
+                "studentMarker": "Student 024",
+                "teacherMarker": "Teacher 24"
+            },
+            {
+                "classId": 25,
+                "classMarker": "E4 Level 02",
+                "day": "Friday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 5,
+                "studentMarker": "Student 025",
+                "teacherMarker": "Teacher 01"
+            },
+            {
+                "classId": 26,
+                "classMarker": "E5 Level 03",
+                "day": "Monday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 1,
+                "studentMarker": "Student 026",
+                "teacherMarker": "Teacher 02"
+            },
+            {
+                "classId": 27,
+                "classMarker": "M1 Level 04",
+                "day": "Tuesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 2,
+                "studentMarker": "Student 027",
+                "teacherMarker": "Teacher 03"
+            },
+            {
+                "classId": 28,
+                "classMarker": "M2 Level 05",
+                "day": "Wednesday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 3,
+                "studentMarker": "Student 028",
+                "teacherMarker": "Teacher 04"
+            },
+            {
+                "classId": 29,
+                "classMarker": "E4 Level 06",
+                "day": "Thursday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 4,
+                "studentMarker": "Student 029",
+                "teacherMarker": "Teacher 05"
+            },
+            {
+                "classId": 30,
+                "classMarker": "E5 Level 07",
+                "day": "Friday",
+                "markerPageCount": 1,
+                "markersMatchOnPage": true,
+                "pageNumber": 5,
+                "studentMarker": "Student 030",
+                "teacherMarker": "Teacher 06"
+            }
+        ]
+    }
+}

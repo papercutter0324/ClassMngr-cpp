@@ -1,0 +1,374 @@
+[0/2] Re-checking globbed directories...
+[1/359] Automatic MOC and UIC for target ClassMngrData
+[2/359] Automatic MOC and UIC for target ClassMngrCore
+[3/359] Automatic MOC and UIC for target ClassMngrDomain
+[4/359] Automatic MOC and UIC for target ClassMngrUiShared
+[5/359] Automatic MOC and UIC for target ClassMngrAppServices
+[6/359] Automatic MOC and UIC for target ClassMngrRuntime
+[7/359] Running qmlimportscanner for ClassMngr
+[8/359] Generating qt.conf part for ClassMngr
+[9/359] Automatic MOC and UIC for target ClassMngrFeatures
+[10/359] Building CXX object CMakeFiles\ClassMngrCore.dir\ClassMngrCore_autogen\mocs_compilation.cpp.obj
+[11/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\application_services.cpp.obj
+[12/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\database_file_format.cpp.obj
+[13/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\fontmanager.cpp.obj
+[14/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\language_service.cpp.obj
+[15/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\network\http_request_policy.cpp.obj
+[16/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\resource_packs\resource_pack_configuration.cpp.obj
+[17/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\process_memory_snapshot.cpp.obj
+[18/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\resource_packs\resource_pack_manager.cpp.obj
+[19/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\resource_packs\resource_pack_manifest.cpp.obj
+[20/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\settingsmanager.cpp.obj
+[21/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\resource_packs\resource_pack_update_service.cpp.obj
+[22/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\theme_service.cpp.obj
+[23/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\startup_profiler.cpp.obj
+[24/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\updater\github_release.cpp.obj
+[25/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\updater\update_configuration.cpp.obj
+[26/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\updater\update_installer.cpp.obj
+[27/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\updater\update_downloader.cpp.obj
+[28/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\updater\update_service.cpp.obj
+[29/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\updater\update_signature_verifier.cpp.obj
+[30/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\updater\version.cpp.obj
+[31/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\utils\colorutils.cpp.obj
+[32/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\utils\platform.cpp.obj
+[33/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\utils\file_name_utils.cpp.obj
+[34/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\utils\sidebar_node_naming.cpp.obj
+[35/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\utils\student_name_utils.cpp.obj
+[36/359] Building CXX object CMakeFiles\ClassMngrData.dir\ClassMngrData_autogen\mocs_compilation.cpp.obj
+[37/359] Building CXX object CMakeFiles\ClassMngrCore.dir\src\core\zip_archive_writer.cpp.obj
+[38/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\database\database_file_operations.cpp.obj
+[39/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\data_service.cpp.obj
+[40/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\database\database_schema_manager.cpp.obj
+[41/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\database\database_transaction.cpp.obj
+[42/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\database\database_session.cpp.obj
+[43/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\database\sql_query_utils.cpp.obj
+[44/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\calendar_event_repository.cpp.obj
+[45/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\campus_record_repository.cpp.obj
+[46/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\class_repository.cpp.obj
+[47/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\class_info_repository.cpp.obj
+[48/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\gs_team_repository.cpp.obj
+[49/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\class_transfer_repository.cpp.obj
+[50/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\intensive_slot_state_repository.cpp.obj
+[51/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\native_english_teacher_repository.cpp.obj
+[52/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\roster_repository.cpp.obj
+[53/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\settings_repository.cpp.obj
+[54/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\schedule_import_repository.cpp.obj
+[55/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\speaking_eval_repository.cpp.obj
+[56/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\teacher_import_repository.cpp.obj
+[57/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\teacher_import_sql_persistence_adapter.cpp.obj
+[58/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\testing_block_repository.cpp.obj
+[59/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\teacher_repository.cpp.obj
+[60/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\ClassMngrDomain_autogen\mocs_compilation.cpp.obj
+[61/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\models\classroom.cpp.obj
+[62/359] Building CXX object CMakeFiles\ClassMngrData.dir\src\data\repositories\testing_class_repository.cpp.obj
+[63/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\models\roster.cpp.obj
+[64/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\rules\schedule_import_rules.cpp.obj
+[65/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\rules\schedule_value_parser.cpp.obj
+[66/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\calendar_event_validator.cpp.obj
+[67/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\class_info_validator.cpp.obj
+[68/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\class_transfer_package_validator.cpp.obj
+[69/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\class_time_validator.cpp.obj
+[70/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\roster_validator.cpp.obj
+[71/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\shared_validation.cpp.obj
+[72/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\speaking_eval_validator.cpp.obj
+[73/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\teacher_validator.cpp.obj
+[74/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\teacher_import_plan_preparation.cpp.obj
+[75/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\validation_result.cpp.obj
+[76/359] Building CXX object CMakeFiles\ClassMngrDomain.dir\src\domain\validation\validation_rules.cpp.obj
+[77/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\ClassMngrUiShared_autogen\mocs_compilation.cpp.obj
+[78/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\actions\action_registry.cpp.obj
+[79/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\components\bottom_bar_builder.cpp.obj
+[80/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\dialogs\dialog_shell.cpp.obj
+[81/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\dialogs\about_dialog.cpp.obj
+[82/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\dialogs\license_dialog.cpp.obj
+[83/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\dialogs\file_dialog_service.cpp.obj
+[84/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\dialogs\record_selection_dialog.cpp.obj
+[85/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\dialogs\update_dialog.cpp.obj
+[86/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\input\hangul_composer.cpp.obj
+[87/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\dialogs\user_prompt_service.cpp.obj
+[88/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\autosave_coordinator.cpp.obj
+[89/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\basepage.cpp.obj
+[90/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\page_header.cpp.obj
+[91/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\pagemanager.cpp.obj
+[92/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\pdf_viewer_page.cpp.obj
+[93/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\pdf_viewer_page_file_actions.cpp.obj
+[94/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\pdf_viewer_page_file_copy.cpp.obj
+[95/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\pdf_viewer_page_navigation.cpp.obj
+[96/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\pdf_viewer_page_status.cpp.obj
+[97/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\pdf_viewer_page_ui.cpp.obj
+[98/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\pdf_viewer_page_view_state.cpp.obj
+[99/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\pdf_viewer_page_zoom.cpp.obj
+[100/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\pages\scrollable_page_body.cpp.obj
+[101/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\printing\pdf_print_dialog.cpp.obj
+[102/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\printing\pdf_print_dialog_pages.cpp.obj
+[103/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\printing\pdf_print_dialog_printer.cpp.obj
+[104/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\printing\pdf_print_dialog_printing.cpp.obj
+[105/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\printing\pdf_print_dialog_widgets.cpp.obj
+[106/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\printing\pdf_print_service.cpp.obj
+[107/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\state\ai_comment_options.cpp.obj
+[108/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\styles\role_style_registry.cpp.obj
+[109/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\styles\file_dialog_icon_style.cpp.obj
+[110/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\styles\themed_icon_utils.cpp.obj
+[111/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\utils\widget_sizing.cpp.obj
+[112/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\validation\form_validation_binder.cpp.obj
+[113/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\clickable_color_preview.cpp.obj
+[114/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\marquee_label.cpp.obj
+[115/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\navigation_pill_button.cpp.obj
+[116/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\navigation_pill_style.cpp.obj
+[117/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\navigation_settings_button.cpp.obj
+[118/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\navigation_tab_widget.cpp.obj
+[119/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\no_wheel_combobox.cpp.obj
+[120/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\on_screen_keyboard.cpp.obj
+[121/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sectioncards\class_info_section_card.cpp.obj
+[122/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sectioncards\class_time_row.cpp.obj
+[123/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sectioncards\teacher_section_card.cpp.obj
+[124/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sections\class_details_section.cpp.obj
+[125/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sections\class_schedule_section.cpp.obj
+[126/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sections\teacher_info_section.cpp.obj
+[127/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sidebar\sidebar.cpp.obj
+[128/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sidebar\sidebar_definitions.cpp.obj
+[129/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sidebar\sidebar_context_menu.cpp.obj
+[130/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sidebar\sidebar_marquee_delegate.cpp.obj
+[131/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sidebar\sidebar_overflow.cpp.obj
+[132/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sidebar\sidebar_selection.cpp.obj
+[133/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sidebar\sidebar_teachers.cpp.obj
+[134/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\splash\splashscreen.cpp.obj
+[135/359] Building CXX object CMakeFiles\ClassMngrUiShared.dir\src\ui\shared\widgets\sidebar\sidebar_tree.cpp.obj
+[136/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\academic_calendar_event_parser.cpp.obj
+[137/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\academic_calendar_schedule.cpp.obj
+[138/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\ClassMngrFeatures_autogen\mocs_compilation.cpp.obj
+[139/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\calendar_event_campus_filter.cpp.obj
+[140/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\calendar_event_projection_query.cpp.obj
+[141/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\calendar_event_import_service.cpp.obj
+[142/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\calendar_workbook_reader.cpp.obj
+[143/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\ui\academic_calendar_provider.cpp.obj
+[144/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\ui\calendar_event_dialog.cpp.obj
+[145/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\ui\calendar_event_cache.cpp.obj
+[146/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\ui\calendar_event_model.cpp.obj
+[147/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\ui\calendar_page.cpp.obj
+[148/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\ui\calendar_page_events.cpp.obj
+[149/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\ui\calendar_page_upcoming_events.cpp.obj
+[150/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\data\campus_json_codec.cpp.obj
+[151/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\calendar\ui\calendar_preferences_panel.cpp.obj
+[152/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\data\campus_json_repository.cpp.obj
+[153/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page.cpp.obj
+[154/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page_address.cpp.obj
+[155/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page_address_ui.cpp.obj
+[156/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page_detail.cpp.obj
+[157/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page_data.cpp.obj
+[158/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page_directions_ui.cpp.obj
+[159/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page_form.cpp.obj
+[160/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page_housing.cpp.obj
+[161/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page_information_ui.cpp.obj
+[162/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page_map_ui.cpp.obj
+[163/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_dashboard_page_ui.cpp.obj
+[164/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\config\class_info_config.cpp.obj
+[165/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\campus\ui\campus_map_preview.cpp.obj
+[166/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\evaluation_default_selection.cpp.obj
+[167/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\evaluation_default_selection_service.cpp.obj
+[168/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\models\class_tab_navigation_model.cpp.obj
+[169/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\services\class_transfer_json_codec.cpp.obj
+[170/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\services\speaking_analytics.cpp.obj
+[171/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\ui\class_analytics_charts.cpp.obj
+[172/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\ui\class_analytics_ranking_model.cpp.obj
+[173/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\ui\class_analytics_page.cpp.obj
+[174/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\ui\class_co_teacher_page.cpp.obj
+[175/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\ui\class_details_page.cpp.obj
+[176/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\ui\class_export_dialog.cpp.obj
+[177/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\ui\class_import_dialog.cpp.obj
+[178/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\ui\class_notes_page.cpp.obj
+[179/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\ui\testing_classes_page.cpp.obj
+[180/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\classes\ui\classes_page.cpp.obj
+[181/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\documents\document_catalog.cpp.obj
+[182/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\my_info\data\personal_details_repository.cpp.obj
+[183/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\my_info\data\signature_image_processor.cpp.obj
+[184/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\my_info\data\typed_signature_renderer.cpp.obj
+[185/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\my_info\ui\my_classes_page.cpp.obj
+[186/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\my_info\ui\my_classes_page_ui.cpp.obj
+[187/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\my_info\ui\my_workspace_page.cpp.obj
+[188/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\my_info\ui\my_classes_page_content.cpp.obj
+[189/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\my_info\ui\personal_details_page.cpp.obj
+[190/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\my_info\ui\personal_details_page_sections.cpp.obj
+[191/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\my_info\ui\personal_details_page_ui.cpp.obj
+[192/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_column_layout_controller.cpp.obj
+[193/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\services\roster_template_print_service.cpp.obj
+[194/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_editor_widget_columns.cpp.obj
+[195/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_editor_widget.cpp.obj
+[196/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_editor_widget_students.cpp.obj
+[197/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_editor_widget_import_print.cpp.obj
+[198/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_editor_widget_ui.cpp.obj
+[199/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_editor_widget_transfer.cpp.obj
+[200/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_header_view.cpp.obj
+[201/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_item_delegate.cpp.obj
+[202/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_model.cpp.obj
+[203/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_model_names.cpp.obj
+[204/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_model_columns.cpp.obj
+[205/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_model_validation.cpp.obj
+[206/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_model_rows.cpp.obj
+[207/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_table_view.cpp.obj
+[208/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\roster\ui\roster_print_dialog.cpp.obj
+[209/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\import\schedule_workbook_parser.cpp.obj
+[210/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\schedule_settings_preferences.cpp.obj
+[211/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\services\schedule_import_review_model.cpp.obj
+[212/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\services\schedule_import_plan_validator.cpp.obj
+[213/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\services\schedule_output_controller.cpp.obj
+[214/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\services\schedule_print_service.cpp.obj
+[215/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_builder.cpp.obj
+[216/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_cell_hit_test.cpp.obj
+[217/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_cell_renderer_policy.cpp.obj
+[218/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_cell_presentation.cpp.obj
+[219/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_editor_dialog.cpp.obj
+[220/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_import_dialog.cpp.obj
+[221/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_import_resolution_view.cpp.obj
+[222/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_import_resolution_controls.cpp.obj
+[223/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_import_review_presentation.cpp.obj
+[224/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_interaction_state.cpp.obj
+[225/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_import_review_dialog.cpp.obj
+[226/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_page.cpp.obj
+[227/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_print_dialog.cpp.obj
+[228/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_table_renderer.cpp.obj
+[229/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_time_formatter.cpp.obj
+[230/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_view_model.cpp.obj
+[231/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_widget_delegates.cpp.obj
+[232/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_widget.cpp.obj
+[233/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\schedule_widget_geometry.cpp.obj
+[234/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\schedule\ui\testing_assignment_dialog.cpp.obj
+[235/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_ai_batch_response_parser.cpp.obj
+[236/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\setup\ui\initial_setup_wizard.cpp.obj
+[237/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_batch_report_service.cpp.obj
+[238/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_internal_pdf_renderer.cpp.obj
+[239/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_powerpoint_automation.cpp.obj
+[240/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_powerpoint_scripts.cpp.obj
+[241/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_powerpoint_job_model.cpp.obj
+[242/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_powerpoint_workspace.cpp.obj
+[243/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_report_asset_resolver.cpp.obj
+[244/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_report_data_assembler.cpp.obj
+[245/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_report_output.cpp.obj
+[246/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\services\speaking_eval_report_output_policy.cpp.obj
+[247/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_batch_export_dialog.cpp.obj
+[248/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_ai_batch_dialog.cpp.obj
+[249/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_comment_edit.cpp.obj
+[250/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_delegate.cpp.obj
+[251/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_model.cpp.obj
+[252/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_notes_dialog.cpp.obj
+[253/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_page_actions.cpp.obj
+[254/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_page.cpp.obj
+[255/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_page_name_matching.cpp.obj
+[256/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_page_persistence.cpp.obj
+[257/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_page_validation_adapter.cpp.obj
+[258/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_private_notes_editor.cpp.obj
+[259/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_page_ui.cpp.obj
+[260/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_report_assets_p.cpp.obj
+[261/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_report_dialog.cpp.obj
+[262/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_report_painter.cpp.obj
+[263/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_report_widget.cpp.obj
+[264/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_report_widget_interaction.cpp.obj
+[265/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\speaking_eval\ui\speaking_eval_table_view.cpp.obj
+[266/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\services\sub_prep_document_model.cpp.obj
+[267/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\services\sub_prep_pdf_renderer.cpp.obj
+[268/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\services\sub_prep_package_service.cpp.obj
+[269/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\services\sub_prep_print_service.cpp.obj
+[270/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\ui\sub_prep_class_information_model.cpp.obj
+[271/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\ui\sub_prep_class_information_list_model.cpp.obj
+[272/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\ui\sub_prep_page.cpp.obj
+[273/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\ui\sub_prep_page_class_information.cpp.obj
+[274/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\ui\sub_prep_page_settings.cpp.obj
+[275/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\ui\sub_prep_page_ui.cpp.obj
+[276/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\ui\sub_prep_print_dialog.cpp.obj
+[277/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\sub_prep\ui\sub_prep_print_source_mapper.cpp.obj
+[278/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\teacher\import\sectioned_contact_list_template.cpp.obj
+[279/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\teacher\import\teacher_import_file_validator.cpp.obj
+[280/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\teacher\import\teacher_import_template_registry.cpp.obj
+[281/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\teacher\ui\staff_directory_page.cpp.obj
+[282/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\teacher\ui\teacher_import_dialog.cpp.obj
+[283/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\teacher\ui\teacher_model.cpp.obj
+[284/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\teacher\ui\teacher_info_page.cpp.obj
+[285/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\teacher\ui\upcoming_birthdays_dialog.cpp.obj
+[286/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\features\teacher\upcoming_birthday_schedule.cpp.obj
+[287/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\next\platform\application_services_custom_color_palette_preferences_port.cpp.obj
+[288/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\next\platform\application_services_speaking_evaluation_read_port.cpp.obj
+[289/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\next\platform\application_services_speaking_evaluation_batch_read_port.cpp.obj
+[290/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\next\platform\application_services_speaking_evaluation_save_port.cpp.obj
+[291/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\next\platform\application_services_sub_prep_personal_zoom_preferences_port.cpp.obj
+[292/359] Building CXX object CMakeFiles\ClassMngrFeatures.dir\src\next\platform\application_services_sub_prep_preferences_port.cpp.obj
+[293/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\ClassMngrAppServices_autogen\mocs_compilation.cpp.obj
+[294/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\edit_controller.cpp.obj
+[295/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\font_size_controller.cpp.obj
+[296/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\file_controller.cpp.obj
+[297/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\language_controller.cpp.obj
+[298/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\sidebar_controller.cpp.obj
+[299/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\navigation_controller.cpp.obj
+[300/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\sidebar_controller_birthdays.cpp.obj
+[301/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\sidebar_controller_classes.cpp.obj
+[302/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\sidebar_controller_p.cpp.obj
+[303/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\sidebar_controller_refresh.cpp.obj
+[304/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\sidebar_controller_prompts.cpp.obj
+[305/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\sidebar_controller_teachers.cpp.obj
+[306/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\sidebar_controller_teacher_import.cpp.obj
+[307/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\theme_controller.cpp.obj
+[308/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\sidebar_controller_transfer.cpp.obj
+[309/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\controllers\update_controller.cpp.obj
+[310/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\menu_builder.cpp.obj
+[311/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\mainwindow.cpp.obj
+[312/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\startup_database_path.cpp.obj
+[313/359] Building CXX object CMakeFiles\ClassMngrRuntime.dir\ClassMngrRuntime_autogen\mocs_compilation.cpp.obj
+[314/359] Generating resource-packs/campuses.rcc
+[315/359] Generating resource-packs/documents.rcc
+[316/359] Generating resource-packs/files.rcc
+[317/359] Generating resource-packs/images.rcc
+[318/359] Generating resource-packs/splash.rcc
+[319/359] Generating resource-packs/templates.rcc
+[320/359] Running rcc pass 1 for resource app_resources
+[321/359] Copying ClassMngr qml sources into build dir
+[322/359] Copying ClassMngr qml resources into build dir
+[323/359] Populating .qmlls.build.ini file at C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/release/.qt/.qmlls.build.ini
+[324/359] Generating qt.conf file
+[325/359] Building CXX object CMakeFiles\ClassMngr_app_resources_obj.dir\.qt\rcc\qrc_app_resources_tmp.cpp.obj
+[326/359] Generating ClassMngr_en_AU.qm
+Updating 'C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/release/ClassMngr_en_AU.qm'...
+    Generated 92 translation(s) (78 finished and 14 unfinished)
+    Ignored 1684 untranslated source text(s)
+[327/359] Generating ClassMngr_en_CA.qm
+Updating 'C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/release/ClassMngr_en_CA.qm'...
+    Generated 81 translation(s) (69 finished and 12 unfinished)
+    Ignored 1695 untranslated source text(s)
+[328/359] Generating ClassMngr_en_GB.qm
+Updating 'C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/release/ClassMngr_en_GB.qm'...
+    Generated 92 translation(s) (78 finished and 14 unfinished)
+    Ignored 1684 untranslated source text(s)
+[329/359] Generating ClassMngr_en_US.qm
+Updating 'C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/release/ClassMngr_en_US.qm'...
+    Generated 679 translation(s) (558 finished and 121 unfinished)
+    Ignored 1097 untranslated source text(s)
+[330/359] Generating ClassMngr_ko_KR.qm
+Updating 'C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/release/ClassMngr_ko_KR.qm'...
+    Generated 1601 translation(s) (1503 finished and 98 unfinished)
+    Ignored 175 untranslated source text(s)
+[331/359] Building CXX object CMakeFiles\ClassMngrAppServices.dir\src\app\services\feature_services.cpp.obj
+[332/359] Automatic MOC and UIC for target ClassMngrNext
+[333/359] Building CXX object CMakeFiles\ClassMngrNext.dir\ClassMngrNext_autogen\mocs_compilation.cpp.obj
+[334/359] Linking CXX static library ClassMngrRuntime.lib
+[335/359] Automatic MOC and UIC for target ClassMngr
+[336/359] Running AUTOMOC file extraction for target ClassMngr
+[337/359] Running moc --collect-json for target ClassMngr
+[338/359] Automatic QML type registration for target ClassMngr
+[339/359] Running rcc pass 2 for resource app_resources
+[340/359] Running rcc for resource qmake_ClassMngr_Calendar
+[341/359] Generating .rcc/qmlcache/ClassMngr_qmlcache_loader.cpp
+[342/359] Generating .rcc/qmlcache/ClassMngr_src_features_calendar_ui_qml_EventCalendar_qml.cpp, .rcc/qmlcache/ClassMngr_src_features_calendar_ui_qml_EventCalendar_qml.cpp.aotstats
+[343/359] Generating .rcc/qmlcache/ClassMngr_src_features_calendar_ui_qml_MonthGridDelegate_qml.cpp, .rcc/qmlcache/ClassMngr_src_features_calendar_ui_qml_MonthGridDelegate_qml.cpp.aotstats
+[344/359] Running rcc for resource ClassMngr_raw_qml_0
+[345/359] Running rcc for resource ClassMngr_translations
+[346/359] Building CXX object CMakeFiles\ClassMngrNext.dir\src\next\main.cpp.obj
+[347/359] Building CXX object CMakeFiles\ClassMngr.dir\ClassMngr_autogen\mocs_compilation.cpp.obj
+[348/359] Building RC object CMakeFiles\ClassMngr.dir\generated\ClassMngr.rc.res
+[349/359] Building CXX object CMakeFiles\ClassMngr.dir\classmngr_qmltyperegistrations.cpp.obj
+[350/359] Building CXX object CMakeFiles\ClassMngr.dir\.qt\rcc\qrc_qmake_ClassMngr_Calendar.cpp.obj
+[351/359] Building CXX object CMakeFiles\ClassMngr.dir\.rcc\qmlcache\ClassMngr_qmlcache_loader.cpp.obj
+[352/359] Building CXX object CMakeFiles\ClassMngr.dir\.rcc\qmlcache\ClassMngr_src_features_calendar_ui_qml_EventCalendar_qml.cpp.obj
+[353/359] Building CXX object CMakeFiles\ClassMngr.dir\.rcc\qmlcache\ClassMngr_src_features_calendar_ui_qml_MonthGridDelegate_qml.cpp.obj
+[354/359] Building CXX object CMakeFiles\ClassMngr.dir\.qt\rcc\qrc_ClassMngr_raw_qml_0.cpp.obj
+[355/359] Building CXX object CMakeFiles\ClassMngr.dir\.qt\rcc\qrc_ClassMngr_translations.cpp.obj
+[356/359] Linking CXX executable ClassMngrNext.exe
+[357/359] Building CXX object CMakeFiles\ClassMngr.dir\src\main.cpp.obj
+[358/359] Linking CXX executable ClassMngr.exe

@@ -1,0 +1,11 @@
+Task ID: W753-F564-F598-FINAL-CAPTURE
+Source HEAD: fe25e2ff7a82b8da34d970a3591b64b3065aeb9e
+Working tree status: clean at preflight.
+ClassMngr.exe SHA256: C5C660025758ABAC763308D9B8214F299D30F3B3FBD9B6B7A5EA4CAA81B43585
+ClassMngr.pdb SHA256: FBD30407F2E606FC257836FBB9844B94C321035DB38CBD9DD48157977DAAF378
+ClassMngrStartupPerformanceTests.exe SHA256: 8722917E2CC2C744DD3D6A72CDC925A6B6E2AC386DD78F6983881236BB0B6BB3
+ClassMngrStartupPerformanceTests.pdb SHA256: BBC1E4976DE9AFF776C3427C87A6EADC44DD085992CFEBA990DD5FC0688C1E80
+Capture output root: build\w753-f564-f598-final-capture-20261102\capture-attempt-1
+Route LocalAppData root: C:\Git\ClassMngr-cpp\build\w753-f564-f598-final-capture-20261102\localappdata
+F564 controller: scripts/phase2/run_f564_heap_snapshot_capture.py
+Timeout: 180 seconds per supported controller option.

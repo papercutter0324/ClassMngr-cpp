@@ -1,0 +1,16 @@
+﻿{
+    "source_sha":  "9f59e68992b753bed1cad4546808fc708573b559",
+    "source_status_after":  [
+
+                            ],
+    "command":  "python C:\\w752-current-debug-9f59\\s\\scripts\\record_refactoring_baseline.py --configure-preset windows-x64-debug --build-dir build/windows-x64-debug --configuration Debug --parallel 2 --test-timeout 120 --output C:\\w752-current-debug-9f59\\e\\baseline.json",
+    "per_cmake_ctest_stage_timeout_seconds":  7200,
+    "outer_job_timeout_seconds":  21600,
+    "started_at":  "2026-11-01T18:32:51.8321742Z",
+    "finished_at":  "2026-11-01T20:37:21.8942027Z",
+    "duration_seconds":  7470.062,
+    "job_timeout_triggered":  false,
+    "exit_code":  null,
+    "stdout_log":  "C:\\w752-current-debug-9f59\\e\\baseline.stdout.log",
+    "stderr_log":  "C:\\w752-current-debug-9f59\\e\\baseline.stderr.log"
+}

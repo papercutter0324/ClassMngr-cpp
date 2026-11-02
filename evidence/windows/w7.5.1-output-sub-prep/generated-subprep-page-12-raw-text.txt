@@ -1,0 +1,44 @@
+Teacher 23
+English Name
+Teacher 23
+Room
+323
+WiFi Name
+HeavyFixture-WiFi-23
+Zoom ID
+heavy-fixture-23
+Internet Type
+N/A
+Projection Type
+N/A
+WiFi Password
+fixture-only
+Zoom Password
+fixture-only
+Classes
+M1 Level 08 Wed 8pm) - 25 Students
+Notes: Synthetic large startup fixture class. Co-Teacher Notes
+Synthetic large startup fixture teacher.
+Teacher 24
+English Name
+Teacher 24
+Room
+324
+WiFi Name
+HeavyFixture-WiFi-24
+Zoom ID
+heavy-fixture-24
+Internet Type
+WiFi
+Projection Type
+HDMI
+WiFi Password
+fixture-only
+Zoom Password
+fixture-only
+Classes
+M2 Level 01 Thurs 8pm) - 25 Students
+Notes: Synthetic large startup fixture class. Co-Teacher Notes
+Synthetic large startup fixture teacher.
+Sub Notes
+If there is anything important that you want me to know, please leave me some notes.

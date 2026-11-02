@@ -1,0 +1,211 @@
+{
+  "schema": "classmngr-f564-heap-snapshot-capture-v1",
+  "createdAtUtc": "2026-11-01T23:44:14.597643+00:00",
+  "status": "passed",
+  "dryRun": false,
+  "processImage": "ClassMngr.exe",
+  "application": "C:\\Git\\ClassMngr-cpp\\build\\w753-resumed-matched-captures-20261102\\ninja-release\\ClassMngr.exe",
+  "applicationSha256": "c5c660025758abac763308d9b8214f299d30f3b3fbd9b6b7a5ea4caa81b43585",
+  "testExecutable": "C:\\Git\\ClassMngr-cpp\\build\\w753-resumed-matched-captures-20261102\\ninja-release\\ClassMngrStartupPerformanceTests.exe",
+  "testExecutableSha256": "8722917e2cc2c744dd3d6a72cdc925a6b6e2ac386dd78f6983881236bb0b6bb3",
+  "wprExecutable": "C:\\Windows\\System32\\wpr.exe",
+  "initialSnapshotConfiguration": "disabled",
+  "finalSnapshotConfiguration": "disabled",
+  "configurationChangeAttempted": true,
+  "routeArtifacts": "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\localappdata\\Temp\\ClassMngr-F563-Checkpoint-DryRun-20261101T234254Z-12440",
+  "runId": "6d028cab-6954-43a2-be78-6d6c91005deb",
+  "processId": 11472,
+  "checkpoints": [
+    {
+      "checkpoint": "after-render",
+      "checkpointOrder": 1,
+      "processId": 11472,
+      "markerSha256": "56f6ed7d7d2568a51d9890eab9d7b60a532cc5a6e9a643165bc31a19a6277a4f",
+      "snapshotCommandSucceeded": true,
+      "dryRun": false,
+      "recordedAtUtc": "2026-11-01T23:43:49.162130+00:00"
+    },
+    {
+      "checkpoint": "after-document-close",
+      "checkpointOrder": 2,
+      "processId": 11472,
+      "markerSha256": "3e02e74cf8132faba8be97afa4722332300fc70e4198620238bde847dd760e2f",
+      "snapshotCommandSucceeded": true,
+      "dryRun": false,
+      "recordedAtUtc": "2026-11-01T23:43:53.111779+00:00"
+    },
+    {
+      "checkpoint": "after-view-destroyed",
+      "checkpointOrder": 3,
+      "processId": 11472,
+      "markerSha256": "125e7ff1ac935a871d6839885d413c990ff360adacaab57541b716e1b2fbac45",
+      "snapshotCommandSucceeded": true,
+      "dryRun": false,
+      "recordedAtUtc": "2026-11-01T23:44:04.093854+00:00"
+    }
+  ],
+  "wprCommands": [
+    {
+      "startedAtUtc": "2026-11-01T23:42:53.692671+00:00",
+      "completedAtUtc": "2026-11-01T23:42:53.769692+00:00",
+      "arguments": [
+        "-status"
+      ],
+      "exitCode": 0,
+      "stdout": "Microsoft Windows Performance Recorder Version 10.0.26100 (CoreSystem)\nCopyright (c) 2024 Microsoft Corporation. All rights reserved.\n\nWPR is not recording",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:42:53.769720+00:00",
+      "completedAtUtc": "2026-11-01T23:42:53.798146+00:00",
+      "arguments": [
+        "-snapshotconfig",
+        "heap",
+        "-name",
+        "ClassMngr.exe"
+      ],
+      "exitCode": 0,
+      "stdout": "Heap snapshot is disabled for process ClassMngr.exe.",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:42:53.798175+00:00",
+      "completedAtUtc": "2026-11-01T23:42:53.852779+00:00",
+      "arguments": [
+        "-snapshotconfig",
+        "heap",
+        "-name",
+        "ClassMngr.exe",
+        "enable"
+      ],
+      "exitCode": 0,
+      "stdout": "Heap snapshot was successfully enabled for process ClassMngr.exe.",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:42:53.852802+00:00",
+      "completedAtUtc": "2026-11-01T23:42:53.878808+00:00",
+      "arguments": [
+        "-snapshotconfig",
+        "heap",
+        "-name",
+        "ClassMngr.exe"
+      ],
+      "exitCode": 0,
+      "stdout": "Heap snapshot is enabled for process ClassMngr.exe.",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:42:53.878846+00:00",
+      "completedAtUtc": "2026-11-01T23:42:54.309444+00:00",
+      "arguments": [
+        "-start",
+        "heapsnapshot",
+        "-filemode"
+      ],
+      "exitCode": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:42:54.309469+00:00",
+      "completedAtUtc": "2026-11-01T23:42:54.449165+00:00",
+      "arguments": [
+        "-status"
+      ],
+      "exitCode": 0,
+      "stdout": "Microsoft Windows Performance Recorder Version 10.0.26100 (CoreSystem)\nCopyright (c) 2024 Microsoft Corporation. All rights reserved.\n\nWPR recording is in progress...\n\nTime since start\t: 00:00:00\nDropped event\t\t: 0\nLogging mode\t\t: File",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:43:48.800415+00:00",
+      "completedAtUtc": "2026-11-01T23:43:49.162027+00:00",
+      "arguments": [
+        "-singlesnapshot",
+        "heap",
+        "11472"
+      ],
+      "exitCode": 0,
+      "stdout": "Taking a heap snapshot...",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:43:52.956051+00:00",
+      "completedAtUtc": "2026-11-01T23:43:53.111741+00:00",
+      "arguments": [
+        "-singlesnapshot",
+        "heap",
+        "11472"
+      ],
+      "exitCode": 0,
+      "stdout": "Taking a heap snapshot...",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:44:03.939716+00:00",
+      "completedAtUtc": "2026-11-01T23:44:04.093819+00:00",
+      "arguments": [
+        "-singlesnapshot",
+        "heap",
+        "11472"
+      ],
+      "exitCode": 0,
+      "stdout": "Taking a heap snapshot...",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:44:04.436929+00:00",
+      "completedAtUtc": "2026-11-01T23:44:14.460994+00:00",
+      "arguments": [
+        "-stop",
+        "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\capture-attempt-1\\classmngr-pdf-heap-snapshots.etl"
+      ],
+      "exitCode": 0,
+      "stdout": "Press Ctrl+C to cancel the stop operation.\nThe trace was successfully saved.",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:44:14.461078+00:00",
+      "completedAtUtc": "2026-11-01T23:44:14.515397+00:00",
+      "arguments": [
+        "-status"
+      ],
+      "exitCode": 0,
+      "stdout": "Microsoft Windows Performance Recorder Version 10.0.26100 (CoreSystem)\nCopyright (c) 2024 Microsoft Corporation. All rights reserved.\n\nWPR is not recording",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:44:14.516883+00:00",
+      "completedAtUtc": "2026-11-01T23:44:14.570819+00:00",
+      "arguments": [
+        "-snapshotconfig",
+        "heap",
+        "-name",
+        "ClassMngr.exe",
+        "disable"
+      ],
+      "exitCode": 0,
+      "stdout": "Heap snapshot was successfully disabled for process ClassMngr.exe.",
+      "stderr": ""
+    },
+    {
+      "startedAtUtc": "2026-11-01T23:44:14.570841+00:00",
+      "completedAtUtc": "2026-11-01T23:44:14.597620+00:00",
+      "arguments": [
+        "-snapshotconfig",
+        "heap",
+        "-name",
+        "ClassMngr.exe"
+      ],
+      "exitCode": 0,
+      "stdout": "Heap snapshot is disabled for process ClassMngr.exe.",
+      "stderr": ""
+    }
+  ],
+  "tracePath": "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\capture-attempt-1\\classmngr-pdf-heap-snapshots.etl",
+  "traceBytes": 56623104,
+  "traceSha256": "9a6301e0a68ce3947362b4107fb62d9856ed7a35c4b7d39e10fe323635b3eca2",
+  "error": null,
+  "cleanupErrors": [],
+  "artifacts": "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\capture-attempt-1"
+}

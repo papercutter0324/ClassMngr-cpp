@@ -1,0 +1,51 @@
+﻿{
+    "captured_at_utc":  "2026-11-01T18:32:51.3538207Z",
+    "source_sha":  "9f59e68992b753bed1cad4546808fc708573b559",
+    "source_status":  [
+
+                      ],
+    "visual_studio":  {
+                          "vsdevcmd":  "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\Common7\\Tools\\VsDevCmd.bat",
+                          "vsdevcmd_exists":  true,
+                          "installation_path":  "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools",
+                          "installation_version":  "18.10.12224.181",
+                          "developer_command_prompt_version":  "18.10.3",
+                          "target_architecture":  "x64",
+                          "host_architecture":  "x64",
+                          "compiler_path":  "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.exe",
+                          "compiler_banner":  "Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36260 for x64\nCopyright (C) Microsoft Corporation.  All rights reserved.\nSystem.Management.Automation.RemoteException\nCompiler Passes:\n C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.exe:        Version 19.51.36260.0\n C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\c1.dll:        Version 19.51.36260.0\n C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\c1xx.dll:      Version 19.51.36260.0\n C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\c2.dll:        Version 19.51.36260.0\n C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\c1xx.dll:      Version 19.51.36260.0\n C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\link.exe:      Version 14.51.36260.0\n C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\mspdb140.dll:  Version 14.51.36260.0\n C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\1033\\clui.dll: Version 19.51.36260.0\nSystem.Management.Automation.RemoteException\ncl : Command line error D8003 : missing source filename"
+                      },
+    "cmake":  {
+                  "path":  "C:\\Program Files\\CMake\\bin\\cmake.exe",
+                  "version":  "cmake version 4.4.2\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
+                  "generator":  "Visual Studio 18 2026"
+              },
+    "ninja":  {
+                  "path":  "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\Ninja\\ninja.exe",
+                  "version":  "1.13.2"
+              },
+    "python":  {
+                   "path":  "C:\\Python314\\python.exe",
+                   "version":  "Python 3.14.7"
+               },
+    "qt":  {
+               "root":  "C:\\Qt\\6.12.0\\msvc2022_64",
+               "cmake_prefix":  "C:\\Qt\\6.12.0\\msvc2022_64",
+               "qmake_path":  "C:\\Qt\\6.12.0\\msvc2022_64\\bin\\qmake.exe",
+               "version":  "6.12.0",
+               "bin_on_path":  true
+           },
+    "windows_sdk":  {
+                        "directory":  "C:\\Program Files (x86)\\Windows Kits\\10\\",
+                        "version":  "10.0.26100.0\\",
+                        "explicit_bin_added":  "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\x64",
+                        "bin_exists":  true,
+                        "bin_on_path":  true,
+                        "rc_path":  "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\\\x64\\rc.exe"
+                    },
+    "environment":  {
+                        "os_version":  "Microsoft Windows NT 10.0.26300.0",
+                        "processor_architecture":  "AMD64",
+                        "current_directory":  "C:\\w752-current-debug-9f59"
+                    }
+}

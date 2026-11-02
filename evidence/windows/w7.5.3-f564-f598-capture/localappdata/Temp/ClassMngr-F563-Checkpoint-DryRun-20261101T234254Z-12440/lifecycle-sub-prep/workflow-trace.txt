@@ -1,0 +1,97 @@
+start my-workspace
+showPage my-workspace
+showPage-returned my-workspace
+events-processed my-workspace
+calendar-start
+calendar-open-returned
+calendar-events-processed
+calendar-schedule-returned
+start schedule
+showPage schedule
+showPage-returned schedule
+events-processed schedule
+start classes
+showPage classes
+showPage-returned classes
+events-processed classes
+start testing-classes
+showPage testing-classes
+showPage-returned testing-classes
+events-processed testing-classes
+start teacher-info
+showPage teacher-info
+showPage-returned teacher-info
+events-processed teacher-info
+start native-english-teachers
+showPage native-english-teachers
+showPage-returned native-english-teachers
+events-processed native-english-teachers
+start gs-team
+showPage gs-team
+showPage-returned gs-team
+events-processed gs-team
+start campus-dashboard
+showPage campus-dashboard
+showPage-returned campus-dashboard
+events-processed campus-dashboard
+start sub-prep
+showPage sub-prep
+sub-prep-class-information rebuild-start; widgets=39; textEdits=2; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=1; selectedClassId=-1; selectedRow=-1; selectorViewportY=2128; detailsCardViewportY=2073
+sub-prep-class-information data-loaded; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=-1; selectedRow=-1; selectorViewportY=2128; detailsCardViewportY=2073
+sub-prep-class-information details-read-start; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=25; selectedRow=0; selectorViewportY=1886; detailsCardViewportY=1941
+sub-prep-class-information details-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=25; selectedRow=0; selectorViewportY=1886; detailsCardViewportY=1941
+sub-prep-class-information view-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=25; selectedRow=0; selectorViewportY=1886; detailsCardViewportY=1941
+showPage-returned sub-prep
+events-processed sub-prep
+sub-prep-lifecycle-start
+sub-prep-class-information details-read-start; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=96; selectedRow=12; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-class-information details-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=1; selectedClassId=96; selectedRow=12; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-select classId=96 returned=true
+sub-prep-refresh-1-start
+sub-prep-class-information rebuild-start; widgets=43; textEdits=2; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=2; selectedClassId=96; selectedRow=12; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-class-information data-loaded; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=2; selectedClassId=96; selectedRow=12; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-class-information details-read-start; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=2; selectedClassId=96; selectedRow=12; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-class-information details-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=2; selectedClassId=96; selectedRow=12; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-class-information view-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=2; selectedClassId=96; selectedRow=12; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-refresh-1-complete
+sub-prep-class-information view-clear-requested; widgets=43; textEdits=2; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=2; selectedClassId=-1; selectedRow=-1; selectorViewportY=8326; detailsCardViewportY=8304
+sub-prep-left-1 returned=true
+sub-prep-class-information rebuild-start; widgets=43; textEdits=2; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=3; selectedClassId=-1; selectedRow=-1; selectorViewportY=8326; detailsCardViewportY=8304
+sub-prep-class-information data-loaded; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=3; selectedClassId=-1; selectedRow=-1; selectorViewportY=8326; detailsCardViewportY=8304
+sub-prep-class-information details-read-start; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=3; selectedClassId=25; selectedRow=0; selectorViewportY=7573; detailsCardViewportY=7628
+sub-prep-class-information details-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=3; selectedClassId=25; selectedRow=0; selectorViewportY=7573; detailsCardViewportY=7628
+sub-prep-class-information view-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=3; selectedClassId=25; selectedRow=0; selectorViewportY=7573; detailsCardViewportY=7628
+sub-prep-reentry-1 returned=true
+sub-prep-class-information details-read-start; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=3; selectedClassId=1; selectedRow=15; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-class-information details-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=3; selectedClassId=1; selectedRow=15; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-select classId=1 returned=true
+sub-prep-refresh-2-start
+sub-prep-class-information rebuild-start; widgets=43; textEdits=2; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=4; selectedClassId=1; selectedRow=15; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-class-information data-loaded; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=4; selectedClassId=1; selectedRow=15; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-class-information details-read-start; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=4; selectedClassId=1; selectedRow=15; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-class-information details-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=4; selectedClassId=1; selectedRow=15; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-class-information view-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=4; selectedClassId=1; selectedRow=15; selectorViewportY=8326; detailsCardViewportY=8381
+sub-prep-refresh-2-complete
+sub-prep-class-information view-clear-requested; widgets=43; textEdits=2; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=4; selectedClassId=-1; selectedRow=-1; selectorViewportY=8185; detailsCardViewportY=8163
+sub-prep-left-2 returned=true
+sub-prep-class-information rebuild-start; widgets=43; textEdits=2; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=5; selectedClassId=-1; selectedRow=-1; selectorViewportY=8185; detailsCardViewportY=8163
+sub-prep-class-information data-loaded; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=5; selectedClassId=-1; selectedRow=-1; selectorViewportY=8185; detailsCardViewportY=8163
+sub-prep-class-information details-read-start; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=5; selectedClassId=25; selectedRow=0; selectorViewportY=8226; detailsCardViewportY=8281
+sub-prep-class-information details-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=5; selectedClassId=25; selectedRow=0; selectorViewportY=8226; detailsCardViewportY=8281
+sub-prep-class-information view-ready; widgets=43; textEdits=2; navigationRows=96; sourceClasses=96; visibleClasses=96; groups=4; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:1,teachers:0,rosterCounts:1; resultRows=classes:0,classInfo:96,classInfoSchedule:0,teachers:24,rosterCounts:96; returnedStudents=0; rebuilds=5; selectedClassId=25; selectedRow=0; selectorViewportY=8226; detailsCardViewportY=8281
+sub-prep-reentry-2 returned=true
+sub-prep-lifecycle-complete
+start my-classes
+showPage my-classes
+sub-prep-class-information view-clear-requested; widgets=43; textEdits=2; navigationRows=0; sourceClasses=0; visibleClasses=0; groups=0; classInfoLookups=0; teacherLookups=0; rosterLookups=0; queryCounts=classes:0,classInfo:0,teachers:0,rosterCounts:0; resultRows=classes:0,classInfo:0,classInfoSchedule:0,teachers:0,rosterCounts:0; returnedStudents=0; rebuilds=5; selectedClassId=-1; selectedRow=-1; selectorViewportY=8326; detailsCardViewportY=8304
+showPage-returned my-classes
+events-processed my-classes
+start pdf-viewer
+showPage pdf-viewer
+showPage-returned pdf-viewer
+events-processed pdf-viewer
+start my-workspace
+showPage my-workspace
+showPage-returned my-workspace
+events-processed my-workspace
+complete

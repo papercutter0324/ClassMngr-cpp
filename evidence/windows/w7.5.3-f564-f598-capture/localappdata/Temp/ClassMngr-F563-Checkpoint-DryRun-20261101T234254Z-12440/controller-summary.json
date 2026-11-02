@@ -1,0 +1,48 @@
+{
+  "schema": "classmngr-f563-checkpoint-dry-run-v1",
+  "createdAtUtc": "2026-11-01T23:44:04.423769+00:00",
+  "application": "C:\\Git\\ClassMngr-cpp\\build\\w753-resumed-matched-captures-20261102\\ninja-release\\ClassMngr.exe",
+  "testExecutable": "C:\\Git\\ClassMngr-cpp\\build\\w753-resumed-matched-captures-20261102\\ninja-release\\ClassMngrStartupPerformanceTests.exe",
+  "testSlot": "capturesLargeSubPrepBoundaryWhenConfigured",
+  "route": "Debug lifecycle-sub-prep with PDF page-render observer opt-in",
+  "runId": "6d028cab-6954-43a2-be78-6d6c91005deb",
+  "processId": 11472,
+  "runnerExitCode": 0,
+  "checkpoints": [
+    {
+      "checkpoint": "after-render",
+      "checkpointOrder": 1,
+      "processId": 11472,
+      "documentStatus": "Ready",
+      "viewAlive": true,
+      "documentAlive": true,
+      "monotonicTimestampNanoseconds": 54050140100.0,
+      "markerPath": "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\localappdata\\Temp\\ClassMngr-F563-Checkpoint-DryRun-20261101T234254Z-12440\\control\\ready-01-after-render.json",
+      "ackPath": "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\localappdata\\Temp\\ClassMngr-F563-Checkpoint-DryRun-20261101T234254Z-12440\\control\\ack-01-after-render.json"
+    },
+    {
+      "checkpoint": "after-document-close",
+      "checkpointOrder": 2,
+      "processId": 11472,
+      "documentStatus": "Null",
+      "viewAlive": true,
+      "documentAlive": true,
+      "monotonicTimestampNanoseconds": 58221566200.0,
+      "markerPath": "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\localappdata\\Temp\\ClassMngr-F563-Checkpoint-DryRun-20261101T234254Z-12440\\control\\ready-02-after-document-close.json",
+      "ackPath": "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\localappdata\\Temp\\ClassMngr-F563-Checkpoint-DryRun-20261101T234254Z-12440\\control\\ack-02-after-document-close.json"
+    },
+    {
+      "checkpoint": "after-view-destroyed",
+      "checkpointOrder": 3,
+      "processId": 11472,
+      "documentStatus": "Null",
+      "viewAlive": false,
+      "documentAlive": true,
+      "monotonicTimestampNanoseconds": 69200138000.0,
+      "markerPath": "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\localappdata\\Temp\\ClassMngr-F563-Checkpoint-DryRun-20261101T234254Z-12440\\control\\ready-03-after-view-destroyed.json",
+      "ackPath": "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\localappdata\\Temp\\ClassMngr-F563-Checkpoint-DryRun-20261101T234254Z-12440\\control\\ack-03-after-view-destroyed.json"
+    }
+  ],
+  "wprInvoked": false,
+  "artifacts": "C:\\Git\\ClassMngr-cpp\\build\\w753-f564-f598-final-capture-20261102\\localappdata\\Temp\\ClassMngr-F563-Checkpoint-DryRun-20261101T234254Z-12440"
+}

@@ -1,0 +1,4 @@
+F563 dry-run passed. Artifacts: C:\Git\ClassMngr-cpp\build\w753-f564-f598-final-capture-20261102\localappdata\Temp\ClassMngr-F563-Checkpoint-DryRun-20261101T234254Z-12440
+F564 heap-snapshot capture passed.
+Artifacts: C:\Git\ClassMngr-cpp\build\w753-f564-f598-final-capture-20261102\capture-attempt-1
+ETL: C:\Git\ClassMngr-cpp\build\w753-f564-f598-final-capture-20261102\capture-attempt-1\classmngr-pdf-heap-snapshots.etl (56623104 bytes)

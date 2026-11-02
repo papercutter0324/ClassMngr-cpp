@@ -2,6 +2,17 @@
 
 ## Decisions and Lessons
 
+### Preserve selected Phase 7.5 Windows evidence in Git — 2026-11-02
+
+To let later checkouts continue the Windows follow-ups without access to the
+capture machine's temporary directories, the selected W7.5.1 output files,
+W7.5.2 Debug-run records, and W7.5.3 raw ETL and capture inputs are versioned
+under `evidence/windows/`. Each bundle has a README and SHA-256 manifest.
+Retain the recorded outcomes with the files: W7.5.1 has a pages 11–12 parity
+mismatch, W7.5.2 timed out before CTest, and W7.5.3 has xperf parser warnings.
+Build trees, browser profiles, binaries, and derived symbol-analysis outputs
+remain outside the shared evidence bundle.
+
 ### Source-matched Windows heap capture and symbol review — 2026-11-02
 
 The elevated Windows run at source commit `fe25e2ff` completed the F564/WPR

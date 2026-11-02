@@ -1,0 +1,8 @@
+Phase 0 evidence: FAIL | routes checked=1 | visual=0 | output PDFs=2 ZIPs=0
+Deferred unofficial platforms: windows-arm64, linux (not Phase 0 failures)
+Phase 0 exit gate: FAILED | pending=windows-x64, macos-universal
+Memory trend: max working set=217518080 bytes; 250 MiB comparisons=0; 512 MiB diagnostic comparisons=0
+FAIL [missing-artifact] Required evidence file is missing: manifest.json
+FAIL [abnormal-process] output-sub-prep did not complete normally (processFinished=True, exitStatus='normal', exitCode=1, timedOut=False).
+FAIL [route-failed] Route output-sub-prep has status 'failed'.
+Machine-readable summary: C:\Users\wfelt\AppData\Local\Temp\w751f-20261101T171718Z\e\w751-31a71e90-windows-output-sub-prep\validation-summary.json

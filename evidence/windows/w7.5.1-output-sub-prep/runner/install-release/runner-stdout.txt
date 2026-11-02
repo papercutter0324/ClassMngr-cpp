@@ -1,0 +1,205 @@
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/ClassMngr.exe
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/licenses/fonts/inter/LICENSE.txt
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/resources/resource-packs/campuses.rcc
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/resources/resource-packs/documents.rcc
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/resources/resource-packs/files.rcc
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/resources/resource-packs/images.rcc
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/resources/resource-packs/splash.rcc
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/resources/resource-packs/templates.rcc
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/licenses/fonts/pretendard/LICENSE.txt
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/licenses/fonts/just-another-hand/LICENSE.txt
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/qtquick2plugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQml/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQml/qmlplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQml/Models/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQml/Models/modelsplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQml/WorkerScript/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQml/WorkerScript/workerscriptplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/qtquickcontrols2plugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Fusion/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Fusion/qtquickcontrols2fusionstyleplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Imagine/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Imagine/qtquickcontrols2imaginestyleplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Material/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Material/qtquickcontrols2materialstyleplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Universal/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Universal/qtquickcontrols2universalstyleplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/FluentWinUI3/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/FluentWinUI3/qtquickcontrols2fluentwinui3styleplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Windows/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Windows/qtquickcontrols2windowsstyleplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Basic/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Basic/qtquickcontrols2basicstyleplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Templates/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Templates/qtquicktemplates2plugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/impl/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/impl/qtquickcontrols2implplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Fusion/impl/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Fusion/impl/qtquickcontrols2fusionstyleimplplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Window/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Window/quickwindowplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Imagine/impl/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Imagine/impl/qtquickcontrols2imaginestyleimplplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Material/impl/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Material/impl/qtquickcontrols2materialstyleimplplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Universal/impl/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Universal/impl/qtquickcontrols2universalstyleimplplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/FluentWinUI3/impl/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/FluentWinUI3/impl/qtquickcontrols2fluentwinui3styleimplplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Effects/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Effects/effectsplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Layouts/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Layouts/qquicklayoutsplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Shapes/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Shapes/qmlshapesplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/NativeStyle/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/NativeStyle/qtquicknativestyleplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Windows/impl/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Windows/impl/qtquickcontrols2windowsstyleimplplugin.dll
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Basic/impl/qmldir
+-- Installing: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/qml/QtQuick/Controls/Basic/impl/qtquickcontrols2basicstyleimplplugin.dll
+-- Writing C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/./qt.conf
+-- Running Qt deploy tool for C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/release/ClassMngr.exe in working directory 'C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package'
+'C:/Qt/6.12.0/msvc2022_64/bin/windeployqt.exe' 'C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/_build/release/ClassMngr.exe' '--dir' '.' '--libdir' '.' '--plugindir' 'plugins' '--qml-deploy-dir' 'qml' '--translationdir' 'translations' '--force' '--no-translations' '--skip-plugin-types' 'qmltooling' '--include-plugins' 'qoffscreen' '--exclude-plugins' 'qsqlibase,qsqlmimer,qsqloci,qsqlodbc,qsqlpsql' '--qtpaths' 'C:/Qt/6.12.0/msvc2022_64/bin/qtpaths6.exe' 'qml/QtQuick/qtquick2plugin.dll' 'qml/QtQml/qmlplugin.dll' 'qml/QtQml/Models/modelsplugin.dll' 'qml/QtQml/WorkerScript/workerscriptplugin.dll' 'qml/QtQuick/Controls/qtquickcontrols2plugin.dll' 'qml/QtQuick/Controls/Fusion/qtquickcontrols2fusionstyleplugin.dll' 'qml/QtQuick/Controls/Imagine/qtquickcontrols2imaginestyleplugin.dll' 'qml/QtQuick/Controls/Material/qtquickcontrols2materialstyleplugin.dll' 'qml/QtQuick/Controls/Universal/qtquickcontrols2universalstyleplugin.dll' 'qml/QtQuick/Controls/FluentWinUI3/qtquickcontrols2fluentwinui3styleplugin.dll' 'qml/QtQuick/Controls/Windows/qtquickcontrols2windowsstyleplugin.dll' 'qml/QtQuick/Controls/Basic/qtquickcontrols2basicstyleplugin.dll' 'qml/QtQuick/Templates/qtquicktemplates2plugin.dll' 'qml/QtQuick/Controls/impl/qtquickcontrols2implplugin.dll' 'qml/QtQuick/Controls/Fusion/impl/qtquickcontrols2fusionstyleimplplugin.dll' 'qml/QtQuick/Window/quickwindowplugin.dll' 'qml/QtQuick/Controls/Imagine/impl/qtquickcontrols2imaginestyleimplplugin.dll' 'qml/QtQuick/Controls/Material/impl/qtquickcontrols2materialstyleimplplugin.dll' 'qml/QtQuick/Controls/Universal/impl/qtquickcontrols2universalstyleimplplugin.dll' 'qml/QtQuick/Controls/FluentWinUI3/impl/qtquickcontrols2fluentwinui3styleimplplugin.dll' 'qml/QtQuick/Effects/effectsplugin.dll' 'qml/QtQuick/Layouts/qquicklayoutsplugin.dll' 'qml/QtQuick/Shapes/qmlshapesplugin.dll' 'qml/QtQuick/NativeStyle/qtquicknativestyleplugin.dll' 'qml/QtQuick/Controls/Windows/impl/qtquickcontrols2windowsstyleimplplugin.dll' 'qml/QtQuick/Controls/Basic/impl/qtquickcontrols2basicstyleimplplugin.dll'
+C:\Users\wfelt\AppData\Local\Temp\w751f-20261101T171718Z\e\w751-31a71e90-windows-output-sub-prep\_build\release\ClassMngr.exe 64 bit, release executable [QML]
+Adding in plugin type generic for module: Qt6Gui
+Adding in plugin type iconengines for module: Qt6Gui
+Adding Qt6Svg for qsvgicon.dll from plugin type: iconengines
+Adding in plugin type imageformats for module: Qt6Gui
+Adding in plugin type networkinformation for module: Qt6Network
+Adding in plugin type platforminputcontexts for module: Qt6Gui
+Adding Qt6VirtualKeyboard for qtvirtualkeyboardplugin.dll from plugin type: platforminputcontexts
+Adding in plugin type platforms for module: Qt6Gui
+Adding in plugin type qmltooling for module: Qt6Qml
+Skipping plugin qmldbg_debugger.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_inspector.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_local.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_messages.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_native.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_nativedebugger.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_preview.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_profiler.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_quick3dprofiler.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_quickeventreplay.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_quickprofiler.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_server.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_tcp.dll due to skipped plugin type qmltooling
+Adding in plugin type sqldrivers for module: Qt6Sql
+Skipping plugin qsqlibase.dll due to exclusion option
+Skipping plugin qsqlmimer.dll due to exclusion option
+Skipping plugin qsqloci.dll due to exclusion option
+Skipping plugin qsqlodbc.dll due to exclusion option
+Skipping plugin qsqlpsql.dll due to exclusion option
+Adding in plugin type styles for module: Qt6Widgets
+Adding in plugin type tls for module: Qt6Network
+Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+Performing additional pass of finding Qt plugins due to updated Qt module list: Qt6Core Qt6Gui Qt6Network Qt6OpenGL Qt6Pdf Qt6PdfWidgets Qt6PrintSupport Qt6Qml Qt6QmlMeta Qt6QmlModels Qt6QmlWorkerScript Qt6Quick Qt6QuickControls2 Qt6QuickControls2Basic Qt6QuickControls2BasicStyleImpl Qt6QuickControls2FluentWinUI3 Qt6QuickControls2FluentWinUI3StyleImpl Qt6QuickControls2Fusion Qt6QuickControls2FusionStyleImpl Qt6QuickControls2Imagine Qt6QuickControls2ImagineStyleImpl Qt6QuickControls2Impl Qt6QuickControls2Material Qt6QuickControls2MaterialStyleImpl Qt6QuickControls2Universal Qt6QuickControls2UniversalStyleImpl Qt6QuickControls2Windows Qt6QuickControls2WindowsStyleImpl Qt6QuickEffects Qt6QuickLayouts Qt6QuickNativeStyle Qt6QuickShapes Qt6QuickTemplates2 Qt6QuickWidgets Qt6Sql Qt6Svg Qt6VirtualKeyboard Qt6Widgets
+Adding in plugin type generic for module: Qt6Gui
+Adding in plugin type iconengines for module: Qt6Gui
+Adding in plugin type imageformats for module: Qt6Gui
+Adding in plugin type networkinformation for module: Qt6Network
+Adding in plugin type platforminputcontexts for module: Qt6Gui
+Adding in plugin type platforms for module: Qt6Gui
+Adding in plugin type qmltooling for module: Qt6Qml
+Skipping plugin qmldbg_debugger.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_inspector.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_local.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_messages.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_native.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_nativedebugger.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_preview.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_profiler.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_quick3dprofiler.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_quickeventreplay.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_quickprofiler.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_server.dll due to skipped plugin type qmltooling
+Skipping plugin qmldbg_tcp.dll due to skipped plugin type qmltooling
+Adding in plugin type sqldrivers for module: Qt6Sql
+Skipping plugin qsqlibase.dll due to exclusion option
+Skipping plugin qsqlmimer.dll due to exclusion option
+Skipping plugin qsqloci.dll due to exclusion option
+Skipping plugin qsqlodbc.dll due to exclusion option
+Skipping plugin qsqlpsql.dll due to exclusion option
+Adding in plugin type styles for module: Qt6Widgets
+Adding in plugin type tls for module: Qt6Network
+Skipping plugin qopensslbackend.dll. Use -force-openssl or specify -openssl-root if you want to use it.
+Direct dependencies: Qt6Core Qt6Gui Qt6Network Qt6OpenGL Qt6Pdf Qt6PdfWidgets Qt6PrintSupport Qt6Qml Qt6QmlMeta Qt6QmlModels Qt6QmlWorkerScript Qt6Quick Qt6QuickControls2 Qt6QuickControls2Basic Qt6QuickControls2BasicStyleImpl Qt6QuickControls2FluentWinUI3 Qt6QuickControls2FluentWinUI3StyleImpl Qt6QuickControls2Fusion Qt6QuickControls2FusionStyleImpl Qt6QuickControls2Imagine Qt6QuickControls2ImagineStyleImpl Qt6QuickControls2Impl Qt6QuickControls2Material Qt6QuickControls2MaterialStyleImpl Qt6QuickControls2Universal Qt6QuickControls2UniversalStyleImpl Qt6QuickControls2Windows Qt6QuickControls2WindowsStyleImpl Qt6QuickEffects Qt6QuickLayouts Qt6QuickNativeStyle Qt6QuickShapes Qt6QuickTemplates2 Qt6QuickWidgets Qt6Sql Qt6Widgets
+All dependencies   : Qt6Core Qt6Gui Qt6Network Qt6OpenGL Qt6Pdf Qt6PdfWidgets Qt6PrintSupport Qt6Qml Qt6QmlMeta Qt6QmlModels Qt6QmlWorkerScript Qt6Quick Qt6QuickControls2 Qt6QuickControls2Basic Qt6QuickControls2BasicStyleImpl Qt6QuickControls2FluentWinUI3 Qt6QuickControls2FluentWinUI3StyleImpl Qt6QuickControls2Fusion Qt6QuickControls2FusionStyleImpl Qt6QuickControls2Imagine Qt6QuickControls2ImagineStyleImpl Qt6QuickControls2Impl Qt6QuickControls2Material Qt6QuickControls2MaterialStyleImpl Qt6QuickControls2Universal Qt6QuickControls2UniversalStyleImpl Qt6QuickControls2Windows Qt6QuickControls2WindowsStyleImpl Qt6QuickEffects Qt6QuickLayouts Qt6QuickNativeStyle Qt6QuickShapes Qt6QuickTemplates2 Qt6QuickWidgets Qt6Sql Qt6Widgets
+To be deployed     : Qt6Core Qt6Gui Qt6Network Qt6OpenGL Qt6Pdf Qt6PdfWidgets Qt6PrintSupport Qt6Qml Qt6QmlMeta Qt6QmlModels Qt6QmlWorkerScript Qt6Quick Qt6QuickControls2 Qt6QuickControls2Basic Qt6QuickControls2BasicStyleImpl Qt6QuickControls2FluentWinUI3 Qt6QuickControls2FluentWinUI3StyleImpl Qt6QuickControls2Fusion Qt6QuickControls2FusionStyleImpl Qt6QuickControls2Imagine Qt6QuickControls2ImagineStyleImpl Qt6QuickControls2Impl Qt6QuickControls2Material Qt6QuickControls2MaterialStyleImpl Qt6QuickControls2Universal Qt6QuickControls2UniversalStyleImpl Qt6QuickControls2Windows Qt6QuickControls2WindowsStyleImpl Qt6QuickEffects Qt6QuickLayouts Qt6QuickNativeStyle Qt6QuickShapes Qt6QuickTemplates2 Qt6QuickWidgets Qt6Sql Qt6Svg Qt6VirtualKeyboard Qt6Widgets
+Skipping system library C:/WINDOWS/system32/icuuc.dll
+Updating Qt6Core.dll.
+Updating Qt6Gui.dll.
+Updating Qt6Network.dll.
+Updating Qt6OpenGL.dll.
+Updating Qt6Pdf.dll.
+Updating Qt6PdfWidgets.dll.
+Updating Qt6PrintSupport.dll.
+Updating Qt6Qml.dll.
+Updating Qt6QmlMeta.dll.
+Updating Qt6QmlModels.dll.
+Updating Qt6QmlWorkerScript.dll.
+Updating Qt6Quick.dll.
+Updating Qt6QuickControls2.dll.
+Updating Qt6QuickControls2Basic.dll.
+Updating Qt6QuickControls2BasicStyleImpl.dll.
+Updating Qt6QuickControls2FluentWinUI3.dll.
+Updating Qt6QuickControls2FluentWinUI3StyleImpl.dll.
+Updating Qt6QuickControls2Fusion.dll.
+Updating Qt6QuickControls2FusionStyleImpl.dll.
+Updating Qt6QuickControls2Imagine.dll.
+Updating Qt6QuickControls2ImagineStyleImpl.dll.
+Updating Qt6QuickControls2Impl.dll.
+Updating Qt6QuickControls2Material.dll.
+Updating Qt6QuickControls2MaterialStyleImpl.dll.
+Updating Qt6QuickControls2Universal.dll.
+Updating Qt6QuickControls2UniversalStyleImpl.dll.
+Updating Qt6QuickControls2Windows.dll.
+Updating Qt6QuickControls2WindowsStyleImpl.dll.
+Updating Qt6QuickEffects.dll.
+Updating Qt6QuickLayouts.dll.
+Updating Qt6QuickNativeStyle.dll.
+Updating Qt6QuickShapes.dll.
+Updating Qt6QuickTemplates2.dll.
+Updating Qt6QuickWidgets.dll.
+Updating Qt6Sql.dll.
+Updating Qt6Svg.dll.
+Updating Qt6VirtualKeyboard.dll.
+Updating Qt6Widgets.dll.
+Updating opengl32sw.dll.
+Updating d3dcompiler_47.dll.
+Updating dxcompiler.dll.
+Updating dxil.dll.
+Updating vc_redist.x64.exe.
+Creating directory C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/plugins/generic.
+Updating qtuiotouchplugin.dll.
+Creating directory C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/plugins/iconengines.
+Updating qsvgicon.dll.
+Creating directory C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/plugins/imageformats.
+Updating qgif.dll.
+Updating qicns.dll.
+Updating qico.dll.
+Updating qjpeg.dll.
+Updating qpdf.dll.
+Updating qsvg.dll.
+Updating qtga.dll.
+Updating qtiff.dll.
+Updating qwbmp.dll.
+Updating qwebp.dll.
+Creating directory C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/plugins/networkinformation.
+Updating qnetworklistmanager.dll.
+Creating directory C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/plugins/platforminputcontexts.
+Updating qtvirtualkeyboardplugin.dll.
+Creating directory C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/plugins/platforms.
+Updating qoffscreen.dll.
+Updating qwindows.dll.
+Creating directory C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/plugins/sqldrivers.
+Updating qsqlite.dll.
+Creating directory C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/plugins/styles.
+Updating qmodernwindowsstyle.dll.
+Creating directory C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/plugins/tls.
+Updating qcertonlybackend.dll.
+Updating qschannelbackend.dll.
+-- Creating: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/translations/qt_en.qm
+-- Creating: C:/Users/wfelt/AppData/Local/Temp/w751f-20261101T171718Z/e/w751-31a71e90-windows-output-sub-prep/package/translations/qt_ko.qm
