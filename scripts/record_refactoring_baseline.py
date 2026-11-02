@@ -175,11 +175,14 @@ def main() -> int:
     parser.add_argument("--configure-preset", required=True)
     parser.add_argument("--build-dir", required=True, type=Path)
     parser.add_argument("--configuration", help="CTest configuration for multi-config generators")
+    # Let the Windows generator build more independent test targets together;
+    # CMakeLists.txt caps each MSVC Debug target at two compiler processes.
+    default_parallel = 4 if sys.platform == "win32" else 2
     parser.add_argument(
         "--parallel",
         type=int,
-        default=2,
-        help="Maximum parallel build jobs (default: 2 for reproducible local baselines)",
+        default=default_parallel,
+        help=f"Maximum parallel build jobs (default: {default_parallel})",
     )
     parser.add_argument(
         "--test-timeout",

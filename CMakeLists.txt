@@ -29,9 +29,12 @@ endif()
 include(CTest)
 include(GNUInstallDirs)
 
+# Build several small Windows Debug test targets together without letting
+# each MSVC target start a full-machine set of compiler processes.
 add_compile_options(
     $<$<CXX_COMPILER_ID:MSVC>:/FS>
-    $<$<CXX_COMPILER_ID:MSVC>:/MP>
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/MP2>
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<NOT:$<CONFIG:Debug>>>:/MP>
 )
 
 # A CMake build directory can retain individual Qt component locations after

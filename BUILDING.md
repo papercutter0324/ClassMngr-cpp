@@ -76,7 +76,7 @@ $qtX64Prefix = "D:\Development\Qt\6.12.0\msvc2022_64"
 $env:QT_MSVC_X64_PREFIX = $qtX64Prefix
 ```
 
-Use the local path for the machine, such as `C:\Qt\6.12.0\msvc2022_64` on a different installation. On a resource-constrained machine, set `CMAKE_BUILD_PARALLEL_LEVEL` locally or pass `--parallel 4` to `cmake --build`; the shared presets do not impose a job limit.
+Use the local path for the machine, such as `C:\Qt\6.12.0\msvc2022_64` on a different installation. The Windows x64 Debug build preset uses four build jobs, with MSVC Debug compilation capped at two compiler processes per target. On a resource-constrained machine, pass a lower `--parallel` value to `cmake --build`.
 
 Open the project from an x64 Native Tools Command Prompt or Developer PowerShell so MSVC is available to VS Code:
 

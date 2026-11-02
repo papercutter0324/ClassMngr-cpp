@@ -53,6 +53,7 @@ jobs:
             preset: windows-x64-debug
             build_dir: build/windows-x64-debug
             configuration: Debug
+            parallel: 4
             report: windows-x64-debug
             run_baseline: true
           - name: Windows ARM64 Debug cross-build
@@ -60,6 +61,7 @@ jobs:
             preset: windows-arm64-debug
             build_dir: build/windows-arm64-debug
             configuration: Debug
+            parallel: 2
             report: windows-arm64-debug
             run_baseline: false
           - name: Linux x64 Debug
@@ -67,6 +69,7 @@ jobs:
             preset: linux-gcc-debug
             build_dir: build/linux-gcc-debug
             configuration: ""
+            parallel: 2
             report: linux-gcc-debug
             run_baseline: true
           - name: macOS universal Debug
@@ -74,6 +77,7 @@ jobs:
             preset: macos-clang-debug
             build_dir: build/macos-clang-debug
             configuration: ""
+            parallel: 2
             report: macos-clang-debug
             run_baseline: true
 
@@ -233,7 +237,7 @@ jobs:
           arguments=(
             --configure-preset "${{ matrix.preset }}"
             --build-dir "${{ matrix.build_dir }}"
-            --parallel 2
+            --parallel "${{ matrix.parallel }}"
             --test-timeout 120
             --output "artifacts/baseline/${{ matrix.report }}.json"
           )

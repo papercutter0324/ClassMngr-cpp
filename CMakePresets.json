@@ -186,7 +186,8 @@
     {
       "name": "windows-x64-debug",
       "configurePreset": "windows-x64-debug",
-      "configuration": "Debug"
+      "configuration": "Debug",
+      "jobs": 4
     },
     {
       "name": "windows-x64-release",
