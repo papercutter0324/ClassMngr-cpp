@@ -102,10 +102,13 @@ and Phase 0's 2026-09-18 Complete declaration.
   block reassignment or be rewritten by it. Apply their validation when those
   fields are edited, and preserve the established assignment checks and
   failure behavior.
-- Class Analytics arbitrary roster-allocation cap and sparse representation
-  change - deferred: F794 covers integer representability only; large
-  int-representable rows retain existing vector allocation/catch behavior. Do
-  not introduce arbitrary 4,096- or 25-row limits.
+- Class Analytics roster allocation - decided 2026-11-03: retain the existing
+  vector-backed name/evaluation collections and allocation-failure handling.
+  Roster names remain compact over stored cells; the logical row count does
+  not size an allocation. Do not add a row-index sparse map or a new roster
+  cap. Preserve F794's integer-representability checks. The 4,096-row limit
+  remains scoped to dense roster-output projections; any future Analytics cap
+  requires a product-backed resource contract.
 - Dense Speaking Evaluation row-limit change - deferred while its product
   policy remains unresolved; do not add a new limit before that decision.
 
