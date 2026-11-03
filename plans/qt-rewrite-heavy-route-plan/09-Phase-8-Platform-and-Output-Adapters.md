@@ -86,6 +86,21 @@ both targets (2/2); no full suite was run. `QClipboard::setText` has no result
 value, so this port does not expose an operating-system clipboard-write
 failure result.
 
+### 8.1.3 — Schedule Import file-dialog adapter (accepted)
+
+Bootstrap now supplies the existing `FileDialogPort` for Schedule Import
+workbook selection, and the dialog no longer has a direct `QFileDialog`
+fallback. The request retains the `ImportWorkbook` purpose, “Import Schedule”
+title, `*.xlsx` filter, and remembered-directory behavior. Cancellation
+preserves the current workbook selection.
+
+On macOS 27 ARM64 with Qt 6.12.0 and Apple Clang 21, the incremental Debug
+build passed for `ClassMngrNextSchedulePageTests` and
+`ClassMngrNextNormalScheduleImportIntegrationTests`. Independent focused runs
+passed both filters (3/3 each), including the Bootstrap-selected workbook and
+Gateway import, row-count checks, and unavailable-Gateway failure. The normal
+headless verification uses Qt's offscreen platform. No full suite was run.
+
 ## Objective
 
 Move platform-specific behavior and large output workflows behind narrow, testable interfaces.

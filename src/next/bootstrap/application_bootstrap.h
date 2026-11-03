@@ -89,6 +89,8 @@ public:
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             normalTeacherImportFileDialogPortFactory;
         std::function<std::unique_ptr<Application::FileDialogPort>()>
+            normalScheduleImportFileDialogPortFactory;
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
             newProfileFileDialogPortFactory;
         std::function<std::unique_ptr<Application::UserPromptPort>()>
             newProfileUserPromptPortFactory;

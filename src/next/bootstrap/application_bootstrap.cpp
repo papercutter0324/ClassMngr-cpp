@@ -2648,6 +2648,56 @@ Application::StartupResult ApplicationBootstrap::start()
                             timeoutPreferences;
                         return timeoutPreferences.read().normalizedSeconds() * 1000;
                     };
+                    actions.chooseScheduleImportWorkbook = [this](QWidget* parent) {
+                        const QByteArray title = QCoreApplication::translate(
+                            "ScheduleImportWorkflowDialog",
+                            "Import Schedule").toUtf8();
+                        const QByteArray filter = QCoreApplication::translate(
+                            "ScheduleImportWorkflowDialog",
+                            "Excel workbooks (*.xlsx)").toUtf8();
+                        const Application::OpenFileDialogRequest request{
+                            .purpose = Application::FileDialogPurpose::ImportWorkbook,
+                            .title = std::string(
+                                title.constData(),
+                                static_cast<std::size_t>(title.size())),
+                            .nameFilters = {
+                                std::string(
+                                    filter.constData(),
+                                    static_cast<std::size_t>(filter.size()))
+                            }
+                        };
+
+                        Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+                            directoryPreferences;
+                        std::unique_ptr<Application::FileDialogPort> ownedFileDialog;
+                        if (m_startupWorkspaceSeams
+                                .normalScheduleImportFileDialogPortFactory)
+                        {
+                            ownedFileDialog = m_startupWorkspaceSeams
+                                .normalScheduleImportFileDialogPortFactory();
+                        }
+                        else
+                        {
+                            ownedFileDialog =
+                                std::make_unique<Ui::QtFileDialogPresenter>(
+                                    directoryPreferences, parent);
+                        }
+                        if (!ownedFileDialog)
+                        {
+                            return QString{};
+                        }
+
+                        const auto selected = ownedFileDialog->openOneFile(request);
+                        if (!selected || !selected.value().selection)
+                        {
+                            return QString{};
+                        }
+
+                        const std::string& path =
+                            selected.value().selection->value();
+                        return QString::fromUtf8(
+                            path.data(), static_cast<qsizetype>(path.size()));
+                    };
                     actions.readScheduleImportState = [
                         resolveScheduleImportGatewayForPath
                         ](

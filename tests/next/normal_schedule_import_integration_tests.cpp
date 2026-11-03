@@ -171,6 +171,77 @@ struct VisibleScheduleBlock final
     ScheduleImportUserBlock user;
 };
 
+struct ScheduleImportFileDialogProbe final
+{
+    std::optional<Application::FileDialogPath> selectedPath;
+    std::optional<Application::OpenFileDialogRequest> lastOpenRequest;
+    int openCount = 0;
+};
+
+class RecordingScheduleImportFileDialogPort final
+    : public Application::FileDialogPort
+{
+public:
+    explicit RecordingScheduleImportFileDialogPort(
+        std::shared_ptr<ScheduleImportFileDialogProbe> probe
+        )
+        : m_probe(std::move(probe))
+    {
+    }
+
+    [[nodiscard]] Domain::Result<
+        Application::FileDialogResponse<Application::FileDialogPath>>
+    openOneFile(const Application::OpenFileDialogRequest& request) override
+    {
+        ++m_probe->openCount;
+        m_probe->lastOpenRequest = request;
+        return Domain::Result<
+            Application::FileDialogResponse<Application::FileDialogPath>>::success(
+                Application::FileDialogResponse<Application::FileDialogPath>{
+                    .selection = m_probe->selectedPath
+                });
+    }
+
+    [[nodiscard]] Domain::Result<
+        Application::FileDialogResponse<std::vector<Application::FileDialogPath>>>
+    openManyFiles(const Application::OpenFileDialogRequest&) override
+    {
+        return unexpectedCall<
+            Application::FileDialogResponse<
+                std::vector<Application::FileDialogPath>>>();
+    }
+
+    [[nodiscard]] Domain::Result<
+        Application::FileDialogResponse<
+            Application::SavedFileDialogSelection>>
+    saveFile(const Application::SaveFileDialogRequest&) override
+    {
+        return unexpectedCall<Application::FileDialogResponse<
+            Application::SavedFileDialogSelection>>();
+    }
+
+    [[nodiscard]] Domain::Result<
+        Application::FileDialogResponse<Application::FileDialogPath>>
+    selectDirectory(const Application::SelectDirectoryDialogRequest&) override
+    {
+        return unexpectedCall<Application::FileDialogResponse<
+            Application::FileDialogPath>>();
+    }
+
+private:
+    template <typename Response>
+    [[nodiscard]] static Domain::Result<Response> unexpectedCall()
+    {
+        return Domain::Result<Response>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Unexpected file dialog call.",
+            .recoverable = false
+        });
+    }
+
+    std::shared_ptr<ScheduleImportFileDialogProbe> m_probe;
+};
+
 std::optional<std::vector<VisibleScheduleBlock>> visibleScheduleBlocks(
     const QString& workbookPath
     )
@@ -2499,6 +2570,12 @@ bootstrapScheduleImportUsesSessionGatewayAndRejectsUnavailableGateway()
     {
         Application::WorkspaceState* workspaceStateForTesting = nullptr;
         auto seams = makeSeams(normalProfile, &workspaceStateForTesting);
+        auto fileDialogProbe =
+            std::make_shared<ScheduleImportFileDialogProbe>();
+        seams.normalScheduleImportFileDialogPortFactory = [fileDialogProbe] {
+            return std::make_unique<RecordingScheduleImportFileDialogPort>(
+                fileDialogProbe);
+        };
         seams.initialSetupRecoveryJournalPath = temporary.filePath(
             QStringLiteral("normal-initial-setup-recovery.json"));
         Bootstrap::ApplicationBootstrap bootstrap(
@@ -2528,10 +2605,28 @@ bootstrapScheduleImportUsesSessionGatewayAndRejectsUnavailableGateway()
         importAction->trigger();
         auto* const driftDialog = page->importDialog();
         QVERIFY(driftDialog);
-        driftDialog->sourcePathEdit()->setText(scheduleFixturePath());
-        driftDialog->primaryButton()->setEnabled(true);
-        QVERIFY(driftDialog->primaryButton()->isEnabled());
+        auto* const driftBrowse = driftDialog->findChild<QPushButton*>(
+            QStringLiteral("nextScheduleImportBrowse"));
+        QVERIFY(driftBrowse);
+        driftBrowse->click();
+        QCOMPARE(fileDialogProbe->openCount, 1);
+        QVERIFY(driftDialog->sourcePathEdit()->text().isEmpty());
+        QVERIFY(!driftDialog->primaryButton()->isEnabled());
+        fileDialogProbe->selectedPath = Application::FileDialogPath(
+            scheduleFixturePath().toUtf8().toStdString());
+        driftBrowse->click();
+        QCOMPARE(fileDialogProbe->openCount, 2);
         QCOMPARE(driftDialog->sourcePathEdit()->text(), scheduleFixturePath());
+        QVERIFY(driftDialog->primaryButton()->isEnabled());
+        QVERIFY(fileDialogProbe->lastOpenRequest.has_value());
+        QCOMPARE(fileDialogProbe->lastOpenRequest->purpose,
+                 Application::FileDialogPurpose::ImportWorkbook);
+        QCOMPARE(QString::fromStdString(
+                     fileDialogProbe->lastOpenRequest->title),
+                 QStringLiteral("Import Schedule"));
+        QCOMPARE(fileDialogProbe->lastOpenRequest->nameFilters,
+                 (std::vector<std::string>{"Excel workbooks (*.xlsx)"}));
+        QVERIFY(fileDialogProbe->lastOpenRequest->initialDirectory.empty());
         driftDialog->primaryButton()->click();
         QTRY_VERIFY_WITH_TIMEOUT(driftDialog->sheetCombo()->count() > 0, 10000);
 
@@ -2569,10 +2664,13 @@ bootstrapScheduleImportUsesSessionGatewayAndRejectsUnavailableGateway()
         importAction->trigger();
         auto* const dialog = page->importDialog();
         QVERIFY(dialog);
-        dialog->sourcePathEdit()->setText(scheduleFixturePath());
-        dialog->primaryButton()->setEnabled(true);
-        QVERIFY(dialog->primaryButton()->isEnabled());
+        auto* const browse = dialog->findChild<QPushButton*>(
+            QStringLiteral("nextScheduleImportBrowse"));
+        QVERIFY(browse);
+        browse->click();
+        QCOMPARE(fileDialogProbe->openCount, 3);
         QCOMPARE(dialog->sourcePathEdit()->text(), scheduleFixturePath());
+        QVERIFY(dialog->primaryButton()->isEnabled());
         dialog->primaryButton()->click();
         QTRY_VERIFY_WITH_TIMEOUT(dialog->sheetCombo()->count() > 0, 10000);
         dialog->primaryButton()->click();

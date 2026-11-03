@@ -11,7 +11,6 @@
 #include <QDateTime>
 #include <QDialogButtonBox>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -741,17 +740,9 @@ void ScheduleImportWorkflowDialog::retranslateUi()
 
 void ScheduleImportWorkflowDialog::chooseWorkbook()
 {
-    QString path;
-    if (m_actions.chooseWorkbook)
-    {
-        path = m_actions.chooseWorkbook(this);
-    }
-    else
-    {
-        path = QFileDialog::getOpenFileName(this,
-            workflowText("Import Schedule"), {},
-            workflowText("Excel workbooks (*.xlsx)"));
-    }
+    const QString path = m_actions.chooseWorkbook
+        ? m_actions.chooseWorkbook(this)
+        : QString{};
     if (path.trimmed().isEmpty())
     {
         return;

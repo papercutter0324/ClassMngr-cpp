@@ -12,6 +12,7 @@
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
 #include "next/ui/schedule_page.h"
+#include "next/ui/schedule_import_workflow_dialog.h"
 #include "next/ui/schedule_output_dialog.h"
 #include "next/ui/schedule_testing_assignment_dialog.h"
 #include "next/ui/testing_classes_manager_page.h"
@@ -236,6 +237,9 @@ struct PageFixture final
     int testingAssignmentSaveCount = 0;
     int scheduleOutputCount = 0;
     int savePathChooserCount = 0;
+    int scheduleImportWorkbookChooserCount = 0;
+    QString chosenScheduleImportWorkbookPath;
+    QWidget* scheduleImportWorkbookChooserParent = nullptr;
     QString lastTestingAssignmentPath;
     std::optional<Application::ScheduleTestingAssignmentSaveRequest>
         lastTestingAssignmentRequest;
@@ -378,6 +382,11 @@ struct PageFixture final
                     ++scheduleOutputCount;
                     lastScheduleOutputRequest = std::move(request);
                     return scheduleOutputResult;
+                };
+                actions.chooseScheduleImportWorkbook = [this](QWidget* parent) {
+                    ++scheduleImportWorkbookChooserCount;
+                    scheduleImportWorkbookChooserParent = parent;
+                    return chosenScheduleImportWorkbookPath;
                 };
                 actions.openTestingClasses = [this](
                     const Application::TestingClassPendingScheduleSlot& slot) {
@@ -592,6 +601,7 @@ private slots:
     void classSelectionRoutesToClassDetailsAndSaveRefreshesSchedule();
     void testingAssignmentCancelHandoffFailureRetryAndReload();
     void scheduleOutputDialogUsesCurrentProjectionAndReleasesOperations();
+    void scheduleImportWorkbookChooserUsesSelectionAndPreservesCancellation();
     void retryReplacementSuspendReentryAndCloseReleaseRows();
     void languageChangeRetranslatesScheduleControls();
     void outputDialogRetranslatesWhileOpenWithoutLosingOptions();
@@ -1326,6 +1336,47 @@ void SchedulePageTests::scheduleOutputDialogUsesCurrentProjectionAndReleasesOper
     QCOMPARE(page->visualMetrics().model.rowCount, 0);
     QCOMPARE(page->visualMetrics().model.cellCount, 0);
     QCOMPARE(page->visualMetrics().model.entryCount, 0);
+}
+
+void SchedulePageTests::
+scheduleImportWorkbookChooserUsesSelectionAndPreservesCancellation()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString path = createTemporaryWorkspace(
+        temporary, QStringLiteral("schedule-import-chooser.tps"),
+        QStringLiteral("Import Chooser Teacher"));
+    QVERIFY(!path.isEmpty());
+
+    PageFixture fixture;
+    QVERIFY(fixture.initialize(path));
+    Ui::SchedulePage* const page = fixture.schedule;
+    QVERIFY(page);
+    QAction* const importAction = page->findChild<QAction*>(
+        QStringLiteral("nextScheduleImportAction"));
+    QVERIFY(importAction && importAction->isEnabled());
+    importAction->trigger();
+
+    Ui::ScheduleImportWorkflowDialog* const dialog = page->importDialog();
+    QVERIFY(dialog);
+    QPushButton* const browse = dialog->findChild<QPushButton*>(
+        QStringLiteral("nextScheduleImportBrowse"));
+    QVERIFY(browse);
+
+    const QString workbookPath = temporary.filePath(
+        QStringLiteral("selected-schedule.xlsx"));
+    fixture.chosenScheduleImportWorkbookPath = workbookPath;
+    browse->click();
+    QCOMPARE(fixture.scheduleImportWorkbookChooserCount, 1);
+    QCOMPARE(fixture.scheduleImportWorkbookChooserParent, dialog);
+    QCOMPARE(dialog->sourcePathEdit()->text(), workbookPath);
+
+    fixture.chosenScheduleImportWorkbookPath.clear();
+    browse->click();
+    QCOMPARE(fixture.scheduleImportWorkbookChooserCount, 2);
+    QCOMPARE(dialog->sourcePathEdit()->text(), workbookPath);
+    QCOMPARE(dialog->statusLabel()->text(),
+             QStringLiteral("Ready to read the workbook."));
 }
 
 void SchedulePageTests::retryReplacementSuspendReentryAndCloseReleaseRows()
