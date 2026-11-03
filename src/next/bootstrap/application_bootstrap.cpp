@@ -26,6 +26,7 @@
 #include "core/appsettings.h"
 #include "core/settingsmanager.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
+#include "next/platform/settings_manager_window_geometry_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "next/platform/settings_manager_preferences_port.h"
 #include "next/platform/settings_manager_save_mode_preferences_port.h"
@@ -1348,7 +1349,8 @@ Application::StartupResult ApplicationBootstrap::start()
     {
         m_shell = std::make_unique<Ui::ApplicationShell>(
             m_coreServices->resourceLoader,
-            m_coreServices->preferences
+            m_coreServices->preferences,
+            std::make_unique<Platform::SettingsManagerWindowGeometryPort>()
             );
         const auto externalUrlLaunchPort = m_coreServices->externalUrlLaunchPort;
         m_shell->setExternalUrlOpener([externalUrlLaunchPort](const QUrl& url) {

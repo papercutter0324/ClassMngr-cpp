@@ -286,7 +286,11 @@ bool captureCombination(
 
     {
         Test::MemoryPreferences preferences;
-        Ui::ApplicationShell shell(loader, preferences.model);
+        Ui::ApplicationShell shell(
+            loader,
+            preferences.model,
+            Test::makeMemoryWindowGeometryPort()
+            );
         shell.setDocumentCatalogProjection(projection);
         const auto registration = Ui::registerDocumentViewerPage(shell.pageHost());
         if (!registration)

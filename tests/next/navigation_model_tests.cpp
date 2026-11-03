@@ -234,6 +234,10 @@ private slots:
     void navigationFontPolicyMatchesStandardAndPreferenceOffsets();
     void shellTeacherRowsStayOnStaticRouteAndOfferContextActions();
     void shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden();
+    void windowGeometryLoadsBeforeFirstShow();
+    void windowGeometryWritesAfterAcceptedClose();
+    void windowGeometryDoesNotWriteWhenCloseIsRejected();
+    void windowGeometryKeepsDefaultForEmptyOrInvalidPayload();
 
 private:
     Test::MemoryPreferences m_preferences;
@@ -470,7 +474,8 @@ void NavigationModelTests::shellCommitsHistoryOnlyAfterGuardAndActivationSuccess
         QStringLiteral("resource:assets/icons/check.png")
         );
     QVERIFY(checkIcon.has_value());
-    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
     for (Ui::PageDescriptor descriptor : commonDescriptors(
              &campus,
              &workspace,
@@ -662,7 +667,8 @@ void NavigationModelTests::shellAdminMenuIsCapabilityGatedAndManageCampusesUsesN
 {
     PageProbe campus{QStringLiteral("campus_information")};
     PageProbe workspace{QStringLiteral("my_workspace")};
-    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
     for (Ui::PageDescriptor descriptor : commonDescriptors(&campus, &workspace))
     {
         QVERIFY(shell.pageHost().registerPage(std::move(descriptor)));
@@ -774,7 +780,8 @@ void NavigationModelTests::shellHistoryControlsTrackAccessRevocation()
     PageProbe workspaceProbe{QStringLiteral("my_workspace")};
     PageProbe protectedProbe{QStringLiteral("classes")};
 
-    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
     QVERIFY(shell.pageHost().registerPage(descriptorFor(
         QStringLiteral("campus_information"), QStringLiteral("Campus Info"),
         {}, {}, &campus
@@ -928,7 +935,8 @@ void NavigationModelTests::shellHistoryControlsTrackAccessRevocation()
 
 void NavigationModelTests::shellExposesNewTeacherProfileAction()
 {
-    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
     QAction* const action = shell.findChild<QAction*>(
         QStringLiteral("classMngrNextNewTeacherProfile")
         );
@@ -949,7 +957,8 @@ void NavigationModelTests::shellExposesNewTeacherProfileAction()
 
 void NavigationModelTests::shellExposesOpenTeacherProfileAction()
 {
-    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
     QAction* const action = shell.findChild<QAction*>(
         QStringLiteral("classMngrNextOpenTeacherProfile")
         );
@@ -970,7 +979,8 @@ void NavigationModelTests::shellExposesOpenTeacherProfileAction()
 
 void NavigationModelTests::shellExposesInterruptedProfileRecoveryAction()
 {
-    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
     QAction* const action = shell.findChild<QAction*>(
         QStringLiteral("classMngrNextRecoverInterruptedTeacherProfile")
         );
@@ -1036,7 +1046,8 @@ shellTeacherRowsStayOnStaticRouteAndOfferContextActions()
     const Ui::PageId profilePage = pageId(QStringLiteral("teacher_profile"));
     PageProbe workspaceProbe{QStringLiteral("my_workspace")};
     PageProbe profileProbe{QStringLiteral("teacher_profile")};
-    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
     QVERIFY(shell.pageHost().registerPage(descriptorFor(
         QStringLiteral("my_workspace"), QStringLiteral("My Workspace"),
         {}, {}, &workspaceProbe
@@ -1261,7 +1272,11 @@ shellTeacherRowsStayOnStaticRouteAndOfferContextActions()
 
 void NavigationModelTests::shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden()
 {
-    auto shell = std::make_unique<Ui::ApplicationShell>(*m_loader, m_preferences.model);
+    auto shell = std::make_unique<Ui::ApplicationShell>(
+        *m_loader,
+        m_preferences.model,
+        Test::makeMemoryWindowGeometryPort()
+        );
     QStatusBar* const statusBar = shell->statusBar();
 
     QCOMPARE(statusBar->objectName(), QStringLiteral("classMngrNextNotificationStatusBar"));
@@ -1291,6 +1306,113 @@ void NavigationModelTests::shellOwnsTransientNotificationPortAndKeepsIdleStatusB
     QPointer<QStatusBar> statusBarLifetime(statusBar);
     shell.reset();
     QVERIFY(statusBarLifetime.isNull());
+}
+
+void NavigationModelTests::windowGeometryLoadsBeforeFirstShow()
+{
+    Ui::ApplicationShell source(
+        *m_loader,
+        m_preferences.model,
+        Test::makeMemoryWindowGeometryPort()
+        );
+    source.resize(760, 640);
+    const QSize expectedSize = source.size();
+    const QByteArray savedGeometry = source.saveGeometry();
+    QVERIFY(!savedGeometry.isEmpty());
+
+    const std::string storedGeometry(
+        savedGeometry.constData(),
+        static_cast<std::size_t>(savedGeometry.size())
+        );
+    auto geometryPort = Test::makeMemoryWindowGeometryPort(storedGeometry);
+    Test::MemoryWindowGeometryPort* const probe = geometryPort.get();
+    Ui::ApplicationShell shell(
+        *m_loader,
+        m_preferences.model,
+        std::move(geometryPort)
+        );
+
+    QCOMPARE(probe->readCount, 1);
+    QCOMPARE(shell.size(), expectedSize);
+    QVERIFY(!shell.isVisible());
+}
+
+void NavigationModelTests::windowGeometryWritesAfterAcceptedClose()
+{
+    auto geometryPort = Test::makeMemoryWindowGeometryPort();
+    Test::MemoryWindowGeometryPort* const probe = geometryPort.get();
+    Ui::ApplicationShell shell(
+        *m_loader,
+        m_preferences.model,
+        std::move(geometryPort)
+        );
+    shell.resize(850, 630);
+    shell.show();
+    QApplication::processEvents();
+
+    const QByteArray expectedGeometry = shell.saveGeometry();
+    int writeCountDuringCloseHandler = -1;
+    shell.setCloseHandler([&] {
+        writeCountDuringCloseHandler = probe->writeCount;
+        return true;
+    });
+
+    QVERIFY(shell.close());
+    QCOMPARE(writeCountDuringCloseHandler, 0);
+    QCOMPARE(probe->writeCount, 1);
+    QCOMPARE(
+        QByteArray(
+            probe->storedGeometry.data(),
+            static_cast<qsizetype>(probe->storedGeometry.size())
+            ),
+        expectedGeometry
+        );
+}
+
+void NavigationModelTests::windowGeometryDoesNotWriteWhenCloseIsRejected()
+{
+    auto geometryPort = Test::makeMemoryWindowGeometryPort();
+    Test::MemoryWindowGeometryPort* const probe = geometryPort.get();
+    Ui::ApplicationShell shell(
+        *m_loader,
+        m_preferences.model,
+        std::move(geometryPort)
+        );
+    shell.show();
+    QApplication::processEvents();
+    shell.setCloseHandler([] { return false; });
+
+    QVERIFY(!shell.close());
+    QCOMPARE(probe->writeCount, 0);
+    QVERIFY(shell.isVisible());
+}
+
+void NavigationModelTests::windowGeometryKeepsDefaultForEmptyOrInvalidPayload()
+{
+    Ui::ApplicationShell defaultShell(
+        *m_loader,
+        m_preferences.model,
+        Test::makeMemoryWindowGeometryPort()
+        );
+    const QSize defaultSize = defaultShell.size();
+    const std::vector<std::string> payloads{
+        {},
+        std::string("\0\xff" "not-qt-geometry", 17)
+    };
+    for (const std::string& payload : payloads)
+    {
+        auto geometryPort = Test::makeMemoryWindowGeometryPort(payload);
+        Test::MemoryWindowGeometryPort* const probe = geometryPort.get();
+        Ui::ApplicationShell shell(
+            *m_loader,
+            m_preferences.model,
+            std::move(geometryPort)
+            );
+
+        QCOMPARE(probe->readCount, 1);
+        QCOMPARE(shell.size(), defaultSize);
+        QCOMPARE(shell.minimumSize(), QSize(720, 480));
+    }
 }
 
 QTEST_MAIN(NavigationModelTests)

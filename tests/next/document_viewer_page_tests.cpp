@@ -130,7 +130,11 @@ struct ViewerHarness final
         )
         : projection(std::move(documentProjection))
     {
-        shell = std::make_unique<ApplicationShell>(loader, preferences.model);
+        shell = std::make_unique<ApplicationShell>(
+            loader,
+            preferences.model,
+            Test::makeMemoryWindowGeometryPort()
+            );
         shell->setDocumentCatalogProjection(projection);
         const auto registered = registerDocumentViewerPage(shell->pageHost());
         if (!registered)

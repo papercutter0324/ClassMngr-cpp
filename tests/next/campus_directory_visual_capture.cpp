@@ -495,7 +495,11 @@ bool captureAdminReview(
         .arg(locale, theme);
 
     Test::MemoryPreferences adminPreferences;
-    Ui::ApplicationShell adminShell(loader, adminPreferences.model);
+    Ui::ApplicationShell adminShell(
+        loader,
+        adminPreferences.model,
+        Test::makeMemoryWindowGeometryPort()
+        );
     if (!configureCampusShell(
             adminShell,
             repository,
@@ -596,7 +600,11 @@ bool captureAdminReview(
     }
 
     Test::MemoryPreferences readOnlyPreferences;
-    Ui::ApplicationShell readOnlyShell(loader, readOnlyPreferences.model);
+    Ui::ApplicationShell readOnlyShell(
+        loader,
+        readOnlyPreferences.model,
+        Test::makeMemoryWindowGeometryPort()
+        );
     if (!configureCampusShell(
             readOnlyShell,
             repository,

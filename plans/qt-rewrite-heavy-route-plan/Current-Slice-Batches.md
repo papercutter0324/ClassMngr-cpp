@@ -4,12 +4,12 @@
 
 1. **8.1.5 Dialog geometry — complete:** use a binary-safe callback boundary,
    keep Legacy storage behavior, and require callbacks for Next Roster output.
-2. **8.1.6 Main-window geometry — in progress:** persist/restore Next window
-   state through a narrow settings adapter. Discovery complete; preserve
-   rejected-close behavior and keep `ApplicationShell` independent of platform
-   settings types.
-3. **8.1.7 Splitter state:** persist in-scope Next splitter sizes with isolated
-   keys and lifecycle-safe restoration.
+2. **8.1.6 Main-window geometry — complete:** restore through a dedicated
+   Application port and SettingsManager adapter; persist only on accepted close.
+3. **8.1.7 Splitter state — in progress:** define the stable Next page splitters
+   in scope, then persist their sizes through isolated keys and lifecycle-safe
+   restoration. Discovery complete; distinguish retained page splitters from
+   transient workflow UI.
 4. **8.1.8 Application icon:** apply the icon to the Next window and native
    Windows/macOS application targets.
 5. **8.1.9 Font-family lookup:** remove direct `QFontDatabase` policy lookups

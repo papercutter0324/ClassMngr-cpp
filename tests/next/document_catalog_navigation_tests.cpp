@@ -444,7 +444,8 @@ void DocumentCatalogNavigationTests::initTestCase()
 
 void DocumentCatalogNavigationTests::rendersNestedSiblingsByOrderThenStableId()
 {
-    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
     shell.setDocumentCatalogProjection(projectionForLocale(QStringLiteral("en_US")));
     auto* const tree = shell.findChild<QTreeWidget*>(
         QStringLiteral("classMngrNextNavigationTree")
@@ -481,7 +482,8 @@ void DocumentCatalogNavigationTests::rendersNestedSiblingsByOrderThenStableId()
 void DocumentCatalogNavigationTests::
 documentSelectionEmitsTypedStableIdAndPreservesFlags()
 {
-    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
     shell.setDocumentCatalogProjection(projectionForLocale(QStringLiteral("en_US")));
     std::vector<Domain::DocumentId> selectedIds;
     shell.setDocumentCatalogSelectionHandler(
@@ -558,7 +560,8 @@ documentSelectionEmitsTypedStableIdAndPreservesFlags()
 void DocumentCatalogNavigationTests::
 replacingLocalizedProjectionUpdatesLabelsAndKeepsSelection()
 {
-    Ui::ApplicationShell shell(*m_loader, m_preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
     shell.setDocumentCatalogProjection(projectionForLocale(QStringLiteral("en_US")));
     QString requestedLocale;
     shell.setDocumentCatalogProjectionLoader(
@@ -633,7 +636,8 @@ void DocumentCatalogNavigationTests::
 preferencesMenuIsDiscoverableAndDoesNotDuplicatePageSettings()
 {
     DialogFixture fixture;
-    Ui::ApplicationShell shell(*m_loader, fixture.preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, fixture.preferences.model, Test::makeMemoryWindowGeometryPort());
     int openCalls = 0;
     shell.setPreferencesHandler([&openCalls] { ++openCalls; });
 
@@ -966,7 +970,8 @@ void DocumentCatalogNavigationTests::
 languageChangeRetranslatesPreferencesShellAndNavigation()
 {
     DialogFixture fixture;
-    Ui::ApplicationShell shell(*m_loader, fixture.preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, fixture.preferences.model, Test::makeMemoryWindowGeometryPort());
     Ui::PageDescriptor scheduleDescriptor{
         .id = *Ui::PageId::fromString(QStringLiteral("schedule")),
         .label = QStringLiteral("Schedule"),
@@ -1018,7 +1023,8 @@ shellAppliesSidebarAndFontPreferencesImmediately()
 {
     DialogFixture fixture;
     QVERIFY(fixture.preferences.model.load());
-    Ui::ApplicationShell shell(*m_loader, fixture.preferences.model);
+    Ui::ApplicationShell shell(
+        *m_loader, fixture.preferences.model, Test::makeMemoryWindowGeometryPort());
     const Ui::PageId scheduleId = *Ui::PageId::fromString(QStringLiteral("schedule"));
     Ui::PageDescriptor descriptor{
         .id = scheduleId,

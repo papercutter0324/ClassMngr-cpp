@@ -136,7 +136,29 @@ missing or one-sided Roster callbacks. The native macOS print dialog was not
 opened interactively; its callback path compiled and was inspected. No full
 suite was run.
 
+### 8.1.6 — Next main-window geometry (accepted)
+
+Added a dedicated `WindowGeometryPort` and SettingsManager adapter using the
+existing `ui/windowGeometry` key. Bootstrap supplies the port to
+`ApplicationShell`, which restores the binary-safe Qt geometry after applying
+its default and minimum size and before the first show. It saves only after
+the close handler leaves the close event accepted; rejected closes do not
+write. Missing or invalid geometry preserves the default bounds. The shell
+contains no SettingsManager or Platform dependency.
+
+On macOS 27 ARM64 with Qt 6.12.0 and Apple Clang 21, the incremental Debug
+build passed in `build/macos-clang-debug` for the affected production,
+navigation, bootstrap, and geometry-adapter targets. Independent CTest
+verification passed `ClassMngrNextNavigationTests`,
+`ClassMngrNextBootstrapTests`, and
+`ClassMngrNextPlatformSettingsManagerWindowGeometryPortTests` (3/3). Tests
+cover pre-show restore, accepted-close persistence, rejected-close no-write,
+empty/invalid payload defaults, and exact-key binary round-trip. The bootstrap
+suite also ran its embedded visual-capture slots; dedicated visual-capture
+targets compiled but were not run or visually reviewed. No full suite was run.
+
 ## Objective
+
 
 Move platform-specific behavior and large output workflows behind narrow, testable interfaces.
 

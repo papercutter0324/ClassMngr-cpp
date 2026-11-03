@@ -3,6 +3,7 @@
 #include "next/application/workspace_state.h"
 #include "next/application/recent_workspace_history.h"
 #include "next/application/preferences_model.h"
+#include "next/application/window_geometry_port.h"
 #include "next/application/document_catalog_projection.h"
 #include "next/application/campus_edit_capability.h"
 #include "next/domain/domain_types.h"
@@ -17,6 +18,7 @@
 #include <QMainWindow>
 
 #include <functional>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -93,6 +95,7 @@ public:
     explicit ApplicationShell(
         Resources::ResourceLoader& resourceLoader,
         Application::PreferencesModel& preferences,
+        std::unique_ptr<Application::WindowGeometryPort> windowGeometryPort,
         QWidget* parent = nullptr
         );
     ~ApplicationShell() override;
@@ -206,6 +209,7 @@ private:
         );
 
     Resources::ResourceLoader* m_resourceLoader = nullptr;
+    std::unique_ptr<Application::WindowGeometryPort> m_windowGeometryPort;
     QWidget* m_contentWidget = nullptr;
     PageHost* m_pageHost = nullptr;
     QTreeWidget* m_navigationTree = nullptr;

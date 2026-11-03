@@ -139,7 +139,11 @@ bool saveCatalogCapture(
     bool saved = false;
     {
         Test::MemoryPreferences preferences;
-        Ui::ApplicationShell shell(loader, preferences.model);
+        Ui::ApplicationShell shell(
+            loader,
+            preferences.model,
+            Test::makeMemoryWindowGeometryPort()
+            );
         shell.setDocumentCatalogProjection(std::move(projection));
         shell.resize(Viewport);
         shell.show();

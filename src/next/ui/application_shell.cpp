@@ -5,6 +5,7 @@
 #include "next/ui/navigation_font_policy.h"
 
 #include <algorithm>
+#include <QByteArray>
 #include <QDir>
 #include <QCloseEvent>
 #include <QCoreApplication>
@@ -30,6 +31,8 @@
 #include <QVBoxLayout>
 
 #include <exception>
+#include <cstddef>
+#include <stdexcept>
 #include <utility>
 
 namespace ClassMngr::Next::Ui
@@ -286,10 +289,12 @@ private:
 ApplicationShell::ApplicationShell(
     Resources::ResourceLoader& resourceLoader,
     Application::PreferencesModel& preferences,
+    std::unique_ptr<Application::WindowGeometryPort> windowGeometryPort,
     QWidget* parent
     )
     : QMainWindow(parent)
     , m_resourceLoader(&resourceLoader)
+    , m_windowGeometryPort(std::move(windowGeometryPort))
     , m_contentWidget(new QWidget(this))
     , m_pageHost(new PageHost(resourceLoader, preferences, m_contentWidget))
     , m_navigationTree(new QTreeWidget(m_contentWidget))
@@ -300,6 +305,13 @@ ApplicationShell::ApplicationShell(
     , m_notificationPresenter(*statusBar())
     , m_preferences(&preferences)
 {
+    if (!m_windowGeometryPort)
+    {
+        throw std::invalid_argument(
+            "ApplicationShell requires a window-geometry port."
+            );
+    }
+
     statusBar()->setObjectName(QStringLiteral("classMngrNextNotificationStatusBar"));
     setObjectName(QStringLiteral("classMngrNextApplicationShell"));
     setWindowTitle(QCoreApplication::translate("NextShell", "ClassMngr Next"));
@@ -644,6 +656,22 @@ ApplicationShell::ApplicationShell(
     if (observer)
     {
         m_preferencesObserverId = observer.value();
+    }
+
+    const std::string storedGeometry = m_windowGeometryPort->read();
+    if (!storedGeometry.empty())
+    {
+        const QByteArray payload(
+            storedGeometry.data(),
+            static_cast<qsizetype>(storedGeometry.size())
+            );
+        const QRect defaultGeometry = geometry();
+        const Qt::WindowStates defaultWindowState = windowState();
+        if (!restoreGeometry(payload))
+        {
+            setWindowState(defaultWindowState);
+            setGeometry(defaultGeometry);
+        }
     }
 }
 
@@ -1640,6 +1668,14 @@ void ApplicationShell::closeEvent(QCloseEvent* event)
         {
             event->ignore();
         }
+    }
+    if (event->isAccepted() && m_windowGeometryPort)
+    {
+        const QByteArray geometry = saveGeometry();
+        m_windowGeometryPort->write(std::string_view(
+            geometry.constData(),
+            static_cast<std::size_t>(geometry.size())
+            ));
     }
 }
 

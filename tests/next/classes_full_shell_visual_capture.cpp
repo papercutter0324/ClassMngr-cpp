@@ -142,7 +142,8 @@ bool captureNextShell(
         return false;
     }
 
-    Ui::ApplicationShell shell(loader, preferences);
+    Ui::ApplicationShell shell(
+        loader, preferences, Test::makeMemoryWindowGeometryPort());
     auto activeSelection = std::optional<Domain::ClassId>(*selectedClassId);
     const Ui::PageId classesPageId = *Ui::PageId::fromString(
         QStringLiteral("classes"));
