@@ -71,6 +71,21 @@ navigation. Independent recheck confirmed Naver failure and Kakao success
 handoffs; the Campus Map startup fixture has no URL, so those link assertions
 use the injected action seam. No full suite was run.
 
+### 8.1.2 — Speaking Evaluation clipboard adapter (accepted)
+
+Added the write-only `ClipboardWritePort` and Qt clipboard adapter, injected
+through Bootstrap into the Speaking Evaluation page and both AI dialogs. The
+page and dialogs no longer write to the clipboard directly. Focused coverage
+preserves copy-only dialog state, copy-before-open ordering, failure behavior,
+batch copying of the displayed prompt, and Bootstrap adapter wiring.
+
+On macOS 27 ARM64 with Qt 6.12.0 and Apple Clang 21, the incremental Debug
+build for `ClassMngrNextSpeakingEvaluationPageTests` and
+`ClassMngrNextBootstrapTests` passed. Independent CTest verification passed
+both targets (2/2); no full suite was run. `QClipboard::setText` has no result
+value, so this port does not expose an operating-system clipboard-write
+failure result.
+
 ## Objective
 
 Move platform-specific behavior and large output workflows behind narrow, testable interfaces.

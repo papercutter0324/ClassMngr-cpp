@@ -9,7 +9,6 @@
 #include "ui/shared/qt_text_adapter.h"
 
 #include <QApplication>
-#include <QClipboard>
 #include <QCoreApplication>
 #include <QDialogButtonBox>
 #include <QHash>
@@ -778,12 +777,14 @@ SpeakingEvaluationAiPromptDialog::SpeakingEvaluationAiPromptDialog(
     QString providerName,
     QUrl providerUrl,
     std::function<bool(const QUrl&)> openExternalUrl,
-    QWidget* parent
+    QWidget* parent,
+    std::function<void(const QString&)> writeClipboardText
     )
     : QDialog(parent)
     , m_prompt(std::move(prompt))
     , m_providerUrl(std::move(providerUrl))
     , m_openExternalUrl(std::move(openExternalUrl))
+    , m_writeClipboardText(std::move(writeClipboardText))
 {
     setObjectName(QStringLiteral("speakingEvaluationAiPromptDialog"));
     setWindowTitle(promptText("AI Comment Prompt"));
@@ -846,7 +847,10 @@ void SpeakingEvaluationAiPromptDialog::copyPrompt(const bool openProvider)
     {
         return;
     }
-    QApplication::clipboard()->setText(m_prompt);
+    if (m_writeClipboardText)
+    {
+        m_writeClipboardText(m_prompt);
+    }
     if (!openProvider)
     {
         return;
@@ -869,12 +873,14 @@ SpeakingEvaluationAiBatchDialog::SpeakingEvaluationAiBatchDialog(
     QString providerName,
     QUrl providerUrl,
     std::function<bool(const QUrl&)> openExternalUrl,
-    QWidget* parent
+    QWidget* parent,
+    std::function<void(const QString&)> writeClipboardText
     )
     : QDialog(parent)
     , m_voice(voice)
     , m_providerUrl(std::move(providerUrl))
     , m_openExternalUrl(std::move(openExternalUrl))
+    , m_writeClipboardText(std::move(writeClipboardText))
 {
     m_inputWithinBatchBound = students.size()
         <= static_cast<std::size_t>(Application::SpeakingEvaluationMaximumRowCount);
@@ -1218,7 +1224,10 @@ void SpeakingEvaluationAiBatchDialog::copyPrompt(const bool openProvider)
     {
         return;
     }
-    QApplication::clipboard()->setText(prompt);
+    if (m_writeClipboardText)
+    {
+        m_writeClipboardText(prompt);
+    }
     if (!openProvider)
     {
         return;

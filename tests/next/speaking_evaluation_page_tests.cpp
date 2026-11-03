@@ -17,7 +17,6 @@
 
 #include <QApplication>
 #include <QCheckBox>
-#include <QClipboard>
 #include <QComboBox>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -40,6 +39,7 @@
 #include <QPdfDocument>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QStringList>
 #include <QStyle>
 #include <QStyleOptionButton>
 #include <QTabWidget>
@@ -442,6 +442,9 @@ public:
                     state.lastExternalUrl = url;
                     return state.openExternalUrlResult;
                 };
+                actions.writeClipboardText = [this](const QString& text) {
+                    m_clipboardWrites.append(text);
+                };
                 actions.resolveUnsavedChanges = [&state](const QString&) {
                     return state.unsavedChoice;
                 };
@@ -485,6 +488,10 @@ public:
     {
         return m_reportActions;
     }
+    [[nodiscard]] const QStringList& clipboardWrites() const noexcept
+    {
+        return m_clipboardWrites;
+    }
     [[nodiscard]] Resources::ResourceLoader& resourceLoader() const
     {
         return *m_loader;
@@ -495,6 +502,7 @@ private:
     std::unique_ptr<Resources::ResourceLoader> m_loader;
     std::unique_ptr<Ui::PageHost> m_host;
     Ui::SpeakingEvaluationReportActions m_reportActions;
+    QStringList m_clipboardWrites;
 };
 
 bool copyLargeFixture(QTemporaryDir& temporary, QString* destination)
@@ -624,6 +632,7 @@ private slots:
     void rosterImportNotesAndValidationUseTypedRules();
     void rosterNameImportUsesMaximumBeyondExtraDisplayRows();
     void aiPromptRetriesGradeReadAndPreservesConfiguredWebsiteFlow();
+    void aiPromptDialogCopyAndOpenWritesBeforeSuccessfulOpen();
     void aiPromptActionSupportsConfiguredRowThirty();
     void aiBatchIsBoundedOrderedAndCancelDoesNotEdit();
     void aiBatchCandidateAtRowThirtyCanBeAppliedWithinOnePrompt();
@@ -1096,9 +1105,9 @@ aiPromptRetriesGradeReadAndPreservesConfiguredWebsiteFlow()
 
     QString prompt;
     QString copyOpenLabel;
-    QString clipboard;
     bool promptDialogSeen = false;
     bool websiteFailureClosed = false;
+    bool copyOnlyKeptDialogOpen = false;
     QTimer::singleShot(0, [&] {
         auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationAiPromptDialog*>(
             qApp->activeModalWidget());
@@ -1109,6 +1118,10 @@ aiPromptRetriesGradeReadAndPreservesConfiguredWebsiteFlow()
         promptDialogSeen = true;
         prompt = dialog->promptEditor()->toPlainText();
         copyOpenLabel = dialog->copyAndOpenButton()->text();
+        dialog->copyButton()->click();
+        copyOnlyKeptDialogOpen = dialog->isVisible()
+            && harness.clipboardWrites().size() == 1
+            && harness.clipboardWrites().front() == prompt;
         QTimer::singleShot(0, [&] {
             auto* const warning = dynamic_cast<QMessageBox*>(
                 qApp->activeModalWidget());
@@ -1119,22 +1132,55 @@ aiPromptRetriesGradeReadAndPreservesConfiguredWebsiteFlow()
             }
         });
         dialog->copyAndOpenButton()->click();
-        clipboard = QApplication::clipboard()->text();
         dialog->reject();
     });
     page->aiCommentButton()->click();
 
     QVERIFY(promptDialogSeen);
     QVERIFY(websiteFailureClosed);
+    QVERIFY(copyOnlyKeptDialogOpen);
     QVERIFY(prompt.contains(QStringLiteral("4th-grade elementary ESL")));
     QVERIFY(prompt.contains(QStringLiteral("STD_NAME")));
     QVERIFY(!prompt.contains(QStringLiteral("Ada Park")));
     QCOMPARE(copyOpenLabel, QStringLiteral("Copy Prompt and Open ChatGPT"));
-    QCOMPARE(clipboard, prompt);
+    QCOMPARE(harness.clipboardWrites().size(), 2);
+    QCOMPARE(harness.clipboardWrites().at(0), prompt);
+    QCOMPARE(harness.clipboardWrites().at(1), prompt);
     QCOMPARE(state.externalUrlOpenCalls, 1);
     QCOMPARE(state.lastExternalUrl,
         std::optional<QUrl>(QUrl(QStringLiteral("https://chatgpt.com/"))));
     QVERIFY(!page->hasUnsavedChanges());
+}
+
+void SpeakingEvaluationPageTests::
+aiPromptDialogCopyAndOpenWritesBeforeSuccessfulOpen()
+{
+    const QString prompt = QStringLiteral("Write for STD_NAME.\nClear ideas.");
+    QString writtenText;
+    QStringList callOrder;
+    Ui::SpeakingEvaluationAiPromptDialog dialog(
+        prompt,
+        QStringLiteral("ChatGPT"),
+        QUrl(QStringLiteral("https://chatgpt.com/")),
+        [&callOrder](const QUrl& url) {
+            callOrder.append(QStringLiteral("open"));
+            return url == QUrl(QStringLiteral("https://chatgpt.com/"));
+        },
+        nullptr,
+        [&writtenText, &callOrder](const QString& text) {
+            writtenText = text;
+            callOrder.append(QStringLiteral("write"));
+        });
+    dialog.show();
+    QCoreApplication::processEvents();
+
+    dialog.copyAndOpenButton()->click();
+
+    QCOMPARE(writtenText, prompt);
+    QCOMPARE(callOrder,
+        QStringList({QStringLiteral("write"), QStringLiteral("open")}));
+    QVERIFY(dialog.isVisible());
+    dialog.hide();
 }
 
 void SpeakingEvaluationPageTests::
@@ -1161,6 +1207,7 @@ aiBatchIsBoundedOrderedAndCancelDoesNotEdit()
 
     bool dialogSeen = false;
     bool promptOrdered = false;
+    bool batchCopyMatchesPrompt = false;
     bool checkboxToggleWorks = false;
     int selectedCount = -1;
     int batchSize = -1;
@@ -1209,6 +1256,14 @@ aiBatchIsBoundedOrderedAndCancelDoesNotEdit()
         const qsizetype first = prompt.indexOf(QStringLiteral("Student ID: STUDENT_01"));
         const qsizetype last = prompt.indexOf(QStringLiteral("Student ID: STUDENT_25"));
         promptOrdered = !prompt.isEmpty() && first >= 0 && last > first;
+        auto* const copyButton = dialog->findChild<QPushButton*>(
+            QStringLiteral("speakingEvaluationAiBatchCopyPrompt"));
+        if (copyButton)
+        {
+            copyButton->click();
+            batchCopyMatchesPrompt = harness.clipboardWrites().size() == 1
+                && harness.clipboardWrites().front() == prompt;
+        }
         dialog->reject();
     });
     page->aiBatchCommentsButton()->click();
@@ -1220,6 +1275,7 @@ aiBatchIsBoundedOrderedAndCancelDoesNotEdit()
     QCOMPARE(selectedCount, static_cast<int>(
         Application::kSpeakingEvaluationAiBatchMaximumStudents));
     QVERIFY(promptOrdered);
+    QVERIFY(batchCopyMatchesPrompt);
     QVERIFY(!page->hasUnsavedChanges());
     QCOMPARE(page->matrixModel()->snapshot().changedCells.size(), std::size_t(0));
 }

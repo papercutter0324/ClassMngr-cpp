@@ -59,6 +59,7 @@
 
 #include <QApplication>
 #include <QAbstractButton>
+#include <QClipboard>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QInputDialog>
@@ -1486,11 +1487,13 @@ class CapturedSpeakingEvaluationAiUrlHandler final : public QObject
 
 public:
     QList<QUrl> urls;
+    QString clipboardTextOnOpen;
 
 public slots:
     void capture(const QUrl& url)
     {
         urls.append(url);
+        clipboardTextOnOpen = QApplication::clipboard()->text();
     }
 };
 
@@ -7671,8 +7674,10 @@ speakingEvaluationAiCompositionUsesWorkspaceAndPreferences()
     QVERIFY(!prompt.contains(QStringLiteral("Ada Park")));
     QCOMPARE(copyOpenLabel,
         QStringLiteral("Copy Prompt and Open Custom AI Website"));
+    QCOMPARE(QApplication::clipboard()->text(), prompt);
     QCOMPARE(urlHandler.urls.size(), 1);
     QCOMPARE(urlHandler.urls.front(), QUrl(customWebsite));
+    QCOMPARE(urlHandler.clipboardTextOnOpen, prompt);
 
     QTreeWidget* const navigationTree = bootstrap.shell()->findChild<QTreeWidget*>(
         QStringLiteral("classMngrNextNavigationTree"));

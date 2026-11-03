@@ -69,6 +69,7 @@ struct SpeakingEvaluationPageActions final
     std::function<Application::AiCommentVoice()> preferredAiCommentVoice;
     std::function<QString()> customAiCommentWebsiteUrl;
     std::function<bool(const QUrl&)> openExternalUrl;
+    std::function<void(const QString&)> writeClipboardText;
     std::function<SpeakingEvaluationUnsavedChoice(const QString&)>
         resolveUnsavedChanges;
     std::function<bool()> confirmQuestionableKoreanNameLengths;

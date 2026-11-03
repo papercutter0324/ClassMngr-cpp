@@ -83,6 +83,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/campus_directory_read_port.h
     src/next/application/campus_directory_read_query.h
     src/next/application/external_url_launch_port.h
+    src/next/application/clipboard_write_port.h
     src/next/application/campus_edit_capability.h
     src/next/application/campus_dashboard_selected_campus_snapshot.h
     src/next/application/campus_dashboard_selected_campus_read_port.h
@@ -487,6 +488,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/campus_dashboard_selected_campus_read_adapter.h
     src/next/platform/campus_directory_repository_adapter.h
     src/next/platform/qt_external_url_launch_adapter.h
+    src/next/platform/qt_clipboard_write_adapter.h
     src/next/platform/my_info_campus_directory_query_adapter.h
     src/next/platform/application_services_calendar_event_import_signature_query_port.h
     src/next/platform/application_services_calendar_event_delete_port.h

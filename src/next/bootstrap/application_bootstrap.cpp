@@ -51,6 +51,7 @@
 #include "next/platform/workspace_store_calendar_actions.h"
 #include "next/platform/calendar_page_resource_campus_directory_query_adapter.h"
 #include "next/platform/campus_directory_repository_adapter.h"
+#include "next/platform/qt_clipboard_write_adapter.h"
 #include "next/platform/qt_external_url_launch_adapter.h"
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "next/platform/qt_schedule_output_adapter.h"
@@ -802,6 +803,9 @@ struct ApplicationBootstrap::CoreServices final
         )
         : resourceLoader(std::move(catalog))
         , startupResourceScope(std::move(startupScope))
+        , clipboardWritePort(
+              std::make_shared<Platform::QtClipboardWriteAdapter>()
+              )
         , externalUrlLaunchPort(
               std::make_shared<Platform::QtExternalUrlLaunchAdapter>()
               )
@@ -823,6 +827,7 @@ struct ApplicationBootstrap::CoreServices final
 
     Resources::ResourceLoader resourceLoader;
     Resources::ResourceScope startupResourceScope;
+    std::shared_ptr<Application::ClipboardWritePort> clipboardWritePort;
     std::shared_ptr<Application::ExternalUrlLaunchPort> externalUrlLaunchPort;
     std::shared_ptr<Platform::CampusDirectoryRepositoryAdapter>
         campusDirectoryRepository;
@@ -1975,6 +1980,13 @@ Application::StartupResult ApplicationBootstrap::start()
                                                       const QUrl& url
                                                       ) {
                             return externalUrlLaunchPort->openUrl(url);
+                        };
+                        const auto clipboardWritePort =
+                            m_coreServices->clipboardWritePort;
+                        actions.writeClipboardText = [clipboardWritePort](
+                                                         const QString& text
+                                                         ) {
+                            clipboardWritePort->writeText(text);
                         };
                         return actions;
                     }));

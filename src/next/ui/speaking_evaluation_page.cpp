@@ -32,8 +32,6 @@
 #include <QVBoxLayout>
 #include <QStyledItemDelegate>
 #include <QUrl>
-#include <QApplication>
-#include <QClipboard>
 
 #include <algorithm>
 #include <array>
@@ -1514,7 +1512,11 @@ void SpeakingEvaluationPage::generateAiCommentPrompt(const bool copyAndOpen)
 
     if (copyAndOpen)
     {
-        QApplication::clipboard()->setText(QString::fromStdU16String(result.prompt));
+        if (m_actions.writeClipboardText)
+        {
+            m_actions.writeClipboardText(
+                QString::fromStdU16String(result.prompt));
+        }
         const QUrl url = aiProviderUrl();
         if (url.scheme() != QStringLiteral("https") || !m_actions.openExternalUrl
             || !m_actions.openExternalUrl(url))
@@ -1527,7 +1529,8 @@ void SpeakingEvaluationPage::generateAiCommentPrompt(const bool copyAndOpen)
         aiProviderName(),
         aiProviderUrl(),
         m_actions.openExternalUrl,
-        this);
+        this,
+        m_actions.writeClipboardText);
     static_cast<void>(dialog.exec());
 }
 
@@ -1657,7 +1660,8 @@ void SpeakingEvaluationPage::generateClassAiComments()
         aiProviderName(),
         aiProviderUrl(),
         m_actions.openExternalUrl,
-        this);
+        this,
+        m_actions.writeClipboardText);
     if (dialog.exec() != QDialog::Accepted
         || dialog.acceptedComments().empty())
     {

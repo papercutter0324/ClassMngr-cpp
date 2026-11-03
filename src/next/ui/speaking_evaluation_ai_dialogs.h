@@ -169,7 +169,8 @@ public:
         QString providerName,
         QUrl providerUrl,
         std::function<bool(const QUrl&)> openExternalUrl = {},
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        std::function<void(const QString&)> writeClipboardText = {}
         );
 
     [[nodiscard]] QPlainTextEdit* promptEditor() const noexcept;
@@ -182,6 +183,7 @@ private:
     QString m_prompt;
     QUrl m_providerUrl;
     std::function<bool(const QUrl&)> m_openExternalUrl;
+    std::function<void(const QString&)> m_writeClipboardText;
     QPlainTextEdit* m_promptEditor = nullptr;
     QPushButton* m_copyButton = nullptr;
     QPushButton* m_copyAndOpenButton = nullptr;
@@ -196,7 +198,8 @@ public:
         QString providerName,
         QUrl providerUrl,
         std::function<bool(const QUrl&)> openExternalUrl = {},
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        std::function<void(const QString&)> writeClipboardText = {}
         );
 
     [[nodiscard]] SpeakingEvaluationAiBatchSelectionModel* selectionModel()
@@ -226,6 +229,7 @@ private:
     Application::AiCommentVoice m_voice = Application::AiCommentVoice::DirectToStudent;
     QUrl m_providerUrl;
     std::function<bool(const QUrl&)> m_openExternalUrl;
+    std::function<void(const QString&)> m_writeClipboardText;
     bool m_inputWithinBatchBound = true;
     SpeakingEvaluationAiBatchSelectionModel* m_selectionModel = nullptr;
     SpeakingEvaluationAiBatchReviewModel* m_reviewModel = nullptr;
