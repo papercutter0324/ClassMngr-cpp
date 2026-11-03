@@ -102,8 +102,10 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QDir>
+#include <QIcon>
 #include <QJsonObject>
 #include <QLocale>
+#include <QPixmap>
 #include <QStringList>
 #include <QTimer>
 #include <QStandardPaths>
@@ -842,6 +844,7 @@ struct ApplicationBootstrap::CoreServices final
     std::optional<Resources::ScopedResource<Resources::ResourceTranslation>> translation;
     std::optional<Resources::ScopedResource<Resources::RegisteredFont>> interFont;
     std::optional<Resources::ScopedResource<Resources::RegisteredFont>> pretendardFont;
+    std::optional<Resources::ScopedResource<QImage>> applicationIcon;
     std::unique_ptr<Ui::ThemePresenter> themePresenter;
     std::unique_ptr<Ui::FontSizePresenter> fontSizePresenter;
 };
@@ -1348,11 +1351,16 @@ Application::StartupResult ApplicationBootstrap::start()
 
     try
     {
+        applyApplicationIcon();
         m_shell = std::make_unique<Ui::ApplicationShell>(
             m_coreServices->resourceLoader,
             m_coreServices->preferences,
             std::make_unique<Platform::SettingsManagerWindowGeometryPort>()
             );
+        if (!m_application.windowIcon().isNull())
+        {
+            m_shell->setWindowIcon(m_application.windowIcon());
+        }
         const auto externalUrlLaunchPort = m_coreServices->externalUrlLaunchPort;
         m_shell->setExternalUrlOpener([externalUrlLaunchPort](const QUrl& url) {
             return externalUrlLaunchPort->openUrl(url);
@@ -6481,6 +6489,38 @@ bool ApplicationBootstrap::createCoreServices()
         );
     m_coreServices->fontSizePresenter = std::make_unique<Ui::FontSizePresenter>(m_application);
     return true;
+}
+
+void ApplicationBootstrap::applyApplicationIcon()
+{
+    if (!m_coreServices)
+    {
+        return;
+    }
+
+    const auto request = startupRequest(
+        m_coreServices->startupResourceScope,
+        QStringLiteral("resource:assets/icons/icon_256x256.png")
+        );
+    if (!request)
+    {
+        return;
+    }
+
+    auto image = m_coreServices->resourceLoader.loadImage(*request);
+    if (!image || image->get().isNull())
+    {
+        return;
+    }
+
+    const QIcon icon(QPixmap::fromImage(image->get()));
+    if (icon.isNull())
+    {
+        return;
+    }
+
+    m_application.setWindowIcon(icon);
+    m_coreServices->applicationIcon.emplace(std::move(*image));
 }
 
 Application::ShutdownResult ApplicationBootstrap::shutdown()

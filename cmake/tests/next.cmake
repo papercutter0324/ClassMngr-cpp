@@ -493,6 +493,15 @@ set_tests_properties(ClassMngrNextBootstrapTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
 )
 add_test(
+    NAME ClassMngrNextApplicationIconTests
+    COMMAND ClassMngrNextBootstrapTests
+        createsVisibleShellAndReportsOnlyCompletedStartupStage
+)
+set_tests_properties(ClassMngrNextApplicationIconTests
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+)
+add_test(
     NAME ClassMngrNextInitialSetupVisualCaptureEnglishLight
     COMMAND ClassMngrNextBootstrapTests
         initialSetupPersonalDetailsAppearance:english-light

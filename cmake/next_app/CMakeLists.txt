@@ -13,6 +13,41 @@ qt_add_executable(ClassMngrNext
     $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
 )
 
+if(APPLE)
+    set(_classmngr_next_macos_icon
+        "${PROJECT_SOURCE_DIR}/resources/assets/icons/app_icon.icns"
+    )
+    set_source_files_properties("${_classmngr_next_macos_icon}"
+        PROPERTIES
+            MACOSX_PACKAGE_LOCATION Resources
+    )
+    target_sources(ClassMngrNext
+        PRIVATE
+            "${_classmngr_next_macos_icon}"
+    )
+    set_target_properties(ClassMngrNext
+        PROPERTIES
+            MACOSX_BUNDLE TRUE
+            MACOSX_BUNDLE_ICON_FILE app_icon.icns
+    )
+endif()
+
+if(WIN32)
+    set(_classmngr_next_windows_rc
+        "${CMAKE_CURRENT_BINARY_DIR}/generated/ClassMngrNext.rc"
+    )
+    file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated")
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/resources/windows/ClassMngrNext.rc.in"
+        "${_classmngr_next_windows_rc}"
+        @ONLY
+    )
+    target_sources(ClassMngrNext
+        PRIVATE
+            "${_classmngr_next_windows_rc}"
+    )
+endif()
+
 target_compile_features(ClassMngrNext
     PRIVATE
         cxx_std_23

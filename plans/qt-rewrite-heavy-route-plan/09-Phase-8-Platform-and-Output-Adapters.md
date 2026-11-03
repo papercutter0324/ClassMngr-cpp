@@ -179,6 +179,23 @@ one-time restoration, suspension persistence, and retained-page reactivation.
 The full suite was not run; visual captures were compiled but not visually
 reviewed.
 
+### 8.1.8 — Next application icon (accepted)
+
+Next startup now loads the existing 256×256 PNG through `ResourceLoader` and
+sets both the QApplication default icon and the main shell icon. The Next
+macOS target builds as a bundle with the existing ICNS and matching
+`MACOSX_BUNDLE_ICON_FILE` metadata. The Windows target receives a minimal RC
+icon resource using the existing ICO, without Legacy version metadata or a
+subsystem change. Installer and update-package production remain in 8.4.2.
+
+On macOS 27 ARM64 with Qt 6.12.0 and Apple Clang 21, the incremental Debug
+build passed for `ClassMngrNext` and `ClassMngrNextBootstrapTests`; focused
+CTest passed `ClassMngrNextApplicationIconTests` (1/1). The test compares
+application and shell icons against the packaged PNG. The built app bundle's
+Info.plist names `app_icon.icns`, and the bundled ICNS matches the source asset
+byte-for-byte. Windows RC target wiring was inspected but not compiled on this
+macOS host. No installer/package build or full suite was run.
+
 ## Objective
 
 

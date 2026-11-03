@@ -1,0 +1,4 @@
+#include <windows.h>
+
+#define IDI_CLASSMNGR_NEXT_ICON 101
+IDI_CLASSMNGR_NEXT_ICON ICON "@PROJECT_SOURCE_DIR@/resources/assets/icons/app_icon.ico"

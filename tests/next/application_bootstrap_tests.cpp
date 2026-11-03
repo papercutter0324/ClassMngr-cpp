@@ -79,6 +79,7 @@
 #include <QFileInfo>
 #include <QFocusEvent>
 #include <QGroupBox>
+#include <QIcon>
 #include <QImage>
 #include <QPointer>
 #include <QPlainTextEdit>
@@ -1327,7 +1328,8 @@ public:
         return addTranslation(locale)
             && addTheme(theme)
             && addRequiredFonts()
-            && addDocumentCatalogMetadata();
+            && addDocumentCatalogMetadata()
+            && addResource(QStringLiteral("assets/icons/icon_256x256.png"));
     }
 
 private:
@@ -2300,6 +2302,27 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
     Ui::ApplicationShell* const shell = bootstrap.shell();
     QVERIFY(shell != nullptr);
     QVERIFY(shell->isVisible());
+    const QImage expectedIcon(QDir(resources.resourceRoot()).filePath(
+        QStringLiteral("assets/icons/icon_256x256.png")
+        ));
+    QVERIFY(!expectedIcon.isNull());
+    QCOMPARE(expectedIcon.size(), QSize(256, 256));
+    const QImage comparableIcon = QIcon(QPixmap::fromImage(expectedIcon))
+        .pixmap(expectedIcon.size())
+        .toImage()
+        .convertToFormat(QImage::Format_RGBA8888);
+    QVERIFY(!application.windowIcon().isNull());
+    QCOMPARE(
+        application.windowIcon().pixmap(expectedIcon.size()).toImage()
+            .convertToFormat(QImage::Format_RGBA8888),
+        comparableIcon
+        );
+    QVERIFY(!shell->windowIcon().isNull());
+    QCOMPARE(
+        shell->windowIcon().pixmap(expectedIcon.size()).toImage()
+            .convertToFormat(QImage::Format_RGBA8888),
+        comparableIcon
+        );
     for (QObject* const object : shell->findChildren<QObject*>())
     {
         const QByteArray className(object->metaObject()->className());

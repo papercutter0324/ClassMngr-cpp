@@ -9,12 +9,13 @@
 3. **8.1.7 Splitter state — complete:** persist four retained Next page
    splitters with isolated settings keys, one-time restore, and suspension save;
    the transient Schedule Import review splitter remains unchanged.
-4. **8.1.8 Application icon — in progress:** apply existing PNG/ICO/ICNS assets
-   to the Next window and native Windows/macOS target metadata. Discovery found
-   the assets and Legacy native configuration; Next has no icon assignment or
-   equivalent native icon wiring.
-5. **8.1.9 Font-family lookup:** remove direct `QFontDatabase` policy lookups
-   from Navigation and Teacher Profile.
+4. **8.1.8 Application icon — complete:** runtime uses the packaged PNG; the
+   Next macOS bundle carries ICNS metadata and the Windows target has a minimal
+   ICO resource. Windows RC compilation awaits a Windows host.
+5. **8.1.9 Font-family lookup — in progress:** replace direct
+   `QFontDatabase` lookups in Next Navigation and Teacher Profile while
+   preserving exact Inter selection, first substring match for Inter/Pretendard,
+   inherited-family fallback, and current font-size/style behavior.
 6. **8.2.1 QtPdf viewer session:** move document load/status/render/close and
    borrowed-stream release behind a session-scoped platform owner.
 7. **8.2.2 PDF/print operation adapter:** isolate layout, fonts/images,

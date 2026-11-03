@@ -168,6 +168,7 @@ private:
     struct CoreServices;
 
     [[nodiscard]] bool createCoreServices();
+    void applyApplicationIcon();
     [[nodiscard]] bool loadStartupPreferences();
     [[nodiscard]] Application::StartupStageOutcome loadStartupLanguage();
     [[nodiscard]] bool loadStartupTheme();
