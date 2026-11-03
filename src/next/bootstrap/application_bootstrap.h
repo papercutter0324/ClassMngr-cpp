@@ -90,6 +90,10 @@ public:
             normalTeacherImportFileDialogPortFactory;
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             normalScheduleImportFileDialogPortFactory;
+        // Keeps the Sub Prep output-directory chooser on the file-dialog port
+        // in focused route tests.
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
+            subPrepOutputFileDialogPortFactory;
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             newProfileFileDialogPortFactory;
         std::function<std::unique_ptr<Application::UserPromptPort>()>

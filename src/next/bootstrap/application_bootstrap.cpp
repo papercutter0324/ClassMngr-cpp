@@ -969,6 +969,35 @@ Ui::SubPrepPageActions ApplicationBootstrap::subPrepPageActions()
             .recoverable = true
         });
     };
+    actions.selectOutputDirectory = [this](
+        const Application::SelectDirectoryDialogRequest& request,
+        QWidget* parent) {
+        Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+            directoryPreferences;
+        std::unique_ptr<Application::FileDialogPort> fileDialog;
+        if (m_startupWorkspaceSeams.subPrepOutputFileDialogPortFactory)
+        {
+            fileDialog = m_startupWorkspaceSeams
+                .subPrepOutputFileDialogPortFactory();
+        }
+        else
+        {
+            fileDialog = std::make_unique<Ui::QtFileDialogPresenter>(
+                directoryPreferences, parent);
+        }
+
+        using Response = Application::FileDialogResponse<
+            Application::FileDialogPath>;
+        if (!fileDialog)
+        {
+            return Domain::Result<Response>::failure({
+                .code = Domain::ErrorCode::Technical,
+                .message = "The Sub Prep folder chooser is unavailable.",
+                .recoverable = true
+            });
+        }
+        return fileDialog->selectDirectory(request);
+    };
     actions.readCalendarIntervals = [gateway](
         const Application::SubPrepCalendarEventIntervalsRequest& request) {
         if (auto* active = gateway()) { return active->readSubPrepCalendarEventIntervals(request); }

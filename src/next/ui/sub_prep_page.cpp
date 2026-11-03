@@ -23,7 +23,6 @@
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFrame>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QGridLayout>
@@ -1110,11 +1109,30 @@ void SubPrepPage::generateSubPrep()
     folderRow->addWidget(chooseFolder);
     layout->addLayout(folderRow);
     layout->addWidget(nameEdit);
-    QObject::connect(chooseFolder, &QPushButton::clicked, &dialog, [&dialog, folderEdit] {
-        const QString chosen = QFileDialog::getExistingDirectory(
-            &dialog, printDialogText("Select Folder"), folderEdit->text());
-        if (!chosen.isEmpty()) { folderEdit->setText(chosen); }
-    });
+    chooseFolder->setObjectName(QStringLiteral("subPrepChooseOutputFolder"));
+    QObject::connect(chooseFolder, &QPushButton::clicked, &dialog,
+        [this, &dialog, folderEdit] {
+            if (!m_actions.selectOutputDirectory)
+            {
+                return;
+            }
+
+            const QString title = printDialogText("Select Folder");
+            const Application::SelectDirectoryDialogRequest request{
+                .purpose = Application::FileDialogPurpose::SubPrepPackage,
+                .title = toUtf8(title),
+                .initialDirectory = Application::FileDialogPath(
+                    toUtf8(folderEdit->text()))
+            };
+            const auto selected = m_actions.selectOutputDirectory(request, &dialog);
+            if (!selected || !selected.value().selection)
+            {
+                return;
+            }
+
+            folderEdit->setText(fromUtf8(
+                selected.value().selection->value()));
+        });
 
     auto* rosterTemplate = new QComboBox(&dialog);
     rosterTemplate->setObjectName(QStringLiteral("subPrepRosterTemplate"));

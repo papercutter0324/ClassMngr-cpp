@@ -101,6 +101,19 @@ passed both filters (3/3 each), including the Bootstrap-selected workbook and
 Gateway import, row-count checks, and unavailable-Gateway failure. The normal
 headless verification uses Qt's offscreen platform. No full suite was run.
 
+### 8.1.4 — Sub Prep output directory chooser (accepted)
+
+Sub Prep now requests its output directory through the existing `FileDialogPort`
+with `SubPrepPackage` purpose, “Select Folder” title, and the current field
+value as the initial directory. A selection updates the field; cancellation
+preserves it. Canceling the output dialog does not invoke package generation.
+
+On macOS 27 ARM64 with Qt 6.12.0 and Apple Clang 21, the incremental Debug
+build and independent focused tests passed for `ClassMngrNextSubPrepPageTests`
+and `ClassMngrNextBootstrapTests` (3/3 each). The page no longer calls
+`QFileDialog`; the platform presenter was inspected but the real operating
+system chooser was not opened. No full suite was run.
+
 ## Objective
 
 Move platform-specific behavior and large output workflows behind narrow, testable interfaces.

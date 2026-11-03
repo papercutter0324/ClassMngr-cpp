@@ -4,10 +4,11 @@
 
 1. **8.1.1 External URL launching — complete:** committed as `838f2b8c`.
 2. **8.1.2 Clipboard — complete:** committed as `a7d27adb`.
-3. **8.1.3 Schedule Import chooser — complete, slice commit pending:** use the
-   existing `FileDialogPort` for workbook selection.
-4. **8.1.4 Sub Prep output directory:** use the existing `FileDialogPort` for
-   output-folder selection.
+3. **8.1.3 Schedule Import chooser — complete:** committed as `c14920b3`.
+4. **8.1.4 Sub Prep output directory — complete, slice commit pending:** use
+   the existing `FileDialogPort` for output-folder selection.
+
+Batch 1 is ready to close after candidate 4 is committed and pushed.
 
 ## Phase 8 — Next Batch 2 (discovered; pending activation)
 

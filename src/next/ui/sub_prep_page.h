@@ -11,6 +11,7 @@
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/application/sub_prep_weekday.h"
 #include "next/application/current_campus_preferences.h"
+#include "next/application/file_dialog_port.h"
 #include "next/application/personal_display_name_preferences.h"
 #include "next/application/sub_prep_campus_directory_query_port.h"
 #include "next/ui/page.h"
@@ -31,6 +32,7 @@ class QPushButton;
 class QTabBar;
 class QGroupBox;
 class QEvent;
+class QWidget;
 
 class SubPrepClassInformationListModel;
 
@@ -58,6 +60,10 @@ struct SubPrepPageActions final
         readFolderUserName;
     std::function<Application::PersonalDisplayNamePreferencesSaveResult(
         const std::string&)> saveFolderUserName;
+    std::function<Domain::Result<Application::FileDialogResponse<
+        Application::FileDialogPath>>(
+            const Application::SelectDirectoryDialogRequest&, QWidget*)>
+        selectOutputDirectory;
     std::function<Application::SubPrepCalendarEventIntervalsQueryResult(
         const Application::SubPrepCalendarEventIntervalsRequest&)>
         readCalendarIntervals;

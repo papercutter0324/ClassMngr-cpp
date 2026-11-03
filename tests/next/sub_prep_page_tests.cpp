@@ -2,13 +2,17 @@
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
 #include "next/ui/sub_prep_page.h"
+#include "features/sub_prep/services/sub_prep_package_service.h"
 #include "preferences_test_ports.h"
 
 #include <QApplication>
 #include <QCoreApplication>
+#include <QDialog>
 #include <QLabel>
+#include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QTimer>
 #include <QTranslator>
 #include <QtTest/QtTest>
 
@@ -77,6 +81,74 @@ Application::SchedulePageReadSnapshot scheduleSnapshot()
     return result;
 }
 
+struct OutputDirectoryDialogProbe final
+{
+    std::vector<Application::SelectDirectoryDialogRequest> requests;
+    std::optional<Application::FileDialogPath> selection;
+    int scheduleReadCount = 0;
+    int printSourceReadCount = 0;
+    int rosterOutputPortCreateCount = 0;
+};
+
+class SubPrepPageFileDialogPort final : public Application::FileDialogPort
+{
+public:
+    explicit SubPrepPageFileDialogPort(
+        std::shared_ptr<OutputDirectoryDialogProbe> probe)
+        : m_probe(std::move(probe))
+    {
+    }
+
+    [[nodiscard]] Domain::Result<Application::FileDialogResponse<
+        Application::FileDialogPath>>
+    openOneFile(const Application::OpenFileDialogRequest&) override
+    {
+        return unexpectedCall<Application::FileDialogResponse<
+            Application::FileDialogPath>>();
+    }
+
+    [[nodiscard]] Domain::Result<Application::FileDialogResponse<
+        std::vector<Application::FileDialogPath>>>
+    openManyFiles(const Application::OpenFileDialogRequest&) override
+    {
+        return unexpectedCall<Application::FileDialogResponse<
+            std::vector<Application::FileDialogPath>>>();
+    }
+
+    [[nodiscard]] Domain::Result<Application::FileDialogResponse<
+        Application::SavedFileDialogSelection>>
+    saveFile(const Application::SaveFileDialogRequest&) override
+    {
+        return unexpectedCall<Application::FileDialogResponse<
+            Application::SavedFileDialogSelection>>();
+    }
+
+    [[nodiscard]] Domain::Result<Application::FileDialogResponse<
+        Application::FileDialogPath>>
+    selectDirectory(
+        const Application::SelectDirectoryDialogRequest& request) override
+    {
+        m_probe->requests.push_back(request);
+        return Domain::Result<Application::FileDialogResponse<
+            Application::FileDialogPath>>::success({
+                .selection = m_probe->selection
+            });
+    }
+
+private:
+    template <typename Response>
+    [[nodiscard]] static Domain::Result<Response> unexpectedCall()
+    {
+        return Domain::Result<Response>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Unexpected file dialog operation.",
+            .recoverable = false
+        });
+    }
+
+    std::shared_ptr<OutputDirectoryDialogProbe> m_probe;
+};
+
 struct PageFixture final
 {
     Test::MemoryPreferences preferences;
@@ -87,6 +159,8 @@ struct PageFixture final
         "stored materials", "stored grading", "stored special", "stored notes");
     Application::SchedulePageReadSnapshot schedule = scheduleSnapshot();
     Application::SubPrepPreferences lastSaved;
+    std::shared_ptr<OutputDirectoryDialogProbe> outputDirectoryDialog =
+        std::make_shared<OutputDirectoryDialogProbe>();
     int preferencesReadCount = 0;
     int preferencesSaveCount = 0;
     bool preferencesReadFails = false;
@@ -115,7 +189,27 @@ struct PageFixture final
                     return QStringLiteral("workspace-a");
                 };
                 actions.readSchedulePage = [this] {
+                    ++outputDirectoryDialog->scheduleReadCount;
                     return Application::SchedulePageReadResult::success(schedule);
+                };
+                actions.selectOutputDirectory = [this](
+                    const Application::SelectDirectoryDialogRequest& request,
+                    QWidget*) {
+                    SubPrepPageFileDialogPort fileDialog(outputDirectoryDialog);
+                    return fileDialog.selectDirectory(request);
+                };
+                actions.readPrintSource = [this](const auto&) {
+                    ++outputDirectoryDialog->printSourceReadCount;
+                    return Application::SubPrepPrintSourceQueryResult::failure({
+                        .code = Domain::ErrorCode::Technical,
+                        .message = "Unexpected output source read.",
+                        .recoverable = false
+                    });
+                };
+                actions.createRosterOutputSourceReadPort = [this] {
+                    ++outputDirectoryDialog->rosterOutputPortCreateCount;
+                    return std::unique_ptr<
+                        Application::SubPrepRosterOutputSourceReadPort>{};
                 };
                 actions.readSummaries = [](const auto&) {
                     return Application::ClassSummaryProjection::create({
@@ -173,6 +267,7 @@ class SubPrepPageTests final : public QObject
 
 private Q_SLOTS:
     void preferencesReadFailureRetainsDraftAndBlocksWritesUntilReload();
+    void outputDirectoryChooserUsesPortAndPreservesSelectionOnCancel();
 };
 
 void SubPrepPageTests::preferencesReadFailureRetainsDraftAndBlocksWritesUntilReload()
@@ -249,6 +344,97 @@ void SubPrepPageTests::preferencesReadFailureRetainsDraftAndBlocksWritesUntilRel
     materials->setPlainText(QStringLiteral("saved after reload"));
     QCOMPARE(fixture.preferencesSaveCount, 1);
     QVERIFY(fixture.lastSaved.classMaterials == std::string("saved after reload"));
+}
+
+void SubPrepPageTests::
+outputDirectoryChooserUsesPortAndPreservesSelectionOnCancel()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    Ui::SubPrepPage* const page = fixture.page();
+    QVERIFY(page);
+    const int scheduleReadCountBeforeGeneration =
+        fixture.outputDirectoryDialog->scheduleReadCount;
+
+    const QString selectedRoot = QStringLiteral("/tmp/sub-prep-selected-root");
+    fixture.outputDirectoryDialog->selection = Application::FileDialogPath(
+        selectedRoot.toUtf8().toStdString());
+
+    bool dialogSeen = false;
+    bool selectionWasApplied = false;
+    bool cancelPreservedSelection = false;
+    bool outputDialogStayedOpen = false;
+    bool automationFailed = false;
+    QTimer::singleShot(0, page, [&] {
+        auto* const dialog = qobject_cast<QDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog)
+        {
+            automationFailed = true;
+            return;
+        }
+        dialogSeen = true;
+        auto* const folder = dialog->findChild<QLineEdit*>(
+            QStringLiteral("subPrepOutputFolder"));
+        auto* const choose = dialog->findChild<QPushButton*>(
+            QStringLiteral("subPrepChooseOutputFolder"));
+        auto* const cancel = dialog->findChild<QPushButton*>(
+            QStringLiteral("subPrepOutputCancel"));
+        if (!folder || !choose || !cancel)
+        {
+            automationFailed = true;
+            dialog->reject();
+            return;
+        }
+
+        choose->click();
+        selectionWasApplied = folder->text() == selectedRoot;
+        fixture.outputDirectoryDialog->selection.reset();
+        choose->click();
+        cancelPreservedSelection = folder->text() == selectedRoot;
+        outputDialogStayedOpen = QApplication::activeModalWidget() == dialog;
+        cancel->click();
+    });
+    QTimer safetyClose;
+    safetyClose.setSingleShot(true);
+    QObject::connect(&safetyClose, &QTimer::timeout, page, [&] {
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            automationFailed = true;
+            modal->close();
+        }
+    });
+    safetyClose.start(15'000);
+    auto* const generate = page->findChild<QPushButton*>(
+        QStringLiteral("subPrepGenerateButton"));
+    QVERIFY(generate);
+    generate->click();
+    safetyClose.stop();
+
+    QVERIFY(dialogSeen);
+    QVERIFY(!automationFailed);
+    QVERIFY(selectionWasApplied);
+    QVERIFY(cancelPreservedSelection);
+    QVERIFY(outputDialogStayedOpen);
+    QCOMPARE(fixture.outputDirectoryDialog->requests.size(), std::size_t(2));
+    const auto& firstRequest = fixture.outputDirectoryDialog->requests.front();
+    QCOMPARE(firstRequest.purpose, Application::FileDialogPurpose::SubPrepPackage);
+    QCOMPARE(QString::fromUtf8(firstRequest.title.data(),
+                               static_cast<qsizetype>(firstRequest.title.size())),
+             QStringLiteral("Select Folder"));
+    QCOMPARE(QString::fromUtf8(firstRequest.initialDirectory.value().data(),
+                               static_cast<qsizetype>(firstRequest.initialDirectory.value().size())),
+             SubPrepPackageService::defaultTargetRoot());
+    const auto& secondRequest = fixture.outputDirectoryDialog->requests.back();
+    QCOMPARE(QString::fromUtf8(secondRequest.initialDirectory.value().data(),
+                               static_cast<qsizetype>(secondRequest.initialDirectory.value().size())),
+             selectedRoot);
+    QCOMPARE(fixture.outputDirectoryDialog->scheduleReadCount,
+             scheduleReadCountBeforeGeneration + 1);
+    QCOMPARE(fixture.outputDirectoryDialog->printSourceReadCount, 0);
+    QCOMPARE(fixture.outputDirectoryDialog->rosterOutputPortCreateCount, 0);
+    QCOMPARE(page->findChild<QLabel*>(QStringLiteral("subPrepRouteStatus"))->text(),
+             QStringLiteral("Sub Prep generation canceled."));
 }
 
 QTEST_MAIN(SubPrepPageTests)

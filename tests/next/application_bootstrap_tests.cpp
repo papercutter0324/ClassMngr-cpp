@@ -30,6 +30,7 @@
 #include "next/ui/schedule_page.h"
 #include "next/ui/sub_prep_page.h"
 #include "features/sub_prep/ui/sub_prep_class_information_list_model.h"
+#include "features/sub_prep/services/sub_prep_package_service.h"
 #include "next/ui/selected_class_editor.h"
 #include "next/ui/speaking_evaluation_ai_dialogs.h"
 #include "next/ui/speaking_evaluation_page.h"
@@ -620,6 +621,72 @@ private:
     }
 
     std::shared_ptr<InitialSetupFileDialogProbe> m_probe;
+};
+
+struct SubPrepOutputFileDialogProbe final
+{
+    std::vector<Application::SelectDirectoryDialogRequest> requests;
+    std::optional<Application::FileDialogPath> selection;
+};
+
+class RecordingSubPrepOutputFileDialogPort final
+    : public Application::FileDialogPort
+{
+public:
+    explicit RecordingSubPrepOutputFileDialogPort(
+        std::shared_ptr<SubPrepOutputFileDialogProbe> probe)
+        : m_probe(std::move(probe))
+    {
+    }
+
+    [[nodiscard]] Domain::Result<Application::FileDialogResponse<
+        Application::FileDialogPath>>
+    openOneFile(const Application::OpenFileDialogRequest&) override
+    {
+        return unexpectedCall<Application::FileDialogResponse<
+            Application::FileDialogPath>>();
+    }
+
+    [[nodiscard]] Domain::Result<Application::FileDialogResponse<
+        std::vector<Application::FileDialogPath>>>
+    openManyFiles(const Application::OpenFileDialogRequest&) override
+    {
+        return unexpectedCall<Application::FileDialogResponse<
+            std::vector<Application::FileDialogPath>>>();
+    }
+
+    [[nodiscard]] Domain::Result<Application::FileDialogResponse<
+        Application::SavedFileDialogSelection>>
+    saveFile(const Application::SaveFileDialogRequest&) override
+    {
+        return unexpectedCall<Application::FileDialogResponse<
+            Application::SavedFileDialogSelection>>();
+    }
+
+    [[nodiscard]] Domain::Result<Application::FileDialogResponse<
+        Application::FileDialogPath>>
+    selectDirectory(
+        const Application::SelectDirectoryDialogRequest& request) override
+    {
+        m_probe->requests.push_back(request);
+        return Domain::Result<Application::FileDialogResponse<
+            Application::FileDialogPath>>::success({
+                .selection = m_probe->selection
+            });
+    }
+
+private:
+    template <typename Response>
+    [[nodiscard]] static Domain::Result<Response> unexpectedCall()
+    {
+        return Domain::Result<Response>::failure({
+            .code = Domain::ErrorCode::Technical,
+            .message = "Unexpected file dialog operation.",
+            .recoverable = false
+        });
+    }
+
+    std::shared_ptr<SubPrepOutputFileDialogProbe> m_probe;
 };
 
 struct InterruptedWorkspaceRecoveryProbe final
@@ -8268,12 +8335,23 @@ subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle()
         profilePath, QStringLiteral("large_startup.sql"), &fixtureError),
         qPrintable(fixtureError));
 
+    const QString chooserSelectedRoot = temporaryDirectory.filePath(
+        QStringLiteral("sub-prep-selected-root"));
+    auto subPrepOutputDialogProbe =
+        std::make_shared<SubPrepOutputFileDialogProbe>();
+    subPrepOutputDialogProbe->selection = Application::FileDialogPath(
+        chooserSelectedRoot.toUtf8().toStdString());
+
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
     seams.commandLineArguments = {QStringLiteral("test-app"), profilePath};
     seams.recentAutoOpenEnabled = false;
     seams.initialSetupRecoveryJournalPath = journalPath;
     seams.workspaceGatewayFactory = [] {
         return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    seams.subPrepOutputFileDialogPortFactory = [subPrepOutputDialogProbe] {
+        return std::make_unique<RecordingSubPrepOutputFileDialogPort>(
+            subPrepOutputDialogProbe);
     };
     Bootstrap::ApplicationBootstrap bootstrap(
         application, {}, silentStartupDiagnosticsSinkFactory(),
@@ -8393,6 +8471,8 @@ subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle()
     const auto metricsBeforeCancel = page->visualMetrics();
     bool cancelDialogSeen = false;
     bool cancelAutomationFailed = false;
+    bool chooserSelectionApplied = false;
+    bool chooserCancelPreservedSelection = false;
     QTimer::singleShot(0, page, [&] {
         auto* const dialog = qobject_cast<QDialog*>(
             QApplication::activeModalWidget());
@@ -8404,14 +8484,21 @@ subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle()
         cancelDialogSeen = true;
         auto* const folder = dialog->findChild<QLineEdit*>(
             QStringLiteral("subPrepOutputFolder"));
+        auto* const choose = dialog->findChild<QPushButton*>(
+            QStringLiteral("subPrepChooseOutputFolder"));
         auto* const cancel = dialog->findChild<QPushButton*>(
             QStringLiteral("subPrepOutputCancel"));
-        if (!folder || !cancel)
+        if (!folder || !choose || !cancel)
         {
             cancelAutomationFailed = true;
             dialog->reject();
             return;
         }
+        choose->click();
+        chooserSelectionApplied = folder->text() == chooserSelectedRoot;
+        subPrepOutputDialogProbe->selection.reset();
+        choose->click();
+        chooserCancelPreservedSelection = folder->text() == chooserSelectedRoot;
         folder->setText(canceledOutputRoot);
         cancel->click();
     });
@@ -8429,6 +8516,27 @@ subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle()
     cancelSafetyClose.stop();
     QVERIFY(cancelDialogSeen);
     QVERIFY(!cancelAutomationFailed);
+    QVERIFY(chooserSelectionApplied);
+    QVERIFY(chooserCancelPreservedSelection);
+    QCOMPARE(subPrepOutputDialogProbe->requests.size(), std::size_t(2));
+    const auto& chooserRequest = subPrepOutputDialogProbe->requests.front();
+    QCOMPARE(chooserRequest.purpose,
+             Application::FileDialogPurpose::SubPrepPackage);
+    QCOMPARE(QString::fromUtf8(
+                 chooserRequest.title.data(),
+                 static_cast<qsizetype>(chooserRequest.title.size())),
+             QStringLiteral("Select Folder"));
+    QCOMPARE(QString::fromUtf8(
+                 chooserRequest.initialDirectory.value().data(),
+                 static_cast<qsizetype>(
+                     chooserRequest.initialDirectory.value().size())),
+             SubPrepPackageService::defaultTargetRoot());
+    QCOMPARE(QString::fromUtf8(
+                 subPrepOutputDialogProbe->requests.back()
+                     .initialDirectory.value().data(),
+                 static_cast<qsizetype>(subPrepOutputDialogProbe->requests.back()
+                     .initialDirectory.value().size())),
+             chooserSelectedRoot);
     QVERIFY(!QFileInfo::exists(canceledOutputRoot));
     QCOMPARE(page->findChild<QLabel*>(
         QStringLiteral("subPrepRouteStatus"))->text(),
