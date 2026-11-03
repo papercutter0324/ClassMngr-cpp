@@ -1,0 +1,19 @@
+{
+    "task_id":  "W752-CURRENT-DEBUG-HEAD-4B5F",
+    "source_base_sha":  "4b5f2de9491f5d6e7064bf41edaa0fedd66ade1f",
+    "initial_worktree_state":  "Clean before the first configure/build.",
+    "final_worktree_state":  "The only implementation/source-code change is the uncommitted cmake/tests/next.cmake link fix. The W7.5.2 plan, project progress, evidence index, and this evidence bundle are also updated. CTest-generated tracked SubPrep PNG edits were restored; no unrelated user changes remain.",
+    "source_patch":  {
+                         "path":  "cmake/tests/next.cmake",
+                         "sha256":  "9172bbbce941a4dc6bc8c00a0cd7771fda00883c9a6d1fa11140704aa84d71d",
+                         "change":  "Adds ClassMngrRuntime as a private link dependency to the Classes Navigator page tests and visual capture because RosterPrintDialog references DialogServices::confirm."
+                     },
+    "source_changes_committed":  false,
+    "note":  "The final successful all-target build and CTest used source SHA 4b5f2de plus the local CMake link-dependency patch; the run is not a pristine-HEAD qualification.",
+    "documentation_and_evidence_updated":  [
+                                               "plans/qt-rewrite-heavy-route-plan/08.5-Phase-7.5-Cross-Platform-Follow-Ups.md",
+                                               "agent_docs/project_progress.md",
+                                               "evidence/windows/README.md",
+                                               "evidence/windows/w7.5.2-current-debug-head-4b5f/"
+                                           ]
+}

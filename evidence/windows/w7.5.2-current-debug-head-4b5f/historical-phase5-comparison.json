@@ -1,0 +1,376 @@
+{
+    "task_id":  "W752-CURRENT-DEBUG-HEAD-4B5F",
+    "historical_phase5_source_sha":  "6bbff54abc524723e23911d65130b1b198dde2b3",
+    "historical_phase5_test_count":  512,
+    "historical_phase5_failure_count":  14,
+    "current_source_base_sha":  "4b5f2de9491f5d6e7064bf41edaa0fedd66ade1f",
+    "current_tests":  614,
+    "current_passed":  575,
+    "current_failed":  39,
+    "ctest_exit_code":  8,
+    "ctest_duration_seconds":  3528,
+    "outcome_distribution":  {
+                                 "SEGFAULT":  3,
+                                 "Exit code 0xc0000409":  8,
+                                 "Failed":  19,
+                                 "Timeout":  9
+                             },
+    "reproduced_historical_failures":  [
+                                           "ClassMngrTestingClassesPageTests",
+                                           "ClassMngrPageManagerTests",
+                                           "ClassMngrClassDetailsSavePageTests",
+                                           "ClassMngrNavigationTeacherReadTests",
+                                           "ClassMngrCampusRouteNavigationParityTests",
+                                           "ClassMngrSubPrepPageTests",
+                                           "ClassMngrStartupPerformanceTests",
+                                           "ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests",
+                                           "ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests",
+                                           "ClassMngrFileControllerWorkspaceLifecycleTests"
+                                       ],
+    "historical_failures_now_passing":  [
+                                            {
+                                                "test":  "ClassMngrDialogServicesTests",
+                                                "historical_outcome":  "Timeout",
+                                                "current_outcome":  "Passed"
+                                            },
+                                            {
+                                                "test":  "ClassMngrClassTransferTests",
+                                                "historical_outcome":  "Failed",
+                                                "current_outcome":  "Passed"
+                                            },
+                                            {
+                                                "test":  "ClassMngrClassesPageTests",
+                                                "historical_outcome":  "Timeout",
+                                                "current_outcome":  "Passed"
+                                            },
+                                            {
+                                                "test":  "ClassMngrNextScheduleEditorDialogParityTests",
+                                                "historical_outcome":  "Timeout",
+                                                "current_outcome":  "Passed"
+                                            }
+                                        ],
+    "current_failures_not_in_historical_failure_list":  [
+                                                            "ClassMngrSharedPolicyTests",
+                                                            "ClassMngrRosterTransferMenuTests",
+                                                            "ClassMngrSubPrepPackageServiceTests",
+                                                            "ClassMngrNextBootstrapTests",
+                                                            "ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle",
+                                                            "ClassMngrNextUsefulLinksVisualCapture_english-light",
+                                                            "ClassMngrNextUsefulLinksVisualCapture_english-dark",
+                                                            "ClassMngrNextUsefulLinksVisualCapture_korean-light",
+                                                            "ClassMngrNextCoTeacherSidebarVisualCapture_english-light",
+                                                            "ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark",
+                                                            "ClassMngrMyDetailsSignatureVisualCapture",
+                                                            "ClassMngrNextTeacherImportVisualCapture",
+                                                            "ClassMngrNextTeacherImportVisualCapture_ko_KR_dark",
+                                                            "ClassMngrNextFileDialogPresenterTests",
+                                                            "ClassMngrNextResourceLoaderTests",
+                                                            "ClassMngrNextWorkspaceInterruptedRecoveryFlowTests",
+                                                            "ClassMngrNextWorkspaceSaveAsFlowTests",
+                                                            "ClassMngrNextWorkspaceExportFlowTests",
+                                                            "ClassMngrNextMyWorkspacePageTests",
+                                                            "ClassMngrNextMyWorkspaceVisualCapture",
+                                                            "ClassMngrNextSubPrepVisualCapture",
+                                                            "ClassMngrNextClassesFullWindowStateVisualCapture",
+                                                            "ClassMngrNextClassesNavigatorVisualCapture",
+                                                            "ClassMngrNextClassesNavigatorWorkspaceStoreTests",
+                                                            "ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests",
+                                                            "ClassMngrNextSchedulePageTests",
+                                                            "ClassMngrNextNormalScheduleImportIntegrationTests",
+                                                            "ClassMngrNextScheduleVisualCapture",
+                                                            "ClassMngrProfileFileWorkflowVisualCapture"
+                                                        ],
+    "additional_current_failure_count":  29,
+    "additional_current_environment_specific":  [
+                                                    "ClassMngrNextResourceLoaderTests"
+                                                ],
+    "remaining_additional_failures_for_follow_up":  28,
+    "current_failure_details":  [
+                                    {
+                                        "test":  "ClassMngrSharedPolicyTests",
+                                        "outcome":  "Exit code 0xc0000409",
+                                        "duration_seconds":  1.92577,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrTestingClassesPageTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  12.5136,
+                                        "in_historical_phase5_failure_list":  true,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrPageManagerTests",
+                                        "outcome":  "Timeout",
+                                        "duration_seconds":  119.892,
+                                        "in_historical_phase5_failure_list":  true,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrClassDetailsSavePageTests",
+                                        "outcome":  "Timeout",
+                                        "duration_seconds":  119.946,
+                                        "in_historical_phase5_failure_list":  true,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNavigationTeacherReadTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  10.3093,
+                                        "in_historical_phase5_failure_list":  true,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrCampusRouteNavigationParityTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  4.20564,
+                                        "in_historical_phase5_failure_list":  true,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrRosterTransferMenuTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  4.82126,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrSubPrepPageTests",
+                                        "outcome":  "Timeout",
+                                        "duration_seconds":  119.969,
+                                        "in_historical_phase5_failure_list":  true,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrSubPrepPackageServiceTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  90.2317,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrStartupPerformanceTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  119.755,
+                                        "in_historical_phase5_failure_list":  true,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextBootstrapTests",
+                                        "outcome":  "Exit code 0xc0000409",
+                                        "duration_seconds":  21.5196,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle",
+                                        "outcome":  "Exit code 0xc0000409",
+                                        "duration_seconds":  1.85069,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextUsefulLinksVisualCapture_english-light",
+                                        "outcome":  "SEGFAULT",
+                                        "duration_seconds":  2.81139,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextUsefulLinksVisualCapture_english-dark",
+                                        "outcome":  "SEGFAULT",
+                                        "duration_seconds":  2.77754,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextUsefulLinksVisualCapture_korean-light",
+                                        "outcome":  "SEGFAULT",
+                                        "duration_seconds":  2.6222,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextCoTeacherSidebarVisualCapture_english-light",
+                                        "outcome":  "Exit code 0xc0000409",
+                                        "duration_seconds":  1.42095,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark",
+                                        "outcome":  "Exit code 0xc0000409",
+                                        "duration_seconds":  1.34455,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrMyDetailsSignatureVisualCapture",
+                                        "outcome":  "Timeout",
+                                        "duration_seconds":  120.005,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextTeacherImportVisualCapture",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  5.59573,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextTeacherImportVisualCapture_ko_KR_dark",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  5.04794,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextFileDialogPresenterTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  87.1139,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextResourceLoaderTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  0.96282,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  "Environment-specific: genuine symlink fixture could not be created; CreateSymbolicLinkW error 1314."
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextWorkspaceInterruptedRecoveryFlowTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  0.390054,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextWorkspaceSaveAsFlowTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  1.17438,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextWorkspaceExportFlowTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  1.23791,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextMyWorkspacePageTests",
+                                        "outcome":  "Exit code 0xc0000409",
+                                        "duration_seconds":  0.990187,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextMyWorkspaceVisualCapture",
+                                        "outcome":  "Timeout",
+                                        "duration_seconds":  119.961,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextSubPrepVisualCapture",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  45.8596,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextClassesFullWindowStateVisualCapture",
+                                        "outcome":  "Timeout",
+                                        "duration_seconds":  119.987,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextClassesNavigatorVisualCapture",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  1.79899,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextClassesNavigatorWorkspaceStoreTests",
+                                        "outcome":  "Timeout",
+                                        "duration_seconds":  119.981,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests",
+                                        "outcome":  "Timeout",
+                                        "duration_seconds":  119.987,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  0.880171,
+                                        "in_historical_phase5_failure_list":  true,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  0.191791,
+                                        "in_historical_phase5_failure_list":  true,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrFileControllerWorkspaceLifecycleTests",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  16.5173,
+                                        "in_historical_phase5_failure_list":  true,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextSchedulePageTests",
+                                        "outcome":  "Exit code 0xc0000409",
+                                        "duration_seconds":  1.27693,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextNormalScheduleImportIntegrationTests",
+                                        "outcome":  "Exit code 0xc0000409",
+                                        "duration_seconds":  0.748156,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrNextScheduleVisualCapture",
+                                        "outcome":  "Timeout",
+                                        "duration_seconds":  119.976,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    },
+                                    {
+                                        "test":  "ClassMngrProfileFileWorkflowVisualCapture",
+                                        "outcome":  "Failed",
+                                        "duration_seconds":  0.669555,
+                                        "in_historical_phase5_failure_list":  false,
+                                        "environment_note":  null
+                                    }
+                                ],
+    "interpretation":  "The Windows Debug requalification run completed, but its current CTest gate is not accepted: 39/614 failed. Ten failures match the saved Phase 5 failure list; four previously listed failures now pass; 29 current failures are not in that list. One additional failure explicitly requires symlink privilege unavailable to the runner. The other 28 additional results remain unclassified by this evidence and require follow-up; source/toolchain/test-set differences prevent treating them as proven regressions.",
+    "follow_up_assignments":  [
+                                  {
+                                      "scope":  "28 additional current failures without a specific diagnostic in this run",
+                                      "owner":  "Phase 10",
+                                      "next_step":  "Diagnose the listed fail-fast, segfault, timeout, and generic CTest-failed outcomes before proposing any gate change."
+                                  },
+                                  {
+                                      "scope":  "ClassMngrNextResourceLoaderTests; CreateSymbolicLinkW error 1314",
+                                      "owner":  "Phase 11",
+                                      "next_step":  "Provide a Windows CI/release runner with the required genuine-symlink capability and rerun the fixture test."
+                                  }
+                              ]
+}

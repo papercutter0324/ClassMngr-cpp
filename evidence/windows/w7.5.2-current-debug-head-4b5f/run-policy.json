@@ -1,0 +1,13 @@
+{
+    "source_preset":  "windows-x64-debug",
+    "initial_configure":  "cmake --fresh --preset windows-x64-debug -B build/windows-x64-debug; exit 0; BUILD_TESTING=ON",
+    "initial_clean_all_target_build":  "cmake --build build/windows-x64-debug --clean-first --parallel 2 --config Debug; 7,200.052 seconds; exit 124",
+    "partial_continuation_before_fix":  "cmake --build build/windows-x64-debug --parallel 4 --config Debug; exit 1 on two unresolved DialogServices::confirm symbols",
+    "link_fix":  "Add ClassMngrRuntime to the private target_link_libraries of ClassMngrNextClassesNavigatorPageTests and ClassMngrNextClassesNavigatorVisualCapture in cmake/tests/next.cmake.",
+    "post_fix_all_target_build":  "cmake --build build/windows-x64-debug --parallel 4 --config Debug; all targets; exit 0 after automatic CMake reconfigure and generation; no clean-first on this final pass.",
+    "ctest":  "ctest --test-dir build/windows-x64-debug --output-on-failure --output-junit Testing/refactoring-baseline.junit.xml --timeout 120 --build-config Debug; no filter; serial default",
+    "ctest_exit_code":  8,
+    "ctest_duration_seconds":  3528.81,
+    "ctest_timeout_per_test_seconds":  120,
+    "source_patch_applied_before_final_build_and_ctest":  true
+}

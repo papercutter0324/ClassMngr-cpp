@@ -4157,6 +4157,7 @@ target_compile_definitions(ClassMngrNextClassesNavigatorPageTests
 )
 target_link_libraries(ClassMngrNextClassesNavigatorPageTests
     PRIVATE
+        ClassMngrRuntime
         ClassMngrNextRosterOutput
         ClassMngrNext::Resources
         ClassMngrScheduleImportRules
@@ -4706,6 +4707,7 @@ target_compile_definitions(ClassMngrNextClassesNavigatorVisualCapture
 target_link_libraries(ClassMngrNextClassesNavigatorVisualCapture
     PRIVATE
         ClassMngrNext::Resources
+        ClassMngrRuntime
         ClassMngrNextRosterOutput
         ClassMngrScheduleImportRules
         Qt6::Widgets

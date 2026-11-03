@@ -1,0 +1,2734 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="Win32-MSBuild"
+	tests="614"
+	failures="39"
+	disabled="0"
+	skipped="0"
+	hostname="Felt-Work"
+	time="3528"
+	timestamp="2026-11-03T17:19:24"
+	>
+	<testcase name="ClassMngrNextLaunch" classname="ClassMngrNextLaunch" time="0.614964" status="run">
+		<properties/>
+		<system-out>ClassMngrNext launch version=0.19.0
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextLaunchFilesystemSideEffectsTests" classname="ClassMngrNextLaunchFilesystemSideEffectsTests" time="0.41228" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSharedPolicyTests" classname="ClassMngrSharedPolicyTests" time="1.92577" status="fail">
+		<failure message="Exit code 0xc0000409"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrDatabaseSchemaManagerTests" classname="ClassMngrDatabaseSchemaManagerTests" time="1.95238" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrPageComponentsTests" classname="ClassMngrPageComponentsTests" time="1.48287" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrDialogShellTests" classname="ClassMngrDialogShellTests" time="1.46555" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrInitialSetupWizardTests" classname="ClassMngrInitialSetupWizardTests" time="18.4034" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrOnScreenKeyboardTests" classname="ClassMngrOnScreenKeyboardTests" time="0.6944" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrUpdaterTests" classname="ClassMngrUpdaterTests" time="9.57803" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrResourcePackTests" classname="ClassMngrResourcePackTests" time="0.463446" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrDocumentCatalogTests" classname="ClassMngrDocumentCatalogTests" time="0.205119" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrFontManagerTests" classname="ClassMngrFontManagerTests" time="1.45998" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrStartupVisualSettingsTests" classname="ClassMngrStartupVisualSettingsTests" time="1.0583" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrCheckboxStyleTests" classname="ClassMngrCheckboxStyleTests" time="0.390136" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrFileDialogIconStyleTests" classname="ClassMngrFileDialogIconStyleTests" time="4.19857" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrDialogServicesTests" classname="ClassMngrDialogServicesTests" time="38.12" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassTimeRowTests" classname="ClassMngrClassTimeRowTests" time="0.353095" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTeacherInfoSectionTests" classname="ClassMngrTeacherInfoSectionTests" time="3.76089" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTeacherInfoPageTests" classname="ClassMngrTeacherInfoPageTests" time="3.32865" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrIntensiveSlotStateRepositoryTests" classname="ClassMngrIntensiveSlotStateRepositoryTests" time="0.168186" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrRepositoryErrorContractTests" classname="ClassMngrRepositoryErrorContractTests" time="0.415991" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingBlockRepositoryTests" classname="ClassMngrTestingBlockRepositoryTests" time="0.474354" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassRepositoryTests" classname="ClassMngrTestingClassRepositoryTests" time="0.71297" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrCalendarEventRepositoryTests" classname="ClassMngrCalendarEventRepositoryTests" time="0.363957" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrCalendarEventCacheTests" classname="ClassMngrCalendarEventCacheTests" time="11.2547" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrDataServiceLifecycleTests" classname="ClassMngrDataServiceLifecycleTests" time="20.8712" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassInfoConfigCatalogParityTests" classname="ClassMngrClassInfoConfigCatalogParityTests" time="0.0830053" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrPersonalDetailsRepositoryTests" classname="ClassMngrPersonalDetailsRepositoryTests" time="1.87568" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassTransferExportCodecParityTests" classname="ClassMngrClassTransferExportCodecParityTests" time="9.34536" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassTransferTests" classname="ClassMngrClassTransferTests" time="40.4138" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassTransferPreviewAdapterRegressionTests" classname="ClassTransferPreviewAdapterRegressionTests" time="1.35328" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassTransferApplyStaleChoiceRegressionTests" classname="ClassTransferApplyStaleChoiceRegressionTests" time="1.50192" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassTransferRowIndexRegressionTests" classname="ClassMngrClassTransferRowIndexRegressionTests" time="0.586787" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassImportTeacherChoiceRegressionTests" classname="ClassMngrClassImportTeacherChoiceRegressionTests" time="1.74183" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassImportTeacherChoiceParityTests" classname="ClassMngrClassImportTeacherChoiceParityTests" time="2.83365" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSidebarClassTransferApplyParityTests" classname="ClassMngrSidebarClassTransferApplyParityTests" time="4.30856" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SidebarClassTransferMatchedPreviewIntegrationTests" classname="SidebarClassTransferMatchedPreviewIntegrationTests" time="0.811744" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SidebarClassTransferPreviewReadFailureIntegrationTests" classname="SidebarClassTransferPreviewReadFailureIntegrationTests" time="0.706025" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SidebarClassTransferNoMatchCreateRegressionTests" classname="SidebarClassTransferNoMatchCreateRegressionTests" time="0.749802" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassExportDialogParityTests" classname="ClassMngrClassExportDialogParityTests" time="1.24123" status="run">
+		<properties/>
+		<system-out>{"case":"populated-initial","checked":[false,false,false],"count":3,"currentRow":-1,"exportEnabled":false,"ids":[2,1,3],"labels":["E4 Perseus • Alex Kim","E4 Theseus • Alex Kim","E4 Theseus • Alex Kim"],"selectedIds":[],"selectedRows":0}
+{"case":"one-checked","checked":[false,true,false],"count":3,"currentRow":-1,"exportEnabled":true,"ids":[2,1,3],"labels":["E4 Perseus • Alex Kim","E4 Theseus • Alex Kim","E4 Theseus • Alex Kim"],"selectedIds":[1],"selectedRows":0}
+{"case":"select-all","checked":[true,true,true],"count":3,"currentRow":-1,"exportEnabled":true,"ids":[2,1,3],"labels":["E4 Perseus • Alex Kim","E4 Theseus • Alex Kim","E4 Theseus • Alex Kim"],"selectedIds":[2,1,3],"selectedRows":0}
+{"case":"clear","checked":[false,false,false],"count":3,"currentRow":-1,"exportEnabled":false,"ids":[2,1,3],"labels":["E4 Perseus • Alex Kim","E4 Theseus • Alex Kim","E4 Theseus • Alex Kim"],"selectedIds":[],"selectedRows":0}
+{"case":"empty","checked":[],"count":0,"currentRow":-1,"exportEnabled":fa...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrCalendarImportTests" classname="ClassMngrCalendarImportTests" time="0.205652" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrScheduleImportTests" classname="ClassMngrScheduleImportTests" time="6.96639" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTeacherImportTests" classname="ClassMngrTeacherImportTests" time="1.5349" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTeacherImportDialogTests" classname="ClassMngrTeacherImportDialogTests" time="1.96694" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrStaffDirectoryPageTests" classname="ClassMngrStaffDirectoryPageTests" time="1.56612" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassTabNavigationModelTests" classname="ClassMngrClassTabNavigationModelTests" time="0.181834" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSubPrepClassInformationModelTests" classname="ClassMngrSubPrepClassInformationModelTests" time="0.394799" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSubPrepPrintSourceMapperTests" classname="ClassMngrSubPrepPrintSourceMapperTests" time="0.449276" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSubPrepClassInformationListModelTests" classname="ClassMngrSubPrepClassInformationListModelTests" time="1.13429" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrScheduleWidgetTests" classname="ClassMngrScheduleWidgetTests" time="5.24675" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassesPageDeleteParityTests" classname="ClassMngrTestingClassesPageDeleteParityTests" time="1.47926" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassesPagePersistenceParityTests" classname="ClassMngrTestingClassesPagePersistenceParityTests" time="2.41929" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassesPageCancelFailureParityTests" classname="ClassMngrTestingClassesPageCancelFailureParityTests" time="2.04518" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassesPageTests" classname="ClassMngrTestingClassesPageTests" time="12.5136" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassesPageTeacherChoiceTests" classname="ClassMngrTestingClassesPageTeacherChoiceTests" time="0.492425" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassesPageWideTeacherIdentityTests" classname="ClassMngrTestingClassesPageWideTeacherIdentityTests" time="0.424197" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassesPageF145UpdateTests" classname="ClassMngrTestingClassesPageF145UpdateTests" time="1.29824" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassesPageF146CreateTests" classname="ClassMngrTestingClassesPageF146CreateTests" time="0.788549" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassesPageF147DeleteTests" classname="ClassMngrTestingClassesPageF147DeleteTests" time="2.41271" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTestingClassesPageF1287SaveRefreshTests" classname="ClassMngrTestingClassesPageF1287SaveRefreshTests" time="0.543168" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrUpcomingBirthdaysTests" classname="ClassMngrUpcomingBirthdaysTests" time="0.972886" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="UpcomingBirthdaysLocaleAwareOrderingTests" classname="UpcomingBirthdaysLocaleAwareOrderingTests" time="0.0836255" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="UpcomingBirthdaysLeapDayFallbackBehavior" classname="UpcomingBirthdaysLeapDayFallbackBehavior" time="0.0802932" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="UpcomingBirthdaysInvalidReferenceDate" classname="UpcomingBirthdaysInvalidReferenceDate" time="0.237276" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTeacherImportUiApplyParityTests" classname="ClassMngrTeacherImportUiApplyParityTests" time="10.7211" status="run">
+		<properties/>
+		<system-out>TEACHER_IMPORT_UI|sidebar|success|teachers=4,native=1,gs=1|sidebarKoreanTeachers=4|notice=information|summary=Import complete.\n\nKorean Teachers: 4 created, 0 updated, 0 unchanged\nNative English Teachers: 1 created, 0 updated, 0 unchanged\nGS Team: 1 created, 0 updated, 0 unchanged
+TEACHER_IMPORT_UI|sidebar|cancel|teachers=0,native=0,gs=0|notice=none
+TEACHER_IMPORT_UI|sidebar|error|teachers=0,native=0,gs=0|notice=warning|text=Creating a GS Team member failed: forced parity failure Unable to fetch row (database error 1811)
+TEACHER_IMPORT_UI|wizard|success|teachers=4,native=1,gs=1|complete=true|completeChanged=1|status=Import complete: 4 Korean teachers created, 0 updated, and 0 unchanged.
+TEACHER_IMPORT_UI|wizard|cancel|teachers=0,native=0,gs=0|result=rejected
+TEACHER_IMPORT_UI|wizard|error|teachers=0,native=0,gs=0|notice=warning|text=Creating a GS Team member failed: forced parity failure Unable to fetch row (database error 1811)|status=unchanged|completeChanged=0
+</system-out>
+	</testcase>
+	<testcase name="TeacherImportUiApplyParityF1061Refresh" classname="TeacherImportUiApplyParityF1061Refresh" time="0.727793" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="TeacherImportUiApplyParityF1061ReloadFailure" classname="TeacherImportUiApplyParityF1061ReloadFailure" time="0.448542" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="TeacherImportUiApplyParityF1285DirectoryReloadFailure" classname="TeacherImportUiApplyParityF1285DirectoryReloadFailure" time="7.77378" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="TeacherImportUiApplyParityF1061SidebarSuccess" classname="TeacherImportUiApplyParityF1061SidebarSuccess" time="0.682688" status="run">
+		<properties/>
+		<system-out>TEACHER_IMPORT_UI|sidebar|success|teachers=4,native=1,gs=1|sidebarKoreanTeachers=4|notice=information|summary=Import complete.\n\nKorean Teachers: 4 created, 0 updated, 0 unchanged\nNative English Teachers: 1 created, 0 updated, 0 unchanged\nGS Team: 1 created, 0 updated, 0 unchanged
+</system-out>
+	</testcase>
+	<testcase name="TeacherImportUiApplyParityF1061SidebarCancel" classname="TeacherImportUiApplyParityF1061SidebarCancel" time="0.613824" status="run">
+		<properties/>
+		<system-out>TEACHER_IMPORT_UI|sidebar|cancel|teachers=0,native=0,gs=0|notice=none
+</system-out>
+	</testcase>
+	<testcase name="TeacherImportUiApplyParityF1061SidebarApplyFailure" classname="TeacherImportUiApplyParityF1061SidebarApplyFailure" time="0.662365" status="run">
+		<properties/>
+		<system-out>TEACHER_IMPORT_UI|sidebar|error|teachers=0,native=0,gs=0|notice=warning|text=Creating a GS Team member failed: forced parity failure Unable to fetch row (database error 1811)
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrPageManagerTests" classname="ClassMngrPageManagerTests" time="119.892" status="fail">
+		<failure message="Timeout"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMyWorkspacePageTests" classname="ClassMngrMyWorkspacePageTests" time="33.6896" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMyClassesPageTests" classname="ClassMngrMyClassesPageTests" time="10.102" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMyClassesPageTeacherDisplayParityTests" classname="ClassMngrMyClassesPageTeacherDisplayParityTests" time="1.39427" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMyClassesPageSummaryParityTests" classname="ClassMngrMyClassesPageSummaryParityTests" time="1.53177" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTypedSignatureRendererTests" classname="ClassMngrTypedSignatureRendererTests" time="2.02484" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassDetailsSavePageTests" classname="ClassMngrClassDetailsSavePageTests" time="119.946" status="fail">
+		<failure message="Timeout"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassDetailsPageSaveParityTests" classname="ClassMngrClassDetailsPageSaveParityTests" time="5.45687" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrInitialSetupWizardClassCreateSaveParityTests" classname="ClassMngrInitialSetupWizardClassCreateSaveParityTests" time="3.08611" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrInitialSetupWizardTeacherCreateParityTests" classname="ClassMngrInitialSetupWizardTeacherCreateParityTests" time="1.5352" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrInitialSetupWizardVisualCapture" classname="ClassMngrInitialSetupWizardVisualCapture" time="15.9194" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassNotesPageReadParityTests" classname="ClassMngrClassNotesPageReadParityTests" time="0.52339" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassNotesPageSaveParityTests" classname="ClassMngrClassNotesPageSaveParityTests" time="0.834528" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrCalendarPageEventMutationParityTests" classname="ClassMngrCalendarPageEventMutationParityTests" time="116.932" status="run">
+		<properties/>
+		<system-out>F383_TRANSCRIPT={"displayed_month":"2026-12","rows":["[2,\"Dec 4 - Dec 6 2026\",\"09:15 - 10:45\",\"F383 Multi Day Timed\",\"Workshop\"]","[3,\"Dec 9\",\"All day\",\"F383 All Day Holiday\",\"Holiday\"]","[4,\"Dec 12\",\"Unknown Time\",\"F383 Unknown Time Event\",\"Other\"]"],"scenario":"current_month"}
+F383_TRANSCRIPT={"after_filter":["[2,\"Nov 3\",\"08:30 - 09:00\",\"F383 Today Boundary\",\"Workshop\"]","[4,\"Dec 3\",\"All day\",\"F383 Day Thirty Boundary\",\"Workshop\"]"],"before_filter":["[2,\"Nov 3\",\"08:30 - 09:00\",\"F383 Today Boundary\",\"Workshop\"]","[3,\"Nov 8\",\"12:00 - 13:00\",\"F383 Filtered Holiday\",\"Holiday\"]","[4,\"Dec 3\",\"All day\",\"F383 Day Thirty Boundary\",\"Workshop\"]"],"excluded":"2026-12-04","filter_toggled_off":"Holiday","last_included":"2026-12-03","scenario":"next_30_days","today":"2026-11-03"}
+F383_TRANSCRIPT={"rows":["[3,\"Nov 4\",\"09:00 - 10:00\",\"F383 Alpha\",\"Workshop\"]","[4,\"Nov 4\",\"09:00 - 10:00\",\"F383 Alpha\",\"Workshop\"]","[5,\"Nov 4\",\"09:00 - 10:00\",\...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrCalendarPreferencesRestoreDefaultsTests" classname="ClassMngrCalendarPreferencesRestoreDefaultsTests" time="10.6877" status="run">
+		<properties/>
+		<system-out>F387_CALENDAR_PREFERENCES_EVENT_RESET_V1 {"applyFailure":{"eventPersistedAfterReopen":true,"signalCount":0,"successStatusEmpty":true,"warningIcon":true,"warningSeen":true,"warningTitle":"Reset Calendar"},"cancel":{"cancelButton":"Cancel","cancelIsDefault":true,"cancelIsReject":true,"eventPersisted":true,"promptTitle":"Reset Calendar?","resetButton":"Reset","resetIsDestructive":true,"signalCount":0,"successStatusEmpty":true,"warningSeen":false},"success":{"eventDeleted":true,"eventVisibleAfterRefresh":false,"eventVisibleBefore":true,"pageVisible":true,"signalArgument":true,"signalCount":1,"successStatus":"Calendar events reset to defaults.","visibleMonthLoadedAfterRefresh":true},"unavailable":{"eventPersistedAfterReopen":true,"promptSeen":false,"signalCount":0,"successStatusEmpty":true}}
+F387_CALENDAR_PREFERENCES_EVENT_RESET_SHA256 92e809f1c75833bfdc181eb10e1587ae6ef8c3a9e9d0eb030afa2d08d59d9a80
+</system-out>
+	</testcase>
+	<testcase name="CalendarPreferencesRejectsOutOfRangeWinterStart" classname="CalendarPreferencesRejectsOutOfRangeWinterStart" time="0.178405" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="CalendarPreferencesRejectsOutOfRangeInternalTermStart" classname="CalendarPreferencesRejectsOutOfRangeInternalTermStart" time="0.178182" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassCoTeacherPageReadParityTests" classname="ClassMngrClassCoTeacherPageReadParityTests" time="0.791665" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTeacherInfoPagePersistenceParityTests" classname="ClassMngrTeacherInfoPagePersistenceParityTests" time="1.21104" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNavigationTeacherReadTests" classname="ClassMngrNavigationTeacherReadTests" time="10.3093" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNavigationTeacherReadParityTests" classname="ClassMngrNavigationTeacherReadParityTests" time="0.860194" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNavigationRosterSessionParityTests" classname="ClassMngrNavigationRosterSessionParityTests" time="1.61384" status="run">
+		<properties/>
+		<system-out>{"case":"closed-session-valid-roster","classesPageCreated":false,"currentPageClassId":-1,"isClasses":false,"isTeacherInfo":true,"leaveConfirmCount":0,"promptCount":0,"qtWarningCount":0,"requestedClassId":1,"rosterSection":false,"teacherDirty":true,"teacherId":1,"teacherNotes":"Unsaved current page state"}
+{"case":"open-session-valid-roster","classesPageCreated":true,"currentPageClassId":1,"isClasses":true,"isTeacherInfo":false,"leaveConfirmCount":1,"promptCount":1,"qtWarningCount":0,"requestedClassId":1,"rosterSection":true,"teacherDirty":false,"teacherId":1,"teacherNotes":""}
+{"case":"invalid-class-id","classesPageCreated":false,"currentPageClassId":-1,"isClasses":false,"isTeacherInfo":true,"leaveConfirmCount":0,"promptCount":0,"qtWarningCount":0,"requestedClassId":0,"rosterSection":false,"teacherDirty":true,"teacherId":1,"teacherNotes":"Unsaved before invalid route"}
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrStaffDirectoryClosedSessionNavigationParityTests" classname="ClassMngrStaffDirectoryClosedSessionNavigationParityTests" time="1.54114" status="run">
+		<properties/>
+		<system-out>{"case":"native_english_teachers","currentPageTeacherInfo":true,"leaveConfirmCount":0,"promptCount":0,"qtWarningCount":0,"requestedPageCreated":false,"requestedPageCurrent":false,"teacherDirty":true,"teacherIdentityPreserved":true,"teacherNotes":"Unsaved F386 current page content","teacherNotesPreserved":true,"teacherServiceAvailable":false,"workspaceOpen":false}
+{"case":"gs_team","currentPageTeacherInfo":true,"leaveConfirmCount":0,"promptCount":0,"qtWarningCount":0,"requestedPageCreated":false,"requestedPageCurrent":false,"teacherDirty":true,"teacherIdentityPreserved":true,"teacherNotes":"Unsaved F386 current page content","teacherNotesPreserved":true,"teacherServiceAvailable":false,"workspaceOpen":false}
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrStaffDirectoryOpenSessionNavigationParityTests" classname="ClassMngrStaffDirectoryOpenSessionNavigationParityTests" time="3.34381" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassRouteAvailabilityParityTests" classname="ClassMngrClassRouteAvailabilityParityTests" time="2.75243" status="run">
+		<properties/>
+		<system-out>{"classesCurrent":false,"classesPageCreated":false,"currentClassId":-1,"detailsSection":false,"evaluationsSection":false,"expectedSection":"details","leaveConfirmCount":0,"notesSection":false,"otherPromptCount":0,"qtWarningCount":0,"requestedClassId":1,"route":"class_details","selectedEvaluation":"","sessionOpen":false,"teacherDirty":true,"teacherId":1,"teacherInfoCurrent":true,"teacherNotes":"Unsaved route-matrix notes"}
+{"classesCurrent":true,"classesPageCreated":true,"currentClassId":1,"detailsSection":true,"evaluationsSection":false,"expectedSection":"details","leaveConfirmCount":1,"notesSection":false,"otherPromptCount":0,"qtWarningCount":0,"requestedClassId":1,"route":"class_details","selectedEvaluation":"","sessionOpen":true,"teacherDirty":false,"teacherId":1,"teacherInfoCurrent":false,"teacherNotes":""}
+{"classesCurrent":false,"classesPageCreated":false,"currentClassId":-1,"detailsSection":false,"evaluationsSection":false,"expectedSection":"notes","leaveConfirmCount":0,"notesSection":false,"otherPromp...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrMyInfoRouteNavigationParityTests" classname="ClassMngrMyInfoRouteNavigationParityTests" time="5.93711" status="run">
+		<properties/>
+		<system-out>{"currentTab":"schedule","expectedTab":"schedule","leaveConfirmCount":0,"otherPromptCount":0,"qtWarningCount":0,"route":"my_workspace","sessionOpen":false,"teacherDirty":true,"teacherId":1,"teacherInfoCurrent":true,"teacherNotes":"Unsaved My Info route notes","teacherPageUnchanged":true,"workspaceCreationEventsDuringRoute":0,"workspaceCurrent":false,"workspacePageCreatedBeforeRoute":true,"workspacePagePresentAfterRoute":true,"workspacePageUnchanged":true}
+{"currentTab":"schedule","expectedTab":"schedule","leaveConfirmCount":1,"otherPromptCount":0,"qtWarningCount":0,"route":"my_workspace","sessionOpen":true,"teacherDirty":false,"teacherId":1,"teacherInfoCurrent":false,"teacherNotes":"","teacherPageUnchanged":true,"workspaceCreationEventsDuringRoute":0,"workspaceCurrent":true,"workspacePageCreatedBeforeRoute":true,"workspacePagePresentAfterRoute":true,"workspacePageUnchanged":true}
+{"currentTab":"schedule","expectedTab":"details","leaveConfirmCount":0,"otherPromptCount":0,"qtWarningCount":0,"route":"my_info_inf...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrSubPrepRouteGateParityTests" classname="ClassMngrSubPrepRouteGateParityTests" time="2.00625" status="run">
+		<properties/>
+		<system-out>{"case":"sidebar-root-closed","currentPage":"teacher-info","expectedSection":"sub_prep_important","leaveConfirmCount":0,"qtWarningCount":0,"routeKey":"sub_prep","routeKeys":["sub_prep"],"routePath":["sub_prep"],"routeType":"page","sameCurrentPagePointer":true,"sessionOpen":false,"subPrepCreated":false,"subPrepCurrent":false,"subPrepSection":"","teacherDirty":true,"teacherIdentity":1,"teacherIdentityPreserved":true,"teacherNotes":"Unsaved F390 teacher notes","teacherPagePreserved":true,"unrelatedPromptCount":0}
+{"case":"sidebar-root-open","currentPage":"sub-prep","expectedSection":"sub_prep_important","leaveConfirmCount":1,"qtWarningCount":0,"routeKey":"sub_prep","routeKeys":["sub_prep"],"routePath":["sub_prep"],"routeType":"page","sameCurrentPagePointer":false,"sessionOpen":true,"subPrepCreated":true,"subPrepCurrent":true,"subPrepSection":"sub_prep_important","teacherDirty":false,"teacherIdentity":1,"teacherIdentityPreserved":true,"teacherNotes":"","teacherPagePreserved":true,"unrelatedPromptCount":0}
+{"case"...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrCampusRouteNavigationParityTests" classname="ClassMngrCampusRouteNavigationParityTests" time="4.20564" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrDocumentCatalogNavigationParityTests" classname="ClassMngrDocumentCatalogNavigationParityTests" time="2.88722" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSidebarClassDeleteParityTests" classname="ClassMngrSidebarClassDeleteParityTests" time="3.64127" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSidebarTeacherDeleteParityTests" classname="ClassMngrSidebarTeacherDeleteParityTests" time="1.93502" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrScheduleTestingLayoutClearParityTests" classname="ClassMngrScheduleTestingLayoutClearParityTests" time="12.2177" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowDocumentCatalogRetranslationParityTests" classname="ClassMngrMainWindowDocumentCatalogRetranslationParityTests" time="3.99879" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowRecentWorkspaceReopenParityTests" classname="ClassMngrMainWindowRecentWorkspaceReopenParityTests" time="3.39747" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowMyWorkspaceSidebarRootNavigationTests" classname="ClassMngrMainWindowMyWorkspaceSidebarRootNavigationTests" time="1.48713" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowClassesSidebarRootNavigationTests" classname="ClassMngrMainWindowClassesSidebarRootNavigationTests" time="14.4877" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowSubPrepSidebarRootNavigationTests" classname="ClassMngrMainWindowSubPrepSidebarRootNavigationTests" time="1.53454" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowInitialSetupEmptyStateNavigationTests" classname="ClassMngrMainWindowInitialSetupEmptyStateNavigationTests" time="3.80514" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowCampusSidebarNavigationTests" classname="ClassMngrMainWindowCampusSidebarNavigationTests" time="2.57814" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowCloseFileParityTests" classname="ClassMngrMainWindowCloseFileParityTests" time="8.85514" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowOpenFileParityTests" classname="ClassMngrMainWindowOpenFileParityTests" time="2.72292" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowExitConfirmationParityTests" classname="ClassMngrMainWindowExitConfirmationParityTests" time="2.76771" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowEditActionParityTests" classname="ClassMngrMainWindowEditActionParityTests" time="4.07091" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowAboutActionParityTests" classname="ClassMngrMainWindowAboutActionParityTests" time="1.13278" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowCheckForUpdatesActionParityTests" classname="ClassMngrMainWindowCheckForUpdatesActionParityTests" time="1.30603" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowAutomaticUpdatePreferenceActionParityTests" classname="ClassMngrMainWindowAutomaticUpdatePreferenceActionParityTests" time="1.9548" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowClassVisibilityPreferencesFailureTests" classname="ClassMngrMainWindowClassVisibilityPreferencesFailureTests" time="24.1662" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowFontSizeActionParityTests" classname="ClassMngrMainWindowFontSizeActionParityTests" time="3.06546" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowThemeActionParityTests" classname="ClassMngrMainWindowThemeActionParityTests" time="9.73304" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowSaveModeActionParityTests" classname="ClassMngrMainWindowSaveModeActionParityTests" time="1.60512" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowDocumentViewerBackgroundActionParityTests" classname="ClassMngrMainWindowDocumentViewerBackgroundActionParityTests" time="1.13162" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowDocumentViewerPageSpacingActionParityTests" classname="ClassMngrMainWindowDocumentViewerPageSpacingActionParityTests" time="1.40371" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowSidebarOverflowTooltipsActionParityTests" classname="ClassMngrMainWindowSidebarOverflowTooltipsActionParityTests" time="2.66474" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowAiCommentVoiceActionParityTests" classname="ClassMngrMainWindowAiCommentVoiceActionParityTests" time="1.67208" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowCustomWebsiteAiCommentProviderActionParityTests" classname="ClassMngrMainWindowCustomWebsiteAiCommentProviderActionParityTests" time="2.92573" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowAiCommentProviderActionParityTests" classname="ClassMngrMainWindowAiCommentProviderActionParityTests" time="1.81777" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowSaveAsExportParityTests" classname="ClassMngrMainWindowSaveAsExportParityTests" time="6.55753" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowScheduleTestingClassesHandoffParityTests" classname="ClassMngrMainWindowScheduleTestingClassesHandoffParityTests" time="17.7588" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowManageCampusesParityTests" classname="ClassMngrMainWindowManageCampusesParityTests" time="4.55201" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMainWindowTeacherSidebarNavigationParityTests" classname="ClassMngrMainWindowTeacherSidebarNavigationParityTests" time="22.694" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrStaffDirectoryNativeEnglishReadTests" classname="ClassMngrStaffDirectoryNativeEnglishReadTests" time="1.77175" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrStaffDirectoryNativeEnglishReadParityTests" classname="ClassMngrStaffDirectoryNativeEnglishReadParityTests" time="1.24354" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrStaffDirectoryNativeEnglishSaveParityTests" classname="ClassMngrStaffDirectoryNativeEnglishSaveParityTests" time="5.64014" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrStaffDirectoryGsTeamReadTests" classname="ClassMngrStaffDirectoryGsTeamReadTests" time="1.38189" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrStaffDirectoryGsTeamReadParityTests" classname="ClassMngrStaffDirectoryGsTeamReadParityTests" time="0.983334" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrStaffDirectoryGsTeamSaveTests" classname="ClassMngrStaffDirectoryGsTeamSaveTests" time="6.61166" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrStaffDirectoryGsTeamSaveParityTests" classname="ClassMngrStaffDirectoryGsTeamSaveParityTests" time="0.759593" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrRosterEditorWidgetSaveTests" classname="ClassMngrRosterEditorWidgetSaveTests" time="9.9799" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrRosterTransferMenuTests" classname="ClassMngrRosterTransferMenuTests" time="4.82126" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrRosterPrintDialogTests" classname="ClassMngrRosterPrintDialogTests" time="6.34837" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSpeakingEvalPageSaveTests" classname="ClassMngrSpeakingEvalPageSaveTests" time="20.1344" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSpeakingEvalPageSaveParityTests" classname="ClassMngrSpeakingEvalPageSaveParityTests" time="0.844311" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassDetailsPageDisplayTests" classname="ClassMngrClassDetailsPageDisplayTests" time="4.09289" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassDetailsPageReadParityTests" classname="ClassMngrClassDetailsPageReadParityTests" time="1.01853" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassAnalyticsPageTests" classname="ClassMngrClassAnalyticsPageTests" time="1.5071" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassAnalyticsPageReadParityTests" classname="ClassMngrClassAnalyticsPageReadParityTests" time="1.61138" status="run">
+		<properties/>
+		<system-out>********* Start testing of ClassAnalyticsPageReadParityTests *********
+Config: Using QtTest library 6.12.0, Qt 6.12.0 (x86_64-little_endian-llp64 shared (dynamic) debug build; by MSVC 2022), windows 11
+PASS   : ClassAnalyticsPageReadParityTests::initTestCase()
+QWARN  : ClassAnalyticsPageReadParityTests::visibleSummaryShapeAndYearToDateMatchFixture() QFontDatabase: Cannot find font directory C:/Qt/6.12.0/msvc2022_64/lib/fonts.
+Note that Qt no longer ships fonts. Deploy some (from https://dejavu-fonts.github.io/ for example) or switch to fontconfig.
+QDEBUG : ClassAnalyticsPageReadParityTests::visibleSummaryShapeAndYearToDateMatchFixture() Checking font existence:
+QDEBUG : ClassAnalyticsPageReadParityTests::visibleSummaryShapeAndYearToDateMatchFixture() ":/assets/fonts/Inter.ttc" true
+QDEBUG : ClassAnalyticsPageReadParityTests::visibleSummaryShapeAndYearToDateMatchFixture() ":/assets/fonts/PretendardVariable.ttf" true
+QDEBUG : ClassAnalyticsPageReadParityTests::visibleSummaryShapeAndYearToDateMatchFixture() [Fon...
+[This part of the test output was removed since it exceeds the threshold of 1024 bytes.]
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrClassesPageTests" classname="ClassMngrClassesPageTests" time="11.7508" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassesPageF1019NavigationSelectionTests" classname="ClassMngrClassesPageF1019NavigationSelectionTests" time="0.345662" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrRosterEditorWidgetImportTests" classname="ClassMngrRosterEditorWidgetImportTests" time="6.00315" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrScheduleImportDialogTests" classname="ClassMngrScheduleImportDialogTests" time="14.5918" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSubPrepPageTests" classname="ClassMngrSubPrepPageTests" time="119.969" status="fail">
+		<failure message="Timeout"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNavigationTabWidgetTests" classname="ClassMngrNavigationTabWidgetTests" time="0.780177" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSidebarStructureTests" classname="ClassMngrSidebarStructureTests" time="1.34004" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrEditableTextTableModelTests" classname="ClassMngrEditableTextTableModelTests" time="1.28186" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrBasePageTests" classname="ClassMngrBasePageTests" time="0.433503" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSchedulePrintModelTests" classname="ClassMngrSchedulePrintModelTests" time="0.420485" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SchedulePrintModelNoncanonicalWeekdayDefaultParity" classname="SchedulePrintModelNoncanonicalWeekdayDefaultParity" time="0.0866189" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SchedulePrintModelTestingModeRegularSlotPolicy" classname="SchedulePrintModelTestingModeRegularSlotPolicy" time="0.0968757" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrScheduleBuilderTests" classname="ClassMngrScheduleBuilderTests" time="0.369343" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSchedulePrintPdfTests" classname="ClassMngrSchedulePrintPdfTests" time="5.90673" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSubPrepPdfTextFinalizerTests" classname="ClassMngrSubPrepPdfTextFinalizerTests" time="41.2987" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSubPrepPrintPdfTests" classname="ClassMngrSubPrepPrintPdfTests" time="35.3433" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSubPrepRosterOutputParityTests" classname="ClassMngrSubPrepRosterOutputParityTests" time="4.79857" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSubPrepPackageServiceTests" classname="ClassMngrSubPrepPackageServiceTests" time="90.2317" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SubPrepPackageServiceClassIdsForDaysProjection" classname="SubPrepPackageServiceClassIdsForDaysProjection" time="0.0681407" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrRosterModelTests" classname="ClassMngrRosterModelTests" time="1.72131" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrRosterRowPreferencesTests" classname="ClassMngrRosterRowPreferencesTests" time="0.360578" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrRosterTemplatePrintServiceTests" classname="ClassMngrRosterTemplatePrintServiceTests" time="9.24602" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrLanguageServiceTests" classname="ClassMngrLanguageServiceTests" time="0.135066" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrLanguagePreferencePortTests" classname="ClassMngrLanguagePreferencePortTests" time="1.66147" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrAiCommentOptionsTests" classname="ClassMngrAiCommentOptionsTests" time="1.83165" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSpeakingAnalyticsTests" classname="ClassMngrSpeakingAnalyticsTests" time="0.360926" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrEvaluationDefaultSelectionTests" classname="ClassMngrEvaluationDefaultSelectionTests" time="0.0910788" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrEvaluationDefaultSelectionIntegrationTests" classname="ClassMngrEvaluationDefaultSelectionIntegrationTests" time="1.07171" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassAnalyticsRankingModelTests" classname="ClassMngrClassAnalyticsRankingModelTests" time="0.12103" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSpeakingEvaluationServiceTests" classname="ClassMngrSpeakingEvaluationServiceTests" time="0.862904" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrYearToDateChartTests" classname="ClassMngrYearToDateChartTests" time="0.903414" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrAcademicCalendarTests" classname="ClassMngrAcademicCalendarTests" time="0.169192" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="AcademicCalendarScheduleValidityPolicy" classname="AcademicCalendarScheduleValidityPolicy" time="0.0535481" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="AcademicCalendarJsonRoundTripAndMalformedFallback" classname="AcademicCalendarJsonRoundTripAndMalformedFallback" time="0.0506461" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="AcademicCalendarInvalidWinterContinuityIsAtomic" classname="AcademicCalendarInvalidWinterContinuityIsAtomic" time="0.142867" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="AcademicYearScheduleDayDistancePolicy" classname="AcademicYearScheduleDayDistancePolicy" time="0.0663586" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrCampusMapTests" classname="ClassMngrCampusMapTests" time="4.92539" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrCampusDashboardPageTests" classname="ClassMngrCampusDashboardPageTests" time="10.0675" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="CampusDashboardCleanRefreshToEmpty" classname="CampusDashboardCleanRefreshToEmpty" time="0.444727" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="CampusDashboardDirtyRefreshToEmpty" classname="CampusDashboardDirtyRefreshToEmpty" time="0.292023" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSignatureImageProcessorTests" classname="ClassMngrSignatureImageProcessorTests" time="0.455013" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSpeakingEvalReportWidgetTests" classname="ClassMngrSpeakingEvalReportWidgetTests" time="15.3272" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSpeakingEvalWidgetlessPdfTests" classname="ClassMngrSpeakingEvalWidgetlessPdfTests" time="5.46461" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSpeakingEvalBatchReportServiceTests" classname="ClassMngrSpeakingEvalBatchReportServiceTests" time="45.7474" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SpeakingEvalAiBatchResponseParser" classname="SpeakingEvalAiBatchResponseParser" time="0.0793898" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SpeakingEvalAiBatchPromptUiParity" classname="SpeakingEvalAiBatchPromptUiParity" time="0.11256" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SpeakingEvalAiSinglePromptUiParity" classname="SpeakingEvalAiSinglePromptUiParity" time="0.543249" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SpeakingEvalDefaultOutputDirectoryIncludesClassScheduleAndEvaluation" classname="SpeakingEvalDefaultOutputDirectoryIncludesClassScheduleAndEvaluation" time="0.0868519" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SpeakingEvalDefaultOutputDirectoryProjectsMixedStartTimes" classname="SpeakingEvalDefaultOutputDirectoryProjectsMixedStartTimes" time="0.0831646" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SpeakingEvalDefaultOutputDirectoryNormalizesClassScheduleTime" classname="SpeakingEvalDefaultOutputDirectoryNormalizesClassScheduleTime" time="0.0935556" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSpeakingEvalReportProjectionAdapterTests" classname="ClassMngrSpeakingEvalReportProjectionAdapterTests" time="0.0961752" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrSpeakingEvalInternalPdfParityTests" classname="ClassMngrSpeakingEvalInternalPdfParityTests" time="8.39899" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SpeakingEvalPowerPointMixedTemplatesRejected" classname="SpeakingEvalPowerPointMixedTemplatesRejected" time="0.188567" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="SpeakingEvalInternalMixedTemplatesAccepted" classname="SpeakingEvalInternalMixedTemplatesAccepted" time="3.29408" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrStartupPerformanceTests" classname="ClassMngrStartupPerformanceTests" time="119.755" status="fail">
+		<failure message="Failed"/>
+		<properties>
+			<property name="cmake_labels" value="memory;performance;startup"/>
+		</properties>
+		<system-out>Representative startup: checkpoint=window-shown, elapsed=1543 ms, platform=windows, workingSet=164921344, peakWorkingSet=164921344, private=99995648, widgets=116, pages=1/11, schedules=1, renders=1
+Representative startup: checkpoint=startup-complete, elapsed=1590 ms, platform=windows, workingSet=164921344, peakWorkingSet=165400576, private=99995648, widgets=116, pages=1/11, schedules=1, renders=1
+Representative startup: checkpoint=settled-5s, elapsed=6939 ms, platform=windows, workingSet=197144576, peakWorkingSet=198565888, private=128999424, widgets=116, pages=1/11, schedules=1, renders=1
+Startup performance: startupComplete=2165 ms, process=2681 ms, widgets=366, pages=2/11, schedules=1, renders=0
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrDatabaseFileFormatTests" classname="ClassMngrDatabaseFileFormatTests" time="0.0803639" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrPhase7NextBlankFixtureTests" classname="ClassMngrPhase7NextBlankFixtureTests" time="0.301201" status="run">
+		<properties>
+			<property name="cmake_labels" value="fixture;next;phase7"/>
+		</properties>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextDocumentCatalogNavigationTests" classname="ClassMngrNextDocumentCatalogNavigationTests" time="0.89152" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextDocumentViewerTests" classname="ClassMngrNextDocumentViewerTests" time="11.5097" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextDocumentCatalogVisualCapture" classname="ClassMngrNextDocumentCatalogVisualCapture" time="1.66986" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextDocumentViewerVisualCapture" classname="ClassMngrNextDocumentViewerVisualCapture" time="13.9762" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextLegacyDocumentViewerVisualCapture" classname="ClassMngrNextLegacyDocumentViewerVisualCapture" time="10.978" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextCampusDirectoryTests" classname="ClassMngrNextCampusDirectoryTests" time="3.86477" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextCampusDirectoryVisualCapture" classname="ClassMngrNextCampusDirectoryVisualCapture" time="76.0657" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextBootstrapTests" classname="ClassMngrNextBootstrapTests" time="21.5196" status="fail">
+		<failure message="Exit code 0xc0000409"/>
+		<properties/>
+		<system-out>ClassMngrNext startup stage=process-created outcome=completed diagnostic=none diagnostic_stage=none
+ClassMngrNext startup stage=core-services-created outcome=failed diagnostic=stage-failed diagnostic_stage=core-services-created
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextInitialSetupVisualCaptureEnglishLight" classname="ClassMngrNextInitialSetupVisualCaptureEnglishLight" time="5.83004" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextInitialSetupVisualCaptureKoreanDark" classname="ClassMngrNextInitialSetupVisualCaptureKoreanDark" time="5.82642" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUsefulLinksSelectionBehavior" classname="ClassMngrNextUsefulLinksSelectionBehavior" time="1.78085" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUsefulLinksEnglishLabelProjection" classname="ClassMngrNextUsefulLinksEnglishLabelProjection" time="1.97879" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUsefulLinksKoreanLabelProjection" classname="ClassMngrNextUsefulLinksKoreanLabelProjection" time="2.14522" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle" classname="ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle" time="1.85069" status="fail">
+		<failure message="Exit code 0xc0000409"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextCoTeacherProjection" classname="ClassMngrNextCoTeacherProjection" time="0.11021" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUsefulLinksVisualCapture_english-light" classname="ClassMngrNextUsefulLinksVisualCapture_english-light" time="2.81139" status="fail">
+		<failure message="SEGFAULT"/>
+		<properties/>
+		<system-out>A crash occurred in C:\Git\ClassMngr-cpp\build\windows-x64-debug\Debug\ClassMngrNextBootstrapTests.exe.
+While testing usefulLinksVisualCapture
+Function time: 1733ms Total time: 1736ms
+
+Exception address: 0x00007FF897A12B15
+Exception code   : 0xc0000005
+Nearby symbol    : QLineEdit::`default constructor closure'
+
+Stack:
+#  1: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+#  2: UnhandledExceptionFilter() - 0x00007FF91FCFF2F0
+#  3: strncpy() - 0x00007FF922948110
+#  4: _C_specific_handler() - 0x00007FF922904B00
+#  5: _chkstk() - 0x00007FF922946410
+#  6: RtlWow64GetCurrentMachine() - 0x00007FF9228A3A10
+#  7: KiUserExceptionDispatcher() - 0x00007FF922945DC0
+#  8: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+#  9: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 10: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 11: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 12: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 13: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 14: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 15: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 16: ApplicationBootstrapTests::usefulLinksVisualCapture() - 0x00007FF7486B7D50
+# 17: ApplicationBootstrapTests::qt_static_metacall() - 0x00007FF74867CFE0
+# 18: QFileInfo::filePath() - 0x00007FF876B508B8
+# 19: QFileInfo::filePath() - 0x00007FF876B508B8
+# 20: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 21: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 22: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 23: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 24: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 25: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 26: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 27: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 28: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 29: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 30: main() - 0x00007FF748804F90
+# 31: invoke_main() - 0x00007FF749BAA2B0
+# 32: __scrt_common_main_seh() - 0x00007FF749BAA0A0
+# 33: __scrt_common_main() - 0x00007FF749BAA080
+# 34: mainCRTStartup() - 0x00007FF749BAA370
+# 35: BaseThreadInitThunk() - 0x00007FF921A7DD90
+# 36: RtlUserThreadStart() - 0x00007FF92285EE20
+
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUsefulLinksVisualCapture_english-dark" classname="ClassMngrNextUsefulLinksVisualCapture_english-dark" time="2.77754" status="fail">
+		<failure message="SEGFAULT"/>
+		<properties/>
+		<system-out>A crash occurred in C:\Git\ClassMngr-cpp\build\windows-x64-debug\Debug\ClassMngrNextBootstrapTests.exe.
+While testing usefulLinksVisualCapture
+Function time: 1989ms Total time: 1993ms
+
+Exception address: 0x00007FF897A12B15
+Exception code   : 0xc0000005
+Nearby symbol    : QLineEdit::`default constructor closure'
+
+Stack:
+#  1: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+#  2: UnhandledExceptionFilter() - 0x00007FF91FCFF2F0
+#  3: strncpy() - 0x00007FF922948110
+#  4: _C_specific_handler() - 0x00007FF922904B00
+#  5: _chkstk() - 0x00007FF922946410
+#  6: RtlWow64GetCurrentMachine() - 0x00007FF9228A3A10
+#  7: KiUserExceptionDispatcher() - 0x00007FF922945DC0
+#  8: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+#  9: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 10: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 11: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 12: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 13: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 14: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 15: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 16: ApplicationBootstrapTests::usefulLinksVisualCapture() - 0x00007FF7486B7D50
+# 17: ApplicationBootstrapTests::qt_static_metacall() - 0x00007FF74867CFE0
+# 18: QFileInfo::filePath() - 0x00007FF876B508B8
+# 19: QFileInfo::filePath() - 0x00007FF876B508B8
+# 20: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 21: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 22: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 23: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 24: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 25: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 26: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 27: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 28: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 29: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 30: main() - 0x00007FF748804F90
+# 31: invoke_main() - 0x00007FF749BAA2B0
+# 32: __scrt_common_main_seh() - 0x00007FF749BAA0A0
+# 33: __scrt_common_main() - 0x00007FF749BAA080
+# 34: mainCRTStartup() - 0x00007FF749BAA370
+# 35: BaseThreadInitThunk() - 0x00007FF921A7DD90
+# 36: RtlUserThreadStart() - 0x00007FF92285EE20
+
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUsefulLinksVisualCapture_korean-light" classname="ClassMngrNextUsefulLinksVisualCapture_korean-light" time="2.6222" status="fail">
+		<failure message="SEGFAULT"/>
+		<properties/>
+		<system-out>A crash occurred in C:\Git\ClassMngr-cpp\build\windows-x64-debug\Debug\ClassMngrNextBootstrapTests.exe.
+While testing usefulLinksVisualCapture
+Function time: 1853ms Total time: 1856ms
+
+Exception address: 0x00007FF897A12B15
+Exception code   : 0xc0000005
+Nearby symbol    : QLineEdit::`default constructor closure'
+
+Stack:
+#  1: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+#  2: UnhandledExceptionFilter() - 0x00007FF91FCFF2F0
+#  3: strncpy() - 0x00007FF922948110
+#  4: _C_specific_handler() - 0x00007FF922904B00
+#  5: _chkstk() - 0x00007FF922946410
+#  6: RtlWow64GetCurrentMachine() - 0x00007FF9228A3A10
+#  7: KiUserExceptionDispatcher() - 0x00007FF922945DC0
+#  8: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+#  9: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 10: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 11: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 12: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 13: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 14: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 15: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 16: ApplicationBootstrapTests::usefulLinksVisualCapture() - 0x00007FF7486B7D50
+# 17: ApplicationBootstrapTests::qt_static_metacall() - 0x00007FF74867CFE0
+# 18: QFileInfo::filePath() - 0x00007FF876B508B8
+# 19: QFileInfo::filePath() - 0x00007FF876B508B8
+# 20: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 21: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 22: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 23: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 24: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 25: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 26: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 27: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 28: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 29: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 30: main() - 0x00007FF748804F90
+# 31: invoke_main() - 0x00007FF749BAA2B0
+# 32: __scrt_common_main_seh() - 0x00007FF749BAA0A0
+# 33: __scrt_common_main() - 0x00007FF749BAA080
+# 34: mainCRTStartup() - 0x00007FF749BAA370
+# 35: BaseThreadInitThunk() - 0x00007FF921A7DD90
+# 36: RtlUserThreadStart() - 0x00007FF92285EE20
+
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUsefulLinksVisualCapture_korean-dark" classname="ClassMngrNextUsefulLinksVisualCapture_korean-dark" time="2.12662" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextCoTeacherSidebarVisualCapture_english-light" classname="ClassMngrNextCoTeacherSidebarVisualCapture_english-light" time="1.42095" status="fail">
+		<failure message="Exit code 0xc0000409"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark" classname="ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark" time="1.34455" status="fail">
+		<failure message="Exit code 0xc0000409"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrTeacherProfileVisualCapture" classname="ClassMngrTeacherProfileVisualCapture" time="4.28952" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrMyDetailsSignatureVisualCapture" classname="ClassMngrMyDetailsSignatureVisualCapture" time="120.005" status="fail">
+		<failure message="Timeout"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests" classname="ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests" time="23.9228" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextThemePresenterTests" classname="ClassMngrNextThemePresenterTests" time="1.19678" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPageHostTests" classname="ClassMngrNextPageHostTests" time="1.87297" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextKoreanTeacherDirectoryActionsTests" classname="ClassMngrNextKoreanTeacherDirectoryActionsTests" time="0.154874" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSharedStaffDirectoryTests" classname="ClassMngrNextSharedStaffDirectoryTests" time="0.835669" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSharedStaffDirectoryVisualCapture" classname="ClassMngrNextSharedStaffDirectoryVisualCapture" time="4.01281" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSharedStaffDirectoryVisualCapture_native_en_US_light" classname="ClassMngrNextSharedStaffDirectoryVisualCapture_native_en_US_light" time="3.17119" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSharedStaffDirectoryVisualCapture_native_ko_KR_dark" classname="ClassMngrNextSharedStaffDirectoryVisualCapture_native_ko_KR_dark" time="3.48248" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSharedStaffDirectoryVisualCapture_gs_en_US_light" classname="ClassMngrNextSharedStaffDirectoryVisualCapture_gs_en_US_light" time="3.03684" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSharedStaffDirectoryVisualCapture_gs_ko_KR_dark" classname="ClassMngrNextSharedStaffDirectoryVisualCapture_gs_ko_KR_dark" time="3.07656" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextTeacherDirectoryVisualCapture" classname="ClassMngrNextTeacherDirectoryVisualCapture" time="1.86652" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark" classname="ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark" time="1.8795" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextTeacherImportWorkflowTests" classname="ClassMngrNextTeacherImportWorkflowTests" time="1.4823" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextTeacherImportVisualCapture" classname="ClassMngrNextTeacherImportVisualCapture" time="5.59573" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextTeacherImportVisualCapture_ko_KR_dark" classname="ClassMngrNextTeacherImportVisualCapture_ko_KR_dark" time="5.04794" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextScheduleImportWorkflowTests" classname="ClassMngrNextScheduleImportWorkflowTests" time="2.85943" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextNavigationTests" classname="ClassMngrNextNavigationTests" time="0.43716" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRuntimeTests" classname="ClassMngrNextApplicationRuntimeTests" time="0.0500123" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUnsavedChangesResolutionTests" classname="ClassMngrNextUnsavedChangesResolutionTests" time="0.077063" status="run">
+		<properties/>
+		<system-out>Next unsaved-changes resolution tests passed.
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPreferencesModelTests" classname="ClassMngrNextPreferencesModelTests" time="0.0679816" status="run">
+		<properties/>
+		<system-out>PreferencesModel tests passed.
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextCommandBusTests" classname="ClassMngrNextCommandBusTests" time="0.0578139" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPromptContractTests" classname="ClassMngrNextPromptContractTests" time="0.0672507" status="run">
+		<properties/>
+		<system-out>Next user-prompt port tests passed.
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextNotificationContractTests" classname="ClassMngrNextNotificationContractTests" time="0.063469" status="run">
+		<properties/>
+		<system-out>Next notification-port tests passed.
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextNotificationPresenterTests" classname="ClassMngrNextNotificationPresenterTests" time="0.476044" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextFileDialogContractTests" classname="ClassMngrNextFileDialogContractTests" time="0.0498638" status="run">
+		<properties/>
+		<system-out>Next file-dialog port tests passed.
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextFileDialogPresenterTests" classname="ClassMngrNextFileDialogPresenterTests" time="87.1139" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPromptPresenterTests" classname="ClassMngrNextPromptPresenterTests" time="0.478686" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextCalendarResourceKeysTests" classname="ClassMngrNextCalendarResourceKeysTests" time="0.0873474" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextResourceLoaderTests" classname="ClassMngrNextResourceLoaderTests" time="0.96282" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out>could not create genuine file symlink fixture; CreateSymbolicLinkW error 1314
+</system-out>
+	</testcase>
+	<testcase name="NextStartupWorkspaceDependencyBoundary" classname="NextStartupWorkspaceDependencyBoundary" time="0.0895283" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextResourceDocumentCatalogTests" classname="ClassMngrNextResourceDocumentCatalogTests" time="0.246151" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextResourceRootResolverTests" classname="ClassMngrNextResourceRootResolverTests" time="0.12941" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextResourceInstallPrefixGuardTests" classname="ClassMngrNextResourceInstallPrefixGuardTests" time="4.0974" status="run">
+		<properties/>
+		<system-out>test_absolute_bindir_and_relative_datadir_reject_changed_prefix (__main__.ResourceInstallPrefixGuardTests.test_absolute_bindir_and_relative_datadir_reject_changed_prefix) ... ok
+test_both_absolute_directories_are_not_guarded (__main__.ResourceInstallPrefixGuardTests.test_both_absolute_directories_are_not_guarded) ... ok
+test_destdir_staging_keeps_configured_prefix_for_mixed_directories (__main__.ResourceInstallPrefixGuardTests.test_destdir_staging_keeps_configured_prefix_for_mixed_directories) ... skipped 'DESTDIR staging semantics are Unix-specific'
+test_relative_bindir_and_absolute_datadir_reject_changed_prefix (__main__.ResourceInstallPrefixGuardTests.test_relative_bindir_and_absolute_datadir_reject_changed_prefix) ... ok
+test_relative_directories_allow_install_prefix_override (__main__.ResourceInstallPrefixGuardTests.test_relative_directories_allow_install_prefix_override) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 3.431s
+
+OK (skipped=1)
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests" classname="ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests" time="0.0464878" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationAcademicYearSchedulePolicyTests" classname="ClassMngrNextApplicationAcademicYearSchedulePolicyTests" time="0.0162598" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleSlotPolicyTests" classname="ClassMngrNextApplicationScheduleSlotPolicyTests" time="0.0478188" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleDisplayModeSourcePolicyTests" classname="ClassMngrNextApplicationScheduleDisplayModeSourcePolicyTests" time="0.0581751" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests" classname="ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests" time="0.0582653" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests" classname="ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests" time="0.111557" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests" classname="ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests" time="0.0545589" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests" classname="ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests" time="0.0711196" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests" classname="ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests" time="0.0601528" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests" classname="ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests" time="2.42632" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests" classname="ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests" time="0.0593298" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationCampusDashboardCampusSavePortTests" classname="ClassMngrNextApplicationCampusDashboardCampusSavePortTests" time="0.0558884" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationCampusDashboardCampusIdentitySavePolicyTests" classname="ClassMngrNextApplicationCampusDashboardCampusIdentitySavePolicyTests" time="0.0630183" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests" classname="ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests" time="0.0532689" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests" classname="ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests" time="0.0551676" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterRowReorderingTests" classname="ClassMngrNextApplicationRosterRowReorderingTests" time="0.0621223" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterRowRemovalTests" classname="ClassMngrNextApplicationRosterRowRemovalTests" time="0.0583896" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterCustomColumnNamePolicyTests" classname="ClassMngrNextApplicationRosterCustomColumnNamePolicyTests" time="0.0542057" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterCustomColumnAppendTests" classname="ClassMngrNextApplicationRosterCustomColumnAppendTests" time="0.0484706" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests" classname="ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests" time="0.0557625" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterRowTransferPreparationTests" classname="ClassMngrNextApplicationRosterRowTransferPreparationTests" time="0.0556573" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterRowTransferUseCaseTests" classname="ClassMngrNextApplicationRosterRowTransferUseCaseTests" time="0.0915976" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterRowAvailabilityTests" classname="ClassMngrNextApplicationRosterRowAvailabilityTests" time="0.054448" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterTransferTargetEligibilityTests" classname="ClassMngrNextApplicationRosterTransferTargetEligibilityTests" time="0.11834" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests" classname="ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests" time="0.129212" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationRosterNameImportPlanTests" classname="ClassMngrNextApplicationSpeakingEvaluationRosterNameImportPlanTests" time="0.0959509" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests" classname="ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests" time="0.0930761" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests" classname="ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests" time="0.0655198" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationStudentNamePairLookupTests" classname="ClassMngrNextApplicationStudentNamePairLookupTests" time="0.065451" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests" classname="ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests" time="0.0485951" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests" classname="ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests" time="0.0641326" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSpeakingEvaluationQtTextMatchPortTests" classname="ClassMngrNextPlatformSpeakingEvaluationQtTextMatchPortTests" time="0.282474" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationReportContentTests" classname="ClassMngrNextApplicationSpeakingEvaluationReportContentTests" time="0.0784889" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests" classname="ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests" time="0.0736579" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests" classname="ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests" time="0.0542088" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests" classname="ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests" time="0.0628114" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests" classname="ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests" time="0.0609353" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationEvaluationDefaultSelectionTests" classname="ClassMngrNextApplicationEvaluationDefaultSelectionTests" time="0.0601809" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassDayFilterPolicyTests" classname="ClassMngrNextApplicationClassDayFilterPolicyTests" time="0.046577" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests" classname="ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests" time="0.0538041" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests" classname="ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests" time="0.071786" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests" classname="ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests" time="0.0707373" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests" classname="ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests" time="0.0794717" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationInitialSetupClassTimesRequirementTests" classname="ClassMngrNextApplicationInitialSetupClassTimesRequirementTests" time="0.053256" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests" classname="ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests" time="0.0680647" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationStartupUpdateCheckUseCaseTests" classname="ClassMngrNextApplicationStartupUpdateCheckUseCaseTests" time="0.0640949" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationManualUpdateCheckUseCaseTests" classname="ClassMngrNextApplicationManualUpdateCheckUseCaseTests" time="0.0582737" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSkippedUpdateVersionPolicyTests" classname="ClassMngrNextApplicationSkippedUpdateVersionPolicyTests" time="0.0716977" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationInitialSetupLifecycleTests" classname="ClassMngrNextApplicationInitialSetupLifecycleTests" time="0.0537676" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformInitialSetupLifecycleAdapterTests" classname="ClassMngrNextPlatformInitialSetupLifecycleAdapterTests" time="0.622512" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformWorkspaceStoreInitialSetupLifecycleAdapterTests" classname="ClassMngrNextPlatformWorkspaceStoreInitialSetupLifecycleAdapterTests" time="1.37473" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextWorkspaceCreationFlowTests" classname="ClassMngrNextWorkspaceCreationFlowTests" time="2.2368" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextWorkspaceOpenFlowTests" classname="ClassMngrNextWorkspaceOpenFlowTests" time="1.67468" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextWorkspaceInterruptedRecoveryFlowTests" classname="ClassMngrNextWorkspaceInterruptedRecoveryFlowTests" time="0.390054" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextWorkspaceSaveAsFlowTests" classname="ClassMngrNextWorkspaceSaveAsFlowTests" time="1.17438" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextWorkspaceExportFlowTests" classname="ClassMngrNextWorkspaceExportFlowTests" time="1.23791" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformWorkspaceStoreInitialSetupTeacherEntryPersistenceTests" classname="ClassMngrNextPlatformWorkspaceStoreInitialSetupTeacherEntryPersistenceTests" time="0.756728" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformWorkspaceStoreTeacherDirectoryTests" classname="ClassMngrNextPlatformWorkspaceStoreTeacherDirectoryTests" time="0.845423" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformWorkspaceStoreStaffDirectoryTests" classname="ClassMngrNextPlatformWorkspaceStoreStaffDirectoryTests" time="1.23091" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformWorkspaceStoreCustomColorPalettePreferencesPortTests" classname="ClassMngrNextPlatformWorkspaceStoreCustomColorPalettePreferencesPortTests" time="0.665902" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformWorkspaceStorePersonalDetailsPortTests" classname="ClassMngrNextPlatformWorkspaceStorePersonalDetailsPortTests" time="2.54773" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextMyWorkspacePageTests" classname="ClassMngrNextMyWorkspacePageTests" time="0.990187" status="fail">
+		<failure message="Exit code 0xc0000409"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextMyWorkspaceVisualCapture" classname="ClassMngrNextMyWorkspaceVisualCapture" time="119.961" status="fail">
+		<failure message="Timeout"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextMyClassesPageTests" classname="ClassMngrNextMyClassesPageTests" time="2.83555" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSubPrepGatewayTests" classname="ClassMngrNextSubPrepGatewayTests" time="1.04355" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSubPrepPageTests" classname="ClassMngrNextSubPrepPageTests" time="0.6817" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSubPrepVisualCapture" classname="ClassMngrNextSubPrepVisualCapture" time="45.8596" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSpeakingEvaluationPageTests" classname="ClassMngrNextSpeakingEvaluationPageTests" time="33.1444" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextClassesNavigatorPageTests" classname="ClassMngrNextClassesNavigatorPageTests" time="15.2288" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextTestingClassesManagerTests" classname="ClassMngrNextTestingClassesManagerTests" time="10.3236" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextRosterEditorTests" classname="ClassMngrNextRosterEditorTests" time="20.5467" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextClassTransferWorkflowTests" classname="ClassMngrNextClassTransferWorkflowTests" time="8.84512" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextClassTransferVisualCapture" classname="ClassMngrNextClassTransferVisualCapture" time="13.4814" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextTestingClassesVisualCapture" classname="ClassMngrNextTestingClassesVisualCapture" time="29.9448" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextClassesFullShellVisualCapture" classname="ClassMngrNextClassesFullShellVisualCapture" time="12.0593" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextClassesFullWindowStateVisualCapture" classname="ClassMngrNextClassesFullWindowStateVisualCapture" time="119.987" status="fail">
+		<failure message="Timeout"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextClassesNavigatorVisualCapture" classname="ClassMngrNextClassesNavigatorVisualCapture" time="1.79899" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextClassesDetailsCoTeacherVisualCapture" classname="ClassMngrNextClassesDetailsCoTeacherVisualCapture" time="107.558" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextClassesNotesVisualCapture" classname="ClassMngrNextClassesNotesVisualCapture" time="54.7612" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextClassesAnalyticsVisualCapture" classname="ClassMngrNextClassesAnalyticsVisualCapture" time="60.5461" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextClassesNavigatorWorkspaceStoreTests" classname="ClassMngrNextClassesNavigatorWorkspaceStoreTests" time="119.981" status="fail">
+		<failure message="Timeout"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextMyClassesVisualCapture" classname="ClassMngrNextMyClassesVisualCapture" time="78.2888" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrUpdateControllerAutomaticStartupTests" classname="ClassMngrUpdateControllerAutomaticStartupTests" time="8.59423" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests" classname="ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests" time="0.453374" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextDomainContractTests" classname="ClassMngrNextDomainContractTests" time="0.0896197" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationContractTests" classname="ClassMngrNextApplicationContractTests" time="0.0936144" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationStateTests" classname="ClassMngrNextApplicationStateTests" time="0.0853483" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationWorkspaceCoordinatorTests" classname="ClassMngrNextApplicationWorkspaceCoordinatorTests" time="0.0995055" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRecentWorkspaceHistoryUseCaseTests" classname="ClassMngrNextApplicationRecentWorkspaceHistoryUseCaseTests" time="0.118936" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests" classname="ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests" time="0.124242" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUpcomingBirthdaysFlowTests" classname="ClassMngrNextUpcomingBirthdaysFlowTests" time="0.130788" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformWorkspaceStoreUpcomingBirthdayDirectoriesTests" classname="ClassMngrNextPlatformWorkspaceStoreUpcomingBirthdayDirectoriesTests" time="0.922567" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUpcomingBirthdaysVisualCaptureEnLight" classname="ClassMngrNextUpcomingBirthdaysVisualCaptureEnLight" time="1.41002" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUpcomingBirthdaysVisualCaptureKoDark" classname="ClassMngrNextUpcomingBirthdaysVisualCaptureKoDark" time="0.97736" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="NextApplicationUpcomingBirthdayScheduleUseCaseOrdering" classname="NextApplicationUpcomingBirthdayScheduleUseCaseOrdering" time="0.0527869" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="NextApplicationUpcomingBirthdayScheduleUseCaseInvalidReferenceDate" classname="NextApplicationUpcomingBirthdayScheduleUseCaseInvalidReferenceDate" time="0.0390727" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSelectionTests" classname="ClassMngrNextApplicationSelectionTests" time="0.111011" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationImportJobTests" classname="ClassMngrNextApplicationImportJobTests" time="0.101082" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationImportJobCoordinatorTests" classname="ClassMngrNextApplicationImportJobCoordinatorTests" time="0.109804" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationReportJobTests" classname="ClassMngrNextApplicationReportJobTests" time="0.11728" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationReportJobCoordinatorTests" classname="ClassMngrNextApplicationReportJobCoordinatorTests" time="0.11874" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationImportReviewTests" classname="ClassMngrNextApplicationImportReviewTests" time="0.10492" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationDocumentCatalogTests" classname="ClassMngrNextApplicationDocumentCatalogTests" time="0.211447" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationDocumentCatalogUseCaseTests" classname="ClassMngrNextApplicationDocumentCatalogUseCaseTests" time="0.121301" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationDocumentContentTests" classname="ClassMngrNextApplicationDocumentContentTests" time="0.113266" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassSummaryTests" classname="ClassMngrNextApplicationClassSummaryTests" time="0.160774" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepPackageRequestValidationTests" classname="ClassMngrNextApplicationSubPrepPackageRequestValidationTests" time="0.0853602" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepSelectedClassIdsTests" classname="ClassMngrNextApplicationSubPrepSelectedClassIdsTests" time="0.0782024" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepVacationSelectionPolicyTests" classname="ClassMngrNextApplicationSubPrepVacationSelectionPolicyTests" time="0.185632" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests" classname="ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests" time="0.0711962" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepMeetingTimeGroupingPolicyTests" classname="ClassMngrNextApplicationSubPrepMeetingTimeGroupingPolicyTests" time="0.0832455" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests" classname="ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests" time="0.0758454" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests" classname="ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests" time="0.0643695" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests" classname="ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests" time="0.076719" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepPrintOrderPolicyTests" classname="ClassMngrNextApplicationSubPrepPrintOrderPolicyTests" time="0.0905166" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests" classname="ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests" time="0.0768387" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTestingClassesOrderingPolicyTests" classname="ClassMngrNextApplicationTestingClassesOrderingPolicyTests" time="0.0722275" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationPreferredNameSelectionPolicyTests" classname="ClassMngrNextApplicationPreferredNameSelectionPolicyTests" time="0.0787988" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests" classname="ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests" time="0.132866" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepPrintSourceQueryTests" classname="ClassMngrNextApplicationSubPrepPrintSourceQueryTests" time="1.14852" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassCoTeacherPageReadQueryTests" classname="ClassMngrNextApplicationClassCoTeacherPageReadQueryTests" time="0.208593" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassCoTeacherTeacherChoicesReadQueryTests" classname="ClassMngrNextApplicationClassCoTeacherTeacherChoicesReadQueryTests" time="0.129041" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassNotesPageReadQueryTests" classname="ClassMngrNextApplicationClassNotesPageReadQueryTests" time="0.111067" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSelectedClassGradeReadQueryTests" classname="ClassMngrNextApplicationSelectedClassGradeReadQueryTests" time="0.116935" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests" classname="ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests" time="0.157463" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests" classname="ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests" time="0.11885" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassNotesSavePortTests" classname="ClassMngrNextApplicationClassNotesSavePortTests" time="0.358481" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassDetailsSaveUseCaseTests" classname="ClassMngrNextApplicationClassDetailsSaveUseCaseTests" time="0.136774" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextScheduleEditorDialogParityTests" classname="ClassMngrNextScheduleEditorDialogParityTests" time="2.50185" status="run">
+		<properties/>
+		<system-out>SCHEDULE_EDITOR_DIALOG|cancel|closed=1,warning=none,unchanged=1
+SCHEDULE_EDITOR_DIALOG|unchanged-save|grade=E4,level=Theseus,teacher=visible,room=visible,hidden=preserved,schedules=regular+intensive
+SCHEDULE_EDITOR_DIALOG|grade-change|grade=E5,level=Artemis,books=cleared,other-details=preserved,schedules=regular+intensive
+SCHEDULE_EDITOR_DIALOG|level-change|grade=E4,level=Perseus,books=cleared,other-details=preserved,schedules=regular+intensive
+SCHEDULE_EDITOR_DIALOG|technical-write-failure|warning=Could Not Save,open=1,unchanged=1
+SCHEDULE_EDITOR_DIALOG|transient-read-failure|warnings=Load Class Information+Could Not Save,open=1,unchanged=1,writes=0
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests" classname="ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests" time="0.0945961" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassDetailsValidationContextQueryTests" classname="ClassMngrNextApplicationClassDetailsValidationContextQueryTests" time="0.0996417" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassDetailsValidationPolicyTests" classname="ClassMngrNextApplicationClassDetailsValidationPolicyTests" time="0.109131" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextScheduleEditorDialogSaveTests" classname="ClassMngrNextScheduleEditorDialogSaveTests" time="2.01985" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterSaveUseCaseTests" classname="ClassMngrNextApplicationRosterSaveUseCaseTests" time="0.113373" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterReadQueryTests" classname="ClassMngrNextApplicationRosterReadQueryTests" time="0.11421" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterColumnNamesBatchReadQueryTests" classname="ClassMngrNextApplicationRosterColumnNamesBatchReadQueryTests" time="0.100915" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests" classname="ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests" time="0.0812079" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests" classname="ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests" time="0.0903885" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassesNavigationSnapshotTests" classname="ClassMngrNextApplicationClassesNavigationSnapshotTests" time="0.0846443" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassByIdReadQueryTests" classname="ClassMngrNextApplicationClassByIdReadQueryTests" time="0.10428" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassesListReadQueryTests" classname="ClassMngrNextApplicationClassesListReadQueryTests" time="0.140921" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests" classname="ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests" time="0.692269" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassesListReadPortTests" classname="ClassMngrNextPlatformApplicationServicesClassesListReadPortTests" time="1.03516" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests" classname="ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests" time="0.152743" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationQueryTests" classname="ClassMngrNextApplicationSpeakingEvaluationQueryTests" time="0.111355" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests" classname="ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests" time="0.0717678" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassDetailsPageQueryTests" classname="ClassMngrNextApplicationClassDetailsPageQueryTests" time="0.0883475" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests" classname="ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests" time="0.110473" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationMyClassesClassSummaryBatchReadQueryTests" classname="ClassMngrNextApplicationMyClassesClassSummaryBatchReadQueryTests" time="0.0973979" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests" classname="ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests" time="0.122486" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests" classname="ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests" time="0.0925045" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleEditorClassInfoQueryTests" classname="ClassMngrNextApplicationScheduleEditorClassInfoQueryTests" time="0.126455" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests" classname="ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests" time="2.15756" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepClassDetailsQueryTests" classname="ClassMngrNextApplicationSubPrepClassDetailsQueryTests" time="0.106129" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepClassInformationStateTests" classname="ClassMngrNextApplicationSubPrepClassInformationStateTests" time="0.0965909" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassTransferTests" classname="ClassMngrNextApplicationClassTransferTests" time="0.233053" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassTransferApplyUseCaseTests" classname="ClassMngrNextApplicationClassTransferApplyUseCaseTests" time="0.107717" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassTransferApplyPackageAdapterTests" classname="ClassMngrClassTransferApplyPackageAdapterTests" time="0.127953" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests" classname="ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests" time="119.987" status="fail">
+		<failure message="Timeout"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassTransferPreviewQueryTests" classname="ClassMngrNextApplicationClassTransferPreviewQueryTests" time="0.0816643" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassTransferExportQueryTests" classname="ClassMngrNextApplicationClassTransferExportQueryTests" time="1.22888" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformClassTransferExportSourceTests" classname="ClassMngrNextPlatformClassTransferExportSourceTests" time="3.05091" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleViewTests" classname="ClassMngrNextApplicationScheduleViewTests" time="0.662437" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationCalendarEventTests" classname="ClassMngrNextApplicationCalendarEventTests" time="0.888432" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationCalendarEventImportPlanTests" classname="ClassMngrNextApplicationCalendarEventImportPlanTests" time="0.120799" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationCalendarEventImportUseCaseTests" classname="ClassMngrNextApplicationCalendarEventImportUseCaseTests" time="1.08527" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationCalendarEventImportSignatureTests" classname="ClassMngrNextApplicationCalendarEventImportSignatureTests" time="0.0859169" status="run">
+		<properties/>
+		<system-out>5 Calendar Import signature cases passed
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleImportStateValidationTests" classname="ClassMngrNextApplicationScheduleImportStateValidationTests" time="0.109556" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleImportStateSnapshotTests" classname="ClassMngrNextApplicationScheduleImportStateSnapshotTests" time="0.0898513" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleImportMatchingProjectionTests" classname="ClassMngrNextApplicationScheduleImportMatchingProjectionTests" time="0.0944948" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleImportReviewDecisionsTests" classname="ClassMngrNextApplicationScheduleImportReviewDecisionsTests" time="0.0790148" status="run">
+		<properties/>
+		<system-out>41 Schedule Import decision cases passed
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleImportReviewReadinessTests" classname="ClassMngrNextApplicationScheduleImportReviewReadinessTests" time="0.0555815" status="run">
+		<properties/>
+		<system-out>4 Schedule Import readiness cases passed
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleImportApplyUseCaseTests" classname="ClassMngrNextApplicationScheduleImportApplyUseCaseTests" time="0.0668211" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests" classname="ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests" time="0.0652241" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests" classname="ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests" time="0.0574485" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests" classname="ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests" time="0.0609835" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleImportPlanValidationTests" classname="ClassMngrNextApplicationScheduleImportPlanValidationTests" time="0.0611146" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationKoreanTeacherImportUpdateTests" classname="ClassMngrNextApplicationKoreanTeacherImportUpdateTests" time="0.0532411" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests" classname="ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests" time="0.0548072" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationGsTeamImportUpdateTests" classname="ClassMngrNextApplicationGsTeamImportUpdateTests" time="0.0708124" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTeacherImportPlanValidationTests" classname="ClassMngrNextApplicationTeacherImportPlanValidationTests" time="0.0628303" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTeacherImportMatchCardinalityTests" classname="ClassMngrNextApplicationTeacherImportMatchCardinalityTests" time="0.0459209" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTeacherImportUseCaseTests" classname="ClassMngrNextApplicationTeacherImportUseCaseTests" time="0.0631476" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTeacherProfileEditTests" classname="ClassMngrNextApplicationTeacherProfileEditTests" time="0.0638666" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTeacherProfileReadQueryTests" classname="ClassMngrNextApplicationTeacherProfileReadQueryTests" time="0.0871702" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTeacherDisplayNameBatchReadQueryTests" classname="ClassMngrNextApplicationTeacherDisplayNameBatchReadQueryTests" time="0.10029" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTeacherImportLatestSourceDateReadQueryTests" classname="ClassMngrNextApplicationTeacherImportLatestSourceDateReadQueryTests" time="0.0847321" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationNativeEnglishTeacherDirectoryReadQueryTests" classname="ClassMngrNextApplicationNativeEnglishTeacherDirectoryReadQueryTests" time="0.0937439" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationNativeEnglishTeacherBirthdayDirectoryReadQueryTests" classname="ClassMngrNextApplicationNativeEnglishTeacherBirthdayDirectoryReadQueryTests" time="0.111342" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationKoreanTeacherBirthdayDirectoryReadQueryTests" classname="ClassMngrNextApplicationKoreanTeacherBirthdayDirectoryReadQueryTests" time="0.093829" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests" classname="ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests" time="0.0885105" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationGsTeamDirectorySaveTests" classname="ClassMngrNextApplicationGsTeamDirectorySaveTests" time="0.0784266" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationGsTeamDirectoryReadQueryTests" classname="ClassMngrNextApplicationGsTeamDirectoryReadQueryTests" time="0.149481" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationGsTeamBirthdayDirectoryReadQueryTests" classname="ClassMngrNextApplicationGsTeamBirthdayDirectoryReadQueryTests" time="0.0860923" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassCoTeacherAssignmentTests" classname="ClassMngrNextApplicationClassCoTeacherAssignmentTests" time="0.0706419" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrCalendarEventImportParityTests" classname="ClassMngrCalendarEventImportParityTests" time="1.42785" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepCampusDirectoryQueryTests" classname="ClassMngrNextApplicationSubPrepCampusDirectoryQueryTests" time="0.108598" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationCalendarEventImportSignatureQueryPortTests" classname="ClassMngrNextApplicationCalendarEventImportSignatureQueryPortTests" time="0.0795193" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationCalendarEventQueryPortTests" classname="ClassMngrNextApplicationCalendarEventQueryPortTests" time="0.0822127" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationCampusDirectoryTests" classname="ClassMngrNextApplicationCampusDirectoryTests" time="0.976718" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationUserPreferencesTests" classname="ClassMngrNextApplicationUserPreferencesTests" time="0.115781" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerExcelImportTimeoutPortTests" classname="ClassMngrNextPlatformSettingsManagerExcelImportTimeoutPortTests" time="0.397388" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerAutomaticUpdatePreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerAutomaticUpdatePreferencesPortTests" time="0.379142" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerAiCommentCustomWebsitePortTests" classname="ClassMngrNextPlatformSettingsManagerAiCommentCustomWebsitePortTests" time="0.342459" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerAiCommentVoicePreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerAiCommentVoicePreferencesPortTests" time="0.600563" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerAiCommentProviderPreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerAiCommentProviderPreferencesPortTests" time="0.357765" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests" time="0.310021" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerDocumentViewerBackgroundPreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerDocumentViewerBackgroundPreferencesPortTests" time="0.310767" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests" time="0.46246" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerSaveModePreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerSaveModePreferencesPortTests" time="0.257812" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests" time="0.458814" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerDialogGeometryPreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerDialogGeometryPreferencesPortTests" time="0.0841858" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerLanguagePreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerLanguagePreferencesPortTests" time="0.344185" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerUpcomingBirthdayDismissalPortTests" classname="ClassMngrNextPlatformSettingsManagerUpcomingBirthdayDismissalPortTests" time="0.669873" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerSkippedUpdateVersionPortTests" classname="ClassMngrNextPlatformSettingsManagerSkippedUpdateVersionPortTests" time="0.524408" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerPowerPointDataAccessNoticePortTests" classname="ClassMngrNextPlatformSettingsManagerPowerPointDataAccessNoticePortTests" time="0.314602" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests" time="0.880171" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerRecentWorkspaceHistoryPortTests" classname="ClassMngrNextPlatformSettingsManagerRecentWorkspaceHistoryPortTests" time="0.533185" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests" classname="ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests" time="0.622852" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerLastDatabaseDirectoryPortTests" classname="ClassMngrNextPlatformSettingsManagerLastDatabaseDirectoryPortTests" time="0.310074" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformLegacyWorkspaceGatewayTests" classname="ClassMngrNextPlatformLegacyWorkspaceGatewayTests" time="0.333954" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesWorkspacePortTests" classname="ClassMngrNextPlatformApplicationServicesWorkspacePortTests" time="6.21929" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests" classname="ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests" time="0.191791" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests" classname="ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests" time="20.4007" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSubPrepClassDetailsPortTests" classname="ClassMngrNextPlatformApplicationServicesSubPrepClassDetailsPortTests" time="0.554135" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSubPrepScheduleSummaryPortTests" classname="ClassMngrNextPlatformApplicationServicesSubPrepScheduleSummaryPortTests" time="0.554441" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests" classname="ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests" time="0.127254" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests" classname="ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests" time="2.45799" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests" classname="ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests" time="1.13641" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests" classname="ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests" time="1.12866" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests" classname="ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests" time="2.83437" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests" classname="ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests" time="1.08026" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests" classname="ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests" time="1.15599" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformRosterWindowSaveTests" classname="ClassMngrNextPlatformRosterWindowSaveTests" time="2.63986" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesRosterSavePortTests" classname="ClassMngrNextPlatformApplicationServicesRosterSavePortTests" time="2.50931" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesRosterReadPortTests" classname="ClassMngrNextPlatformApplicationServicesRosterReadPortTests" time="5.71928" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests" classname="ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests" time="1.95586" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesRosterColumnNamesBatchReadPortTests" classname="ClassMngrNextPlatformApplicationServicesRosterColumnNamesBatchReadPortTests" time="1.60648" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassesNavigationReadPortTests" classname="ClassMngrNextPlatformApplicationServicesClassesNavigationReadPortTests" time="0.81301" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests" classname="ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests" time="2.22875" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests" classname="ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests" time="1.62871" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests" classname="ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests" time="1.58389" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests" classname="ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests" time="1.67436" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesMyClassesClassSummaryBatchReadPortTests" classname="ClassMngrNextPlatformApplicationServicesMyClassesClassSummaryBatchReadPortTests" time="0.510986" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests" classname="ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests" time="0.857116" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests" classname="ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests" time="1.35918" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests" classname="ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests" time="1.36472" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests" classname="ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests" time="1.07206" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests" classname="ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests" time="1.04448" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests" classname="ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests" time="1.18211" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests" time="1.06109" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests" classname="ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests" time="2.13716" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPortTests" classname="ClassMngrNextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPortTests" time="0.852499" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests" classname="ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests" time="0.811902" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests" classname="ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests" time="0.609751" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTeacherDisplayNameBatchReadPortTests" classname="ClassMngrNextPlatformApplicationServicesTeacherDisplayNameBatchReadPortTests" time="0.587029" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests" classname="ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests" time="0.479403" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests" classname="ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests" time="0.969691" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests" classname="ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests" time="0.704767" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPortTests" classname="ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPortTests" time="0.647144" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests" classname="ClassMngrNextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests" time="0.770643" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests" classname="ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests" time="0.874175" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesGsTeamDirectorySavePortTests" classname="ClassMngrNextPlatformApplicationServicesGsTeamDirectorySavePortTests" time="1.11703" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests" classname="ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests" time="0.742534" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesGsTeamBirthdayDirectoryReadPortTests" classname="ClassMngrNextPlatformApplicationServicesGsTeamBirthdayDirectoryReadPortTests" time="0.576277" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests" classname="ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests" time="2.66558" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrClassCoTeacherAssignmentPersistenceParityTests" classname="ClassMngrClassCoTeacherAssignmentPersistenceParityTests" time="0.941849" status="run">
+		<properties/>
+		<system-out>F355_TRANSCRIPT {"scenario":"canonical_assign","success":true,"error_code":"","message":"","observation":"teacher_assigned"}
+F355_TRANSCRIPT {"scenario":"unassign","success":true,"error_code":"","message":"","observation":"teacher_id_null"}
+F355_TRANSCRIPT {"scenario":"invalid_notes","success":false,"error_code":"Technical","message":"Class information validation failed: notes: validation.length.out_of_bounds","observation":"assignment_rejected"}
+F355_TRANSCRIPT {"scenario":"regular_before_intensive_conflict","success":false,"error_code":"Technical","message":"Class schedule conflict: Monday 9:00 AM\u20139:50 AM conflicts with F355 Regular Conflict Source.","observation":"regular_conflict_selected"}
+F355_TRANSCRIPT {"scenario":"missing_class_info_row","success":true,"error_code":"","message":"","observation":"assigned_with_schema_defaults"}
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextFeatureClassCoTeacherPageTests" classname="ClassMngrNextFeatureClassCoTeacherPageTests" time="6.33511" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="NextFeatureClassCoTeacherWideTeacherIdentity" classname="NextFeatureClassCoTeacherWideTeacherIdentity" time="0.364965" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextFeatureClassNotesPageTests" classname="ClassMngrNextFeatureClassNotesPageTests" time="7.71297" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationMyInfoCampusDirectoryQueryPortTests" classname="ClassMngrNextApplicationMyInfoCampusDirectoryQueryPortTests" time="0.097541" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests" classname="ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests" time="8.46479" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSubPrepCampusDirectoryQueryAdapterTests" classname="ClassMngrNextPlatformSubPrepCampusDirectoryQueryAdapterTests" time="0.468695" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesCalendarEventPortTests" classname="ClassMngrNextPlatformApplicationServicesCalendarEventPortTests" time="28.9934" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests" time="1.09976" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests" time="1.14388" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests" time="1.01392" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests" time="1.20121" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests" time="1.62471" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrColorUtilsCustomColorPaletteTests" classname="ClassMngrColorUtilsCustomColorPaletteTests" time="1.29121" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests" time="1.49047" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformCalendarEventImportCampusCodeQueryTests" classname="ClassMngrNextPlatformCalendarEventImportCampusCodeQueryTests" time="0.137415" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests" classname="ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests" time="0.133891" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformCampusDashboardSelectedCampusReadAdapterTests" classname="ClassMngrNextPlatformCampusDashboardSelectedCampusReadAdapterTests" time="0.150613" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests" classname="ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests" time="0.354088" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformMyInfoCampusDirectoryQueryAdapterTests" classname="ClassMngrNextPlatformMyInfoCampusDirectoryQueryAdapterTests" time="0.208547" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests" time="1.24425" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests" classname="ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests" time="1.34486" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests" classname="ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests" time="2.28148" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests" time="2.02517" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests" time="1.07588" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests" time="1.99953" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleSlotStateReadQueryTests" classname="ClassMngrNextApplicationScheduleSlotStateReadQueryTests" time="0.102707" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests" classname="ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests" time="0.263815" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests" classname="ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests" time="0.10126" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTestingClassDetailsReadQueryTests" classname="ClassMngrNextApplicationTestingClassDetailsReadQueryTests" time="0.086946" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests" classname="ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests" time="0.0803205" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTestingClassCreateUseCaseTests" classname="ClassMngrNextApplicationTestingClassCreateUseCaseTests" time="0.091201" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassCreateUseCaseTests" classname="ClassMngrNextApplicationClassCreateUseCaseTests" time="0.188127" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTestingClassDeleteUseCaseTests" classname="ClassMngrNextApplicationTestingClassDeleteUseCaseTests" time="0.0985806" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassDeleteUseCaseTests" classname="ClassMngrNextApplicationClassDeleteUseCaseTests" time="0.0989364" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTeacherDeleteUseCaseTests" classname="ClassMngrNextApplicationTeacherDeleteUseCaseTests" time="0.0934979" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTeacherCreateUseCaseTests" classname="ClassMngrNextApplicationTeacherCreateUseCaseTests" time="0.130019" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleTestingAssignmentSaveUseCaseTests" classname="ClassMngrNextApplicationScheduleTestingAssignmentSaveUseCaseTests" time="0.103266" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleTestingLayoutClearUseCaseTests" classname="ClassMngrNextApplicationScheduleTestingLayoutClearUseCaseTests" time="0.105169" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationScheduleSlotStateSaveTests" classname="ClassMngrNextApplicationScheduleSlotStateSaveTests" time="0.115774" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests" time="0.669499" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests" time="1.09222" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests" time="1.29575" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationTestingTeacherChoicesReadQueryTests" classname="ClassMngrNextApplicationTestingTeacherChoicesReadQueryTests" time="0.104537" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests" classname="ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests" time="1.01304" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests" classname="ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests" time="0.117953" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests" classname="ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests" time="0.103775" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests" classname="ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests" time="0.838311" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests" classname="ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests" time="0.611524" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests" classname="ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests" time="1.51577" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests" classname="ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests" time="1.63588" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests" classname="ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests" time="1.27172" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassCreatePortTests" classname="ClassMngrNextPlatformApplicationServicesClassCreatePortTests" time="0.705067" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTestingClassDeletePortTests" classname="ClassMngrNextPlatformApplicationServicesTestingClassDeletePortTests" time="0.708444" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassDeletePortTests" classname="ClassMngrNextPlatformApplicationServicesClassDeletePortTests" time="1.16092" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTeacherDeletePortTests" classname="ClassMngrNextPlatformApplicationServicesTeacherDeletePortTests" time="0.90595" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesTeacherCreatePortTests" classname="ClassMngrNextPlatformApplicationServicesTeacherCreatePortTests" time="1.01641" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests" time="0.913604" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleTestingLayoutClearPortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleTestingLayoutClearPortTests" time="0.669937" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests" time="0.915473" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests" time="2.04137" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests" time="8.69278" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests" time="1.14325" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests" time="1.75586" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests" time="1.33459" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests" classname="ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests" time="1.44302" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests" classname="ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests" time="1.26501" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests" classname="ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests" time="1.24215" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests" time="1.22349" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests" classname="ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests" time="1.00993" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformDocumentContentResourcePortTests" classname="ClassMngrNextPlatformDocumentContentResourcePortTests" time="1.5842" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformDocumentExportResourcePortTests" classname="ClassMngrNextPlatformDocumentExportResourcePortTests" time="1.47877" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformQtPdfSessionReleaseTests" classname="ClassMngrNextPlatformQtPdfSessionReleaseTests" time="0.991838" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformQtJobWorkerTests" classname="ClassMngrNextPlatformQtJobWorkerTests" time="0.855286" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrFileControllerWorkspaceLifecycleTests" classname="ClassMngrFileControllerWorkspaceLifecycleTests" time="16.5173" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPreferencesSnapshotAdapterTests" classname="ClassMngrNextPreferencesSnapshotAdapterTests" time="0.060551" status="run">
+		<properties/>
+		<system-out>PreferencesSnapshotAdapter tests passed.
+</system-out>
+	</testcase>
+	<testcase name="ClassMngrNextScheduleWorkspaceStoreActionsTests" classname="ClassMngrNextScheduleWorkspaceStoreActionsTests" time="3.02558" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSchedulePageTests" classname="ClassMngrNextSchedulePageTests" time="1.27693" status="fail">
+		<failure message="Exit code 0xc0000409"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextNormalScheduleImportIntegrationTests" classname="ClassMngrNextNormalScheduleImportIntegrationTests" time="0.748156" status="fail">
+		<failure message="Exit code 0xc0000409"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextScheduleVisualCapture" classname="ClassMngrNextScheduleVisualCapture" time="119.976" status="fail">
+		<failure message="Timeout"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextFontSizePresenterTests" classname="ClassMngrNextFontSizePresenterTests" time="0.11334" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextPlatformSettingsManagerPreferencesPortTests" classname="ClassMngrNextPlatformSettingsManagerPreferencesPortTests" time="0.562548" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextCalendarPageTests" classname="ClassMngrNextCalendarPageTests" time="56.9219" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextCalendarWorkspaceStoreActionsTests" classname="ClassMngrNextCalendarWorkspaceStoreActionsTests" time="0.571184" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextRosterOutputTests" classname="ClassMngrNextRosterOutputTests" time="40.8322" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextUpdateCoordinatorTests" classname="ClassMngrNextUpdateCoordinatorTests" time="1.0619" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrNextSharedUpdatePresentationTests" classname="ClassMngrNextSharedUpdatePresentationTests" time="0.499541" status="run">
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+	<testcase name="ClassMngrProfileFileWorkflowVisualCapture" classname="ClassMngrProfileFileWorkflowVisualCapture" time="0.669555" status="fail">
+		<failure message="Failed"/>
+		<properties/>
+		<system-out></system-out>
+	</testcase>
+</testsuite>

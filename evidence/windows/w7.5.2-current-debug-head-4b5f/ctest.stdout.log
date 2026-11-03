@@ -1,0 +1,1467 @@
+Test project C:/Git/ClassMngr-cpp/build/windows-x64-debug
+        Start   1: ClassMngrNextLaunch
+  1/614 Test   #1: ClassMngrNextLaunch ..........................................................................   Passed    0.61 sec
+        Start   2: ClassMngrNextLaunchFilesystemSideEffectsTests
+  2/614 Test   #2: ClassMngrNextLaunchFilesystemSideEffectsTests ................................................   Passed    0.41 sec
+        Start   3: ClassMngrSharedPolicyTests
+  3/614 Test   #3: ClassMngrSharedPolicyTests ...................................................................Exit code 0xc0000409***Exception:   1.93 sec
+
+        Start   4: ClassMngrDatabaseSchemaManagerTests
+  4/614 Test   #4: ClassMngrDatabaseSchemaManagerTests ..........................................................   Passed    1.95 sec
+        Start   5: ClassMngrPageComponentsTests
+  5/614 Test   #5: ClassMngrPageComponentsTests .................................................................   Passed    1.48 sec
+        Start   6: ClassMngrDialogShellTests
+  6/614 Test   #6: ClassMngrDialogShellTests ....................................................................   Passed    1.47 sec
+        Start   7: ClassMngrInitialSetupWizardTests
+  7/614 Test   #7: ClassMngrInitialSetupWizardTests .............................................................   Passed   18.40 sec
+        Start   8: ClassMngrOnScreenKeyboardTests
+  8/614 Test   #8: ClassMngrOnScreenKeyboardTests ...............................................................   Passed    0.69 sec
+        Start   9: ClassMngrUpdaterTests
+  9/614 Test   #9: ClassMngrUpdaterTests ........................................................................   Passed    9.58 sec
+        Start  10: ClassMngrResourcePackTests
+ 10/614 Test  #10: ClassMngrResourcePackTests ...................................................................   Passed    0.46 sec
+        Start  11: ClassMngrDocumentCatalogTests
+ 11/614 Test  #11: ClassMngrDocumentCatalogTests ................................................................   Passed    0.21 sec
+        Start  12: ClassMngrFontManagerTests
+ 12/614 Test  #12: ClassMngrFontManagerTests ....................................................................   Passed    1.46 sec
+        Start  13: ClassMngrStartupVisualSettingsTests
+ 13/614 Test  #13: ClassMngrStartupVisualSettingsTests ..........................................................   Passed    1.06 sec
+        Start  14: ClassMngrCheckboxStyleTests
+ 14/614 Test  #14: ClassMngrCheckboxStyleTests ..................................................................   Passed    0.39 sec
+        Start  15: ClassMngrFileDialogIconStyleTests
+ 15/614 Test  #15: ClassMngrFileDialogIconStyleTests ............................................................   Passed    4.20 sec
+        Start  16: ClassMngrDialogServicesTests
+ 16/614 Test  #16: ClassMngrDialogServicesTests .................................................................   Passed   38.12 sec
+        Start  17: ClassMngrClassTimeRowTests
+ 17/614 Test  #17: ClassMngrClassTimeRowTests ...................................................................   Passed    0.35 sec
+        Start  18: ClassMngrTeacherInfoSectionTests
+ 18/614 Test  #18: ClassMngrTeacherInfoSectionTests .............................................................   Passed    3.76 sec
+        Start  19: ClassMngrTeacherInfoPageTests
+ 19/614 Test  #19: ClassMngrTeacherInfoPageTests ................................................................   Passed    3.33 sec
+        Start  20: ClassMngrIntensiveSlotStateRepositoryTests
+ 20/614 Test  #20: ClassMngrIntensiveSlotStateRepositoryTests ...................................................   Passed    0.17 sec
+        Start  21: ClassMngrRepositoryErrorContractTests
+ 21/614 Test  #21: ClassMngrRepositoryErrorContractTests ........................................................   Passed    0.42 sec
+        Start  22: ClassMngrTestingBlockRepositoryTests
+ 22/614 Test  #22: ClassMngrTestingBlockRepositoryTests .........................................................   Passed    0.47 sec
+        Start  23: ClassMngrTestingClassRepositoryTests
+ 23/614 Test  #23: ClassMngrTestingClassRepositoryTests .........................................................   Passed    0.71 sec
+        Start  24: ClassMngrCalendarEventRepositoryTests
+ 24/614 Test  #24: ClassMngrCalendarEventRepositoryTests ........................................................   Passed    0.36 sec
+        Start  25: ClassMngrCalendarEventCacheTests
+ 25/614 Test  #25: ClassMngrCalendarEventCacheTests .............................................................   Passed   11.25 sec
+        Start  26: ClassMngrDataServiceLifecycleTests
+ 26/614 Test  #26: ClassMngrDataServiceLifecycleTests ...........................................................   Passed   20.87 sec
+        Start  27: ClassMngrClassInfoConfigCatalogParityTests
+ 27/614 Test  #27: ClassMngrClassInfoConfigCatalogParityTests ...................................................   Passed    0.08 sec
+        Start  28: ClassMngrPersonalDetailsRepositoryTests
+ 28/614 Test  #28: ClassMngrPersonalDetailsRepositoryTests ......................................................   Passed    1.88 sec
+        Start  29: ClassMngrClassTransferExportCodecParityTests
+ 29/614 Test  #29: ClassMngrClassTransferExportCodecParityTests .................................................   Passed    9.35 sec
+        Start  30: ClassMngrClassTransferTests
+ 30/614 Test  #30: ClassMngrClassTransferTests ..................................................................   Passed   40.41 sec
+        Start  31: ClassTransferPreviewAdapterRegressionTests
+ 31/614 Test  #31: ClassTransferPreviewAdapterRegressionTests ...................................................   Passed    1.35 sec
+        Start  32: ClassTransferApplyStaleChoiceRegressionTests
+ 32/614 Test  #32: ClassTransferApplyStaleChoiceRegressionTests .................................................   Passed    1.50 sec
+        Start  33: ClassMngrClassTransferRowIndexRegressionTests
+ 33/614 Test  #33: ClassMngrClassTransferRowIndexRegressionTests ................................................   Passed    0.59 sec
+        Start  34: ClassMngrClassImportTeacherChoiceRegressionTests
+ 34/614 Test  #34: ClassMngrClassImportTeacherChoiceRegressionTests .............................................   Passed    1.74 sec
+        Start  35: ClassMngrClassImportTeacherChoiceParityTests
+ 35/614 Test  #35: ClassMngrClassImportTeacherChoiceParityTests .................................................   Passed    2.83 sec
+        Start  36: ClassMngrSidebarClassTransferApplyParityTests
+ 36/614 Test  #36: ClassMngrSidebarClassTransferApplyParityTests ................................................   Passed    4.31 sec
+        Start  37: SidebarClassTransferMatchedPreviewIntegrationTests
+ 37/614 Test  #37: SidebarClassTransferMatchedPreviewIntegrationTests ...........................................   Passed    0.81 sec
+        Start  38: SidebarClassTransferPreviewReadFailureIntegrationTests
+ 38/614 Test  #38: SidebarClassTransferPreviewReadFailureIntegrationTests .......................................   Passed    0.71 sec
+        Start  39: SidebarClassTransferNoMatchCreateRegressionTests
+ 39/614 Test  #39: SidebarClassTransferNoMatchCreateRegressionTests .............................................   Passed    0.75 sec
+        Start  40: ClassMngrClassExportDialogParityTests
+ 40/614 Test  #40: ClassMngrClassExportDialogParityTests ........................................................   Passed    1.24 sec
+        Start  41: ClassMngrCalendarImportTests
+ 41/614 Test  #41: ClassMngrCalendarImportTests .................................................................   Passed    0.21 sec
+        Start  42: ClassMngrScheduleImportTests
+ 42/614 Test  #42: ClassMngrScheduleImportTests .................................................................   Passed    6.97 sec
+        Start  43: ClassMngrTeacherImportTests
+ 43/614 Test  #43: ClassMngrTeacherImportTests ..................................................................   Passed    1.53 sec
+        Start  44: ClassMngrTeacherImportDialogTests
+ 44/614 Test  #44: ClassMngrTeacherImportDialogTests ............................................................   Passed    1.97 sec
+        Start  45: ClassMngrStaffDirectoryPageTests
+ 45/614 Test  #45: ClassMngrStaffDirectoryPageTests .............................................................   Passed    1.57 sec
+        Start  46: ClassMngrClassTabNavigationModelTests
+ 46/614 Test  #46: ClassMngrClassTabNavigationModelTests ........................................................   Passed    0.18 sec
+        Start  47: ClassMngrSubPrepClassInformationModelTests
+ 47/614 Test  #47: ClassMngrSubPrepClassInformationModelTests ...................................................   Passed    0.39 sec
+        Start  48: ClassMngrSubPrepPrintSourceMapperTests
+ 48/614 Test  #48: ClassMngrSubPrepPrintSourceMapperTests .......................................................   Passed    0.45 sec
+        Start  49: ClassMngrSubPrepClassInformationListModelTests
+ 49/614 Test  #49: ClassMngrSubPrepClassInformationListModelTests ...............................................   Passed    1.13 sec
+        Start  50: ClassMngrScheduleWidgetTests
+ 50/614 Test  #50: ClassMngrScheduleWidgetTests .................................................................   Passed    5.25 sec
+        Start  51: ClassMngrTestingClassesPageDeleteParityTests
+ 51/614 Test  #51: ClassMngrTestingClassesPageDeleteParityTests .................................................   Passed    1.48 sec
+        Start  52: ClassMngrTestingClassesPagePersistenceParityTests
+ 52/614 Test  #52: ClassMngrTestingClassesPagePersistenceParityTests ............................................   Passed    2.42 sec
+        Start  53: ClassMngrTestingClassesPageCancelFailureParityTests
+ 53/614 Test  #53: ClassMngrTestingClassesPageCancelFailureParityTests ..........................................   Passed    2.05 sec
+        Start  54: ClassMngrTestingClassesPageTests
+ 54/614 Test  #54: ClassMngrTestingClassesPageTests .............................................................***Failed   12.51 sec
+
+        Start  55: ClassMngrTestingClassesPageTeacherChoiceTests
+ 55/614 Test  #55: ClassMngrTestingClassesPageTeacherChoiceTests ................................................   Passed    0.49 sec
+        Start  56: ClassMngrTestingClassesPageWideTeacherIdentityTests
+ 56/614 Test  #56: ClassMngrTestingClassesPageWideTeacherIdentityTests ..........................................   Passed    0.42 sec
+        Start  57: ClassMngrTestingClassesPageF145UpdateTests
+ 57/614 Test  #57: ClassMngrTestingClassesPageF145UpdateTests ...................................................   Passed    1.30 sec
+        Start  58: ClassMngrTestingClassesPageF146CreateTests
+ 58/614 Test  #58: ClassMngrTestingClassesPageF146CreateTests ...................................................   Passed    0.79 sec
+        Start  59: ClassMngrTestingClassesPageF147DeleteTests
+ 59/614 Test  #59: ClassMngrTestingClassesPageF147DeleteTests ...................................................   Passed    2.41 sec
+        Start  60: ClassMngrTestingClassesPageF1287SaveRefreshTests
+ 60/614 Test  #60: ClassMngrTestingClassesPageF1287SaveRefreshTests .............................................   Passed    0.54 sec
+        Start  61: ClassMngrUpcomingBirthdaysTests
+ 61/614 Test  #61: ClassMngrUpcomingBirthdaysTests ..............................................................   Passed    0.97 sec
+        Start  62: UpcomingBirthdaysLocaleAwareOrderingTests
+ 62/614 Test  #62: UpcomingBirthdaysLocaleAwareOrderingTests ....................................................   Passed    0.08 sec
+        Start  63: UpcomingBirthdaysLeapDayFallbackBehavior
+ 63/614 Test  #63: UpcomingBirthdaysLeapDayFallbackBehavior .....................................................   Passed    0.08 sec
+        Start  64: UpcomingBirthdaysInvalidReferenceDate
+ 64/614 Test  #64: UpcomingBirthdaysInvalidReferenceDate ........................................................   Passed    0.24 sec
+        Start  65: ClassMngrTeacherImportUiApplyParityTests
+ 65/614 Test  #65: ClassMngrTeacherImportUiApplyParityTests .....................................................   Passed   10.72 sec
+        Start  66: TeacherImportUiApplyParityF1061Refresh
+ 66/614 Test  #66: TeacherImportUiApplyParityF1061Refresh .......................................................   Passed    0.73 sec
+        Start  67: TeacherImportUiApplyParityF1061ReloadFailure
+ 67/614 Test  #67: TeacherImportUiApplyParityF1061ReloadFailure .................................................   Passed    0.45 sec
+        Start  68: TeacherImportUiApplyParityF1285DirectoryReloadFailure
+ 68/614 Test  #68: TeacherImportUiApplyParityF1285DirectoryReloadFailure ........................................   Passed    7.77 sec
+        Start  69: TeacherImportUiApplyParityF1061SidebarSuccess
+ 69/614 Test  #69: TeacherImportUiApplyParityF1061SidebarSuccess ................................................   Passed    0.68 sec
+        Start  70: TeacherImportUiApplyParityF1061SidebarCancel
+ 70/614 Test  #70: TeacherImportUiApplyParityF1061SidebarCancel .................................................   Passed    0.61 sec
+        Start  71: TeacherImportUiApplyParityF1061SidebarApplyFailure
+ 71/614 Test  #71: TeacherImportUiApplyParityF1061SidebarApplyFailure ...........................................   Passed    0.66 sec
+        Start  72: ClassMngrPageManagerTests
+ 72/614 Test  #72: ClassMngrPageManagerTests ....................................................................***Timeout 119.89 sec
+
+        Start  73: ClassMngrMyWorkspacePageTests
+ 73/614 Test  #73: ClassMngrMyWorkspacePageTests ................................................................   Passed   33.69 sec
+        Start  74: ClassMngrMyClassesPageTests
+ 74/614 Test  #74: ClassMngrMyClassesPageTests ..................................................................   Passed   10.10 sec
+        Start  75: ClassMngrMyClassesPageTeacherDisplayParityTests
+ 75/614 Test  #75: ClassMngrMyClassesPageTeacherDisplayParityTests ..............................................   Passed    1.39 sec
+        Start  76: ClassMngrMyClassesPageSummaryParityTests
+ 76/614 Test  #76: ClassMngrMyClassesPageSummaryParityTests .....................................................   Passed    1.53 sec
+        Start  77: ClassMngrTypedSignatureRendererTests
+ 77/614 Test  #77: ClassMngrTypedSignatureRendererTests .........................................................   Passed    2.02 sec
+        Start  78: ClassMngrClassDetailsSavePageTests
+ 78/614 Test  #78: ClassMngrClassDetailsSavePageTests ...........................................................***Timeout 119.95 sec
+
+        Start  79: ClassMngrClassDetailsPageSaveParityTests
+ 79/614 Test  #79: ClassMngrClassDetailsPageSaveParityTests .....................................................   Passed    5.46 sec
+        Start  80: ClassMngrInitialSetupWizardClassCreateSaveParityTests
+ 80/614 Test  #80: ClassMngrInitialSetupWizardClassCreateSaveParityTests ........................................   Passed    3.09 sec
+        Start  81: ClassMngrInitialSetupWizardTeacherCreateParityTests
+ 81/614 Test  #81: ClassMngrInitialSetupWizardTeacherCreateParityTests ..........................................   Passed    1.54 sec
+        Start  82: ClassMngrInitialSetupWizardVisualCapture
+ 82/614 Test  #82: ClassMngrInitialSetupWizardVisualCapture .....................................................   Passed   15.92 sec
+        Start  83: ClassMngrClassNotesPageReadParityTests
+ 83/614 Test  #83: ClassMngrClassNotesPageReadParityTests .......................................................   Passed    0.52 sec
+        Start  84: ClassMngrClassNotesPageSaveParityTests
+ 84/614 Test  #84: ClassMngrClassNotesPageSaveParityTests .......................................................   Passed    0.83 sec
+        Start  85: ClassMngrCalendarPageEventMutationParityTests
+ 85/614 Test  #85: ClassMngrCalendarPageEventMutationParityTests ................................................   Passed  116.93 sec
+        Start  86: ClassMngrCalendarPreferencesRestoreDefaultsTests
+ 86/614 Test  #86: ClassMngrCalendarPreferencesRestoreDefaultsTests .............................................   Passed   10.69 sec
+        Start  87: CalendarPreferencesRejectsOutOfRangeWinterStart
+ 87/614 Test  #87: CalendarPreferencesRejectsOutOfRangeWinterStart ..............................................   Passed    0.18 sec
+        Start  88: CalendarPreferencesRejectsOutOfRangeInternalTermStart
+ 88/614 Test  #88: CalendarPreferencesRejectsOutOfRangeInternalTermStart ........................................   Passed    0.18 sec
+        Start  89: ClassMngrClassCoTeacherPageReadParityTests
+ 89/614 Test  #89: ClassMngrClassCoTeacherPageReadParityTests ...................................................   Passed    0.79 sec
+        Start  90: ClassMngrTeacherInfoPagePersistenceParityTests
+ 90/614 Test  #90: ClassMngrTeacherInfoPagePersistenceParityTests ...............................................   Passed    1.21 sec
+        Start  91: ClassMngrNavigationTeacherReadTests
+ 91/614 Test  #91: ClassMngrNavigationTeacherReadTests ..........................................................***Failed   10.31 sec
+
+        Start  92: ClassMngrNavigationTeacherReadParityTests
+ 92/614 Test  #92: ClassMngrNavigationTeacherReadParityTests ....................................................   Passed    0.86 sec
+        Start  93: ClassMngrNavigationRosterSessionParityTests
+ 93/614 Test  #93: ClassMngrNavigationRosterSessionParityTests ..................................................   Passed    1.61 sec
+        Start  94: ClassMngrStaffDirectoryClosedSessionNavigationParityTests
+ 94/614 Test  #94: ClassMngrStaffDirectoryClosedSessionNavigationParityTests ....................................   Passed    1.54 sec
+        Start  95: ClassMngrStaffDirectoryOpenSessionNavigationParityTests
+ 95/614 Test  #95: ClassMngrStaffDirectoryOpenSessionNavigationParityTests ......................................   Passed    3.34 sec
+        Start  96: ClassMngrClassRouteAvailabilityParityTests
+ 96/614 Test  #96: ClassMngrClassRouteAvailabilityParityTests ...................................................   Passed    2.75 sec
+        Start  97: ClassMngrMyInfoRouteNavigationParityTests
+ 97/614 Test  #97: ClassMngrMyInfoRouteNavigationParityTests ....................................................   Passed    5.94 sec
+        Start  98: ClassMngrSubPrepRouteGateParityTests
+ 98/614 Test  #98: ClassMngrSubPrepRouteGateParityTests .........................................................   Passed    2.01 sec
+        Start  99: ClassMngrCampusRouteNavigationParityTests
+ 99/614 Test  #99: ClassMngrCampusRouteNavigationParityTests ....................................................***Failed    4.21 sec
+
+        Start 100: ClassMngrDocumentCatalogNavigationParityTests
+100/614 Test #100: ClassMngrDocumentCatalogNavigationParityTests ................................................   Passed    2.89 sec
+        Start 101: ClassMngrSidebarClassDeleteParityTests
+101/614 Test #101: ClassMngrSidebarClassDeleteParityTests .......................................................   Passed    3.64 sec
+        Start 102: ClassMngrSidebarTeacherDeleteParityTests
+102/614 Test #102: ClassMngrSidebarTeacherDeleteParityTests .....................................................   Passed    1.94 sec
+        Start 103: ClassMngrScheduleTestingLayoutClearParityTests
+103/614 Test #103: ClassMngrScheduleTestingLayoutClearParityTests ...............................................   Passed   12.22 sec
+        Start 104: ClassMngrMainWindowDocumentCatalogRetranslationParityTests
+104/614 Test #104: ClassMngrMainWindowDocumentCatalogRetranslationParityTests ...................................   Passed    4.00 sec
+        Start 105: ClassMngrMainWindowRecentWorkspaceReopenParityTests
+105/614 Test #105: ClassMngrMainWindowRecentWorkspaceReopenParityTests ..........................................   Passed    3.40 sec
+        Start 106: ClassMngrMainWindowMyWorkspaceSidebarRootNavigationTests
+106/614 Test #106: ClassMngrMainWindowMyWorkspaceSidebarRootNavigationTests .....................................   Passed    1.49 sec
+        Start 107: ClassMngrMainWindowClassesSidebarRootNavigationTests
+107/614 Test #107: ClassMngrMainWindowClassesSidebarRootNavigationTests .........................................   Passed   14.49 sec
+        Start 108: ClassMngrMainWindowSubPrepSidebarRootNavigationTests
+108/614 Test #108: ClassMngrMainWindowSubPrepSidebarRootNavigationTests .........................................   Passed    1.53 sec
+        Start 109: ClassMngrMainWindowInitialSetupEmptyStateNavigationTests
+109/614 Test #109: ClassMngrMainWindowInitialSetupEmptyStateNavigationTests .....................................   Passed    3.81 sec
+        Start 110: ClassMngrMainWindowCampusSidebarNavigationTests
+110/614 Test #110: ClassMngrMainWindowCampusSidebarNavigationTests ..............................................   Passed    2.58 sec
+        Start 111: ClassMngrMainWindowCloseFileParityTests
+111/614 Test #111: ClassMngrMainWindowCloseFileParityTests ......................................................   Passed    8.86 sec
+        Start 112: ClassMngrMainWindowOpenFileParityTests
+112/614 Test #112: ClassMngrMainWindowOpenFileParityTests .......................................................   Passed    2.72 sec
+        Start 113: ClassMngrMainWindowExitConfirmationParityTests
+113/614 Test #113: ClassMngrMainWindowExitConfirmationParityTests ...............................................   Passed    2.77 sec
+        Start 114: ClassMngrMainWindowEditActionParityTests
+114/614 Test #114: ClassMngrMainWindowEditActionParityTests .....................................................   Passed    4.07 sec
+        Start 115: ClassMngrMainWindowAboutActionParityTests
+115/614 Test #115: ClassMngrMainWindowAboutActionParityTests ....................................................   Passed    1.13 sec
+        Start 116: ClassMngrMainWindowCheckForUpdatesActionParityTests
+116/614 Test #116: ClassMngrMainWindowCheckForUpdatesActionParityTests ..........................................   Passed    1.31 sec
+        Start 117: ClassMngrMainWindowAutomaticUpdatePreferenceActionParityTests
+117/614 Test #117: ClassMngrMainWindowAutomaticUpdatePreferenceActionParityTests ................................   Passed    1.95 sec
+        Start 118: ClassMngrMainWindowClassVisibilityPreferencesFailureTests
+118/614 Test #118: ClassMngrMainWindowClassVisibilityPreferencesFailureTests ....................................   Passed   24.17 sec
+        Start 119: ClassMngrMainWindowFontSizeActionParityTests
+119/614 Test #119: ClassMngrMainWindowFontSizeActionParityTests .................................................   Passed    3.07 sec
+        Start 120: ClassMngrMainWindowThemeActionParityTests
+120/614 Test #120: ClassMngrMainWindowThemeActionParityTests ....................................................   Passed    9.73 sec
+        Start 121: ClassMngrMainWindowSaveModeActionParityTests
+121/614 Test #121: ClassMngrMainWindowSaveModeActionParityTests .................................................   Passed    1.61 sec
+        Start 122: ClassMngrMainWindowDocumentViewerBackgroundActionParityTests
+122/614 Test #122: ClassMngrMainWindowDocumentViewerBackgroundActionParityTests .................................   Passed    1.13 sec
+        Start 123: ClassMngrMainWindowDocumentViewerPageSpacingActionParityTests
+123/614 Test #123: ClassMngrMainWindowDocumentViewerPageSpacingActionParityTests ................................   Passed    1.40 sec
+        Start 124: ClassMngrMainWindowSidebarOverflowTooltipsActionParityTests
+124/614 Test #124: ClassMngrMainWindowSidebarOverflowTooltipsActionParityTests ..................................   Passed    2.66 sec
+        Start 125: ClassMngrMainWindowAiCommentVoiceActionParityTests
+125/614 Test #125: ClassMngrMainWindowAiCommentVoiceActionParityTests ...........................................   Passed    1.67 sec
+        Start 126: ClassMngrMainWindowCustomWebsiteAiCommentProviderActionParityTests
+126/614 Test #126: ClassMngrMainWindowCustomWebsiteAiCommentProviderActionParityTests ...........................   Passed    2.93 sec
+        Start 127: ClassMngrMainWindowAiCommentProviderActionParityTests
+127/614 Test #127: ClassMngrMainWindowAiCommentProviderActionParityTests ........................................   Passed    1.82 sec
+        Start 128: ClassMngrMainWindowSaveAsExportParityTests
+128/614 Test #128: ClassMngrMainWindowSaveAsExportParityTests ...................................................   Passed    6.56 sec
+        Start 129: ClassMngrMainWindowScheduleTestingClassesHandoffParityTests
+129/614 Test #129: ClassMngrMainWindowScheduleTestingClassesHandoffParityTests ..................................   Passed   17.76 sec
+        Start 130: ClassMngrMainWindowManageCampusesParityTests
+130/614 Test #130: ClassMngrMainWindowManageCampusesParityTests .................................................   Passed    4.55 sec
+        Start 131: ClassMngrMainWindowTeacherSidebarNavigationParityTests
+131/614 Test #131: ClassMngrMainWindowTeacherSidebarNavigationParityTests .......................................   Passed   22.69 sec
+        Start 132: ClassMngrStaffDirectoryNativeEnglishReadTests
+132/614 Test #132: ClassMngrStaffDirectoryNativeEnglishReadTests ................................................   Passed    1.77 sec
+        Start 133: ClassMngrStaffDirectoryNativeEnglishReadParityTests
+133/614 Test #133: ClassMngrStaffDirectoryNativeEnglishReadParityTests ..........................................   Passed    1.24 sec
+        Start 134: ClassMngrStaffDirectoryNativeEnglishSaveParityTests
+134/614 Test #134: ClassMngrStaffDirectoryNativeEnglishSaveParityTests ..........................................   Passed    5.64 sec
+        Start 135: ClassMngrStaffDirectoryGsTeamReadTests
+135/614 Test #135: ClassMngrStaffDirectoryGsTeamReadTests .......................................................   Passed    1.38 sec
+        Start 136: ClassMngrStaffDirectoryGsTeamReadParityTests
+136/614 Test #136: ClassMngrStaffDirectoryGsTeamReadParityTests .................................................   Passed    0.98 sec
+        Start 137: ClassMngrStaffDirectoryGsTeamSaveTests
+137/614 Test #137: ClassMngrStaffDirectoryGsTeamSaveTests .......................................................   Passed    6.61 sec
+        Start 138: ClassMngrStaffDirectoryGsTeamSaveParityTests
+138/614 Test #138: ClassMngrStaffDirectoryGsTeamSaveParityTests .................................................   Passed    0.76 sec
+        Start 139: ClassMngrRosterEditorWidgetSaveTests
+139/614 Test #139: ClassMngrRosterEditorWidgetSaveTests .........................................................   Passed    9.98 sec
+        Start 140: ClassMngrRosterTransferMenuTests
+140/614 Test #140: ClassMngrRosterTransferMenuTests .............................................................***Failed    4.82 sec
+
+        Start 141: ClassMngrRosterPrintDialogTests
+141/614 Test #141: ClassMngrRosterPrintDialogTests ..............................................................   Passed    6.35 sec
+        Start 142: ClassMngrSpeakingEvalPageSaveTests
+142/614 Test #142: ClassMngrSpeakingEvalPageSaveTests ...........................................................   Passed   20.13 sec
+        Start 143: ClassMngrSpeakingEvalPageSaveParityTests
+143/614 Test #143: ClassMngrSpeakingEvalPageSaveParityTests .....................................................   Passed    0.84 sec
+        Start 144: ClassMngrClassDetailsPageDisplayTests
+144/614 Test #144: ClassMngrClassDetailsPageDisplayTests ........................................................   Passed    4.09 sec
+        Start 145: ClassMngrClassDetailsPageReadParityTests
+145/614 Test #145: ClassMngrClassDetailsPageReadParityTests .....................................................   Passed    1.02 sec
+        Start 146: ClassMngrClassAnalyticsPageTests
+146/614 Test #146: ClassMngrClassAnalyticsPageTests .............................................................   Passed    1.51 sec
+        Start 147: ClassMngrClassAnalyticsPageReadParityTests
+147/614 Test #147: ClassMngrClassAnalyticsPageReadParityTests ...................................................   Passed    1.61 sec
+        Start 148: ClassMngrClassesPageTests
+148/614 Test #148: ClassMngrClassesPageTests ....................................................................   Passed   11.75 sec
+        Start 149: ClassMngrClassesPageF1019NavigationSelectionTests
+149/614 Test #149: ClassMngrClassesPageF1019NavigationSelectionTests ............................................   Passed    0.35 sec
+        Start 150: ClassMngrRosterEditorWidgetImportTests
+150/614 Test #150: ClassMngrRosterEditorWidgetImportTests .......................................................   Passed    6.00 sec
+        Start 151: ClassMngrScheduleImportDialogTests
+151/614 Test #151: ClassMngrScheduleImportDialogTests ...........................................................   Passed   14.59 sec
+        Start 152: ClassMngrSubPrepPageTests
+152/614 Test #152: ClassMngrSubPrepPageTests ....................................................................***Timeout 119.97 sec
+
+        Start 153: ClassMngrNavigationTabWidgetTests
+153/614 Test #153: ClassMngrNavigationTabWidgetTests ............................................................   Passed    0.78 sec
+        Start 154: ClassMngrSidebarStructureTests
+154/614 Test #154: ClassMngrSidebarStructureTests ...............................................................   Passed    1.34 sec
+        Start 155: ClassMngrEditableTextTableModelTests
+155/614 Test #155: ClassMngrEditableTextTableModelTests .........................................................   Passed    1.28 sec
+        Start 156: ClassMngrBasePageTests
+156/614 Test #156: ClassMngrBasePageTests .......................................................................   Passed    0.43 sec
+        Start 157: ClassMngrSchedulePrintModelTests
+157/614 Test #157: ClassMngrSchedulePrintModelTests .............................................................   Passed    0.42 sec
+        Start 158: SchedulePrintModelNoncanonicalWeekdayDefaultParity
+158/614 Test #158: SchedulePrintModelNoncanonicalWeekdayDefaultParity ...........................................   Passed    0.09 sec
+        Start 159: SchedulePrintModelTestingModeRegularSlotPolicy
+159/614 Test #159: SchedulePrintModelTestingModeRegularSlotPolicy ...............................................   Passed    0.10 sec
+        Start 160: ClassMngrScheduleBuilderTests
+160/614 Test #160: ClassMngrScheduleBuilderTests ................................................................   Passed    0.37 sec
+        Start 161: ClassMngrSchedulePrintPdfTests
+161/614 Test #161: ClassMngrSchedulePrintPdfTests ...............................................................   Passed    5.91 sec
+        Start 162: ClassMngrSubPrepPdfTextFinalizerTests
+162/614 Test #162: ClassMngrSubPrepPdfTextFinalizerTests ........................................................   Passed   41.30 sec
+        Start 163: ClassMngrSubPrepPrintPdfTests
+163/614 Test #163: ClassMngrSubPrepPrintPdfTests ................................................................   Passed   35.34 sec
+        Start 164: ClassMngrSubPrepRosterOutputParityTests
+164/614 Test #164: ClassMngrSubPrepRosterOutputParityTests ......................................................   Passed    4.80 sec
+        Start 165: ClassMngrSubPrepPackageServiceTests
+165/614 Test #165: ClassMngrSubPrepPackageServiceTests ..........................................................***Failed   90.23 sec
+
+        Start 166: SubPrepPackageServiceClassIdsForDaysProjection
+166/614 Test #166: SubPrepPackageServiceClassIdsForDaysProjection ...............................................   Passed    0.07 sec
+        Start 167: ClassMngrRosterModelTests
+167/614 Test #167: ClassMngrRosterModelTests ....................................................................   Passed    1.72 sec
+        Start 168: ClassMngrRosterRowPreferencesTests
+168/614 Test #168: ClassMngrRosterRowPreferencesTests ...........................................................   Passed    0.36 sec
+        Start 169: ClassMngrRosterTemplatePrintServiceTests
+169/614 Test #169: ClassMngrRosterTemplatePrintServiceTests .....................................................   Passed    9.25 sec
+        Start 170: ClassMngrLanguageServiceTests
+170/614 Test #170: ClassMngrLanguageServiceTests ................................................................   Passed    0.14 sec
+        Start 171: ClassMngrLanguagePreferencePortTests
+171/614 Test #171: ClassMngrLanguagePreferencePortTests .........................................................   Passed    1.66 sec
+        Start 172: ClassMngrAiCommentOptionsTests
+172/614 Test #172: ClassMngrAiCommentOptionsTests ...............................................................   Passed    1.83 sec
+        Start 173: ClassMngrSpeakingAnalyticsTests
+173/614 Test #173: ClassMngrSpeakingAnalyticsTests ..............................................................   Passed    0.36 sec
+        Start 174: ClassMngrEvaluationDefaultSelectionTests
+174/614 Test #174: ClassMngrEvaluationDefaultSelectionTests .....................................................   Passed    0.09 sec
+        Start 175: ClassMngrEvaluationDefaultSelectionIntegrationTests
+175/614 Test #175: ClassMngrEvaluationDefaultSelectionIntegrationTests ..........................................   Passed    1.07 sec
+        Start 176: ClassMngrClassAnalyticsRankingModelTests
+176/614 Test #176: ClassMngrClassAnalyticsRankingModelTests .....................................................   Passed    0.12 sec
+        Start 177: ClassMngrSpeakingEvaluationServiceTests
+177/614 Test #177: ClassMngrSpeakingEvaluationServiceTests ......................................................   Passed    0.86 sec
+        Start 178: ClassMngrYearToDateChartTests
+178/614 Test #178: ClassMngrYearToDateChartTests ................................................................   Passed    0.90 sec
+        Start 179: ClassMngrAcademicCalendarTests
+179/614 Test #179: ClassMngrAcademicCalendarTests ...............................................................   Passed    0.17 sec
+        Start 180: AcademicCalendarScheduleValidityPolicy
+180/614 Test #180: AcademicCalendarScheduleValidityPolicy .......................................................   Passed    0.05 sec
+        Start 181: AcademicCalendarJsonRoundTripAndMalformedFallback
+181/614 Test #181: AcademicCalendarJsonRoundTripAndMalformedFallback ............................................   Passed    0.05 sec
+        Start 182: AcademicCalendarInvalidWinterContinuityIsAtomic
+182/614 Test #182: AcademicCalendarInvalidWinterContinuityIsAtomic ..............................................   Passed    0.14 sec
+        Start 183: AcademicYearScheduleDayDistancePolicy
+183/614 Test #183: AcademicYearScheduleDayDistancePolicy ........................................................   Passed    0.07 sec
+        Start 184: ClassMngrCampusMapTests
+184/614 Test #184: ClassMngrCampusMapTests ......................................................................   Passed    4.93 sec
+        Start 185: ClassMngrCampusDashboardPageTests
+185/614 Test #185: ClassMngrCampusDashboardPageTests ............................................................   Passed   10.07 sec
+        Start 186: CampusDashboardCleanRefreshToEmpty
+186/614 Test #186: CampusDashboardCleanRefreshToEmpty ...........................................................   Passed    0.44 sec
+        Start 187: CampusDashboardDirtyRefreshToEmpty
+187/614 Test #187: CampusDashboardDirtyRefreshToEmpty ...........................................................   Passed    0.29 sec
+        Start 188: ClassMngrSignatureImageProcessorTests
+188/614 Test #188: ClassMngrSignatureImageProcessorTests ........................................................   Passed    0.46 sec
+        Start 189: ClassMngrSpeakingEvalReportWidgetTests
+189/614 Test #189: ClassMngrSpeakingEvalReportWidgetTests .......................................................   Passed   15.33 sec
+        Start 190: ClassMngrSpeakingEvalWidgetlessPdfTests
+190/614 Test #190: ClassMngrSpeakingEvalWidgetlessPdfTests ......................................................   Passed    5.46 sec
+        Start 191: ClassMngrSpeakingEvalBatchReportServiceTests
+191/614 Test #191: ClassMngrSpeakingEvalBatchReportServiceTests .................................................   Passed   45.75 sec
+        Start 192: SpeakingEvalAiBatchResponseParser
+192/614 Test #192: SpeakingEvalAiBatchResponseParser ............................................................   Passed    0.08 sec
+        Start 193: SpeakingEvalAiBatchPromptUiParity
+193/614 Test #193: SpeakingEvalAiBatchPromptUiParity ............................................................   Passed    0.11 sec
+        Start 194: SpeakingEvalAiSinglePromptUiParity
+194/614 Test #194: SpeakingEvalAiSinglePromptUiParity ...........................................................   Passed    0.54 sec
+        Start 195: SpeakingEvalDefaultOutputDirectoryIncludesClassScheduleAndEvaluation
+195/614 Test #195: SpeakingEvalDefaultOutputDirectoryIncludesClassScheduleAndEvaluation .........................   Passed    0.09 sec
+        Start 196: SpeakingEvalDefaultOutputDirectoryProjectsMixedStartTimes
+196/614 Test #196: SpeakingEvalDefaultOutputDirectoryProjectsMixedStartTimes ....................................   Passed    0.08 sec
+        Start 197: SpeakingEvalDefaultOutputDirectoryNormalizesClassScheduleTime
+197/614 Test #197: SpeakingEvalDefaultOutputDirectoryNormalizesClassScheduleTime ................................   Passed    0.09 sec
+        Start 198: ClassMngrSpeakingEvalReportProjectionAdapterTests
+198/614 Test #198: ClassMngrSpeakingEvalReportProjectionAdapterTests ............................................   Passed    0.10 sec
+        Start 199: ClassMngrSpeakingEvalInternalPdfParityTests
+199/614 Test #199: ClassMngrSpeakingEvalInternalPdfParityTests ..................................................   Passed    8.40 sec
+        Start 200: SpeakingEvalPowerPointMixedTemplatesRejected
+200/614 Test #200: SpeakingEvalPowerPointMixedTemplatesRejected .................................................   Passed    0.19 sec
+        Start 201: SpeakingEvalInternalMixedTemplatesAccepted
+201/614 Test #201: SpeakingEvalInternalMixedTemplatesAccepted ...................................................   Passed    3.29 sec
+        Start 202: ClassMngrStartupPerformanceTests
+202/614 Test #202: ClassMngrStartupPerformanceTests .............................................................***Failed  119.75 sec
+Representative startup: checkpoint=window-shown, elapsed=1543 ms, platform=windows, workingSet=164921344, peakWorkingSet=164921344, private=99995648, widgets=116, pages=1/11, schedules=1, renders=1
+Representative startup: checkpoint=startup-complete, elapsed=1590 ms, platform=windows, workingSet=164921344, peakWorkingSet=165400576, private=99995648, widgets=116, pages=1/11, schedules=1, renders=1
+Representative startup: checkpoint=settled-5s, elapsed=6939 ms, platform=windows, workingSet=197144576, peakWorkingSet=198565888, private=128999424, widgets=116, pages=1/11, schedules=1, renders=1
+Startup performance: startupComplete=2165 ms, process=2681 ms, widgets=366, pages=2/11, schedules=1, renders=0
+
+        Start 203: ClassMngrDatabaseFileFormatTests
+203/614 Test #203: ClassMngrDatabaseFileFormatTests .............................................................   Passed    0.08 sec
+        Start 204: ClassMngrPhase7NextBlankFixtureTests
+204/614 Test #204: ClassMngrPhase7NextBlankFixtureTests .........................................................   Passed    0.30 sec
+        Start 205: ClassMngrNextDocumentCatalogNavigationTests
+205/614 Test #205: ClassMngrNextDocumentCatalogNavigationTests ..................................................   Passed    0.89 sec
+        Start 206: ClassMngrNextDocumentViewerTests
+206/614 Test #206: ClassMngrNextDocumentViewerTests .............................................................   Passed   11.51 sec
+        Start 207: ClassMngrNextDocumentCatalogVisualCapture
+207/614 Test #207: ClassMngrNextDocumentCatalogVisualCapture ....................................................   Passed    1.67 sec
+        Start 208: ClassMngrNextDocumentViewerVisualCapture
+208/614 Test #208: ClassMngrNextDocumentViewerVisualCapture .....................................................   Passed   13.98 sec
+        Start 209: ClassMngrNextLegacyDocumentViewerVisualCapture
+209/614 Test #209: ClassMngrNextLegacyDocumentViewerVisualCapture ...............................................   Passed   10.98 sec
+        Start 210: ClassMngrNextCampusDirectoryTests
+210/614 Test #210: ClassMngrNextCampusDirectoryTests ............................................................   Passed    3.86 sec
+        Start 211: ClassMngrNextCampusDirectoryVisualCapture
+211/614 Test #211: ClassMngrNextCampusDirectoryVisualCapture ....................................................   Passed   76.07 sec
+        Start 212: ClassMngrNextBootstrapTests
+212/614 Test #212: ClassMngrNextBootstrapTests ..................................................................Exit code 0xc0000409***Exception:  21.52 sec
+ClassMngrNext startup stage=process-created outcome=completed diagnostic=none diagnostic_stage=none
+ClassMngrNext startup stage=core-services-created outcome=failed diagnostic=stage-failed diagnostic_stage=core-services-created
+
+        Start 213: ClassMngrNextInitialSetupVisualCaptureEnglishLight
+213/614 Test #213: ClassMngrNextInitialSetupVisualCaptureEnglishLight ...........................................   Passed    5.83 sec
+        Start 214: ClassMngrNextInitialSetupVisualCaptureKoreanDark
+214/614 Test #214: ClassMngrNextInitialSetupVisualCaptureKoreanDark .............................................   Passed    5.83 sec
+        Start 215: ClassMngrNextUsefulLinksSelectionBehavior
+215/614 Test #215: ClassMngrNextUsefulLinksSelectionBehavior ....................................................   Passed    1.78 sec
+        Start 216: ClassMngrNextUsefulLinksEnglishLabelProjection
+216/614 Test #216: ClassMngrNextUsefulLinksEnglishLabelProjection ...............................................   Passed    1.98 sec
+        Start 217: ClassMngrNextUsefulLinksKoreanLabelProjection
+217/614 Test #217: ClassMngrNextUsefulLinksKoreanLabelProjection ................................................   Passed    2.15 sec
+        Start 218: ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle
+218/614 Test #218: ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle .........................................Exit code 0xc0000409***Exception:   1.85 sec
+
+        Start 219: ClassMngrNextCoTeacherProjection
+219/614 Test #219: ClassMngrNextCoTeacherProjection .............................................................   Passed    0.11 sec
+        Start 220: ClassMngrNextUsefulLinksVisualCapture_english-light
+220/614 Test #220: ClassMngrNextUsefulLinksVisualCapture_english-light ..........................................***Exception: SegFault  2.81 sec
+A crash occurred in C:\Git\ClassMngr-cpp\build\windows-x64-debug\Debug\ClassMngrNextBootstrapTests.exe.
+While testing usefulLinksVisualCapture
+Function time: 1733ms Total time: 1736ms
+
+Exception address: 0x00007FF897A12B15
+Exception code   : 0xc0000005
+Nearby symbol    : QLineEdit::`default constructor closure'
+
+Stack:
+#  1: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+#  2: UnhandledExceptionFilter() - 0x00007FF91FCFF2F0
+#  3: strncpy() - 0x00007FF922948110
+#  4: _C_specific_handler() - 0x00007FF922904B00
+#  5: _chkstk() - 0x00007FF922946410
+#  6: RtlWow64GetCurrentMachine() - 0x00007FF9228A3A10
+#  7: KiUserExceptionDispatcher() - 0x00007FF922945DC0
+#  8: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+#  9: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 10: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 11: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 12: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 13: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 14: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 15: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 16: ApplicationBootstrapTests::usefulLinksVisualCapture() - 0x00007FF7486B7D50
+# 17: ApplicationBootstrapTests::qt_static_metacall() - 0x00007FF74867CFE0
+# 18: QFileInfo::filePath() - 0x00007FF876B508B8
+# 19: QFileInfo::filePath() - 0x00007FF876B508B8
+# 20: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 21: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 22: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 23: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 24: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 25: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 26: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 27: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 28: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 29: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 30: main() - 0x00007FF748804F90
+# 31: invoke_main() - 0x00007FF749BAA2B0
+# 32: __scrt_common_main_seh() - 0x00007FF749BAA0A0
+# 33: __scrt_common_main() - 0x00007FF749BAA080
+# 34: mainCRTStartup() - 0x00007FF749BAA370
+# 35: BaseThreadInitThunk() - 0x00007FF921A7DD90
+# 36: RtlUserThreadStart() - 0x00007FF92285EE20
+
+
+        Start 221: ClassMngrNextUsefulLinksVisualCapture_english-dark
+221/614 Test #221: ClassMngrNextUsefulLinksVisualCapture_english-dark ...........................................***Exception: SegFault  2.78 sec
+A crash occurred in C:\Git\ClassMngr-cpp\build\windows-x64-debug\Debug\ClassMngrNextBootstrapTests.exe.
+While testing usefulLinksVisualCapture
+Function time: 1989ms Total time: 1993ms
+
+Exception address: 0x00007FF897A12B15
+Exception code   : 0xc0000005
+Nearby symbol    : QLineEdit::`default constructor closure'
+
+Stack:
+#  1: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+#  2: UnhandledExceptionFilter() - 0x00007FF91FCFF2F0
+#  3: strncpy() - 0x00007FF922948110
+#  4: _C_specific_handler() - 0x00007FF922904B00
+#  5: _chkstk() - 0x00007FF922946410
+#  6: RtlWow64GetCurrentMachine() - 0x00007FF9228A3A10
+#  7: KiUserExceptionDispatcher() - 0x00007FF922945DC0
+#  8: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+#  9: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 10: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 11: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 12: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 13: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 14: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 15: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 16: ApplicationBootstrapTests::usefulLinksVisualCapture() - 0x00007FF7486B7D50
+# 17: ApplicationBootstrapTests::qt_static_metacall() - 0x00007FF74867CFE0
+# 18: QFileInfo::filePath() - 0x00007FF876B508B8
+# 19: QFileInfo::filePath() - 0x00007FF876B508B8
+# 20: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 21: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 22: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 23: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 24: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 25: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 26: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 27: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 28: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 29: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 30: main() - 0x00007FF748804F90
+# 31: invoke_main() - 0x00007FF749BAA2B0
+# 32: __scrt_common_main_seh() - 0x00007FF749BAA0A0
+# 33: __scrt_common_main() - 0x00007FF749BAA080
+# 34: mainCRTStartup() - 0x00007FF749BAA370
+# 35: BaseThreadInitThunk() - 0x00007FF921A7DD90
+# 36: RtlUserThreadStart() - 0x00007FF92285EE20
+
+
+        Start 222: ClassMngrNextUsefulLinksVisualCapture_korean-light
+222/614 Test #222: ClassMngrNextUsefulLinksVisualCapture_korean-light ...........................................***Exception: SegFault  2.62 sec
+A crash occurred in C:\Git\ClassMngr-cpp\build\windows-x64-debug\Debug\ClassMngrNextBootstrapTests.exe.
+While testing usefulLinksVisualCapture
+Function time: 1853ms Total time: 1856ms
+
+Exception address: 0x00007FF897A12B15
+Exception code   : 0xc0000005
+Nearby symbol    : QLineEdit::`default constructor closure'
+
+Stack:
+#  1: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+#  2: UnhandledExceptionFilter() - 0x00007FF91FCFF2F0
+#  3: strncpy() - 0x00007FF922948110
+#  4: _C_specific_handler() - 0x00007FF922904B00
+#  5: _chkstk() - 0x00007FF922946410
+#  6: RtlWow64GetCurrentMachine() - 0x00007FF9228A3A10
+#  7: KiUserExceptionDispatcher() - 0x00007FF922945DC0
+#  8: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+#  9: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 10: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 11: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 12: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 13: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 14: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 15: QLineEdit::`default constructor closure'() - 0x00007FF8970E45D5
+# 16: ApplicationBootstrapTests::usefulLinksVisualCapture() - 0x00007FF7486B7D50
+# 17: ApplicationBootstrapTests::qt_static_metacall() - 0x00007FF74867CFE0
+# 18: QFileInfo::filePath() - 0x00007FF876B508B8
+# 19: QFileInfo::filePath() - 0x00007FF876B508B8
+# 20: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 21: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 22: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 23: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 24: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 25: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 26: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 27: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 28: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 29: QTestLog::enterTestFunction() - 0x00007FF8F74663C0
+# 30: main() - 0x00007FF748804F90
+# 31: invoke_main() - 0x00007FF749BAA2B0
+# 32: __scrt_common_main_seh() - 0x00007FF749BAA0A0
+# 33: __scrt_common_main() - 0x00007FF749BAA080
+# 34: mainCRTStartup() - 0x00007FF749BAA370
+# 35: BaseThreadInitThunk() - 0x00007FF921A7DD90
+# 36: RtlUserThreadStart() - 0x00007FF92285EE20
+
+
+        Start 223: ClassMngrNextUsefulLinksVisualCapture_korean-dark
+223/614 Test #223: ClassMngrNextUsefulLinksVisualCapture_korean-dark ............................................   Passed    2.13 sec
+        Start 224: ClassMngrNextCoTeacherSidebarVisualCapture_english-light
+224/614 Test #224: ClassMngrNextCoTeacherSidebarVisualCapture_english-light .....................................Exit code 0xc0000409***Exception:   1.42 sec
+
+        Start 225: ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark
+225/614 Test #225: ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark .......................................Exit code 0xc0000409***Exception:   1.34 sec
+
+        Start 226: ClassMngrTeacherProfileVisualCapture
+226/614 Test #226: ClassMngrTeacherProfileVisualCapture .........................................................   Passed    4.29 sec
+        Start 227: ClassMngrMyDetailsSignatureVisualCapture
+227/614 Test #227: ClassMngrMyDetailsSignatureVisualCapture .....................................................***Timeout 120.00 sec
+
+        Start 228: ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+228/614 Test #228: ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests ...............................   Passed   23.92 sec
+        Start 229: ClassMngrNextThemePresenterTests
+229/614 Test #229: ClassMngrNextThemePresenterTests .............................................................   Passed    1.20 sec
+        Start 230: ClassMngrNextPageHostTests
+230/614 Test #230: ClassMngrNextPageHostTests ...................................................................   Passed    1.87 sec
+        Start 231: ClassMngrNextKoreanTeacherDirectoryActionsTests
+231/614 Test #231: ClassMngrNextKoreanTeacherDirectoryActionsTests ..............................................   Passed    0.15 sec
+        Start 232: ClassMngrNextSharedStaffDirectoryTests
+232/614 Test #232: ClassMngrNextSharedStaffDirectoryTests .......................................................   Passed    0.84 sec
+        Start 233: ClassMngrNextSharedStaffDirectoryVisualCapture
+233/614 Test #233: ClassMngrNextSharedStaffDirectoryVisualCapture ...............................................   Passed    4.01 sec
+        Start 234: ClassMngrNextSharedStaffDirectoryVisualCapture_native_en_US_light
+234/614 Test #234: ClassMngrNextSharedStaffDirectoryVisualCapture_native_en_US_light ............................   Passed    3.17 sec
+        Start 235: ClassMngrNextSharedStaffDirectoryVisualCapture_native_ko_KR_dark
+235/614 Test #235: ClassMngrNextSharedStaffDirectoryVisualCapture_native_ko_KR_dark .............................   Passed    3.48 sec
+        Start 236: ClassMngrNextSharedStaffDirectoryVisualCapture_gs_en_US_light
+236/614 Test #236: ClassMngrNextSharedStaffDirectoryVisualCapture_gs_en_US_light ................................   Passed    3.04 sec
+        Start 237: ClassMngrNextSharedStaffDirectoryVisualCapture_gs_ko_KR_dark
+237/614 Test #237: ClassMngrNextSharedStaffDirectoryVisualCapture_gs_ko_KR_dark .................................   Passed    3.08 sec
+        Start 238: ClassMngrNextTeacherDirectoryVisualCapture
+238/614 Test #238: ClassMngrNextTeacherDirectoryVisualCapture ...................................................   Passed    1.87 sec
+        Start 239: ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark
+239/614 Test #239: ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark .........................................   Passed    1.88 sec
+        Start 240: ClassMngrNextTeacherImportWorkflowTests
+240/614 Test #240: ClassMngrNextTeacherImportWorkflowTests ......................................................   Passed    1.48 sec
+        Start 241: ClassMngrNextTeacherImportVisualCapture
+241/614 Test #241: ClassMngrNextTeacherImportVisualCapture ......................................................***Failed    5.60 sec
+
+        Start 242: ClassMngrNextTeacherImportVisualCapture_ko_KR_dark
+242/614 Test #242: ClassMngrNextTeacherImportVisualCapture_ko_KR_dark ...........................................***Failed    5.05 sec
+
+        Start 243: ClassMngrNextScheduleImportWorkflowTests
+243/614 Test #243: ClassMngrNextScheduleImportWorkflowTests .....................................................   Passed    2.86 sec
+        Start 244: ClassMngrNextNavigationTests
+244/614 Test #244: ClassMngrNextNavigationTests .................................................................   Passed    0.44 sec
+        Start 245: ClassMngrNextApplicationRuntimeTests
+245/614 Test #245: ClassMngrNextApplicationRuntimeTests .........................................................   Passed    0.05 sec
+        Start 246: ClassMngrNextUnsavedChangesResolutionTests
+246/614 Test #246: ClassMngrNextUnsavedChangesResolutionTests ...................................................   Passed    0.08 sec
+        Start 247: ClassMngrNextPreferencesModelTests
+247/614 Test #247: ClassMngrNextPreferencesModelTests ...........................................................   Passed    0.07 sec
+        Start 248: ClassMngrNextCommandBusTests
+248/614 Test #248: ClassMngrNextCommandBusTests .................................................................   Passed    0.06 sec
+        Start 249: ClassMngrNextPromptContractTests
+249/614 Test #249: ClassMngrNextPromptContractTests .............................................................   Passed    0.07 sec
+        Start 250: ClassMngrNextNotificationContractTests
+250/614 Test #250: ClassMngrNextNotificationContractTests .......................................................   Passed    0.06 sec
+        Start 251: ClassMngrNextNotificationPresenterTests
+251/614 Test #251: ClassMngrNextNotificationPresenterTests ......................................................   Passed    0.48 sec
+        Start 252: ClassMngrNextFileDialogContractTests
+252/614 Test #252: ClassMngrNextFileDialogContractTests .........................................................   Passed    0.05 sec
+        Start 253: ClassMngrNextFileDialogPresenterTests
+253/614 Test #253: ClassMngrNextFileDialogPresenterTests ........................................................***Failed   87.11 sec
+
+        Start 254: ClassMngrNextPromptPresenterTests
+254/614 Test #254: ClassMngrNextPromptPresenterTests ............................................................   Passed    0.48 sec
+        Start 255: ClassMngrNextCalendarResourceKeysTests
+255/614 Test #255: ClassMngrNextCalendarResourceKeysTests .......................................................   Passed    0.09 sec
+        Start 256: ClassMngrNextResourceLoaderTests
+256/614 Test #256: ClassMngrNextResourceLoaderTests .............................................................***Failed    0.96 sec
+could not create genuine file symlink fixture; CreateSymbolicLinkW error 1314
+
+        Start 257: NextStartupWorkspaceDependencyBoundary
+257/614 Test #257: NextStartupWorkspaceDependencyBoundary .......................................................   Passed    0.09 sec
+        Start 258: ClassMngrNextResourceDocumentCatalogTests
+258/614 Test #258: ClassMngrNextResourceDocumentCatalogTests ....................................................   Passed    0.25 sec
+        Start 259: ClassMngrNextResourceRootResolverTests
+259/614 Test #259: ClassMngrNextResourceRootResolverTests .......................................................   Passed    0.13 sec
+        Start 260: ClassMngrNextResourceInstallPrefixGuardTests
+260/614 Test #260: ClassMngrNextResourceInstallPrefixGuardTests .................................................   Passed    4.10 sec
+        Start 261: ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests
+261/614 Test #261: ClassMngrNextApplicationSpeakingEvaluationReportTemplatePolicyTests ..........................   Passed    0.05 sec
+        Start 262: ClassMngrNextApplicationAcademicYearSchedulePolicyTests
+262/614 Test #262: ClassMngrNextApplicationAcademicYearSchedulePolicyTests ......................................   Passed    0.02 sec
+        Start 263: ClassMngrNextApplicationScheduleSlotPolicyTests
+263/614 Test #263: ClassMngrNextApplicationScheduleSlotPolicyTests ..............................................   Passed    0.05 sec
+        Start 264: ClassMngrNextApplicationScheduleDisplayModeSourcePolicyTests
+264/614 Test #264: ClassMngrNextApplicationScheduleDisplayModeSourcePolicyTests .................................   Passed    0.06 sec
+        Start 265: ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests
+265/614 Test #265: ClassMngrNextApplicationScheduleTestingGradeSuppressionPolicyTests ...........................   Passed    0.06 sec
+        Start 266: ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests
+266/614 Test #266: ClassMngrNextApplicationClassAnalyticsDashboardReadQueryTests ................................   Passed    0.11 sec
+        Start 267: ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests
+267/614 Test #267: ClassMngrNextApplicationClassAnalyticsGradeAttentionPolicyTests ..............................   Passed    0.05 sec
+        Start 268: ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests
+268/614 Test #268: ClassMngrNextApplicationClassAnalyticsCriterionExtremaPolicyTests ............................   Passed    0.07 sec
+        Start 269: ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests
+269/614 Test #269: ClassMngrNextApplicationClassAnalyticsRankingOrderPolicyTests ................................   Passed    0.06 sec
+        Start 270: ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests
+270/614 Test #270: ClassMngrNextPlatformApplicationServicesClassAnalyticsDashboardReadPortTests .................   Passed    2.43 sec
+        Start 271: ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests
+271/614 Test #271: ClassMngrNextApplicationCampusDashboardSelectedCampusReadQueryTests ..........................   Passed    0.06 sec
+        Start 272: ClassMngrNextApplicationCampusDashboardCampusSavePortTests
+272/614 Test #272: ClassMngrNextApplicationCampusDashboardCampusSavePortTests ...................................   Passed    0.06 sec
+        Start 273: ClassMngrNextApplicationCampusDashboardCampusIdentitySavePolicyTests
+273/614 Test #273: ClassMngrNextApplicationCampusDashboardCampusIdentitySavePolicyTests .........................   Passed    0.06 sec
+        Start 274: ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests
+274/614 Test #274: ClassMngrNextApplicationRosterPrintClassInfoReadQueryTests ...................................   Passed    0.05 sec
+        Start 275: ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests
+275/614 Test #275: ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests ..............................   Passed    0.06 sec
+        Start 276: ClassMngrNextApplicationRosterRowReorderingTests
+276/614 Test #276: ClassMngrNextApplicationRosterRowReorderingTests .............................................   Passed    0.06 sec
+        Start 277: ClassMngrNextApplicationRosterRowRemovalTests
+277/614 Test #277: ClassMngrNextApplicationRosterRowRemovalTests ................................................   Passed    0.06 sec
+        Start 278: ClassMngrNextApplicationRosterCustomColumnNamePolicyTests
+278/614 Test #278: ClassMngrNextApplicationRosterCustomColumnNamePolicyTests ....................................   Passed    0.05 sec
+        Start 279: ClassMngrNextApplicationRosterCustomColumnAppendTests
+279/614 Test #279: ClassMngrNextApplicationRosterCustomColumnAppendTests ........................................   Passed    0.05 sec
+        Start 280: ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests
+280/614 Test #280: ClassMngrNextApplicationRosterCustomColumnRemovalPolicyTests .................................   Passed    0.06 sec
+        Start 281: ClassMngrNextApplicationRosterRowTransferPreparationTests
+281/614 Test #281: ClassMngrNextApplicationRosterRowTransferPreparationTests ....................................   Passed    0.06 sec
+        Start 282: ClassMngrNextApplicationRosterRowTransferUseCaseTests
+282/614 Test #282: ClassMngrNextApplicationRosterRowTransferUseCaseTests ........................................   Passed    0.09 sec
+        Start 283: ClassMngrNextApplicationRosterRowAvailabilityTests
+283/614 Test #283: ClassMngrNextApplicationRosterRowAvailabilityTests ...........................................   Passed    0.05 sec
+        Start 284: ClassMngrNextApplicationRosterTransferTargetEligibilityTests
+284/614 Test #284: ClassMngrNextApplicationRosterTransferTargetEligibilityTests .................................   Passed    0.12 sec
+        Start 285: ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests
+285/614 Test #285: ClassMngrNextApplicationStudentKoreanNameSuffixSuggestionTests ...............................   Passed    0.13 sec
+        Start 286: ClassMngrNextApplicationSpeakingEvaluationRosterNameImportPlanTests
+286/614 Test #286: ClassMngrNextApplicationSpeakingEvaluationRosterNameImportPlanTests ..........................   Passed    0.10 sec
+        Start 287: ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests
+287/614 Test #287: ClassMngrNextApplicationSpeakingEvaluationRosterNamesReadQueryTests ..........................   Passed    0.09 sec
+        Start 288: ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests
+288/614 Test #288: ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests .....................   Passed    0.07 sec
+        Start 289: ClassMngrNextApplicationStudentNamePairLookupTests
+289/614 Test #289: ClassMngrNextApplicationStudentNamePairLookupTests ...........................................   Passed    0.07 sec
+        Start 290: ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests
+290/614 Test #290: ClassMngrNextApplicationSpeakingEvaluationAiBatchEligibilityTests ............................   Passed    0.05 sec
+        Start 291: ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests
+291/614 Test #291: ClassMngrNextApplicationSpeakingEvaluationAiCommentPromptTests ...............................   Passed    0.06 sec
+        Start 292: ClassMngrNextPlatformSpeakingEvaluationQtTextMatchPortTests
+292/614 Test #292: ClassMngrNextPlatformSpeakingEvaluationQtTextMatchPortTests ..................................   Passed    0.28 sec
+        Start 293: ClassMngrNextApplicationSpeakingEvaluationReportContentTests
+293/614 Test #293: ClassMngrNextApplicationSpeakingEvaluationReportContentTests .................................   Passed    0.08 sec
+        Start 294: ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests
+294/614 Test #294: ClassMngrNextApplicationSpeakingEvaluationScheduleLabelProjectionTests .......................   Passed    0.07 sec
+        Start 295: ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests
+295/614 Test #295: ClassMngrNextApplicationSpeakingEvaluationAiBatchCommentQualityTests .........................   Passed    0.05 sec
+        Start 296: ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests
+296/614 Test #296: ClassMngrNextApplicationSpeakingEvaluationAiBatchAcceptedCommentPlanTests ....................   Passed    0.06 sec
+        Start 297: ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests
+297/614 Test #297: ClassMngrNextApplicationSpeakingEvaluationPrivateNotesSplitTests .............................   Passed    0.06 sec
+        Start 298: ClassMngrNextApplicationEvaluationDefaultSelectionTests
+298/614 Test #298: ClassMngrNextApplicationEvaluationDefaultSelectionTests ......................................   Passed    0.06 sec
+        Start 299: ClassMngrNextApplicationClassDayFilterPolicyTests
+299/614 Test #299: ClassMngrNextApplicationClassDayFilterPolicyTests ............................................   Passed    0.05 sec
+        Start 300: ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests
+300/614 Test #300: ClassMngrNextApplicationInitialSetupTeacherIdentityValidationTests ...........................   Passed    0.05 sec
+        Start 301: ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests
+301/614 Test #301: ClassMngrNextApplicationInitialSetupPersonalNameRequirementTests .............................   Passed    0.07 sec
+        Start 302: ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests
+302/614 Test #302: ClassMngrNextApplicationInitialSetupTeacherEntrySkipPolicyTests ..............................   Passed    0.07 sec
+        Start 303: ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests
+303/614 Test #303: ClassMngrNextApplicationInitialSetupClassDetailsRequirementsTests ............................   Passed    0.08 sec
+        Start 304: ClassMngrNextApplicationInitialSetupClassTimesRequirementTests
+304/614 Test #304: ClassMngrNextApplicationInitialSetupClassTimesRequirementTests ...............................   Passed    0.05 sec
+        Start 305: ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests
+305/614 Test #305: ClassMngrNextApplicationAutomaticUpdateStartupEligibilityTests ...............................   Passed    0.07 sec
+        Start 306: ClassMngrNextApplicationStartupUpdateCheckUseCaseTests
+306/614 Test #306: ClassMngrNextApplicationStartupUpdateCheckUseCaseTests .......................................   Passed    0.06 sec
+        Start 307: ClassMngrNextApplicationManualUpdateCheckUseCaseTests
+307/614 Test #307: ClassMngrNextApplicationManualUpdateCheckUseCaseTests ........................................   Passed    0.06 sec
+        Start 308: ClassMngrNextApplicationSkippedUpdateVersionPolicyTests
+308/614 Test #308: ClassMngrNextApplicationSkippedUpdateVersionPolicyTests ......................................   Passed    0.07 sec
+        Start 309: ClassMngrNextApplicationInitialSetupLifecycleTests
+309/614 Test #309: ClassMngrNextApplicationInitialSetupLifecycleTests ...........................................   Passed    0.05 sec
+        Start 310: ClassMngrNextPlatformInitialSetupLifecycleAdapterTests
+310/614 Test #310: ClassMngrNextPlatformInitialSetupLifecycleAdapterTests .......................................   Passed    0.62 sec
+        Start 311: ClassMngrNextPlatformWorkspaceStoreInitialSetupLifecycleAdapterTests
+311/614 Test #311: ClassMngrNextPlatformWorkspaceStoreInitialSetupLifecycleAdapterTests .........................   Passed    1.37 sec
+        Start 312: ClassMngrNextWorkspaceCreationFlowTests
+312/614 Test #312: ClassMngrNextWorkspaceCreationFlowTests ......................................................   Passed    2.24 sec
+        Start 313: ClassMngrNextWorkspaceOpenFlowTests
+313/614 Test #313: ClassMngrNextWorkspaceOpenFlowTests ..........................................................   Passed    1.67 sec
+        Start 314: ClassMngrNextWorkspaceInterruptedRecoveryFlowTests
+314/614 Test #314: ClassMngrNextWorkspaceInterruptedRecoveryFlowTests ...........................................***Failed    0.39 sec
+
+        Start 315: ClassMngrNextWorkspaceSaveAsFlowTests
+315/614 Test #315: ClassMngrNextWorkspaceSaveAsFlowTests ........................................................***Failed    1.17 sec
+
+        Start 316: ClassMngrNextWorkspaceExportFlowTests
+316/614 Test #316: ClassMngrNextWorkspaceExportFlowTests ........................................................***Failed    1.24 sec
+
+        Start 317: ClassMngrNextPlatformWorkspaceStoreInitialSetupTeacherEntryPersistenceTests
+317/614 Test #317: ClassMngrNextPlatformWorkspaceStoreInitialSetupTeacherEntryPersistenceTests ..................   Passed    0.76 sec
+        Start 318: ClassMngrNextPlatformWorkspaceStoreTeacherDirectoryTests
+318/614 Test #318: ClassMngrNextPlatformWorkspaceStoreTeacherDirectoryTests .....................................   Passed    0.85 sec
+        Start 319: ClassMngrNextPlatformWorkspaceStoreStaffDirectoryTests
+319/614 Test #319: ClassMngrNextPlatformWorkspaceStoreStaffDirectoryTests .......................................   Passed    1.23 sec
+        Start 320: ClassMngrNextPlatformWorkspaceStoreCustomColorPalettePreferencesPortTests
+320/614 Test #320: ClassMngrNextPlatformWorkspaceStoreCustomColorPalettePreferencesPortTests ....................   Passed    0.67 sec
+        Start 321: ClassMngrNextPlatformWorkspaceStorePersonalDetailsPortTests
+321/614 Test #321: ClassMngrNextPlatformWorkspaceStorePersonalDetailsPortTests ..................................   Passed    2.55 sec
+        Start 322: ClassMngrNextMyWorkspacePageTests
+322/614 Test #322: ClassMngrNextMyWorkspacePageTests ............................................................Exit code 0xc0000409***Exception:   0.99 sec
+
+        Start 323: ClassMngrNextMyWorkspaceVisualCapture
+323/614 Test #323: ClassMngrNextMyWorkspaceVisualCapture ........................................................***Timeout 119.96 sec
+
+        Start 324: ClassMngrNextMyClassesPageTests
+324/614 Test #324: ClassMngrNextMyClassesPageTests ..............................................................   Passed    2.84 sec
+        Start 325: ClassMngrNextSubPrepGatewayTests
+325/614 Test #325: ClassMngrNextSubPrepGatewayTests .............................................................   Passed    1.04 sec
+        Start 326: ClassMngrNextSubPrepPageTests
+326/614 Test #326: ClassMngrNextSubPrepPageTests ................................................................   Passed    0.68 sec
+        Start 327: ClassMngrNextSubPrepVisualCapture
+327/614 Test #327: ClassMngrNextSubPrepVisualCapture ............................................................***Failed   45.86 sec
+
+        Start 328: ClassMngrNextSpeakingEvaluationPageTests
+328/614 Test #328: ClassMngrNextSpeakingEvaluationPageTests .....................................................   Passed   33.14 sec
+        Start 329: ClassMngrNextClassesNavigatorPageTests
+329/614 Test #329: ClassMngrNextClassesNavigatorPageTests .......................................................   Passed   15.23 sec
+        Start 330: ClassMngrNextTestingClassesManagerTests
+330/614 Test #330: ClassMngrNextTestingClassesManagerTests ......................................................   Passed   10.32 sec
+        Start 331: ClassMngrNextRosterEditorTests
+331/614 Test #331: ClassMngrNextRosterEditorTests ...............................................................   Passed   20.55 sec
+        Start 332: ClassMngrNextClassTransferWorkflowTests
+332/614 Test #332: ClassMngrNextClassTransferWorkflowTests ......................................................   Passed    8.85 sec
+        Start 333: ClassMngrNextClassTransferVisualCapture
+333/614 Test #333: ClassMngrNextClassTransferVisualCapture ......................................................   Passed   13.48 sec
+        Start 334: ClassMngrNextTestingClassesVisualCapture
+334/614 Test #334: ClassMngrNextTestingClassesVisualCapture .....................................................   Passed   29.94 sec
+        Start 335: ClassMngrNextClassesFullShellVisualCapture
+335/614 Test #335: ClassMngrNextClassesFullShellVisualCapture ...................................................   Passed   12.06 sec
+        Start 336: ClassMngrNextClassesFullWindowStateVisualCapture
+336/614 Test #336: ClassMngrNextClassesFullWindowStateVisualCapture .............................................***Timeout 119.99 sec
+
+        Start 337: ClassMngrNextClassesNavigatorVisualCapture
+337/614 Test #337: ClassMngrNextClassesNavigatorVisualCapture ...................................................***Failed    1.80 sec
+
+        Start 338: ClassMngrNextClassesDetailsCoTeacherVisualCapture
+338/614 Test #338: ClassMngrNextClassesDetailsCoTeacherVisualCapture ............................................   Passed  107.56 sec
+        Start 339: ClassMngrNextClassesNotesVisualCapture
+339/614 Test #339: ClassMngrNextClassesNotesVisualCapture .......................................................   Passed   54.76 sec
+        Start 340: ClassMngrNextClassesAnalyticsVisualCapture
+340/614 Test #340: ClassMngrNextClassesAnalyticsVisualCapture ...................................................   Passed   60.55 sec
+        Start 341: ClassMngrNextClassesNavigatorWorkspaceStoreTests
+341/614 Test #341: ClassMngrNextClassesNavigatorWorkspaceStoreTests .............................................***Timeout 119.98 sec
+
+        Start 342: ClassMngrNextMyClassesVisualCapture
+342/614 Test #342: ClassMngrNextMyClassesVisualCapture ..........................................................   Passed   78.29 sec
+        Start 343: ClassMngrUpdateControllerAutomaticStartupTests
+343/614 Test #343: ClassMngrUpdateControllerAutomaticStartupTests ...............................................   Passed    8.59 sec
+        Start 344: ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests
+344/614 Test #344: ClassMngrNextPlatformQSettingsFileDialogDirectoryPreferencesAdapterTests .....................   Passed    0.45 sec
+        Start 345: ClassMngrNextDomainContractTests
+345/614 Test #345: ClassMngrNextDomainContractTests .............................................................   Passed    0.09 sec
+        Start 346: ClassMngrNextApplicationContractTests
+346/614 Test #346: ClassMngrNextApplicationContractTests ........................................................   Passed    0.09 sec
+        Start 347: ClassMngrNextApplicationStateTests
+347/614 Test #347: ClassMngrNextApplicationStateTests ...........................................................   Passed    0.09 sec
+        Start 348: ClassMngrNextApplicationWorkspaceCoordinatorTests
+348/614 Test #348: ClassMngrNextApplicationWorkspaceCoordinatorTests ............................................   Passed    0.10 sec
+        Start 349: ClassMngrNextApplicationRecentWorkspaceHistoryUseCaseTests
+349/614 Test #349: ClassMngrNextApplicationRecentWorkspaceHistoryUseCaseTests ...................................   Passed    0.12 sec
+        Start 350: ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests
+350/614 Test #350: ClassMngrNextApplicationUpcomingBirthdayScheduleUseCaseTests .................................   Passed    0.12 sec
+        Start 351: ClassMngrNextUpcomingBirthdaysFlowTests
+351/614 Test #351: ClassMngrNextUpcomingBirthdaysFlowTests ......................................................   Passed    0.13 sec
+        Start 352: ClassMngrNextPlatformWorkspaceStoreUpcomingBirthdayDirectoriesTests
+352/614 Test #352: ClassMngrNextPlatformWorkspaceStoreUpcomingBirthdayDirectoriesTests ..........................   Passed    0.92 sec
+        Start 353: ClassMngrNextUpcomingBirthdaysVisualCaptureEnLight
+353/614 Test #353: ClassMngrNextUpcomingBirthdaysVisualCaptureEnLight ...........................................   Passed    1.41 sec
+        Start 354: ClassMngrNextUpcomingBirthdaysVisualCaptureKoDark
+354/614 Test #354: ClassMngrNextUpcomingBirthdaysVisualCaptureKoDark ............................................   Passed    0.98 sec
+        Start 355: NextApplicationUpcomingBirthdayScheduleUseCaseOrdering
+355/614 Test #355: NextApplicationUpcomingBirthdayScheduleUseCaseOrdering .......................................   Passed    0.05 sec
+        Start 356: NextApplicationUpcomingBirthdayScheduleUseCaseInvalidReferenceDate
+356/614 Test #356: NextApplicationUpcomingBirthdayScheduleUseCaseInvalidReferenceDate ...........................   Passed    0.04 sec
+        Start 357: ClassMngrNextApplicationSelectionTests
+357/614 Test #357: ClassMngrNextApplicationSelectionTests .......................................................   Passed    0.11 sec
+        Start 358: ClassMngrNextApplicationImportJobTests
+358/614 Test #358: ClassMngrNextApplicationImportJobTests .......................................................   Passed    0.10 sec
+        Start 359: ClassMngrNextApplicationImportJobCoordinatorTests
+359/614 Test #359: ClassMngrNextApplicationImportJobCoordinatorTests ............................................   Passed    0.11 sec
+        Start 360: ClassMngrNextApplicationReportJobTests
+360/614 Test #360: ClassMngrNextApplicationReportJobTests .......................................................   Passed    0.12 sec
+        Start 361: ClassMngrNextApplicationReportJobCoordinatorTests
+361/614 Test #361: ClassMngrNextApplicationReportJobCoordinatorTests ............................................   Passed    0.12 sec
+        Start 362: ClassMngrNextApplicationImportReviewTests
+362/614 Test #362: ClassMngrNextApplicationImportReviewTests ....................................................   Passed    0.10 sec
+        Start 363: ClassMngrNextApplicationDocumentCatalogTests
+363/614 Test #363: ClassMngrNextApplicationDocumentCatalogTests .................................................   Passed    0.21 sec
+        Start 364: ClassMngrNextApplicationDocumentCatalogUseCaseTests
+364/614 Test #364: ClassMngrNextApplicationDocumentCatalogUseCaseTests ..........................................   Passed    0.12 sec
+        Start 365: ClassMngrNextApplicationDocumentContentTests
+365/614 Test #365: ClassMngrNextApplicationDocumentContentTests .................................................   Passed    0.11 sec
+        Start 366: ClassMngrNextApplicationClassSummaryTests
+366/614 Test #366: ClassMngrNextApplicationClassSummaryTests ....................................................   Passed    0.16 sec
+        Start 367: ClassMngrNextApplicationSubPrepPackageRequestValidationTests
+367/614 Test #367: ClassMngrNextApplicationSubPrepPackageRequestValidationTests .................................   Passed    0.09 sec
+        Start 368: ClassMngrNextApplicationSubPrepSelectedClassIdsTests
+368/614 Test #368: ClassMngrNextApplicationSubPrepSelectedClassIdsTests .........................................   Passed    0.08 sec
+        Start 369: ClassMngrNextApplicationSubPrepVacationSelectionPolicyTests
+369/614 Test #369: ClassMngrNextApplicationSubPrepVacationSelectionPolicyTests ..................................   Passed    0.19 sec
+        Start 370: ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests
+370/614 Test #370: ClassMngrNextApplicationSubPrepClassInformationSelectionPolicyTests ..........................   Passed    0.07 sec
+        Start 371: ClassMngrNextApplicationSubPrepMeetingTimeGroupingPolicyTests
+371/614 Test #371: ClassMngrNextApplicationSubPrepMeetingTimeGroupingPolicyTests ................................   Passed    0.08 sec
+        Start 372: ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests
+372/614 Test #372: ClassMngrNextApplicationSubPrepNavigationMetadataPolicyTests .................................   Passed    0.08 sec
+        Start 373: ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests
+373/614 Test #373: ClassMngrNextApplicationSubPrepNavigationScheduleOrderPolicyTests ............................   Passed    0.06 sec
+        Start 374: ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests
+374/614 Test #374: ClassMngrNextApplicationSubPrepVisibleClassOrderingPolicyTests ...............................   Passed    0.08 sec
+        Start 375: ClassMngrNextApplicationSubPrepPrintOrderPolicyTests
+375/614 Test #375: ClassMngrNextApplicationSubPrepPrintOrderPolicyTests .........................................   Passed    0.09 sec
+        Start 376: ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests
+376/614 Test #376: ClassMngrNextApplicationClassTabNavigationOrderingPolicyTests ................................   Passed    0.08 sec
+        Start 377: ClassMngrNextApplicationTestingClassesOrderingPolicyTests
+377/614 Test #377: ClassMngrNextApplicationTestingClassesOrderingPolicyTests ....................................   Passed    0.07 sec
+        Start 378: ClassMngrNextApplicationPreferredNameSelectionPolicyTests
+378/614 Test #378: ClassMngrNextApplicationPreferredNameSelectionPolicyTests ....................................   Passed    0.08 sec
+        Start 379: ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests
+379/614 Test #379: ClassMngrNextApplicationSubPrepScheduleSummaryQueryTests .....................................   Passed    0.13 sec
+        Start 380: ClassMngrNextApplicationSubPrepPrintSourceQueryTests
+380/614 Test #380: ClassMngrNextApplicationSubPrepPrintSourceQueryTests .........................................   Passed    1.15 sec
+        Start 381: ClassMngrNextApplicationClassCoTeacherPageReadQueryTests
+381/614 Test #381: ClassMngrNextApplicationClassCoTeacherPageReadQueryTests .....................................   Passed    0.21 sec
+        Start 382: ClassMngrNextApplicationClassCoTeacherTeacherChoicesReadQueryTests
+382/614 Test #382: ClassMngrNextApplicationClassCoTeacherTeacherChoicesReadQueryTests ...........................   Passed    0.13 sec
+        Start 383: ClassMngrNextApplicationClassNotesPageReadQueryTests
+383/614 Test #383: ClassMngrNextApplicationClassNotesPageReadQueryTests .........................................   Passed    0.11 sec
+        Start 384: ClassMngrNextApplicationSelectedClassGradeReadQueryTests
+384/614 Test #384: ClassMngrNextApplicationSelectedClassGradeReadQueryTests .....................................   Passed    0.12 sec
+        Start 385: ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests
+385/614 Test #385: ClassMngrNextApplicationSelectedClassSubtitleReadQueryTests ..................................   Passed    0.16 sec
+        Start 386: ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests
+386/614 Test #386: ClassMngrNextApplicationSelectedClassSubtitleBatchReadQueryTests .............................   Passed    0.12 sec
+        Start 387: ClassMngrNextApplicationClassNotesSavePortTests
+387/614 Test #387: ClassMngrNextApplicationClassNotesSavePortTests ..............................................   Passed    0.36 sec
+        Start 388: ClassMngrNextApplicationClassDetailsSaveUseCaseTests
+388/614 Test #388: ClassMngrNextApplicationClassDetailsSaveUseCaseTests .........................................   Passed    0.14 sec
+        Start 389: ClassMngrNextScheduleEditorDialogParityTests
+389/614 Test #389: ClassMngrNextScheduleEditorDialogParityTests .................................................   Passed    2.50 sec
+        Start 390: ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests
+390/614 Test #390: ClassMngrNextApplicationClassDetailsScheduleConflictQueryTests ...............................   Passed    0.09 sec
+        Start 391: ClassMngrNextApplicationClassDetailsValidationContextQueryTests
+391/614 Test #391: ClassMngrNextApplicationClassDetailsValidationContextQueryTests ..............................   Passed    0.10 sec
+        Start 392: ClassMngrNextApplicationClassDetailsValidationPolicyTests
+392/614 Test #392: ClassMngrNextApplicationClassDetailsValidationPolicyTests ....................................   Passed    0.11 sec
+        Start 393: ClassMngrNextScheduleEditorDialogSaveTests
+393/614 Test #393: ClassMngrNextScheduleEditorDialogSaveTests ...................................................   Passed    2.02 sec
+        Start 394: ClassMngrNextApplicationRosterSaveUseCaseTests
+394/614 Test #394: ClassMngrNextApplicationRosterSaveUseCaseTests ...............................................   Passed    0.11 sec
+        Start 395: ClassMngrNextApplicationRosterReadQueryTests
+395/614 Test #395: ClassMngrNextApplicationRosterReadQueryTests .................................................   Passed    0.11 sec
+        Start 396: ClassMngrNextApplicationRosterColumnNamesBatchReadQueryTests
+396/614 Test #396: ClassMngrNextApplicationRosterColumnNamesBatchReadQueryTests .................................   Passed    0.10 sec
+        Start 397: ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests
+397/614 Test #397: ClassMngrNextApplicationRosterAvailabilityBatchReadQueryTests ................................   Passed    0.08 sec
+        Start 398: ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests
+398/614 Test #398: ClassMngrNextApplicationScheduleBuilderSourceSnapshotTests ...................................   Passed    0.09 sec
+        Start 399: ClassMngrNextApplicationClassesNavigationSnapshotTests
+399/614 Test #399: ClassMngrNextApplicationClassesNavigationSnapshotTests .......................................   Passed    0.08 sec
+        Start 400: ClassMngrNextApplicationClassByIdReadQueryTests
+400/614 Test #400: ClassMngrNextApplicationClassByIdReadQueryTests ..............................................   Passed    0.10 sec
+        Start 401: ClassMngrNextApplicationClassesListReadQueryTests
+401/614 Test #401: ClassMngrNextApplicationClassesListReadQueryTests ............................................   Passed    0.14 sec
+        Start 402: ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests
+402/614 Test #402: ClassMngrNextPlatformApplicationServicesClassByIdReadPortTests ...............................   Passed    0.69 sec
+        Start 403: ClassMngrNextPlatformApplicationServicesClassesListReadPortTests
+403/614 Test #403: ClassMngrNextPlatformApplicationServicesClassesListReadPortTests .............................   Passed    1.04 sec
+        Start 404: ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests
+404/614 Test #404: ClassMngrNextApplicationSpeakingEvaluationSaveUseCaseTests ...................................   Passed    0.15 sec
+        Start 405: ClassMngrNextApplicationSpeakingEvaluationQueryTests
+405/614 Test #405: ClassMngrNextApplicationSpeakingEvaluationQueryTests .........................................   Passed    0.11 sec
+        Start 406: ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests
+406/614 Test #406: ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests .............................   Passed    0.07 sec
+        Start 407: ClassMngrNextApplicationClassDetailsPageQueryTests
+407/614 Test #407: ClassMngrNextApplicationClassDetailsPageQueryTests ...........................................   Passed    0.09 sec
+        Start 408: ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests
+408/614 Test #408: ClassMngrNextApplicationMyClassesClassInformationBatchReadQueryTests .........................   Passed    0.11 sec
+        Start 409: ClassMngrNextApplicationMyClassesClassSummaryBatchReadQueryTests
+409/614 Test #409: ClassMngrNextApplicationMyClassesClassSummaryBatchReadQueryTests .............................   Passed    0.10 sec
+        Start 410: ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests
+410/614 Test #410: ClassMngrNextApplicationMyClassesTeacherProfileBatchReadQueryTests ...........................   Passed    0.12 sec
+        Start 411: ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests
+411/614 Test #411: ClassMngrNextApplicationMyClassesStudentCountBatchReadQueryTests .............................   Passed    0.09 sec
+        Start 412: ClassMngrNextApplicationScheduleEditorClassInfoQueryTests
+412/614 Test #412: ClassMngrNextApplicationScheduleEditorClassInfoQueryTests ....................................   Passed    0.13 sec
+        Start 413: ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests
+413/614 Test #413: ClassMngrNextApplicationSubPrepRosterOutputSourceQueryTests ..................................   Passed    2.16 sec
+        Start 414: ClassMngrNextApplicationSubPrepClassDetailsQueryTests
+414/614 Test #414: ClassMngrNextApplicationSubPrepClassDetailsQueryTests ........................................   Passed    0.11 sec
+        Start 415: ClassMngrNextApplicationSubPrepClassInformationStateTests
+415/614 Test #415: ClassMngrNextApplicationSubPrepClassInformationStateTests ....................................   Passed    0.10 sec
+        Start 416: ClassMngrNextApplicationClassTransferTests
+416/614 Test #416: ClassMngrNextApplicationClassTransferTests ...................................................   Passed    0.23 sec
+        Start 417: ClassMngrNextApplicationClassTransferApplyUseCaseTests
+417/614 Test #417: ClassMngrNextApplicationClassTransferApplyUseCaseTests .......................................   Passed    0.11 sec
+        Start 418: ClassMngrClassTransferApplyPackageAdapterTests
+418/614 Test #418: ClassMngrClassTransferApplyPackageAdapterTests ...............................................   Passed    0.13 sec
+        Start 419: ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests
+419/614 Test #419: ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests ..........................***Timeout 119.99 sec
+
+        Start 420: ClassMngrNextApplicationClassTransferPreviewQueryTests
+420/614 Test #420: ClassMngrNextApplicationClassTransferPreviewQueryTests .......................................   Passed    0.08 sec
+        Start 421: ClassMngrNextApplicationClassTransferExportQueryTests
+421/614 Test #421: ClassMngrNextApplicationClassTransferExportQueryTests ........................................   Passed    1.23 sec
+        Start 422: ClassMngrNextPlatformClassTransferExportSourceTests
+422/614 Test #422: ClassMngrNextPlatformClassTransferExportSourceTests ..........................................   Passed    3.05 sec
+        Start 423: ClassMngrNextApplicationScheduleViewTests
+423/614 Test #423: ClassMngrNextApplicationScheduleViewTests ....................................................   Passed    0.66 sec
+        Start 424: ClassMngrNextApplicationCalendarEventTests
+424/614 Test #424: ClassMngrNextApplicationCalendarEventTests ...................................................   Passed    0.89 sec
+        Start 425: ClassMngrNextApplicationCalendarEventImportPlanTests
+425/614 Test #425: ClassMngrNextApplicationCalendarEventImportPlanTests .........................................   Passed    0.12 sec
+        Start 426: ClassMngrNextApplicationCalendarEventImportUseCaseTests
+426/614 Test #426: ClassMngrNextApplicationCalendarEventImportUseCaseTests ......................................   Passed    1.09 sec
+        Start 427: ClassMngrNextApplicationCalendarEventImportSignatureTests
+427/614 Test #427: ClassMngrNextApplicationCalendarEventImportSignatureTests ....................................   Passed    0.09 sec
+        Start 428: ClassMngrNextApplicationScheduleImportStateValidationTests
+428/614 Test #428: ClassMngrNextApplicationScheduleImportStateValidationTests ...................................   Passed    0.11 sec
+        Start 429: ClassMngrNextApplicationScheduleImportStateSnapshotTests
+429/614 Test #429: ClassMngrNextApplicationScheduleImportStateSnapshotTests .....................................   Passed    0.09 sec
+        Start 430: ClassMngrNextApplicationScheduleImportMatchingProjectionTests
+430/614 Test #430: ClassMngrNextApplicationScheduleImportMatchingProjectionTests ................................   Passed    0.09 sec
+        Start 431: ClassMngrNextApplicationScheduleImportReviewDecisionsTests
+431/614 Test #431: ClassMngrNextApplicationScheduleImportReviewDecisionsTests ...................................   Passed    0.08 sec
+        Start 432: ClassMngrNextApplicationScheduleImportReviewReadinessTests
+432/614 Test #432: ClassMngrNextApplicationScheduleImportReviewReadinessTests ...................................   Passed    0.06 sec
+        Start 433: ClassMngrNextApplicationScheduleImportApplyUseCaseTests
+433/614 Test #433: ClassMngrNextApplicationScheduleImportApplyUseCaseTests ......................................   Passed    0.07 sec
+        Start 434: ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests
+434/614 Test #434: ClassMngrNextApplicationScheduleImportApplyReviewDecisionsTests ..............................   Passed    0.07 sec
+        Start 435: ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests
+435/614 Test #435: ClassMngrNextApplicationScheduleImportReviewSummaryProjectionTests ...........................   Passed    0.06 sec
+        Start 436: ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests
+436/614 Test #436: ClassMngrNextApplicationScheduleImportSchedulesClearedProjectionTests ........................   Passed    0.06 sec
+        Start 437: ClassMngrNextApplicationScheduleImportPlanValidationTests
+437/614 Test #437: ClassMngrNextApplicationScheduleImportPlanValidationTests ....................................   Passed    0.06 sec
+        Start 438: ClassMngrNextApplicationKoreanTeacherImportUpdateTests
+438/614 Test #438: ClassMngrNextApplicationKoreanTeacherImportUpdateTests .......................................   Passed    0.05 sec
+        Start 439: ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests
+439/614 Test #439: ClassMngrNextApplicationNativeEnglishTeacherImportUpdateTests ................................   Passed    0.05 sec
+        Start 440: ClassMngrNextApplicationGsTeamImportUpdateTests
+440/614 Test #440: ClassMngrNextApplicationGsTeamImportUpdateTests ..............................................   Passed    0.07 sec
+        Start 441: ClassMngrNextApplicationTeacherImportPlanValidationTests
+441/614 Test #441: ClassMngrNextApplicationTeacherImportPlanValidationTests .....................................   Passed    0.06 sec
+        Start 442: ClassMngrNextApplicationTeacherImportMatchCardinalityTests
+442/614 Test #442: ClassMngrNextApplicationTeacherImportMatchCardinalityTests ...................................   Passed    0.05 sec
+        Start 443: ClassMngrNextApplicationTeacherImportUseCaseTests
+443/614 Test #443: ClassMngrNextApplicationTeacherImportUseCaseTests ............................................   Passed    0.06 sec
+        Start 444: ClassMngrNextApplicationTeacherProfileEditTests
+444/614 Test #444: ClassMngrNextApplicationTeacherProfileEditTests ..............................................   Passed    0.06 sec
+        Start 445: ClassMngrNextApplicationTeacherProfileReadQueryTests
+445/614 Test #445: ClassMngrNextApplicationTeacherProfileReadQueryTests .........................................   Passed    0.09 sec
+        Start 446: ClassMngrNextApplicationTeacherDisplayNameBatchReadQueryTests
+446/614 Test #446: ClassMngrNextApplicationTeacherDisplayNameBatchReadQueryTests ................................   Passed    0.10 sec
+        Start 447: ClassMngrNextApplicationTeacherImportLatestSourceDateReadQueryTests
+447/614 Test #447: ClassMngrNextApplicationTeacherImportLatestSourceDateReadQueryTests ..........................   Passed    0.08 sec
+        Start 448: ClassMngrNextApplicationNativeEnglishTeacherDirectoryReadQueryTests
+448/614 Test #448: ClassMngrNextApplicationNativeEnglishTeacherDirectoryReadQueryTests ..........................   Passed    0.09 sec
+        Start 449: ClassMngrNextApplicationNativeEnglishTeacherBirthdayDirectoryReadQueryTests
+449/614 Test #449: ClassMngrNextApplicationNativeEnglishTeacherBirthdayDirectoryReadQueryTests ..................   Passed    0.11 sec
+        Start 450: ClassMngrNextApplicationKoreanTeacherBirthdayDirectoryReadQueryTests
+450/614 Test #450: ClassMngrNextApplicationKoreanTeacherBirthdayDirectoryReadQueryTests .........................   Passed    0.09 sec
+        Start 451: ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests
+451/614 Test #451: ClassMngrNextApplicationNativeEnglishTeacherDirectorySaveTests ...............................   Passed    0.09 sec
+        Start 452: ClassMngrNextApplicationGsTeamDirectorySaveTests
+452/614 Test #452: ClassMngrNextApplicationGsTeamDirectorySaveTests .............................................   Passed    0.08 sec
+        Start 453: ClassMngrNextApplicationGsTeamDirectoryReadQueryTests
+453/614 Test #453: ClassMngrNextApplicationGsTeamDirectoryReadQueryTests ........................................   Passed    0.15 sec
+        Start 454: ClassMngrNextApplicationGsTeamBirthdayDirectoryReadQueryTests
+454/614 Test #454: ClassMngrNextApplicationGsTeamBirthdayDirectoryReadQueryTests ................................   Passed    0.09 sec
+        Start 455: ClassMngrNextApplicationClassCoTeacherAssignmentTests
+455/614 Test #455: ClassMngrNextApplicationClassCoTeacherAssignmentTests ........................................   Passed    0.07 sec
+        Start 456: ClassMngrCalendarEventImportParityTests
+456/614 Test #456: ClassMngrCalendarEventImportParityTests ......................................................   Passed    1.43 sec
+        Start 457: ClassMngrNextApplicationSubPrepCampusDirectoryQueryTests
+457/614 Test #457: ClassMngrNextApplicationSubPrepCampusDirectoryQueryTests .....................................   Passed    0.11 sec
+        Start 458: ClassMngrNextApplicationCalendarEventImportSignatureQueryPortTests
+458/614 Test #458: ClassMngrNextApplicationCalendarEventImportSignatureQueryPortTests ...........................   Passed    0.08 sec
+        Start 459: ClassMngrNextApplicationCalendarEventQueryPortTests
+459/614 Test #459: ClassMngrNextApplicationCalendarEventQueryPortTests ..........................................   Passed    0.08 sec
+        Start 460: ClassMngrNextApplicationCampusDirectoryTests
+460/614 Test #460: ClassMngrNextApplicationCampusDirectoryTests .................................................   Passed    0.98 sec
+        Start 461: ClassMngrNextApplicationUserPreferencesTests
+461/614 Test #461: ClassMngrNextApplicationUserPreferencesTests .................................................   Passed    0.12 sec
+        Start 462: ClassMngrNextPlatformSettingsManagerExcelImportTimeoutPortTests
+462/614 Test #462: ClassMngrNextPlatformSettingsManagerExcelImportTimeoutPortTests ..............................   Passed    0.40 sec
+        Start 463: ClassMngrNextPlatformSettingsManagerAutomaticUpdatePreferencesPortTests
+463/614 Test #463: ClassMngrNextPlatformSettingsManagerAutomaticUpdatePreferencesPortTests ......................   Passed    0.38 sec
+        Start 464: ClassMngrNextPlatformSettingsManagerAiCommentCustomWebsitePortTests
+464/614 Test #464: ClassMngrNextPlatformSettingsManagerAiCommentCustomWebsitePortTests ..........................   Passed    0.34 sec
+        Start 465: ClassMngrNextPlatformSettingsManagerAiCommentVoicePreferencesPortTests
+465/614 Test #465: ClassMngrNextPlatformSettingsManagerAiCommentVoicePreferencesPortTests .......................   Passed    0.60 sec
+        Start 466: ClassMngrNextPlatformSettingsManagerAiCommentProviderPreferencesPortTests
+466/614 Test #466: ClassMngrNextPlatformSettingsManagerAiCommentProviderPreferencesPortTests ....................   Passed    0.36 sec
+        Start 467: ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests
+467/614 Test #467: ClassMngrNextPlatformSettingsManagerFontSizePreferencesPortTests .............................   Passed    0.31 sec
+        Start 468: ClassMngrNextPlatformSettingsManagerDocumentViewerBackgroundPreferencesPortTests
+468/614 Test #468: ClassMngrNextPlatformSettingsManagerDocumentViewerBackgroundPreferencesPortTests .............   Passed    0.31 sec
+        Start 469: ClassMngrNextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests
+469/614 Test #469: ClassMngrNextPlatformSettingsManagerDocumentPageSpacingPreferencesPortTests ..................   Passed    0.46 sec
+        Start 470: ClassMngrNextPlatformSettingsManagerSaveModePreferencesPortTests
+470/614 Test #470: ClassMngrNextPlatformSettingsManagerSaveModePreferencesPortTests .............................   Passed    0.26 sec
+        Start 471: ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests
+471/614 Test #471: ClassMngrNextPlatformSettingsManagerThemePreferencesPortTests ................................   Passed    0.46 sec
+        Start 472: ClassMngrNextPlatformSettingsManagerDialogGeometryPreferencesPortTests
+472/614 Test #472: ClassMngrNextPlatformSettingsManagerDialogGeometryPreferencesPortTests .......................   Passed    0.08 sec
+        Start 473: ClassMngrNextPlatformSettingsManagerLanguagePreferencesPortTests
+473/614 Test #473: ClassMngrNextPlatformSettingsManagerLanguagePreferencesPortTests .............................   Passed    0.34 sec
+        Start 474: ClassMngrNextPlatformSettingsManagerUpcomingBirthdayDismissalPortTests
+474/614 Test #474: ClassMngrNextPlatformSettingsManagerUpcomingBirthdayDismissalPortTests .......................   Passed    0.67 sec
+        Start 475: ClassMngrNextPlatformSettingsManagerSkippedUpdateVersionPortTests
+475/614 Test #475: ClassMngrNextPlatformSettingsManagerSkippedUpdateVersionPortTests ............................   Passed    0.52 sec
+        Start 476: ClassMngrNextPlatformSettingsManagerPowerPointDataAccessNoticePortTests
+476/614 Test #476: ClassMngrNextPlatformSettingsManagerPowerPointDataAccessNoticePortTests ......................   Passed    0.31 sec
+        Start 477: ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests
+477/614 Test #477: ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests .......................***Failed    0.88 sec
+
+        Start 478: ClassMngrNextPlatformSettingsManagerRecentWorkspaceHistoryPortTests
+478/614 Test #478: ClassMngrNextPlatformSettingsManagerRecentWorkspaceHistoryPortTests ..........................   Passed    0.53 sec
+        Start 479: ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests
+479/614 Test #479: ClassMngrNextPlatformSettingsManagerLastSelectedCampusPortTests ..............................   Passed    0.62 sec
+        Start 480: ClassMngrNextPlatformSettingsManagerLastDatabaseDirectoryPortTests
+480/614 Test #480: ClassMngrNextPlatformSettingsManagerLastDatabaseDirectoryPortTests ...........................   Passed    0.31 sec
+        Start 481: ClassMngrNextPlatformLegacyWorkspaceGatewayTests
+481/614 Test #481: ClassMngrNextPlatformLegacyWorkspaceGatewayTests .............................................   Passed    0.33 sec
+        Start 482: ClassMngrNextPlatformApplicationServicesWorkspacePortTests
+482/614 Test #482: ClassMngrNextPlatformApplicationServicesWorkspacePortTests ...................................   Passed    6.22 sec
+        Start 483: ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests
+483/614 Test #483: ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests .............................***Failed    0.19 sec
+
+        Start 484: ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests
+484/614 Test #484: ClassMngrNextPlatformApplicationServicesSubPrepPrintSourcePortTests ..........................   Passed   20.40 sec
+        Start 485: ClassMngrNextPlatformApplicationServicesSubPrepClassDetailsPortTests
+485/614 Test #485: ClassMngrNextPlatformApplicationServicesSubPrepClassDetailsPortTests .........................   Passed    0.55 sec
+        Start 486: ClassMngrNextPlatformApplicationServicesSubPrepScheduleSummaryPortTests
+486/614 Test #486: ClassMngrNextPlatformApplicationServicesSubPrepScheduleSummaryPortTests ......................   Passed    0.55 sec
+        Start 487: ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests
+487/614 Test #487: ClassMngrNextApplicationSubPrepCalendarEventIntervalsQueryTests ..............................   Passed    0.13 sec
+        Start 488: ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests
+488/614 Test #488: ClassMngrNextPlatformApplicationServicesClassNotesPageReadPortTests ..........................   Passed    2.46 sec
+        Start 489: ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests
+489/614 Test #489: ClassMngrNextPlatformApplicationServicesSelectedClassGradeReadPortTests ......................   Passed    1.14 sec
+        Start 490: ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests
+490/614 Test #490: ClassMngrNextPlatformApplicationServicesClassNotesSavePortTests ..............................   Passed    1.13 sec
+        Start 491: ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests
+491/614 Test #491: ClassMngrNextPlatformApplicationServicesClassDetailsSavePortTests ............................   Passed    2.83 sec
+        Start 492: ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests
+492/614 Test #492: ClassMngrNextPlatformApplicationServicesClassDetailsScheduleConflictPortTests ................   Passed    1.08 sec
+        Start 493: ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests
+493/614 Test #493: ClassMngrNextPlatformApplicationServicesClassDetailsValidationContextPortTests ...............   Passed    1.16 sec
+        Start 494: ClassMngrNextPlatformRosterWindowSaveTests
+494/614 Test #494: ClassMngrNextPlatformRosterWindowSaveTests ...................................................   Passed    2.64 sec
+        Start 495: ClassMngrNextPlatformApplicationServicesRosterSavePortTests
+495/614 Test #495: ClassMngrNextPlatformApplicationServicesRosterSavePortTests ..................................   Passed    2.51 sec
+        Start 496: ClassMngrNextPlatformApplicationServicesRosterReadPortTests
+496/614 Test #496: ClassMngrNextPlatformApplicationServicesRosterReadPortTests ..................................   Passed    5.72 sec
+        Start 497: ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests
+497/614 Test #497: ClassMngrNextPlatformApplicationServicesSpeakingEvaluationRosterNamesReadPortTests ...........   Passed    1.96 sec
+        Start 498: ClassMngrNextPlatformApplicationServicesRosterColumnNamesBatchReadPortTests
+498/614 Test #498: ClassMngrNextPlatformApplicationServicesRosterColumnNamesBatchReadPortTests ..................   Passed    1.61 sec
+        Start 499: ClassMngrNextPlatformApplicationServicesClassesNavigationReadPortTests
+499/614 Test #499: ClassMngrNextPlatformApplicationServicesClassesNavigationReadPortTests .......................   Passed    0.81 sec
+        Start 500: ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests
+500/614 Test #500: ClassMngrNextPlatformApplicationServicesSpeakingEvaluationSavePortTests ......................   Passed    2.23 sec
+        Start 501: ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests
+501/614 Test #501: ClassMngrNextPlatformApplicationServicesSpeakingEvaluationReadPortTests ......................   Passed    1.63 sec
+        Start 502: ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests
+502/614 Test #502: ClassMngrNextPlatformApplicationServicesClassDetailsPageReadPortTests ........................   Passed    1.58 sec
+        Start 503: ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests
+503/614 Test #503: ClassMngrNextPlatformApplicationServicesMyClassesClassInformationBatchReadPortTests ..........   Passed    1.67 sec
+        Start 504: ClassMngrNextPlatformApplicationServicesMyClassesClassSummaryBatchReadPortTests
+504/614 Test #504: ClassMngrNextPlatformApplicationServicesMyClassesClassSummaryBatchReadPortTests ..............   Passed    0.51 sec
+        Start 505: ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests
+505/614 Test #505: ClassMngrNextPlatformApplicationServicesMyClassesTeacherProfileBatchReadPortTests ............   Passed    0.86 sec
+        Start 506: ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests
+506/614 Test #506: ClassMngrNextPlatformApplicationServicesMyClassesStudentCountBatchReadPortTests ..............   Passed    1.36 sec
+        Start 507: ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests
+507/614 Test #507: ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleReadPortTests ...................   Passed    1.36 sec
+        Start 508: ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests
+508/614 Test #508: ClassMngrNextPlatformApplicationServicesSelectedClassSubtitleBatchReadPortTests ..............   Passed    1.07 sec
+        Start 509: ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests
+509/614 Test #509: ClassMngrNextPlatformApplicationServicesRosterPrintClassInfoReadPortTests ....................   Passed    1.04 sec
+        Start 510: ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests
+510/614 Test #510: ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests ...............   Passed    1.18 sec
+        Start 511: ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests
+511/614 Test #511: ClassMngrNextPlatformApplicationServicesScheduleEditorClassInfoReadPortTests .................   Passed    1.06 sec
+        Start 512: ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests
+512/614 Test #512: ClassMngrNextPlatformApplicationServicesClassCoTeacherPageReadPortTests ......................   Passed    2.14 sec
+        Start 513: ClassMngrNextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPortTests
+513/614 Test #513: ClassMngrNextPlatformApplicationServicesClassCoTeacherTeacherChoicesReadPortTests ............   Passed    0.85 sec
+        Start 514: ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests
+514/614 Test #514: ClassMngrNextPlatformApplicationServicesTeacherProfileEditPersistencePortTests ...............   Passed    0.81 sec
+        Start 515: ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests
+515/614 Test #515: ClassMngrNextPlatformApplicationServicesTeacherProfileReadPortTests ..........................   Passed    0.61 sec
+        Start 516: ClassMngrNextPlatformApplicationServicesTeacherDisplayNameBatchReadPortTests
+516/614 Test #516: ClassMngrNextPlatformApplicationServicesTeacherDisplayNameBatchReadPortTests .................   Passed    0.59 sec
+        Start 517: ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests
+517/614 Test #517: ClassMngrNextPlatformApplicationServicesTeacherImportLatestSourceDateReadPortTests ...........   Passed    0.48 sec
+        Start 518: ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests
+518/614 Test #518: ClassMngrNextPlatformApplicationServicesTeacherImportApplyPortTests ..........................   Passed    0.97 sec
+        Start 519: ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests
+519/614 Test #519: ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectoryReadPortTests ...........   Passed    0.70 sec
+        Start 520: ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPortTests
+520/614 Test #520: ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPortTests ...   Passed    0.65 sec
+        Start 521: ClassMngrNextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests
+521/614 Test #521: ClassMngrNextPlatformApplicationServicesKoreanTeacherBirthdayDirectoryReadPortTests ..........   Passed    0.77 sec
+        Start 522: ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests
+522/614 Test #522: ClassMngrNextPlatformApplicationServicesNativeEnglishTeacherDirectorySavePortTests ...........   Passed    0.87 sec
+        Start 523: ClassMngrNextPlatformApplicationServicesGsTeamDirectorySavePortTests
+523/614 Test #523: ClassMngrNextPlatformApplicationServicesGsTeamDirectorySavePortTests .........................   Passed    1.12 sec
+        Start 524: ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests
+524/614 Test #524: ClassMngrNextPlatformApplicationServicesGsTeamDirectoryReadPortTests .........................   Passed    0.74 sec
+        Start 525: ClassMngrNextPlatformApplicationServicesGsTeamBirthdayDirectoryReadPortTests
+525/614 Test #525: ClassMngrNextPlatformApplicationServicesGsTeamBirthdayDirectoryReadPortTests .................   Passed    0.58 sec
+        Start 526: ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests
+526/614 Test #526: ClassMngrNextPlatformApplicationServicesClassCoTeacherAssignmentPortTests ....................   Passed    2.67 sec
+        Start 527: ClassMngrClassCoTeacherAssignmentPersistenceParityTests
+527/614 Test #527: ClassMngrClassCoTeacherAssignmentPersistenceParityTests ......................................   Passed    0.94 sec
+        Start 528: ClassMngrNextFeatureClassCoTeacherPageTests
+528/614 Test #528: ClassMngrNextFeatureClassCoTeacherPageTests ..................................................   Passed    6.34 sec
+        Start 529: NextFeatureClassCoTeacherWideTeacherIdentity
+529/614 Test #529: NextFeatureClassCoTeacherWideTeacherIdentity .................................................   Passed    0.36 sec
+        Start 530: ClassMngrNextFeatureClassNotesPageTests
+530/614 Test #530: ClassMngrNextFeatureClassNotesPageTests ......................................................   Passed    7.71 sec
+        Start 531: ClassMngrNextApplicationMyInfoCampusDirectoryQueryPortTests
+531/614 Test #531: ClassMngrNextApplicationMyInfoCampusDirectoryQueryPortTests ..................................   Passed    0.10 sec
+        Start 532: ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests
+532/614 Test #532: ClassMngrNextPlatformApplicationServicesSubPrepRosterOutputSourcePortTests ...................   Passed    8.46 sec
+        Start 533: ClassMngrNextPlatformSubPrepCampusDirectoryQueryAdapterTests
+533/614 Test #533: ClassMngrNextPlatformSubPrepCampusDirectoryQueryAdapterTests .................................   Passed    0.47 sec
+        Start 534: ClassMngrNextPlatformApplicationServicesCalendarEventPortTests
+534/614 Test #534: ClassMngrNextPlatformApplicationServicesCalendarEventPortTests ...............................   Passed   28.99 sec
+        Start 535: ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests
+535/614 Test #535: ClassMngrNextPlatformApplicationServicesCalendarEventDisplayPreferencesPortTests .............   Passed    1.10 sec
+        Start 536: ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests
+536/614 Test #536: ClassMngrNextPlatformApplicationServicesCalendarFirstDayOfWeekPreferencesPortTests ...........   Passed    1.14 sec
+        Start 537: ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests
+537/614 Test #537: ClassMngrNextPlatformApplicationServicesAcademicCalendarSchedulePreferencesPortTests .........   Passed    1.01 sec
+        Start 538: ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests
+538/614 Test #538: ClassMngrNextPlatformApplicationServicesCalendarEventTypeColorPreferencesPortTests ...........   Passed    1.20 sec
+        Start 539: ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests
+539/614 Test #539: ClassMngrNextPlatformApplicationServicesCustomColorPalettePreferencesPortTests ...............   Passed    1.62 sec
+        Start 540: ClassMngrColorUtilsCustomColorPaletteTests
+540/614 Test #540: ClassMngrColorUtilsCustomColorPaletteTests ...................................................   Passed    1.29 sec
+        Start 541: ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests
+541/614 Test #541: ClassMngrNextPlatformApplicationServicesCurrentCampusPreferencesPortTests ....................   Passed    1.49 sec
+        Start 542: ClassMngrNextPlatformCalendarEventImportCampusCodeQueryTests
+542/614 Test #542: ClassMngrNextPlatformCalendarEventImportCampusCodeQueryTests .................................   Passed    0.14 sec
+        Start 543: ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests
+543/614 Test #543: ClassMngrNextPlatformCalendarPageCampusDirectoryQueryTests ...................................   Passed    0.13 sec
+        Start 544: ClassMngrNextPlatformCampusDashboardSelectedCampusReadAdapterTests
+544/614 Test #544: ClassMngrNextPlatformCampusDashboardSelectedCampusReadAdapterTests ...........................   Passed    0.15 sec
+        Start 545: ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests
+545/614 Test #545: ClassMngrNextPlatformCampusDashboardCampusRepositoryAdapterTests .............................   Passed    0.35 sec
+        Start 546: ClassMngrNextPlatformMyInfoCampusDirectoryQueryAdapterTests
+546/614 Test #546: ClassMngrNextPlatformMyInfoCampusDirectoryQueryAdapterTests ..................................   Passed    0.21 sec
+        Start 547: ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests
+547/614 Test #547: ClassMngrNextPlatformApplicationServicesPersonalDisplayNamePreferencesPortTests ..............   Passed    1.24 sec
+        Start 548: ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests
+548/614 Test #548: ClassMngrNextPlatformApplicationServicesPersonalDetailsSavePortTests .........................   Passed    1.34 sec
+        Start 549: ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests
+549/614 Test #549: ClassMngrNextPlatformApplicationServicesPersonalSignatureImagePortTests ......................   Passed    2.28 sec
+        Start 550: ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests
+550/614 Test #550: ClassMngrNextPlatformApplicationServicesPersonalSignaturePreferencesPortTests ................   Passed    2.03 sec
+        Start 551: ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests
+551/614 Test #551: ClassMngrNextPlatformApplicationServicesSubPrepPreferencesPortTests ..........................   Passed    1.08 sec
+        Start 552: ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests
+552/614 Test #552: ClassMngrNextPlatformApplicationServicesSubPrepPersonalZoomPreferencesPortTests ..............   Passed    2.00 sec
+        Start 553: ClassMngrNextApplicationScheduleSlotStateReadQueryTests
+553/614 Test #553: ClassMngrNextApplicationScheduleSlotStateReadQueryTests ......................................   Passed    0.10 sec
+        Start 554: ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests
+554/614 Test #554: ClassMngrNextApplicationScheduleTestingAssignmentReadQueryTests ..............................   Passed    0.26 sec
+        Start 555: ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests
+555/614 Test #555: ClassMngrNextApplicationScheduleTestingClassChoicesReadQueryTests ............................   Passed    0.10 sec
+        Start 556: ClassMngrNextApplicationTestingClassDetailsReadQueryTests
+556/614 Test #556: ClassMngrNextApplicationTestingClassDetailsReadQueryTests ....................................   Passed    0.09 sec
+        Start 557: ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests
+557/614 Test #557: ClassMngrNextApplicationTestingClassDetailsUpdateUseCaseTests ................................   Passed    0.08 sec
+        Start 558: ClassMngrNextApplicationTestingClassCreateUseCaseTests
+558/614 Test #558: ClassMngrNextApplicationTestingClassCreateUseCaseTests .......................................   Passed    0.09 sec
+        Start 559: ClassMngrNextApplicationClassCreateUseCaseTests
+559/614 Test #559: ClassMngrNextApplicationClassCreateUseCaseTests ..............................................   Passed    0.19 sec
+        Start 560: ClassMngrNextApplicationTestingClassDeleteUseCaseTests
+560/614 Test #560: ClassMngrNextApplicationTestingClassDeleteUseCaseTests .......................................   Passed    0.10 sec
+        Start 561: ClassMngrNextApplicationClassDeleteUseCaseTests
+561/614 Test #561: ClassMngrNextApplicationClassDeleteUseCaseTests ..............................................   Passed    0.10 sec
+        Start 562: ClassMngrNextApplicationTeacherDeleteUseCaseTests
+562/614 Test #562: ClassMngrNextApplicationTeacherDeleteUseCaseTests ............................................   Passed    0.09 sec
+        Start 563: ClassMngrNextApplicationTeacherCreateUseCaseTests
+563/614 Test #563: ClassMngrNextApplicationTeacherCreateUseCaseTests ............................................   Passed    0.13 sec
+        Start 564: ClassMngrNextApplicationScheduleTestingAssignmentSaveUseCaseTests
+564/614 Test #564: ClassMngrNextApplicationScheduleTestingAssignmentSaveUseCaseTests ............................   Passed    0.10 sec
+        Start 565: ClassMngrNextApplicationScheduleTestingLayoutClearUseCaseTests
+565/614 Test #565: ClassMngrNextApplicationScheduleTestingLayoutClearUseCaseTests ...............................   Passed    0.11 sec
+        Start 566: ClassMngrNextApplicationScheduleSlotStateSaveTests
+566/614 Test #566: ClassMngrNextApplicationScheduleSlotStateSaveTests ...........................................   Passed    0.12 sec
+        Start 567: ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests
+567/614 Test #567: ClassMngrNextPlatformApplicationServicesScheduleSlotStateReadPortTests .......................   Passed    0.67 sec
+        Start 568: ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests
+568/614 Test #568: ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentReadPortTests ...............   Passed    1.09 sec
+        Start 569: ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests
+569/614 Test #569: ClassMngrNextPlatformApplicationServicesScheduleTestingClassChoicesReadPortTests .............   Passed    1.30 sec
+        Start 570: ClassMngrNextApplicationTestingTeacherChoicesReadQueryTests
+570/614 Test #570: ClassMngrNextApplicationTestingTeacherChoicesReadQueryTests ..................................   Passed    0.10 sec
+        Start 571: ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests
+571/614 Test #571: ClassMngrNextPlatformApplicationServicesTestingTeacherChoicesReadPortTests ...................   Passed    1.01 sec
+        Start 572: ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests
+572/614 Test #572: ClassMngrNextApplicationInitialSetupTeacherChoicesReadQueryTests .............................   Passed    0.12 sec
+        Start 573: ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests
+573/614 Test #573: ClassMngrNextApplicationClassTeacherAssignmentsReadQueryTests ................................   Passed    0.10 sec
+        Start 574: ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests
+574/614 Test #574: ClassMngrNextPlatformApplicationServicesInitialSetupTeacherChoicesReadPortTests ..............   Passed    0.84 sec
+        Start 575: ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests
+575/614 Test #575: ClassMngrNextPlatformApplicationServicesClassTeacherAssignmentsReadPortTests .................   Passed    0.61 sec
+        Start 576: ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests
+576/614 Test #576: ClassMngrNextPlatformApplicationServicesTestingClassDetailsReadPortTests .....................   Passed    1.52 sec
+        Start 577: ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests
+577/614 Test #577: ClassMngrNextPlatformApplicationServicesTestingClassDetailsUpdatePortTests ...................   Passed    1.64 sec
+        Start 578: ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests
+578/614 Test #578: ClassMngrNextPlatformApplicationServicesTestingClassCreatePortTests ..........................   Passed    1.27 sec
+        Start 579: ClassMngrNextPlatformApplicationServicesClassCreatePortTests
+579/614 Test #579: ClassMngrNextPlatformApplicationServicesClassCreatePortTests .................................   Passed    0.71 sec
+        Start 580: ClassMngrNextPlatformApplicationServicesTestingClassDeletePortTests
+580/614 Test #580: ClassMngrNextPlatformApplicationServicesTestingClassDeletePortTests ..........................   Passed    0.71 sec
+        Start 581: ClassMngrNextPlatformApplicationServicesClassDeletePortTests
+581/614 Test #581: ClassMngrNextPlatformApplicationServicesClassDeletePortTests .................................   Passed    1.16 sec
+        Start 582: ClassMngrNextPlatformApplicationServicesTeacherDeletePortTests
+582/614 Test #582: ClassMngrNextPlatformApplicationServicesTeacherDeletePortTests ...............................   Passed    0.91 sec
+        Start 583: ClassMngrNextPlatformApplicationServicesTeacherCreatePortTests
+583/614 Test #583: ClassMngrNextPlatformApplicationServicesTeacherCreatePortTests ...............................   Passed    1.02 sec
+        Start 584: ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests
+584/614 Test #584: ClassMngrNextPlatformApplicationServicesScheduleTestingAssignmentSavePortTests ...............   Passed    0.91 sec
+        Start 585: ClassMngrNextPlatformApplicationServicesScheduleTestingLayoutClearPortTests
+585/614 Test #585: ClassMngrNextPlatformApplicationServicesScheduleTestingLayoutClearPortTests ..................   Passed    0.67 sec
+        Start 586: ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests
+586/614 Test #586: ClassMngrNextPlatformApplicationServicesScheduleSlotStateSavePortTests .......................   Passed    0.92 sec
+        Start 587: ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests
+587/614 Test #587: ClassMngrNextPlatformApplicationServicesScheduleBuilderSourcePortTests .......................   Passed    2.04 sec
+        Start 588: ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests
+588/614 Test #588: ClassMngrNextPlatformApplicationServicesScheduleImportStateSnapshotPortTests .................   Passed    8.69 sec
+        Start 589: ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests
+589/614 Test #589: ClassMngrNextPlatformApplicationServicesScheduleImportApplyPortTests .........................   Passed    1.14 sec
+        Start 590: ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests
+590/614 Test #590: ClassMngrNextPlatformApplicationServicesScheduleDisplayPreferencesPortTests ..................   Passed    1.76 sec
+        Start 591: ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests
+591/614 Test #591: ClassMngrNextPlatformApplicationServicesScheduleDisplayModePreferencesPortTests ..............   Passed    1.33 sec
+        Start 592: ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests
+592/614 Test #592: ClassMngrNextPlatformApplicationServicesEvaluationDefaultPolicyPortTests .....................   Passed    1.44 sec
+        Start 593: ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests
+593/614 Test #593: ClassMngrNextPlatformApplicationServicesClassDayFilterResetPolicyPortTests ...................   Passed    1.27 sec
+        Start 594: ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests
+594/614 Test #594: ClassMngrNextPlatformApplicationServicesClassSelectionResetPolicyPortTests ...................   Passed    1.24 sec
+        Start 595: ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests
+595/614 Test #595: ClassMngrNextPlatformApplicationServicesClassVisibilityPreferencesPortTests ..................   Passed    1.22 sec
+        Start 596: ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests
+596/614 Test #596: ClassMngrNextPlatformApplicationServicesMiddleSchoolAnalyticsPreferencesPortTests ............   Passed    1.01 sec
+        Start 597: ClassMngrNextPlatformDocumentContentResourcePortTests
+597/614 Test #597: ClassMngrNextPlatformDocumentContentResourcePortTests ........................................   Passed    1.58 sec
+        Start 598: ClassMngrNextPlatformDocumentExportResourcePortTests
+598/614 Test #598: ClassMngrNextPlatformDocumentExportResourcePortTests .........................................   Passed    1.48 sec
+        Start 599: ClassMngrNextPlatformQtPdfSessionReleaseTests
+599/614 Test #599: ClassMngrNextPlatformQtPdfSessionReleaseTests ................................................   Passed    0.99 sec
+        Start 600: ClassMngrNextPlatformQtJobWorkerTests
+600/614 Test #600: ClassMngrNextPlatformQtJobWorkerTests ........................................................   Passed    0.86 sec
+        Start 601: ClassMngrFileControllerWorkspaceLifecycleTests
+601/614 Test #601: ClassMngrFileControllerWorkspaceLifecycleTests ...............................................***Failed   16.52 sec
+
+        Start 602: ClassMngrNextPreferencesSnapshotAdapterTests
+602/614 Test #602: ClassMngrNextPreferencesSnapshotAdapterTests .................................................   Passed    0.06 sec
+        Start 603: ClassMngrNextScheduleWorkspaceStoreActionsTests
+603/614 Test #603: ClassMngrNextScheduleWorkspaceStoreActionsTests ..............................................   Passed    3.03 sec
+        Start 604: ClassMngrNextSchedulePageTests
+604/614 Test #604: ClassMngrNextSchedulePageTests ...............................................................Exit code 0xc0000409***Exception:   1.28 sec
+
+        Start 605: ClassMngrNextNormalScheduleImportIntegrationTests
+605/614 Test #605: ClassMngrNextNormalScheduleImportIntegrationTests ............................................Exit code 0xc0000409***Exception:   0.75 sec
+
+        Start 606: ClassMngrNextScheduleVisualCapture
+606/614 Test #606: ClassMngrNextScheduleVisualCapture ...........................................................***Timeout 119.98 sec
+
+        Start 607: ClassMngrNextFontSizePresenterTests
+607/614 Test #607: ClassMngrNextFontSizePresenterTests ..........................................................   Passed    0.11 sec
+        Start 608: ClassMngrNextPlatformSettingsManagerPreferencesPortTests
+608/614 Test #608: ClassMngrNextPlatformSettingsManagerPreferencesPortTests .....................................   Passed    0.56 sec
+        Start 609: ClassMngrNextCalendarPageTests
+609/614 Test #609: ClassMngrNextCalendarPageTests ...............................................................   Passed   56.92 sec
+        Start 610: ClassMngrNextCalendarWorkspaceStoreActionsTests
+610/614 Test #610: ClassMngrNextCalendarWorkspaceStoreActionsTests ..............................................   Passed    0.57 sec
+        Start 611: ClassMngrNextRosterOutputTests
+611/614 Test #611: ClassMngrNextRosterOutputTests ...............................................................   Passed   40.83 sec
+        Start 612: ClassMngrNextUpdateCoordinatorTests
+612/614 Test #612: ClassMngrNextUpdateCoordinatorTests ..........................................................   Passed    1.06 sec
+        Start 613: ClassMngrNextSharedUpdatePresentationTests
+613/614 Test #613: ClassMngrNextSharedUpdatePresentationTests ...................................................   Passed    0.50 sec
+        Start 614: ClassMngrProfileFileWorkflowVisualCapture
+614/614 Test #614: ClassMngrProfileFileWorkflowVisualCapture ....................................................***Failed    0.67 sec
+
+
+94% tests passed, 39 tests failed out of 614
+
+Label Time Summary:
+fixture        =   0.30 sec*proc (1 test)
+memory         = 119.75 sec*proc (1 test)
+next           =   0.30 sec*proc (1 test)
+performance    = 119.75 sec*proc (1 test)
+phase7         =   0.30 sec*proc (1 test)
+startup        = 119.75 sec*proc (1 test)
+
+Total Test time (real) = 3528.81 sec
+
+The following tests FAILED:
+	  3 - ClassMngrSharedPolicyTests (Exit code 0xc0000409)
+	 54 - ClassMngrTestingClassesPageTests (Failed)
+	 72 - ClassMngrPageManagerTests (Timeout)
+	 78 - ClassMngrClassDetailsSavePageTests (Timeout)
+	 91 - ClassMngrNavigationTeacherReadTests (Failed)
+	 99 - ClassMngrCampusRouteNavigationParityTests (Failed)
+	140 - ClassMngrRosterTransferMenuTests (Failed)
+	152 - ClassMngrSubPrepPageTests (Timeout)
+	165 - ClassMngrSubPrepPackageServiceTests (Failed)
+	202 - ClassMngrStartupPerformanceTests (Failed)         memory performance startup
+	212 - ClassMngrNextBootstrapTests (Exit code 0xc0000409)
+	218 - ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle (Exit code 0xc0000409)
+	220 - ClassMngrNextUsefulLinksVisualCapture_english-light (SEGFAULT)
+	221 - ClassMngrNextUsefulLinksVisualCapture_english-dark (SEGFAULT)
+	222 - ClassMngrNextUsefulLinksVisualCapture_korean-light (SEGFAULT)
+	224 - ClassMngrNextCoTeacherSidebarVisualCapture_english-light (Exit code 0xc0000409)
+	225 - ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark (Exit code 0xc0000409)
+	227 - ClassMngrMyDetailsSignatureVisualCapture (Timeout)
+	241 - ClassMngrNextTeacherImportVisualCapture (Failed)
+	242 - ClassMngrNextTeacherImportVisualCapture_ko_KR_dark (Failed)
+	253 - ClassMngrNextFileDialogPresenterTests (Failed)
+	256 - ClassMngrNextResourceLoaderTests (Failed)
+	314 - ClassMngrNextWorkspaceInterruptedRecoveryFlowTests (Failed)
+	315 - ClassMngrNextWorkspaceSaveAsFlowTests (Failed)
+	316 - ClassMngrNextWorkspaceExportFlowTests (Failed)
+	322 - ClassMngrNextMyWorkspacePageTests (Exit code 0xc0000409)
+	323 - ClassMngrNextMyWorkspaceVisualCapture (Timeout)
+	327 - ClassMngrNextSubPrepVisualCapture (Failed)
+	336 - ClassMngrNextClassesFullWindowStateVisualCapture (Timeout)
+	337 - ClassMngrNextClassesNavigatorVisualCapture (Failed)
+	341 - ClassMngrNextClassesNavigatorWorkspaceStoreTests (Timeout)
+	419 - ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests (Timeout)
+	477 - ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests (Failed)
+	483 - ClassMngrNextPlatformApplicationServicesDocumentCatalogPortTests (Failed)
+	601 - ClassMngrFileControllerWorkspaceLifecycleTests (Failed)
+	604 - ClassMngrNextSchedulePageTests (Exit code 0xc0000409)
+	605 - ClassMngrNextNormalScheduleImportIntegrationTests (Exit code 0xc0000409)
+	606 - ClassMngrNextScheduleVisualCapture (Timeout)
+	614 - ClassMngrProfileFileWorkflowVisualCapture (Failed)
+Errors while running CTest
