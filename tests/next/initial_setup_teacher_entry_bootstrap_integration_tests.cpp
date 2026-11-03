@@ -3,6 +3,7 @@
 #include "data/database/workspace_store.h"
 #include "next/bootstrap/application_bootstrap.h"
 #include "next/bootstrap/startup_update_dispatcher.h"
+#include "next/application/workspace_state.h"
 #include "next/platform/workspace_store_gateway.h"
 #include "next/platform/workspace_store_schedule_import_state_snapshot_port.h"
 #include "next/resources/resource_root_resolver.h"
@@ -280,6 +281,29 @@ public:
 
 private:
     std::shared_ptr<RecentWorkspaceHistoryProbe> m_probe;
+};
+
+class NoopRecentWorkspaceHistoryPort final
+    : public Application::RecentWorkspaceHistoryPort
+{
+public:
+    [[nodiscard]] Application::RecentWorkspaceHistory load() const override
+    {
+        return {};
+    }
+
+    [[nodiscard]] Domain::Result<void> save(
+        const Application::RecentWorkspaceHistory& history
+        ) const override
+    {
+        static_cast<void>(history);
+        return Domain::Result<void>::success();
+    }
+
+    [[nodiscard]] Domain::Result<void> clear() const override
+    {
+        return Domain::Result<void>::success();
+    }
 };
 
 QString builtResourceRoot()
@@ -2430,6 +2454,9 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
     const QString profilePath = workspaceRoot.filePath(
         QStringLiteral("schedule-import-setup.tps")
         );
+    const QString startupProfilePath = workspaceRoot.filePath(
+        QStringLiteral("schedule-import-startup.tps")
+        );
     const QString workbookPath = QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
         QStringLiteral("tests/fixtures/imports/schedule_review.xlsx")
         );
@@ -2448,17 +2475,37 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
         QCOMPARE(originalProfile.write(originalProfileBytes),
                  originalProfileBytes.size());
     }
+    QString startupProfileError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 startupProfilePath,
+                 QStringLiteral("representative_startup.sql"),
+                 &startupProfileError),
+             qPrintable(startupProfileError));
 
     QApplication& application = *qApp;
     ApplicationStyleSheetGuard styleSheetGuard(application);
     auto historyProbe = std::make_shared<RecentWorkspaceHistoryProbe>();
+    auto historyPortFactoryCalls = std::make_shared<int>(0);
+    Application::WorkspaceState* workspaceStateForTesting = nullptr;
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
     seams.commandLineArguments = QStringList{
-        QStringLiteral("schedule-import-setup-test")
+        QStringLiteral("schedule-import-setup-test"), startupProfilePath
     };
     seams.recentAutoOpenEnabled = false;
     seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
-    seams.recentWorkspaceHistoryPortFactory = [historyProbe] {
+    seams.afterStartupWorkspaceOpenedForTesting = [
+        &workspaceStateForTesting
+        ](Application::WorkspaceState& state) {
+        workspaceStateForTesting = &state;
+    };
+    seams.recentWorkspaceHistoryPortFactory = [
+        historyProbe,
+        historyPortFactoryCalls
+        ]() -> std::unique_ptr<Application::RecentWorkspaceHistoryPort> {
+        if ((*historyPortFactoryCalls)++ == 0)
+        {
+            return std::make_unique<NoopRecentWorkspaceHistoryPort>();
+        }
         return std::make_unique<RecordingRecentWorkspaceHistoryPort>(historyProbe);
     };
     Platform::WorkspaceStoreGateway* activeWorkspaceGateway = nullptr;
@@ -2471,8 +2518,11 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
     scheduleWorkbookQueue->paths = {
         workbookPath,
         workbookPath,
+        workbookPath,
+        workbookPath,
         intensiveWorkbookPath,
         intensiveWorkbookPath,
+        workbookPath,
         workbookPath
     };
     seams.initialSetupFileDialogPortFactory = [
@@ -2497,6 +2547,12 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
         [] { return std::make_unique<SilentUpdateDispatcher>(); }
         );
     QVERIFY2(bootstrap.start().succeeded(), "ApplicationBootstrap failed to start.");
+    QVERIFY(workspaceStateForTesting);
+    QAction* const closeStartupProfile = bootstrap.shell()->findChild<QAction*>(
+        QStringLiteral("classMngrNextCloseWorkspace"));
+    QVERIFY(closeStartupProfile);
+    closeStartupProfile->trigger();
+    QVERIFY(!bootstrap.workspaceStateSnapshot().session().has_value());
     auto* const page = dynamic_cast<Ui::InitialPage*>(
         bootstrap.shell()->pageHost().pageInstance(QStringLiteral("initial_setup"))
         );
@@ -2653,6 +2709,159 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
         );
     QVERIFY(initialRows.has_value());
     QCOMPARE(initialRows->size(), std::size_t(2));
+
+    const auto setupSession = workspaceStateForTesting->snapshot().session();
+    QVERIFY(setupSession.has_value());
+    QString observedApplyFailure;
+    const auto runPendingApplyFailure = [
+        &page,
+        &observedApplyFailure
+        ](const std::function<void()>& invalidatePendingContext) {
+        bool browseStarted = false;
+        bool reviewStarted = false;
+        bool interactionFinished = false;
+        observedApplyFailure.clear();
+        auto driveImport = std::make_shared<std::function<void()>>();
+        *driveImport = [
+            &page,
+            &observedApplyFailure,
+            &invalidatePendingContext,
+            &browseStarted,
+            &reviewStarted,
+            &interactionFinished,
+            driveImport
+            ] {
+            if (interactionFinished)
+            {
+                return;
+            }
+            QWidget* const modal = QApplication::activeModalWidget();
+            if (!modal)
+            {
+                QTimer::singleShot(10, qApp, *driveImport);
+                return;
+            }
+            if (modal->objectName()
+                == QStringLiteral("classMngrNextScheduleImportSourceDialog"))
+            {
+                auto* const status = modal->findChild<QLabel*>(
+                    QStringLiteral("classMngrNextScheduleImportSourceStatus"));
+                auto* const browse = modal->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextScheduleImportBrowse"));
+                auto* const sheet = modal->findChild<QComboBox*>(
+                    QStringLiteral("classMngrNextScheduleImportSheet"));
+                auto* const user = modal->findChild<QComboBox*>(
+                    QStringLiteral("classMngrNextScheduleImportUser"));
+                auto* const review = modal->findChild<QPushButton*>(
+                    QStringLiteral("classMngrNextScheduleImportReview"));
+                QVERIFY(status && browse && sheet && user && review);
+                if (!browseStarted)
+                {
+                    browseStarted = true;
+                    browse->click();
+                }
+                if (!status->text().contains(QStringLiteral("Workbook loaded")))
+                {
+                    QTimer::singleShot(10, qApp, *driveImport);
+                    return;
+                }
+                sheet->setCurrentIndex(1);
+                user->setCurrentIndex(1);
+                QCOMPARE(user->currentText(), QStringLiteral("Alice"));
+                if (!reviewStarted)
+                {
+                    reviewStarted = true;
+                    QTimer::singleShot(0, qApp, *driveImport);
+                    review->click();
+                    interactionFinished = true;
+                    auto* const sourceDialog = qobject_cast<QDialog*>(modal);
+                    QVERIFY(sourceDialog);
+                    sourceDialog->done(QDialog::Rejected);
+                }
+                return;
+            }
+            if (modal->objectName()
+                != QStringLiteral("classMngrNextScheduleImportReviewDialog"))
+            {
+                QTimer::singleShot(10, qApp, *driveImport);
+                return;
+            }
+
+            const auto teacherActions = modal->findChildren<QComboBox*>(
+                QStringLiteral("classMngrNextScheduleImportTeacherAction"));
+            const auto classActions = modal->findChildren<QComboBox*>(
+                QStringLiteral("classMngrNextScheduleImportClassAction"));
+            for (QComboBox* const action : teacherActions)
+            {
+                action->setCurrentIndex(action->findData(static_cast<int>(
+                    Application::ScheduleImportReviewTeacherAction::Create)));
+            }
+            for (QComboBox* const action : classActions)
+            {
+                action->setCurrentIndex(action->findData(static_cast<int>(
+                    Application::ScheduleImportReviewClassAction::CreateNew)));
+            }
+            if (auto* const diagnostics = modal->findChild<QCheckBox*>(
+                    QStringLiteral("classMngrNextScheduleImportAcknowledgeDiagnostics")))
+            {
+                diagnostics->setChecked(true);
+            }
+            auto* const apply = modal->findChild<QPushButton*>(
+                QStringLiteral("classMngrNextScheduleImportApply"));
+            auto* const reviewStatus = modal->findChild<QLabel*>(
+                QStringLiteral("classMngrNextScheduleImportReviewStatus"));
+            auto* const back = modal->findChild<QPushButton*>(
+                QStringLiteral("classMngrNextScheduleImportBackToSource"));
+            QVERIFY(apply && reviewStatus && back);
+            QVERIFY(apply->isEnabled());
+            invalidatePendingContext();
+            apply->click();
+            observedApplyFailure = reviewStatus->text();
+            back->click();
+        };
+        QTimer::singleShot(0, qApp, *driveImport);
+        page->findChild<QPushButton*>(
+            QStringLiteral("classMngrNextInitialSetupImportSchedule")
+            )->click();
+    };
+
+    const QString alternateProfilePath = workspaceRoot.filePath(
+        QStringLiteral("other-active-profile.tps"));
+    const Application::WorkspaceSession mismatchedSession(
+        setupSession->workspaceId(),
+        Application::WorkspaceLocation(
+            QFileInfo(alternateProfilePath).absoluteFilePath()
+                .toUtf8().toStdString())
+        );
+    runPendingApplyFailure([&] {
+        QVERIFY(workspaceStateForTesting->open(mismatchedSession));
+    });
+    QCOMPARE(observedApplyFailure,
+             QStringLiteral(
+                 "Schedule import failed: The active workspace no longer matches the setup profile."
+                 ));
+    QVERIFY(workspaceStateForTesting->open(*setupSession));
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("teachers")),
+             std::optional<int>{1});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("classes")),
+             std::optional<int>{1});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_times")),
+             std::optional<int>{2});
+
+    runPendingApplyFailure([&] {
+        QVERIFY(workspaceStateForTesting->close());
+    });
+    QCOMPARE(observedApplyFailure,
+             QStringLiteral(
+                 "Schedule import failed: The active setup profile is unavailable."
+                 ));
+    QVERIFY(workspaceStateForTesting->open(*setupSession));
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("teachers")),
+             std::optional<int>{1});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("classes")),
+             std::optional<int>{1});
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_times")),
+             std::optional<int>{2});
 
     bool omissionBrowseStarted = false;
     bool omissionReviewStarted = false;
@@ -3466,7 +3675,32 @@ scheduleImportIsTransactionalAndFinishIsExplicit()
     QVERIFY(!finish->isHidden());
     QVERIFY(skip->isHidden());
 
-    finish->click();
+    const auto teachersBeforeMissingSetup = tableRowCount(
+        profilePath, QStringLiteral("teachers"));
+    const auto classesBeforeMissingSetup = tableRowCount(
+        profilePath, QStringLiteral("classes"));
+    const auto timesBeforeMissingSetup = tableRowCount(
+        profilePath, QStringLiteral("class_times"));
+    QVERIFY(teachersBeforeMissingSetup && classesBeforeMissingSetup
+            && timesBeforeMissingSetup);
+    bool finishTriggeredFromReview = false;
+    runPendingApplyFailure([&] {
+        finishTriggeredFromReview = QMetaObject::invokeMethod(
+            finish,
+            "clicked",
+            Qt::DirectConnection,
+            Q_ARG(bool, false)
+            );
+    });
+    QVERIFY(finishTriggeredFromReview);
+    QCOMPARE(observedApplyFailure,
+             QStringLiteral("Schedule import failed: No setup profile is active."));
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("teachers")),
+             teachersBeforeMissingSetup);
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("classes")),
+             classesBeforeMissingSetup);
+    QCOMPARE(tableRowCount(profilePath, QStringLiteral("class_times")),
+             timesBeforeMissingSetup);
     QCOMPARE(historyProbe->loadCount, 1);
     QCOMPARE(historyProbe->saveCount, 1);
     QCOMPARE(historyProbe->savedHistories.size(), std::size_t(1));

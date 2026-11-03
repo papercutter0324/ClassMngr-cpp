@@ -8343,21 +8343,11 @@ set_tests_properties(ClassMngrNextSchedulePageTests
 add_executable(ClassMngrNextNormalScheduleImportIntegrationTests
     tests/next/normal_schedule_import_integration_tests.cpp
     src/core/process_memory_snapshot.cpp
-    src/next/platform/workspace_store_schedule_actions.cpp
-    src/next/platform/workspace_store_schedule_import_actions.cpp
-    src/next/platform/qt_schedule_output_adapter.cpp
-    src/next/ui/page_host.cpp
-    src/next/ui/page.h
-    src/next/ui/page_host.h
-    src/next/ui/schedule_page.cpp
-    src/next/ui/schedule_print_projection.cpp
-    src/next/ui/schedule_output_dialog.cpp
-    src/next/ui/schedule_testing_assignment_dialog.cpp
-    src/next/ui/schedule_page_model.cpp
-    src/next/ui/schedule_page_slot_policy_bridge.cpp
-    src/next/ui/schedule_import_workflow_dialog.cpp
-    src/next/ui/schedule_import_review_models.cpp
-    src/next/ui/schedule_import_request_mapper.cpp
+    ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
+    $<TARGET_OBJECTS:ClassMngrSettings>
+    $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
+    $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
+    $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
 )
 target_compile_features(ClassMngrNextNormalScheduleImportIntegrationTests
     PRIVATE cxx_std_23
@@ -8369,6 +8359,7 @@ target_include_directories(ClassMngrNextNormalScheduleImportIntegrationTests
 )
 target_compile_definitions(ClassMngrNextNormalScheduleImportIntegrationTests
     PRIVATE
+        CLASSMNGR_NEXT_VERSION="${PROJECT_VERSION}"
         CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
         CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
         CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
@@ -8377,14 +8368,23 @@ target_compile_definitions(ClassMngrNextNormalScheduleImportIntegrationTests
 target_link_libraries(ClassMngrNextNormalScheduleImportIntegrationTests
     PRIVATE
         ClassMngrRuntime
-        ClassMngrNext::Application
+        ClassMngrClassTransferSupport
+        ClassMngrNextCalendarUi
+        ClassMngrSubPrepShared
+        ClassMngrNextScheduleOutput
+        ClassMngrNextRosterOutput
+        ClassMngrNextSpeakingEvaluationOutput
         ClassMngrNext::Resources
-        ClassMngrNextWorkspaceDomain
-        ClassMngrWorkspaceStore
+        ClassMngrNextWorkspace
+        ClassMngrNext::DocumentCatalog
+        ClassMngrQtPdfPrint
+        ClassMngrNextStartupUpdates
+        ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser
         Qt6::Concurrent
         Qt6::Sql
         Qt6::Test
+        Qt6::PdfWidgets
         Qt6::Widgets
 )
 set_target_properties(ClassMngrNextNormalScheduleImportIntegrationTests

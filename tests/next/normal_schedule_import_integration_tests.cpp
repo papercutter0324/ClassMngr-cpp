@@ -7,11 +7,17 @@
 #include "features/schedule/ui/schedule_builder.h"
 #include "features/schedule/ui/schedule_print_document_adapter.h"
 #include "features/schedule/ui/schedule_view_model.h"
+#include "next/bootstrap/application_bootstrap.h"
+#include "next/bootstrap/startup_update_dispatcher.h"
+#include "next/application/workspace_state.h"
+#include "next/platform/workspace_store_gateway.h"
 #include "next/platform/workspace_store_schedule_actions.h"
 #include "next/platform/workspace_store_schedule_import_actions.h"
 #include "next/platform/qt_schedule_output_adapter.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
+#include "next/resources/resource_root_resolver.h"
+#include "next/ui/application_shell.h"
 #include "next/ui/page_host.h"
 #include "next/ui/schedule_import_workflow_dialog.h"
 #include "next/ui/schedule_import_review_models.h"
@@ -270,6 +276,152 @@ std::optional<int> scalarInt(const QString& path, const QString& sql)
     }
     return query.value(0).toInt();
 }
+
+class SilentBootstrapUpdateDispatcher final
+    : public Bootstrap::StartupUpdateDispatcher
+{
+public:
+    void dispatch() override {}
+};
+
+class SessionOnlyWorkspaceGateway final : public Application::WorkspaceGateway
+{
+public:
+    [[nodiscard]] Domain::Result<Application::WorkspaceSession> createWorkspace(
+        const Application::CreateWorkspaceRequest& request
+        ) override
+    {
+        return Domain::Result<Application::WorkspaceSession>::success(
+            sessionFor(request.location));
+    }
+
+    [[nodiscard]] Domain::Result<Application::WorkspaceSession> openWorkspace(
+        const Application::OpenWorkspaceRequest& request
+        ) override
+    {
+        return Domain::Result<Application::WorkspaceSession>::success(
+            sessionFor(request.location));
+    }
+
+    [[nodiscard]] Domain::Result<void> closeWorkspace(
+        const Application::CloseWorkspaceRequest& request
+        ) override
+    {
+        static_cast<void>(request);
+        return Domain::Result<void>::success();
+    }
+
+    [[nodiscard]] Domain::Result<void> saveWorkspace(
+        const Application::SaveWorkspaceRequest& request
+        ) override
+    {
+        static_cast<void>(request);
+        return Domain::Result<void>::success();
+    }
+
+    [[nodiscard]] Domain::Result<Application::WorkspaceLocation> saveWorkspaceAs(
+        const Application::SaveWorkspaceAsRequest& request
+        ) override
+    {
+        return Domain::Result<Application::WorkspaceLocation>::success(
+            request.destination);
+    }
+
+    [[nodiscard]] Domain::Result<Application::WorkspaceLocation> exportWorkspace(
+        const Application::ExportWorkspaceRequest& request
+        ) override
+    {
+        return Domain::Result<Application::WorkspaceLocation>::success(
+            request.destination);
+    }
+
+private:
+    [[nodiscard]] static Application::WorkspaceSession sessionFor(
+        const Application::WorkspaceLocation& location
+        )
+    {
+        const auto id = Domain::WorkspaceId::fromString(
+            "schedule-import-bootstrap-test-session");
+        return Application::WorkspaceSession(*id, location);
+    }
+};
+
+Bootstrap::ApplicationBootstrap::ResourcePackagePathsResolver
+bootstrapResourceResolver(QString resourceRoot)
+{
+    return [resourceRoot = std::move(resourceRoot)]()
+        -> Resources::ResourceResult<Resources::ResourcePackagePaths> {
+        return Resources::ResourcePackagePaths{
+            resourceRoot,
+            QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG)
+        };
+    };
+}
+
+class BootstrapResourceFixture final
+{
+public:
+    BootstrapResourceFixture()
+        : m_root(QDir(m_directory.path()).filePath(QStringLiteral("resources")))
+    {
+    }
+
+    [[nodiscard]] bool isValid() const
+    {
+        return m_directory.isValid() && QDir().mkpath(m_root);
+    }
+
+    [[nodiscard]] const QString& root() const noexcept
+    {
+        return m_root;
+    }
+
+    [[nodiscard]] bool addStartupResources() const
+    {
+        const QString translationPath = QStringLiteral(
+            "assets/translations/ClassMngr_en_US.qm");
+        const QString translationSource = QDir(QFileInfo(QStringLiteral(
+            CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG)).absolutePath())
+            .filePath(translationPath);
+        if (!copyFile(translationSource, QDir(m_root).filePath(translationPath)))
+        {
+            return false;
+        }
+
+        for (const QString& relativePath : {
+                 QStringLiteral("assets/styles/light.qss"),
+                 QStringLiteral("assets/fonts/Inter.ttc"),
+                 QStringLiteral("assets/fonts/PretendardVariable.ttf"),
+                 QStringLiteral("assets/documents/documents.json")
+             })
+        {
+            const QString source = QDir(QStringLiteral(
+                CLASSMNGR_NEXT_TEST_RESOURCE_ROOT)).filePath(relativePath);
+            const QString destination = QDir(m_root).filePath(relativePath);
+            if (!copyFile(source, destination))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+private:
+    [[nodiscard]] static bool copyFile(
+        const QString& source,
+        const QString& destination
+        )
+    {
+        if (!QDir().mkpath(QFileInfo(destination).absolutePath()))
+        {
+            return false;
+        }
+        return QFile::copy(source, destination);
+    }
+
+    QTemporaryDir m_directory;
+    QString m_root;
+};
 
 QString teacherRoom(const QString& path, const QString& id)
 {
@@ -741,6 +893,7 @@ private slots:
     void suspendingDuringAsyncParseCancelsAndIgnoresLateResult();
     void replacingScheduleWithReviewOpenReleasesRetainedData();
     void staleWorkspaceIdentityRejectsApply();
+    void bootstrapScheduleImportUsesSessionGatewayAndRejectsUnavailableGateway();
 
 private:
     QTemporaryDir m_settingsRoot;
@@ -2286,6 +2439,211 @@ void NormalScheduleImportIntegrationTests::staleWorkspaceIdentityRejectsApply()
     const auto activated = fixture.page->onActivating();
     QVERIFY(activated.has_value());
     QTRY_VERIFY_WITH_TIMEOUT(guarded.isNull(), 5000);
+}
+
+void NormalScheduleImportIntegrationTests::
+bootstrapScheduleImportUsesSessionGatewayAndRejectsUnavailableGateway()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    BootstrapResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources());
+    const auto resourceResolver = bootstrapResourceResolver(resources.root());
+    const auto importedUser = firstVisibleUser(scheduleFixturePath());
+    QVERIFY(importedUser.has_value());
+    QVERIFY(!importedUser->classes.isEmpty());
+    const QString normalProfile = temporary.filePath(
+        QStringLiteral("normal-bootstrap-import.tps"));
+    const QString unavailableProfile = temporary.filePath(
+        QStringLiteral("unavailable-bootstrap-import.tps"));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(normalProfile));
+    }
+    {
+        WorkspaceStore store;
+        QVERIFY(store.open(unavailableProfile));
+    }
+
+    int expectedScheduleRows = 0;
+    for (const ScheduleImportClassCandidate& candidate : importedUser->classes)
+    {
+        expectedScheduleRows += candidate.times.size();
+    }
+
+    QApplication& application = *qApp;
+    const auto makeSeams = [](
+        const QString& profilePath,
+        Application::WorkspaceState** workspaceStateForTesting
+        ) {
+        Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+        seams.commandLineArguments = QStringList{
+            QStringLiteral("schedule-import-bootstrap-test"), profilePath
+        };
+        seams.recentAutoOpenEnabled = false;
+        if (workspaceStateForTesting)
+        {
+            seams.afterStartupWorkspaceOpenedForTesting = [
+                workspaceStateForTesting
+                ](Application::WorkspaceState& state) {
+                *workspaceStateForTesting = &state;
+            };
+        }
+        return seams;
+    };
+    const auto schedulePageId = Ui::PageId::fromString(
+        QStringLiteral("schedule"));
+    QVERIFY(schedulePageId.has_value());
+
+    {
+        Application::WorkspaceState* workspaceStateForTesting = nullptr;
+        auto seams = makeSeams(normalProfile, &workspaceStateForTesting);
+        seams.initialSetupRecoveryJournalPath = temporary.filePath(
+            QStringLiteral("normal-initial-setup-recovery.json"));
+        Bootstrap::ApplicationBootstrap bootstrap(
+            application,
+            {},
+            {},
+            resourceResolver,
+            QStringList{QStringLiteral("en-US")},
+            std::move(seams),
+            [] { return std::make_unique<SilentBootstrapUpdateDispatcher>(); }
+            );
+        QVERIFY2(bootstrap.start().succeeded(),
+                 "ApplicationBootstrap failed to open the normal profile.");
+        QVERIFY(workspaceStateForTesting);
+        const auto originalSession =
+            workspaceStateForTesting->snapshot().session();
+        QVERIFY(originalSession.has_value());
+        QVERIFY(bootstrap.shell());
+        QVERIFY(bootstrap.shell()->navigateTo(*schedulePageId));
+        auto* const page = dynamic_cast<Ui::SchedulePage*>(
+            bootstrap.shell()->pageHost().pageInstance(QStringLiteral("schedule")));
+        QVERIFY(page);
+        QAction* const importAction = page->findChild<QAction*>(
+            QStringLiteral("nextScheduleImportAction"));
+        QVERIFY(importAction);
+
+        importAction->trigger();
+        auto* const driftDialog = page->importDialog();
+        QVERIFY(driftDialog);
+        driftDialog->sourcePathEdit()->setText(scheduleFixturePath());
+        driftDialog->primaryButton()->setEnabled(true);
+        QVERIFY(driftDialog->primaryButton()->isEnabled());
+        QCOMPARE(driftDialog->sourcePathEdit()->text(), scheduleFixturePath());
+        driftDialog->primaryButton()->click();
+        QTRY_VERIFY_WITH_TIMEOUT(driftDialog->sheetCombo()->count() > 0, 10000);
+
+        const Application::WorkspaceSession alternateSession(
+            originalSession->workspaceId(),
+            Application::WorkspaceLocation(
+                QFileInfo(unavailableProfile).absoluteFilePath()
+                    .toUtf8().toStdString())
+            );
+        QVERIFY(workspaceStateForTesting->open(alternateSession));
+        driftDialog->primaryButton()->click();
+        QTRY_COMPARE_WITH_TIMEOUT(
+            driftDialog->statusLabel()->text(),
+            QStringLiteral(
+                "The active profile changed. Close this import and start again."
+                ),
+            10000);
+        QCOMPARE(scalarInt(normalProfile,
+                           QStringLiteral("SELECT COUNT(*) FROM classes")),
+                 std::optional<int>{0});
+        QCOMPARE(scalarInt(normalProfile,
+                           QStringLiteral("SELECT COUNT(*) FROM class_times")),
+                 std::optional<int>{0});
+        QCOMPARE(scalarInt(unavailableProfile,
+                           QStringLiteral("SELECT COUNT(*) FROM classes")),
+                 std::optional<int>{0});
+        QCOMPARE(scalarInt(unavailableProfile,
+                           QStringLiteral("SELECT COUNT(*) FROM class_times")),
+                 std::optional<int>{0});
+        QPointer<Ui::ScheduleImportWorkflowDialog> driftGuarded(driftDialog);
+        driftDialog->reject();
+        QTRY_VERIFY_WITH_TIMEOUT(driftGuarded.isNull(), 5000);
+        QVERIFY(workspaceStateForTesting->open(*originalSession));
+
+        importAction->trigger();
+        auto* const dialog = page->importDialog();
+        QVERIFY(dialog);
+        dialog->sourcePathEdit()->setText(scheduleFixturePath());
+        dialog->primaryButton()->setEnabled(true);
+        QVERIFY(dialog->primaryButton()->isEnabled());
+        QCOMPARE(dialog->sourcePathEdit()->text(), scheduleFixturePath());
+        dialog->primaryButton()->click();
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->sheetCombo()->count() > 0, 10000);
+        dialog->primaryButton()->click();
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->classTable()->model()->rowCount()
+                                 == importedUser->classes.size(), 10000);
+        QVERIFY(dialog->teacherTable()->model()->rowCount() > 0);
+        setAllTeachersToCreate(dialog);
+        setAllClassesToCreateNew(dialog);
+        QVERIFY(dialog->primaryButton()->isEnabled());
+        dialog->primaryButton()->click();
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->isHidden(), 15000);
+        QCOMPARE(scalarInt(normalProfile,
+                           QStringLiteral("SELECT COUNT(*) FROM classes")),
+                 std::optional<int>{static_cast<int>(importedUser->classes.size())});
+        QCOMPARE(scalarInt(normalProfile,
+                           QStringLiteral("SELECT COUNT(*) FROM class_times")),
+                 std::optional<int>{expectedScheduleRows});
+        QVERIFY(bootstrap.shutdown().shutdownRequested);
+    }
+
+    {
+        auto seams = makeSeams(unavailableProfile, nullptr);
+        seams.initialSetupRecoveryJournalPath = temporary.filePath(
+            QStringLiteral("unavailable-initial-setup-recovery.json"));
+        seams.workspaceGatewayFactory = [] {
+            return std::make_unique<SessionOnlyWorkspaceGateway>();
+        };
+        Bootstrap::ApplicationBootstrap bootstrap(
+            application,
+            {},
+            {},
+            resourceResolver,
+            QStringList{QStringLiteral("en-US")},
+            std::move(seams),
+            [] { return std::make_unique<SilentBootstrapUpdateDispatcher>(); }
+            );
+        QVERIFY2(bootstrap.start().succeeded(),
+                 "ApplicationBootstrap failed to open the test session.");
+        QVERIFY(bootstrap.shell());
+        QVERIFY(bootstrap.shell()->navigateTo(*schedulePageId));
+        auto* const page = dynamic_cast<Ui::SchedulePage*>(
+            bootstrap.shell()->pageHost().pageInstance(QStringLiteral("schedule")));
+        QVERIFY(page);
+        QAction* const importAction = page->findChild<QAction*>(
+            QStringLiteral("nextScheduleImportAction"));
+        QVERIFY(importAction);
+        importAction->trigger();
+        auto* const dialog = page->importDialog();
+        QVERIFY(dialog);
+        dialog->sourcePathEdit()->setText(scheduleFixturePath());
+        dialog->primaryButton()->setEnabled(true);
+        QVERIFY(dialog->primaryButton()->isEnabled());
+        QCOMPARE(dialog->sourcePathEdit()->text(), scheduleFixturePath());
+        dialog->primaryButton()->click();
+        QTRY_VERIFY_WITH_TIMEOUT(dialog->sheetCombo()->count() > 0, 10000);
+        dialog->primaryButton()->click();
+        QTRY_COMPARE_WITH_TIMEOUT(
+            dialog->statusLabel()->text(),
+            QStringLiteral("The active workspace store is unavailable."),
+            10000);
+        QCOMPARE(scalarInt(unavailableProfile,
+                           QStringLiteral("SELECT COUNT(*) FROM classes")),
+                 std::optional<int>{0});
+        QCOMPARE(scalarInt(unavailableProfile,
+                           QStringLiteral("SELECT COUNT(*) FROM class_times")),
+                 std::optional<int>{0});
+        QPointer<Ui::ScheduleImportWorkflowDialog> guarded(dialog);
+        dialog->reject();
+        QTRY_VERIFY_WITH_TIMEOUT(guarded.isNull(), 5000);
+        QVERIFY(bootstrap.shutdown().shutdownRequested);
+    }
 }
 
 void NormalScheduleImportIntegrationTests::
