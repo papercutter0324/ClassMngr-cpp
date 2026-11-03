@@ -7673,6 +7673,19 @@ speakingEvaluationAiCompositionUsesWorkspaceAndPreferences()
         QStringLiteral("Copy Prompt and Open Custom AI Website"));
     QCOMPARE(urlHandler.urls.size(), 1);
     QCOMPARE(urlHandler.urls.front(), QUrl(customWebsite));
+
+    QTreeWidget* const navigationTree = bootstrap.shell()->findChild<QTreeWidget*>(
+        QStringLiteral("classMngrNextNavigationTree"));
+    QVERIFY(navigationTree);
+    const QList<QTreeWidgetItem*> dropboxItems = navigationTree->findItems(
+        QStringLiteral("Dropbox"), Qt::MatchExactly | Qt::MatchRecursive, 0);
+    QCOMPARE(dropboxItems.size(), 1);
+    QVERIFY(dropboxItems.front()->parent());
+    dropboxItems.front()->parent()->setExpanded(true);
+    navigationTree->setCurrentItem(dropboxItems.front());
+    QCOMPARE(urlHandler.urls.size(), 2);
+    QCOMPARE(urlHandler.urls.back(), QUrl(QStringLiteral("https://www.dropbox.com")));
+
     QVERIFY(page->discardChanges().has_value());
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);

@@ -47,6 +47,7 @@
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTranslator>
+#include <QUrl>
 #include <QVBoxLayout>
 #include <QtTest/QtTest>
 
@@ -174,6 +175,7 @@ struct FakeEvaluationState final
     bool failRosterRead = false;
     bool failClassGradeRead = false;
     bool openExternalUrlResult = false;
+    std::optional<QUrl> lastExternalUrl;
     QString classGrade = QStringLiteral("E4");
     int readCalls = 0;
     int saveCalls = 0;
@@ -435,8 +437,9 @@ public:
                     return Application::AiCommentVoice::DirectToStudent;
                 };
                 actions.customAiCommentWebsiteUrl = [] { return QString{}; };
-                actions.openExternalUrl = [&state](const QUrl&) {
+                actions.openExternalUrl = [&state](const QUrl& url) {
                     ++state.externalUrlOpenCalls;
+                    state.lastExternalUrl = url;
                     return state.openExternalUrlResult;
                 };
                 actions.resolveUnsavedChanges = [&state](const QString&) {
@@ -1129,6 +1132,8 @@ aiPromptRetriesGradeReadAndPreservesConfiguredWebsiteFlow()
     QCOMPARE(copyOpenLabel, QStringLiteral("Copy Prompt and Open ChatGPT"));
     QCOMPARE(clipboard, prompt);
     QCOMPARE(state.externalUrlOpenCalls, 1);
+    QCOMPARE(state.lastExternalUrl,
+        std::optional<QUrl>(QUrl(QStringLiteral("https://chatgpt.com/"))));
     QVERIFY(!page->hasUnsavedChanges());
 }
 

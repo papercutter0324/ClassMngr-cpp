@@ -51,6 +51,7 @@
 #include "next/platform/workspace_store_calendar_actions.h"
 #include "next/platform/calendar_page_resource_campus_directory_query_adapter.h"
 #include "next/platform/campus_directory_repository_adapter.h"
+#include "next/platform/qt_external_url_launch_adapter.h"
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "next/platform/qt_schedule_output_adapter.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
@@ -93,7 +94,6 @@
 
 #include <QApplication>
 #include <QCoreApplication>
-#include <QDesktopServices>
 #include <QDate>
 #include <QDebug>
 #include <QFile>
@@ -802,6 +802,9 @@ struct ApplicationBootstrap::CoreServices final
         )
         : resourceLoader(std::move(catalog))
         , startupResourceScope(std::move(startupScope))
+        , externalUrlLaunchPort(
+              std::make_shared<Platform::QtExternalUrlLaunchAdapter>()
+              )
         , campusDirectoryRepository(
               std::make_shared<Platform::CampusDirectoryRepositoryAdapter>(
                   resourceLoader,
@@ -820,6 +823,7 @@ struct ApplicationBootstrap::CoreServices final
 
     Resources::ResourceLoader resourceLoader;
     Resources::ResourceScope startupResourceScope;
+    std::shared_ptr<Application::ExternalUrlLaunchPort> externalUrlLaunchPort;
     std::shared_ptr<Platform::CampusDirectoryRepositoryAdapter>
         campusDirectoryRepository;
     std::shared_ptr<Platform::SettingsManagerLastSelectedCampusPort>
@@ -1312,8 +1316,9 @@ Application::StartupResult ApplicationBootstrap::start()
             m_coreServices->resourceLoader,
             m_coreServices->preferences
             );
-        m_shell->setExternalUrlOpener([](const QUrl& url) {
-            return QDesktopServices::openUrl(url);
+        const auto externalUrlLaunchPort = m_coreServices->externalUrlLaunchPort;
+        m_shell->setExternalUrlOpener([externalUrlLaunchPort](const QUrl& url) {
+            return externalUrlLaunchPort->openUrl(url);
         });
         m_shell->setCampusEditCapability(
             campusEditCapabilityForArguments(m_application.arguments())
@@ -1533,6 +1538,8 @@ Application::StartupResult ApplicationBootstrap::start()
                          m_coreServices->campusDirectoryRepository;
                      const auto lastSelectedCampusPort =
                          m_coreServices->lastSelectedCampusPort;
+                     const auto externalUrlLaunchPort =
+                         m_coreServices->externalUrlLaunchPort;
                      actions.editCapability =
                          campusEditCapabilityForArguments(m_application.arguments());
                      const Application::CampusEditCapability capability =
@@ -1569,6 +1576,11 @@ Application::StartupResult ApplicationBootstrap::start()
                                                    const Application::CampusDashboardCampusSnapshot& campus
                                                    ) {
                          return repository->mapResourcesFor(campus);
+                     };
+                     actions.openExternalUrl = [externalUrlLaunchPort](
+                                                   const QUrl& url
+                                                   ) {
+                         return externalUrlLaunchPort->openUrl(url);
                      };
                      return actions;
                  }))
@@ -1956,6 +1968,13 @@ Application::StartupResult ApplicationBootstrap::start()
                                 SettingsManagerAiCommentCustomWebsitePort().read();
                             return QString::fromUtf8(
                                 url.data(), static_cast<qsizetype>(url.size()));
+                        };
+                        const auto externalUrlLaunchPort =
+                            m_coreServices->externalUrlLaunchPort;
+                        actions.openExternalUrl = [externalUrlLaunchPort](
+                                                      const QUrl& url
+                                                      ) {
+                            return externalUrlLaunchPort->openUrl(url);
                         };
                         return actions;
                     }));

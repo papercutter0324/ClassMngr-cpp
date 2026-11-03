@@ -34,7 +34,6 @@
 #include <QUrl>
 #include <QApplication>
 #include <QClipboard>
-#include <QDesktopServices>
 
 #include <algorithm>
 #include <array>
@@ -1517,8 +1516,8 @@ void SpeakingEvaluationPage::generateAiCommentPrompt(const bool copyAndOpen)
     {
         QApplication::clipboard()->setText(QString::fromStdU16String(result.prompt));
         const QUrl url = aiProviderUrl();
-        if (url.scheme() != QStringLiteral("https") || !(m_actions.openExternalUrl
-                ? m_actions.openExternalUrl(url) : QDesktopServices::openUrl(url)))
+        if (url.scheme() != QStringLiteral("https") || !m_actions.openExternalUrl
+            || !m_actions.openExternalUrl(url))
             QMessageBox::warning(this, pageText("Unable to Open AI Website"),
                 pageText("The AI website could not be opened. The prompt is still available on the clipboard."));
         return;

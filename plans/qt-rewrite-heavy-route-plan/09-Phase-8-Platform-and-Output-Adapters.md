@@ -32,12 +32,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phases 2, 3, and 7
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
-- Last updated: 2026-09-16
+- Last updated: 2026-11-03
 - Current note: Keep feature code platform-neutral and isolate external integrations.
 
 ### Slice batches
@@ -52,6 +52,24 @@ Use this section only when a decision, acceptance result, verification
 finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
+
+### 8.1.1 — External URL launch boundary (accepted)
+
+Added the `ExternalUrlLaunchPort` application interface and its Qt
+`QDesktopServices` adapter. Bootstrap now supplies it to shell navigation,
+Speaking Evaluation, and Campus Directory. Those callers retain their current
+URLs, HTTPS checks, localized failure behavior, and shell navigation behavior;
+the platform adapter is the only direct `QDesktopServices` caller in the
+assigned paths.
+
+On macOS 27 ARM64 with Qt 6.12.0 and Apple Clang 21, the incremental Debug
+build passed for `ClassMngrNext`, `ClassMngrNextBootstrapTests`,
+`ClassMngrNextSpeakingEvaluationPageTests`, and
+`ClassMngrNextCampusDirectoryTests`. Focused tests passed for Campus Map URL
+handoff/failure, AI URL handoff/failure, Bootstrap AI composition, and shell
+navigation. Independent recheck confirmed Naver failure and Kakao success
+handoffs; the Campus Map startup fixture has no URL, so those link assertions
+use the injected action seam. No full suite was run.
 
 ## Objective
 

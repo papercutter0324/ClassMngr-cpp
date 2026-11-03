@@ -11,7 +11,6 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QCoreApplication>
-#include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QHash>
 #include <QHeaderView>
@@ -853,9 +852,8 @@ void SpeakingEvaluationAiPromptDialog::copyPrompt(const bool openProvider)
         return;
     }
     const bool opened = !m_providerUrl.isEmpty()
-        && (m_openExternalUrl
-            ? m_openExternalUrl(m_providerUrl)
-            : QDesktopServices::openUrl(m_providerUrl));
+        && m_openExternalUrl
+        && m_openExternalUrl(m_providerUrl);
     if (!opened)
     {
         QMessageBox::warning(
@@ -1226,9 +1224,8 @@ void SpeakingEvaluationAiBatchDialog::copyPrompt(const bool openProvider)
         return;
     }
     const bool opened = !m_providerUrl.isEmpty()
-        && (m_openExternalUrl
-            ? m_openExternalUrl(m_providerUrl)
-            : QDesktopServices::openUrl(m_providerUrl));
+        && m_openExternalUrl
+        && m_openExternalUrl(m_providerUrl);
     if (!opened)
     {
         QMessageBox::warning(

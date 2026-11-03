@@ -770,6 +770,7 @@ set(CLASSMNGR_MAIN_SOURCE "src/main.cpp")
 set(CLASSMNGR_NEXT_MAIN_SOURCE "src/next/main.cpp")
 set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/bootstrap/application_bootstrap.cpp"
+    "src/next/platform/qt_external_url_launch_adapter.cpp"
     "src/next/bootstrap/application_bootstrap.h"
     "src/next/application/assigned_teacher_directory_projection.h"
     "src/next/application/roster_row_display_policy.h"

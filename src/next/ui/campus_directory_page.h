@@ -20,6 +20,7 @@ class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
 class QPushButton;
+class QUrl;
 class QVBoxLayout;
 
 namespace ClassMngr::Next::Ui
@@ -48,6 +49,7 @@ struct CampusDirectoryPageActions final
     std::function<Domain::Result<std::size_t>()> importLegacyCampuses;
     std::function<Domain::Result<std::vector<Resources::ResourceId>>(
         const Application::CampusDashboardCampusSnapshot&)> mapResourcesFor;
+    std::function<bool(const QUrl&)> openExternalUrl;
     Application::CampusEditCapability editCapability =
         Application::CampusEditCapability::readOnly();
 };

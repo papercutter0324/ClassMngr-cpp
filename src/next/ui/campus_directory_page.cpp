@@ -6,7 +6,6 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QCoreApplication>
-#include <QDesktopServices>
 #include <QFormLayout>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -869,7 +868,7 @@ void CampusDirectoryPage::openHttpsUrl(const QString& urlText)
     {
         return;
     }
-    if (!QDesktopServices::openUrl(url))
+    if (!m_actions.openExternalUrl || !m_actions.openExternalUrl(url))
     {
         setStatus(campusText("The map link could not be opened."), true);
     }

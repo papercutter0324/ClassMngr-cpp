@@ -28,6 +28,7 @@
 #include <QPushButton>
 #include <QTemporaryDir>
 #include <QTest>
+#include <QUrl>
 
 #include <algorithm>
 #include <optional>
@@ -211,6 +212,7 @@ private slots:
     void packagedMapReferencesAreTypedAndImagesStayWithinBound();
     void savedCampusSelectionAndFirstAvailableFallback();
     void allFiveRoutesRenderAndReadOnlyDoesNotExposeEditing();
+    void mapLinksUseInjectedUrlLauncherAndReportFailure();
     void failedSaveRetainsDirtyDraftForRetry();
     void mapsLoadOnlyOnMapRouteReleaseOnLeaveAndReopen();
     void koreanTranslationAndApplicationPaletteReachRoutes();
@@ -927,6 +929,63 @@ void CampusDirectoryTests::allFiveRoutesRenderAndReadOnlyDoesNotExposeEditing()
             QVERIFY(openKakao->isEnabled());
         }
     }
+}
+
+void CampusDirectoryTests::mapLinksUseInjectedUrlLauncherAndReportFailure()
+{
+    auto catalog = loadCatalog();
+    QVERIFY(catalog.has_value());
+    Resources::ResourceLoader loader(std::move(*catalog));
+    Test::MemoryPreferences preferences;
+    Ui::PageHost host(loader, preferences.model);
+
+    QList<QUrl> openedUrls;
+    bool launchSucceeds = false;
+    const auto descriptors = Ui::campusDirectoryPageDescriptors(
+        [&openedUrls, &launchSucceeds] {
+            Ui::CampusDirectoryPageActions actions = actionsFor(
+                Application::CampusEditCapability::readOnly());
+            actions.openExternalUrl = [&openedUrls, &launchSucceeds](
+                                          const QUrl& url) {
+                openedUrls.append(url);
+                return launchSucceeds;
+            };
+            return actions;
+        });
+    const auto mapDescriptor = std::find_if(
+        descriptors.cbegin(), descriptors.cend(), [](const Ui::PageDescriptor& descriptor) {
+            return descriptor.id.value() == QStringLiteral("campus_map");
+        });
+    QVERIFY(mapDescriptor != descriptors.cend());
+    QVERIFY(host.registerPage(*mapDescriptor));
+    QVERIFY(host.activatePage(QStringLiteral("campus_map")));
+
+    auto* const page = dynamic_cast<Ui::CampusDirectoryPage*>(
+        host.pageInstance(QStringLiteral("campus_map")));
+    QVERIFY(page);
+    auto* const openNaver = page->findChild<QPushButton*>(
+        QStringLiteral("campusMapNaver"));
+    auto* const openKakao = page->findChild<QPushButton*>(
+        QStringLiteral("campusMapKakao"));
+    auto* const status = page->findChild<QLabel*>(
+        QStringLiteral("campusDirectoryStatus"));
+    QVERIFY(openNaver);
+    QVERIFY(openKakao);
+    QVERIFY(status);
+
+    openNaver->click();
+
+    QCOMPARE(openedUrls.size(), 1);
+    QCOMPARE(openedUrls.front(), QUrl(QStringLiteral(
+        "https://map.naver.com/p/entry/place/37093029")));
+    QCOMPARE(status->text(), QStringLiteral("The map link could not be opened."));
+
+    launchSucceeds = true;
+    openKakao->click();
+
+    QCOMPARE(openedUrls.size(), 2);
+    QCOMPARE(openedUrls.back(), QUrl(QStringLiteral(
+        "https://place.map.kakao.com/12327306")));
 }
 
 void CampusDirectoryTests::failedSaveRetainsDirtyDraftForRetry()
