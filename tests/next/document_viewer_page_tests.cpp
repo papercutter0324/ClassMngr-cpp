@@ -286,6 +286,7 @@ class DocumentViewerPageTests final : public QObject
 
 private slots:
     void initTestCase();
+    void catalogAndEmptyViewerKeepPdfBodiesUnopened();
     void typedCatalogSelectionLoadsReadyPdfAndKeepsMetadataCapabilities();
     void replacementClosesDocumentBeforeReleasingStreamAndRequestsFreshContent();
     void closeTimeoutDestroysConsumersBeforeReleasingAndReopensFreshContent();
@@ -319,6 +320,29 @@ void DocumentViewerPageTests::initTestCase()
         }
         );
     m_projection = catalogProjection(*m_loader);
+}
+
+void DocumentViewerPageTests::catalogAndEmptyViewerKeepPdfBodiesUnopened()
+{
+    const std::size_t diagnosticsBefore = m_diagnostics.size();
+    ViewerHarness harness(*m_loader, m_projection);
+    QVERIFY(!harness.viewer());
+    QVERIFY(harness.shell->pageHost().activatePage(
+        QString::fromLatin1(kDocumentViewerPageKey)));
+    auto* const viewer = harness.viewer();
+    QVERIFY(viewer);
+    QCoreApplication::processEvents();
+    QCOMPARE(viewer->documentStatus(), QPdfDocument::Status::Null);
+    QCOMPARE(viewer->documentPageCount(), 0);
+    QVERIFY(!viewer->hasActivePrimaryStream());
+    QVERIFY(!viewer->hasLoadedDocument());
+    const auto bodyOpens = std::count_if(
+        m_diagnostics.cbegin() + static_cast<std::ptrdiff_t>(diagnosticsBefore),
+        m_diagnostics.cend(),
+        [](const Resources::ResourceDiagnostic& diagnostic) {
+            return diagnostic.scope.kind() == Resources::ResourceScopeKind::ViewerSession;
+        });
+    QCOMPARE(bodyOpens, std::ptrdiff_t(0));
 }
 
 void DocumentViewerPageTests::

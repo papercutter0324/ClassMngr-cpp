@@ -2,7 +2,7 @@
 
 #include "next/application/document_catalog_projection.h"
 #include "next/application/document_content_session.h"
-#include "next/platform/document_content_resource_port.h"
+#include "next/platform/pdf_viewer_session.h"
 #include "next/platform/document_export_resource_port.h"
 #include "next/ui/page.h"
 #include "ui/shared/dialogs/dialog_shell.h"
@@ -25,8 +25,8 @@ class QVBoxLayout;
 namespace ClassMngr::Next::Ui
 {
 
-// Owns the selected PDF's QPdfDocument, borrowed file stream, and application
-// session. Catalog metadata is copied only while a selection is active.
+// Presents one selected viewer session. The adapter owns all active QtPdf
+// consumers and the borrowed body; this page owns application state and controls.
 class DocumentViewerPage final : public Page
 {
 public:
@@ -56,7 +56,9 @@ public:
 
     explicit DocumentViewerPage(
         const PageContext& context,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        Platform::PdfViewerSessionFactory sessionFactory =
+            Platform::makeQtPdfViewerSession
         );
     ~DocumentViewerPage() override;
 
@@ -101,12 +103,10 @@ protected:
 private:
     void buildUi();
     void retranslateUi();
-    void createPdfConsumers();
-    void destroyPdfConsumersForCloseTimeout();
+    void attachSessionView();
     void handleDocumentStatusChanged(QPdfDocument::Status status);
     void failActiveDocument(const QString& message);
     [[nodiscard]] bool releaseActiveContent(bool clearError);
-    [[nodiscard]] bool waitForDocumentNull();
     void updatePageControls();
     void updateOutputActions();
     void applyPageInput();
@@ -124,16 +124,13 @@ private:
         const QString& phase
         ) const;
 
-    Platform::DocumentContentResourcePort m_contentResourcePort;
+    std::unique_ptr<Platform::PdfViewerSession> m_pdfSession;
     Platform::DocumentExportResourcePort m_exportResourcePort;
     Application::DocumentContentSession m_contentSession;
     std::optional<Application::DocumentContentSession::SessionToken>
         m_contentToken;
-    std::optional<Platform::DocumentContentResource> m_primaryContent;
     std::optional<Application::DocumentEntryMetadata> m_selectedDocument;
     std::optional<Domain::DocumentId> m_selectedDocumentId;
-    QPdfDocument* m_document = nullptr;
-    QPdfView* m_view = nullptr;
     QLabel* m_titleLabel = nullptr;
     QLabel* m_errorLabel = nullptr;
     QLabel* m_pageLabel = nullptr;
@@ -153,7 +150,6 @@ private:
     quint64 m_requestSequence = 0;
     bool m_releasing = false;
     LifecycleObserver m_lifecycleObserver;
-    CloseWaiter m_closeWaiter;
     PrintActionHandler m_printActionHandler;
     SaveCopyRequestProvider m_saveCopyRequestProvider;
     OpenSavedCopyHandler m_openSavedCopyHandler;

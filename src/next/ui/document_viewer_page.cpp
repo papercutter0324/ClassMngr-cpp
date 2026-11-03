@@ -9,7 +9,6 @@
 #include <QDesktopServices>
 #include <QDir>
 #include <QEvent>
-#include <QEventLoop>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFontMetrics>
@@ -26,7 +25,6 @@
 #include <QSignalBlocker>
 #include <QSizePolicy>
 #include <QStandardPaths>
-#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -43,7 +41,6 @@ constexpr qreal kZoomStep = 1.2;
 constexpr qreal kMinimumZoom = 0.25;
 constexpr qreal kMaximumZoom = 3.0;
 constexpr qint64 kCopyBufferSize = 1024 * 1024;
-constexpr int kCloseStatusTimeoutMilliseconds = 5000;
 
 QString viewerText(const char* source)
 {
@@ -107,10 +104,11 @@ QString documentErrorText(const QPdfDocument::Error error)
 
 DocumentViewerPage::DocumentViewerPage(
     const PageContext& context,
-    QWidget* parent
+    QWidget* parent,
+    Platform::PdfViewerSessionFactory sessionFactory
     )
     : Page(context, parent)
-    , m_contentResourcePort(context.resourceLoader())
+    , m_pdfSession(sessionFactory(context.resourceLoader(), this))
     , m_exportResourcePort(context.resourceLoader())
 {
     buildUi();
@@ -118,56 +116,10 @@ DocumentViewerPage::DocumentViewerPage(
 
 DocumentViewerPage::~DocumentViewerPage()
 {
-    if (closeDocument())
-    {
-        return;
-    }
-
-    // Keep the borrowed stream alive until every QtPdf consumer is gone if a
-    // close timeout prevents the normal Status::Null release boundary.
-    if (m_view)
-    {
-        delete m_view;
-        m_view = nullptr;
-    }
-    if (m_document)
-    {
-        recordLifecycleBoundary(
-            QStringLiteral("qpdf-document-destroy"),
-            QStringLiteral("before")
-            );
-        delete m_document;
-        m_document = nullptr;
-        recordLifecycleBoundary(
-            QStringLiteral("qpdf-document-destroy"),
-            QStringLiteral("after")
-            );
-    }
-    if (m_primaryContent)
-    {
-        recordLifecycleBoundary(
-            QStringLiteral("primary-stream-release"),
-            QStringLiteral("before")
-            );
-        m_primaryContent.reset();
-        recordLifecycleBoundary(
-            QStringLiteral("primary-stream-release"),
-            QStringLiteral("after")
-            );
-    }
-    if (m_contentToken)
-    {
-        recordLifecycleBoundary(
-            QStringLiteral("content-session-release"),
-            QStringLiteral("before")
-            );
-        static_cast<void>(m_contentSession.release());
-        m_contentToken.reset();
-        recordLifecycleBoundary(
-            QStringLiteral("content-session-release"),
-            QStringLiteral("after")
-            );
-    }
+    static_cast<void>(closeDocument());
+    m_pdfSession->setStatusHandler({});
+    m_pdfSession->setLifecycleObserver({});
+    m_pdfSession.reset();
 }
 
 bool DocumentViewerPage::openDocument(
@@ -222,59 +174,24 @@ bool DocumentViewerPage::openDocument(
         documentId,
         ++m_requestSequence
         );
-    auto primary = m_contentResourcePort.openPrimaryPdf(
-        resolved.value().contentReference,
-        streamLabel
-        );
-    if (!primary)
-    {
-        const QString message = utf8Text(primary.error().message);
-        static_cast<void>(m_contentSession.fail(
-            *m_contentToken,
-            primary.error()
-            ));
-        static_cast<void>(releaseActiveContent(true));
-        showError(message);
-        return false;
-    }
-
-    m_primaryContent.emplace(std::move(primary.value()));
-    QIODevice& device = m_primaryContent->primaryBody.get().device();
-    if (!device.isOpen() || !device.isReadable() || !device.seek(0))
-    {
-        const QString message = viewerText("Unable to read the selected PDF.");
-        static_cast<void>(m_contentSession.fail(
-            *m_contentToken,
-            Domain::OperationError{
-                .code = Domain::ErrorCode::Technical,
-                .message = message.toUtf8().toStdString(),
-                .recoverable = true
-            }
-            ));
-        static_cast<void>(releaseActiveContent(true));
-        showError(message);
-        return false;
-    }
-
     m_zoomFactor = 1.0;
-    m_view->setPageMode(QPdfView::PageMode::MultiPage);
-    m_view->setZoomMode(QPdfView::ZoomMode::Custom);
-    m_view->setZoomFactor(m_zoomFactor);
+    m_pdfSession->view()->setPageMode(QPdfView::PageMode::MultiPage);
+    m_pdfSession->view()->setZoomMode(QPdfView::ZoomMode::Custom);
+    m_pdfSession->view()->setZoomFactor(m_zoomFactor);
     updateZoomDisplay();
     m_errorLabel->clear();
     m_errorLabel->hide();
     updateOutputActions();
 
-    recordLifecycleBoundary(QStringLiteral("qpdf-document-load"), QStringLiteral("before"));
-    m_document->load(&device);
-    recordLifecycleBoundary(QStringLiteral("qpdf-document-load"), QStringLiteral("after"));
-    // QtPdf can complete a fresh stream synchronously. Its statusChanged
-    // handler is deferred so an Error event never releases the stream while
-    // load() is on the stack; publish Ready now that load() has returned so
-    // the content session cannot lag behind the ready document.
-    if (m_document->status() == QPdfDocument::Status::Ready)
+    const auto loaded = m_pdfSession->open(
+        resolved.value().contentReference, streamLabel);
+    if (!loaded)
     {
-        handleDocumentStatusChanged(QPdfDocument::Status::Ready);
+        const QString message = utf8Text(loaded.error().message);
+        static_cast<void>(m_contentSession.fail(*m_contentToken, loaded.error()));
+        static_cast<void>(releaseActiveContent(true));
+        showError(message);
+        return false;
     }
     updatePageControls();
     updateOutputActions();
@@ -328,26 +245,22 @@ Application::DocumentContentSnapshot DocumentViewerPage::contentSnapshot() const
 
 bool DocumentViewerPage::hasActivePrimaryStream() const noexcept
 {
-    return m_primaryContent.has_value()
-        && m_primaryContent->primaryBody.get().isOpen();
+    return m_pdfSession->hasActiveStream();
 }
 
 bool DocumentViewerPage::hasLoadedDocument() const noexcept
 {
-    return m_document
-        && m_document->status() == QPdfDocument::Status::Ready
-        && m_document->pageCount() > 0
-        && hasActivePrimaryStream();
+    return m_pdfSession->isReady();
 }
 
 int DocumentViewerPage::documentPageCount() const noexcept
 {
-    return m_document ? m_document->pageCount() : 0;
+    return m_pdfSession->pageCount();
 }
 
 QPdfDocument::Status DocumentViewerPage::documentStatus() const noexcept
 {
-    return m_document ? m_document->status() : QPdfDocument::Status::Null;
+    return m_pdfSession->status();
 }
 
 QString DocumentViewerPage::lastErrorMessage() const
@@ -472,11 +385,12 @@ bool DocumentViewerPage::copySelectedExportTo(
 void DocumentViewerPage::setLifecycleObserver(LifecycleObserver observer)
 {
     m_lifecycleObserver = std::move(observer);
+    m_pdfSession->setLifecycleObserver(m_lifecycleObserver);
 }
 
 void DocumentViewerPage::setCloseWaiterForTesting(CloseWaiter waiter)
 {
-    m_closeWaiter = std::move(waiter);
+    m_pdfSession->setCloseWaiterForTesting(std::move(waiter));
 }
 
 void DocumentViewerPage::setPrintActionHandlerForTesting(
@@ -563,7 +477,7 @@ void DocumentViewerPage::buildUi()
     m_errorLabel->setWordWrap(true);
     m_errorLabel->hide();
     m_rootLayout->addWidget(m_errorLabel);
-    createPdfConsumers();
+    attachSessionView();
     connect(m_pageInput, &QLineEdit::editingFinished,
             this, [this] { applyPageInput(); });
     connect(m_zoomInput, &QLineEdit::editingFinished,
@@ -662,70 +576,21 @@ void DocumentViewerPage::retranslateUi()
     updateOutputActions();
 }
 
-void DocumentViewerPage::createPdfConsumers()
+void DocumentViewerPage::attachSessionView()
 {
-    if (m_document || m_view || !m_rootLayout)
+    auto* const view = m_pdfSession->view();
+    if (!view || !m_rootLayout || m_rootLayout->indexOf(view) >= 0)
     {
         return;
     }
-    m_document = new QPdfDocument(this);
-    m_view = new QPdfView(this);
-    m_view->setObjectName(QStringLiteral("documentViewerPdfView"));
-    m_view->setDocument(m_document);
-    m_view->setPageMode(QPdfView::PageMode::MultiPage);
-    m_view->setZoomMode(QPdfView::ZoomMode::Custom);
-    m_view->setZoomFactor(m_zoomFactor);
-    m_view->setPageSpacing(8);
-    m_view->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    m_rootLayout->addWidget(m_view, 1);
-
-    connect(m_document, &QPdfDocument::statusChanged, this,
-            [this](const QPdfDocument::Status status) {
-        // Deferring prevents an error status emitted from load() from closing
-        // the borrowed stream while QPdfDocument::load is still on the stack.
-        QTimer::singleShot(0, this, [this, status] {
-            handleDocumentStatusChanged(status);
-        });
+    m_rootLayout->addWidget(view, 1);
+    m_pdfSession->setStatusHandler([this](QPdfDocument::Status status) {
+        handleDocumentStatusChanged(status);
     });
-    if (m_view->pageNavigator())
+    if (view->pageNavigator())
     {
-        connect(
-            m_view->pageNavigator(),
-            &QPdfPageNavigator::currentPageChanged,
-            this,
-            [this](int) { updatePageControls(); }
-            );
-    }
-}
-
-void DocumentViewerPage::destroyPdfConsumersForCloseTimeout()
-{
-    if (m_view)
-    {
-        recordLifecycleBoundary(
-            QStringLiteral("qpdf-view-destroy"),
-            QStringLiteral("before")
-            );
-        m_rootLayout->removeWidget(m_view);
-        delete m_view;
-        m_view = nullptr;
-        recordLifecycleBoundary(
-            QStringLiteral("qpdf-view-destroy"),
-            QStringLiteral("after")
-            );
-    }
-    if (m_document)
-    {
-        recordLifecycleBoundary(
-            QStringLiteral("qpdf-document-destroy"),
-            QStringLiteral("before")
-            );
-        delete m_document;
-        m_document = nullptr;
-        recordLifecycleBoundary(
-            QStringLiteral("qpdf-document-destroy"),
-            QStringLiteral("after")
-            );
+        connect(view->pageNavigator(), &QPdfPageNavigator::currentPageChanged,
+                this, [this](int) { updatePageControls(); });
     }
 }
 
@@ -733,14 +598,14 @@ void DocumentViewerPage::handleDocumentStatusChanged(
     const QPdfDocument::Status status
     )
 {
-    if (m_releasing || !m_document || status != m_document->status())
+    if (m_releasing || status != m_pdfSession->status())
     {
         return;
     }
 
     if (status == QPdfDocument::Status::Ready)
     {
-        if (m_document->pageCount() <= 0)
+        if (m_pdfSession->pageCount() <= 0)
         {
             failActiveDocument(viewerText("The selected PDF has no pages."));
             return;
@@ -758,15 +623,15 @@ void DocumentViewerPage::handleDocumentStatusChanged(
         }
         m_errorLabel->clear();
         m_errorLabel->hide();
-        m_view->setPageMode(QPdfView::PageMode::MultiPage);
-        if (m_view->pageNavigator()
-            && m_view->pageNavigator()->currentPage() != 0)
+        m_pdfSession->view()->setPageMode(QPdfView::PageMode::MultiPage);
+        if (m_pdfSession->view()->pageNavigator()
+            && m_pdfSession->view()->pageNavigator()->currentPage() != 0)
         {
-            m_view->pageNavigator()->jump(0, {}, 1.0);
+            m_pdfSession->view()->pageNavigator()->jump(0, {}, 1.0);
         }
         m_zoomFactor = 1.0;
-        m_view->setZoomMode(QPdfView::ZoomMode::Custom);
-        m_view->setZoomFactor(m_zoomFactor);
+        m_pdfSession->view()->setZoomMode(QPdfView::ZoomMode::Custom);
+        m_pdfSession->view()->setZoomFactor(m_zoomFactor);
         updateZoomDisplay();
         updatePageControls();
         updateOutputActions();
@@ -777,7 +642,7 @@ void DocumentViewerPage::handleDocumentStatusChanged(
     {
         failActiveDocument(
             viewerText("Failed to load PDF: %1")
-                .arg(documentErrorText(m_document->error()))
+                .arg(documentErrorText(m_pdfSession->error()))
             );
         return;
     }
@@ -811,39 +676,11 @@ void DocumentViewerPage::failActiveDocument(const QString& message)
 bool DocumentViewerPage::releaseActiveContent(const bool clearError)
 {
     m_releasing = true;
-    bool closeTimedOut = false;
-    if (m_document && m_document->status() != QPdfDocument::Status::Null)
+    if (!m_pdfSession->release())
     {
-        recordLifecycleBoundary(
-            QStringLiteral("qpdf-document-close"),
-            QStringLiteral("before")
-            );
-        m_document->close();
-        const bool closed = waitForDocumentNull();
-        recordLifecycleBoundary(
-            QStringLiteral("qpdf-document-close"),
-            QStringLiteral("after")
-            );
-        if (!closed)
-        {
-            closeTimedOut = true;
-            destroyPdfConsumersForCloseTimeout();
-        }
+        m_releasing = false;
+        return false;
     }
-
-    if (m_primaryContent)
-    {
-        recordLifecycleBoundary(
-            QStringLiteral("primary-stream-release"),
-            QStringLiteral("before")
-            );
-        m_primaryContent.reset();
-        recordLifecycleBoundary(
-            QStringLiteral("primary-stream-release"),
-            QStringLiteral("after")
-            );
-    }
-
     if (m_contentToken)
     {
         recordLifecycleBoundary(
@@ -858,22 +695,15 @@ bool DocumentViewerPage::releaseActiveContent(const bool clearError)
             );
     }
 
-    if (closeTimedOut)
-    {
-        createPdfConsumers();
-        recordLifecycleBoundary(
-            QStringLiteral("qpdf-wrapper-recreate"),
-            QStringLiteral("after")
-            );
-    }
+    attachSessionView();
     m_selectedDocument.reset();
     m_selectedDocumentId.reset();
     m_titleLabel->clear();
     m_zoomFactor = 1.0;
-    if (m_view)
+    if (m_pdfSession->view())
     {
-        m_view->setZoomMode(QPdfView::ZoomMode::Custom);
-        m_view->setZoomFactor(m_zoomFactor);
+        m_pdfSession->view()->setZoomMode(QPdfView::ZoomMode::Custom);
+        m_pdfSession->view()->setZoomFactor(m_zoomFactor);
     }
     updateZoomDisplay();
     updatePageControls();
@@ -887,51 +717,16 @@ bool DocumentViewerPage::releaseActiveContent(const bool clearError)
     return true;
 }
 
-bool DocumentViewerPage::waitForDocumentNull()
-{
-    if (m_closeWaiter)
-    {
-        return m_closeWaiter();
-    }
-    if (!m_document || m_document->status() == QPdfDocument::Status::Null)
-    {
-        return true;
-    }
-
-    QEventLoop loop;
-    QTimer timeout;
-    timeout.setSingleShot(true);
-    QObject::connect(
-        m_document,
-        &QPdfDocument::statusChanged,
-        &loop,
-        [&loop](const QPdfDocument::Status status) {
-            if (status == QPdfDocument::Status::Null)
-            {
-                loop.quit();
-            }
-        }
-        );
-    QObject::connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
-    timeout.start(kCloseStatusTimeoutMilliseconds);
-    while (m_document->status() != QPdfDocument::Status::Null
-           && timeout.isActive())
-    {
-        loop.exec(QEventLoop::ExcludeUserInputEvents);
-    }
-    return m_document->status() == QPdfDocument::Status::Null;
-}
-
 void DocumentViewerPage::updatePageControls()
 {
-    if (!m_document || !m_pageInput || !m_pageTotalLabel)
+    if (!m_pageInput || !m_pageTotalLabel)
     {
         return;
     }
-    const int pageCount = m_document->pageCount();
+    const int pageCount = m_pdfSession->pageCount();
     m_pageValidator->setRange(1, std::max(1, pageCount));
     const QSignalBlocker blocker(m_pageInput);
-    if (pageCount <= 0 || !m_view || !m_view->pageNavigator())
+    if (pageCount <= 0 || !m_pdfSession->view() || !m_pdfSession->view()->pageNavigator())
     {
         m_pageInput->setText(QStringLiteral("0"));
         m_pageInput->setEnabled(false);
@@ -939,7 +734,7 @@ void DocumentViewerPage::updatePageControls()
         return;
     }
     const int pageNumber = std::clamp(
-        m_view->pageNavigator()->currentPage() + 1,
+        m_pdfSession->view()->pageNavigator()->currentPage() + 1,
         1,
         pageCount
         );
@@ -968,7 +763,7 @@ void DocumentViewerPage::updateOutputActions()
     if (m_closeButton)
     {
         m_closeButton->setEnabled(
-            m_contentToken.has_value() || m_primaryContent.has_value()
+            m_contentToken.has_value() || m_pdfSession->hasActiveStream()
             );
     }
 }
@@ -976,7 +771,7 @@ void DocumentViewerPage::updateOutputActions()
 void DocumentViewerPage::applyPageInput()
 {
     const int pageCount = documentPageCount();
-    if (pageCount <= 0 || !m_view || !m_view->pageNavigator())
+    if (pageCount <= 0 || !m_pdfSession->view() || !m_pdfSession->view()->pageNavigator())
     {
         updatePageControls();
         return;
@@ -989,10 +784,10 @@ void DocumentViewerPage::applyPageInput()
         return;
     }
     const int target = std::clamp(requested, 1, pageCount);
-    m_view->pageNavigator()->jump(
+    m_pdfSession->view()->pageNavigator()->jump(
         target - 1,
         {},
-        m_view->pageNavigator()->currentZoom()
+        m_pdfSession->view()->pageNavigator()->currentZoom()
         );
     updatePageControls();
 }
@@ -1015,8 +810,8 @@ void DocumentViewerPage::applyZoomInput()
 void DocumentViewerPage::applyZoom()
 {
     m_zoomFactor = std::clamp(m_zoomFactor, kMinimumZoom, kMaximumZoom);
-    m_view->setZoomMode(QPdfView::ZoomMode::Custom);
-    m_view->setZoomFactor(m_zoomFactor);
+    m_pdfSession->view()->setZoomMode(QPdfView::ZoomMode::Custom);
+    m_pdfSession->view()->setZoomFactor(m_zoomFactor);
     updateZoomDisplay();
 }
 
@@ -1041,22 +836,22 @@ void DocumentViewerPage::fitToPage()
 
 void DocumentViewerPage::applyCalculatedFit(const bool widthOnly)
 {
-    if (!m_document || m_document->status() != QPdfDocument::Status::Ready
-        || m_document->pageCount() <= 0 || !m_view->viewport())
+    if (m_pdfSession->status() != QPdfDocument::Status::Ready
+        || m_pdfSession->pageCount() <= 0 || !m_pdfSession->view()->viewport())
     {
         return;
     }
-    int pageIndex = m_view->pageNavigator()
-        ? m_view->pageNavigator()->currentPage()
+    int pageIndex = m_pdfSession->view()->pageNavigator()
+        ? m_pdfSession->view()->pageNavigator()->currentPage()
         : 0;
-    pageIndex = std::clamp(pageIndex, 0, m_document->pageCount() - 1);
-    const QSizeF pageSize = m_document->pagePointSize(pageIndex);
+    pageIndex = std::clamp(pageIndex, 0, m_pdfSession->pageCount() - 1);
+    const QSizeF pageSize = m_pdfSession->pagePointSize(pageIndex);
     if (!pageSize.isValid() || pageSize.isEmpty())
     {
         return;
     }
-    const QMargins margins = m_view->documentMargins();
-    const QSize viewport = m_view->viewport()->size();
+    const QMargins margins = m_pdfSession->view()->documentMargins();
+    const QSize viewport = m_pdfSession->view()->viewport()->size();
     const qreal availableWidth = viewport.width() - margins.left() - margins.right();
     const qreal availableHeight = viewport.height() - margins.top() - margins.bottom();
     if (availableWidth <= 0.0 || availableHeight <= 0.0)
@@ -1064,9 +859,9 @@ void DocumentViewerPage::applyCalculatedFit(const bool widthOnly)
         return;
     }
     const qreal widthZoom = availableWidth
-        / (pageSize.width() * std::max(m_view->logicalDpiX() / 72.0, 0.01));
+        / (pageSize.width() * std::max(m_pdfSession->view()->logicalDpiX() / 72.0, 0.01));
     const qreal heightZoom = availableHeight
-        / (pageSize.height() * std::max(m_view->logicalDpiY() / 72.0, 0.01));
+        / (pageSize.height() * std::max(m_pdfSession->view()->logicalDpiY() / 72.0, 0.01));
     m_zoomFactor = widthOnly ? widthZoom : std::min(widthZoom, heightZoom);
     applyZoom();
 }
@@ -1077,38 +872,40 @@ void DocumentViewerPage::printSelectedDocument()
     {
         return;
     }
-    const int pageIndex = m_view->pageNavigator()
+    const int pageIndex = m_pdfSession->view()->pageNavigator()
         ? std::clamp(
-            m_view->pageNavigator()->currentPage(),
+            m_pdfSession->view()->pageNavigator()->currentPage(),
             0,
-            m_document->pageCount() - 1
+            m_pdfSession->pageCount() - 1
             )
         : 0;
     const QString documentName = m_titleLabel->text();
     const auto geometryPreferences =
         settingsManagerDialogGeometryPreferencesCallbacks();
-    if (m_printActionHandler)
-    {
-        m_printActionHandler(
-            m_document,
-            documentName,
-            pageIndex,
-            geometryPreferences
-            );
-        return;
-    }
-    const auto result = PdfPrintService::printPdfDocument({
-        .parent = this,
-        .document = m_document,
-        .documentPath = documentName,
-        .currentPageIndex = pageIndex,
-        .dialogTitle = viewerText("Print File"),
-        .dialogGeometryPreferences = geometryPreferences
+    m_pdfSession->withReadyDocument([&](QPdfDocument* document) {
+        if (m_printActionHandler)
+        {
+            m_printActionHandler(
+                document,
+                documentName,
+                pageIndex,
+                geometryPreferences
+                );
+            return;
+        }
+        const auto result = PdfPrintService::printPdfDocument({
+            .parent = this,
+            .document = document,
+            .documentPath = documentName,
+            .currentPageIndex = pageIndex,
+            .dialogTitle = viewerText("Print File"),
+            .dialogGeometryPreferences = geometryPreferences
+        });
+        if (result.status == PdfPrintService::Status::Failed)
+        {
+            QMessageBox::warning(this, viewerText("Print File"), result.message);
+        }
     });
-    if (result.status == PdfPrintService::Status::Failed)
-    {
-        QMessageBox::warning(this, viewerText("Print File"), result.message);
-    }
 }
 
 void DocumentViewerPage::saveSelectedCopy()

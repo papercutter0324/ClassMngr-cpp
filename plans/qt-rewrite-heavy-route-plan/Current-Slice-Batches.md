@@ -15,14 +15,13 @@
 5. **8.1.9 Font-family lookup — complete:** Navigation and Teacher Profile use
    the injected current-family list while retaining their distinct match and
    fallback rules; the resource loader's font registration is unchanged.
-6. **8.2.1 QtPdf viewer session — in progress:** move selected-document
+6. **8.2.1 QtPdf viewer session — complete:** the selected-document
    load/status/render/close and borrowed-stream release behind a session-scoped
-   platform owner. Discovery found that DocumentViewerPage currently owns the
-   QtPdf document, view, and stream lease; generated/print PDFs stay out of this
-   session boundary.
-7. **8.2.2 PDF/print operation adapter:** isolate layout, fonts/images,
-   resources, printer selection, preview, file output, and cleanup from viewer
-   session ownership.
+   platform owner. `DocumentViewerPage` retains application state and controls;
+  generated/print PDFs stay out of this session boundary.
+7. **8.2.2 PDF/print operation adapter — in progress:** isolate layout,
+   fonts/images, resources, printer selection, preview, file output, and cleanup
+   from viewer session ownership.
 8. **8.2.3 Schedule output:** remove the legacy print-service forwarding path
    and verify schedule output parity.
 9. **8.2.4 Roster output:** route preview/print/save through the operation

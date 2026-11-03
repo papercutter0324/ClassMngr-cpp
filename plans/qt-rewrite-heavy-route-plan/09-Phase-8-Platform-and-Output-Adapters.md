@@ -224,6 +224,37 @@ captures passed runtime assertions; two Next captures were visually reviewed.
 The normal capture launch required offscreen mode because no display was
 available. No repository-wide suite was run.
 
+### 8.2.1 — Selected-document QtPdf session (accepted)
+
+`QtPdfViewerSession` now owns the active `QPdfDocument`, `QPdfView`, and
+borrowed source resource. `DocumentViewerPage` retains application session
+state and controls. Replacement, close, suspension, page release, malformed
+PDF handling, stale status suppression, close-timeout teardown, and reopen
+are covered. Generated and print-output PDFs remain outside this viewer
+session and continue through their operation paths.
+
+On Darwin 27 arm64 in the Qt offscreen Debug configuration, the incremental
+build in `build/macos-clang-debug` passed for five targets:
+`ClassMngrNextDocumentCatalogNavigationTests`,
+`ClassMngrNextDocumentViewerTests`,
+`ClassMngrNextDocumentViewerVisualCapture`,
+`ClassMngrNextPageHostTests`, and
+`ClassMngrNextPlatformQtPdfSessionReleaseTests`. Independent CTest
+verification passed all six focused checks: Document Viewer, QtPdf session
+owner, visual capture, startup/workspace dependency boundary, PageHost, and
+catalog navigation. The requested `ClassMngrNextDependencyBoundaryTests`
+name is not registered; `NextStartupWorkspaceDependencyBoundary` was verified
+with `ctest -N -V` and used. Ninja reported `premature end of file; recovering`
+and completed with exit code 0 without compile or link failures. Visual
+captures were generated and English/light Ready and Korean/dark Closed states
+were reviewed; no pixel-parity claim against the older baseline was made.
+
+The synchronous print borrow rejects reentrant replacement or release; its
+owner/page must remain alive until the callback returns. The production path
+uses a modal print dialog, so destruction from inside that callback is outside
+the supported contract. The native macOS print dialog was not opened, and no
+repository-wide suite was run.
+
 ## Objective
 
 

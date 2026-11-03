@@ -1,339 +1,293 @@
-#include "next/domain/document_content_reference.h"
-#include "next/platform/document_content_resource_port.h"
+#include "next/platform/qt_pdf_viewer_session.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_diagnostics.h"
-#include "next/resources/resource_loader.h"
 
-#include <QEventLoop>
-#include <QIODevice>
-#include <QPdfDocument>
+#include <QCryptographicHash>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QPdfView>
 #include <QPointer>
 #include <QStringList>
-#include <QTimer>
+#include <QTemporaryDir>
+#include <QWidget>
 #include <QtTest/QtTest>
 
-#include <optional>
-#include <utility>
+#include <memory>
 #include <vector>
 
 using namespace ClassMngr::Next;
 
 namespace
 {
+constexpr auto kReference = "resource://documents/Guides/DYB Lesson Planning Guide.pdf";
+constexpr auto kBodyPath = "assets/documents/Guides/DYB Lesson Planning Guide.pdf";
+constexpr auto kBodyId = "document.body:Guides/DYB Lesson Planning Guide.pdf";
 
-constexpr int kStatusTimeoutMs = 10000;
-constexpr auto kSelectedPdfReference =
-    "resource://documents/Guides/DYB Lesson Planning Guide.pdf";
-
-bool waitForStatus(
-    QPdfDocument& document,
-    const QPdfDocument::Status expected,
-    const int timeoutMs
-    )
+std::unique_ptr<Resources::ResourceLoader> loader(
+    Resources::ResourceDiagnosticsSink sink = {})
 {
-    if (document.status() == expected)
-    {
-        return true;
-    }
-
-    QEventLoop eventLoop;
-    QTimer timeout;
-    timeout.setSingleShot(true);
-    QObject::connect(
-        &document,
-        &QPdfDocument::statusChanged,
-        &eventLoop,
-        [&eventLoop, expected](const QPdfDocument::Status status) {
-            if (status == expected)
-            {
-                eventLoop.quit();
-            }
-        }
-        );
-    QObject::connect(&timeout, &QTimer::timeout, &eventLoop, &QEventLoop::quit);
-    timeout.start(timeoutMs);
-
-    while (document.status() != expected && timeout.isActive())
-    {
-        eventLoop.exec(QEventLoop::ExcludeUserInputEvents);
-    }
-
-    return document.status() == expected;
+    auto catalog = Resources::ResourceCatalog::load(
+        QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG),
+        QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_ROOT));
+    if (!catalog) { return {}; }
+    return std::make_unique<Resources::ResourceLoader>(std::move(*catalog), std::move(sink));
 }
 
-QString resourceRoot()
+// Pass resource integrity validation while deliberately failing PDF parsing.
+QString malformedPackage(QTemporaryDir& package)
 {
-    return QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_ROOT);
+    QFile source(QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG));
+    if (!source.open(QIODevice::ReadOnly)) { return {}; }
+    QJsonObject root = QJsonDocument::fromJson(source.readAll()).object();
+    QJsonArray records = root.value(QStringLiteral("records")).toArray();
+    const QByteArray bytes("%PDF-1.7\nThis PDF has no catalog or pages.\n%%EOF\n");
+    const QString hash = QString::fromLatin1(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex());
+    for (qsizetype i = 0; i < records.size(); ++i)
+    {
+        auto record = records.at(i).toObject();
+        if (record.value(QStringLiteral("logical_id")).toString() != QString::fromLatin1(kBodyId)) { continue; }
+        auto provenance = record.value(QStringLiteral("provenance")).toObject();
+        for (const auto& key : {QStringLiteral("source"), QStringLiteral("baked")})
+        {
+            auto entry = provenance.value(key).toObject();
+            entry.insert(QStringLiteral("bytes"), bytes.size());
+            entry.insert(QStringLiteral("sha256"), hash);
+            provenance.insert(key, entry);
+        }
+        record.insert(QStringLiteral("provenance"), provenance);
+        records.replace(i, record);
+    }
+    root.insert(QStringLiteral("records"), records);
+    const QString path = package.filePath(QString::fromLatin1(kBodyPath));
+    if (!QDir().mkpath(QFileInfo(path).absolutePath())) { return {}; }
+    QFile body(path);
+    if (!body.open(QIODevice::WriteOnly) || body.write(bytes) != bytes.size()) { return {}; }
+    body.close();
+    const QString catalogPath = package.filePath(QStringLiteral("resource-catalog.json"));
+    QFile output(catalogPath);
+    if (!output.open(QIODevice::WriteOnly) || output.write(QJsonDocument(root).toJson()) <= 0) { return {}; }
+    return catalogPath;
 }
-
-QString catalogPath()
-{
-    return QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG);
 }
-
-class PdfSessionOwner final
-{
-public:
-    explicit PdfSessionOwner(QStringList* destructionEvents = nullptr) noexcept
-        : m_destructionEvents(destructionEvents)
-    {
-    }
-
-    PdfSessionOwner(const PdfSessionOwner&) = delete;
-    PdfSessionOwner& operator=(const PdfSessionOwner&) = delete;
-
-    ~PdfSessionOwner()
-    {
-        m_document.close();
-        const bool reachedNull = waitForStatus(
-            m_document,
-            QPdfDocument::Status::Null,
-            kStatusTimeoutMs
-            );
-        const bool streamStayedOpen = m_resource
-            && m_resource->primaryBody.get().isOpen();
-
-        if (m_destructionEvents && m_resource)
-        {
-            m_destructionEvents->append(
-                reachedNull && streamStayedOpen
-                    ? QStringLiteral("document-null-while-stream-open")
-                    : QStringLiteral("document-close-order-failed")
-                );
-        }
-
-        if (m_resource)
-        {
-            m_resource->primaryBody.get().close();
-            m_resource.reset();
-        }
-    }
-
-    void attach(Platform::DocumentContentResource resource)
-    {
-        m_resource.emplace(std::move(resource));
-    }
-
-    [[nodiscard]] QPdfDocument& document() noexcept
-    {
-        return m_document;
-    }
-
-    [[nodiscard]] QIODevice* streamDevice() noexcept
-    {
-        if (!m_resource)
-        {
-            return nullptr;
-        }
-        return &m_resource->primaryBody.get().device();
-    }
-
-    [[nodiscard]] bool streamIsOpen() const noexcept
-    {
-        return m_resource && m_resource->primaryBody.get().isOpen();
-    }
-
-    [[nodiscard]] const Resources::ResourceScope* streamScope() const noexcept
-    {
-        return m_resource ? &m_resource->primaryBody.scope() : nullptr;
-    }
-
-    void loadFromStream()
-    {
-        m_document.load(streamDevice());
-    }
-
-    [[nodiscard]] bool closeDocument()
-    {
-        m_document.close();
-        return waitForStatus(
-            m_document,
-            QPdfDocument::Status::Null,
-            kStatusTimeoutMs
-            );
-    }
-
-    void closeStream() noexcept
-    {
-        if (m_resource)
-        {
-            m_resource->primaryBody.get().close();
-        }
-    }
-
-    void releaseStream() noexcept
-    {
-        m_resource.reset();
-    }
-
-private:
-    QPdfDocument m_document;
-    std::optional<Platform::DocumentContentResource> m_resource;
-    QStringList* m_destructionEvents = nullptr;
-};
-
-} // namespace
 
 class NextPlatformQtPdfSessionReleaseTests final : public QObject
 {
     Q_OBJECT
-
 private slots:
-    void closeAndReopenUsesFreshStreamAndSessionGeneration();
-    void destroyingAnActiveOwnerClosesDocumentBeforeStream();
+    void constructionIsLazy();
+    void closeAndReplacementUseFreshDocumentAndStreamGeneration();
+    void destroyingAnActiveOwnerClosesConsumersBeforeStream();
+    void timeoutDestroysViewThenDocumentThenStreamAndReopens();
+    void queuedStatusesCannotReachReplacementOrClosedSession();
+    void malformedPdfErrorIsDeferredAndCanReleaseSafely();
+    void synchronousPrintBorrowProtectsTheActiveDocument();
 };
 
-void NextPlatformQtPdfSessionReleaseTests::
-closeAndReopenUsesFreshStreamAndSessionGeneration()
+void NextPlatformQtPdfSessionReleaseTests::constructionIsLazy()
 {
-    auto catalog = Resources::ResourceCatalog::load(catalogPath(), resourceRoot());
-    QVERIFY(catalog);
+    int requests = 0;
+    auto resources = loader([&](const auto&) { ++requests; });
+    QVERIFY(resources);
+    QWidget parent;
+    Platform::QtPdfViewerSession session(*resources, &parent);
+    QCOMPARE(requests, 0);
+    QCOMPARE(session.status(), QPdfDocument::Status::Null);
+    QCOMPARE(session.pageCount(), 0);
+    QVERIFY(!session.hasActiveStream());
+    QVERIFY(!session.isReady());
+}
 
+void NextPlatformQtPdfSessionReleaseTests::closeAndReplacementUseFreshDocumentAndStreamGeneration()
+{
     std::vector<Resources::ResourceDiagnostic> diagnostics;
-    Resources::ResourceLoader loader(
-        std::move(*catalog),
-        [&diagnostics](const Resources::ResourceDiagnostic& diagnostic) {
-            diagnostics.push_back(diagnostic);
+    auto resources = loader([&](const auto& value) { diagnostics.push_back(value); });
+    QVERIFY(resources);
+    QWidget parent;
+    Platform::QtPdfViewerSession session(*resources, &parent);
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:1")));
+    QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+    const int pages = session.pageCount();
+    QPointer<QPdfDocument> first(session.findChild<QPdfDocument*>());
+    QVERIFY(first);
+    QCOMPARE(session.error(), QPdfDocument::Error::None);
+    QVERIFY(session.pagePointSize(0).isValid());
+    bool nullWithStreamOpen = false;
+    session.setLifecycleObserver([&](const QString& operation, const QString& phase) {
+        if (operation == QStringLiteral("qpdf-document-close") && phase == QStringLiteral("after"))
+        {
+            nullWithStreamOpen = session.status() == QPdfDocument::Status::Null && session.hasActiveStream();
         }
-        );
-    Platform::DocumentContentResourcePort port(loader);
-    PdfSessionOwner owner;
-
-    const QString firstGeneration =
-        QStringLiteral("DocumentViewer:QtPdfLifecycle:1");
-    auto firstOpen = port.openPrimaryPdf(
-        Domain::DocumentContentReference(kSelectedPdfReference),
-        firstGeneration
-        );
-    QVERIFY(firstOpen);
-    owner.attach(std::move(firstOpen.value()));
-
-    QIODevice* const firstDevice = owner.streamDevice();
-    QPointer<QIODevice> firstDeviceGuard(firstDevice);
-    QVERIFY(firstDevice);
-    QVERIFY(owner.streamIsOpen());
-    QCOMPARE(owner.streamScope()->ownerLabel(), firstGeneration);
-
-    owner.loadFromStream();
-    QTRY_COMPARE_WITH_TIMEOUT(
-        owner.document().status(),
-        QPdfDocument::Status::Ready,
-        kStatusTimeoutMs
-        );
-    QCOMPARE(owner.document().error(), QPdfDocument::Error::None);
-    QTRY_VERIFY_WITH_TIMEOUT(
-        owner.document().pageCount() > 0,
-        kStatusTimeoutMs
-        );
-    const int firstPageCount = owner.document().pageCount();
-    QVERIFY(owner.streamIsOpen());
-
-    QVERIFY(owner.closeDocument());
-    QCOMPARE(owner.document().status(), QPdfDocument::Status::Null);
-    QVERIFY(owner.streamIsOpen());
-
-    owner.closeStream();
-    QVERIFY(!owner.streamIsOpen());
-    owner.releaseStream();
-    QVERIFY(firstDeviceGuard.isNull());
-
-    const QString secondGeneration =
-        QStringLiteral("DocumentViewer:QtPdfLifecycle:2");
-    auto secondOpen = port.openPrimaryPdf(
-        Domain::DocumentContentReference(kSelectedPdfReference),
-        secondGeneration
-        );
-    QVERIFY(secondOpen);
-    owner.attach(std::move(secondOpen.value()));
-
-    QVERIFY(owner.streamDevice());
-    QVERIFY(owner.streamIsOpen());
-    QCOMPARE(owner.streamScope()->ownerLabel(), secondGeneration);
-    owner.loadFromStream();
-    QTRY_COMPARE_WITH_TIMEOUT(
-        owner.document().status(),
-        QPdfDocument::Status::Ready,
-        kStatusTimeoutMs
-        );
-    QCOMPARE(owner.document().error(), QPdfDocument::Error::None);
-    QTRY_COMPARE_WITH_TIMEOUT(
-        owner.document().pageCount(),
-        firstPageCount,
-        kStatusTimeoutMs
-        );
-    QVERIFY(owner.streamIsOpen());
-
+    });
+    // open() also owns replacement cleanup; no external close is needed.
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:2")));
+    QVERIFY(first.isNull());
+    QVERIFY(nullWithStreamOpen);
+    QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+    QCOMPARE(session.pageCount(), pages);
     QCOMPARE(diagnostics.size(), std::size_t(2));
-    for (const Resources::ResourceDiagnostic& diagnostic : diagnostics)
+    for (const auto& diagnostic : diagnostics)
     {
         QVERIFY(diagnostic.succeeded);
-        QCOMPARE(
-            diagnostic.resourceId.value(),
-            QStringLiteral("document.body:Guides/DYB Lesson Planning Guide.pdf")
-            );
-        QCOMPARE(
-            diagnostic.scope.kind(),
-            Resources::ResourceScopeKind::ViewerSession
-            );
+        QCOMPARE(diagnostic.resourceId.value(), QString::fromLatin1(kBodyId));
+        QCOMPARE(diagnostic.scope.kind(), Resources::ResourceScopeKind::ViewerSession);
     }
-    QCOMPARE(diagnostics[0].scope.ownerLabel(), firstGeneration);
-    QCOMPARE(diagnostics[1].scope.ownerLabel(), secondGeneration);
-
-    QVERIFY(owner.closeDocument());
-    QVERIFY(owner.streamIsOpen());
-    owner.closeStream();
-    owner.releaseStream();
+    QCOMPARE(diagnostics[0].scope.ownerLabel(), QStringLiteral("Viewer:1"));
+    QCOMPARE(diagnostics[1].scope.ownerLabel(), QStringLiteral("Viewer:2"));
+    QVERIFY(session.release());
+    QVERIFY(!session.hasActiveStream());
+    QCOMPARE(session.status(), QPdfDocument::Status::Null);
+    QVERIFY(session.release());
+    session.setLifecycleObserver({});
 }
 
-void NextPlatformQtPdfSessionReleaseTests::
-destroyingAnActiveOwnerClosesDocumentBeforeStream()
+void NextPlatformQtPdfSessionReleaseTests::destroyingAnActiveOwnerClosesConsumersBeforeStream()
 {
-    auto catalog = Resources::ResourceCatalog::load(catalogPath(), resourceRoot());
-    QVERIFY(catalog);
-
-    Resources::ResourceLoader loader(std::move(*catalog));
-    Platform::DocumentContentResourcePort port(loader);
-    QStringList destructionEvents;
-
+    auto resources = loader();
+    QVERIFY(resources);
+    QWidget parent;
+    QStringList events;
+    bool nullWithStreamOpen = false;
+    QPointer<QPdfDocument> document;
+    QPointer<QPdfView> view;
     {
-        PdfSessionOwner owner(&destructionEvents);
-        const QString generation =
-            QStringLiteral("DocumentViewer:QtPdfLifecycle:destruction:1");
-        auto opened = port.openPrimaryPdf(
-            Domain::DocumentContentReference(kSelectedPdfReference),
-            generation
-            );
-        QVERIFY(opened);
-        owner.attach(std::move(opened.value()));
-
-        QIODevice* const device = owner.streamDevice();
-        QVERIFY(device);
-        QVERIFY(device->isOpen());
-        QObject::connect(
-            device,
-            &QIODevice::aboutToClose,
-            [&destructionEvents]() {
-                destructionEvents.append(QStringLiteral("stream-about-to-close"));
+        Platform::QtPdfViewerSession session(*resources, &parent);
+        QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:destruction")));
+        QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+        document = session.findChild<QPdfDocument*>();
+        view = session.view();
+        session.setLifecycleObserver([&](const QString& operation, const QString& phase) {
+            events.append(operation + QLatin1Char(':') + phase);
+            if (operation == QStringLiteral("qpdf-document-close") && phase == QStringLiteral("after"))
+            {
+                nullWithStreamOpen = session.status() == QPdfDocument::Status::Null && session.hasActiveStream();
             }
-            );
-
-        owner.loadFromStream();
-        QTRY_COMPARE_WITH_TIMEOUT(
-            owner.document().status(),
-            QPdfDocument::Status::Ready,
-            kStatusTimeoutMs
-            );
-        QVERIFY(owner.document().pageCount() > 0);
-        QVERIFY(device->isOpen());
+        });
     }
-
-    const QStringList expectedDestructionEvents{
-        QStringLiteral("document-null-while-stream-open"),
-        QStringLiteral("stream-about-to-close")
-    };
-    QCOMPARE(destructionEvents, expectedDestructionEvents);
+    QVERIFY(nullWithStreamOpen);
+    QVERIFY(document.isNull());
+    QVERIFY(view.isNull());
+    QVERIFY(events.indexOf(QStringLiteral("qpdf-view-destroy:after"))
+        < events.indexOf(QStringLiteral("qpdf-document-destroy:before")));
+    QVERIFY(events.indexOf(QStringLiteral("qpdf-document-destroy:after"))
+        < events.indexOf(QStringLiteral("primary-stream-release:before")));
+    QCOMPARE(events.count(QStringLiteral("primary-stream-release:after")), 1);
 }
 
-QTEST_GUILESS_MAIN(NextPlatformQtPdfSessionReleaseTests)
+void NextPlatformQtPdfSessionReleaseTests::timeoutDestroysViewThenDocumentThenStreamAndReopens()
+{
+    auto resources = loader();
+    QVERIFY(resources);
+    QWidget parent;
+    Platform::QtPdfViewerSession session(*resources, &parent);
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:timeout")));
+    QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+    QPointer<QPdfView> view(session.view());
+    QPointer<QPdfDocument> document(session.findChild<QPdfDocument*>());
+    QStringList events;
+    bool consumersDestroyedWhileStreamOpen = true;
+    session.setLifecycleObserver([&](const QString& operation, const QString& phase) {
+        events.append(operation + QLatin1Char(':') + phase);
+        if (operation.endsWith(QStringLiteral("-destroy")) && phase == QStringLiteral("after"))
+        {
+            consumersDestroyedWhileStreamOpen &= session.hasActiveStream();
+        }
+    });
+    session.setCloseWaiterForTesting([] { return false; });
+    QVERIFY(session.release());
+    QVERIFY(consumersDestroyedWhileStreamOpen);
+    QVERIFY(view.isNull());
+    QVERIFY(document.isNull());
+    QVERIFY(events.indexOf(QStringLiteral("qpdf-view-destroy:after"))
+        < events.indexOf(QStringLiteral("qpdf-document-destroy:before")));
+    QVERIFY(events.indexOf(QStringLiteral("qpdf-document-destroy:after"))
+        < events.indexOf(QStringLiteral("primary-stream-release:before")));
+    QVERIFY(!session.hasActiveStream());
+    QVERIFY(session.view());
+    session.setCloseWaiterForTesting({});
+    session.setLifecycleObserver({});
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:reopen")));
+    QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+}
 
+void NextPlatformQtPdfSessionReleaseTests::queuedStatusesCannotReachReplacementOrClosedSession()
+{
+    auto resources = loader();
+    QVERIFY(resources);
+    QWidget parent;
+    Platform::QtPdfViewerSession session(*resources, &parent);
+    int readyEvents = 0;
+    session.setStatusHandler([&](QPdfDocument::Status status) {
+        if (status == QPdfDocument::Status::Ready) { ++readyEvents; }
+    });
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:stale:1")));
+    QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:stale:2")));
+    QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+    QCOMPARE(readyEvents, 2);
+    // Queued Ready from generation 1 must not publish as generation 2, even
+    // though both documents currently have the same Ready status.
+    QCoreApplication::processEvents();
+    QCOMPARE(readyEvents, 2);
+    QVERIFY(session.release());
+    QCoreApplication::processEvents();
+    QCOMPARE(readyEvents, 2);
+    QCOMPARE(session.status(), QPdfDocument::Status::Null);
+}
+
+void NextPlatformQtPdfSessionReleaseTests::malformedPdfErrorIsDeferredAndCanReleaseSafely()
+{
+    QTemporaryDir package;
+    QVERIFY(package.isValid());
+    const QString path = malformedPackage(package);
+    QVERIFY(!path.isEmpty());
+    auto catalog = Resources::ResourceCatalog::load(path, package.path());
+    QVERIFY(catalog);
+    Resources::ResourceLoader resources(std::move(*catalog));
+    QWidget parent;
+    Platform::QtPdfViewerSession session(resources, &parent);
+    bool loadReturned = false;
+    bool errorHandled = false;
+    session.setStatusHandler([&](QPdfDocument::Status status) {
+        if (status != QPdfDocument::Status::Error) { return; }
+        QVERIFY(loadReturned);
+        QVERIFY(session.hasActiveStream());
+        QVERIFY(session.error() != QPdfDocument::Error::None);
+        QVERIFY(session.release());
+        errorHandled = true;
+    });
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:invalid")));
+    loadReturned = true;
+    QTRY_VERIFY_WITH_TIMEOUT(errorHandled, 10000);
+    QVERIFY(!session.hasActiveStream());
+    QCOMPARE(session.status(), QPdfDocument::Status::Null);
+}
+
+void NextPlatformQtPdfSessionReleaseTests::synchronousPrintBorrowProtectsTheActiveDocument()
+{
+    auto resources = loader();
+    QVERIFY(resources);
+    QWidget parent;
+    Platform::QtPdfViewerSession session(*resources, &parent);
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:print")));
+    QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+    bool called = false;
+    session.withReadyDocument([&](QPdfDocument* document) {
+        called = true;
+        QPointer<QPdfDocument> guard(document);
+        QVERIFY(!session.release());
+        QVERIFY(!session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:busy")));
+        QCoreApplication::processEvents();
+        QVERIFY(guard);
+        QVERIFY(session.hasActiveStream());
+        QCOMPARE(document->status(), QPdfDocument::Status::Ready);
+    });
+    QVERIFY(called);
+    QVERIFY(session.release());
+}
+
+QTEST_MAIN(NextPlatformQtPdfSessionReleaseTests)
 #include "next_platform_qtpdf_session_release_tests.moc"

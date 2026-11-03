@@ -61,6 +61,7 @@ add_executable(ClassMngrNextDocumentViewerTests
     src/next/ui/application_shell.cpp
     src/next/ui/document_catalog_navigation.cpp
     src/next/ui/document_viewer_page.cpp
+    src/next/platform/qt_pdf_viewer_session.cpp
     src/next/ui/document_viewer_route.cpp
     src/next/ui/navigation_model.cpp
     src/next/ui/page_host.cpp
@@ -176,6 +177,7 @@ add_executable(ClassMngrNextDocumentViewerVisualCapture
     src/next/ui/application_shell.cpp
     src/next/ui/document_catalog_navigation.cpp
     src/next/ui/document_viewer_page.cpp
+    src/next/platform/qt_pdf_viewer_session.cpp
     src/next/ui/document_viewer_route.cpp
     src/next/ui/navigation_model.cpp
     src/next/ui/page_host.cpp
@@ -8219,20 +8221,25 @@ classmngr_add_qt_test(
         ClassMngrNextResourcePackage
 )
 
-classmngr_add_qt_test(
-    NAME NextPlatformQtPdfSessionRelease
-    SOURCES
-        tests/next_platform_qtpdf_session_release_tests.cpp
-    COMPILE_DEFINITIONS
-        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
-        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
-    LIBRARIES
-        ClassMngrNext::Platform
-        Qt6::Pdf
-        Qt6::Test
-    DEPENDENCIES
-        ClassMngrNextResourcePackage
+add_executable(ClassMngrNextPlatformQtPdfSessionReleaseTests
+    tests/next_platform_qtpdf_session_release_tests.cpp
+    src/next/platform/qt_pdf_viewer_session.cpp
 )
+target_compile_features(ClassMngrNextPlatformQtPdfSessionReleaseTests PRIVATE cxx_std_23)
+target_include_directories(ClassMngrNextPlatformQtPdfSessionReleaseTests PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_compile_definitions(ClassMngrNextPlatformQtPdfSessionReleaseTests PRIVATE
+    CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+    CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
+)
+target_link_libraries(ClassMngrNextPlatformQtPdfSessionReleaseTests PRIVATE
+    ClassMngrNext::Resources Qt6::PdfWidgets Qt6::Test
+)
+set_target_properties(ClassMngrNextPlatformQtPdfSessionReleaseTests PROPERTIES
+    AUTOMOC ON AUTOUIC OFF AUTORCC OFF CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_dependencies(ClassMngrNextPlatformQtPdfSessionReleaseTests ClassMngrNextResourcePackage)
+add_test(NAME ClassMngrNextPlatformQtPdfSessionReleaseTests COMMAND ClassMngrNextPlatformQtPdfSessionReleaseTests)
+set_tests_properties(ClassMngrNextPlatformQtPdfSessionReleaseTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 classmngr_add_qt_test(
     NAME NextPlatformQtJobWorker
