@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/save_mode_preferences.h"
+#include "next/application/font_family_availability_port.h"
 #include "next/application/teacher_profile_edit_use_case.h"
 #include "next/application/teacher_profile_read_port.h"
 #include "next/ui/page.h"
@@ -47,6 +48,7 @@ class TeacherProfilePage final : public Page
 public:
     explicit TeacherProfilePage(
         const PageContext& context,
+        Application::FontFamilyAvailabilityPort& fontFamilyAvailabilityPort,
         TeacherProfilePageActions actions = {},
         QWidget* parent = nullptr
         );
@@ -113,6 +115,7 @@ private:
     void clearPersistenceStatus();
 
     TeacherProfilePageActions m_actions;
+    Application::FontFamilyAvailabilityPort& m_fontFamilyAvailabilityPort;
     std::optional<Domain::TeacherId> m_teacherId;
     Domain::TeacherProfileFields m_savedFields;
     Application::SaveMode m_saveMode = Application::SaveMode::Automatic;

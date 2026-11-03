@@ -5,8 +5,10 @@
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_descriptor.h"
+#include "next/ui/font_family_selection_policy.h"
 #include "next/ui/page_host.h"
 #include "next/ui/teacher_profile_page.h"
+#include "font_family_availability_test_support.h"
 
 #include <QApplication>
 #include <QDir>
@@ -18,10 +20,13 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QTranslator>
+#include <QWidget>
 
 #include <memory>
 #include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
 using namespace ClassMngr;
 
@@ -152,6 +157,16 @@ public:
     const QString& path
     )
 {
+    std::vector<std::u16string> availableFamilies;
+    const QStringList registeredFamilies = QFontDatabase::families();
+    availableFamilies.reserve(static_cast<std::size_t>(registeredFamilies.size()));
+    for (const QString& family : registeredFamilies)
+    {
+        availableFamilies.push_back(family.toStdU16String());
+    }
+    Next::Test::FixedFontFamilyAvailabilityPort fontFamilies(
+        std::move(availableFamilies)
+        );
     Next::Ui::PageHost host(resourceLoader, preferences);
     const Next::Ui::PageId pageId = *Next::Ui::PageId::fromString(
         QStringLiteral("teacher_profile")
@@ -159,7 +174,7 @@ public:
     Next::Ui::PageDescriptor descriptor{
         .id = pageId,
         .label = QStringLiteral("Teacher Profile"),
-        .factory = [](const Next::Ui::PageContext& context)
+        .factory = [&fontFamilies](const Next::Ui::PageContext& context)
             -> Next::Ui::PageOperationResult<std::unique_ptr<Next::Ui::Page>> {
             Next::Ui::TeacherProfilePageActions actions;
             actions.validate = [](const Next::Domain::TeacherProfile& profile) {
@@ -169,7 +184,7 @@ public:
             };
             return std::unique_ptr<Next::Ui::Page>(
                 std::make_unique<Next::Ui::TeacherProfilePage>(
-                    context, std::move(actions))
+                    context, fontFamilies, std::move(actions))
                 );
         }
     };
@@ -184,6 +199,25 @@ public:
     const auto teacherId = Next::Domain::TeacherId::fromString("42");
     if (!page || !teacherId
         || !page->displayProfile({.teacherId = *teacherId, .fields = fields}))
+    {
+        return false;
+    }
+    const auto inter = Next::Ui::FontFamilySelectionPolicy::firstContainingMatch(
+        fontFamilies, QStringLiteral("Inter")
+        );
+    const auto pretendard =
+        Next::Ui::FontFamilySelectionPolicy::firstContainingMatch(
+            fontFamilies, QStringLiteral("Pretendard")
+            );
+    QWidget* const title = page->findChild<QWidget*>(QStringLiteral("pageTitle"));
+    QWidget* const subtitle = page->findChild<QWidget*>(QStringLiteral("pageSubtitle"));
+    QWidget* const sectionTitle = page->findChild<QWidget*>(QStringLiteral("sectionTitle"));
+    QWidget* const koreanName = page->findChild<QWidget*>(QStringLiteral("teacherKrEdit"));
+    if (!inter || !pretendard || !title || !subtitle || !sectionTitle || !koreanName
+        || title->font().family() != *inter
+        || subtitle->font().family() != *inter
+        || sectionTitle->font().family() != *inter
+        || koreanName->font().family() != *pretendard)
     {
         return false;
     }

@@ -316,6 +316,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/ai_comment_provider_preferences.h
     src/next/application/ai_comment_voice_preferences.h
     src/next/application/font_size_preferences.h
+    src/next/application/font_family_availability_port.h
     src/next/application/document_viewer_background_preferences.h
     src/next/application/document_page_spacing_preferences.h
     src/next/application/save_mode_preferences.h
@@ -469,6 +470,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
 )
 
 set(CLASSMNGR_NEXT_PLATFORM_SOURCES
+    src/next/platform/qt_font_family_availability_adapter.h
     src/next/platform/application_services_class_transfer_export_source_read_port.h
     src/next/platform/class_transfer_apply_legacy_adapter.h
     src/next/platform/application_services_class_transfer_apply_port.h

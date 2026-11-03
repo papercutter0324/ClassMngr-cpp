@@ -6,6 +6,7 @@
 #include "next/ui/page_host_active_page_changes_adapter.h"
 #include "next/ui/shared_staff_directory_page.h"
 #include "preferences_test_ports.h"
+#include "font_family_availability_test_support.h"
 
 #include <QApplication>
 #include <QComboBox>
@@ -573,7 +574,8 @@ void SharedStaffDirectoryTests::dirtyRouteLeaveGuardRejectsAndRetainsDraft()
     Resources::ResourceLoader loader(std::move(*catalog));
     EmptyPreferences preferences;
     Ui::ApplicationShell shell(
-        loader, preferences.model, Test::makeMemoryWindowGeometryPort());
+        loader, preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     DirectoryProbe probe;
     const auto staffPageId = *Ui::PageId::fromString(QStringLiteral("gs_team"));
     const auto destinationPageId = *Ui::PageId::fromString(QStringLiteral("destination"));

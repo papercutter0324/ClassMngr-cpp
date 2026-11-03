@@ -6,6 +6,7 @@
 #include "next/ui/application_shell.h"
 #include "next/ui/document_catalog_navigation.h"
 #include "preferences_test_ports.h"
+#include "font_family_availability_test_support.h"
 
 #include <QApplication>
 #include <QCoreApplication>
@@ -142,7 +143,8 @@ bool saveCatalogCapture(
         Ui::ApplicationShell shell(
             loader,
             preferences.model,
-            Test::makeMemoryWindowGeometryPort()
+            Test::makeMemoryWindowGeometryPort(),
+            Test::emptyFontFamilyAvailabilityPort()
             );
         shell.setDocumentCatalogProjection(std::move(projection));
         shell.resize(Viewport);

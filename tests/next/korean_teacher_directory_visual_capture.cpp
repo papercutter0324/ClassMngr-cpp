@@ -10,6 +10,7 @@
 #include "next/resources/resource_loader.h"
 #include "next/ui/application_shell.h"
 #include "preferences_test_ports.h"
+#include "font_family_availability_test_support.h"
 #include "next/ui/font_size_presenter.h"
 #include "next/ui/navigation_font_policy.h"
 #include "next/ui/page_host.h"
@@ -489,7 +490,8 @@ public:
         Next::Ui::ApplicationShell nextShell(
             resourceLoader,
             preferences,
-            Next::Test::makeMemoryWindowGeometryPort()
+            Next::Test::makeMemoryWindowGeometryPort(),
+            Next::Test::emptyFontFamilyAvailabilityPort()
             );
         nextGuard = &nextShell;
         const auto registerPage = [&nextShell](

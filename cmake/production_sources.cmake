@@ -770,6 +770,7 @@ set(CLASSMNGR_MAIN_SOURCE "src/main.cpp")
 set(CLASSMNGR_NEXT_MAIN_SOURCE "src/next/main.cpp")
 set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/bootstrap/application_bootstrap.cpp"
+    "src/next/platform/qt_font_family_availability_adapter.cpp"
     "src/next/platform/qt_clipboard_write_adapter.cpp"
     "src/next/platform/qt_external_url_launch_adapter.cpp"
     "src/next/bootstrap/application_bootstrap.h"
@@ -792,6 +793,7 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/document_viewer_route.cpp"
     "src/next/ui/document_viewer_route.h"
     "src/next/ui/navigation_font_policy.h"
+    "src/next/ui/font_family_selection_policy.h"
     "src/next/ui/initial_page.cpp"
     "src/next/ui/initial_page.h"
     "src/next/ui/my_workspace_page.cpp"

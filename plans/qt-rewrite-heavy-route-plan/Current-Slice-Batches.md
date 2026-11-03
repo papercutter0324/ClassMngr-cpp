@@ -12,12 +12,14 @@
 4. **8.1.8 Application icon — complete:** runtime uses the packaged PNG; the
    Next macOS bundle carries ICNS metadata and the Windows target has a minimal
    ICO resource. Windows RC compilation awaits a Windows host.
-5. **8.1.9 Font-family lookup — in progress:** replace direct
-   `QFontDatabase` lookups in Next Navigation and Teacher Profile while
-   preserving exact Inter selection, first substring match for Inter/Pretendard,
-   inherited-family fallback, and current font-size/style behavior.
-6. **8.2.1 QtPdf viewer session:** move document load/status/render/close and
-   borrowed-stream release behind a session-scoped platform owner.
+5. **8.1.9 Font-family lookup — complete:** Navigation and Teacher Profile use
+   the injected current-family list while retaining their distinct match and
+   fallback rules; the resource loader's font registration is unchanged.
+6. **8.2.1 QtPdf viewer session — in progress:** move selected-document
+   load/status/render/close and borrowed-stream release behind a session-scoped
+   platform owner. Discovery found that DocumentViewerPage currently owns the
+   QtPdf document, view, and stream lease; generated/print PDFs stay out of this
+   session boundary.
 7. **8.2.2 PDF/print operation adapter:** isolate layout, fonts/images,
    resources, printer selection, preview, file output, and cleanup from viewer
    session ownership.

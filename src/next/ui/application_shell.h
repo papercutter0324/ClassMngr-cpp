@@ -4,6 +4,7 @@
 #include "next/application/recent_workspace_history.h"
 #include "next/application/preferences_model.h"
 #include "next/application/window_geometry_port.h"
+#include "next/application/font_family_availability_port.h"
 #include "next/application/document_catalog_projection.h"
 #include "next/application/campus_edit_capability.h"
 #include "next/domain/domain_types.h"
@@ -96,6 +97,7 @@ public:
         Resources::ResourceLoader& resourceLoader,
         Application::PreferencesModel& preferences,
         std::unique_ptr<Application::WindowGeometryPort> windowGeometryPort,
+        Application::FontFamilyAvailabilityPort& fontFamilyAvailabilityPort,
         QWidget* parent = nullptr
         );
     ~ApplicationShell() override;
@@ -210,6 +212,7 @@ private:
 
     Resources::ResourceLoader* m_resourceLoader = nullptr;
     std::unique_ptr<Application::WindowGeometryPort> m_windowGeometryPort;
+    Application::FontFamilyAvailabilityPort& m_fontFamilyAvailabilityPort;
     QWidget* m_contentWidget = nullptr;
     PageHost* m_pageHost = nullptr;
     QTreeWidget* m_navigationTree = nullptr;

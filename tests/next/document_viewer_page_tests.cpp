@@ -8,6 +8,7 @@
 #include "next/ui/document_viewer_page.h"
 #include "next/ui/document_viewer_route.h"
 #include "preferences_test_ports.h"
+#include "font_family_availability_test_support.h"
 
 #include <QCoreApplication>
 #include <QApplication>
@@ -133,7 +134,8 @@ struct ViewerHarness final
         shell = std::make_unique<ApplicationShell>(
             loader,
             preferences.model,
-            Test::makeMemoryWindowGeometryPort()
+            Test::makeMemoryWindowGeometryPort(),
+            Test::emptyFontFamilyAvailabilityPort()
             );
         shell->setDocumentCatalogProjection(projection);
         const auto registered = registerDocumentViewerPage(shell->pageHost());

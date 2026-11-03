@@ -1,7 +1,9 @@
 #include "preferences_test_ports.h"
+#include "font_family_availability_test_support.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/application_shell.h"
+#include "next/ui/font_family_selection_policy.h"
 #include "next/ui/navigation_font_policy.h"
 #include "next/ui/navigation_model.h"
 #include "next/ui/page_host.h"
@@ -9,7 +11,6 @@
 #include <QPushButton>
 #include <QAction>
 #include <QContextMenuEvent>
-#include <QFontDatabase>
 #include <QKeySequence>
 #include <QMenu>
 #include <QMenuBar>
@@ -231,6 +232,7 @@ private slots:
     void shellExposesNewTeacherProfileAction();
     void shellExposesOpenTeacherProfileAction();
     void shellExposesInterruptedProfileRecoveryAction();
+    void fontFamilySelectionPreservesOrderingRulesAndUnicode();
     void navigationFontPolicyMatchesStandardAndPreferenceOffsets();
     void shellTeacherRowsStayOnStaticRouteAndOfferContextActions();
     void shellOwnsTransientNotificationPortAndKeepsIdleStatusBarHidden();
@@ -475,7 +477,8 @@ void NavigationModelTests::shellCommitsHistoryOnlyAfterGuardAndActivationSuccess
         );
     QVERIFY(checkIcon.has_value());
     Ui::ApplicationShell shell(
-        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     for (Ui::PageDescriptor descriptor : commonDescriptors(
              &campus,
              &workspace,
@@ -668,7 +671,8 @@ void NavigationModelTests::shellAdminMenuIsCapabilityGatedAndManageCampusesUsesN
     PageProbe campus{QStringLiteral("campus_information")};
     PageProbe workspace{QStringLiteral("my_workspace")};
     Ui::ApplicationShell shell(
-        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     for (Ui::PageDescriptor descriptor : commonDescriptors(&campus, &workspace))
     {
         QVERIFY(shell.pageHost().registerPage(std::move(descriptor)));
@@ -781,7 +785,8 @@ void NavigationModelTests::shellHistoryControlsTrackAccessRevocation()
     PageProbe protectedProbe{QStringLiteral("classes")};
 
     Ui::ApplicationShell shell(
-        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     QVERIFY(shell.pageHost().registerPage(descriptorFor(
         QStringLiteral("campus_information"), QStringLiteral("Campus Info"),
         {}, {}, &campus
@@ -936,7 +941,8 @@ void NavigationModelTests::shellHistoryControlsTrackAccessRevocation()
 void NavigationModelTests::shellExposesNewTeacherProfileAction()
 {
     Ui::ApplicationShell shell(
-        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     QAction* const action = shell.findChild<QAction*>(
         QStringLiteral("classMngrNextNewTeacherProfile")
         );
@@ -958,7 +964,8 @@ void NavigationModelTests::shellExposesNewTeacherProfileAction()
 void NavigationModelTests::shellExposesOpenTeacherProfileAction()
 {
     Ui::ApplicationShell shell(
-        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     QAction* const action = shell.findChild<QAction*>(
         QStringLiteral("classMngrNextOpenTeacherProfile")
         );
@@ -980,7 +987,8 @@ void NavigationModelTests::shellExposesOpenTeacherProfileAction()
 void NavigationModelTests::shellExposesInterruptedProfileRecoveryAction()
 {
     Ui::ApplicationShell shell(
-        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     QAction* const action = shell.findChild<QAction*>(
         QStringLiteral("classMngrNextRecoverInterruptedTeacherProfile")
         );
@@ -1001,34 +1009,36 @@ void NavigationModelTests::shellExposesInterruptedProfileRecoveryAction()
 void NavigationModelTests::navigationFontPolicyMatchesStandardAndPreferenceOffsets()
 {
     QFont inheritedFont;
-    inheritedFont.setFamily(QStringLiteral("Inherited Family"));
+    inheritedFont.setFamilies({
+        QStringLiteral("Fallback One"),
+        QStringLiteral("iNtEr"),
+        QStringLiteral("Fallback Two"),
+        QStringLiteral("FALLBACK ONE")
+    });
     inheritedFont.setPointSize(9);
     inheritedFont.setWeight(QFont::Bold);
     inheritedFont.setItalic(true);
-    const bool interRegistered = QFontDatabase::families().contains(
-        QStringLiteral("Inter"),
-        Qt::CaseInsensitive
-        );
+    Test::FixedFontFamilyAvailabilityPort fontFamilies({
+        u"Inter Variable",
+        u"inter",
+        u"INTER"
+    });
 
-    const auto verifyPreference = [&inheritedFont, interRegistered](
+    const auto verifyPreference = [&inheritedFont, &fontFamilies](
         const Application::FontSize preference,
         const int expectedPointSize
         ) {
         const QFont font = Ui::NavigationFontPolicy::standardFont(
             inheritedFont,
-            preference
+            preference,
+            fontFamilies
             );
         QCOMPARE(font.pointSize(), expectedPointSize);
-        QCOMPARE(
-            font.family(),
-            interRegistered
-                ? QStringLiteral("Inter")
-                : QStringLiteral("Inherited Family")
-            );
-        QVERIFY(font.families().contains(
-            QStringLiteral("Inherited Family"),
-            Qt::CaseInsensitive
-            ));
+        QCOMPARE(font.families(), QStringList({
+            QStringLiteral("inter"),
+            QStringLiteral("Fallback One"),
+            QStringLiteral("Fallback Two")
+        }));
         QCOMPARE(font.weight(), QFont::Normal);
         QVERIFY(!font.italic());
     };
@@ -1037,6 +1047,96 @@ void NavigationModelTests::navigationFontPolicyMatchesStandardAndPreferenceOffse
     verifyPreference(Application::FontSize::Normal, 14);
     verifyPreference(Application::FontSize::Large, 16);
     verifyPreference(Application::FontSize::ExtraLarge, 18);
+
+    Test::FixedFontFamilyAvailabilityPort noInter({
+        u"Inter Variable",
+        u"Pretendard"
+    });
+    const QFont inheritedFallback = Ui::NavigationFontPolicy::standardFont(
+        inheritedFont,
+        Application::FontSize::Normal,
+        noInter
+        );
+    QCOMPARE(inheritedFallback.families(), inheritedFont.families());
+    QCOMPARE(inheritedFallback.pointSize(), 14);
+    QCOMPARE(inheritedFallback.weight(), QFont::Normal);
+    QVERIFY(!inheritedFallback.italic());
+}
+
+void NavigationModelTests::fontFamilySelectionPreservesOrderingRulesAndUnicode()
+{
+    Test::FixedFontFamilyAvailabilityPort fontFamilies({
+        u"Inter Variable",
+        u"Pretendard Korean",
+        u"Inter Display",
+        u"프리텐다드 Pretendard KR"
+    });
+
+    QVERIFY(!Ui::FontFamilySelectionPolicy::firstExactMatch(
+        fontFamilies, QStringLiteral("Inter")
+        ));
+    const auto interFragment = Ui::FontFamilySelectionPolicy::firstContainingMatch(
+        fontFamilies, QStringLiteral("inter")
+        );
+    QVERIFY(interFragment.has_value());
+    QCOMPARE(*interFragment, QStringLiteral("Inter Variable"));
+    const auto pretendardFragment =
+        Ui::FontFamilySelectionPolicy::firstContainingMatch(
+            fontFamilies, QStringLiteral("Pretendard")
+            );
+    QVERIFY(pretendardFragment.has_value());
+    QCOMPARE(*pretendardFragment, QStringLiteral("Pretendard Korean"));
+
+    Test::FixedFontFamilyAvailabilityPort exactFamilies({
+        u"Inter Variable",
+        u"inter",
+        u"INTER"
+    });
+    const auto exactMatch = Ui::FontFamilySelectionPolicy::firstExactMatch(
+        exactFamilies, QStringLiteral("Inter")
+        );
+    QVERIFY(exactMatch.has_value());
+    QCOMPARE(*exactMatch, QStringLiteral("inter"));
+
+    Test::FixedFontFamilyAvailabilityPort unicodeFamilies({
+        u"Pretendard Latin",
+        u"프리텐다드 Pretendard 한글"
+    });
+    const auto unicodeFirstMatch =
+        Ui::FontFamilySelectionPolicy::firstContainingMatch(
+            unicodeFamilies, QStringLiteral("PRETENDARD")
+            );
+    QVERIFY(unicodeFirstMatch.has_value());
+    QCOMPARE(*unicodeFirstMatch, QStringLiteral("Pretendard Latin"));
+    Test::FixedFontFamilyAvailabilityPort unicodeOnlyFamilies({
+        u"프리텐다드 Pretendard 한글"
+    });
+    const auto unicodeOnlyMatch =
+        Ui::FontFamilySelectionPolicy::firstContainingMatch(
+            unicodeOnlyFamilies, QStringLiteral("Pretendard")
+            );
+    QVERIFY(unicodeOnlyMatch.has_value());
+    QCOMPARE(*unicodeOnlyMatch, QStringLiteral("프리텐다드 Pretendard 한글"));
+
+    Test::FixedFontFamilyAvailabilityPort absentFamilies({u"Noto Sans"});
+    QVERIFY(!Ui::FontFamilySelectionPolicy::firstExactMatch(
+        absentFamilies, QStringLiteral("Inter")
+        ));
+    QVERIFY(!Ui::FontFamilySelectionPolicy::firstContainingMatch(
+        absentFamilies, QStringLiteral("Pretendard")
+        ));
+    QFont inheritedFont;
+    inheritedFont.setFamilies({
+        QStringLiteral("Inherited Unicode 字体"),
+        QStringLiteral("Generic Fallback")
+    });
+    const QFont teacherFallback =
+        Ui::FontFamilySelectionPolicy::withFirstContainingMatch(
+            inheritedFont,
+            absentFamilies,
+            QStringLiteral("Pretendard")
+            );
+    QCOMPARE(teacherFallback.families(), inheritedFont.families());
 }
 
 void NavigationModelTests::
@@ -1047,7 +1147,8 @@ shellTeacherRowsStayOnStaticRouteAndOfferContextActions()
     PageProbe workspaceProbe{QStringLiteral("my_workspace")};
     PageProbe profileProbe{QStringLiteral("teacher_profile")};
     Ui::ApplicationShell shell(
-        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     QVERIFY(shell.pageHost().registerPage(descriptorFor(
         QStringLiteral("my_workspace"), QStringLiteral("My Workspace"),
         {}, {}, &workspaceProbe
@@ -1275,7 +1376,8 @@ void NavigationModelTests::shellOwnsTransientNotificationPortAndKeepsIdleStatusB
     auto shell = std::make_unique<Ui::ApplicationShell>(
         *m_loader,
         m_preferences.model,
-        Test::makeMemoryWindowGeometryPort()
+        Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort()
         );
     QStatusBar* const statusBar = shell->statusBar();
 
@@ -1313,7 +1415,8 @@ void NavigationModelTests::windowGeometryLoadsBeforeFirstShow()
     Ui::ApplicationShell source(
         *m_loader,
         m_preferences.model,
-        Test::makeMemoryWindowGeometryPort()
+        Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort()
         );
     source.resize(760, 640);
     const QSize expectedSize = source.size();
@@ -1329,7 +1432,8 @@ void NavigationModelTests::windowGeometryLoadsBeforeFirstShow()
     Ui::ApplicationShell shell(
         *m_loader,
         m_preferences.model,
-        std::move(geometryPort)
+        std::move(geometryPort),
+        Test::emptyFontFamilyAvailabilityPort()
         );
 
     QCOMPARE(probe->readCount, 1);
@@ -1344,7 +1448,8 @@ void NavigationModelTests::windowGeometryWritesAfterAcceptedClose()
     Ui::ApplicationShell shell(
         *m_loader,
         m_preferences.model,
-        std::move(geometryPort)
+        std::move(geometryPort),
+        Test::emptyFontFamilyAvailabilityPort()
         );
     shell.resize(850, 630);
     shell.show();
@@ -1376,7 +1481,8 @@ void NavigationModelTests::windowGeometryDoesNotWriteWhenCloseIsRejected()
     Ui::ApplicationShell shell(
         *m_loader,
         m_preferences.model,
-        std::move(geometryPort)
+        std::move(geometryPort),
+        Test::emptyFontFamilyAvailabilityPort()
         );
     shell.show();
     QApplication::processEvents();
@@ -1392,7 +1498,8 @@ void NavigationModelTests::windowGeometryKeepsDefaultForEmptyOrInvalidPayload()
     Ui::ApplicationShell defaultShell(
         *m_loader,
         m_preferences.model,
-        Test::makeMemoryWindowGeometryPort()
+        Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort()
         );
     const QSize defaultSize = defaultShell.size();
     const std::vector<std::string> payloads{
@@ -1406,7 +1513,8 @@ void NavigationModelTests::windowGeometryKeepsDefaultForEmptyOrInvalidPayload()
         Ui::ApplicationShell shell(
             *m_loader,
             m_preferences.model,
-            std::move(geometryPort)
+            std::move(geometryPort),
+            Test::emptyFontFamilyAvailabilityPort()
             );
 
         QCOMPARE(probe->readCount, 1);

@@ -6,6 +6,7 @@
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/page_host.h"
 #include "preferences_test_ports.h"
+#include "font_family_availability_test_support.h"
 #include "splitter_state_test_port.h"
 
 #include <QApplication>
@@ -144,7 +145,8 @@ bool captureNextShell(
     }
 
     Ui::ApplicationShell shell(
-        loader, preferences, Test::makeMemoryWindowGeometryPort());
+        loader, preferences, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     auto activeSelection = std::optional<Domain::ClassId>(*selectedClassId);
     const Ui::PageId classesPageId = *Ui::PageId::fromString(
         QStringLiteral("classes"));

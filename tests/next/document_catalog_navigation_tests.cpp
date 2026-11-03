@@ -8,6 +8,7 @@
 #include "next/ui/page_host.h"
 #include "next/ui/preferences_dialog.h"
 #include "preferences_test_ports.h"
+#include "font_family_availability_test_support.h"
 
 #include <QApplication>
 #include <QAction>
@@ -445,7 +446,8 @@ void DocumentCatalogNavigationTests::initTestCase()
 void DocumentCatalogNavigationTests::rendersNestedSiblingsByOrderThenStableId()
 {
     Ui::ApplicationShell shell(
-        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     shell.setDocumentCatalogProjection(projectionForLocale(QStringLiteral("en_US")));
     auto* const tree = shell.findChild<QTreeWidget*>(
         QStringLiteral("classMngrNextNavigationTree")
@@ -483,7 +485,8 @@ void DocumentCatalogNavigationTests::
 documentSelectionEmitsTypedStableIdAndPreservesFlags()
 {
     Ui::ApplicationShell shell(
-        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     shell.setDocumentCatalogProjection(projectionForLocale(QStringLiteral("en_US")));
     std::vector<Domain::DocumentId> selectedIds;
     shell.setDocumentCatalogSelectionHandler(
@@ -561,7 +564,8 @@ void DocumentCatalogNavigationTests::
 replacingLocalizedProjectionUpdatesLabelsAndKeepsSelection()
 {
     Ui::ApplicationShell shell(
-        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, m_preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     shell.setDocumentCatalogProjection(projectionForLocale(QStringLiteral("en_US")));
     QString requestedLocale;
     shell.setDocumentCatalogProjectionLoader(
@@ -637,7 +641,8 @@ preferencesMenuIsDiscoverableAndDoesNotDuplicatePageSettings()
 {
     DialogFixture fixture;
     Ui::ApplicationShell shell(
-        *m_loader, fixture.preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, fixture.preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     int openCalls = 0;
     shell.setPreferencesHandler([&openCalls] { ++openCalls; });
 
@@ -971,7 +976,8 @@ languageChangeRetranslatesPreferencesShellAndNavigation()
 {
     DialogFixture fixture;
     Ui::ApplicationShell shell(
-        *m_loader, fixture.preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, fixture.preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     Ui::PageDescriptor scheduleDescriptor{
         .id = *Ui::PageId::fromString(QStringLiteral("schedule")),
         .label = QStringLiteral("Schedule"),
@@ -1024,7 +1030,8 @@ shellAppliesSidebarAndFontPreferencesImmediately()
     DialogFixture fixture;
     QVERIFY(fixture.preferences.model.load());
     Ui::ApplicationShell shell(
-        *m_loader, fixture.preferences.model, Test::makeMemoryWindowGeometryPort());
+        *m_loader, fixture.preferences.model, Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort());
     const Ui::PageId scheduleId = *Ui::PageId::fromString(QStringLiteral("schedule"));
     Ui::PageDescriptor descriptor{
         .id = scheduleId,

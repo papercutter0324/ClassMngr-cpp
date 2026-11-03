@@ -11,6 +11,7 @@
 #include "next/ui/navigation_model.h"
 #include "next/ui/page_host.h"
 #include "preferences_test_ports.h"
+#include "font_family_availability_test_support.h"
 
 #include <QApplication>
 #include <QAction>
@@ -498,7 +499,8 @@ bool captureAdminReview(
     Ui::ApplicationShell adminShell(
         loader,
         adminPreferences.model,
-        Test::makeMemoryWindowGeometryPort()
+        Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort()
         );
     if (!configureCampusShell(
             adminShell,
@@ -603,7 +605,8 @@ bool captureAdminReview(
     Ui::ApplicationShell readOnlyShell(
         loader,
         readOnlyPreferences.model,
-        Test::makeMemoryWindowGeometryPort()
+        Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort()
         );
     if (!configureCampusShell(
             readOnlyShell,

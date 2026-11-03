@@ -2,6 +2,7 @@
 
 #include "next/application/positive_decimal_id_validation.h"
 #include "next/application/preferred_name_selection_policy.h"
+#include "next/ui/font_family_selection_policy.h"
 #include "ui/shared/constants/gui_constants.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
@@ -13,7 +14,6 @@
 #include <QEvent>
 #include <QFrame>
 #include <QFont>
-#include <QFontDatabase>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -62,18 +62,13 @@ constexpr int TeacherKoreanFontPointSize = 15;
 
 [[nodiscard]] QFont fontWithFamilyFragment(
     QFont font,
-    const QString& fragment
+    const QString& fragment,
+    const Application::FontFamilyAvailabilityPort& fontFamilies
     )
 {
-    for (const QString& family : QFontDatabase::families())
-    {
-        if (family.contains(fragment, Qt::CaseInsensitive))
-        {
-            font.setFamily(family);
-            break;
-        }
-    }
-    return font;
+    return FontFamilySelectionPolicy::withFirstContainingMatch(
+        std::move(font), fontFamilies, fragment
+        );
 }
 
 class TeacherProfileSectionCard final : public QFrame
@@ -81,6 +76,7 @@ class TeacherProfileSectionCard final : public QFrame
 public:
     explicit TeacherProfileSectionCard(
         const QString& title,
+        const Application::FontFamilyAvailabilityPort& fontFamilies,
         QWidget* parent = nullptr
         )
         : QFrame(parent)
@@ -99,7 +95,7 @@ public:
         m_titleLabel = new QLabel(title, this);
         m_titleLabel->setObjectName(QStringLiteral("sectionTitle"));
         m_titleLabel->setFont(fontWithFamilyFragment(
-            m_titleLabel->font(), QStringLiteral("Inter")
+            m_titleLabel->font(), QStringLiteral("Inter"), fontFamilies
             ));
         m_layout->addWidget(
             m_titleLabel,
@@ -318,11 +314,13 @@ private:
 
 TeacherProfilePage::TeacherProfilePage(
     const PageContext& context,
+    Application::FontFamilyAvailabilityPort& fontFamilyAvailabilityPort,
     TeacherProfilePageActions actions,
     QWidget* parent
     )
     : Page(context, parent)
     , m_actions(std::move(actions))
+    , m_fontFamilyAvailabilityPort(fontFamilyAvailabilityPort)
     , m_saveMode(m_actions.saveMode)
 {
     setObjectName(QStringLiteral("classMngrNextTeacherProfilePage"));
@@ -634,7 +632,9 @@ void TeacherProfilePage::buildUi()
     QFont titleFont = m_titleLabel->font();
     titleFont.setPointSize(UiConstants::Pages::TitleFontSize);
     titleFont.setWeight(QFont::Bold);
-    titleFont = fontWithFamilyFragment(titleFont, QStringLiteral("Inter"));
+    titleFont = fontWithFamilyFragment(
+        titleFont, QStringLiteral("Inter"), m_fontFamilyAvailabilityPort
+        );
     m_titleLabel->setFont(titleFont);
     titleRow->addWidget(m_titleLabel);
     titleRow->addStretch();
@@ -652,7 +652,7 @@ void TeacherProfilePage::buildUi()
     QFont subtitleFont = m_subtitleLabel->font();
     subtitleFont.setPointSize(UiConstants::Pages::SubtitleFontSize);
     subtitleFont = fontWithFamilyFragment(
-        subtitleFont, QStringLiteral("Inter")
+        subtitleFont, QStringLiteral("Inter"), m_fontFamilyAvailabilityPort
         );
     m_subtitleLabel->setFont(subtitleFont);
     headerLayout->addWidget(m_subtitleLabel);
@@ -672,7 +672,9 @@ void TeacherProfilePage::buildUi()
     formLayout->setContentsMargins(0, 0, 0, 0);
     formLayout->setSpacing(UiConstants::Pages::Spacing);
 
-    auto* const details = new TeacherProfileSectionCard({}, m_formContainer);
+    auto* const details = new TeacherProfileSectionCard(
+        {}, m_fontFamilyAvailabilityPort, m_formContainer
+        );
     details->setObjectName(QStringLiteral("teacherProfileDetailsCard"));
     m_detailsGroup = details;
     auto* const detailsGrid = new QGridLayout;
@@ -712,7 +714,9 @@ void TeacherProfilePage::buildUi()
         ->contentLayout()->addLayout(detailsGrid);
     formLayout->addWidget(details);
 
-    auto* const connectivity = new TeacherProfileSectionCard({}, m_formContainer);
+    auto* const connectivity = new TeacherProfileSectionCard(
+        {}, m_fontFamilyAvailabilityPort, m_formContainer
+        );
     connectivity->setObjectName(
         QStringLiteral("teacherProfileConnectivityCard")
         );
@@ -764,7 +768,9 @@ void TeacherProfilePage::buildUi()
         ->contentLayout()->addLayout(connectivityGrid);
     formLayout->addWidget(connectivity);
 
-    auto* const notes = new TeacherProfileSectionCard({}, m_formContainer);
+    auto* const notes = new TeacherProfileSectionCard(
+        {}, m_fontFamilyAvailabilityPort, m_formContainer
+        );
     notes->setObjectName(QStringLiteral("teacherProfileNotesCard"));
     m_notesGroup = notes;
     addNotesField(*static_cast<TeacherProfileSectionCard*>(m_notesGroup)
@@ -852,7 +858,9 @@ void TeacherProfilePage::addLineField(
     if (field == QStringLiteral("teacherKr"))
     {
         QFont koreanFont = fontWithFamilyFragment(
-            input->font(), QStringLiteral("Pretendard")
+            input->font(),
+            QStringLiteral("Pretendard"),
+            m_fontFamilyAvailabilityPort
             );
         koreanFont.setPointSize(TeacherKoreanFontPointSize);
         input->setFont(koreanFont);

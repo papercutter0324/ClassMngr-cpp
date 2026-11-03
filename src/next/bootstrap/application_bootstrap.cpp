@@ -54,6 +54,7 @@
 #include "next/platform/calendar_page_resource_campus_directory_query_adapter.h"
 #include "next/platform/campus_directory_repository_adapter.h"
 #include "next/platform/qt_clipboard_write_adapter.h"
+#include "next/platform/qt_font_family_availability_adapter.h"
 #include "next/platform/qt_external_url_launch_adapter.h"
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "next/platform/qt_schedule_output_adapter.h"
@@ -639,6 +640,7 @@ loadWorkspaceCampusChoices(
 }
 
 [[nodiscard]] Ui::PageDescriptor teacherProfilePageDescriptor(
+    Application::FontFamilyAvailabilityPort& fontFamilyAvailabilityPort,
     std::function<Ui::TeacherProfilePageActions()> actionsFactory
     )
 {
@@ -648,13 +650,15 @@ loadWorkspaceCampusChoices(
         .labelTranslationSource = QStringLiteral("Teacher Profile"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
-        .factory = [actionsFactory = std::move(actionsFactory)](
+        .factory = [actionsFactory = std::move(actionsFactory),
+                    fontFamilyAvailabilityPort = &fontFamilyAvailabilityPort](
                        const Ui::PageContext& context
                        ) mutable
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             std::unique_ptr<Ui::Page> page =
                 std::make_unique<Ui::TeacherProfilePage>(
                     context,
+                    *fontFamilyAvailabilityPort,
                     actionsFactory()
                     );
             return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
@@ -830,6 +834,7 @@ struct ApplicationBootstrap::CoreServices final
     }
 
     Resources::ResourceLoader resourceLoader;
+    Platform::QtFontFamilyAvailabilityAdapter fontFamilyAvailabilityPort;
     Resources::ResourceScope startupResourceScope;
     std::shared_ptr<Application::ClipboardWritePort> clipboardWritePort;
     std::shared_ptr<Application::ExternalUrlLaunchPort> externalUrlLaunchPort;
@@ -1355,7 +1360,8 @@ Application::StartupResult ApplicationBootstrap::start()
         m_shell = std::make_unique<Ui::ApplicationShell>(
             m_coreServices->resourceLoader,
             m_coreServices->preferences,
-            std::make_unique<Platform::SettingsManagerWindowGeometryPort>()
+            std::make_unique<Platform::SettingsManagerWindowGeometryPort>(),
+            m_coreServices->fontFamilyAvailabilityPort
             );
         if (!m_application.windowIcon().isNull())
         {
@@ -2865,7 +2871,9 @@ Application::StartupResult ApplicationBootstrap::start()
         if (initialPageFailure.isEmpty())
         {
             const Ui::PageHostResult<void> registration =
-                m_shell->pageHost().registerPage(teacherProfilePageDescriptor([this] {
+                m_shell->pageHost().registerPage(teacherProfilePageDescriptor(
+                    m_coreServices->fontFamilyAvailabilityPort,
+                    [this] {
                     Ui::TeacherProfilePageActions actions;
                     actions.saveMode =
                         Platform::SettingsManagerSaveModePreferencesPort().read();

@@ -290,11 +290,13 @@ ApplicationShell::ApplicationShell(
     Resources::ResourceLoader& resourceLoader,
     Application::PreferencesModel& preferences,
     std::unique_ptr<Application::WindowGeometryPort> windowGeometryPort,
+    Application::FontFamilyAvailabilityPort& fontFamilyAvailabilityPort,
     QWidget* parent
     )
     : QMainWindow(parent)
     , m_resourceLoader(&resourceLoader)
     , m_windowGeometryPort(std::move(windowGeometryPort))
+    , m_fontFamilyAvailabilityPort(fontFamilyAvailabilityPort)
     , m_contentWidget(new QWidget(this))
     , m_pageHost(new PageHost(resourceLoader, preferences, m_contentWidget))
     , m_navigationTree(new QTreeWidget(m_contentWidget))
@@ -348,7 +350,8 @@ ApplicationShell::ApplicationShell(
     m_navigationTree->setFont(
         NavigationFontPolicy::standardFont(
             m_navigationTree->font(),
-            preferences.snapshot().fontSize()
+            preferences.snapshot().fontSize(),
+            m_fontFamilyAvailabilityPort
             )
         );
     m_navigationTree->setIndentation(12);
@@ -1762,7 +1765,11 @@ void ApplicationShell::applyPreferences(
     )
 {
     m_navigationTree->setFont(
-        NavigationFontPolicy::standardFont(m_navigationTree->font(), snapshot.fontSize()));
+        NavigationFontPolicy::standardFont(
+            m_navigationTree->font(),
+            snapshot.fontSize(),
+            m_fontFamilyAvailabilityPort
+            ));
     m_navigationTree->setProperty(
         "sidebarAnimationEnabled", snapshot.sidebarMarqueeEnabled());
     if (auto* const delegate = dynamic_cast<NavigationTreeItemDelegate*>(

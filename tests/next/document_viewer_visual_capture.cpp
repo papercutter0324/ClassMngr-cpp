@@ -9,6 +9,7 @@
 #include "next/ui/document_viewer_page.h"
 #include "next/ui/document_viewer_route.h"
 #include "preferences_test_ports.h"
+#include "font_family_availability_test_support.h"
 
 #include <QApplication>
 #include <QCoreApplication>
@@ -289,7 +290,8 @@ bool captureCombination(
         Ui::ApplicationShell shell(
             loader,
             preferences.model,
-            Test::makeMemoryWindowGeometryPort()
+            Test::makeMemoryWindowGeometryPort(),
+            Test::emptyFontFamilyAvailabilityPort()
             );
         shell.setDocumentCatalogProjection(projection);
         const auto registration = Ui::registerDocumentViewerPage(shell.pageHost());

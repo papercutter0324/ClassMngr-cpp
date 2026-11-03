@@ -1293,6 +1293,7 @@ set_tests_properties(ClassMngrNextScheduleImportWorkflowTests
 # integration independently from startup composition.
 add_executable(ClassMngrNextNavigationTests
     tests/next/navigation_model_tests.cpp
+    tests/next/font_family_availability_test_support.h
     src/next/ui/application_shell.cpp
     src/next/ui/document_catalog_navigation.cpp
     src/next/ui/navigation_model.cpp

@@ -1,12 +1,14 @@
 #pragma once
 
+#include "next/application/font_family_availability_port.h"
 #include "next/application/font_size_preferences.h"
+#include "next/ui/font_family_selection_policy.h"
 
 #include <QFont>
-#include <QFontDatabase>
 #include <QStringList>
 
 #include <algorithm>
+#include <optional>
 
 namespace ClassMngr::Next::Ui
 {
@@ -21,7 +23,8 @@ public:
     // matching the legacy tree's 14 pt base and its font-size preferences.
     [[nodiscard]] static QFont standardFont(
         QFont inheritedFont,
-        const Application::FontSize preference
+        const Application::FontSize preference,
+        const Application::FontFamilyAvailabilityPort& fontFamilies
         )
     {
         int offset = 0;
@@ -39,7 +42,7 @@ public:
             offset = 4;
             break;
         }
-        preferRegisteredInter(inheritedFont);
+        preferRegisteredInter(inheritedFont, fontFamilies);
         inheritedFont.setPointSize(StandardPointSize + offset);
         inheritedFont.setWeight(QFont::Normal);
         inheritedFont.setItalic(false);
@@ -47,24 +50,21 @@ public:
     }
 
 private:
-    static void preferRegisteredInter(QFont& font)
+    static void preferRegisteredInter(
+        QFont& font,
+        const Application::FontFamilyAvailabilityPort& fontFamilies
+        )
     {
-        QString interFamily;
-        for (const QString& availableFamily : QFontDatabase::families())
-        {
-            if (availableFamily.compare(QStringLiteral("Inter"),
-                                        Qt::CaseInsensitive) == 0)
-            {
-                interFamily = availableFamily;
-                break;
-            }
-        }
-        if (interFamily.isEmpty())
+        const std::optional<QString> interFamily =
+            FontFamilySelectionPolicy::firstExactMatch(
+                fontFamilies, QStringLiteral("Inter")
+                );
+        if (!interFamily)
         {
             return;
         }
 
-        QStringList families{interFamily};
+        QStringList families{*interFamily};
         for (const QString& inheritedFamily : font.families())
         {
             const bool alreadyPresent = std::any_of(

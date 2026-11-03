@@ -200,6 +200,30 @@ The Bootstrap fixture's exact startup-resource expectation now includes the
 required icon PNG. Its existing equality assertion remains unchanged; the
 focused `generatedCatalogStartsWithOnlySelectedStartupPayloads` test passed.
 
+### 8.1.9 — Navigation and Teacher Profile font-family lookup (accepted)
+
+Added a Qt-free Application port for the ordered available font-family list
+and a Qt Platform adapter that queries `QFontDatabase` on demand. Bootstrap
+supplies the required port to Navigation and Teacher Profile. Matching policy
+remains in the UI: Navigation uses the first exact case-insensitive Inter match
+and preserves inherited fallback ordering; Teacher Profile uses the first
+case-insensitive substring match for Inter/Pretendard and retains inherited
+families when no match exists. Font sizes, styles, and widget assignments are
+preserved. ResourceLoader's font registration is unchanged.
+
+On macOS 27 ARM64 with Qt 6.12.0 and Apple Clang 21, the incremental Debug
+build passed for `ClassMngrNext`, Navigation tests, Bootstrap tests, and the
+Teacher Profile visual-capture target. Independent CTest verification passed
+Navigation, Document Catalog Navigation, Document Viewer, Shared Staff
+Directory, Application Icon, and the full `ClassMngrNextBootstrapTests`
+target (6/6 targets; 89 Bootstrap cases passed). Deterministic coverage checks
+exact versus substring matching, list order, deduplication, missing-family
+fallback, Unicode conversion, all four Navigation sizes/styles, and the
+intended Teacher Profile widgets. Offscreen English/light and Korean/dark
+captures passed runtime assertions; two Next captures were visually reviewed.
+The normal capture launch required offscreen mode because no display was
+available. No repository-wide suite was run.
+
 ## Objective
 
 
