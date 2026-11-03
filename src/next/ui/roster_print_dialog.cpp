@@ -14,11 +14,26 @@
 #include <QSaveFile>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <stdexcept>
+#include <utility>
 
 namespace ClassMngr::Next::Ui
 {
 namespace
 {
+DialogGeometryPreferencesCallbacks requireNextRosterGeometryPreferences(
+    DialogGeometryPreferencesCallbacks geometryPreferences
+    )
+{
+    if (!geometryPreferences.read || !geometryPreferences.write)
+    {
+        throw std::invalid_argument(
+            "Next RosterPrintDialog requires paired geometry preference callbacks"
+            );
+    }
+    return geometryPreferences;
+}
+
 QString text(const char* source) { return QCoreApplication::translate("NextRosterOutput", source); }
 QPushButton* button(const char* label, const char* name, QHBoxLayout* layout, QWidget* parent)
 {
@@ -31,14 +46,26 @@ QString choosePath(const RosterOutputActions& actions, QWidget* parent)
         text("Save Rosters as PDF"), QStringLiteral("Rosters.pdf"), text("PDF Files (*.pdf)"));
 }
 DocumentOutputResult printFile(const RosterOutputActions& actions, QWidget* parent, const QString& path,
-    QPageLayout::Orientation orientation)
+    QPageLayout::Orientation orientation,
+    const DialogGeometryPreferencesCallbacks& geometryPreferences)
 {
     if (actions.printPdf) return actions.printPdf(parent, path, orientation);
     QPdfDocument document;
     if (document.load(path) != QPdfDocument::Error::None || document.pageCount() <= 0)
         return {DocumentOutputStatus::Failed, text("Unable to load the generated roster PDF.")};
-    return PdfPrintService::printPdfDocument({parent, &document, path, 0,
-        text("Print Rosters"), orientation, false, QPageSize::A4, true, actions.fonts.ui});
+    return PdfPrintService::printPdfDocument({
+        .parent = parent,
+        .document = &document,
+        .documentPath = path,
+        .currentPageIndex = 0,
+        .dialogTitle = text("Print Rosters"),
+        .pageOrientation = orientation,
+        .fitToPageByDefault = false,
+        .preferredPageSize = QPageSize::A4,
+        .lockPreferredPageSize = true,
+        .uiFont = actions.fonts.ui,
+        .dialogGeometryPreferences = geometryPreferences
+    });
 }
 DocumentOutputResult copyPdf(const QString& source, QString target)
 {
@@ -60,13 +87,19 @@ DocumentOutputResult copyPdf(const QString& source, QString target)
 }
 
 RosterPrintDialog::RosterPrintDialog(QString databasePath, Domain::ClassId current, bool testing,
-    Output::RosterOutputChoices choices, RosterOutputActions actions, QWidget* parent)
-    : QDialog(parent), m_path(std::move(databasePath)), m_current(std::move(current)), m_testing(testing),
+    Output::RosterOutputChoices choices, RosterOutputActions actions,
+    DialogGeometryPreferencesCallbacks geometryPreferences, QWidget* parent)
+    : DialogShell(
+          QStringLiteral("nextRosterPrint"),
+          parent,
+          requireNextRosterGeometryPreferences(geometryPreferences)
+          ),
+      m_geometryPreferences(std::move(geometryPreferences)),
+      m_path(std::move(databasePath)), m_current(std::move(current)), m_testing(testing),
       m_choices(std::move(choices)), m_actions(std::move(actions))
 {
-    setObjectName(QStringLiteral("nextRosterPrintDialog"));
     setWindowTitle(text("Roster Templates and Printing")); resize(680, 500);
-    auto* root = new QVBoxLayout(this);
+    auto* root = contentLayout();
     auto* title = new QLabel(text("Choose a template and classes for your roster."), this); title->setWordWrap(true); root->addWidget(title);
     root->addWidget(new QLabel(text("Template"), this));
     m_template = new QComboBox(this); m_template->setObjectName(QStringLiteral("nextRosterTemplate"));
@@ -199,7 +232,8 @@ void RosterPrintDialog::print()
     const auto pdf = generate(); if (pdf.isEmpty()) return;
     const auto selection = request();
     showResult(printFile(m_actions, this, pdf, selection.templateId == RosterTemplateRenderer::TemplateId::PerClassWithExtraInfo
-        ? selection.orientation : RosterTemplateRenderer::templateOrientation(selection.templateId)));
+        ? selection.orientation : RosterTemplateRenderer::templateOrientation(selection.templateId),
+        m_geometryPreferences));
 }
 void RosterPrintDialog::preview()
 {
@@ -231,7 +265,8 @@ void RosterPrintDialog::preview()
     const auto selection = request();
     connect(button("Print", "nextRosterPreviewPrint", navigation, &dialog), &QPushButton::clicked, &dialog, [&] {
         const auto result = printFile(m_actions, &dialog, pdf, selection.templateId == RosterTemplateRenderer::TemplateId::PerClassWithExtraInfo
-            ? selection.orientation : RosterTemplateRenderer::templateOrientation(selection.templateId));
+            ? selection.orientation : RosterTemplateRenderer::templateOrientation(selection.templateId),
+            m_geometryPreferences);
         if (result.status != DocumentOutputStatus::Canceled) status->setText(result.message);
     });
     connect(button("Close", "nextRosterPreviewClose", navigation, &dialog), &QPushButton::clicked, &dialog, &QDialog::reject);

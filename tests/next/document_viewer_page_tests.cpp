@@ -740,10 +740,17 @@ openAfterSaveAndPrintCapabilityUseDeterministicHandlers()
     QVERIFY(exportButton);
     int printCalls = 0;
     viewer->setPrintActionHandlerForTesting(
-        [&printCalls](QPdfDocument* document, const QString&, int pageIndex) {
+        [&printCalls](
+            QPdfDocument* document,
+            const QString&,
+            int pageIndex,
+            const DialogGeometryPreferencesCallbacks& geometryPreferences
+            ) {
             QVERIFY(document);
             QCOMPARE(document->status(), QPdfDocument::Status::Ready);
             QCOMPARE(pageIndex, 0);
+            QVERIFY(geometryPreferences.read);
+            QVERIFY(geometryPreferences.write);
             ++printCalls;
         }
         );

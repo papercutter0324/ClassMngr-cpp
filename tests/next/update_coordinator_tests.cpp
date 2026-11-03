@@ -145,6 +145,7 @@ class UpdateCoordinatorTests final : public QObject
 private slots:
     void initTestCase();
     void disabledAutomaticStillAllowsManualCheckAndRetry();
+    void updateDialogPersistsGeometryThroughNextComposition();
     void manualOpenObservesSharedStartupAndCache();
     void automaticPromptHonorsSkippedVersionAndReconcilesInvalidStorage();
     void persistedSkipUnskipAndStalePreferenceReconciliation();
@@ -195,6 +196,39 @@ void UpdateCoordinatorTests::disabledAutomaticStillAllowsManualCheckAndRetry()
     QCOMPARE(title(dialog)->text(), QStringLiteral("You're Up to Date"));
     coordinator.openManual();
     QCOMPARE(checks.manualCalls, 3); // Fresh results do not send another request.
+}
+
+void UpdateCoordinatorTests::updateDialogPersistsGeometryThroughNextComposition()
+{
+    SharedChecks checks;
+    AutomaticPreferences automatic;
+    Platform::SettingsManagerSkippedUpdateVersionPort skipped;
+    QVERIFY(skipped.clear());
+    SettingsManager::instance().set(
+        QStringLiteral("ui/dialogs/update/geometry"),
+        QByteArray()
+        );
+    QWidget parent;
+    Bootstrap::UpdateCoordinator coordinator(
+        checks,
+        checks,
+        automatic,
+        skipped,
+        true,
+        true,
+        &parent
+        );
+
+    coordinator.openManual();
+    auto* const dialog = dialogFor(parent);
+    QVERIFY(dialog && dialog->isVisible());
+    dialog->resize(560, 420);
+    dialog->close();
+
+    QVERIFY(!SettingsManager::instance()
+        .get(QStringLiteral("ui/dialogs/update/geometry"))
+        .toByteArray()
+        .isEmpty());
 }
 
 void UpdateCoordinatorTests::manualOpenObservesSharedStartupAndCache()

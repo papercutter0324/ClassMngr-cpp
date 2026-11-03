@@ -17,7 +17,10 @@
 #include <QtGlobal>
 
 #include <algorithm>
+#include <cstddef>
 #include <memory>
+#include <string>
+#include <string_view>
 #include <vector>
 
 namespace PdfPrintService
@@ -25,6 +28,50 @@ namespace PdfPrintService
 namespace
 {
 constexpr int MaximumPrintRenderDpi = 300;
+
+void restoreSavedDialogGeometry(
+    QDialog& dialog,
+    const DialogGeometryPreferencesCallbacks& preferences
+    )
+{
+    if (!preferences.read)
+    {
+        return;
+    }
+
+    const std::string geometry = preferences.read(
+        PdfPrintDialogSupport::StableDialogKey
+        );
+    if (!geometry.empty())
+    {
+        dialog.restoreGeometry(
+            QByteArray(
+                geometry.data(),
+                static_cast<qsizetype>(geometry.size())
+                )
+            );
+    }
+}
+
+void persistDialogGeometry(
+    const QDialog& dialog,
+    const DialogGeometryPreferencesCallbacks& preferences
+    )
+{
+    if (!preferences.write)
+    {
+        return;
+    }
+
+    const QByteArray geometry = dialog.saveGeometry();
+    preferences.write(
+        PdfPrintDialogSupport::StableDialogKey,
+        std::string_view(
+            geometry.constData(),
+            static_cast<std::size_t>(geometry.size())
+            )
+        );
+}
 
 Result failed(
     const QString& message
@@ -485,7 +532,8 @@ Result printPdfDocumentWithCustomPreview(
         request.fitToPageByDefault,
         request.preferredPageSize,
         request.lockPreferredPageSize,
-        request.uiFont
+        request.uiFont,
+        request.dialogGeometryPreferences
         );
 
     if (dialog.exec() != QDialog::Accepted)
@@ -556,7 +604,18 @@ Result printPdfDocumentWithSystemDialog(
         request.document->pageCount()
         );
 
-    if (dialog.exec() != QDialog::Accepted)
+    restoreSavedDialogGeometry(
+        dialog,
+        request.dialogGeometryPreferences
+        );
+
+    const int dialogResult = dialog.exec();
+    persistDialogGeometry(
+        dialog,
+        request.dialogGeometryPreferences
+        );
+
+    if (dialogResult != QDialog::Accepted)
     {
         return canceled();
     }

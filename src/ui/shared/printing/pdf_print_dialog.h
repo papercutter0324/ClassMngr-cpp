@@ -13,6 +13,7 @@
 
 #include <functional>
 #include <optional>
+#include <string_view>
 
 class QCheckBox;
 class QComboBox;
@@ -25,6 +26,8 @@ class QSpinBox;
 
 namespace PdfPrintDialogSupport
 {
+inline constexpr std::string_view StableDialogKey = "pdfPrint";
+
 struct RenderOptions
 {
     QList<int> pageIndexes;
@@ -51,7 +54,8 @@ public:
         bool fitToPageByDefault = false,
         std::optional<QPageSize::PageSizeId> preferredPageSize = std::nullopt,
         bool lockPreferredPageSize = false,
-        QFont uiFont = QFont()
+        QFont uiFont = QFont(),
+        DialogGeometryPreferencesCallbacks geometryPreferences = {}
         );
 
     [[nodiscard]] PdfPrintService::Result printResult() const;

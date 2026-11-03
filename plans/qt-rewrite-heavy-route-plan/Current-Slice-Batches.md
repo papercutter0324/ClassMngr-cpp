@@ -1,21 +1,13 @@
 # Current Slice Batches
 
-## Phase 8 — Active Batch 1
+## Phase 8 — Active Batch 2 (17 candidates)
 
-1. **8.1.1 External URL launching — complete:** committed as `838f2b8c`.
-2. **8.1.2 Clipboard — complete:** committed as `a7d27adb`.
-3. **8.1.3 Schedule Import chooser — complete:** committed as `c14920b3`.
-4. **8.1.4 Sub Prep output directory — complete, slice commit pending:** use
-   the existing `FileDialogPort` for output-folder selection.
-
-Batch 1 is ready to close after candidate 4 is committed and pushed.
-
-## Phase 8 — Next Batch 2 (discovered; pending activation)
-
-1. **8.1.5 Dialog geometry:** inject the existing preferences port into
-   `DialogShell` rather than constructing its platform adapter there.
-2. **8.1.6 Main-window geometry:** persist/restore Next window state through a
-   narrow settings adapter.
+1. **8.1.5 Dialog geometry — complete:** use a binary-safe callback boundary,
+   keep Legacy storage behavior, and require callbacks for Next Roster output.
+2. **8.1.6 Main-window geometry — in progress:** persist/restore Next window
+   state through a narrow settings adapter. Discovery complete; preserve
+   rejected-close behavior and keep `ApplicationShell` independent of platform
+   settings types.
 3. **8.1.7 Splitter state:** persist in-scope Next splitter sizes with isolated
    keys and lifecycle-safe restoration.
 4. **8.1.8 Application icon:** apply the icon to the Next window and native

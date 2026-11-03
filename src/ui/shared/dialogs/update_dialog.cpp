@@ -68,9 +68,14 @@ UpdateDialog::UpdateDialog(
     bool startupComplete,
     QWidget* parent,
     const QString& skippedVersion,
-    ResourcePackPlaceholder resourcePackPlaceholder
+    ResourcePackPlaceholder resourcePackPlaceholder,
+    DialogGeometryPreferencesCallbacks geometryPreferences
     )
-    : DialogShell(QStringLiteral("update"), parent)
+    : DialogShell(
+          QStringLiteral("update"),
+          parent,
+          std::move(geometryPreferences)
+          )
     , m_downloader(new UpdateDownloader(this))
     , m_startupComplete(startupComplete)
     , m_skippedVersion(skippedVersion.trimmed())

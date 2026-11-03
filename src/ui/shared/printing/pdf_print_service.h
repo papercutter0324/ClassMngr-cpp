@@ -1,6 +1,7 @@
 #pragma once
 
 #include "domain/models/document_output_result.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
 #include <QPageLayout>
 #include <QPageSize>
@@ -32,6 +33,7 @@ struct Request
     std::optional<QPageSize::PageSizeId> preferredPageSize;
     bool lockPreferredPageSize = false;
     QFont uiFont;
+    DialogGeometryPreferencesCallbacks dialogGeometryPreferences;
 };
 
 struct BatchRequest

@@ -7,6 +7,7 @@
 #include "next/application/roster_row_availability.h"
 #include "next/application/roster_transfer_target_eligibility.h"
 #include "next/application/speaking_evaluation_roster_score_row_assignments.h"
+#include "next/ui/dialog_geometry_preferences_callbacks.h"
 #include "next/ui/roster_table_model.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
@@ -1570,6 +1571,14 @@ void ClassMngr::Next::Ui::RosterEditorWidget::openRosterOutput()
     if (!saveChanges(true) || !m_databasePath || !m_classId || !m_actions.output.readChoices) return;
     const auto choices = m_actions.output.readChoices(*m_databasePath, *m_classId, m_testingClassMode);
     if (!choices) { updateStatus(choices.error(), true); return; }
-    RosterPrintDialog dialog(*m_databasePath, *m_classId, m_testingClassMode, *choices, m_actions.output, this);
+    RosterPrintDialog dialog(
+        *m_databasePath,
+        *m_classId,
+        m_testingClassMode,
+        *choices,
+        m_actions.output,
+        settingsManagerDialogGeometryPreferencesCallbacks(),
+        this
+        );
     dialog.exec();
 }

@@ -1,6 +1,6 @@
 #include "dialog_shell.h"
 
-#include "next/platform/settings_manager_dialog_geometry_preferences_port.h"
+#include "core/settingsmanager.h"
 #include "ui/shared/widgets/text_fit_dialog_button_box.h"
 
 #include <QCloseEvent>
@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <string>
 #include <string_view>
+#include <utility>
 
 namespace
 {
@@ -41,17 +42,49 @@ QString normalizedDialogKey(QString key)
 
     return key;
 }
+
+// Legacy-only compatibility storage for existing callers that do not supply
+// the Next application-port callbacks.
+std::string readLegacyDialogGeometryPayload(const QString& settingsKey)
+{
+    const QByteArray geometry =
+        SettingsManager::instance().get(settingsKey).toByteArray();
+    return std::string(
+        geometry.constData(),
+        static_cast<std::size_t>(geometry.size())
+        );
+}
+
+void writeLegacyDialogGeometryPayload(
+    const QString& settingsKey,
+    std::string_view geometryPayload
+    )
+{
+    SettingsManager::instance().set(
+        settingsKey,
+        QByteArray(
+            geometryPayload.data(),
+            static_cast<qsizetype>(geometryPayload.size())
+            )
+        );
+}
 }
 
 DialogShell::DialogShell(
     const QString& dialogKey,
-    QWidget* parent
+    QWidget* parent,
+    DialogGeometryPreferencesCallbacks geometryPreferences
     )
     : QDialog(parent)
     , m_dialogKey(normalizedDialogKey(dialogKey))
+    , m_geometryPreferences(std::move(geometryPreferences))
     , m_contentLayout(new QVBoxLayout(this))
 {
     Q_ASSERT(!m_dialogKey.isEmpty());
+    Q_ASSERT(
+        static_cast<bool>(m_geometryPreferences.read)
+        == static_cast<bool>(m_geometryPreferences.write)
+        );
 
     setObjectName(m_dialogKey + QStringLiteral("Dialog"));
     setModal(true);
@@ -207,11 +240,14 @@ QString DialogShell::geometrySettingsKey() const
 
 void DialogShell::restoreSavedGeometry()
 {
-    const ClassMngr::Next::Platform::SettingsManagerDialogGeometryPreferencesPort
-        port;
-    const std::string geometry = port.read(
-        m_dialogKey.toUtf8().toStdString()
+    const QByteArray key = m_dialogKey.toUtf8();
+    const std::string stableDialogKey(
+        key.constData(),
+        static_cast<std::size_t>(key.size())
         );
+    const std::string geometry = m_geometryPreferences.read
+        ? m_geometryPreferences.read(stableDialogKey)
+        : readLegacyDialogGeometryPayload(geometrySettingsKey());
 
     if (!geometry.empty())
     {
@@ -231,16 +267,27 @@ void DialogShell::persistGeometry() const
         return;
     }
 
-    const ClassMngr::Next::Platform::SettingsManagerDialogGeometryPreferencesPort
-        port;
     const QByteArray geometry = saveGeometry();
-    port.write(
-        m_dialogKey.toUtf8().toStdString(),
-        std::string_view(
-            geometry.constData(),
-            static_cast<std::size_t>(geometry.size())
-            )
+    const QByteArray key = m_dialogKey.toUtf8();
+    const std::string stableDialogKey(
+        key.constData(),
+        static_cast<std::size_t>(key.size())
         );
+    const std::string_view geometryPayload(
+        geometry.constData(),
+        static_cast<std::size_t>(geometry.size())
+        );
+    if (m_geometryPreferences.write)
+    {
+        m_geometryPreferences.write(stableDialogKey, geometryPayload);
+    }
+    else
+    {
+        writeLegacyDialogGeometryPayload(
+            geometrySettingsKey(),
+            geometryPayload
+            );
+    }
 }
 
 void DialogShell::clampToAvailableScreen()

@@ -151,6 +151,7 @@ private slots:
     void retainsParentOwnershipAndModalContract();
     void languageChangeRetranslatesShellAndDialog();
     void persistsGeometryByStableDialogKey();
+    void usesBinarySafeGeometryCallbacks();
     void calendarEventDialogsExposeUntargetedKeyboard();
     void calendarEventDialogMapsTypedEditDraft();
     void calendarEventDialogRejectsInvalidTypedDraftTimes();
@@ -344,6 +345,78 @@ void DialogShellTests::persistsGeometryByStableDialogKey()
     restored.show();
     QCoreApplication::processEvents();
     QCOMPARE(restored.size(), savedSize);
+}
+
+void DialogShellTests::usesBinarySafeGeometryCallbacks()
+{
+    QByteArray serializedGeometry;
+    QSize restoredSize;
+    {
+        DialogShell source(QStringLiteral("geometryCallbackSeed"));
+        source.resize(444, 333);
+        source.show();
+        QCoreApplication::processEvents();
+        restoredSize = source.size();
+        serializedGeometry = source.saveGeometry();
+        source.close();
+    }
+    const std::string payloadWithNul(
+        serializedGeometry.constData(),
+        static_cast<std::size_t>(serializedGeometry.size())
+        );
+    QVERIFY(payloadWithNul.find('\0') != std::string::npos);
+    std::string readKey;
+    std::string writtenKey;
+    std::string writtenPayload;
+    int readCalls = 0;
+    int writeCalls = 0;
+
+    DialogGeometryPreferencesCallbacks callbacks;
+    callbacks.read = [&](const std::string_view stableDialogKey)
+    {
+        ++readCalls;
+        readKey.assign(stableDialogKey.data(), stableDialogKey.size());
+        return payloadWithNul;
+    };
+    callbacks.write = [
+        &writtenKey,
+        &writtenPayload,
+        &writeCalls
+    ](
+        const std::string_view stableDialogKey,
+        const std::string_view geometryPayload
+        )
+    {
+        ++writeCalls;
+        writtenKey.assign(stableDialogKey.data(), stableDialogKey.size());
+        writtenPayload.assign(geometryPayload.data(), geometryPayload.size());
+    };
+
+    {
+        DialogShell dialog(
+            QStringLiteral(" callback key! "),
+            nullptr,
+            callbacks
+            );
+        QCOMPARE(dialog.dialogKey(), QStringLiteral("callback_key_"));
+        dialog.resize(512, 376);
+        dialog.show();
+        QCoreApplication::processEvents();
+        QCOMPARE(dialog.size(), restoredSize);
+        dialog.hide();
+        dialog.show();
+        QCoreApplication::processEvents();
+
+        QCOMPARE(readCalls, 1);
+        QCOMPARE(readKey, std::string("callback_key_"));
+        dialog.close();
+        QCOMPARE(writeCalls, 1);
+        QCOMPARE(writtenKey, std::string("callback_key_"));
+        QVERIFY(writtenPayload.find('\0') != std::string::npos);
+    }
+
+    QCOMPARE(writeCalls, 2);
+    QVERIFY(!writtenPayload.empty());
 }
 
 void DialogShellTests::calendarEventDialogsExposeUntargetedKeyboard()

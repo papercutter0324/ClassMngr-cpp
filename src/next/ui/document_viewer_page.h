@@ -5,6 +5,7 @@
 #include "next/platform/document_content_resource_port.h"
 #include "next/platform/document_export_resource_port.h"
 #include "next/ui/page.h"
+#include "ui/shared/dialogs/dialog_shell.h"
 
 #include <QPdfDocument>
 #include <QString>
@@ -43,7 +44,8 @@ public:
     using PrintActionHandler = std::function<void(
         QPdfDocument* document,
         const QString& documentName,
-        int pageIndex
+        int pageIndex,
+        const DialogGeometryPreferencesCallbacks& geometryPreferences
         )>;
     using SaveCopyRequestProvider = std::function<
         std::optional<SaveCopyRequest>(

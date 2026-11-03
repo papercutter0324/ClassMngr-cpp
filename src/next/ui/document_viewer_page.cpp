@@ -1,6 +1,7 @@
 #include "next/ui/document_viewer_page.h"
 
 #include "next/application/document_catalog_use_case.h"
+#include "next/ui/dialog_geometry_preferences_callbacks.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QCheckBox>
@@ -1084,17 +1085,25 @@ void DocumentViewerPage::printSelectedDocument()
             )
         : 0;
     const QString documentName = m_titleLabel->text();
+    const auto geometryPreferences =
+        settingsManagerDialogGeometryPreferencesCallbacks();
     if (m_printActionHandler)
     {
-        m_printActionHandler(m_document, documentName, pageIndex);
+        m_printActionHandler(
+            m_document,
+            documentName,
+            pageIndex,
+            geometryPreferences
+            );
         return;
     }
     const auto result = PdfPrintService::printPdfDocument({
-        this,
-        m_document,
-        documentName,
-        pageIndex,
-        viewerText("Print File")
+        .parent = this,
+        .document = m_document,
+        .documentPath = documentName,
+        .currentPageIndex = pageIndex,
+        .dialogTitle = viewerText("Print File"),
+        .dialogGeometryPreferences = geometryPreferences
     });
     if (result.status == PdfPrintService::Status::Failed)
     {

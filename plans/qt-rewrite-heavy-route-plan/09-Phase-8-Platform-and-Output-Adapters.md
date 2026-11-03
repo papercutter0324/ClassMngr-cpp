@@ -114,6 +114,28 @@ and `ClassMngrNextBootstrapTests` (3/3 each). The page no longer calls
 `QFileDialog`; the platform presenter was inspected but the real operating
 system chooser was not opened. No full suite was run.
 
+### 8.1.5 — Dialog geometry (accepted)
+
+`DialogShell` now accepts a UI-owned, binary-safe geometry callback bundle.
+Next composition supplies callbacks backed by the existing Application port
+and SettingsManager platform adapter for Update, DocumentViewer printing,
+Roster output, and both custom and native print dialogs. The shared shell no
+longer includes Next Application or Platform types. Empty callbacks retain the
+existing Legacy settings path; Next's RosterPrintDialog requires a complete
+read/write pair and rejects missing or partial pairs, preventing accidental
+fallback to Legacy storage. Stable dialog keys, first-show restore, close and
+destruction persistence, and screen clamping are preserved.
+
+On macOS 27 ARM64 with Qt 6.12.0 and Apple Clang 21, the incremental affected-
+target Debug build passed in `build/macos-clang-debug`. Independent CTest
+verification passed all five focused suites: DialogShell, Next DocumentViewer,
+Next Roster Output, Next Update Coordinator, and the Next SettingsManager
+geometry adapter (5/5). Coverage includes binary-safe callback round-trip,
+Legacy geometry persistence, Next callback composition, and rejection of
+missing or one-sided Roster callbacks. The native macOS print dialog was not
+opened interactively; its callback path compiled and was inspected. No full
+suite was run.
+
 ## Objective
 
 Move platform-specific behavior and large output workflows behind narrow, testable interfaces.

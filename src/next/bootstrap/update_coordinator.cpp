@@ -1,4 +1,5 @@
 #include "next/bootstrap/update_coordinator.h"
+#include "next/ui/dialog_geometry_preferences_callbacks.h"
 
 #include "core/updater/update_downloader.h"
 #include "core/updater/version.h"
@@ -180,7 +181,8 @@ UpdateDialog* UpdateCoordinator::ensureDialog(bool automatic)
     }
     auto* dialog = new UpdateDialog(
         m_manualPort, true, m_parent, skipped,
-        UpdateDialog::ResourcePackPlaceholder::Omit);
+        UpdateDialog::ResourcePackPlaceholder::Omit,
+        Ui::settingsManagerDialogGeometryPreferencesCallbacks());
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setProperty("automaticUpdatePrompt", automatic);
     dialog->setSkipVersionResultHandlingEnabled(true);

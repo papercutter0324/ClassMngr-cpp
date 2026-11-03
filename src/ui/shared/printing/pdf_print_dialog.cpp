@@ -19,9 +19,19 @@ PdfPrintDialog::PdfPrintDialog(
     bool fitToPageByDefault,
     std::optional<QPageSize::PageSizeId> preferredPageSize,
     bool lockPreferredPageSize,
-    QFont uiFont
+    QFont uiFont,
+    DialogGeometryPreferencesCallbacks geometryPreferences
     )
-    : DialogShell(QStringLiteral("pdfPrint"), parent)
+    : DialogShell(
+          QString::fromLatin1(
+              PdfPrintDialogSupport::StableDialogKey.data(),
+              static_cast<qsizetype>(
+                  PdfPrintDialogSupport::StableDialogKey.size()
+                  )
+              ),
+          parent,
+          std::move(geometryPreferences)
+          )
     , m_document(document)
     , m_documentPath(documentPath)
     , m_currentPageIndex(currentPageIndex)

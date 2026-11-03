@@ -41,7 +41,8 @@ public:
         bool startupComplete,
         QWidget* parent = nullptr,
         const QString& skippedVersion = QString(),
-        ResourcePackPlaceholder resourcePackPlaceholder = ResourcePackPlaceholder::Show
+        ResourcePackPlaceholder resourcePackPlaceholder = ResourcePackPlaceholder::Show,
+        DialogGeometryPreferencesCallbacks geometryPreferences = {}
         );
 
     void refreshForOpen();

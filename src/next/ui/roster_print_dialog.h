@@ -1,17 +1,19 @@
 #pragma once
 #include "next/ui/roster_output_actions.h"
-#include <QDialog>
+#include "ui/shared/dialogs/dialog_shell.h"
 #include <QTemporaryDir>
 class QComboBox;
 class QListWidget;
 class QLabel;
 namespace ClassMngr::Next::Ui
 {
-class RosterPrintDialog final : public QDialog
+class RosterPrintDialog final : public DialogShell
 {
 public:
     RosterPrintDialog(QString databasePath, Domain::ClassId current, bool testing,
-        Output::RosterOutputChoices choices, RosterOutputActions actions, QWidget* parent = nullptr);
+        Output::RosterOutputChoices choices, RosterOutputActions actions,
+        DialogGeometryPreferencesCallbacks geometryPreferences,
+        QWidget* parent = nullptr);
     [[nodiscard]] Output::RosterOutputRequest request() const;
 private:
     void refreshOptions();
@@ -20,6 +22,7 @@ private:
     void print();
     QString generate();
     void showResult(const DocumentOutputResult& result);
+    DialogGeometryPreferencesCallbacks m_geometryPreferences;
     QString m_path;
     Domain::ClassId m_current;
     bool m_testing;

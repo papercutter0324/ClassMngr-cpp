@@ -44,6 +44,9 @@
 #include <QUuid>
 #include <QtTest>
 
+#include <stdexcept>
+#include <string_view>
+
 using namespace ClassMngr::Next;
 namespace R = RosterTemplateRenderer;
 namespace
@@ -99,6 +102,13 @@ Ui::RosterOutputActions actions()
     };
     result.fonts = {FontManager::getUiFont(-1), FontManager::getKoreanFont(-1)};
     return result;
+}
+DialogGeometryPreferencesCallbacks noOpGeometryPreferencesCallbacks()
+{
+    return {
+        [](std::string_view) { return std::string{}; },
+        [](std::string_view, std::string_view) {}
+    };
 }
 QPushButton* findButton(QWidget& dialog, const char* name) { return dialog.findChild<QPushButton*>(QString::fromLatin1(name)); }
 QByteArray fileSha256(const QString& path)
@@ -213,6 +223,7 @@ private slots:
     void restrictionsAndAtomicFailure();
     void pageReleaseAndLargeRoute();
     void editorSaveGate();
+    void rosterDialogRequiresCompleteGeometryCallbacks();
     void dialogCancelFailureAndPreview();
     void outputWarnsBeforeGeneratingWhenStudentsOverflowTemplate();
     void printPortReceivesGeneratedPdfAndReportsCancelAndFailure();
@@ -540,7 +551,48 @@ void RosterOutputTests::editorSaveGate()
     fail = false;
     QTimer::singleShot(0, [&] { if (auto* dialog = editor.findChild<QDialog*>(QStringLiteral("nextRosterPrintDialog"))) dialog->reject(); });
     editor.openRosterOutput(); QCOMPARE(saves, 2); QCOMPARE(reads, 1); QVERIFY(!editor.hasUnsavedChanges());
+    QVERIFY(!SettingsManager::instance()
+        .get(QStringLiteral("ui/dialogs/nextRosterPrint/geometry"))
+        .toByteArray()
+        .isEmpty());
     const auto loaded = Platform::readRosterWindowAtPath(path, id(1)); QVERIFY(loaded); QCOMPARE(loaded.value().roster.rows[0][0], std::u16string(u"Fixture Saved Edit"));
+}
+
+void RosterOutputTests::rosterDialogRequiresCompleteGeometryCallbacks()
+{
+    const Output::RosterOutputChoices choices;
+    const Ui::RosterOutputActions outputActions;
+    const auto construct = [&](DialogGeometryPreferencesCallbacks callbacks)
+    {
+        Ui::RosterPrintDialog dialog(
+            QString(),
+            id(1),
+            false,
+            choices,
+            outputActions,
+            std::move(callbacks)
+            );
+        static_cast<void>(dialog);
+    };
+
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        construct(DialogGeometryPreferencesCallbacks{})
+        );
+
+    DialogGeometryPreferencesCallbacks readOnly;
+    readOnly.read = [](std::string_view) { return std::string{}; };
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        construct(std::move(readOnly))
+        );
+
+    DialogGeometryPreferencesCallbacks writeOnly;
+    writeOnly.write = [](std::string_view, std::string_view) {};
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        construct(std::move(writeOnly))
+        );
 }
 
 void RosterOutputTests::dialogCancelFailureAndPreview()
@@ -552,7 +604,8 @@ void RosterOutputTests::dialogCancelFailureAndPreview()
     source.chooseSavePath = [](QWidget*) { return QString{}; };
     source.printPdf = [&](QWidget*, const QString&, QPageLayout::Orientation) { ++prints; return DocumentOutputResult{DocumentOutputStatus::Canceled, {}}; };
     const auto choices = source.readChoices(path, id(1), false); QVERIFY(choices);
-    Ui::RosterPrintDialog dialog(path, id(1), false, *choices, source);
+    Ui::RosterPrintDialog dialog(path, id(1), false, *choices, source,
+        noOpGeometryPreferencesCallbacks());
     findButton(dialog, "nextRosterSavePdf")->click(); QCOMPARE(outputs, 0);
     findButton(dialog, "nextRosterPrint")->click(); QCOMPARE(outputs, 1); QCOMPARE(prints, 1);
     QTimer::singleShot(0, [&] {
@@ -562,20 +615,24 @@ void RosterOutputTests::dialogCancelFailureAndPreview()
     });
     findButton(dialog, "nextRosterPreview")->click(); QCOMPARE(outputs, 2); QCOMPARE(prints, 2);
     source.chooseSavePath = [&](QWidget*) { return dir.filePath(QStringLiteral("saved.pdf")); };
-    Ui::RosterPrintDialog saved(path, id(1), false, *choices, source);
+    Ui::RosterPrintDialog saved(path, id(1), false, *choices, source,
+        noOpGeometryPreferencesCallbacks());
     findButton(saved, "nextRosterSavePdf")->click(); QCOMPARE(pageCount(dir.filePath(QStringLiteral("saved.pdf"))), 1);
     source.printPdf = [](QWidget*, const QString&, QPageLayout::Orientation) { return DocumentOutputResult{DocumentOutputStatus::Failed, QStringLiteral("FIXTURE PRINT FAILURE")}; };
-    Ui::RosterPrintDialog printFailure(path, id(1), false, *choices, source);
+    Ui::RosterPrintDialog printFailure(path, id(1), false, *choices, source,
+        noOpGeometryPreferencesCallbacks());
     findButton(printFailure, "nextRosterPrint")->click();
     QCOMPARE(printFailure.findChild<QLabel*>(QStringLiteral("nextRosterOutputStatus"))->text(), QStringLiteral("FIXTURE PRINT FAILURE"));
     source.savePdf = [](const QString&, const Output::RosterOutputRequest&, const QString&, const R::Fonts&) { return DocumentOutputResult{DocumentOutputStatus::Failed, QStringLiteral("FIXTURE READ FAILURE")}; };
     source.chooseSavePath = [&](QWidget*) { return dir.filePath(QStringLiteral("failed.pdf")); };
-    Ui::RosterPrintDialog failure(path, id(1), false, *choices, source);
+    Ui::RosterPrintDialog failure(path, id(1), false, *choices, source,
+        noOpGeometryPreferencesCallbacks());
     findButton(failure, "nextRosterSavePdf")->click(); QVERIFY(!QFile::exists(dir.filePath(QStringLiteral("failed.pdf"))));
     QCOMPARE(failure.findChild<QLabel*>(QStringLiteral("nextRosterOutputStatus"))->text(), QStringLiteral("FIXTURE READ FAILURE"));
     findButton(failure, "nextRosterPreview")->click();
     QVERIFY(!failure.findChild<QDialog*>(QStringLiteral("nextRosterPreviewDialog")));
-    Ui::RosterPrintDialog testing(path, id(1), true, *choices, source);
+    Ui::RosterPrintDialog testing(path, id(1), true, *choices, source,
+        noOpGeometryPreferencesCallbacks());
     QCOMPARE(testing.findChild<QComboBox*>(QStringLiteral("nextRosterTemplate"))->count(), 1);
     QCOMPARE(testing.request().templateId, R::TemplateId::PerClassWithExtraInfo); QCOMPARE(testing.request().scope, Output::RosterOutputScope::CurrentClass);
 }
@@ -669,7 +726,8 @@ void RosterOutputTests::outputWarnsBeforeGeneratingWhenStudentsOverflowTemplate(
     prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
     prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
     DialogServices::setUserPromptServiceForTesting(&prompts);
-    Ui::RosterPrintDialog dialog(path, id(1), false, *choices, source);
+    Ui::RosterPrintDialog dialog(path, id(1), false, *choices, source,
+        noOpGeometryPreferencesCallbacks());
     auto* const scope = dialog.findChild<QComboBox*>(
         QStringLiteral("nextRosterScope"));
     QVERIFY(scope);
@@ -747,7 +805,8 @@ void RosterOutputTests::printPortReceivesGeneratedPdfAndReportsCancelAndFailure(
     const auto choices = source.readChoices(path, id(1), false);
     QVERIFY(choices);
 
-    Ui::RosterPrintDialog canceled(path, id(1), false, *choices, source);
+    Ui::RosterPrintDialog canceled(path, id(1), false, *choices, source,
+        noOpGeometryPreferencesCallbacks());
     findButton(canceled, "nextRosterPrint")->click();
     QCOMPARE(outputCount, 1);
     QCOMPARE(printCount, 1);
@@ -766,7 +825,8 @@ void RosterOutputTests::printPortReceivesGeneratedPdfAndReportsCancelAndFailure(
         DocumentOutputStatus::Failed,
         QStringLiteral("FIXTURE PRINT FAILURE")
     };
-    Ui::RosterPrintDialog failed(path, id(1), false, *choices, source);
+    Ui::RosterPrintDialog failed(path, id(1), false, *choices, source,
+        noOpGeometryPreferencesCallbacks());
     findButton(failed, "nextRosterPrint")->click();
     QCOMPARE(outputCount, 2);
     QCOMPARE(printCount, 2);
@@ -836,7 +896,8 @@ void RosterOutputTests::captures()
             currentCaptureTag = tag;
             bool regularCaptureVerified = false;
             QJsonObject regularCaptureEvidence;
-            Ui::RosterPrintDialog dialog(path, id(1), false, *choices, source); dialog.show(); QCoreApplication::processEvents();
+            Ui::RosterPrintDialog dialog(path, id(1), false, *choices, source,
+                noOpGeometryPreferencesCallbacks()); dialog.show(); QCoreApplication::processEvents();
             QCOMPARE(findButton(dialog, "nextRosterPreview")->text(), locale == QStringLiteral("ko_KR") ? QStringLiteral("미리보기") : QStringLiteral("Preview"));
             QVERIFY(dialog.grab().save(folder + QStringLiteral("/roster_templates_") + tag + QStringLiteral(".png")));
             QTimer::singleShot(0, &dialog, [&] {
@@ -900,7 +961,8 @@ void RosterOutputTests::captures()
             });
             findButton(dialog, "nextRosterPreview")->click();
             QVERIFY(regularCaptureVerified);
-            Ui::RosterPrintDialog testingDialog(path, id(testingId), true, *testingChoices, source); testingDialog.show(); QCoreApplication::processEvents();
+            Ui::RosterPrintDialog testingDialog(path, id(testingId), true, *testingChoices, source,
+                noOpGeometryPreferencesCallbacks()); testingDialog.show(); QCoreApplication::processEvents();
             QVERIFY(testingDialog.grab().save(folder + QStringLiteral("/testing_roster_templates_") + tag + QStringLiteral(".png")));
             QTimer::singleShot(0, &testingDialog, [&] {
                 auto* preview = testingDialog.findChild<QDialog*>(QStringLiteral("nextRosterPreviewDialog")); QVERIFY(preview); QCoreApplication::processEvents();
