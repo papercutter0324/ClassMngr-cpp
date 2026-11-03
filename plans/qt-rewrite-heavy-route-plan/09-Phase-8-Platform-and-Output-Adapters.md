@@ -196,6 +196,10 @@ Info.plist names `app_icon.icns`, and the bundled ICNS matches the source asset
 byte-for-byte. Windows RC target wiring was inspected but not compiled on this
 macOS host. No installer/package build or full suite was run.
 
+The Bootstrap fixture's exact startup-resource expectation now includes the
+required icon PNG. Its existing equality assertion remains unchanged; the
+focused `generatedCatalogStartsWithOnlySelectedStartupPayloads` test passed.
+
 ## Objective
 
 

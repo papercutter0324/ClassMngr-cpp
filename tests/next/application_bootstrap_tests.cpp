@@ -5787,7 +5787,8 @@ void ApplicationBootstrapTests::generatedCatalogStartsWithOnlySelectedStartupPay
         QStringLiteral("assets/styles/light.qss"),
         QStringLiteral("assets/fonts/Inter.ttc"),
         QStringLiteral("assets/fonts/PretendardVariable.ttf"),
-        QStringLiteral("assets/documents/documents.json")
+        QStringLiteral("assets/documents/documents.json"),
+        QStringLiteral("assets/icons/icon_256x256.png")
     };
     std::size_t foundStartupPayloads = 0;
     for (const Resources::ResourceDescriptor& record : catalog->records())
