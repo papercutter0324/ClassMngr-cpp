@@ -118,6 +118,12 @@ public:
         static constexpr auto EXCEL_IMPORT_TIMEOUT_SECONDS =
             "imports/excelTimeoutSeconds";
 
+        static constexpr auto MAXIMUM_ROSTER_ROWS =
+            "options/maximumRosterRows";
+
+        static constexpr auto ROSTER_ROW_DISPLAY_MODE =
+            "options/rosterRowDisplayMode";
+
         static constexpr auto AUTOMATIC_UPDATE_CHECKS_ENABLED =
             "updates/automaticChecksEnabled";
 
@@ -365,6 +371,22 @@ public:
     [[nodiscard]] QSettings::Status writeExcelImportTimeoutPreference(
         int seconds,
         const ExcelImportTimeoutPreferenceSync& synchronize = {}
+        );
+
+    [[nodiscard]] int maximumRosterRows() const;
+    [[nodiscard]] int rosterRowDisplayMode() const;
+
+    using RosterRowPreferenceSync =
+        std::function<QSettings::Status(QSettings&)>;
+
+    [[nodiscard]] bool writeMaximumRosterRowsPreference(
+        int rows,
+        const RosterRowPreferenceSync& synchronize = {}
+        );
+
+    [[nodiscard]] bool writeRosterRowDisplayModePreference(
+        int mode,
+        const RosterRowPreferenceSync& synchronize = {}
         );
 
     // =====================================================

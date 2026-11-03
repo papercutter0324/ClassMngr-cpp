@@ -187,6 +187,7 @@ private:
         );
 
     void updateEvaluationValidation();
+    void updateHiddenRowsNotice();
     void focusFirstEvaluationError();
     void scheduleAutosave();
 
@@ -227,6 +228,7 @@ private:
     bool m_rebuildingClassTabs = false;
     bool m_restoringClassTabs = false;
     bool m_syncingEvaluationTabs = false;
+    bool m_hasHiddenEvaluationRows = false;
     AutosaveCoordinator* m_autosave = nullptr;
     FormValidationBinder* m_validationBinder = nullptr;
     ClassTabNavigation::DayFilter m_dayFilter{
@@ -255,6 +257,7 @@ private:
     SpeakingEvalDelegate* m_delegate = nullptr;
     QLabel* m_validationMessage = nullptr;
     QLabel* m_saveFailureMessage = nullptr;
+    QLabel* m_hiddenRowsNotice = nullptr;
     QUndoStack* m_undoStack = nullptr;
 
     QPushButton* m_importNamesButton = nullptr;

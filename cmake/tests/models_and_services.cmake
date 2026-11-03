@@ -302,6 +302,27 @@ qt_add_executable(ClassMngrBasePageTests
         COMMAND ClassMngrRosterModelTests
     )
 
+    qt_add_executable(ClassMngrRosterRowPreferencesTests
+        tests/roster_row_preferences_tests.cpp
+    )
+    target_compile_features(ClassMngrRosterRowPreferencesTests
+        PRIVATE cxx_std_23
+    )
+    target_include_directories(ClassMngrRosterRowPreferencesTests
+        PRIVATE ${PROJECT_SOURCE_DIR}/src
+    )
+    target_link_libraries(ClassMngrRosterRowPreferencesTests
+        PRIVATE ClassMngrSettings Qt6::Core Qt6::Test
+    )
+    add_test(
+        NAME ClassMngrRosterRowPreferencesTests
+        COMMAND ClassMngrRosterRowPreferencesTests
+    )
+    set_tests_properties(ClassMngrRosterRowPreferencesTests
+        PROPERTIES
+            ENVIRONMENT "CLASSMNGR_SETTINGS_ROOT=${PROJECT_BINARY_DIR}/test-settings/roster-row-preferences"
+    )
+
     qt_add_executable(ClassMngrRosterTemplatePrintServiceTests
         tests/roster_template_print_service_tests.cpp
         tests/windows_output_reference_capture.h

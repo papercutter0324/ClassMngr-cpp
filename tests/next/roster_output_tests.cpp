@@ -1,4 +1,5 @@
 #include "core/fontmanager.h"
+#include "core/settingsmanager.h"
 #include "data/database/database_schema_manager.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
@@ -6,6 +7,7 @@
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/settings_repository.h"
 #include "data/repositories/teacher_repository.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "data/repositories/testing_class_repository.h"
 #include "features/roster/services/roster_template_print_service.h"
 #include "next/platform/workspace_store_roster_actions.h"
@@ -13,6 +15,7 @@
 #include "next/ui/roster_editor_widget.h"
 #include "next/ui/roster_print_dialog.h"
 #include "next/ui/roster_table_model.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QApplication>
 #include <QComboBox>
@@ -90,6 +93,7 @@ Ui::RosterOutputActions actions()
 {
     Ui::RosterOutputActions result;
     result.readChoices = Platform::rosterOutputChoicesAtPath;
+    result.inspectTruncation = Platform::rosterOutputTruncationAtPath;
     result.savePdf = [](const QString& path, const Output::RosterOutputRequest& request, const QString& pdf, const R::Fonts& fonts) {
         return Platform::saveRosterOutputPdfAtPath(path, request, pdf, fonts);
     };
@@ -187,7 +191,20 @@ class RosterOutputTests final : public QObject
 {
     Q_OBJECT
 private slots:
-    void initTestCase() { FontManager::loadFonts(); }
+    void initTestCase()
+    {
+        QVERIFY(m_settingsDirectory.isValid());
+        qputenv("CLASSMNGR_SETTINGS_ROOT",
+            m_settingsDirectory.path().toUtf8());
+        SettingsManager::instance().clear();
+        SettingsManager::instance().sync();
+        FontManager::loadFonts();
+    }
+    void cleanup()
+    {
+        DialogServices::setUserPromptServiceForTesting(nullptr);
+        QVERIFY(SettingsManager::instance().writeMaximumRosterRowsPreference(25));
+    }
     void sparseNamesAndPositionalProjection();
     void scopesProfilesAndDailyPageOrder();
     void templateParity_data();
@@ -197,19 +214,24 @@ private slots:
     void pageReleaseAndLargeRoute();
     void editorSaveGate();
     void dialogCancelFailureAndPreview();
+    void outputWarnsBeforeGeneratingWhenStudentsOverflowTemplate();
     void printPortReceivesGeneratedPdfAndReportsCancelAndFailure();
     void captures();
+
+private:
+    QTemporaryDir m_settingsDirectory;
 };
 
 void RosterOutputTests::sparseNamesAndPositionalProjection()
 {
+    QVERIFY(SettingsManager::instance().writeMaximumRosterRowsPreference(100));
     QTemporaryDir dir; const auto path = dir.filePath(QStringLiteral("sparse.tps")); QVERIFY(seed(path));
     WorkspaceStore store; QVERIFY(store.openExisting(path)); auto db = store.database(); QSqlQuery query(db);
     QVERIFY(query.exec(QStringLiteral("DELETE FROM roster_data WHERE class_id=1")));
     for (int index = 0; index < 26; ++index)
     {
         query.prepare(QStringLiteral("INSERT INTO roster_data(class_id,row_index,col_index,value) VALUES(1,?,?,?)"));
-        query.addBindValue(index == 0 ? 25LL : 1'000'000'000LL + index * 100LL);
+        query.addBindValue(25LL + index * 3LL);
         query.addBindValue(index == 0 ? 1 : 0);
         query.addBindValue(QStringLiteral("SPARSE_%1").arg(index, 2, 10, QLatin1Char('0'))); QVERIFY(query.exec());
     }
@@ -556,6 +578,123 @@ void RosterOutputTests::dialogCancelFailureAndPreview()
     Ui::RosterPrintDialog testing(path, id(1), true, *choices, source);
     QCOMPARE(testing.findChild<QComboBox*>(QStringLiteral("nextRosterTemplate"))->count(), 1);
     QCOMPARE(testing.request().templateId, R::TemplateId::PerClassWithExtraInfo); QCOMPARE(testing.request().scope, Output::RosterOutputScope::CurrentClass);
+}
+
+void RosterOutputTests::outputWarnsBeforeGeneratingWhenStudentsOverflowTemplate()
+{
+    using namespace RosterTemplatePrintTruncation;
+    const auto compactSummary = summarize(R::TemplateId::ByDay, {{26, 0}});
+    QCOMPARE(compactSummary.capacityPerClass, 25);
+    QCOMPARE(compactSummary.totalStudents, 26);
+    QCOMPARE(compactSummary.includedStudents, 25);
+    QCOMPARE(compactSummary.omittedStudents(), 1);
+    QVERIFY(compactSummary.requiresConfirmation());
+    const auto positionalSummary = summarize(
+        R::TemplateId::PerClassWithExtraInfo, {{30, 22}});
+    QCOMPARE(positionalSummary.capacityPerClass, 23);
+    QCOMPARE(positionalSummary.includedStudents, 22);
+    QCOMPARE(positionalSummary.omittedStudents(), 8);
+
+    QTemporaryDir directory;
+    const QString path = directory.filePath(QStringLiteral("overflow.tps"));
+    QVERIFY(seed(path));
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(path));
+        Roster roster;
+        roster.columns = Roster::BaseColumns;
+        roster.columnWidths.fill(120, roster.columns.size());
+        for (int row = 0; row < 30; ++row)
+        {
+            roster.rows.append(
+                QStringList(roster.columns.size(), QString{}));
+        }
+        for (int index = 0; index < 25; ++index)
+        {
+            roster.rows[index][0] =
+                QStringLiteral("OVERFLOW STUDENT %1").arg(index + 1);
+            roster.rows[index][1] = QStringLiteral("\uAE40\uBBFC\uC9C0");
+        }
+        roster.rows[29][0] = QStringLiteral("ROW 30 TAIL STUDENT");
+        roster.rows[29][1] = QStringLiteral("\uAE40\uBBFC\uC9C0");
+        QVERIFY(store.rosterRepository()->saveRoster(1, roster));
+    }
+
+    Output::RosterOutputRequest request{id(1)};
+    request.scope = Output::RosterOutputScope::CurrentClass;
+    request.templateId = R::TemplateId::ByDay;
+    QVERIFY(SettingsManager::instance().writeMaximumRosterRowsPreference(25));
+    const auto max25Summary = Platform::rosterOutputTruncationAtPath(
+        path, request);
+    QVERIFY(max25Summary);
+    QCOMPARE(max25Summary->totalStudents, 25);
+    QCOMPARE(max25Summary->includedStudents, 25);
+    QVERIFY(!max25Summary->requiresConfirmation());
+    const QString max25Pdf = directory.filePath(QStringLiteral("max25.pdf"));
+    QCOMPARE(Platform::saveRosterOutputPdfAtPath(
+                 path, request, max25Pdf, actions().fonts).status,
+        DocumentOutputStatus::Sent);
+    QVERIFY(!pdfText(max25Pdf).contains(QStringLiteral("ROW 30 TAIL")));
+
+    QVERIFY(SettingsManager::instance().writeMaximumRosterRowsPreference(100));
+    const auto max100Summary = Platform::rosterOutputTruncationAtPath(
+        path, request);
+    QVERIFY(max100Summary);
+    QCOMPARE(max100Summary->totalStudents, 26);
+    QCOMPARE(max100Summary->includedStudents, 25);
+    QCOMPARE(max100Summary->omittedStudents(), 1);
+    QVERIFY(max100Summary->requiresConfirmation());
+    const QString max100Pdf = directory.filePath(QStringLiteral("max100.pdf"));
+    QCOMPARE(Platform::saveRosterOutputPdfAtPath(
+                 path, request, max100Pdf, actions().fonts).status,
+        DocumentOutputStatus::Sent);
+    QVERIFY(!pdfText(max100Pdf).contains(QStringLiteral("ROW 30 TAIL")));
+
+    auto source = actions();
+    int outputs = 0;
+    source.savePdf = [&](const QString&, const Output::RosterOutputRequest&,
+                         const QString&, const R::Fonts&)
+    {
+        ++outputs;
+        return DocumentOutputResult{DocumentOutputStatus::Sent, {}};
+    };
+    source.printPdf = [](QWidget*, const QString&, QPageLayout::Orientation)
+    {
+        return DocumentOutputResult{DocumentOutputStatus::Canceled, {}};
+    };
+    const auto choices = source.readChoices(path, id(1), false);
+    QVERIFY(choices);
+
+    FakeUserPromptService prompts;
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    Ui::RosterPrintDialog dialog(path, id(1), false, *choices, source);
+    auto* const scope = dialog.findChild<QComboBox*>(
+        QStringLiteral("nextRosterScope"));
+    QVERIFY(scope);
+    const int currentClassIndex = scope->findData(
+        static_cast<int>(Output::RosterOutputScope::CurrentClass));
+    QVERIFY(currentClassIndex >= 0);
+    scope->setCurrentIndex(currentClassIndex);
+
+    QVERIFY(SettingsManager::instance().writeMaximumRosterRowsPreference(25));
+    findButton(dialog, "nextRosterPrint")->click();
+    QCOMPARE(prompts.confirmations.size(), 0);
+    QCOMPARE(outputs, 1);
+
+    QVERIFY(SettingsManager::instance().writeMaximumRosterRowsPreference(100));
+    findButton(dialog, "nextRosterPrint")->click();
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QVERIFY(prompts.confirmations.front().message.contains(
+        QStringLiteral("25 of 26")));
+    QVERIFY(prompts.confirmations.front().message.contains(
+        QStringLiteral("1 students")));
+    QCOMPARE(outputs, 1);
+
+    findButton(dialog, "nextRosterPrint")->click();
+    QCOMPARE(prompts.confirmations.size(), 2);
+    QCOMPARE(outputs, 2);
 }
 
 void RosterOutputTests::printPortReceivesGeneratedPdfAndReportsCancelAndFailure()

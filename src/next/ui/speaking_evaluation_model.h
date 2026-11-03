@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/classes_list_read_snapshot.h"
+#include "next/application/roster_row_display_policy.h"
 #include "next/application/speaking_evaluation_validation.h"
 
 #include <QAbstractListModel>
@@ -45,7 +46,7 @@ private:
     Application::ClassesListSnapshot m_snapshot;
 };
 
-// The view owns one fixed 25 by 11 value matrix while an evaluation is active.
+// The view owns one bounded 100 by 11 value matrix while an evaluation is active.
 // Saved values are tracked only for changed cells, so the page does not keep a
 // second full matrix as a dirty-state baseline.
 class SpeakingEvaluationTableModel final : public QAbstractTableModel
@@ -74,6 +75,8 @@ public:
     [[nodiscard]] bool loadRows(
         const std::vector<std::vector<std::u16string>>& rows
         );
+    void setRowPreferences(int maximumRows, int displayMode);
+    [[nodiscard]] int maximumRows() const noexcept;
     void clear();
     void markSaved();
     void setUndoStack(QUndoStack* stack) noexcept;
@@ -103,6 +106,12 @@ private:
     QHash<QString, QStringList> m_cellErrors;
     std::vector<Application::SpeakingEvaluationValidationIssue> m_issues;
     QUndoStack* m_undoStack = nullptr;
+    int m_maximumRows = Application::DefaultMaximumRosterRows;
+    int m_displayMode = static_cast<int>(Application::RosterRowDisplayMode::AllRows);
+    int m_visibleRows = Application::DefaultMaximumRosterRows;
+
+    [[nodiscard]] int calculateVisibleRows() const;
+    void refreshVisibleRows();
 };
 
 } // namespace ClassMngr::Next::Ui

@@ -138,6 +138,7 @@ private slots:
     void ambiguousOrUnknownTailFailsWithoutWrites_data();
     void ambiguousOrUnknownTailFailsWithoutWrites();
     void row24RemovalKeepsAbsoluteTailPositions();
+    void expandedWindowReadsAndShortSavePreservesTailIndex();
     void verySparseTailStaysSparseAndWindowInputsAreChecked();
     void structuredSaveErrorsAndCheckedRollback();
     void repositoryInputErrorsAreTyped();
@@ -283,6 +284,46 @@ void NextPlatformRosterWindowSaveTests::row24RemovalKeepsAbsoluteTailPositions()
     QCOMPARE(full->rows[37][6], QStringLiteral("row 37"));
 }
 
+void NextPlatformRosterWindowSaveTests::
+expandedWindowReadsAndShortSavePreservesTailIndex()
+{
+    QTemporaryDir directory;
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(directory.filePath("expanded-window.db")));
+    const auto id = services.classService()->create(
+        QStringLiteral("Expanded Window"));
+    QVERIFY(id);
+    auto* const repository = services.workspaceStore()->rosterRepository();
+    Roster original;
+    original.columns = Roster::BaseColumns;
+    original.columnWidths.fill(160, original.columns.size());
+    QVERIFY(repository->saveRoster(*id, original));
+    QVERIFY(cell(services, *id, 35, 0, QStringLiteral("Tail Student")));
+
+    const auto expanded = repository->loadRosterWindowDetailed(*id, 100);
+    QVERIFY(expanded);
+    QCOMPARE(expanded->roster.rows.size(), 36);
+    QCOMPARE(expanded->roster.rows[35][0], QStringLiteral("Tail Student"));
+
+    Roster shorter;
+    shorter.columns = Roster::BaseColumns;
+    shorter.columnWidths.fill(160, shorter.columns.size());
+    for (int row = 0; row < 25; ++row)
+    {
+        shorter.rows.append(QStringList(shorter.columns.size(), QString{}));
+    }
+    QVERIFY(repository->saveRosterWindowsWithParentCheck({{
+        .classId = *id,
+        .roster = shorter,
+        .removedCustomColumns = {}
+    }}));
+
+    const auto preserved = repository->loadRoster(*id);
+    QVERIFY(preserved);
+    QCOMPARE(preserved->rows.size(), 36);
+    QCOMPARE(preserved->rows[35][0], QStringLiteral("Tail Student"));
+}
+
 void NextPlatformRosterWindowSaveTests::verySparseTailStaysSparseAndWindowInputsAreChecked()
 {
     QTemporaryDir directory;
@@ -316,7 +357,7 @@ void NextPlatformRosterWindowSaveTests::verySparseTailStaysSparseAndWindowInputs
     QCOMPARE(query.value(2).toString(), QStringLiteral("sparse tail"));
     QVERIFY(!query.next());
     const auto before = rawState(services);
-    snapshot.rows.resize(26);
+    snapshot.rows.resize(Application::RosterMaximumRowCount + 1);
     QVERIFY(!port.saveRoster({.classId = classId, .roster = snapshot}));
     QCOMPARE(rawState(services), before);
     // Window reads are still bounded even after saving a huge absolute index.

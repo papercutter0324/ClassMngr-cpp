@@ -150,6 +150,7 @@ class NextPlatformApplicationServicesSpeakingEvaluationSavePortTests final
 
 private slots:
     void savesCompleteMatrixAndAppliesExactChangedCellDelta();
+    void savesStudentsBeyondRow25AndPreservesTailAfterShortSave();
     void normalizesNameAndScoreAliasBeforePersisting();
     void validationRejectsInvalidRowsBeforePersistence();
     void appValidationMatchesLegacySpeakingEvaluationRules();
@@ -228,6 +229,64 @@ savesCompleteMatrixAndAppliesExactChangedCellDelta()
     QVERIFY(updated->at(0).at(10).isEmpty());
     QCOMPARE(updated->at(3).at(10), QStringLiteral("Updated listed note"));
     QCOMPARE(updated->at(24).at(10), QStringLiteral("Last row"));
+}
+
+void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::
+savesStudentsBeyondRow25AndPreservesTailAfterShortSave()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Speaking Evaluation Row Limit Test"));
+    QVERIFY(createdClass);
+
+    Platform::ApplicationServicesSpeakingEvaluationSavePort port(services);
+    Application::SpeakingEvaluationSaveRequest expanded = request(*createdClass);
+    expanded.evaluation.rows.resize(31);
+    expanded.evaluation.changedCells.clear();
+    for (int row = 25; row < 31; ++row)
+    {
+        auto& cells = expanded.evaluation.rows[static_cast<std::size_t>(row)];
+        cells.resize(Application::SpeakingEvaluationColumnCount);
+        cells[1] = row == 25 ? u"Student Z" : u"Student A";
+        if (row > 25)
+        {
+            cells[1].push_back(static_cast<char16_t>(u'A' + row - 26));
+        }
+        cells[2] = u"\uAE40\uBBFC\uC9C0";
+        cells[3] = u"B";
+        if (row == 30)
+        {
+            cells[10] = u"Tail student note";
+        }
+    }
+    auto saved = Application::SpeakingEvaluationSaveUseCase::execute(
+        expanded, port);
+    QVERIFY2(saved, qPrintable(saved ? QString()
+        : QString::fromStdString(saved.error().message)));
+
+    auto persisted = services.speakingEvaluationService()->evaluation(
+        *createdClass, QStringLiteral("Winter"));
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 31);
+    QCOMPARE(persisted->at(30).at(1), QStringLiteral("Student Ae"));
+    QCOMPARE(persisted->at(30).at(10), QStringLiteral("Tail student note"));
+
+    Application::SpeakingEvaluationSaveRequest shorter = request(*createdClass);
+    shorter.evaluation.rows.resize(25);
+    shorter.evaluation.changedCells.clear();
+    saved = Application::SpeakingEvaluationSaveUseCase::execute(shorter, port);
+    QVERIFY2(saved, qPrintable(saved ? QString()
+        : QString::fromStdString(saved.error().message)));
+
+    persisted = services.speakingEvaluationService()->evaluation(
+        *createdClass, QStringLiteral("Winter"));
+    QVERIFY(persisted);
+    QCOMPARE(persisted->size(), 31);
+    QCOMPARE(persisted->at(30).at(1), QStringLiteral("Student Ae"));
+    QCOMPARE(persisted->at(30).at(10), QStringLiteral("Tail student note"));
 }
 
 void NextPlatformApplicationServicesSpeakingEvaluationSavePortTests::

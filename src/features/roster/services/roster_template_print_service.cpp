@@ -3,6 +3,7 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
 #include "core/fontmanager.h"
+#include "core/settingsmanager.h"
 #include "core/startup_profiler.h"
 #include "domain/rules/schedule_value_parser.h"
 #include "next/application/classes_list_read_query.h"

@@ -1,6 +1,31 @@
 # Latest Session Work
 
-## Current Deployment Handoff — phase75_windows_elevated_capture (Windows capture complete)
+## Current Deployment Handoff — configurable-roster-rows (implementation complete)
+
+- Heavy-route feature work on branch `Qt-Rewrite`. The Legacy and Next
+  Preferences dialogs now share saved settings for maximum roster rows (default
+  25, range 1–100) and visible-row policy (Display All by default; optionally
+  retain 5, 10, 15, 20, or 25 blank rows after the last populated row). Values
+  above 40 prompt only when the previously saved maximum is 25 or lower.
+- The configured capacity applies to roster editing and Speaking Evaluation.
+  Populated saved rows outside the active maximum remain stored and return when
+  capacity is raised. AI batch selection can cover up to 100 students, while
+  each AI prompt remains limited to 25 students. Fixed print templates retain
+  their 25-row By Day/Daily and 23-row Per Class-with-Extra-Info capacities and
+  show an included/omitted confirmation before output.
+- A clean isolated Ninja build completed 873 steps. Resource inventory
+  validation and all five changed translation builds passed. The bounded 38-
+  test set first passed 35/38; after correcting two stale 25-row assertions,
+  both affected targets passed independent rechecks. All feature-specific cases
+  passed. Combined split-run evidence is 37/38; the remaining
+  `preferencesRouteRetranslatesActiveClassesNavigator` Qt assertion (`visual
+  != -1`, Qt 6.12 `qheaderview.cpp:1287`) was reproduced on unchanged `HEAD`
+  `d9b94aa3` with the same MSVC/offscreen environment and is pre-existing.
+  The complete 38-test suite was not rerun after the two test updates.
+- `git diff --check` and `python scripts/phase4/generate_resource_inventory.py
+  --check` passed. No commit or push was requested.
+
+## Prior Deployment Handoff — phase75_windows_elevated_capture (Windows capture complete)
 
 - Heavy route; branch `Qt-Rewrite`. The pending CMake generator fix and the
   W7.5.1, W7.5.2, and Windows capture work were committed as separate slices;

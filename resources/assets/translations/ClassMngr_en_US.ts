@@ -5737,6 +5737,12 @@ Rm: %1</source>
         <source>Remove Student</source>
         <translation type="unfinished"></translation>
     </message>
+
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget.cpp" line="289"/>
+        <source>This roster contains saved rows after row %1. Rows above this limit remain stored at their original row numbers. Removing a custom column also removes that column from those saved rows.</source>
+        <translation>This roster contains saved rows after row %1. Rows above this limit remain stored at their original row numbers. Removing a custom column also removes that column from those saved rows.</translation>
+    </message>
 </context>
 <context>
     <name>RosterHeaderView</name>
@@ -5908,6 +5914,10 @@ Rm: %1</source>
 </context>
 <context>
     <name>RosterPrintDialog</name>
+    <message><source>Confirm Roster Output</source><translation>Confirm Roster Output</translation></message>
+    <message><source>Student counts could not be checked, so roster output was canceled.</source><translation>Student counts could not be checked, so roster output was canceled.</translation></message>
+    <message><source>This layout can include %1 of %2 students across the selected rosters. %3 students will not appear in the output. Continue?</source><translation>This layout can include %1 of %2 students across the selected rosters. %3 students will not appear in the output. Continue?</translation></message>
+    <message><source>Proceed</source><translation>Proceed</translation></message>
     <message><source>Save As...</source><translation>Save As...</translation></message>
     <message>
         <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="+239"/>
@@ -7216,7 +7226,11 @@ GS Team: %7 created, %8 updated, %9 unchanged</source>
     </message>
     <message>
         <location line="+25"/>
-        <source>Select students. Eligible students without comments are selected automatically.</source>
+        <source>Eligible students without comments are selected automatically, up to 25. Each prompt includes at most 25 students; deselect students to choose another group.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 of %2 students selected. Each prompt is limited to 25 students; deselect students to choose another group.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8002,6 +8016,12 @@ Choose Allow in the macOS prompt. Temporary files are deleted when the batch fin
         <location line="+62"/>
         <source>Match Roster Name</source>
         <translation>Match Roster Name</translation>
+    </message>
+
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="148"/>
+        <source>Saved evaluation rows above %1 are hidden and preserved at their original row numbers. Increase the maximum row setting to view them.</source>
+        <translation>Saved evaluation rows above %1 are hidden and preserved at their original row numbers. Increase the maximum row setting to view them.</translation>
     </message>
 </context>
 <context>
@@ -10707,9 +10727,35 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
         <source>Templates / Print</source>
         <translation>Templates / Print</translation>
     </message>
+
+    <message>
+        <location filename="../../../src/next/ui/roster_editor_widget.cpp" line="932"/>
+        <source>This roster has saved rows after row %1. They remain stored at their original row numbers.</source>
+        <translation>This roster has saved rows after row %1. They remain stored at their original row numbers.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/next/ui/roster_editor_widget.cpp" line="1089"/>
+        <location filename="../../../src/next/ui/roster_editor_widget.cpp" line="1100"/>
+        <source>Stored rows after row %1 could not be checked. The column was not removed.</source>
+        <translation>Stored rows after row %1 could not be checked. The column was not removed.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/next/ui/roster_editor_widget.cpp" line="1109"/>
+        <source>Remove Column Data After Row %1?</source>
+        <translation>Remove Column Data After Row %1?</translation>
+    </message>
+    <message>
+        <location filename="../../../src/next/ui/roster_editor_widget.cpp" line="1113"/>
+        <source>The &quot;%1&quot; column has stored data after row %2. Removing it will also delete that data.</source>
+        <translation>The &quot;%1&quot; column has stored data after row %2. Removing it will also delete that data.</translation>
+    </message>
 </context>
 <context>
     <name>NextRosterOutput</name>
+    <message><source>Confirm Roster Output</source><translation>Confirm Roster Output</translation></message>
+    <message><source>This layout can include %1 of %2 students across the selected rosters. %3 students will not appear in the output. Continue?</source><translation>This layout can include %1 of %2 students across the selected rosters. %3 students will not appear in the output. Continue?</translation></message>
+    <message><source>Proceed</source><translation>Proceed</translation></message>
+    <message><source>Cancel</source><translation>Cancel</translation></message>
     <message>
         <source>Save Rosters as PDF</source>
         <translation>Save Rosters as PDF</translation>
@@ -10833,6 +10879,93 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
     <message>
         <source>Next</source>
         <translation>Next</translation>
+    </message>
+</context>
+<context>
+    <name>RosterRowPreferencesGroup</name>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="36"/>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="106"/>
+        <source>Set the maximum number of rows for Class Roster and Speaking Evaluation.</source>
+        <translation>Set the maximum number of rows for Class Roster and Speaking Evaluation.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="38"/>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="98"/>
+        <source>Maximum Rows:</source>
+        <translation>Maximum Rows:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="43"/>
+        <source>Display All Rows</source>
+        <translation>Display All Rows</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="44"/>
+        <source>Display 5 Extra Rows</source>
+        <translation>Display 5 Extra Rows</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="45"/>
+        <source>Display 10 Extra Rows</source>
+        <translation>Display 10 Extra Rows</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="46"/>
+        <source>Display 15 Extra Rows</source>
+        <translation>Display 15 Extra Rows</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="47"/>
+        <source>Display 20 Extra Rows</source>
+        <translation>Display 20 Extra Rows</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="48"/>
+        <source>Display 25 Extra Rows</source>
+        <translation>Display 25 Extra Rows</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="49"/>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="108"/>
+        <source>Show all rows, or show blank rows after the last row with data.</source>
+        <translation>Show all rows, or show blank rows after the last row with data.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="92"/>
+        <source>Roster and Speaking Evaluation</source>
+        <translation>Roster and Speaking Evaluation</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="103"/>
+        <source>Rows to Display:</source>
+        <translation>Rows to Display:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="137"/>
+        <source>Confirm Maximum Rows</source>
+        <translation>Confirm Maximum Rows</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="138"/>
+        <source>Is this number correct?</source>
+        <translation>Is this number correct?</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="154"/>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="176"/>
+        <source>Unable to Save Preference</source>
+        <translation>Unable to Save Preference</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="155"/>
+        <source>The maximum row setting could not be saved.</source>
+        <translation>The maximum row setting could not be saved.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="177"/>
+        <source>The row display setting could not be saved.</source>
+        <translation>The row display setting could not be saved.</translation>
     </message>
 </context>
 </TS>

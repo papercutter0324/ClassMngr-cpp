@@ -76,6 +76,7 @@ struct Fixture
             insert.addBindValue(ids.first()); insert.addBindValue(name); if (!insert.exec()) return false;
             const int evaluation = insert.lastInsertId().toInt();
             if (!sql(QStringLiteral("INSERT INTO speaking_eval_data(evaluation_id,row_index,col_0,col_1,col_10) VALUES(%1,24,'25','Last evaluation student','Tail note')").arg(evaluation))) return false;
+            if (!sql(QStringLiteral("INSERT INTO speaking_eval_data(evaluation_id,row_index,col_0,col_1,col_10) VALUES(%1,30,'31','Beyond default row limit','Extended tail note')").arg(evaluation))) return false;
             if (!sql(QStringLiteral("INSERT INTO speaking_eval_data(evaluation_id,row_index,col_0,col_1,col_9) VALUES(%1,0,'1','First evaluation student','Full comment')").arg(evaluation))) return false;
         }
         return true;
@@ -215,9 +216,12 @@ void ClassTransferExportCodecParityTests::completeExportPreservesSchemaOrderAndE
     const auto evaluations = first.value(QStringLiteral("speaking_evaluations")).toArray(); QCOMPARE(evaluations.size(), 2);
     QCOMPARE(evaluations[0].toObject().value(QStringLiteral("name")).toString(), QStringLiteral("Zulu"));
     QCOMPARE(evaluations[1].toObject().value(QStringLiteral("name")).toString(), QStringLiteral("Alpha"));
-    const auto rows = evaluations[0].toObject().value(QStringLiteral("rows")).toArray(); QCOMPARE(rows.size(), 25);
+    const auto rows = evaluations[0].toObject().value(QStringLiteral("rows")).toArray(); QCOMPARE(rows.size(), 100);
     QCOMPARE(rows[1].toArray().size(), 11); QCOMPARE(rows[1].toArray()[1].toString(), QString());
     QCOMPARE(rows[24].toArray()[10].toString(), QStringLiteral("Tail note"));
+    QCOMPARE(rows[30].toArray()[1].toString(), QStringLiteral("Beyond default row limit"));
+    QCOMPARE(legacy->classes[1].evaluations[0].rows[30][10],
+        QStringLiteral("Extended tail note"));
     logTranscript({{QStringLiteral("case"), QStringLiteral("complete-export")}, {QStringLiteral("package"), normalized(*actual)}});
 }
 void ClassTransferExportCodecParityTests::failurePrecedence_data()

@@ -37,7 +37,7 @@ struct RosterWindowReadOutcome final
 class RosterRepository
 {
 public:
-    // Replaces [0, 25), preserving sparse tail rows at absolute indices.
+    // Replaces the supplied window, preserving sparse tail rows at absolute indices.
     // Only explicitly confirmed, displayed custom columns may lose tail cells.
     struct WindowSaveRequest final
     {
@@ -155,9 +155,12 @@ public:
     };
     // Names: first 25 nonblank name pairs across sparse absolute rows.
     // Positional: rows [0,23), including blanks, selected columns only.
+    // maximumCandidateRows, when supplied, further hides rows beyond the
+    // configured roster range before applying either template capacity.
     // Unprinted tail rows and unselected cells are intentionally ignored.
     [[nodiscard]] RepositoryResult<PrintProjection> loadTemplatePrintProjection(
-        int classId, const QStringList& selectedColumns, bool positional);
+        int classId, const QStringList& selectedColumns, bool positional,
+        std::optional<int> maximumCandidateRows = std::nullopt);
 
     explicit RosterRepository(
         QSqlDatabase& database
@@ -283,6 +286,10 @@ public:
     [[nodiscard]] RepositoryResult<int> getRosterStudentCount(
         int classId
         );
+    [[nodiscard]] RepositoryResult<int> getRosterStudentCount(
+        int classId,
+        int maximumCandidateRows
+        );
 
 private:
     [[nodiscard]] RepositoryStatus writeRosterWindow(const WindowSaveRequest& window);
@@ -297,7 +304,9 @@ private:
     [[nodiscard]] RepositoryResult<SubPrepStudentCountReadEntry>
     loadSubPrepStudentCountRecord(int classId);
     [[nodiscard]] RepositoryResult<SubPrepStudentCountReadEntry>
-    loadSingleClassSubPrepStudentCountRecord(int classId);
+    loadSingleClassSubPrepStudentCountRecord(
+        int classId,
+        std::optional<int> maximumCandidateRows = std::nullopt);
     [[nodiscard]] RepositoryResult<RosterWindowReadOutcome> loadRosterDetailedImpl(
         int classId,
         std::optional<int> rowLimit

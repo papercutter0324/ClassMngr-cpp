@@ -3,6 +3,7 @@
 
 #include <QtTest/QtTest>
 
+#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <initializer_list>
@@ -398,12 +399,13 @@ void NextApplicationRosterSaveUseCaseTests::directPreparationPreservesStructureA
     Application::RosterSnapshot snapshot;
     snapshot.columns = {u" English ", u"ENGLISH", u" ", std::u16string(65, u'X')};
     snapshot.columnWidths = snapshotWidths({-1, 0, 9, 10, 11});
-    snapshot.rows.resize(26);
+    snapshot.rows.resize(Application::RosterSaveMaximumRows + 1);
     snapshot.rows[0] = {u" A2 ", u"", u"", u"", std::u16string(10001, u'z')};
     const auto prepared = Application::prepareRosterSave(snapshot, false, equals);
     QVERIFY(prepared.hasErrors());
     QVERIFY(prepared.roster.columnWidths == snapshot.columnWidths);
-    QCOMPARE(prepared.roster.rows.size(), std::size_t(26));
+    QCOMPARE(prepared.roster.rows.size(),
+        Application::RosterSaveMaximumRows + 1);
     QCOMPARE(prepared.roster.rows[0].size(), std::size_t(5));
     QCOMPARE(prepared.roster.rows[0][0], std::u16string(u"A2"));
     QVERIFY(prepared.roster.rows[1].empty());
@@ -456,7 +458,7 @@ void NextApplicationRosterSaveUseCaseTests::
 duplicateNamePairDiagnosticsKeepTypedRowsAndIssueOrder()
 {
     auto value = request("42");
-    value.roster.rows.assign(26, {});
+    value.roster.rows.assign(Application::RosterSaveMaximumRows + 1, {});
     value.roster.rows[0] = {u"Alice", u"\uAE40\uBBFC\uC9C0"};
     value.roster.rows[1] = {u"Bob", u"\uBC15\uC9C0\uBBFC"};
     value.roster.rows[3] = {u"Alice", u"\uAE40\uBBFC\uC9C0"};
@@ -576,11 +578,26 @@ void NextApplicationRosterSaveUseCaseTests::policyAcceptsBoundarySizesAndCountsU
     QVERIFY(!atLimit.hasErrors());
     QVERIFY(atLimit.issues.empty());
     QCOMPARE(atLimit.roster.columns[6].size(), std::size_t(64));
+    auto atRosterRowLimit = value.roster;
+    atRosterRowLimit.rows.resize(Application::RosterSaveMaximumRows);
+    const auto acceptedRowsAtLimit = Application::prepareRosterSave(
+        atRosterRowLimit, false, equals);
+    QVERIFY(!acceptedRowsAtLimit.hasErrors());
+    QCOMPARE(acceptedRowsAtLimit.roster.rows.size(),
+        Application::RosterSaveMaximumRows);
+    QVERIFY(std::none_of(
+        acceptedRowsAtLimit.issues.cbegin(),
+        acceptedRowsAtLimit.issues.cend(),
+        [](const auto& issue)
+        {
+            return Application::rosterSaveIssueCodeKey(issue.code)
+                == "roster.rows.too_many";
+        }));
     auto beyond = value.roster;
     beyond.columns[6] += u'x';
     beyond.rows[0][6] += u'x';
     beyond.rows[0][0] += u'a';
-    beyond.rows.resize(26);
+    beyond.rows.resize(Application::RosterSaveMaximumRows + 1);
     const auto rejected = Application::prepareRosterSave(beyond, false, equals);
     QVERIFY(rejected.hasErrors());
     QCOMPARE(rejected.issues.size(), std::size_t(4));

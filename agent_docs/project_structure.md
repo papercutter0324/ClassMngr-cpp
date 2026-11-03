@@ -52,6 +52,16 @@ is opt-in; `setRows()` retains the unwindowed compatibility path. Feature code
 owns window fetching and persistence of the complete source. Staff Directory
 remains unwindowed because its save path enumerates `rowCount()` and `rowAt()`.
 
+Roster and Speaking Evaluation share a saved maximum row capacity (1–100,
+default 25) and a display-row preference across Legacy and Next. The maximum
+controls the editable roster window; hiding a populated tail does not delete
+its stored rows. The shared preferences group is in
+`src/ui/shared/widgets/roster_row_preferences_group.h`, and the row display
+policy is in `src/next/application/roster_row_display_policy.h`. Roster print
+templates keep their separate 25-row By Day/Daily and 23-row Per Class with
+Extra Info capacities and ask before omitting populated rows. AI batch requests
+also retain a separate 25-student prompt limit.
+
 ## Main Interfaces and Integration Boundaries
 
 `ApplicationServices` owns the canonical `DatabaseSession` and a `DataService`

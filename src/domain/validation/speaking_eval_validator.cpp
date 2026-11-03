@@ -187,13 +187,13 @@ ValidationResult SpeakingEvalValidator::validate(
         {.field = QStringLiteral("evaluationName")}
         ));
 
-    if (rows.size() > SpeakingEval::RowCount)
+    if (rows.size() > SpeakingEval::MaximumRowCount)
     {
         result.add(ValidationRules::issue(
             QStringLiteral("speaking_evaluation.rows.too_many"),
             {.field = QStringLiteral("rows")},
             ValidationSeverity::Error,
-            {{QStringLiteral("maximumRows"), SpeakingEval::RowCount},
+            {{QStringLiteral("maximumRows"), SpeakingEval::MaximumRowCount},
              {QStringLiteral("rowCount"), rows.size()}}
             ));
     }

@@ -58,6 +58,7 @@ private:
     QList<int> m_selectedReportIndexes;
     QList<SpeakingEvalAiBatchAcceptedComment> m_acceptedComments;
     QTableWidget* m_selectionTable = nullptr;
+    QLabel* m_selectionStatus = nullptr;
     QPlainTextEdit* m_promptEdit = nullptr;
     QPushButton* m_createPromptButton = nullptr;
     QPushButton* m_copyPromptButton = nullptr;

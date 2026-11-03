@@ -23,7 +23,11 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
     const int evaluationKoreanColumn =
         SpeakingEval::toInt(SpeakingEvalColumn::KoreanName);
 
-    const SpeakingEvalRows evaluationRows = m_model->rows();
+    const SpeakingEvalRows allEvaluationRows = m_model->allRows();
+    const SpeakingEvalRows evaluationRows = allEvaluationRows.mid(
+        0,
+        m_model->maximumRows()
+        );
     std::vector<ClassMngr::Next::Application::
         SpeakingEvaluationRosterNamePair> projectedRosterNames;
     projectedRosterNames.reserve(
@@ -72,29 +76,24 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
                 );
 
     const auto appendChange =
-        [this, &changes](
+        [this, &changes, &allEvaluationRows](
             ClassMngr::Next::Application::
                 SpeakingEvaluationRosterNameImportTargetIndex row,
             SpeakingEvalColumn column,
             const QString& value
             )
         {
-            const QModelIndex index =
-                m_model->index(
-                    row.rawValue(),
-                    SpeakingEval::toInt(column)
-                    );
-
-            if (
-                !index.isValid()
-                || !(m_model->flags(index) & Qt::ItemIsEditable)
-                )
+            const int rowIndex = row.rawValue();
+            const int columnIndex = SpeakingEval::toInt(column);
+            if (rowIndex < 0 || rowIndex >= allEvaluationRows.size()
+                || columnIndex < 0
+                || columnIndex >= SpeakingEval::ColumnCount)
             {
                 return;
             }
 
             const QString oldValue =
-                index.data(Qt::EditRole).toString();
+                allEvaluationRows.at(rowIndex).value(columnIndex);
 
             if (oldValue == value)
             {
@@ -103,8 +102,8 @@ QList<SpeakingEvalCellEdit> SpeakingEvalPage::nameImportChanges(
 
             changes.append(
                 {
-                    index.row(),
-                    SpeakingEval::toInt(column),
+                    rowIndex,
+                    columnIndex,
                     oldValue,
                     value
                 }

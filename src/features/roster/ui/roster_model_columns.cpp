@@ -380,7 +380,7 @@ void RosterModel::rebuildRows(
 {
     m_rows.clear();
 
-    for (int rowIndex = 0; rowIndex < RosterUi::RowCount; ++rowIndex)
+    for (int rowIndex = 0; rowIndex < m_maximumRows; ++rowIndex)
     {
         QStringList row;
         row.reserve(m_columns.size());

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/roster_save_preparation.h"
+#include "next/application/roster_row_display_policy.h"
 #include "next/application/roster_snapshot.h"
 
 #include <QAbstractTableModel>
@@ -19,6 +20,7 @@ class RosterTableModel final : public QAbstractTableModel
 {
 public:
     static constexpr int ModeledRowCount = 25;
+    static constexpr int MaximumRowCount = Application::MaximumRosterRows;
 
     explicit RosterTableModel(QObject* parent = nullptr);
 
@@ -46,6 +48,7 @@ public:
         ) const override;
 
     void setRoster(const Application::RosterSnapshot& roster);
+    void setRowPreferences(int maximumRows, int displayMode);
     void clear();
     void setEditable(bool editable);
     void setDirtyChangedCallback(std::function<void(bool)> callback);
@@ -76,12 +79,17 @@ private:
         bool markDirty
         );
     void revalidate();
+    [[nodiscard]] int calculateVisibleRows() const;
+    void refreshVisibleRows();
     void setDirty(bool dirty);
     [[nodiscard]] bool isNameColumn(int column, const QString& name) const;
 
     QVector<QString> m_columns;
     QVector<int> m_widths;
     QVector<QStringList> m_rows;
+    int m_maximumRows = Application::DefaultMaximumRosterRows;
+    int m_displayMode = static_cast<int>(Application::RosterRowDisplayMode::AllRows);
+    int m_visibleRows = Application::DefaultMaximumRosterRows;
     std::vector<Application::RosterSaveIssue> m_issues;
     QHash<QString, QStringList> m_cellErrors;
     QHash<QString, QStringList> m_cellWarnings;

@@ -2,6 +2,25 @@
 
 ## Decisions and Lessons
 
+### Configurable roster capacity and display window — 2026-11-03
+
+Use one saved roster maximum from 1 to 100 across Legacy and Next roster and
+Speaking Evaluation views, defaulting to 25. Keep display policy separate from
+capacity: show all rows by default, or maintain 5-row increments through 25
+blank rows after populated data. Preserve stored tail rows when a smaller
+maximum or display window hides them. Confirm a selection above 40 only when
+the previously saved maximum is 25 or lower.
+
+Keep the paper templates at their existing physical capacities (25 rows for
+By Day/Daily and 23 for Per Class with Extra Info); warn with included and
+omitted counts before output. The AI batch prompt remains capped at 25 students
+per request while selection can cover the configured roster maximum. When the
+capacity change invalidates tests that encoded the former fixed 25-row storage
+limit, update the assertions to the 100-row storage contract rather than
+truncating preserved transfer data. The unrelated Next Bootstrap Qt header
+assertion was reproduced on unchanged `HEAD` and should remain separately
+tracked as baseline/environmental test debt.
+
 ### Preserve selected Phase 7.5 Windows evidence in Git — 2026-11-02
 
 To let later checkouts continue the Windows follow-ups without access to the

@@ -2,6 +2,7 @@
 
 #include "domain/models/speaking_evaluation.h"
 #include "domain/validation/validation_result.h"
+#include "next/application/roster_row_display_policy.h"
 
 #include <QAbstractTableModel>
 #include <QHash>
@@ -50,7 +51,11 @@ public:
         const SpeakingEvalRows& rows
         );
 
+    void setRowPreferences(int maximumRows, int displayMode);
+    [[nodiscard]] int maximumRows() const noexcept;
+
     SpeakingEvalRows rows() const;
+    SpeakingEvalRows allRows() const;
 
     QList<SpeakingEvalCellChange> changedCells() const;
 
@@ -103,6 +108,9 @@ private:
         const SpeakingEvalRows& rows
         ) const;
 
+    [[nodiscard]] int calculateVisibleRows() const;
+    void refreshVisibleRows();
+
     ProcessedValue processValue(
         int row,
         int column,
@@ -143,6 +151,12 @@ private:
 private:
     SpeakingEvalRows m_rows;
     SpeakingEvalRows m_lastSaved;
+    int m_maximumRows =
+        ClassMngr::Next::Application::DefaultMaximumRosterRows;
+    int m_displayMode = static_cast<int>(
+        ClassMngr::Next::Application::RosterRowDisplayMode::AllRows);
+    int m_visibleRows =
+        ClassMngr::Next::Application::DefaultMaximumRosterRows;
     QHash<QString, QStringList> m_errors;
     QHash<QString, QStringList> m_domainErrors;
     QSet<QString> m_dirtyCells;

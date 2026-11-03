@@ -61,6 +61,7 @@ struct WindowPort final : RosterWindowReadPort
     RosterWindowReadSnapshot snapshot;
     mutable int callCount = 0;
     mutable std::optional<Domain::ClassId> readId;
+    mutable int readRowLimit = 0;
 
     RosterWindowReadResult readRosterWindow(
         const RosterWindowReadQuery& query
@@ -68,6 +69,7 @@ struct WindowPort final : RosterWindowReadPort
     {
         ++callCount;
         readId = query.classId;
+        readRowLimit = query.rowLimit;
         return RosterWindowReadResult::success(snapshot);
     }
 };
@@ -345,6 +347,26 @@ bool targetWindowOverflowAllowsBoundedTransferSave()
         && savePort.saved->targetRoster.rows[1][5] == u"Fall value";
 }
 
+bool windowReadAdapterUsesConfiguredMaximum()
+{
+    WindowPort windowPort;
+    windowPort.snapshot.roster = {
+        .columns = base,
+        .columnWidths = std::vector<RosterSnapshotColumnWidth>(
+            base.size(), RosterSnapshotColumnWidth{100}
+            ),
+        .rows = std::vector<std::vector<std::u16string>>(
+            100, std::vector<std::u16string>(base.size())
+            )
+    };
+    RosterWindowAsRosterReadPort readPort(windowPort, 100);
+    const auto loaded = readPort.readRoster({.classId = id("23")});
+    return loaded
+        && windowPort.callCount == 1
+        && windowPort.readRowLimit == 100
+        && loaded.value().rows.size() == 100;
+}
+
 bool emptyTargetUsesCanonicalBaseAndRowZero()
 {
     auto req = request();
@@ -522,6 +544,7 @@ int main()
         {"maximum class ID forwarding",maximumClassIdForwardsThroughReadAndSave},
         {"invalid target snapshot",invalidTargetSnapshotDoesNotReachSave},
         {"target window overflow allows bounded transfer save",targetWindowOverflowAllowsBoundedTransferSave},
+        {"window read adapter uses configured maximum",windowReadAdapterUsesConfiguredMaximum},
         {"empty target base columns and row zero",emptyTargetUsesCanonicalBaseAndRowZero},
         {"warning-only roster preparation",warningOnlySnapshotPreparationStillSaves},
         {"rejected target name lengths cancel before saving",rejectedTargetQuestionableKoreanLengthCancelsBeforeSave},

@@ -22,6 +22,7 @@ namespace ClassMngr::Next::Application
 {
 
 inline constexpr int SpeakingEvaluationRowCount = 25;
+inline constexpr int SpeakingEvaluationMaximumRowCount = 100;
 inline constexpr int SpeakingEvaluationColumnCount = 11;
 inline constexpr std::size_t SpeakingEvaluationMaximumNameLength = 128;
 inline constexpr std::size_t SpeakingEvaluationMaximumEnglishNameLength = 20;
@@ -1131,7 +1132,8 @@ validateAndNormalizeSpeakingEvaluation(
     }
 
     const auto& rows = result.normalizedRequest.evaluation.rows;
-    if (rows.size() > static_cast<std::size_t>(SpeakingEvaluationRowCount))
+    if (rows.size()
+        > static_cast<std::size_t>(SpeakingEvaluationMaximumRowCount))
     {
         appendIssue(
             result,
@@ -1141,7 +1143,7 @@ validateAndNormalizeSpeakingEvaluation(
             -1,
             SpeakingEvaluationValidationSeverity::Error,
             {{"maximumRows", static_cast<std::int64_t>(
-                 SpeakingEvaluationRowCount)},
+                 SpeakingEvaluationMaximumRowCount)},
              {"rowCount", static_cast<std::int64_t>(rows.size())}}
             );
     }

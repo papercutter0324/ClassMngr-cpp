@@ -8589,7 +8589,7 @@ add_executable(ClassMngrNextRosterOutputTests
     $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
 )
 target_compile_features(ClassMngrNextRosterOutputTests PRIVATE cxx_std_23)
-target_include_directories(ClassMngrNextRosterOutputTests PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_include_directories(ClassMngrNextRosterOutputTests PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/tests")
 target_compile_definitions(ClassMngrNextRosterOutputTests PRIVATE CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}")
 target_link_libraries(ClassMngrNextRosterOutputTests PRIVATE ClassMngrRuntime ClassMngrNextRosterOutput ClassMngrNextWorkspaceDomain Qt6::Sql Qt6::Pdf Qt6::Test Qt6::Widgets)
 set_target_properties(ClassMngrNextRosterOutputTests PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF)
@@ -8632,3 +8632,29 @@ add_test(NAME ClassMngrNextSharedUpdatePresentationTests
 set_tests_properties(ClassMngrNextSharedUpdatePresentationTests PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
+
+# These focused UI targets compile a shared preference consumer directly.
+# Link the existing settings object only where those consumers are present.
+get_property(_classmngr_next_test_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+foreach(_classmngr_next_test_target IN LISTS _classmngr_next_test_targets)
+    get_target_property(
+        _classmngr_next_test_sources
+        ${_classmngr_next_test_target}
+        SOURCES
+    )
+    set(_classmngr_next_test_uses_roster_preferences FALSE)
+    foreach(_classmngr_next_test_source IN LISTS _classmngr_next_test_sources)
+        if(_classmngr_next_test_source MATCHES
+           "(src/next/ui/(roster_editor_widget|speaking_evaluation_page|preferences_dialog)|src/next/platform/workspace_store_roster_actions)\\.cpp$")
+            set(_classmngr_next_test_uses_roster_preferences TRUE)
+            break()
+        endif()
+    endforeach()
+    if(_classmngr_next_test_uses_roster_preferences)
+        target_link_libraries(
+            ${_classmngr_next_test_target}
+            PRIVATE
+                ClassMngrSettings
+        )
+    endif()
+endforeach()

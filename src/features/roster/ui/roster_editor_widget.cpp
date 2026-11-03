@@ -2,6 +2,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "core/application_services.h"
+#include "core/settingsmanager.h"
 #include "app/services/feature_services.h"
 #include "features/roster/ui/roster_column_layout_controller.h"
 #include "features/roster/ui/roster_constants.h"
@@ -269,7 +270,8 @@ void RosterEditorWidget::loadClass(
         if (classId)
         {
             const ClassMngr::Next::Application::RosterWindowReadQuery query{
-                .classId = *classId
+                .classId = *classId,
+                .rowLimit = SettingsManager::instance().maximumRosterRows()
             };
             const ClassMngr::Next::Platform::
                 ApplicationServicesRosterWindowReadPort port(*m_services);
@@ -285,11 +287,11 @@ void RosterEditorWidget::loadClass(
                 {
                     m_rosterOverflow = true;
                     rosterReadFailureDetail = tr(
-                        "This roster contains saved rows after row 25. "
-                        "Edits apply to the first 25 rows; additional rows keep "
-                        "their saved positions. Removing a custom column also "
-                        "removes that column from the additional rows."
-                        );
+                        "This roster contains saved rows after row %1. "
+                        "Rows above this limit remain stored at their original "
+                        "row numbers. Removing a custom column also removes "
+                        "that column from those saved rows."
+                        ).arg(query.rowLimit);
                 }
             }
             else
@@ -313,6 +315,9 @@ void RosterEditorWidget::loadClass(
         rosterReadFailureDetail = tr("The roster service is unavailable.");
     }
 
+    m_model->setRowPreferences(
+        SettingsManager::instance().maximumRosterRows(),
+        SettingsManager::instance().rosterRowDisplayMode());
     m_model->setRoster(roster);
     m_layoutController->attach(m_table, m_model);
     m_layoutController->applyWidths(

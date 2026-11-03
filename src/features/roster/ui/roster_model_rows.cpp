@@ -215,7 +215,8 @@ bool RosterModel::removeRosterRow(
     }
 
     m_rows = qtRows(removed->rows);
-    const int lastRow = m_rows.size() - 1;
+    refreshVisibleRows();
+    const int lastRow = rowCount() - 1;
 
     validateAll();
 
@@ -314,6 +315,7 @@ bool RosterModel::moveRosterRow(
     }
 
     m_rows = qtRows(reordered->rows);
+    refreshVisibleRows();
 
     validateAll();
 
@@ -325,7 +327,7 @@ bool RosterModel::moveRosterRow(
                 0
                 ),
             index(
-                m_rows.size() - 1,
+                rowCount() - 1,
                 m_columns.size() - 1
                 ),
             {
@@ -459,6 +461,8 @@ bool RosterModel::insertTransferredRow(
     m_rows[static_cast<qsizetype>(prepared->destinationRow.rawValue())] =
         qtStrings(prepared->mappedRow);
 
+    refreshVisibleRows();
+
     validateAll();
 
     if (!m_columns.isEmpty())
@@ -469,7 +473,7 @@ bool RosterModel::insertTransferredRow(
                 0
                 ),
             index(
-                m_rows.size() - 1,
+                rowCount() - 1,
                 m_columns.size() - 1
                 ),
             {

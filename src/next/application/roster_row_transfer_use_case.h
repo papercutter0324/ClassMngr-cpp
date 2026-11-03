@@ -66,7 +66,7 @@ class RosterRowTransferSavePort
 public:
     virtual ~RosterRowTransferSavePort() = default;
 
-    // Both visible windows [0, 25) must be saved in one transaction, or neither
+    // Both visible windows must be saved in one transaction, or neither
     // is saved. Tail rows retain absolute indices and normalized column identity.
     [[nodiscard]] virtual Domain::Result<void> saveTransfer(
         const RosterRowTransferSaveRequest& request
@@ -258,8 +258,10 @@ private:
             target.columnWidths.push_back(RosterSnapshotColumnWidth{width});
         }
 
-        target.rows.reserve(RosterModeledRowCount);
-        for (std::size_t row = 0; row < RosterModeledRowCount; ++row)
+        const std::size_t rowCount = std::max(
+            stored.rows.size(), RosterModeledRowCount);
+        target.rows.reserve(rowCount);
+        for (std::size_t row = 0; row < rowCount; ++row)
         {
             std::vector<std::u16string> values;
             for (const auto& column : projection.columns())

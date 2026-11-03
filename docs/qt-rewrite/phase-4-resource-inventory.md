@@ -10,34 +10,35 @@ size measurement method.
 
 ## Refreshed source baseline
 
-At source revision `58de51bf`, the tree has 226 tracked `resources/assets`
-files totaling **65,707,627 exact source bytes**. The total includes the 28
-speaking-evaluation source inputs under `templates/speaking-eval/sources/`;
-those inputs total 1,350,933 bytes and remain build-only. There are three
-additional tracked Windows packaging templates under `resources/windows/`
-totaling 1,186 bytes, so 229 tracked paths are recorded under `resources/`; all
-229 total **65,708,813 exact source bytes**. The two Calendar QML module
-sources are outside that tree and are listed separately (two files, 35,154
-bytes). F1482 changed four packaging dispositions without changing any source
-path, size, or hash.
+At source revision `d9b94aa3`, plus the five working-tree translation updates
+listed in the machine-readable inventory, the tree has 226 tracked
+`resources/assets` files totaling **66,092,516 exact source bytes**. The total
+includes the 28 speaking-evaluation source inputs under
+`templates/speaking-eval/sources/`; those inputs total 1,351,379 bytes and
+remain build-only. There are three additional tracked Windows packaging
+templates under `resources/windows/` totaling 1,225 bytes, so 229 tracked paths
+are recorded under `resources/`; all 229 total **66,093,741 exact source
+bytes**. The two Calendar QML module sources are outside that tree and are
+listed separately (two files, 36,137 bytes). F1482 changed four packaging
+dispositions without changing any source path, size, or hash.
 
 | Asset group | Files | Exact source bytes |
 | --- | ---: | ---: |
-| Campuses | 17 | 5,119,172 |
-| Documents, including catalog metadata and one Office lock file | 53 | 34,484,308 |
+| Campuses | 17 | 5,121,304 |
+| Documents, including catalog metadata and one Office lock file | 53 | 34,484,918 |
 | Roster workflow files | 3 | 38,903 |
 | Fonts | 6 | 21,098,232 |
-| Icons | 83 | 313,845 |
+| Icons | 83 | 313,958 |
 | Images | 1 | 9,861 |
 | Legacy splash | 1 | 130,586 |
-| Styles | 2 | 30,777 |
-| Translations (`.ts` sources) | 5 | 1,732,872 |
-| Templates, including excluded speaking-art sources | 55 | 2,749,071 |
-| **Total `resources/assets`** | **226** | **65,707,627** |
+| Styles | 2 | 31,337 |
+| Translations (`.ts` sources) | 5 | 2,112,636 |
+| Templates, including excluded speaking-art sources | 55 | 2,750,781 |
+| **Total `resources/assets`** | **226** | **66,092,516** |
 
 These are exact tracked source-file sizes, not an installed-package or decoded
 memory measurement. The earlier Phase 0 inventory is an older snapshot; use
-this Phase 4 inventory for the refreshed source baseline. The 65,707,627-byte
+this Phase 4 inventory for the refreshed source baseline. The 66,092,516-byte
 figure is for `resources/assets`; the all-tracked-resources total also includes
 the three Windows templates. Calendar QML source bytes are counted separately.
 

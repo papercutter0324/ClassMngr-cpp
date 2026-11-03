@@ -384,6 +384,7 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/widgets/sidebar/sidebar_types.h"
     "src/ui/shared/widgets/text_fit_dialog_button_box.h"
     "src/ui/shared/widgets/text_fit_push_button.h"
+    "src/ui/shared/widgets/roster_row_preferences_group.h"
 )
 
 set(CLASSMNGR_ON_SCREEN_KEYBOARD_SOURCES
@@ -650,6 +651,7 @@ set(CLASSMNGR_ROSTER_TEMPLATE_RENDERER_SOURCES
     "src/shared/roster/sub_prep_pdf_text_finalizer.h"
     "src/shared/roster/roster_template_renderer.cpp"
     "src/shared/roster/roster_template_renderer.h"
+    "src/shared/roster/roster_template_print_truncation.h"
     "src/shared/roster/roster_template_print_by_day_template.inc"
     "src/shared/roster/roster_template_print_daily_template.inc"
     "src/shared/roster/roster_template_print_per_class_template.inc"
@@ -770,6 +772,7 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/bootstrap/application_bootstrap.cpp"
     "src/next/bootstrap/application_bootstrap.h"
     "src/next/application/assigned_teacher_directory_projection.h"
+    "src/next/application/roster_row_display_policy.h"
     "src/next/bootstrap/campus_edit_operation_actions.h"
     "src/next/bootstrap/campus_edit_capability_arguments.h"
     "src/next/bootstrap/startup_diagnostics_sink.h"

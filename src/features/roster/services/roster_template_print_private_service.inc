@@ -172,6 +172,15 @@
                 if (validBatch
                     && batchResult.size() == classIds.size())
                 {
+                    const int maximumRows =
+                        SettingsManager::instance().maximumRosterRows();
+                    for (RosterClassData& rosterClass : batchResult)
+                    {
+                        if (rosterClass.roster.rows.size() > maximumRows)
+                        {
+                            rosterClass.roster.rows.resize(maximumRows);
+                        }
+                    }
                     return batchResult;
                 }
             }
@@ -337,6 +346,15 @@
         }
     }
 
+    const int maximumRows =
+        SettingsManager::instance().maximumRosterRows();
+    for (RosterClassData& rosterClass : result)
+    {
+        if (rosterClass.roster.rows.size() > maximumRows)
+        {
+            rosterClass.roster.rows.resize(maximumRows);
+        }
+    }
     return result;
 }
 

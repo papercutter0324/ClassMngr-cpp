@@ -63,6 +63,7 @@ private slots:
 private:
     void buildUi();
     void captureFinalSelection();
+    bool confirmRosterOutputTruncation();
     void loadClasses();
     void retranslateUi();
     void resizeForExtraInfoOptions();

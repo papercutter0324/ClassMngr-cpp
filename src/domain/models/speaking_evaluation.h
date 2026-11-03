@@ -45,6 +45,7 @@ namespace SpeakingEval
 {
 
 inline constexpr int RowCount = 25;
+inline constexpr int MaximumRowCount = 100;
 inline constexpr int ColumnCount = 11;
 inline constexpr int RowHeight = 50;
 
@@ -218,11 +219,11 @@ inline QColor contrastTextColor(
         : QColor(255, 255, 255);
 }
 
-inline SpeakingEvalRows emptyRows()
+inline SpeakingEvalRows emptyRows(const int rowCount = RowCount)
 {
     SpeakingEvalRows rows;
 
-    for (int row = 0; row < RowCount; ++row)
+    for (int row = 0; row < rowCount; ++row)
     {
         QStringList values;
 

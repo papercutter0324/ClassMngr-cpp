@@ -157,6 +157,7 @@ private:
     void syncSelectionControls();
     void retranslateUi();
     void updateActionButtonWidths();
+    void updateHiddenRowsNotice();
     void releaseActiveDraft();
     [[nodiscard]] SpeakingEvaluationUnsavedChoice askUnsavedChanges(
         const QString& reason
@@ -172,6 +173,7 @@ private:
     QLabel* m_title = nullptr;
     QLabel* m_classSummary = nullptr;
     QLabel* m_status = nullptr;
+    QLabel* m_hiddenRowsNotice = nullptr;
     QLabel* m_dirtyIndicator = nullptr;
     QPushButton* m_importNamesButton = nullptr;
     QPushButton* m_editNotesButton = nullptr;
@@ -196,6 +198,8 @@ private:
     bool m_active = false;
     bool m_syncingControls = false;
     bool m_refreshingValidation = false;
+    bool m_hasHiddenRows = false;
+    int m_hiddenRowsMaximum = Application::DefaultMaximumRosterRows;
     int m_reportRetryMode = 0;
 };
 

@@ -37,7 +37,7 @@ public:
         if (!hasCompleteMatrix(request.evaluation.rows))
         {
             return failure(
-                "Speaking evaluation data must contain exactly 25 rows and 11 cells per row."
+                "Speaking evaluation data must contain 1 to 100 rows and 11 cells per row."
                 );
         }
 
@@ -45,7 +45,7 @@ public:
              : request.evaluation.changedCells)
         {
             if (change.row.rawValue() < 0
-                || change.row.rawValue() >= SpeakingEvaluationRowCount
+                || change.row.rawValue() >= SpeakingEvaluationMaximumRowCount
                 || change.column.rawValue() < 0
                 || change.column.rawValue() >= SpeakingEvaluationColumnCount)
             {
@@ -85,7 +85,9 @@ private:
         const std::vector<std::vector<std::u16string>>& rows
         )
     {
-        if (rows.size() != static_cast<std::size_t>(SpeakingEvaluationRowCount))
+        if (rows.empty()
+            || rows.size()
+                > static_cast<std::size_t>(SpeakingEvaluationMaximumRowCount))
         {
             return false;
         }

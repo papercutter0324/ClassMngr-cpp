@@ -77,7 +77,7 @@ public:
             const RepositoryResult<RosterWindowReadOutcome> loaded =
                 repository->loadRosterWindowDetailed(
                     *classId,
-                    static_cast<int>(Application::RosterModeledRowCount)
+                    query.rowLimit
                     );
             if (!loaded)
             {

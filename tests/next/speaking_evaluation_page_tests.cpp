@@ -1,4 +1,5 @@
 #include "data/database/workspace_store.h"
+#include "core/settingsmanager.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/settings_repository.h"
@@ -603,26 +604,41 @@ class SpeakingEvaluationPageTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase()
+    {
+        QVERIFY(m_settingsDirectory.isValid());
+        qputenv("CLASSMNGR_SETTINGS_ROOT",
+            m_settingsDirectory.path().toUtf8());
+    }
+
     void matrixIsFixedSizeTracksExactDeltaValidationAndUndo();
+    void rowPreferencesDisplayExtrasExtendAndRetainTailRows();
     void saveReopenPersistsUnicodeAndOnlyChangedCells();
     void largeNavigationUsesOneMatrixAndReleasesItOnSuspension();
     void selectionSaveDiscardAndFailureRetryPreserveDrafts();
     void saveOnSwitchPersistsBeforeLoadingAndFailureKeepsDraft();
     void automaticModeDebouncesAndSavesOnce();
     void rosterImportNotesAndValidationUseTypedRules();
+    void rosterNameImportUsesMaximumBeyondExtraDisplayRows();
     void aiPromptRetriesGradeReadAndPreservesConfiguredWebsiteFlow();
+    void aiPromptActionSupportsConfiguredRowThirty();
     void aiBatchIsBoundedOrderedAndCancelDoesNotEdit();
+    void aiBatchCandidateAtRowThirtyCanBeAppliedWithinOnePrompt();
     void aiBatchResponseRetryMapsCommentsToSourceRows();
-    void aiBatchRejectsOneHundredStudentsWithVisibleLimit();
+    void aiBatchAcceptsOneHundredCandidatesAndCapsEachPrompt();
     void reportContextUsesPathScopedWorkspaceStoreAndOmitsCredentials();
     void currentReportSaveAsPdfAndPrintActionsUseOutputEngine();
     void reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs();
+    void reportsRespectConfiguredMaximumForStoredTailRows();
     void batchCheckIndicatorMouseAndKeyboardEventsToggleSelection();
     void batchIncludeIndicatorsRenderCheckedAndUncheckedForAllThemes();
     void koreanLightUndoButtonShowsItsFullLabelAtCaptureSize();
     void workspaceStoreBatchApplySaveReopenPersistsComment();
     void capturesEnglishKoreanLightAndDarkPresentation();
     void capturesSpeakingEvaluationReportsForEnglishKoreanLightAndDark();
+
+private:
+    QTemporaryDir m_settingsDirectory;
 };
 
 void SpeakingEvaluationPageTests::
@@ -656,6 +672,32 @@ matrixIsFixedSizeTracksExactDeltaValidationAndUndo()
     page->findChild<QPushButton*>(QStringLiteral("speakingEvaluationUndo"))->click();
     QVERIFY(page->matrixModel()->isDirty());
     QCOMPARE(page->matrixModel()->cellText(0, 3), QStringLiteral("not-a-score"));
+}
+
+void SpeakingEvaluationPageTests::
+rowPreferencesDisplayExtrasExtendAndRetainTailRows()
+{
+    Ui::SpeakingEvaluationTableModel model;
+    model.setRowPreferences(
+        30, static_cast<int>(Application::RosterRowDisplayMode::Extra5));
+    QVERIFY(model.loadRows({}));
+    QCOMPARE(model.rowCount(), 5);
+
+    QVERIFY(model.setData(model.index(4, 1), QStringLiteral("Student A")));
+    QCOMPARE(model.rowCount(), 10);
+
+    std::vector<std::vector<std::u16string>> storedRows(40);
+    storedRows[30].resize(Application::SpeakingEvaluationColumnCount);
+    storedRows[30][1] = u"Tail Student";
+    model.setRowPreferences(
+        8, static_cast<int>(Application::RosterRowDisplayMode::Extra5));
+    QVERIFY(model.loadRows(storedRows));
+    QCOMPARE(model.rowCount(), 8);
+    const Application::SpeakingEvaluationSnapshot snapshot = model.snapshot();
+    QCOMPARE(snapshot.rows.size(),
+        static_cast<std::size_t>(
+            Application::SpeakingEvaluationMaximumRowCount));
+    QCOMPARE(snapshot.rows[30][1], std::u16string(u"Tail Student"));
 }
 
 void SpeakingEvaluationPageTests::saveReopenPersistsUnicodeAndOnlyChangedCells()
@@ -992,6 +1034,41 @@ void SpeakingEvaluationPageTests::rosterImportNotesAndValidationUseTypedRules()
 }
 
 void SpeakingEvaluationPageTests::
+rosterNameImportUsesMaximumBeyondExtraDisplayRows()
+{
+    FakeEvaluationState state;
+    state.roster.hasEnglishColumn = true;
+    state.roster.hasKoreanColumn = true;
+    for (int index = 0; index < 30; ++index)
+    {
+        std::u16string englishName = u"Student ";
+        for (const char digit : std::to_string(index + 1))
+        {
+            englishName.push_back(static_cast<char16_t>(digit));
+        }
+        state.roster.rows.push_back({
+            std::move(englishName), u"\uAE40\uBBFC\uC9C0"});
+    }
+
+    PageHarness harness;
+    QVERIFY(harness.initialize(state));
+    auto* const page = harness.page();
+    QVERIFY(page);
+    page->matrixModel()->setRowPreferences(
+        30, static_cast<int>(Application::RosterRowDisplayMode::Extra5));
+    QCOMPARE(page->matrixModel()->rowCount(), 5);
+
+    auto* const importButton = page->findChild<QPushButton*>(
+        QStringLiteral("speakingEvaluationImportNames"));
+    QVERIFY(importButton);
+    importButton->click();
+
+    QCOMPARE(page->matrixModel()->rowCount(), 30);
+    QCOMPARE(page->matrixModel()->cellText(29, 1), QStringLiteral("Student 30"));
+    QCOMPARE(page->matrixModel()->snapshot().changedCells.size(), std::size_t(60));
+}
+
+void SpeakingEvaluationPageTests::
 aiPromptRetriesGradeReadAndPreservesConfiguredWebsiteFlow()
 {
     FakeEvaluationState state;
@@ -1142,6 +1219,172 @@ aiBatchIsBoundedOrderedAndCancelDoesNotEdit()
     QCOMPARE(page->matrixModel()->snapshot().changedCells.size(), std::size_t(0));
 }
 
+void SpeakingEvaluationPageTests::aiPromptActionSupportsConfiguredRowThirty()
+{
+    FakeEvaluationState state;
+    auto rows = emptyEvaluation();
+    rows.resize(Application::SpeakingEvaluationMaximumRowCount,
+        std::vector<std::u16string>(Application::SpeakingEvaluationColumnCount));
+    rows[29][1] = u"Student Thirty";
+    rows[29][10] = u"[Did Well]\nClear ideas\n[Needs Improvement]\nAdd more detail";
+    state.evaluations[evaluationKey(classId(1), QStringLiteral("Winter"))] = rows;
+
+    PageHarness harness;
+    QVERIFY(harness.initialize(state));
+    auto* const page = harness.page();
+    QVERIFY(page);
+    page->matrixModel()->setRowPreferences(
+        Application::SpeakingEvaluationMaximumRowCount,
+        static_cast<int>(Application::RosterRowDisplayMode::AllRows));
+    page->tableView()->setCurrentIndex(page->matrixModel()->index(29, 9));
+    QVERIFY(page->aiCommentButton()->isEnabled());
+
+    bool dialogSeen = false;
+    bool promptCreated = false;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationAiPromptDialog*>(
+            qApp->activeModalWidget());
+        if (!dialog)
+        {
+            return;
+        }
+        dialogSeen = true;
+        promptCreated = !dialog->promptEditor()->toPlainText().isEmpty()
+            && dialog->promptEditor()->toPlainText().contains(
+                QStringLiteral("Clear ideas"));
+        dialog->reject();
+    });
+    page->aiCommentButton()->click();
+
+    QVERIFY(dialogSeen);
+    QVERIFY(promptCreated);
+    QVERIFY(!page->hasUnsavedChanges());
+}
+
+void SpeakingEvaluationPageTests::
+aiBatchCandidateAtRowThirtyCanBeAppliedWithinOnePrompt()
+{
+    FakeEvaluationState state;
+    auto rows = emptyEvaluation();
+    rows.resize(Application::SpeakingEvaluationMaximumRowCount,
+        std::vector<std::u16string>(Application::SpeakingEvaluationColumnCount));
+    for (int row = 0; row < 30; ++row)
+    {
+        rows[static_cast<std::size_t>(row)][1] = row == 29
+            ? u"Student Thirty"
+            : QStringLiteral("Student %1").arg(row + 1).toStdU16String();
+        rows[static_cast<std::size_t>(row)][10] =
+            u"[Did Well]\nClear ideas\n[Needs Improvement]\nAdd more detail";
+    }
+    state.evaluations[evaluationKey(classId(1), QStringLiteral("Winter"))] = rows;
+
+    PageHarness harness;
+    QVERIFY(harness.initialize(state));
+    auto* const page = harness.page();
+    QVERIFY(page);
+    page->matrixModel()->setRowPreferences(
+        Application::SpeakingEvaluationMaximumRowCount,
+        static_cast<int>(Application::RosterRowDisplayMode::AllRows));
+
+    bool dialogSeen = false;
+    bool rowThirtyWasSelectable = false;
+    bool selectionStayedBounded = false;
+    bool promptIncludedRowThirty = false;
+    bool responseMappedToRowThirty = false;
+    bool rowThirtyWasValid = false;
+    bool rowThirtyWasSelectedForApply = false;
+    const QString response = QStringLiteral(
+        "<<<STUDENT_30>>>\n"
+        "STD_NAME shared clear ideas during the lesson and used strong words with confidence. "
+        "Keep practicing past tense verbs so each answer sounds complete. "
+        "Your careful effort helps you improve and makes your speaking fun to hear.\n"
+        "<<<END_STUDENT_30>>>");
+
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationAiBatchDialog*>(
+            qApp->activeModalWidget());
+        if (!dialog)
+        {
+            return;
+        }
+        dialogSeen = true;
+        auto* const selection = dialog->selectionModel();
+        rowThirtyWasSelectable = selection->rowCount() == 30
+            && selection->isEligible(29)
+            && !selection->isSelected(29);
+        if (!rowThirtyWasSelectable)
+        {
+            dialog->reject();
+            return;
+        }
+        const int includeColumn =
+            Ui::SpeakingEvaluationAiBatchSelectionModel::IncludeColumn;
+        static_cast<void>(selection->setData(
+            selection->index(0, includeColumn), Qt::Unchecked,
+            Qt::CheckStateRole));
+        static_cast<void>(selection->setData(
+            selection->index(29, includeColumn), Qt::Checked,
+            Qt::CheckStateRole));
+        const std::vector<int> chosen = selection->selectedRows();
+        selectionStayedBounded = chosen.size()
+            == Application::kSpeakingEvaluationAiBatchMaximumStudents
+            && selection->isSelected(29);
+        dialog->createPromptButton()->click();
+        const QString prompt = dialog->promptEditor()->toPlainText();
+        promptIncludedRowThirty = prompt.contains(
+                QStringLiteral("Student ID: STUDENT_30"))
+            && prompt.count(QStringLiteral("Student ID:")) == 25;
+        dialog->responseEditor()->setPlainText(response);
+        dialog->parseButton()->click();
+        int rowThirtyReviewIndex = -1;
+        for (int reviewRow = 0;
+             reviewRow < dialog->reviewModel()->rowCount();
+             ++reviewRow)
+        {
+            const auto* const entry =
+                dialog->reviewModel()->entryAt(reviewRow);
+            if (entry && entry->sourceRow == 29)
+            {
+                rowThirtyReviewIndex = reviewRow;
+                rowThirtyWasValid = entry->valid;
+                break;
+            }
+        }
+        responseMappedToRowThirty =
+            dialog->reviewModel()->rowCount() == 25
+            && rowThirtyReviewIndex >= 0;
+        if (!promptIncludedRowThirty || !responseMappedToRowThirty
+            || !rowThirtyWasValid)
+        {
+            dialog->reject();
+            return;
+        }
+        rowThirtyWasSelectedForApply = dialog->reviewModel()->setData(
+            dialog->reviewModel()->index(
+                rowThirtyReviewIndex,
+                Ui::SpeakingEvaluationAiBatchReviewModel::ApplyColumn),
+            Qt::Checked,
+            Qt::CheckStateRole);
+        if (!rowThirtyWasSelectedForApply)
+        {
+            dialog->reject();
+            return;
+        }
+        dialog->applyButton()->click();
+    });
+    page->aiBatchCommentsButton()->click();
+
+    QVERIFY(dialogSeen);
+    QVERIFY(rowThirtyWasSelectable);
+    QVERIFY(selectionStayedBounded);
+    QVERIFY(promptIncludedRowThirty);
+    QVERIFY(responseMappedToRowThirty);
+    QVERIFY(rowThirtyWasValid);
+    QVERIFY(rowThirtyWasSelectedForApply);
+    QVERIFY(page->matrixModel()->cellText(29, 9).contains(
+        QStringLiteral("Student Thirty")));
+}
+
 void SpeakingEvaluationPageTests::
 aiBatchResponseRetryMapsCommentsToSourceRows()
 {
@@ -1249,7 +1492,7 @@ aiBatchResponseRetryMapsCommentsToSourceRows()
 }
 
 void SpeakingEvaluationPageTests::
-aiBatchRejectsOneHundredStudentsWithVisibleLimit()
+aiBatchAcceptsOneHundredCandidatesAndCapsEachPrompt()
 {
     std::vector<Ui::SpeakingEvaluationAiBatchStudent> students;
     students.reserve(100);
@@ -1258,9 +1501,11 @@ aiBatchRejectsOneHundredStudentsWithVisibleLimit()
         const QString id = QStringLiteral("STUDENT_%1")
             .arg(index + 1, 2, 10, QLatin1Char('0'));
         students.push_back({
-            .sourceRow = index % Application::SpeakingEvaluationRowCount,
+            .sourceRow = index,
             .id = id,
             .englishName = QStringLiteral("Student %1").arg(index + 1),
+            .didWell = QStringLiteral("Clear ideas"),
+            .needsImprovement = QStringLiteral("Add more detail"),
             .grade = Domain::CourseGradeBand::E4,
             .eligibilityReason =
                 Application::SpeakingEvaluationAiBatchEligibilityReason::Eligible
@@ -1271,12 +1516,47 @@ aiBatchRejectsOneHundredStudentsWithVisibleLimit()
         Application::AiCommentVoice::DirectToStudent,
         QStringLiteral("ChatGPT"),
         QUrl(QStringLiteral("https://chatgpt.com/")));
-    QCOMPARE(dialog.selectionModel()->rowCount(), 0);
-    QVERIFY(!dialog.createPromptButton()->isEnabled());
+    QCOMPARE(dialog.selectionModel()->rowCount(), 100);
+    QCOMPARE(dialog.selectionModel()->selectedRows().size(), std::size_t(25));
+    QVERIFY(!dialog.selectionModel()->isSelected(99));
+    QVERIFY(dialog.createPromptButton()->isEnabled());
     QVERIFY(dialog.findChild<QLabel*>(
         QStringLiteral("speakingEvaluationAiBatchStatus"))->text()
         .contains(QStringLiteral("25")));
-    QVERIFY(dialog.promptEditor()->toPlainText().isEmpty());
+    const int includeColumn = Ui::SpeakingEvaluationAiBatchSelectionModel::IncludeColumn;
+    QVERIFY(dialog.selectionModel()->setData(
+        dialog.selectionModel()->index(0, includeColumn), Qt::Unchecked,
+        Qt::CheckStateRole));
+    QVERIFY(dialog.selectionModel()->setData(
+        dialog.selectionModel()->index(99, includeColumn), Qt::Checked,
+        Qt::CheckStateRole));
+    QCOMPARE(dialog.selectionModel()->selectedRows().size(), std::size_t(25));
+    dialog.createPromptButton()->click();
+    const QString prompt = dialog.promptEditor()->toPlainText();
+    QVERIFY(prompt.contains(QStringLiteral("Student ID: STUDENT_100")));
+    QCOMPARE(prompt.count(QStringLiteral("Student ID:")), 25);
+    dialog.responseEditor()->setPlainText(QStringLiteral(
+        "<<<STUDENT_100>>>\n"
+        "STD_NAME shared clear ideas during the lesson and used strong words with confidence. "
+        "Keep practicing past tense verbs so each answer sounds complete. "
+        "Your careful effort helps you improve and makes your speaking fun to hear.\n"
+        "<<<END_STUDENT_100>>>"));
+    dialog.parseButton()->click();
+    QCOMPARE(dialog.reviewModel()->rowCount(), 25);
+    const Ui::SpeakingEvaluationAiBatchReviewModel::Entry* studentOneHundred =
+        nullptr;
+    for (int row = 0; row < dialog.reviewModel()->rowCount(); ++row)
+    {
+        const auto* const entry = dialog.reviewModel()->entryAt(row);
+        if (entry && entry->sourceRow == 99)
+        {
+            studentOneHundred = entry;
+            break;
+        }
+    }
+    QVERIFY(studentOneHundred);
+    QVERIFY(studentOneHundred->valid);
+    QCOMPARE(studentOneHundred->studentName, QStringLiteral("Student 100"));
 }
 
 void SpeakingEvaluationPageTests::
@@ -1637,6 +1917,102 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
     QCOMPARE(overwritePromptCount, 1);
     QCOMPARE(renderedNames.size(), rendererCallsBeforeOverwrite);
     QVERIFY(!QFileInfo::exists(stagingDirectories.constLast()));
+}
+
+void SpeakingEvaluationPageTests::
+reportsRespectConfiguredMaximumForStoredTailRows()
+{
+    auto& settings = SettingsManager::instance();
+    const int savedMaximumRows = settings.maximumRosterRows();
+    struct RestoreMaximumRows final
+    {
+        SettingsManager& settings;
+        int rows;
+        ~RestoreMaximumRows()
+        {
+            static_cast<void>(settings.writeMaximumRosterRowsPreference(rows));
+        }
+    } restore{settings, savedMaximumRows};
+
+    const QString workspacePath = QDir(qEnvironmentVariable(
+        "CLASSMNGR_SETTINGS_ROOT")).filePath(
+            QStringLiteral("tail-row-reports.tps"));
+    QByteArray signature;
+    QVERIFY(createReportContextWorkspace(workspacePath, &signature));
+    FakeEvaluationState state;
+    state.path = workspacePath;
+    auto rows = emptyEvaluation();
+    rows.resize(Application::SpeakingEvaluationMaximumRowCount,
+        std::vector<std::u16string>(Application::SpeakingEvaluationColumnCount));
+    rows[29][1] = u"Tail Student";
+    rows[29][2] = u"\uAE40\uBBFC\uC9C0";
+    state.evaluations[evaluationKey(classId(1), QStringLiteral("Winter"))] =
+        rows;
+    QVERIFY(settings.writeMaximumRosterRowsPreference(25));
+    {
+        PageHarness harness;
+        QVERIFY(harness.initialize(state));
+        Ui::SpeakingEvaluationPage* const page = harness.page();
+        QVERIFY(page);
+        QVERIFY(!page->reportsButton()->isEnabled());
+        QCOMPARE(page->matrixModel()->snapshot().rows[29][1],
+            std::u16string(u"Tail Student"));
+    }
+
+    QVERIFY(settings.writeMaximumRosterRowsPreference(100));
+    PageHarness harness;
+    QVERIFY(harness.initialize(state));
+    Ui::SpeakingEvaluationPage* const page = harness.page();
+    QVERIFY(page);
+    QVERIFY(page->reportsButton()->isEnabled());
+
+    bool reportDialogSeen = false;
+    int reportCount = -1;
+    int reportSourceRow = -1;
+    QString unexpectedModalClass;
+    QTimer dialogDriver;
+    dialogDriver.setInterval(10);
+    QObject::connect(&dialogDriver, &QTimer::timeout, [&]
+    {
+        auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationReportsDialog*>(
+            qApp->activeModalWidget());
+        if (!dialog)
+        {
+            if (QWidget* const modal = qApp->activeModalWidget())
+            {
+                unexpectedModalClass = QString::fromLatin1(
+                    modal->metaObject()->className());
+            }
+            return;
+        }
+        dialogDriver.stop();
+        reportDialogSeen = true;
+        reportCount = dialog->reports().size();
+        if (!dialog->reports().isEmpty())
+        {
+            reportSourceRow = dialog->reports().first().sourceRow;
+        }
+        dialog->reject();
+    });
+    QTimer safetyCloseTimer;
+    safetyCloseTimer.setSingleShot(true);
+    QObject::connect(&safetyCloseTimer, &QTimer::timeout, [&]
+    {
+        if (QWidget* const modal = qApp->activeModalWidget())
+        {
+            unexpectedModalClass = QString::fromLatin1(
+                modal->metaObject()->className());
+            modal->close();
+        }
+    });
+    dialogDriver.start();
+    safetyCloseTimer.start(5000);
+    page->reportsButton()->click();
+    safetyCloseTimer.stop();
+    dialogDriver.stop();
+    QVERIFY2(reportDialogSeen, qPrintable(unexpectedModalClass));
+    QCOMPARE(reportCount, 1);
+    QCOMPARE(reportSourceRow, 29);
 }
 
 void SpeakingEvaluationPageTests::

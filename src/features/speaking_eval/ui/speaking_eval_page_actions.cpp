@@ -1,4 +1,5 @@
 #include "speaking_eval_page_p.h"
+#include "core/settingsmanager.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
@@ -38,6 +39,7 @@ void SpeakingEvalPage::clearDatabaseState()
 void SpeakingEvalPage::retranslateUi()
 {
     updateHeaderText();
+    updateHiddenRowsNotice();
 
     if (m_emptyLabel)
     {
@@ -134,6 +136,21 @@ void SpeakingEvalPage::retranslateUi()
     }
 
     updateActions();
+}
+
+void SpeakingEvalPage::updateHiddenRowsNotice()
+{
+    if (!m_hiddenRowsNotice)
+    {
+        return;
+    }
+    m_hiddenRowsNotice->setText(
+        tr("Saved evaluation rows above %1 are hidden and preserved at their original row numbers. Increase the maximum row setting to view them.")
+            .arg(SettingsManager::instance().maximumRosterRows()));
+    m_hiddenRowsNotice->setVisible(
+        m_hasHiddenEvaluationRows
+        && m_classroom.id > 0
+        && m_hasSuccessfulEvaluationSnapshot);
 }
 
 void SpeakingEvalPage::importNames()
@@ -286,7 +303,9 @@ bool SpeakingEvalPage::hasReportStudents() const
         return false;
     }
 
-    for (const QStringList& row : m_model->rows())
+    const SpeakingEvalRows rows =
+        m_model->allRows().mid(0, m_model->maximumRows());
+    for (const QStringList& row : rows)
     {
         if (
             !row.value(
@@ -359,7 +378,7 @@ void SpeakingEvalPage::showReports()
 
     const QList<SpeakingEvalBatchReportService::StudentReport> reports =
         buildSpeakingEvalStudentReports(
-            m_model->rows(),
+            m_model->allRows().mid(0, m_model->maximumRows()),
             classInfo,
             signatureImage
             );
@@ -432,7 +451,7 @@ void SpeakingEvalPage::generateClassAiComments()
 
     const QList<SpeakingEvalBatchReportService::StudentReport> reports =
         buildSpeakingEvalStudentReports(
-            m_model->rows(),
+            m_model->allRows().mid(0, m_model->maximumRows()),
             classInfo
             );
     if (reports.isEmpty())
@@ -516,7 +535,7 @@ void SpeakingEvalPage::outputReports(
 
     const QList<SpeakingEvalBatchReportService::StudentReport> reports =
         buildSpeakingEvalStudentReports(
-            m_model->rows(),
+            m_model->allRows().mid(0, m_model->maximumRows()),
             classInfo,
             signatureImage
             );

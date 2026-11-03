@@ -6,7 +6,7 @@
 class RosterValidator final
 {
 public:
-    static constexpr qsizetype MaximumRows = 25;
+    static constexpr qsizetype MaximumRows = 100;
     static constexpr qsizetype MaximumColumnNameLength = 64;
     static constexpr qsizetype MaximumCellLength = 10000;
 

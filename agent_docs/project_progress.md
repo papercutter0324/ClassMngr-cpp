@@ -1,5 +1,28 @@
 # Project Progress
 
+## Current Work Handoff — configurable-roster-rows (implementation complete)
+
+Implemented configurable roster capacity across the Legacy and Next roster and
+Speaking Evaluation surfaces. The saved maximum defaults to 25 and ranges from
+1 to 100. A selection above 40 prompts for confirmation only while the saved
+maximum is 25 or lower. Display All Rows is the default; the other display
+choices keep 5, 10, 15, 20, or 25 blank rows after the last populated row.
+Hiding rows preserves the saved tail. Fixed paper templates retain their 25-
+and 23-student layouts and now warn before omitting populated rows.
+
+The clean isolated Ninja build completed all 873 steps; the current resource
+inventory check and all five updated translation builds passed. Feature-focused
+tests passed, including both row-30 AI flows, the 100-candidate/parser boundary,
+tail preservation, report limits, and print overflow warnings. Two stale test
+assumptions about a fixed 25-row transfer/save limit were updated and passed
+independent focused rechecks. Across split runs, 37 of 38 bounded tests passed;
+the remaining Next Bootstrap Qt header assertion also reproduces on unchanged
+`HEAD` `d9b94aa3` under Qt 6.12/MSVC 2022/offscreen, so it predates this change.
+The full 38-test set was not rerun after the two assertion updates. No commit or
+push was part of this task.
+
+## Formal Qt Rewrite Progress — Phase 7.5
+
 Active deployment plan: Qt Rewrite Phase 7.5 — Cross-Platform Follow-Ups.
 Current deployment: `phase75_windows_elevated_capture`. Route: Heavy, with
 Light used for the requested commit and push operations.

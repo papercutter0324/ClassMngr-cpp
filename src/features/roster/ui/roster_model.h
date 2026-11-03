@@ -3,6 +3,7 @@
 #include "domain/models/roster.h"
 #include "domain/validation/validation_result.h"
 #include "next/application/roster_column_projection.h"
+#include "next/application/roster_row_display_policy.h"
 
 #include <QAbstractTableModel>
 #include <QHash>
@@ -51,6 +52,14 @@ public:
     void setRoster(
         const Roster& roster
         );
+
+    void setRowPreferences(
+        int maximumRows,
+        int displayMode
+        );
+
+    [[nodiscard]] int maximumRows() const noexcept;
+    [[nodiscard]] int visibleRows() const noexcept;
 
     Roster toRoster() const;
 
@@ -185,6 +194,9 @@ private:
         const ClassMngr::Next::Application::RosterColumnProjection& projection
         );
 
+    [[nodiscard]] int calculateVisibleRows() const;
+    void refreshVisibleRows();
+
     QString normalizeCell(
         const QString& value,
         int column
@@ -235,6 +247,10 @@ private:
 private:
     QStringList m_columns;
     QList<QStringList> m_rows;
+    int m_maximumRows = ClassMngr::Next::Application::DefaultMaximumRosterRows;
+    int m_displayMode = static_cast<int>(
+        ClassMngr::Next::Application::RosterRowDisplayMode::AllRows);
+    int m_visibleRows = ClassMngr::Next::Application::DefaultMaximumRosterRows;
     QHash<QString, QStringList> m_validationErrors;
     QHash<QString, QStringList> m_domainValidationErrors;
     QSet<QString> m_duplicateNameErrorCells;

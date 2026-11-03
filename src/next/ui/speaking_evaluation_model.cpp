@@ -185,14 +185,16 @@ std::size_t SpeakingEvaluationClassListModel::summaryCount() const noexcept
 
 SpeakingEvaluationTableModel::SpeakingEvaluationTableModel(QObject* parent)
     : QAbstractTableModel(parent)
+    , m_visibleRows(m_maximumRows)
 {
+    m_visibleRows = calculateVisibleRows();
 }
 
 int SpeakingEvaluationTableModel::rowCount(const QModelIndex& parent) const
 {
     return parent.isValid() || !m_rows
         ? 0
-        : Application::SpeakingEvaluationRowCount;
+        : m_visibleRows;
 }
 
 int SpeakingEvaluationTableModel::columnCount(const QModelIndex& parent) const
@@ -208,7 +210,7 @@ QVariant SpeakingEvaluationTableModel::data(
     ) const
 {
     if (!m_rows || !index.isValid() || index.row() < 0
-        || index.row() >= Application::SpeakingEvaluationRowCount
+        || index.row() >= rowCount()
         || index.column() < 0
         || index.column() >= Application::SpeakingEvaluationColumnCount)
     {
@@ -283,7 +285,8 @@ QVariant SpeakingEvaluationTableModel::headerData(
     }
     if (orientation == Qt::Vertical)
     {
-        return section >= 0 && section < Application::SpeakingEvaluationRowCount
+        return section >= 0
+                && section < Application::SpeakingEvaluationMaximumRowCount
             ? QVariant(section + 1)
             : QVariant{};
     }
@@ -304,7 +307,9 @@ bool SpeakingEvaluationTableModel::loadRows(
     const std::vector<std::vector<std::u16string>>& rows
     )
 {
-    if (rows.size() > static_cast<std::size_t>(Application::SpeakingEvaluationRowCount)
+    if (rows.size()
+            > static_cast<std::size_t>(
+                Application::SpeakingEvaluationMaximumRowCount)
         || std::ranges::any_of(rows, [](const auto& row) {
             return row.size()
                 > static_cast<std::size_t>(Application::SpeakingEvaluationColumnCount);
@@ -315,8 +320,9 @@ bool SpeakingEvaluationTableModel::loadRows(
 
     beginResetModel();
     std::vector<QStringList> matrix;
-    matrix.reserve(Application::SpeakingEvaluationRowCount);
-    for (int rowIndex = 0; rowIndex < Application::SpeakingEvaluationRowCount;
+    matrix.reserve(Application::SpeakingEvaluationMaximumRowCount);
+    for (int rowIndex = 0;
+         rowIndex < Application::SpeakingEvaluationMaximumRowCount;
          ++rowIndex)
     {
         QStringList row;
@@ -337,11 +343,40 @@ bool SpeakingEvaluationTableModel::loadRows(
         matrix.push_back(std::move(row));
     }
     m_rows.emplace(std::move(matrix));
+    m_visibleRows = calculateVisibleRows();
     m_originalValues.clear();
     m_cellErrors.clear();
     m_issues.clear();
     endResetModel();
     return true;
+}
+
+void SpeakingEvaluationTableModel::setRowPreferences(
+    const int maximumRows,
+    const int displayMode
+    )
+{
+    const int safeMaximum = Application::isValidMaximumRosterRows(maximumRows)
+        ? maximumRows
+        : Application::DefaultMaximumRosterRows;
+    const int safeDisplayMode = Application::isValidRosterRowDisplayMode(displayMode)
+        ? displayMode
+        : static_cast<int>(Application::RosterRowDisplayMode::AllRows);
+    if (safeMaximum == m_maximumRows && safeDisplayMode == m_displayMode)
+    {
+        return;
+    }
+
+    beginResetModel();
+    m_maximumRows = safeMaximum;
+    m_displayMode = safeDisplayMode;
+    m_visibleRows = calculateVisibleRows();
+    endResetModel();
+}
+
+int SpeakingEvaluationTableModel::maximumRows() const noexcept
+{
+    return m_maximumRows;
 }
 
 void SpeakingEvaluationTableModel::clear()
@@ -374,7 +409,7 @@ void SpeakingEvaluationTableModel::setValidationIssues(
     {
         const int row = issue.row.rawValue();
         const int column = issue.column.rawValue();
-        if (row < 0 || row >= Application::SpeakingEvaluationRowCount
+        if (row < 0 || row >= Application::SpeakingEvaluationMaximumRowCount
             || column < 0 || column >= Application::SpeakingEvaluationColumnCount)
         {
             continue;
@@ -385,7 +420,7 @@ void SpeakingEvaluationTableModel::setValidationIssues(
     {
         emit dataChanged(
             index(0, 0),
-            index(Application::SpeakingEvaluationRowCount - 1,
+            index(m_visibleRows - 1,
                 Application::SpeakingEvaluationColumnCount - 1),
             {Qt::ToolTipRole, Qt::BackgroundRole});
     }
@@ -401,7 +436,7 @@ void SpeakingEvaluationTableModel::retranslate()
     {
         emit dataChanged(
             index(0, 0),
-            index(Application::SpeakingEvaluationRowCount - 1,
+            index(m_visibleRows - 1,
                 Application::SpeakingEvaluationColumnCount - 1),
             {Qt::ToolTipRole});
     }
@@ -453,7 +488,7 @@ QString SpeakingEvaluationTableModel::cellText(
     const int column
     ) const
 {
-    if (!m_rows || row < 0 || row >= Application::SpeakingEvaluationRowCount
+    if (!m_rows || row < 0 || row >= Application::SpeakingEvaluationMaximumRowCount
         || column < 0 || column >= Application::SpeakingEvaluationColumnCount)
     {
         return {};
@@ -475,7 +510,7 @@ bool SpeakingEvaluationTableModel::setCellValue(
     QString value
     )
 {
-    if (!m_rows || row < 0 || row >= Application::SpeakingEvaluationRowCount
+    if (!m_rows || row < 0 || row >= rowCount()
         || column <= 0 || column >= Application::SpeakingEvaluationColumnCount)
     {
         return false;
@@ -504,7 +539,7 @@ void SpeakingEvaluationTableModel::applyCommandValue(
     const QString& value
     )
 {
-    if (!m_rows || row < 0 || row >= Application::SpeakingEvaluationRowCount
+    if (!m_rows || row < 0 || row >= Application::SpeakingEvaluationMaximumRowCount
         || column <= 0 || column >= Application::SpeakingEvaluationColumnCount)
     {
         return;
@@ -527,10 +562,52 @@ void SpeakingEvaluationTableModel::applyCommandValue(
     {
         m_originalValues.erase(original);
     }
+    refreshVisibleRows();
     emit dataChanged(
         index(row, column),
         index(row, column),
         {Qt::DisplayRole, Qt::EditRole, Qt::ToolTipRole, Qt::BackgroundRole});
+}
+
+int SpeakingEvaluationTableModel::calculateVisibleRows() const
+{
+    int lastNonBlankRowCount = 0;
+    if (m_rows)
+    {
+        for (int row = 0; row < static_cast<int>(m_rows->size()); ++row)
+        {
+            if (std::ranges::any_of(
+                    m_rows->at(static_cast<std::size_t>(row)),
+                    [](const QString& value)
+                    {
+                        return !value.trimmed().isEmpty();
+                    }))
+            {
+                lastNonBlankRowCount = row + 1;
+            }
+        }
+    }
+    return Application::visibleRosterRowCount(
+        m_maximumRows,
+        static_cast<Application::RosterRowDisplayMode>(m_displayMode),
+        lastNonBlankRowCount);
+}
+
+void SpeakingEvaluationTableModel::refreshVisibleRows()
+{
+    const int nextVisibleRows = calculateVisibleRows();
+    if (nextVisibleRows > m_visibleRows)
+    {
+        beginInsertRows({}, m_visibleRows, nextVisibleRows - 1);
+        m_visibleRows = nextVisibleRows;
+        endInsertRows();
+    }
+    else if (nextVisibleRows < m_visibleRows)
+    {
+        beginRemoveRows({}, nextVisibleRows, m_visibleRows - 1);
+        m_visibleRows = nextVisibleRows;
+        endRemoveRows();
+    }
 }
 
 QString SpeakingEvaluationTableModel::normalizedValue(

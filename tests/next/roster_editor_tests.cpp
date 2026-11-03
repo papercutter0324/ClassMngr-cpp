@@ -737,6 +737,7 @@ class NextRosterEditorTests final : public QObject
 
 private slots:
     void editorLoadsOnDemandAndUsesOnlyActiveCellEditors();
+    void modelDisplayModeShowsExtraRowsAndExtendsOnEdit();
     void emptyRosterAndReadFailureHaveDifferentStatesAndNoFailureWrite();
     void automaticManualAndFailedSaveRetryRetainLatestDraft();
     void discardReloadsVisibleWindowAndClearsDraft();
@@ -836,6 +837,21 @@ void NextRosterEditorTests::editorLoadsOnDemandAndUsesOnlyActiveCellEditors()
     QCOMPARE(editor.model()->rowCount(), 25);
     QCOMPARE(editor.model()->columnCount(), 6);
     QVERIFY(editor.model()->data(editor.model()->index(0, 0)).toString().isEmpty());
+}
+
+void NextRosterEditorTests::modelDisplayModeShowsExtraRowsAndExtendsOnEdit()
+{
+    Ui::RosterTableModel model;
+    model.setRowPreferences(
+        30,
+        static_cast<int>(Application::RosterRowDisplayMode::Extra5));
+    model.setRoster(emptyRosterSnapshot());
+    QCOMPARE(model.rowCount(), 5);
+
+    QVERIFY(model.setData(model.index(4, 0), QStringLiteral("Student A")));
+    QCOMPARE(model.rowCount(), 10);
+    QVERIFY(model.setData(model.index(9, 0), QStringLiteral("Student B")));
+    QCOMPARE(model.rowCount(), 15);
 }
 
 void NextRosterEditorTests::emptyRosterAndReadFailureHaveDifferentStatesAndNoFailureWrite()
@@ -1714,8 +1730,19 @@ pathRosterWorkflowActionsStayScopedAndPairSaveIsAtomic()
                 QStringView(right.data(), static_cast<qsizetype>(right.size())),
                 Qt::CaseInsensitive) == 0;
         });
-    QVERIFY(std::holds_alternative<Application::RosterRowTransferSuccess>(
-        transferred));
+    QString transferFailure;
+    if (const auto* operationError = std::get_if<Domain::OperationError>(
+            &transferred))
+    {
+        transferFailure = QString::fromStdString(operationError->message);
+    }
+    else
+    {
+        transferFailure = QStringLiteral("Unexpected result variant %1")
+            .arg(static_cast<int>(transferred.index()));
+    }
+    QVERIFY2(std::holds_alternative<Application::RosterRowTransferSuccess>(
+        transferred), qPrintable(transferFailure));
     QCOMPARE(storedCell(profileA, idsA.source, 0, 0).value(),
         QStringLiteral("Student B"));
     QCOMPARE(storedCell(profileA, idsA.target, 0, 0).value(),

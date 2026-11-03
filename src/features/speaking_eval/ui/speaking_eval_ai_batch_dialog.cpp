@@ -249,10 +249,7 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
 
     auto* selectionLabel =
         new QLabel(
-            tr(
-                "Select students. Eligible students without comments are "
-                "selected automatically."
-                ),
+            tr("Eligible students without comments are selected automatically, up to 25. Each prompt includes at most 25 students; deselect students to choose another group."),
             promptPage
             );
     selectionLabel->setWordWrap(true);
@@ -293,6 +290,7 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
     m_selectionTable->setMinimumHeight(230);
     promptLayout->addWidget(m_selectionTable);
 
+    int automaticallySelected = 0;
     for (int row = 0; row < m_reports.size(); ++row)
     {
         const auto& report =
@@ -321,9 +319,16 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
             );
         includeItem->setCheckState(
             eligible && !hasComment
+                    && automaticallySelected
+                        < static_cast<int>(ClassMngr::Next::Application::
+                            kSpeakingEvaluationAiBatchMaximumStudents)
                 ? Qt::Checked
                 : Qt::Unchecked
             );
+        if (includeItem->checkState() == Qt::Checked)
+        {
+            ++automaticallySelected;
+        }
         if (!eligible)
         {
             includeItem->setFlags(
@@ -353,6 +358,12 @@ SpeakingEvalAiBatchDialog::SpeakingEvalAiBatchDialog(
                 )
             );
     }
+
+    m_selectionStatus = new QLabel(promptPage);
+    m_selectionStatus->setObjectName(
+        QStringLiteral("speakingEvalAiBatchSelectionStatus"));
+    m_selectionStatus->setWordWrap(true);
+    promptLayout->addWidget(m_selectionStatus);
 
     m_createPromptButton =
         new TextFitPushButton(
@@ -643,6 +654,7 @@ void SpeakingEvalAiBatchDialog::resetGeneratedContent()
 void SpeakingEvalAiBatchDialog::updateCreatePromptButton()
 {
     bool hasSelection = false;
+    int selectedCount = 0;
     for (int row = 0; row < m_selectionTable->rowCount(); ++row)
     {
         const QTableWidgetItem* item =
@@ -656,10 +668,17 @@ void SpeakingEvalAiBatchDialog::updateCreatePromptButton()
             )
         {
             hasSelection = true;
-            break;
+            ++selectedCount;
         }
     }
-    m_createPromptButton->setEnabled(hasSelection);
+    m_selectionStatus->setText(
+        tr("%1 of %2 students selected. Each prompt is limited to 25 students; deselect students to choose another group.")
+            .arg(selectedCount)
+            .arg(m_reports.size()));
+    m_createPromptButton->setEnabled(
+        hasSelection
+        && selectedCount <= static_cast<int>(ClassMngr::Next::Application::
+            kSpeakingEvaluationAiBatchMaximumStudents));
 }
 
 void SpeakingEvalAiBatchDialog::createPrompt()
@@ -681,6 +700,22 @@ void SpeakingEvalAiBatchDialog::createPrompt()
     }
 
     m_selectedReportIndexes.clear();
+    int selectedCount = 0;
+    for (int row = 0; row < m_selectionTable->rowCount(); ++row)
+    {
+        const QTableWidgetItem* const item = m_selectionTable->item(
+            row, SelectionIncludeColumn);
+        if (item && item->checkState() == Qt::Checked)
+        {
+            ++selectedCount;
+        }
+    }
+    if (selectedCount == 0
+        || selectedCount > static_cast<int>(ClassMngr::Next::Application::
+            kSpeakingEvaluationAiBatchMaximumStudents))
+    {
+        return;
+    }
     for (int row = 0; row < m_selectionTable->rowCount(); ++row)
     {
         const QTableWidgetItem* item =

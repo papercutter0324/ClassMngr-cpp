@@ -3,6 +3,7 @@
 #include "ui/shared/pages/autosave_coordinator.h"
 
 #include "core/application_services.h"
+#include "core/settingsmanager.h"
 #include "app/services/feature_services.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "features/roster/ui/roster_model.h"
@@ -602,7 +603,8 @@ void RosterEditorWidget::transferRosterRow(
     ClassMngr::Next::Platform::ApplicationServicesRosterWindowReadPort
         windowReadPort(m_services);
     ClassMngr::Next::Application::RosterWindowAsRosterReadPort readPort(
-        windowReadPort
+        windowReadPort,
+        SettingsManager::instance().maximumRosterRows()
         );
     ClassMngr::Next::Platform::ApplicationServicesRosterRowTransferSavePort savePort(
         m_services);

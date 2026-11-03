@@ -189,7 +189,7 @@ WorkspaceStoreSpeakingEvaluationReadPort::readEvaluation(
             .evaluationName = query.evaluationName,
             .rows = {}
         };
-        snapshot.rows.reserve(25);
+        snapshot.rows.reserve(SpeakingEval::MaximumRowCount);
         const auto loaded = repository->forEachSpeakingEvalRowDetailed(
             *classId,
             qtText(query.evaluationName),

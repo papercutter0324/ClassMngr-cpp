@@ -3,6 +3,7 @@
 #include "domain/models/roster.h"
 #include "next/application/roster_evaluation_column_policy.h"
 #include "next/application/roster_row_availability.h"
+#include "next/application/roster_row_display_policy.h"
 
 #include <QColor>
 #include <QString>
@@ -16,6 +17,8 @@ namespace RosterUi
 inline constexpr int RowCount = static_cast<int>(
     ClassMngr::Next::Application::RosterModeledRowCount
     );
+inline constexpr int MaximumRowCount =
+    ClassMngr::Next::Application::MaximumRosterRows;
 inline constexpr int RowHeight = 50;
 inline constexpr int HeaderGroupsHeight = 40;
 inline constexpr int HeaderColumnHeight = 30;

@@ -12,6 +12,7 @@ namespace ClassMngr::Next::Application
 // RosterModel displays this many rows, and transfer capacity uses the same
 // modeled range.
 inline constexpr std::size_t RosterModeledRowCount = 25;
+inline constexpr std::size_t RosterMaximumRowCount = 100;
 
 class RosterFirstEmptyRowIndex final
 {

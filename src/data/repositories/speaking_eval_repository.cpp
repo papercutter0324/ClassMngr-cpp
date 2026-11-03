@@ -379,7 +379,10 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
         }
     }
 
-    for (int row = 0; row < SpeakingEval::RowCount; ++row)
+    const int ensuredRowCount = std::min(
+        SpeakingEval::MaximumRowCount,
+        std::max(SpeakingEval::RowCount, static_cast<int>(rows.size())));
+    for (int row = 0; row < ensuredRowCount; ++row)
     {
         query.prepare(R"(
             INSERT OR IGNORE INTO speaking_eval_data (
@@ -479,7 +482,7 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
 
     if (cellsToUpdate.isEmpty())
     {
-        for (int row = 0; row < SpeakingEval::RowCount; ++row)
+        for (int row = 0; row < rows.size(); ++row)
         {
             for (int column = 0; column < SpeakingEval::ColumnCount; ++column)
             {
@@ -492,7 +495,7 @@ SpeakingEvalRepository::saveSpeakingEvalInternal(
     {
         if (
             cell.row < 0
-            || cell.row >= SpeakingEval::RowCount
+            || cell.row >= SpeakingEval::MaximumRowCount
             || cell.column < 0
             || cell.column >= SpeakingEval::ColumnCount
             )

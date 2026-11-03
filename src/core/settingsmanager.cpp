@@ -1,5 +1,7 @@
 #include "settingsmanager.h"
 
+#include "next/application/roster_row_display_policy.h"
+
 #include <QDir>
 #include <QtGlobal>
 
@@ -52,6 +54,57 @@ std::unique_ptr<QSettings> createSettings()
             ),
         QSettings::IniFormat
         );
+}
+
+bool writeCheckedIntegerPreference(
+    std::unique_ptr<QSettings>& settings,
+    const QString& key,
+    const int value,
+    const SettingsManager::RosterRowPreferenceSync& synchronize
+    )
+{
+    if (settings->status() != QSettings::NoError)
+    {
+        std::unique_ptr<QSettings> recoveredSettings = createSettings();
+        (void) recoveredSettings->value(key);
+        if (recoveredSettings->status() != QSettings::NoError)
+        {
+            return false;
+        }
+        settings = std::move(recoveredSettings);
+    }
+
+    const bool hadPreviousValue = settings->contains(key);
+    const QVariant previousValue = settings->value(key);
+    settings->setValue(key, value);
+
+    QSettings::Status status = QSettings::NoError;
+    if (synchronize)
+    {
+        status = synchronize(*settings);
+    }
+    else
+    {
+        settings->sync();
+        status = settings->status();
+    }
+
+    if (status == QSettings::NoError)
+    {
+        return true;
+    }
+
+    if (hadPreviousValue)
+    {
+        settings->setValue(key, previousValue);
+    }
+    else
+    {
+        settings->remove(key);
+    }
+    settings.reset();
+    settings = createSettings();
+    return false;
 }
 }
 
@@ -1038,6 +1091,70 @@ QSettings::Status SettingsManager::writeExcelImportTimeoutPreference(
     }
 
     return status;
+}
+
+int SettingsManager::maximumRosterRows() const
+{
+    bool valid = false;
+    const int rows = get(
+        Keys::MAXIMUM_ROSTER_ROWS,
+        ClassMngr::Next::Application::DefaultMaximumRosterRows
+        ).toInt(&valid);
+    return valid
+            && ClassMngr::Next::Application::isValidMaximumRosterRows(rows)
+        ? rows
+        : ClassMngr::Next::Application::DefaultMaximumRosterRows;
+}
+
+int SettingsManager::rosterRowDisplayMode() const
+{
+    bool valid = false;
+    const int mode = get(
+        Keys::ROSTER_ROW_DISPLAY_MODE,
+        static_cast<int>(
+            ClassMngr::Next::Application::RosterRowDisplayMode::AllRows
+            )
+        ).toInt(&valid);
+    return valid
+            && ClassMngr::Next::Application::isValidRosterRowDisplayMode(mode)
+        ? mode
+        : static_cast<int>(
+            ClassMngr::Next::Application::RosterRowDisplayMode::AllRows
+            );
+}
+
+bool SettingsManager::writeMaximumRosterRowsPreference(
+    const int rows,
+    const RosterRowPreferenceSync& synchronize
+    )
+{
+    if (!ClassMngr::Next::Application::isValidMaximumRosterRows(rows))
+    {
+        return false;
+    }
+    return writeCheckedIntegerPreference(
+        m_settings,
+        QString::fromUtf8(Keys::MAXIMUM_ROSTER_ROWS),
+        rows,
+        synchronize
+        );
+}
+
+bool SettingsManager::writeRosterRowDisplayModePreference(
+    const int mode,
+    const RosterRowPreferenceSync& synchronize
+    )
+{
+    if (!ClassMngr::Next::Application::isValidRosterRowDisplayMode(mode))
+    {
+        return false;
+    }
+    return writeCheckedIntegerPreference(
+        m_settings,
+        QString::fromUtf8(Keys::ROSTER_ROW_DISPLAY_MODE),
+        mode,
+        synchronize
+        );
 }
 
 // =========================================================

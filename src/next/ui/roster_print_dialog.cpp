@@ -1,5 +1,6 @@
 #include "next/ui/roster_print_dialog.h"
 #include "ui/shared/printing/pdf_print_service.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QComboBox>
 #include <QCoreApplication>
@@ -161,6 +162,28 @@ QString RosterPrintDialog::generate()
     const auto selected = request();
     if (selected.extraColumns.size() > RosterTemplateRenderer::perClassExtraInfoMaxExtraColumns(selected.orientation))
     { showResult({DocumentOutputStatus::Failed, text("Too many extra columns for the selected orientation.")}); return {}; }
+    if (m_actions.inspectTruncation)
+    {
+        const auto summary = m_actions.inspectTruncation(m_path, selected);
+        if (!summary)
+        {
+            showResult({DocumentOutputStatus::Failed, summary.error()});
+            return {};
+        }
+        if (summary->requiresConfirmation()
+            && DialogServices::confirm(
+                this,
+                text("Confirm Roster Output"),
+                text("This layout can include %1 of %2 students across the selected rosters. %3 students will not appear in the output. Continue?")
+                    .arg(summary->includedStudents)
+                    .arg(summary->totalStudents)
+                    .arg(summary->omittedStudents()),
+                text("Proceed"),
+                text("Cancel")) != PromptChoice::Accepted)
+        {
+            return {};
+        }
+    }
     const auto path = m_temporary.filePath(QStringLiteral("Rosters.pdf"));
     const auto result = m_actions.savePdf(m_path, selected, path, m_actions.fonts);
     showResult(result); return result.status == DocumentOutputStatus::Sent ? path : QString{};

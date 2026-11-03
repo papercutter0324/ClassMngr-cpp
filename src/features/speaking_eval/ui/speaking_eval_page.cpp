@@ -1,4 +1,5 @@
 #include "speaking_eval_page_p.h"
+#include "core/settingsmanager.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/classes_navigation_snapshot.h"
 #include "next/platform/application_services_classes_list_read_port.h"
@@ -10,6 +11,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <charconv>
+#include <algorithm>
 #include <string>
 #include <system_error>
 #include <utility>
@@ -287,6 +289,12 @@ void SpeakingEvalPage::loadEvaluationData(
     m_evaluationName =
         evaluationName;
 
+    m_model->setRowPreferences(
+        SettingsManager::instance().maximumRosterRows(),
+        SettingsManager::instance().rosterRowDisplayMode());
+    m_hasHiddenEvaluationRows = false;
+    updateHiddenRowsNotice();
+
     SpeakingEvalRows rows;
     bool readSucceeded = false;
 
@@ -344,11 +352,29 @@ void SpeakingEvalPage::loadEvaluationData(
     {
         if (rows.isEmpty())
         {
-            rows = SpeakingEval::emptyRows();
+            rows = SpeakingEval::emptyRows(
+                SettingsManager::instance().maximumRosterRows());
+        }
+
+        const int maximumRows = SettingsManager::instance().maximumRosterRows();
+        for (int row = maximumRows; row < rows.size(); ++row)
+        {
+            if (std::any_of(
+                    rows[row].cbegin(),
+                    rows[row].cend(),
+                    [](const QString& value)
+                    {
+                        return !value.trimmed().isEmpty();
+                    }))
+            {
+                m_hasHiddenEvaluationRows = true;
+                break;
+            }
         }
 
         m_hasSuccessfulEvaluationSnapshot = true;
         m_evaluationReadFailed = false;
+        updateHiddenRowsNotice();
         if (m_undoStack)
         {
             m_undoStack->clear();
@@ -365,6 +391,7 @@ void SpeakingEvalPage::loadEvaluationData(
         if (!sameEvaluation || !m_hasSuccessfulEvaluationSnapshot)
         {
             m_hasSuccessfulEvaluationSnapshot = false;
+            updateHiddenRowsNotice();
             if (m_undoStack)
             {
                 m_undoStack->clear();
@@ -379,6 +406,7 @@ void SpeakingEvalPage::loadEvaluationData(
     {
         m_hasSuccessfulEvaluationSnapshot = false;
         m_evaluationReadFailed = false;
+        updateHiddenRowsNotice();
         if (m_undoStack)
         {
             m_undoStack->clear();

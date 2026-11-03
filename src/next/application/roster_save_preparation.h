@@ -183,7 +183,7 @@ struct RosterSavePreparation final
         );
 }
 
-inline constexpr std::size_t RosterSaveMaximumRows = RosterModeledRowCount;
+inline constexpr std::size_t RosterSaveMaximumRows = RosterMaximumRowCount;
 inline constexpr std::size_t RosterSaveMaximumColumnNameLength =
     RosterMaximumColumnNameLength;
 inline constexpr std::size_t RosterSaveMaximumCellLength = 10000;

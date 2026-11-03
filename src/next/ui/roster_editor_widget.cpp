@@ -1,6 +1,7 @@
 #include "next/ui/roster_print_dialog.h"
 #include "next/ui/roster_editor_widget.h"
 
+#include "core/settingsmanager.h"
 #include "next/application/roster_save_preparation.h"
 #include "next/application/roster_evaluation_column_policy.h"
 #include "next/application/roster_row_availability.h"
@@ -889,6 +890,9 @@ bool RosterEditorWidget::reload()
     }
 
     m_loading = true;
+    m_model->setRowPreferences(
+        SettingsManager::instance().maximumRosterRows(),
+        SettingsManager::instance().rosterRowDisplayMode());
     m_model->setRoster(loaded.value().roster);
     m_hasSourceEnglishColumn = hasRosterColumn(
         loaded.value().roster, QStringLiteral("English"));
@@ -925,7 +929,10 @@ bool RosterEditorWidget::reload()
     }
     m_table->verticalHeader()->setDefaultSectionSize(50);
     m_overflowLabel->setText(m_hasRowsOutsideWindow
-        ? text("This roster has saved rows after row 25. They remain stored at their original row numbers.")
+        ? QCoreApplication::translate(
+                "NextRosterEditor",
+                "This roster has saved rows after row %1. They remain stored at their original row numbers.")
+            .arg(SettingsManager::instance().maximumRosterRows())
         : QString{});
     m_overflowLabel->setVisible(m_hasRowsOutsideWindow);
     updateStatus({}, false);
@@ -1079,7 +1086,10 @@ void RosterEditorWidget::removeColumn()
     if (!m_actions.columnHasTailData || !m_databasePath || !m_classId)
     {
         QMessageBox::warning(this, text("Cannot Remove Column"),
-            text("Stored rows after row 25 could not be checked. The column was not removed."));
+            QCoreApplication::translate(
+                "NextRosterEditor",
+                "Stored rows after row %1 could not be checked. The column was not removed.")
+                .arg(SettingsManager::instance().maximumRosterRows()));
         return;
     }
     const Domain::Result<bool> tail = m_actions.columnHasTailData(
@@ -1087,14 +1097,24 @@ void RosterEditorWidget::removeColumn()
     if (!tail)
     {
         QMessageBox::warning(this, text("Cannot Remove Column"),
-            text("Stored rows after row 25 could not be checked. The column was not removed."));
+            QCoreApplication::translate(
+                "NextRosterEditor",
+                "Stored rows after row %1 could not be checked. The column was not removed.")
+                .arg(SettingsManager::instance().maximumRosterRows()));
         return;
     }
     if (tail.value())
     {
         const auto tailResponse = QMessageBox::warning(this,
-            text("Remove Column Data After Row 25?"),
-            text("The \"%1\" column has stored data after row 25. Removing it will also delete that data.").arg(*name),
+            QCoreApplication::translate(
+                "NextRosterEditor",
+                "Remove Column Data After Row %1?")
+                .arg(SettingsManager::instance().maximumRosterRows()),
+            QCoreApplication::translate(
+                "NextRosterEditor",
+                "The \"%1\" column has stored data after row %2. Removing it will also delete that data.")
+                .arg(*name)
+                .arg(SettingsManager::instance().maximumRosterRows()),
             QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel);
         if (tailResponse != QMessageBox::Yes)
         {
@@ -1423,7 +1443,9 @@ bool RosterEditorWidget::transferStudentToClass(
     };
     CallbackRosterWindowReadPort windowReadPort(*m_databasePath,
         m_actions.readRoster);
-    const Application::RosterWindowAsRosterReadPort readPort(windowReadPort);
+    const Application::RosterWindowAsRosterReadPort readPort(
+        windowReadPort,
+        SettingsManager::instance().maximumRosterRows());
     CallbackRosterTransferSavePort savePort(*m_databasePath,
         m_actions.saveRosterTransfer);
     const RosterEditorTransferConfirmationPort confirmationPort(this);

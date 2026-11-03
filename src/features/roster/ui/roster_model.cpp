@@ -5,6 +5,7 @@
 
 #include <string>
 #include <string_view>
+#include <algorithm>
 #include <utility>
 #include <vector>
 
@@ -65,6 +66,7 @@ RosterModel::RosterModel(
     QObject* parent
     )
     : QAbstractTableModel(parent)
+    , m_visibleRows(m_maximumRows)
 {
     Roster roster;
     setRoster(roster);
@@ -79,7 +81,7 @@ int RosterModel::rowCount(
         return 0;
     }
 
-    return RosterUi::RowCount;
+    return m_visibleRows;
 }
 
 int RosterModel::columnCount(
@@ -106,7 +108,7 @@ QVariant RosterModel::data(
 
     if (
         index.row() < 0
-        || index.row() >= m_rows.size()
+        || index.row() >= rowCount()
         || index.column() < 0
         || index.column() >= m_columns.size()
         )
@@ -151,7 +153,7 @@ bool RosterModel::setData(
         role != Qt::EditRole
         || !index.isValid()
         || index.row() < 0
-        || index.row() >= m_rows.size()
+        || index.row() >= rowCount()
         || index.column() < 0
         || index.column() >= m_columns.size()
         )
@@ -195,6 +197,11 @@ bool RosterModel::setData(
         );
     validateDuplicateNames();
 
+    if (changed)
+    {
+        refreshVisibleRows();
+    }
+
     const bool validationChanged =
         oldErrors != m_validationErrors;
 
@@ -203,15 +210,18 @@ bool RosterModel::setData(
         return false;
     }
 
-    emit dataChanged(
-        index,
-        index,
-        {
-            Qt::DisplayRole,
-            Qt::EditRole,
-            Qt::ToolTipRole
-        }
-        );
+    if (index.row() < rowCount())
+    {
+        emit dataChanged(
+            index,
+            index,
+            {
+                Qt::DisplayRole,
+                Qt::EditRole,
+                Qt::ToolTipRole
+            }
+            );
+    }
 
     if (changed)
     {
@@ -314,6 +324,7 @@ void RosterModel::setRoster(
     }
 
     rebuildRows(roster, projection);
+    m_visibleRows = calculateVisibleRows();
     validateAll();
     m_domainValidationErrors.clear();
 
@@ -329,9 +340,94 @@ Roster RosterModel::toRoster() const
 {
     Roster roster;
     roster.columns = m_columns;
-    roster.rows = m_rows;
+    roster.rows = m_rows.mid(0, m_visibleRows);
 
     return roster;
+}
+
+void RosterModel::setRowPreferences(
+    const int maximumRows,
+    const int displayMode
+    )
+{
+    const int safeMaximum =
+        ClassMngr::Next::Application::isValidMaximumRosterRows(maximumRows)
+            ? maximumRows
+            : ClassMngr::Next::Application::DefaultMaximumRosterRows;
+    const int safeDisplayMode =
+        ClassMngr::Next::Application::isValidRosterRowDisplayMode(displayMode)
+            ? displayMode
+            : static_cast<int>(
+                ClassMngr::Next::Application::RosterRowDisplayMode::AllRows);
+    if (safeMaximum == m_maximumRows && safeDisplayMode == m_displayMode)
+    {
+        return;
+    }
+
+    beginResetModel();
+    m_maximumRows = safeMaximum;
+    m_displayMode = safeDisplayMode;
+    while (m_rows.size() > m_maximumRows)
+    {
+        m_rows.removeLast();
+    }
+    while (m_rows.size() < m_maximumRows)
+    {
+        m_rows.append(QStringList(m_columns.size(), QString{}));
+    }
+    m_visibleRows = calculateVisibleRows();
+    validateAll();
+    endResetModel();
+}
+
+int RosterModel::maximumRows() const noexcept
+{
+    return m_maximumRows;
+}
+
+int RosterModel::visibleRows() const noexcept
+{
+    return m_visibleRows;
+}
+
+int RosterModel::calculateVisibleRows() const
+{
+    int lastNonBlankRowCount = 0;
+    for (int row = 0; row < m_rows.size(); ++row)
+    {
+        if (std::any_of(
+                m_rows[row].cbegin(),
+                m_rows[row].cend(),
+                [](const QString& value)
+                {
+                    return !value.trimmed().isEmpty();
+                }))
+        {
+            lastNonBlankRowCount = row + 1;
+        }
+    }
+    return ClassMngr::Next::Application::visibleRosterRowCount(
+        m_maximumRows,
+        static_cast<ClassMngr::Next::Application::RosterRowDisplayMode>(
+            m_displayMode),
+        lastNonBlankRowCount);
+}
+
+void RosterModel::refreshVisibleRows()
+{
+    const int nextVisibleRows = calculateVisibleRows();
+    if (nextVisibleRows > m_visibleRows)
+    {
+        beginInsertRows({}, m_visibleRows, nextVisibleRows - 1);
+        m_visibleRows = nextVisibleRows;
+        endInsertRows();
+    }
+    else if (nextVisibleRows < m_visibleRows)
+    {
+        beginRemoveRows({}, nextVisibleRows, m_visibleRows - 1);
+        m_visibleRows = nextVisibleRows;
+        endRemoveRows();
+    }
 }
 
 QStringList RosterModel::columnNames() const

@@ -1,6 +1,9 @@
 #include "features/roster/ui/roster_print_dialog.h"
 
 #include "core/application_services.h"
+#include "core/settingsmanager.h"
+#include "data/database/workspace_store.h"
+#include "data/repositories/roster_repository.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
 #include "ui/shared/widgets/marquee_item_delegate.h"
@@ -25,6 +28,7 @@
 #include "ui/shared/widgets/text_fit_push_button.h"
 #include "ui/shared/dialogs/file_dialog_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
+#include "shared/roster/roster_template_print_truncation.h"
 
 #include <QAbstractButton>
 #include <QApplication>
@@ -293,6 +297,10 @@ void RosterPrintDialog::resizeEvent(
 
 void RosterPrintDialog::acceptPrint()
 {
+    if (!confirmRosterOutputTruncation())
+    {
+        return;
+    }
     captureFinalSelection();
     m_selectedAction =
         Action::Print;
@@ -328,6 +336,11 @@ void RosterPrintDialog::chooseSavePath()
             QStringLiteral(".pdf");
     }
 
+    if (!confirmRosterOutputTruncation())
+    {
+        return;
+    }
+
     m_selectedAction =
         Action::SaveAs;
     m_selectedSavePath =
@@ -349,6 +362,125 @@ void RosterPrintDialog::captureFinalSelection()
     m_finalPerClassExtraInfoOrientation =
         selectedPerClassExtraInfoOrientation();
     m_hasFinalSelection = true;
+}
+
+bool RosterPrintDialog::confirmRosterOutputTruncation()
+{
+    using namespace RosterTemplatePrintTruncation;
+    if (!m_services || !m_services->hasOpenDatabase())
+    {
+        return true;
+    }
+    WorkspaceStore* const store = m_services->workspaceStore();
+    RosterRepository* const repository = store
+        ? store->rosterRepository()
+        : nullptr;
+    if (!repository)
+    {
+        DialogServices::showWarning(
+            this,
+            tr("Print Rosters"),
+            tr("Student counts could not be checked, so roster output was canceled."));
+        return false;
+    }
+
+    QList<int> classIds;
+    switch (selectedScope())
+    {
+    case RosterTemplatePrintService::Scope::CurrentClass:
+        if (m_currentClassId > 0) classIds.append(m_currentClassId);
+        break;
+    case RosterTemplatePrintService::Scope::SelectedClasses:
+        classIds = selectedClassIds();
+        break;
+    case RosterTemplatePrintService::Scope::AllClasses:
+    default:
+        if (m_classList)
+        {
+            for (int index = 0; index < m_classList->count(); ++index)
+            {
+                const QListWidgetItem* const item = m_classList->item(index);
+                if (item)
+                {
+                    const int classId = item->data(Qt::UserRole).toInt();
+                    if (classId > 0) classIds.append(classId);
+                }
+            }
+        }
+        break;
+    }
+
+    std::vector<ClassStudentCounts> counts;
+    counts.reserve(static_cast<std::size_t>(classIds.size()));
+    const int maximumRows = SettingsManager::instance().maximumRosterRows();
+    for (const int classId : classIds)
+    {
+        const auto studentCount = repository->getRosterStudentCount(
+            classId, maximumRows);
+        if (!studentCount)
+        {
+            DialogServices::showWarning(
+                this,
+                tr("Print Rosters"),
+                tr("Student counts could not be checked, so roster output was canceled."),
+                toLegacyDiagnostic(studentCount.error()));
+            return false;
+        }
+
+        qsizetype positionalIncluded = 0;
+        if (selectedTemplateId()
+            == RosterTemplatePrintService::TemplateId::PerClassWithExtraInfo)
+        {
+            const auto projection = repository->loadTemplatePrintProjection(
+                classId,
+                {QStringLiteral("English"), QStringLiteral("Korean")},
+                true,
+                maximumRows);
+            if (!projection)
+            {
+                DialogServices::showWarning(
+                    this,
+                    tr("Print Rosters"),
+                    tr("Student counts could not be checked, so roster output was canceled."),
+                    toLegacyDiagnostic(projection.error()));
+                return false;
+            }
+            const qsizetype english = projection->columns.indexOf(
+                QStringLiteral("English"));
+            const qsizetype korean = projection->columns.indexOf(
+                QStringLiteral("Korean"));
+            for (const QStringList& row : projection->rows)
+            {
+                const bool hasEnglish = english >= 0
+                    && english < row.size()
+                    && !row.at(english).trimmed().isEmpty();
+                const bool hasKorean = korean >= 0
+                    && korean < row.size()
+                    && !row.at(korean).trimmed().isEmpty();
+                if (hasEnglish || hasKorean) ++positionalIncluded;
+            }
+        }
+        counts.push_back({
+            .total = *studentCount,
+            .positionalIncluded = positionalIncluded
+        });
+    }
+
+    const Summary summary = summarize(selectedTemplateId(), counts);
+    if (!summary.requiresConfirmation())
+    {
+        return true;
+    }
+    const PromptChoice choice = DialogServices::confirm(
+        this,
+        tr("Confirm Roster Output"),
+        tr("This layout can include %1 of %2 students across the selected rosters. %3 students will not appear in the output. Continue?")
+            .arg(summary.includedStudents)
+            .arg(summary.totalStudents)
+            .arg(summary.omittedStudents()),
+        tr("Proceed"),
+        tr("Cancel"));
+    return choice == PromptChoice::Accepted;
 }
 
 void RosterPrintDialog::updateClassListVisibility()

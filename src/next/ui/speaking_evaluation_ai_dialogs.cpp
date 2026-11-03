@@ -4,6 +4,7 @@
 #include "next/application/speaking_evaluation_ai_batch_accepted_comment_plan.h"
 #include "next/application/speaking_evaluation_ai_batch_comment_quality.h"
 #include "next/application/speaking_evaluation_ai_comment_prompt.h"
+#include "next/application/speaking_evaluation_validation.h"
 #include "next/platform/speaking_evaluation_qt_text_match_port.h"
 #include "ui/shared/qt_text_adapter.h"
 
@@ -64,10 +65,10 @@ ParsedBatchResponse parseBatchResponse(
     ParsedBatchResponse result;
     const QSet<QString> expected(expectedIds.cbegin(), expectedIds.cend());
     const QRegularExpression completeBlock(
-        QStringLiteral(R"(<<<(STUDENT_[0-9]{2})>>>\s*(.*?)\s*<<<END_\1>>>)"),
+        QStringLiteral(R"(<<<(STUDENT_[0-9]{2,3})>>>\s*(.*?)\s*<<<END_\1>>>)"),
         QRegularExpression::DotMatchesEverythingOption);
     const QRegularExpression openingMarker(
-        QStringLiteral(R"(<<<(STUDENT_[0-9]{2})>>>)"));
+        QStringLiteral(R"(<<<(STUDENT_[0-9]{2,3})>>>)"));
 
     QHash<QString, int> completeCounts;
     QHash<QString, ParsedBatchComment> parsedById;
@@ -321,14 +322,18 @@ SpeakingEvaluationAiBatchSelectionModel::SpeakingEvaluationAiBatchSelectionModel
     , m_students(std::move(students))
     , m_selected(m_students.size(), false)
 {
+    std::size_t initiallySelected = 0;
     for (std::size_t index = 0; index < m_students.size(); ++index)
     {
         const auto& student = m_students[index];
         if (student.eligibilityReason ==
                 Application::SpeakingEvaluationAiBatchEligibilityReason::Eligible
-            && student.oldComment.trimmed().isEmpty())
+            && student.oldComment.trimmed().isEmpty()
+            && initiallySelected
+                < Application::kSpeakingEvaluationAiBatchMaximumStudents)
         {
             m_selected[index] = true;
+            ++initiallySelected;
         }
     }
 }
@@ -423,6 +428,12 @@ bool SpeakingEvaluationAiBatchSelectionModel::setData(
     if (m_selected[row] == selected)
     {
         return true;
+    }
+    if (selected
+        && selectedRows().size()
+            >= Application::kSpeakingEvaluationAiBatchMaximumStudents)
+    {
+        return false;
     }
     m_selected[row] = selected;
     emit dataChanged(index, index, {Qt::CheckStateRole});
@@ -868,7 +879,7 @@ SpeakingEvaluationAiBatchDialog::SpeakingEvaluationAiBatchDialog(
     , m_openExternalUrl(std::move(openExternalUrl))
 {
     m_inputWithinBatchBound = students.size()
-        <= Application::kSpeakingEvaluationAiBatchMaximumStudents;
+        <= static_cast<std::size_t>(Application::SpeakingEvaluationMaximumRowCount);
     if (m_inputWithinBatchBound)
     {
         m_students = std::move(students);
@@ -888,7 +899,7 @@ SpeakingEvaluationAiBatchDialog::SpeakingEvaluationAiBatchDialog(
     promptLayout->setContentsMargins(12, 12, 12, 12);
     promptLayout->setSpacing(8);
     auto* selectionInfo = new QLabel(batchText(
-        "Select students. Eligible students without comments are selected automatically."),
+        "Eligible students without comments are selected automatically, up to 25. Each prompt includes at most 25 students; deselect students to choose another group."),
         promptPage);
     selectionInfo->setWordWrap(true);
     promptLayout->addWidget(selectionInfo);
@@ -923,10 +934,6 @@ SpeakingEvaluationAiBatchDialog::SpeakingEvaluationAiBatchDialog(
         m_batchStatus->setText(batchText(
             "The AI comment batch supports up to %1 students.")
             .arg(Application::kSpeakingEvaluationAiBatchMaximumStudents));
-    }
-    else if (m_students.empty())
-    {
-        m_batchStatus->setText(batchText("No named students are available."));
     }
     promptLayout->addWidget(m_batchStatus);
 
@@ -1123,6 +1130,23 @@ void SpeakingEvaluationAiBatchDialog::resetGeneratedContent()
 void SpeakingEvaluationAiBatchDialog::updateActions()
 {
     const std::vector<int> selected = m_selectionModel->selectedRows();
+    if (!m_inputWithinBatchBound)
+    {
+        m_batchStatus->setText(batchText(
+            "The AI comment batch supports up to %1 students.")
+            .arg(Application::SpeakingEvaluationMaximumRowCount));
+    }
+    else if (m_students.empty())
+    {
+        m_batchStatus->setText(batchText("No named students are available."));
+    }
+    else
+    {
+        m_batchStatus->setText(batchText(
+            "%1 of %2 students selected. Each prompt is limited to 25 students; deselect students to choose another group.")
+            .arg(selected.size())
+            .arg(m_students.size()));
+    }
     const bool promptReady = m_inputWithinBatchBound
         && !m_promptEditor->toPlainText().isEmpty();
     m_createPromptButton->setEnabled(

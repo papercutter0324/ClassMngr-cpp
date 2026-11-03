@@ -1,5 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "core/settingsmanager.h"
 #include "core/utils/student_name_utils.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "data/database/database_session.h"
@@ -13,6 +14,7 @@
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_page_p.h"
 #include "features/speaking_eval/ui/speaking_eval_page.h"
+#include "features/speaking_eval/ui/speaking_eval_report_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_table_view.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/application/class_visibility_preferences.h"
@@ -475,6 +477,13 @@ class SpeakingEvalPageSaveTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase()
+    {
+        QVERIFY(m_settingsDirectory.isValid());
+        qputenv("CLASSMNGR_SETTINGS_ROOT",
+            m_settingsDirectory.path().toUtf8());
+    }
+
     void automaticSavePersistsMatrixWithoutInteractiveNotices();
     void automaticSaveFailureShowsLocalizedFeedbackAndRecovers();
     void manualSaveFailureRetainsWarningBehavior();
@@ -512,9 +521,14 @@ private slots:
     void reportClassInfoProjectionDefaultsWhenOuterReadFails();
     void reportClassInfoProjectionKeepsClassFieldsWhenTeacherReadFails();
     void outputReportsUsesProjectedRegularSchedule();
+    void reportActionsRespectConfiguredMaximumForStoredTailRows();
     void generateCommentsAppliesToOriginalRowAndUndoesAsOneAction();
     void generateCommentsAppliesMultipleStudentsAndUndoesAsOneAction();
+    void generateCommentsCanSelectAndApplyStudentThirtyInOnePrompt();
     void cancelingGenerateCommentsLeavesPageStateUntouched();
+
+private:
+    QTemporaryDir m_settingsDirectory;
 };
 
 void SpeakingEvalPageSaveTests::
@@ -2810,6 +2824,7 @@ duplicateRosterMatchesKeepTrimmedFirstSeenOrder()
     ScopedPromptService promptScope(&prompts);
 
     SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
     page.setSaveMode(SaveMode::Manual);
     page.loadEvaluation(
         Classroom(fixture.classNames.first(), fixture.classIds.first()),
@@ -3362,6 +3377,99 @@ outputReportsUsesProjectedRegularSchedule()
 }
 
 void SpeakingEvalPageSaveTests::
+reportActionsRespectConfiguredMaximumForStoredTailRows()
+{
+    auto& settings = SettingsManager::instance();
+    const int savedMaximumRows = settings.maximumRosterRows();
+    struct RestoreMaximumRows final
+    {
+        SettingsManager& settings;
+        int rows;
+        ~RestoreMaximumRows()
+        {
+            static_cast<void>(settings.writeMaximumRosterRowsPreference(rows));
+        }
+    } restore{settings, savedMaximumRows};
+
+    QVERIFY(settings.writeMaximumRosterRowsPreference(25));
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+
+    SpeakingEvalRows storedRows = SpeakingEval::emptyRows(
+        SpeakingEval::MaximumRowCount);
+    storedRows[29][SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)] =
+        QStringLiteral("Tail Student");
+    storedRows[29][SpeakingEval::toInt(SpeakingEvalColumn::KoreanName)] =
+        QStringLiteral("\uAE40\uBBFC\uC9C0");
+    QVERIFY(fixture.services.speakingEvaluationService()->saveEvaluation(
+        fixture.classIds.first(), QStringLiteral("Winter"), storedRows));
+
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    const Classroom classroom(
+        fixture.classNames.first(), fixture.classIds.first());
+    page.loadEvaluation(classroom, QStringLiteral("Winter"));
+    QPushButton* reportButton = nullptr;
+    for (QPushButton* button : page.findChildren<QPushButton*>())
+    {
+        if (button->text() == QStringLiteral("Report Editor"))
+        {
+            reportButton = button;
+            break;
+        }
+    }
+    QVERIFY(reportButton);
+    QVERIFY(!reportButton->isEnabled());
+    QVERIFY(!page.outputCapabilities().printEnabled);
+    QVERIFY(!page.outputCapabilities().saveAsEnabled);
+
+    const auto persistedWhileHidden =
+        fixture.services.speakingEvaluationService()->evaluation(
+            fixture.classIds.first(), QStringLiteral("Winter"));
+    QVERIFY(persistedWhileHidden);
+    QCOMPARE(persistedWhileHidden->size(), SpeakingEval::MaximumRowCount);
+    QCOMPARE(persistedWhileHidden->at(29).at(
+        SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)),
+        QStringLiteral("Tail Student"));
+
+    QVERIFY(settings.writeMaximumRosterRowsPreference(100));
+    page.loadEvaluation(classroom, QStringLiteral("Winter"));
+    QVERIFY(reportButton->isEnabled());
+    QVERIFY(page.outputCapabilities().printEnabled);
+    QVERIFY(page.outputCapabilities().saveAsEnabled);
+
+    bool reportDialogSeen = false;
+    int reportCount = -1;
+    QString reportName;
+    QTimer::singleShot(0, [&]
+    {
+        auto* const dialog = dynamic_cast<SpeakingEvalReportDialog*>(
+            qApp->activeModalWidget());
+        if (!dialog)
+        {
+            return;
+        }
+        auto* const students = dialog->findChild<QComboBox*>(
+            QStringLiteral("speakingEvalReportStudentSelector"));
+        if (!students)
+        {
+            dialog->reject();
+            return;
+        }
+        reportDialogSeen = true;
+        reportCount = students->count();
+        reportName = students->itemText(0);
+        dialog->reject();
+    });
+    reportButton->click();
+    QVERIFY(reportDialogSeen);
+    QCOMPARE(reportCount, 1);
+    QVERIFY(reportName.contains(QStringLiteral("Tail Student")));
+}
+
+void SpeakingEvalPageSaveTests::
 generateCommentsAppliesToOriginalRowAndUndoesAsOneAction()
 {
     SpeakingEvalPageFixture fixture;
@@ -3866,6 +3974,169 @@ generateCommentsAppliesMultipleStudentsAndUndoesAsOneAction()
     QCOMPARE(afterUndo.at(1).at(commentsColumn), unnamedComment);
     QCOMPARE(afterUndo.at(2).at(commentsColumn), carolComment);
     QCOMPARE(undoStack->index(), 0);
+}
+
+void SpeakingEvalPageSaveTests::
+generateCommentsCanSelectAndApplyStudentThirtyInOnePrompt()
+{
+    SpeakingEvalPageFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(1, &error), qPrintable(error));
+    QVERIFY2(
+        saveSubtitleForReportTests(
+            fixture.services,
+            fixture.classIds.first(),
+            QStringLiteral("E5"),
+            QStringLiteral("Athena"),
+            QStringLiteral("English Teacher"),
+            QStringLiteral("\uAE40\uBBFC\uC9C0"),
+            &error
+            ),
+        qPrintable(error)
+        );
+
+    FakeUserPromptService prompts;
+    ScopedPromptService promptScope(&prompts);
+    SpeakingEvalPage page(&fixture.services);
+    page.setDatabaseOpen(true);
+    page.setSaveMode(SaveMode::Manual);
+    page.loadEvaluation(
+        Classroom(fixture.classNames.first(), fixture.classIds.first()),
+        QStringLiteral("Winter")
+        );
+
+    auto* const model = page.findChild<SpeakingEvalModel*>();
+    QVERIFY(model);
+    model->setRowPreferences(100, static_cast<int>(
+        ClassMngr::Next::Application::RosterRowDisplayMode::AllRows));
+    const int commentsColumn = SpeakingEval::toInt(SpeakingEvalColumn::Comments);
+    const int notesColumn = SpeakingEval::toInt(SpeakingEvalColumn::Notes);
+    const QString notes = QStringLiteral(
+        "[Did Well]\nClear ideas\n[Needs Improvement]\nAdd more detail");
+    for (int row = 0; row < 30; ++row)
+    {
+        QVERIFY(model->setData(
+            model->index(row, SpeakingEval::toInt(SpeakingEvalColumn::EnglishName)),
+            QStringLiteral("Student %1").arg(row + 1)));
+        QVERIFY(model->setData(model->index(row, notesColumn), notes));
+    }
+
+    QPushButton* generateCommentsButton = nullptr;
+    for (QPushButton* const button : page.findChildren<QPushButton*>())
+    {
+        if (button->text() == QStringLiteral("Generate Comments"))
+        {
+            generateCommentsButton = button;
+            break;
+        }
+    }
+    QVERIFY(generateCommentsButton);
+
+    bool dialogShown = false;
+    bool thirtyWasSelectable = false;
+    bool selectedCountStayedAtTwentyFive = false;
+    bool promptIncludedThirtyWithinLimit = false;
+    bool responseWasAppliedToRowThirty = false;
+    QString expectedComment = QStringLiteral(
+        "STD_NAME shared clear ideas during the lesson and used strong words with confidence. "
+        "Keep practicing past tense verbs so each answer sounds complete. "
+        "Your careful effort helps you improve and makes your speaking fun to hear.");
+    expectedComment.replace(QStringLiteral("STD_NAME"), QStringLiteral("Student 30"));
+
+    page.show();
+    QCoreApplication::processEvents();
+    QTimer dialogDriver;
+    dialogDriver.setInterval(10);
+    QObject::connect(&dialogDriver, &QTimer::timeout, &page, [&]
+    {
+        auto* const dialog = qobject_cast<SpeakingEvalAiBatchDialog*>(
+            QApplication::activeModalWidget());
+        if (!dialog)
+        {
+            return;
+        }
+        dialogDriver.stop();
+        dialogShown = true;
+        auto* const selection = dialog->findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchSelectionTable"));
+        auto* const createPromptButton = dialog->findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchCreatePrompt"));
+        auto* const promptEdit = dialog->findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchPrompt"));
+        auto* const responseEdit = dialog->findChild<QPlainTextEdit*>(
+            QStringLiteral("speakingEvalAiBatchResponse"));
+        auto* const parseButton = dialog->findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchParse"));
+        auto* const review = dialog->findChild<QTableWidget*>(
+            QStringLiteral("speakingEvalAiBatchReviewTable"));
+        auto* const applyButton = dialog->findChild<QPushButton*>(
+            QStringLiteral("speakingEvalAiBatchApply"));
+        if (!selection || !createPromptButton || !promptEdit || !responseEdit
+            || !parseButton || !review || !applyButton
+            || selection->rowCount() != 30)
+        {
+            dialog->reject();
+            return;
+        }
+
+        thirtyWasSelectable = selection->item(29, 0)->checkState() == Qt::Unchecked;
+        selection->item(0, 0)->setCheckState(Qt::Unchecked);
+        selection->item(29, 0)->setCheckState(Qt::Checked);
+        int checkedCount = 0;
+        for (int row = 0; row < selection->rowCount(); ++row)
+        {
+            checkedCount += selection->item(row, 0)->checkState() == Qt::Checked;
+        }
+        selectedCountStayedAtTwentyFive = checkedCount == 25;
+        createPromptButton->click();
+        const QString prompt = promptEdit->toPlainText();
+        promptIncludedThirtyWithinLimit =
+            prompt.contains(QStringLiteral("Student ID: STUDENT_30"))
+            && prompt.count(QStringLiteral("Student ID:")) == 25;
+        responseEdit->setPlainText(QStringLiteral(
+            "<<<STUDENT_30>>>\n%1\n<<<END_STUDENT_30>>>").arg(
+                QStringLiteral(
+                    "STD_NAME shared clear ideas during the lesson and used strong words with confidence. "
+                    "Keep practicing past tense verbs so each answer sounds complete. "
+                    "Your careful effort helps you improve and makes your speaking fun to hear.")));
+        parseButton->click();
+        for (int row = 0; row < review->rowCount(); ++row)
+        {
+            if (review->item(row, 1)
+                    && review->item(row, 1)->text() == QStringLiteral("Student 30")
+                && review->item(row, 4)
+                    && review->item(row, 4)->text() == expectedComment)
+            {
+                responseWasAppliedToRowThirty = true;
+                break;
+            }
+        }
+        if (!responseWasAppliedToRowThirty || !applyButton->isEnabled())
+        {
+            dialog->reject();
+            return;
+        }
+        applyButton->click();
+    });
+    QTimer safetyCloseTimer;
+    safetyCloseTimer.setSingleShot(true);
+    QObject::connect(&safetyCloseTimer, &QTimer::timeout, &page, [&]
+    {
+        if (QWidget* const modal = QApplication::activeModalWidget())
+        {
+            modal->close();
+        }
+    });
+    dialogDriver.start();
+    safetyCloseTimer.start(5000);
+    QTest::mouseClick(generateCommentsButton, Qt::LeftButton);
+
+    QVERIFY(dialogShown);
+    QVERIFY(thirtyWasSelectable);
+    QVERIFY(selectedCountStayedAtTwentyFive);
+    QVERIFY(promptIncludedThirtyWithinLimit);
+    QVERIFY(responseWasAppliedToRowThirty);
+    QCOMPARE(model->data(model->index(29, commentsColumn)).toString(), expectedComment);
 }
 
 void SpeakingEvalPageSaveTests::

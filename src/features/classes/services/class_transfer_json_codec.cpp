@@ -526,7 +526,7 @@ Result<QList<ClassTransferEvaluation>> evaluationsFromJson(
                 );
         }
 
-        if (rows->size() > SpeakingEval::RowCount)
+        if (rows->size() > SpeakingEval::MaximumRowCount)
         {
             return std::unexpected(
                 QObject::tr("%1.rows has too many rows.").arg(itemContext)
@@ -1611,7 +1611,7 @@ Status ClassTransferJsonCodec::saveFile(
 
     QSaveFile file(filePath);
 
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    if (!file.open(QIODevice::WriteOnly))
     {
         return std::unexpected(
             QObject::tr("Unable to open the class package for writing:\n%1")
@@ -1662,7 +1662,7 @@ Status ClassTransferJsonCodec::saveFile(
 
     QSaveFile file(filePath);
 
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    if (!file.open(QIODevice::WriteOnly))
     {
         return std::unexpected(
             QObject::tr("Unable to open the class package for writing:\n%1")

@@ -249,7 +249,8 @@ QList<ClassTransferEvaluation> loadEvaluations(
 
         ClassTransferEvaluation evaluation;
         evaluation.name = evaluationQuery.value("evaluation_name").toString();
-        evaluation.rows = SpeakingEval::emptyRows();
+        evaluation.rows = SpeakingEval::emptyRows(
+            SpeakingEval::MaximumRowCount);
         evaluationIndexById.insert(evaluationId, evaluations.size());
         evaluations.append(evaluation);
     }
@@ -324,7 +325,7 @@ QList<ClassTransferEvaluation> loadEvaluations(
         const int rowIndex = rowQuery.value("row_index").toInt(&rowIndexOk);
 
         if (!rowIndexOk || evaluationIndex == evaluationIndexById.cend()
-            || rowIndex < 0 || rowIndex >= SpeakingEval::RowCount)
+            || rowIndex < 0 || rowIndex >= SpeakingEval::MaximumRowCount)
         {
             continue;
         }
@@ -1178,7 +1179,7 @@ RepositoryStatus writeClassData(
 
         const qint64 evaluationId = query.lastInsertId().toLongLong();
 
-        for (int row = 0; row < SpeakingEval::RowCount; ++row)
+        for (int row = 0; row < SpeakingEval::MaximumRowCount; ++row)
         {
             query.prepare(R"(
                 INSERT INTO speaking_eval_data (

@@ -1,6 +1,7 @@
 #include "next/ui/preferences_dialog.h"
 
 #include "next/application/excel_import_timeout_preferences.h"
+#include "ui/shared/widgets/roster_row_preferences_group.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -213,6 +214,9 @@ void PreferencesDialog::buildUi()
     m_excelTimeout->addItem(text("5 Minutes"), 300);
     timeoutLayout->addRow(text("Workbook Timeout:"), m_excelTimeout);
     generalLayout->addWidget(timeoutGroup);
+
+    generalLayout->addWidget(
+        new ::Ui::RosterRowPreferencesGroup(generalPage));
 
 #ifdef Q_OS_MACOS
     m_powerPointNotice = new QCheckBox(generalPage);

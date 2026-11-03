@@ -29,6 +29,7 @@ private slots:
     void moveRosterRowRejectsEmptyAndSameRows();
     void moveRosterRowRefreshesValidationAndEmitsModelChanges();
     void firstEmptyRowUsesLowestBlankAndReturnsNoRowWhenFull();
+    void displayModeShowsExtraRowsAndExtendsAsTheLastVisibleRowIsFilled();
     void sharedAvailabilityProjectionMatchesModelNameCellOccupancy();
     void reorderedAliasedStoredColumnsMapToDisplayedCells();
     void insertTransferredRowUsesFirstEmptyRow();
@@ -698,6 +699,25 @@ firstEmptyRowUsesLowestBlankAndReturnsNoRowWhenFull()
 
     QCOMPARE(model.rowCount(), RosterUi::RowCount);
     QCOMPARE(model.firstEmptyRow(), -1);
+}
+
+void RosterModelTests::
+displayModeShowsExtraRowsAndExtendsAsTheLastVisibleRowIsFilled()
+{
+    RosterModel model;
+    model.setRowPreferences(
+        30,
+        static_cast<int>(
+            ClassMngr::Next::Application::RosterRowDisplayMode::Extra5));
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    model.setRoster(roster);
+    QCOMPARE(model.rowCount(), 5);
+
+    QVERIFY(model.setData(model.index(4, 0), QStringLiteral("Student A")));
+    QCOMPARE(model.rowCount(), 10);
+    QVERIFY(model.setData(model.index(9, 0), QStringLiteral("Student B")));
+    QCOMPARE(model.rowCount(), 15);
 }
 
 void RosterModelTests::

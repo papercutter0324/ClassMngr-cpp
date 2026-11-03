@@ -1,5 +1,6 @@
 #include "next/platform/workspace_store_roster_actions.h"
 
+#include "core/settingsmanager.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
@@ -192,7 +193,7 @@ public:
         {
             const auto loaded = m_repository->loadRosterWindowDetailed(
                 *classId,
-                static_cast<int>(Application::RosterModeledRowCount));
+                query.rowLimit);
             if (!loaded)
             {
                 return Application::RosterWindowReadResult::failure(
@@ -451,7 +452,9 @@ Application::RosterWindowReadResult readRosterWindowAtPath(
     }
     WorkspaceStoreRosterWindowReadPort port(store.rosterRepository());
     return Application::RosterWindowReadUseCase::execute(
-        {.classId = classId}, port);
+        {.classId = classId,
+         .rowLimit = SettingsManager::instance().maximumRosterRows()},
+        port);
 }
 
 Domain::Result<void> saveRosterAtPath(
@@ -556,7 +559,7 @@ Domain::Result<bool> rosterColumnHasTailDataAtPath(
         "SELECT EXISTS(SELECT 1 FROM roster_data "
         "WHERE class_id=? AND row_index>=? AND col_index=?)"));
     tail.addBindValue(*legacyId);
-    tail.addBindValue(static_cast<int>(Application::RosterModeledRowCount));
+    tail.addBindValue(SettingsManager::instance().maximumRosterRows());
     tail.addBindValue(sourceColumnIndex);
     if (!tail.exec() || !tail.next())
     {
@@ -808,7 +811,7 @@ readRosterTransferTargetChoicesAtPath(
 
             const auto targetRoster = rosterRepository->loadRosterWindowDetailed(
                 details.classId,
-                static_cast<int>(Application::RosterModeledRowCount));
+                SettingsManager::instance().maximumRosterRows());
             if (!targetRoster)
             {
                 return Application::RosterTransferTargetChoicesResult::failure(
@@ -823,7 +826,7 @@ readRosterTransferTargetChoicesAtPath(
                 applicationSnapshot(targetRoster->roster);
             const bool full = Application::firstEmptyRosterRow(roster.rows)
                     .rawValue()
-                >= Application::RosterModeledRowCount;
+                >= roster.rows.size();
 
             Application::RosterTransferTargetDisplayMetadata displayMetadata{
                 .grade = details.grade.toStdU16String(),

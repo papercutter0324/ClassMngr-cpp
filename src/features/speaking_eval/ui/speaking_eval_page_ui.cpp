@@ -190,6 +190,12 @@ void SpeakingEvalPage::buildUi()
         );
     m_saveFailureMessage->hide();
 
+    m_hiddenRowsNotice = new QLabel(this);
+    m_hiddenRowsNotice->setObjectName(
+        QStringLiteral("speakingEvalHiddenRowsNotice"));
+    m_hiddenRowsNotice->setWordWrap(true);
+    m_hiddenRowsNotice->hide();
+
     m_emptyLabel =
         new QLabel(
             tr("No classes available"),
@@ -237,6 +243,7 @@ void SpeakingEvalPage::buildUi()
     contentLayout()->addWidget(m_readErrorContainer);
 
     contentLayout()->addWidget(m_table);
+    contentLayout()->addWidget(m_hiddenRowsNotice);
     contentLayout()->addWidget(m_validationMessage);
     contentLayout()->addWidget(m_saveFailureMessage);
 
@@ -592,7 +599,7 @@ void SpeakingEvalPage::focusFirstEvaluationError()
     for (const ValidationIssue& issue : m_validationBinder->validation().errors())
     {
         if (issue.row >= 0
-            && issue.row < SpeakingEval::RowCount
+            && issue.row < m_model->rowCount()
             && issue.column >= 0
             && issue.column < SpeakingEval::ColumnCount)
         {
@@ -626,7 +633,7 @@ void SpeakingEvalPage::setupTable()
             );
     }
 
-    for (int row = 0; row < SpeakingEval::RowCount; ++row)
+    for (int row = 0; row < m_model->rowCount(); ++row)
     {
         m_table->setRowHeight(
             row,

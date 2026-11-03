@@ -1,5 +1,6 @@
 #include "next/ui/speaking_evaluation_page.h"
 
+#include "core/settingsmanager.h"
 #include "next/application/speaking_evaluation_private_notes_split.h"
 #include "next/application/speaking_evaluation_ai_comment_prompt.h"
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
@@ -345,6 +346,13 @@ SpeakingEvaluationPage::SpeakingEvaluationPage(
     stateRow->addWidget(m_dirtyIndicator);
     stateRow->addWidget(m_retryButton);
     root->addLayout(stateRow);
+
+    m_hiddenRowsNotice = new QLabel(this);
+    m_hiddenRowsNotice->setObjectName(
+        QStringLiteral("speakingEvaluationHiddenRowsNotice"));
+    m_hiddenRowsNotice->setWordWrap(true);
+    m_hiddenRowsNotice->hide();
+    root->addWidget(m_hiddenRowsNotice);
 
     auto* actionsRow = new QHBoxLayout();
     m_importNamesButton = new QPushButton(this);
@@ -860,6 +868,8 @@ bool SpeakingEvaluationPage::loadEvaluation()
     m_undoStack->clear();
     m_evaluationLoaded = false;
     m_evaluationReadFailed = false;
+    m_hasHiddenRows = false;
+    updateHiddenRowsNotice();
     if (!m_selectedClassId || m_evaluationName.isEmpty())
     {
         setStatus(Status::Empty);
@@ -883,6 +893,9 @@ bool SpeakingEvaluationPage::loadEvaluation()
 
     try
     {
+        m_matrixModel->setRowPreferences(
+            SettingsManager::instance().maximumRosterRows(),
+            SettingsManager::instance().rosterRowDisplayMode());
         const Application::SpeakingEvaluationReadQuery query{
             .classId = *m_selectedClassId,
             .evaluationName = m_evaluationName.toStdU16String()
@@ -907,6 +920,26 @@ bool SpeakingEvaluationPage::loadEvaluation()
             updateActions();
             return false;
         }
+        const int maximumRows = m_matrixModel->maximumRows();
+        m_hiddenRowsMaximum = maximumRows;
+        for (std::size_t rowIndex = static_cast<std::size_t>(maximumRows);
+             rowIndex < loaded.value().rows.size();
+             ++rowIndex)
+        {
+            const auto& row = loaded.value().rows[rowIndex];
+            if (std::any_of(
+                    row.begin(),
+                    row.end(),
+                    [](const std::u16string& value)
+                    {
+                        return !fromUtf16(value).trimmed().isEmpty();
+                    }))
+            {
+                m_hasHiddenRows = true;
+                break;
+            }
+        }
+        updateHiddenRowsNotice();
         m_matrixModel->markSaved();
         m_evaluationLoaded = true;
         setStatus(Status::Ready);
@@ -1018,10 +1051,14 @@ bool SpeakingEvaluationPage::saveCurrentEvaluation(const bool interactive)
         return false;
     }
 
+    Application::SpeakingEvaluationSnapshot visibleEvaluation =
+        m_matrixModel->snapshot();
+    visibleEvaluation.rows.resize(
+        static_cast<std::size_t>(m_matrixModel->rowCount()));
     Application::SpeakingEvaluationSaveRequest request{
         .classId = *m_selectedClassId,
         .evaluationName = m_evaluationName.toStdU16String(),
-        .evaluation = m_matrixModel->snapshot(),
+        .evaluation = std::move(visibleEvaluation),
         .allowQuestionableKoreanNameLengths = false
     };
     Application::SpeakingEvaluationValidationResult validation =
@@ -1092,6 +1129,9 @@ bool SpeakingEvaluationPage::reloadCurrentEvaluation()
     }
     try
     {
+        m_matrixModel->setRowPreferences(
+            SettingsManager::instance().maximumRosterRows(),
+            SettingsManager::instance().rosterRowDisplayMode());
         const Application::SpeakingEvaluationReadQuery query{
             .classId = *m_selectedClassId,
             .evaluationName = m_evaluationName.toStdU16String()
@@ -1104,7 +1144,8 @@ bool SpeakingEvaluationPage::reloadCurrentEvaluation()
         }
         const auto loaded = Application::SpeakingEvaluationQuery::execute(query, *port);
         if (!loaded || loaded.value().rows.size()
-                > static_cast<std::size_t>(Application::SpeakingEvaluationRowCount)
+                > static_cast<std::size_t>(
+                    Application::SpeakingEvaluationMaximumRowCount)
             || !std::ranges::all_of(loaded.value().rows, [](const auto& row) {
                 return row.size()
                     <= static_cast<std::size_t>(Application::SpeakingEvaluationColumnCount);
@@ -1118,6 +1159,26 @@ bool SpeakingEvaluationPage::reloadCurrentEvaluation()
             setStatus(Status::EvaluationReadError);
             return false;
         }
+        m_hiddenRowsMaximum = SettingsManager::instance().maximumRosterRows();
+        m_hasHiddenRows = false;
+        for (std::size_t rowIndex = static_cast<std::size_t>(m_hiddenRowsMaximum);
+             rowIndex < loaded.value().rows.size();
+             ++rowIndex)
+        {
+            const auto& row = loaded.value().rows[rowIndex];
+            if (std::any_of(
+                    row.begin(),
+                    row.end(),
+                    [](const std::u16string& value)
+                    {
+                        return !fromUtf16(value).trimmed().isEmpty();
+                    }))
+            {
+                m_hasHiddenRows = true;
+                break;
+            }
+        }
+        updateHiddenRowsNotice();
         m_undoStack->clear();
         m_matrixModel->markSaved();
         m_evaluationLoaded = true;
@@ -1213,8 +1274,9 @@ void SpeakingEvaluationPage::importRosterNames()
         }
         std::vector<Application::SpeakingEvaluationRosterNameEvaluationRow>
             evaluationRows;
-        evaluationRows.reserve(Application::SpeakingEvaluationRowCount);
-        for (int row = 0; row < Application::SpeakingEvaluationRowCount; ++row)
+        const int maximumRows = m_matrixModel->maximumRows();
+        evaluationRows.reserve(static_cast<std::size_t>(maximumRows));
+        for (int row = 0; row < maximumRows; ++row)
         {
             evaluationRows.push_back({
                 Application::SpeakingEvaluationRosterNameImportTargetIndex{row},
@@ -1258,7 +1320,7 @@ void SpeakingEvaluationPage::editPrivateNotes()
         return;
     }
     const int row = m_table->currentIndex().row();
-    if (row < 0 || row >= Application::SpeakingEvaluationRowCount)
+    if (row < 0 || row >= m_matrixModel->rowCount())
     {
         setStatus(Status::Ready, pageText("Select a student row first."));
         return;
@@ -1401,7 +1463,8 @@ void SpeakingEvaluationPage::generateAiCommentPrompt(const bool copyAndOpen)
         return;
     }
     const int row = m_table->currentIndex().row();
-    if (row < 0 || row >= Application::SpeakingEvaluationRowCount)
+    if (row < 0 || row >= m_matrixModel->rowCount()
+        || row >= m_matrixModel->maximumRows())
     {
         setStatus(Status::Ready, pageText("Select a student row first."));
         return;
@@ -1491,7 +1554,7 @@ void SpeakingEvaluationPage::openReports(const int mode)
         for (const auto& time : context.value().regularTimes)
             classInfo.classTimes.append({fromUtf16(time.day), fromUtf16(time.startTime), fromUtf16(time.endTime)});
         SpeakingEvalRows rows;
-        for (int row = 0; row < Application::SpeakingEvaluationRowCount; ++row)
+        for (int row = 0; row < m_matrixModel->maximumRows(); ++row)
         {
             QStringList values;
             for (int column = 0; column < m_matrixModel->columnCount(); ++column)
@@ -1551,8 +1614,8 @@ void SpeakingEvaluationPage::generateClassAiComments()
     }
 
     std::vector<SpeakingEvaluationAiBatchStudent> students;
-    students.reserve(Application::SpeakingEvaluationRowCount);
-    for (int row = 0; row < Application::SpeakingEvaluationRowCount; ++row)
+    students.reserve(static_cast<std::size_t>(m_matrixModel->maximumRows()));
+    for (int row = 0; row < m_matrixModel->maximumRows(); ++row)
     {
         const QString englishName = m_matrixModel->cellText(row, 1).trimmed();
         const QString koreanName = m_matrixModel->cellText(row, 2).trimmed();
@@ -1609,7 +1672,7 @@ void SpeakingEvaluationPage::generateClassAiComments()
          dialog.acceptedComments())
     {
         if (accepted.sourceRow < 0
-            || accepted.sourceRow >= Application::SpeakingEvaluationRowCount)
+            || accepted.sourceRow >= m_matrixModel->maximumRows())
         {
             continue;
         }
@@ -1656,10 +1719,14 @@ void SpeakingEvaluationPage::refreshValidation()
         return;
     }
     m_refreshingValidation = true;
+    Application::SpeakingEvaluationSnapshot visibleEvaluation =
+        m_matrixModel->snapshot();
+    visibleEvaluation.rows.resize(
+        static_cast<std::size_t>(m_matrixModel->rowCount()));
     const Application::SpeakingEvaluationSaveRequest request{
         .classId = *m_selectedClassId,
         .evaluationName = m_evaluationName.toStdU16String(),
-        .evaluation = m_matrixModel->snapshot(),
+        .evaluation = std::move(visibleEvaluation),
         .allowQuestionableKoreanNameLengths = false
     };
     const auto validation = Application::validateAndNormalizeSpeakingEvaluation(request);
@@ -1694,14 +1761,17 @@ void SpeakingEvaluationPage::updateActions()
     m_editNotesButton->setEnabled(matrixReady);
     const int currentStudentRow = m_table->currentIndex().row();
     const bool studentRowSelected = currentStudentRow >= 0
-        && currentStudentRow < Application::SpeakingEvaluationRowCount;
+        && currentStudentRow < m_matrixModel->rowCount()
+        && currentStudentRow < m_matrixModel->maximumRows();
     m_aiCommentButton->setEnabled(matrixReady && studentRowSelected);
     m_aiCommentButton->setToolTip(studentRowSelected
         ? QString{}
         : pageText("Select a student row to create an AI comment prompt."));
     m_aiBatchCommentsButton->setEnabled(matrixReady);
     bool hasReportStudent = false;
-    if (matrixReady) for (int row = 0; row < Application::SpeakingEvaluationRowCount; ++row)
+    if (matrixReady) for (int row = 0;
+        row < m_matrixModel->maximumRows();
+        ++row)
         if (!m_matrixModel->cellText(row, 1).trimmed().isEmpty() || !m_matrixModel->cellText(row, 2).trimmed().isEmpty())
         { hasReportStudent = true; break; }
     m_reportsButton->setEnabled(matrixReady && hasReportStudent);
@@ -1831,6 +1901,7 @@ void SpeakingEvaluationPage::retranslateUi()
     m_undoButton->setText(pageText("Undo"));
     m_saveButton->setText(pageText("Save Changes"));
     m_retryButton->setText(pageText("Retry"));
+    updateHiddenRowsNotice();
     updateActionButtonWidths();
     for (int index = 0; index < m_evaluationChoice->count(); ++index)
     {
@@ -1838,6 +1909,18 @@ void SpeakingEvaluationPage::retranslateUi()
         m_evaluationChoice->setItemText(index,
             evaluationLabel(storedName.toStdU16String()));
     }
+}
+
+void SpeakingEvaluationPage::updateHiddenRowsNotice()
+{
+    if (!m_hiddenRowsNotice)
+    {
+        return;
+    }
+    m_hiddenRowsNotice->setText(
+        pageText("Saved evaluation rows above %1 are hidden and preserved at their original row numbers. Increase the maximum row setting to view them.")
+            .arg(m_hiddenRowsMaximum));
+    m_hiddenRowsNotice->setVisible(m_hasHiddenRows);
 }
 
 void SpeakingEvaluationPage::updateActionButtonWidths()
@@ -1877,6 +1960,8 @@ void SpeakingEvaluationPage::releaseActiveDraft()
     m_undoStack->clear();
     m_evaluationLoaded = false;
     m_evaluationReadFailed = false;
+    m_hasHiddenRows = false;
+    updateHiddenRowsNotice();
     setHasUnsavedChanges(false);
     updateActions();
 }

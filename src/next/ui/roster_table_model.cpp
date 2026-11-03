@@ -177,13 +177,14 @@ QString normalizedEditedText(
 
 RosterTableModel::RosterTableModel(QObject* parent)
     : QAbstractTableModel(parent)
+    , m_visibleRows(m_maximumRows)
 {
     clear();
 }
 
 int RosterTableModel::rowCount(const QModelIndex& parent) const
 {
-    return parent.isValid() ? 0 : ModeledRowCount;
+    return parent.isValid() ? 0 : m_visibleRows;
 }
 
 int RosterTableModel::columnCount(const QModelIndex& parent) const
@@ -193,7 +194,7 @@ int RosterTableModel::columnCount(const QModelIndex& parent) const
 
 QVariant RosterTableModel::data(const QModelIndex& index, const int role) const
 {
-    if (!index.isValid() || index.row() < 0 || index.row() >= m_rows.size()
+    if (!index.isValid() || index.row() < 0 || index.row() >= rowCount()
         || index.column() < 0 || index.column() >= m_columns.size())
     {
         return {};
@@ -235,7 +236,7 @@ bool RosterTableModel::setData(
     )
 {
     if (role != Qt::EditRole || !m_editable || !index.isValid()
-        || index.row() < 0 || index.row() >= m_rows.size()
+        || index.row() < 0 || index.row() >= rowCount()
         || index.column() < 0 || index.column() >= m_columns.size()
         || isEvaluationColumn(index.column()))
     {
@@ -251,9 +252,13 @@ bool RosterTableModel::setData(
 
     m_rows[index.row()][index.column()] = normalized;
     setDirty(true);
+    refreshVisibleRows();
     revalidate();
-    emit dataChanged(index, index, {
-        Qt::DisplayRole, Qt::EditRole, Qt::ToolTipRole, Qt::BackgroundRole});
+    if (index.row() < rowCount())
+    {
+        emit dataChanged(index, index, {
+            Qt::DisplayRole, Qt::EditRole, Qt::ToolTipRole, Qt::BackgroundRole});
+    }
     return true;
 }
 
@@ -263,7 +268,7 @@ bool RosterTableModel::setImportedEvaluationGrade(
     const QString& grade
     )
 {
-    if (!m_editable || row < 0 || row >= m_rows.size()
+    if (!m_editable || row < 0 || row >= rowCount()
         || column < 0 || column >= m_columns.size()
         || !isEvaluationColumn(column))
     {
@@ -279,10 +284,14 @@ bool RosterTableModel::setImportedEvaluationGrade(
 
     m_rows[row][column] = normalized;
     setDirty(true);
+    refreshVisibleRows();
     revalidate();
     const QModelIndex changed = index(row, column);
-    emit dataChanged(changed, changed, {
-        Qt::DisplayRole, Qt::EditRole, Qt::ToolTipRole, Qt::BackgroundRole});
+    if (row < rowCount())
+    {
+        emit dataChanged(changed, changed, {
+            Qt::DisplayRole, Qt::EditRole, Qt::ToolTipRole, Qt::BackgroundRole});
+    }
     return true;
 }
 
@@ -341,6 +350,36 @@ void RosterTableModel::setRoster(const Application::RosterSnapshot& roster)
     setDirty(false);
 }
 
+void RosterTableModel::setRowPreferences(
+    const int maximumRows,
+    const int displayMode
+    )
+{
+    const int safeMaximum = Application::isValidMaximumRosterRows(maximumRows)
+        ? maximumRows : Application::DefaultMaximumRosterRows;
+    const int safeDisplayMode = Application::isValidRosterRowDisplayMode(displayMode)
+        ? displayMode : static_cast<int>(Application::RosterRowDisplayMode::AllRows);
+    if (safeMaximum == m_maximumRows && safeDisplayMode == m_displayMode)
+    {
+        return;
+    }
+
+    beginResetModel();
+    m_maximumRows = safeMaximum;
+    m_displayMode = safeDisplayMode;
+    while (m_rows.size() > m_maximumRows)
+    {
+        m_rows.removeLast();
+    }
+    while (m_rows.size() < m_maximumRows)
+    {
+        m_rows.append(QStringList(m_columns.size(), QString{}));
+    }
+    m_visibleRows = calculateVisibleRows();
+    revalidate();
+    endResetModel();
+}
+
 void RosterTableModel::clear()
 {
     Application::RosterSnapshot empty;
@@ -396,9 +435,10 @@ Application::RosterSnapshot RosterTableModel::snapshot() const
     {
         result.columnWidths.push_back(Application::RosterSnapshotColumnWidth{width});
     }
-    result.rows.reserve(static_cast<std::size_t>(m_rows.size()));
-    for (const QStringList& sourceRow : m_rows)
+    result.rows.reserve(static_cast<std::size_t>(m_visibleRows));
+    for (int rowIndex = 0; rowIndex < m_visibleRows; ++rowIndex)
     {
+        const QStringList& sourceRow = m_rows.at(rowIndex);
         std::vector<std::u16string> row;
         row.reserve(static_cast<std::size_t>(sourceRow.size()));
         for (const QString& cell : sourceRow)
@@ -596,8 +636,8 @@ void RosterTableModel::replaceFromSnapshot(
         m_widths.append(width);
     }
 
-    m_rows.reserve(ModeledRowCount);
-    for (int rowIndex = 0; rowIndex < ModeledRowCount; ++rowIndex)
+    m_rows.reserve(m_maximumRows);
+    for (int rowIndex = 0; rowIndex < m_maximumRows; ++rowIndex)
     {
         QStringList row;
         row.reserve(m_columns.size());
@@ -620,6 +660,7 @@ void RosterTableModel::replaceFromSnapshot(
     m_cellErrors.clear();
     m_cellWarnings.clear();
     m_issues.clear();
+    m_visibleRows = calculateVisibleRows();
     m_editable = true;
     m_dirty = markDirty;
     revalidate();
@@ -627,6 +668,42 @@ void RosterTableModel::replaceFromSnapshot(
     if (m_dirtyChanged)
     {
         m_dirtyChanged(m_dirty);
+    }
+}
+
+int RosterTableModel::calculateVisibleRows() const
+{
+    int lastNonBlankRowCount = 0;
+    for (int row = 0; row < m_rows.size(); ++row)
+    {
+        const QStringList& values = m_rows.at(row);
+        if (std::any_of(values.cbegin(), values.cend(), [](const QString& value) {
+                return !value.trimmed().isEmpty();
+            }))
+        {
+            lastNonBlankRowCount = row + 1;
+        }
+    }
+    return Application::visibleRosterRowCount(
+        m_maximumRows,
+        static_cast<Application::RosterRowDisplayMode>(m_displayMode),
+        lastNonBlankRowCount);
+}
+
+void RosterTableModel::refreshVisibleRows()
+{
+    const int nextVisibleRows = calculateVisibleRows();
+    if (nextVisibleRows > m_visibleRows)
+    {
+        beginInsertRows({}, m_visibleRows, nextVisibleRows - 1);
+        m_visibleRows = nextVisibleRows;
+        endInsertRows();
+    }
+    else if (nextVisibleRows < m_visibleRows)
+    {
+        beginRemoveRows({}, nextVisibleRows, m_visibleRows - 1);
+        m_visibleRows = nextVisibleRows;
+        endRemoveRows();
     }
 }
 

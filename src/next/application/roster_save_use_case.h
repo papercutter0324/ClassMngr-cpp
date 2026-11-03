@@ -46,7 +46,7 @@ class RosterSavePort
 public:
     virtual ~RosterSavePort() = default;
 
-    // Receives the prepared, valid visible window [0, 25) from RosterSaveUseCase.
+    // Receives the prepared visible window from RosterSaveUseCase.
     // removedCustomColumns records explicit user-confirmed custom removals.
     [[nodiscard]] virtual Domain::Result<void> saveRoster(
         const PreparedRosterSaveRequest& request

@@ -165,7 +165,8 @@ SpeakingEvalRows completeEvaluation(
 
 SpeakingEvalRows expectedFixtureEvaluationRows()
 {
-    SpeakingEvalRows rows = SpeakingEval::emptyRows();
+    SpeakingEvalRows rows = SpeakingEval::emptyRows(
+        SpeakingEval::MaximumRowCount);
     rows[0] = {
         QString(),
         QStringLiteral("Avery"),
@@ -735,7 +736,8 @@ void ClassTransferTests::
     QCOMPARE(secondClassEvaluations.size(), 1);
     QCOMPARE(secondClassEvaluations[0].name,
              QStringLiteral("Second Class Evaluation"));
-    QCOMPARE(secondClassEvaluations[0].rows.size(), SpeakingEval::RowCount);
+    QCOMPARE(secondClassEvaluations[0].rows.size(),
+             SpeakingEval::MaximumRowCount);
     for (const QStringList& row : secondClassEvaluations[0].rows)
     {
         QCOMPARE(row.size(), SpeakingEval::ColumnCount);
@@ -752,7 +754,8 @@ void ClassTransferTests::
              QStringLiteral("First Evaluation"));
     QCOMPARE(firstClassEvaluations[1].name,
              QStringLiteral("Second Evaluation"));
-    QCOMPARE(firstClassEvaluations[0].rows.size(), SpeakingEval::RowCount);
+    QCOMPARE(firstClassEvaluations[0].rows.size(),
+             SpeakingEval::MaximumRowCount);
     for (const int rowIndex : {0, 1, 3, 4, 23})
     {
         QCOMPARE(
@@ -762,7 +765,8 @@ void ClassTransferTests::
     QCOMPARE(firstClassEvaluations[0].rows[2], rowTwoValues);
     rowTwentyFourValues[6].clear();
     QCOMPARE(firstClassEvaluations[0].rows[24], rowTwentyFourValues);
-    QCOMPARE(firstClassEvaluations[1].rows.size(), SpeakingEval::RowCount);
+    QCOMPARE(firstClassEvaluations[1].rows.size(),
+             SpeakingEval::MaximumRowCount);
     for (const QStringList& row : firstClassEvaluations[1].rows)
     {
         QCOMPARE(row.size(), SpeakingEval::ColumnCount);
@@ -867,7 +871,7 @@ void ClassTransferTests::exportSkipsMalformedEvaluationRowIndexes()
 
     const SpeakingEvalRows& rows =
         package->classes.first().evaluations.first().rows;
-    QCOMPARE(rows.size(), SpeakingEval::RowCount);
+    QCOMPARE(rows.size(), SpeakingEval::MaximumRowCount);
     QCOMPARE(rows[0][1], QStringLiteral("Valid row zero"));
     QCOMPARE(rows[24][1], QStringLiteral("Valid row twenty-four"));
 }
@@ -4111,7 +4115,7 @@ void ClassTransferTests::requiredSuccessFixtureTraversesReviewAndPersistsResults
     const auto importedEvaluation = service.loadSpeakingEval(
         importedClassId, QStringLiteral("Fixture Evaluation"));
     QVERIFY(importedEvaluation.has_value());
-    QCOMPARE(importedEvaluation->size(), SpeakingEval::RowCount);
+    QCOMPARE(importedEvaluation->size(), SpeakingEval::MaximumRowCount);
     QCOMPARE(*importedEvaluation, expectedFixtureEvaluationRows());
 }
 
@@ -4459,7 +4463,7 @@ void ClassTransferTests::successFixtureReplacesMatchingDestinationAndChildren()
     const auto importedEvaluation = service.loadSpeakingEval(
         destinationClass, QStringLiteral("Fixture Evaluation"));
     QVERIFY(importedEvaluation.has_value());
-    QCOMPARE(importedEvaluation->size(), SpeakingEval::RowCount);
+    QCOMPARE(importedEvaluation->size(), SpeakingEval::MaximumRowCount);
     QCOMPARE(*importedEvaluation, expectedFixtureEvaluationRows());
 
     const auto retainedTeacher = service.getTeacher(destinationTeacher);
@@ -4629,7 +4633,8 @@ void ClassTransferTests::successFixtureClassReplacementMatchesCommonInputState()
         service.loadSpeakingEval(
             destinationClass, QStringLiteral("Fixture Evaluation"));
     QVERIFY(replacedEvaluation);
-    SpeakingEvalRows expectedEvaluation = SpeakingEval::emptyRows();
+    SpeakingEvalRows expectedEvaluation = SpeakingEval::emptyRows(
+        SpeakingEval::MaximumRowCount);
     expectedEvaluation[0] = {
         QString(),
         QStringLiteral("Avery"),
@@ -4662,7 +4667,7 @@ void ClassTransferTests::successFixtureClassReplacementMatchesCommonInputState()
     QVERIFY2(snapshot.has_value(), qPrintable(snapshotError));
     const QByteArray snapshotHash = QCryptographicHash::hash(
         *snapshot, QCryptographicHash::Sha256).toHex();
-    QVERIFY2(snapshotHash == QByteArrayLiteral("ae65cb0a14393a9da0c9a546320f233531e324a4ef0bbfeee7f1a8306701ee6b"),
+    QVERIFY2(snapshotHash == QByteArrayLiteral("987a540212151ae63cfa0c3c7a80f65637e5b4d851d84519d4e443b9b9137f75"),
              snapshotHash.constData());
 }
 

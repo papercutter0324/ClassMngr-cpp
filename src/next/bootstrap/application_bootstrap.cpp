@@ -1771,6 +1771,7 @@ Application::StartupResult ApplicationBootstrap::start()
                         return Platform::saveClassNotesAtPath(databasePath, request);
                     };
                     actions.rosterEditor.output.readChoices = Platform::rosterOutputChoicesAtPath;
+                    actions.rosterEditor.output.inspectTruncation = Platform::rosterOutputTruncationAtPath;
                     actions.rosterEditor.output.savePdf = [] (const QString& path, const Output::RosterOutputRequest& request, const QString& pdf, const RosterTemplateRenderer::Fonts& fonts) {
                         return Platform::saveRosterOutputPdfAtPath(path, request, pdf, fonts);
                     };
@@ -1973,6 +1974,7 @@ Application::StartupResult ApplicationBootstrap::start()
                         actions.saveMode =
                             Platform::SettingsManagerSaveModePreferencesPort().read();
                         actions.rosterEditor.output.readChoices = Platform::rosterOutputChoicesAtPath;
+                        actions.rosterEditor.output.inspectTruncation = Platform::rosterOutputTruncationAtPath;
                     actions.rosterEditor.output.savePdf = [] (const QString& path, const Output::RosterOutputRequest& request, const QString& pdf, const RosterTemplateRenderer::Fonts& fonts) {
                         return Platform::saveRosterOutputPdfAtPath(path, request, pdf, fonts);
                     };

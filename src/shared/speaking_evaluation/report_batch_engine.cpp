@@ -10,6 +10,7 @@
 
 #include "core/utils/file_name_utils.h"
 #include "core/zip_archive_writer.h"
+#include "domain/models/speaking_evaluation.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QDir>
@@ -430,8 +431,9 @@ Result exportResolvedReports(
     const Request& request
     )
 {
-    if (request.reports.size() > 25)
-        return failed(QObject::tr("A report batch may contain at most 25 students."));
+    if (static_cast<std::size_t>(request.reports.size())
+        > static_cast<std::size_t>(SpeakingEval::MaximumRowCount))
+        return failed(QObject::tr("A report batch may contain at most 100 students."));
 
     if (request.reports.isEmpty())
     {

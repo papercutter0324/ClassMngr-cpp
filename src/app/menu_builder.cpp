@@ -21,6 +21,7 @@
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/pages/pagemanager.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
+#include "ui/shared/widgets/roster_row_preferences_group.h"
 
 #include <QAction>
 #include <QCheckBox>
@@ -1248,6 +1249,9 @@ void populatePreferencesDialog(
         }
         );
     generalLayout->addWidget(excelImportGroup);
+
+    generalLayout->addWidget(
+        new Ui::RosterRowPreferencesGroup(generalPage));
 
 #ifdef Q_OS_MACOS
     if (actions.showPowerPointDataAccessNotice)

@@ -10,6 +10,7 @@
 
 #include <QRegularExpression>
 
+#include <algorithm>
 #include <optional>
 #include <string>
 #include <utility>
@@ -55,8 +56,11 @@ SpeakingEvalModel::SpeakingEvalModel(
     QObject* parent
     )
     : QAbstractTableModel(parent)
-    , m_rows(SpeakingEval::emptyRows())
+    , m_rows(SpeakingEval::emptyRows(
+          SpeakingEval::MaximumRowCount))
+    , m_visibleRows(m_maximumRows)
 {
+    m_visibleRows = calculateVisibleRows();
     markSaved();
 }
 
@@ -69,7 +73,7 @@ int SpeakingEvalModel::rowCount(
         return 0;
     }
 
-    return SpeakingEval::RowCount;
+    return m_visibleRows;
 }
 
 int SpeakingEvalModel::columnCount(
@@ -92,7 +96,7 @@ QVariant SpeakingEvalModel::data(
     if (
         !index.isValid()
         || index.row() < 0
-        || index.row() >= m_rows.size()
+        || index.row() >= rowCount()
         || index.column() < 0
         || index.column() >= SpeakingEval::ColumnCount
         )
@@ -150,7 +154,7 @@ bool SpeakingEvalModel::setData(
         role != Qt::EditRole
         || !index.isValid()
         || index.row() < 0
-        || index.row() >= m_rows.size()
+        || index.row() >= rowCount()
         || index.column() < 0
         || index.column() >= SpeakingEval::ColumnCount
         )
@@ -193,6 +197,7 @@ bool SpeakingEvalModel::setData(
                 )
             );
         setDirtyState(true);
+        refreshVisibleRows();
     }
 
     revalidateAll();
@@ -205,15 +210,18 @@ bool SpeakingEvalModel::setData(
         return false;
     }
 
-    emit dataChanged(
-        index,
-        index,
-        {
-            Qt::DisplayRole,
-            Qt::EditRole,
-            Qt::ToolTipRole
-        }
-        );
+    if (index.row() < rowCount())
+    {
+        emit dataChanged(
+            index,
+            index,
+            {
+                Qt::DisplayRole,
+                Qt::EditRole,
+                Qt::ToolTipRole
+            }
+            );
+    }
 
     emit dataModified();
 
@@ -296,6 +304,7 @@ void SpeakingEvalModel::loadData(
 
     m_rows =
         normalizeStructure(rows);
+    m_visibleRows = calculateVisibleRows();
 
     revalidateAll();
     m_domainErrors.clear();
@@ -306,7 +315,46 @@ void SpeakingEvalModel::loadData(
 
 SpeakingEvalRows SpeakingEvalModel::rows() const
 {
+    return m_rows.mid(0, m_visibleRows);
+}
+
+SpeakingEvalRows SpeakingEvalModel::allRows() const
+{
     return m_rows;
+}
+
+int SpeakingEvalModel::maximumRows() const noexcept
+{
+    return m_maximumRows;
+}
+
+void SpeakingEvalModel::setRowPreferences(
+    const int maximumRows,
+    const int displayMode
+    )
+{
+    const int safeMaximum =
+        ClassMngr::Next::Application::isValidMaximumRosterRows(maximumRows)
+            ? maximumRows
+            : ClassMngr::Next::Application::DefaultMaximumRosterRows;
+    const int safeDisplayMode =
+        ClassMngr::Next::Application::isValidRosterRowDisplayMode(displayMode)
+            ? displayMode
+            : static_cast<int>(
+                ClassMngr::Next::Application::RosterRowDisplayMode::AllRows);
+    if (safeMaximum == m_maximumRows && safeDisplayMode == m_displayMode)
+    {
+        return;
+    }
+
+    beginResetModel();
+    m_maximumRows = safeMaximum;
+    m_displayMode = safeDisplayMode;
+    m_rows = normalizeStructure(m_rows);
+    m_visibleRows = calculateVisibleRows();
+    revalidateAll();
+    markSaved();
+    endResetModel();
 }
 
 QList<SpeakingEvalCellChange> SpeakingEvalModel::changedCells() const
@@ -531,7 +579,20 @@ bool SpeakingEvalModel::containsNamePair(
 
 bool SpeakingEvalModel::hasErrors() const
 {
-    return !m_errors.isEmpty() || !m_domainErrors.isEmpty();
+    const auto hasVisibleError = [this](
+        const QHash<QString, QStringList>& errors)
+    {
+        for (auto it = errors.constBegin(); it != errors.constEnd(); ++it)
+        {
+            const int row = it.key().section(QLatin1Char(':'), 0, 0).toInt();
+            if (row >= 0 && row < m_visibleRows && !it.value().isEmpty())
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+    return hasVisibleError(m_errors) || hasVisibleError(m_domainErrors);
 }
 
 QStringList SpeakingEvalModel::errorList() const
@@ -545,6 +606,11 @@ QStringList SpeakingEvalModel::errorList() const
 
         const int row =
             parts.value(0).toInt() + 1;
+
+        if (row <= 0 || row > m_visibleRows)
+        {
+            continue;
+        }
 
         const int column =
             parts.value(1).toInt() + 1;
@@ -614,7 +680,7 @@ SpeakingEvalRows SpeakingEvalModel::normalizeStructure(
 {
     SpeakingEvalRows normalized;
 
-    for (int row = 0; row < SpeakingEval::RowCount; ++row)
+    for (int row = 0; row < SpeakingEval::MaximumRowCount; ++row)
     {
         QStringList outputRow;
 
@@ -643,6 +709,46 @@ SpeakingEvalRows SpeakingEvalModel::normalizeStructure(
     }
 
     return normalized;
+}
+
+int SpeakingEvalModel::calculateVisibleRows() const
+{
+    int lastNonBlankRowCount = 0;
+    for (int row = 0; row < m_rows.size(); ++row)
+    {
+        if (std::any_of(
+                m_rows[row].cbegin(),
+                m_rows[row].cend(),
+                [](const QString& value)
+                {
+                    return !value.trimmed().isEmpty();
+                }))
+        {
+            lastNonBlankRowCount = row + 1;
+        }
+    }
+    return ClassMngr::Next::Application::visibleRosterRowCount(
+        m_maximumRows,
+        static_cast<ClassMngr::Next::Application::RosterRowDisplayMode>(
+            m_displayMode),
+        lastNonBlankRowCount);
+}
+
+void SpeakingEvalModel::refreshVisibleRows()
+{
+    const int nextVisibleRows = calculateVisibleRows();
+    if (nextVisibleRows > m_visibleRows)
+    {
+        beginInsertRows({}, m_visibleRows, nextVisibleRows - 1);
+        m_visibleRows = nextVisibleRows;
+        endInsertRows();
+    }
+    else if (nextVisibleRows < m_visibleRows)
+    {
+        beginRemoveRows({}, nextVisibleRows, m_visibleRows - 1);
+        m_visibleRows = nextVisibleRows;
+        endRemoveRows();
+    }
 }
 
 SpeakingEvalModel::ProcessedValue SpeakingEvalModel::processValue(

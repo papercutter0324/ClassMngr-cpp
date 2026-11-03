@@ -2,6 +2,7 @@
 
 #include "next/application/positive_decimal_id_validation.h"
 #include "next/application/roster_read_query.h"
+#include "next/application/roster_row_display_policy.h"
 #include "next/application/roster_row_availability.h"
 
 #include <utility>
@@ -12,6 +13,7 @@ namespace ClassMngr::Next::Application
 struct RosterWindowReadQuery final
 {
     Domain::ClassId classId;
+    int rowLimit = static_cast<int>(RosterModeledRowCount);
 
     friend bool operator==(
         const RosterWindowReadQuery&,
@@ -59,6 +61,15 @@ public:
             });
         }
 
+        if (!isValidMaximumRosterRows(query.rowLimit))
+        {
+            return RosterWindowReadResult::failure({
+                .code = Domain::ErrorCode::InvalidInput,
+                .message = "Roster row limit must be between 1 and 100.",
+                .recoverable = true
+            });
+        }
+
         return port.readRosterWindow(query);
     }
 };
@@ -69,9 +80,13 @@ class RosterWindowAsRosterReadPort final : public RosterReadPort
 {
 public:
     explicit RosterWindowAsRosterReadPort(
-        const RosterWindowReadPort& windowPort
+        const RosterWindowReadPort& windowPort,
+        const int rowLimit = DefaultMaximumRosterRows
         ) noexcept
         : m_windowPort(windowPort)
+        , m_rowLimit(isValidMaximumRosterRows(rowLimit)
+            ? rowLimit
+            : DefaultMaximumRosterRows)
     {
     }
 
@@ -81,7 +96,7 @@ public:
     {
         const RosterWindowReadResult loaded =
             RosterWindowReadUseCase::execute(
-                {.classId = query.classId},
+                {.classId = query.classId, .rowLimit = m_rowLimit},
                 m_windowPort
                 );
         if (!loaded)
@@ -96,6 +111,7 @@ public:
 
 private:
     const RosterWindowReadPort& m_windowPort;
+    int m_rowLimit = DefaultMaximumRosterRows;
 };
 
 } // namespace ClassMngr::Next::Application

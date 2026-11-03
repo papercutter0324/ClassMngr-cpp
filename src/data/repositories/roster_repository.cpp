@@ -4,6 +4,7 @@
 #include "data/database/database_transaction.h"
 #include "data/database/sql_query_utils.h"
 #include "next/application/roster_custom_column_name_policy.h"
+#include "next/application/roster_row_display_policy.h"
 #include "next/application/roster_row_availability.h"
 
 #include <QUuid>
@@ -639,14 +640,14 @@ RepositoryStatus RosterRepository::saveRosterWindowsWithParentCheck(
         return invalid(QObject::tr("Roster window save requires at least one window."));
 
     QSet<int> identities;
-    constexpr int rowLimit = static_cast<int>(
-        ClassMngr::Next::Application::RosterModeledRowCount);
+    constexpr int maximumRows = static_cast<int>(
+        ClassMngr::Next::Application::RosterMaximumRowCount);
     for (const auto& window : windows)
     {
         if (window.classId <= 0 || identities.contains(window.classId)
             || window.roster.columns.isEmpty()
             || window.roster.columns.size() > std::numeric_limits<int>::max()
-            || window.roster.rows.size() > rowLimit
+            || window.roster.rows.size() > maximumRows
             || window.roster.columnWidths.size() != window.roster.columns.size())
             return invalid(QObject::tr("Invalid roster window save request."));
         for (const auto& row : window.roster.rows)
@@ -694,8 +695,7 @@ RepositoryStatus RosterRepository::saveRosterWindowsWithParentCheck(
 
 RepositoryStatus RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
 {
-    constexpr int rowLimit = static_cast<int>(
-        ClassMngr::Next::Application::RosterModeledRowCount);
+    const int preservedTailStart = static_cast<int>(window.roster.rows.size());
     const auto equals = [](std::u16string_view left, std::u16string_view right)
     {
         return QStringView(left.data(), static_cast<qsizetype>(left.size())).compare(
@@ -787,7 +787,7 @@ RepositoryStatus RosterRepository::writeRosterWindow(const WindowSaveRequest& wi
         "FROM roster_data WHERE class_id=? AND "
         "(row_index>=? OR typeof(row_index)!='integer' OR row_index<0)"));
     tailColumns.addBindValue(window.classId);
-    tailColumns.addBindValue(rowLimit);
+    tailColumns.addBindValue(preservedTailStart);
     if (!tailColumns.exec())
         return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, tailColumns.lastError().text()});
     while (tailColumns.next())
@@ -834,7 +834,7 @@ RepositoryStatus RosterRepository::writeRosterWindow(const WindowSaveRequest& wi
         "FROM roster_data d JOIN %2 m ON m.old_index=d.col_index "
         "WHERE d.class_id=? AND d.row_index>=?").arg(tailTable, mapTable));
     query.addBindValue(window.classId);
-    query.addBindValue(rowLimit);
+    query.addBindValue(preservedTailStart);
     if (!query.exec())
         return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, query.lastError().text()});
 
@@ -1008,7 +1008,9 @@ RepositoryResult<RosterWindowReadOutcome> RosterRepository::loadRosterWindowDeta
     const int rowLimit
     )
 {
-    if (rowLimit <= 0)
+    if (rowLimit <= 0
+        || rowLimit > static_cast<int>(
+            ClassMngr::Next::Application::RosterMaximumRowCount))
     {
         return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr(
             "Loading a roster window failed: row limit must be positive."
@@ -1656,6 +1658,15 @@ RosterRepository::loadSpeakingEvaluationRosterNamesImpl(
                     ).arg(identity).arg(sourceRowIndex)});
         }
         const int rowIndex = static_cast<int>(sourceRowIndex);
+        if (rowIndex >= static_cast<int>(
+                ClassMngr::Next::Application::RosterMaximumRowCount))
+        {
+            return std::unexpected(RepositoryError{
+                RepositoryErrorCode::Validation,
+                QObject::tr(
+                    "Loading Speaking Evaluation roster names failed for %1: the roster contains a row beyond the supported maximum of 100."
+                    ).arg(identity)});
+        }
 
         while (record.rows.size() <= rowIndex)
         {
@@ -3529,13 +3540,22 @@ RepositoryResult<Roster> RosterRepository::loadRosterForOutput(
 
 RepositoryResult<RosterRepository::SubPrepStudentCountReadEntry>
 RosterRepository::loadSingleClassSubPrepStudentCountRecord(
-    const int classId
+    const int classId,
+    const std::optional<int> maximumCandidateRows
     )
 {
     if (classId <= 0)
     {
         return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, QObject::tr("Loading Sub Prep student count failed: invalid class id %1.")
                 .arg(classId)});
+    }
+    if (maximumCandidateRows
+        && !ClassMngr::Next::Application::isValidMaximumRosterRows(
+            *maximumCandidateRows))
+    {
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput,
+            QObject::tr("Loading roster student count failed: invalid row limit %1.")
+                .arg(*maximumCandidateRows)});
     }
 
     const QString identity = QObject::tr("class id %1").arg(classId);
@@ -3646,7 +3666,7 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
         };
     }
 
-    query.prepare(R"(
+    QString dataQuery = QStringLiteral(R"(
         SELECT
             row_index,
             typeof(row_index) AS row_index_storage_type,
@@ -3655,9 +3675,21 @@ RosterRepository::loadSingleClassSubPrepStudentCountRecord(
             value
         FROM roster_data
         WHERE class_id=?
-        ORDER BY row_index, col_index
     )");
+    if (maximumCandidateRows)
+    {
+        // Keep malformed indexes visible to validation, while excluding valid
+        // stored tail rows from the candidate count.
+        dataQuery += QStringLiteral(
+            " AND (typeof(row_index)<>'integer' OR row_index<?)");
+    }
+    dataQuery += QStringLiteral(" ORDER BY row_index, col_index");
+    query.prepare(dataQuery);
     query.addBindValue(classId);
+    if (maximumCandidateRows)
+    {
+        query.addBindValue(*maximumCandidateRows);
+    }
 
     const auto loadedData = SqlQueryUtils::executePrepared(
         query,
@@ -3871,10 +3903,51 @@ RepositoryResult<int> RosterRepository::getRosterStudentCount(
     return loaded->studentCount.value();
 }
 
+RepositoryResult<int> RosterRepository::getRosterStudentCount(
+    const int classId,
+    const int maximumCandidateRows
+    )
+{
+    if (!ClassMngr::Next::Application::isValidMaximumRosterRows(
+            maximumCandidateRows))
+    {
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput,
+            QObject::tr("Loading roster student count failed: invalid row limit %1.")
+                .arg(maximumCandidateRows)});
+    }
+
+    const auto loaded = loadSingleClassSubPrepStudentCountRecord(
+        classId, maximumCandidateRows);
+    if (!loaded)
+    {
+        return std::unexpected(loaded.error());
+    }
+
+    StartupProfiler::recordSubPrepRosterQuery(
+        classId,
+        loaded->columnCount,
+        loaded->rowCount,
+        loaded->cellCount,
+        loaded->studentCount.value()
+        );
+
+    return loaded->studentCount.value();
+}
+
 RepositoryResult<RosterRepository::PrintProjection>
 RosterRepository::loadTemplatePrintProjection(
-    int classId, const QStringList& selectedColumns, bool positional)
+    int classId, const QStringList& selectedColumns, bool positional,
+    const std::optional<int> maximumCandidateRows)
 {
+    if (maximumCandidateRows
+        && !ClassMngr::Next::Application::isValidMaximumRosterRows(
+            *maximumCandidateRows))
+    {
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput,
+            QObject::tr("Roster print data has an invalid row limit %1.")
+                .arg(*maximumCandidateRows)});
+    }
+
     PrintProjection result;
     QList<qlonglong> sourceColumns;
     QList<qlonglong> selectedIndexes(selectedColumns.size(), -1);
@@ -3910,16 +3983,38 @@ RosterRepository::loadTemplatePrintProjection(
         if (selectedIndexes[index] >= 0 && !sourceColumns.contains(selectedIndexes[index]))
         { sourceColumns.append(selectedIndexes[index]); result.columns.append(selectedColumns[index]); }
     if (positional)
-        for (int row = 0; row < 23; ++row) result.rows.append(QStringList(result.columns.size(), QString{}));
+    {
+        const int positionalRowCount = maximumCandidateRows
+            ? std::min(23, *maximumCandidateRows)
+            : 23;
+        for (int row = 0; row < positionalRowCount; ++row)
+            result.rows.append(QStringList(result.columns.size(), QString{}));
+    }
     if (sourceColumns.isEmpty()) return result;
     QStringList indexes;
     for (qlonglong column : sourceColumns) indexes.append(QString::number(column));
     QSqlQuery query(m_database);
     query.setForwardOnly(true);
+    QString rowFilter;
+    if (positional)
+    {
+        const int positionalRowLimit = maximumCandidateRows
+            ? std::min(23, *maximumCandidateRows)
+            : 23;
+        rowFilter = QStringLiteral(
+            "AND (row_index<%1 OR typeof(row_index)<>'integer')")
+            .arg(positionalRowLimit);
+    }
+    else if (maximumCandidateRows)
+    {
+        rowFilter = QStringLiteral(
+            "AND (row_index<%1 OR typeof(row_index)<>'integer')")
+            .arg(*maximumCandidateRows);
+    }
     const QString sql = QStringLiteral(
         "SELECT row_index, typeof(row_index), col_index, typeof(col_index), value, typeof(value) "
         "FROM roster_data WHERE class_id=? AND col_index IN (%1) %2 ORDER BY row_index,col_index")
-        .arg(indexes.join(','), positional ? QStringLiteral("AND (row_index<23 OR typeof(row_index)<>'integer')") : QString{});
+        .arg(indexes.join(','), rowFilter);
     if (!query.prepare(sql)) return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Roster data is not available.")});
     query.addBindValue(classId);
     if (!query.exec()) return std::unexpected(RepositoryError{RepositoryErrorCode::Technical, QObject::tr("Roster data is not available.")});

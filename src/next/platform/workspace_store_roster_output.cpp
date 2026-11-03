@@ -1,5 +1,6 @@
 #include "next/platform/workspace_store_roster_output.h"
 
+#include "core/settingsmanager.h"
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/class_repository.h"
@@ -97,6 +98,127 @@ Output::RosterOutputChoicesResult rosterOutputChoicesAtPath(
     catch (...) { return std::unexpected(QObject::tr("Roster data is not available.")); }
 }
 
+std::expected<RosterTemplatePrintTruncation::Summary, QString>
+rosterOutputTruncationAtPath(
+    const QString& path,
+    const Output::RosterOutputRequest& request)
+{
+    using namespace RosterTemplatePrintTruncation;
+    try
+    {
+        if (request.scope != RosterOutputScope::AllClasses
+            && request.scope != RosterOutputScope::CurrentClass
+            && request.scope != RosterOutputScope::SelectedClasses)
+        {
+            return std::unexpected(QObject::tr(
+                "No classes were selected for printing."));
+        }
+        if (request.testingClass
+            && (request.scope != RosterOutputScope::CurrentClass
+                || request.templateId
+                    != RosterTemplateRenderer::TemplateId::PerClassWithExtraInfo))
+        {
+            return std::unexpected(QObject::tr(
+                "Testing classes support only the current class and Per Class with Extra Info."));
+        }
+
+        WorkspaceStore store;
+        const auto opened = store.openExisting(path);
+        if (!opened) return std::unexpected(errorText(opened.error()));
+        auto classes = classesFor(store, request.currentClassId,
+            request.testingClass);
+        if (!classes) return std::unexpected(classes.error());
+
+        QList<RosterOutputClass> selected;
+        if (request.scope == RosterOutputScope::AllClasses)
+        {
+            selected = *classes;
+        }
+        else
+        {
+            const auto ids = request.scope == RosterOutputScope::CurrentClass
+                ? std::vector<Domain::ClassId>{request.currentClassId}
+                : request.selectedClassIds;
+            QSet<int> seen;
+            for (const auto& id : ids)
+            {
+                const auto found = std::find_if(classes->cbegin(),
+                    classes->cend(), [&](const auto& item)
+                    {
+                        return item.classId == id;
+                    });
+                if (found == classes->cend())
+                {
+                    return std::unexpected(QObject::tr(
+                        "Roster data is not available."));
+                }
+                if (!seen.contains(idValue(id)))
+                {
+                    selected.append(*found);
+                    seen.insert(idValue(id));
+                }
+            }
+        }
+        if (selected.isEmpty())
+        {
+            return std::unexpected(QObject::tr(
+                "No classes were selected for printing."));
+        }
+
+        std::vector<ClassStudentCounts> counts;
+        counts.reserve(static_cast<std::size_t>(selected.size()));
+        const int maximumRows = SettingsManager::instance().maximumRosterRows();
+        for (const auto& item : selected)
+        {
+            const int classId = idValue(item.classId);
+            const auto studentCount = store.rosterRepository()
+                ->getRosterStudentCount(classId, maximumRows);
+            if (!studentCount)
+            {
+                return std::unexpected(errorText(studentCount.error()));
+            }
+
+            qsizetype positionalIncluded = 0;
+            if (request.templateId
+                == RosterTemplateRenderer::TemplateId::PerClassWithExtraInfo)
+            {
+                const auto projection = store.rosterRepository()
+                    ->loadTemplatePrintProjection(classId,
+                        {QStringLiteral("English"), QStringLiteral("Korean")},
+                        true, maximumRows);
+                if (!projection)
+                {
+                    return std::unexpected(errorText(projection.error()));
+                }
+                const qsizetype english = projection->columns.indexOf(
+                    QStringLiteral("English"));
+                const qsizetype korean = projection->columns.indexOf(
+                    QStringLiteral("Korean"));
+                for (const QStringList& row : projection->rows)
+                {
+                    const bool hasEnglish = english >= 0
+                        && english < row.size()
+                        && !row.at(english).trimmed().isEmpty();
+                    const bool hasKorean = korean >= 0
+                        && korean < row.size()
+                        && !row.at(korean).trimmed().isEmpty();
+                    if (hasEnglish || hasKorean) ++positionalIncluded;
+                }
+            }
+            counts.push_back({
+                .total = *studentCount,
+                .positionalIncluded = positionalIncluded
+            });
+        }
+        return summarize(request.templateId, counts);
+    }
+    catch (...)
+    {
+        return std::unexpected(QObject::tr(
+            "Roster data is not available."));
+    }
+}
+
 DocumentOutputResult saveRosterOutputPdfAtPath(
     const QString& path, const Output::RosterOutputRequest& request,
     const QString& outputPath, const RosterTemplateRenderer::Fonts& fonts,
@@ -141,6 +263,7 @@ DocumentOutputResult saveRosterOutputPdfAtPath(
             }
         }
         if (selected.isEmpty()) return failure(QObject::tr("No classes were selected for printing."));
+        const int maximumRows = SettingsManager::instance().maximumRosterRows();
         // Keep a read snapshot while planning and streaming pages. The only
         // operation-wide data are class identities and schedule descriptors.
         DocumentOutputResult rendered = failure(QObject::tr("Roster printing failed."));
@@ -227,7 +350,8 @@ DocumentOutputResult saveRosterOutputPdfAtPath(
                         QStringList columns{QStringLiteral("English"), QStringLiteral("Korean")};
                         if (request.templateId == TemplateId::PerClassWithExtraInfo) columns.append(request.extraColumns);
                         auto projection = store.rosterRepository()->loadTemplatePrintProjection(section.id, columns,
-                            request.templateId == TemplateId::PerClassWithExtraInfo);
+                            request.templateId == TemplateId::PerClassWithExtraInfo,
+                            maximumRows);
                         if (!projection) return std::unexpected(errorText(projection.error()));
                         if (metrics) metrics->scannedCells += projection->scannedCellCount;
                         pageRows += projection->rows.size();

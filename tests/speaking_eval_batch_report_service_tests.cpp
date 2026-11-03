@@ -568,6 +568,7 @@ private slots:
     void privateNotesAreSplitAndSaved();
     void privateNotesAutomaticallyContinueBullets();
     void aiBatchResponseParserHandlesPartialAndMalformedBlocks();
+    void aiBatchResponseParserHandlesThreeDigitCandidateIds();
     void aiBatchDialogDisplaysEligibilityReasonsAndCheckState();
     void aiBatchDialogUsesKoreanNameWhenEnglishNameIsBlank();
     void aiBatchDialogAssessesCommentQualityAndPreservesStatuses();
@@ -2268,6 +2269,25 @@ void SpeakingEvalBatchReportServiceTests::
         result.unknownIds,
         QStringList{ QStringLiteral("STUDENT_99") }
         );
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    aiBatchResponseParserHandlesThreeDigitCandidateIds()
+{
+    const SpeakingEvalAiBatchParseResult result =
+        parseSpeakingEvalAiBatchResponse(
+            QStringLiteral(
+                "<<<STUDENT_100>>>\nA complete response.\n"
+                "<<<END_STUDENT_100>>>"),
+            {QStringLiteral("STUDENT_100")});
+
+    QCOMPARE(result.comments.size(), 1);
+    QCOMPARE(result.comments.first().id, QStringLiteral("STUDENT_100"));
+    QCOMPARE(result.comments.first().comment, QStringLiteral("A complete response."));
+    QVERIFY(!result.comments.first().hadNamePlaceholder);
+    QVERIFY(result.duplicateIds.isEmpty());
+    QVERIFY(result.malformedIds.isEmpty());
+    QVERIFY(result.unknownIds.isEmpty());
 }
 
 void SpeakingEvalBatchReportServiceTests::

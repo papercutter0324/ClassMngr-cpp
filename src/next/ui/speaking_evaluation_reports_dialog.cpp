@@ -1,4 +1,5 @@
 #include "next/ui/speaking_evaluation_reports_dialog.h"
+#include "next/application/speaking_evaluation_validation.h"
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 #include "features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
 #include "features/speaking_eval/services/speaking_eval_report_output.h"
@@ -139,7 +140,9 @@ SpeakingEvaluationReportsDialog::SpeakingEvaluationReportsDialog(QList<Service::
     connect(print, &QPushButton::clicked, this, [this] { printCurrent(); });
     connect(previewAi, &QPushButton::clicked, this, [this] { if (m_actions.previewAiPrompt && m_students->currentIndex() >= 0) m_actions.previewAiPrompt(m_reports.at(m_students->currentIndex()).sourceRow); });
     connect(openAi, &QPushButton::clicked, this, [this] { if (m_actions.copyAndOpenAiPrompt && m_students->currentIndex() >= 0) m_actions.copyAndOpenAiPrompt(m_reports.at(m_students->currentIndex()).sourceRow); });
-    const bool valid = !m_reports.isEmpty() && m_reports.size() <= 25 && m_assets->isValid();
+    const bool valid = !m_reports.isEmpty()
+        && m_reports.size() <= Application::SpeakingEvaluationMaximumRowCount
+        && m_assets->isValid();
     m_students->setEnabled(valid); save->setEnabled(valid); print->setEnabled(valid);
     previous->setEnabled(valid); next->setEnabled(valid); m_notes->setEnabled(valid);
     if (valid) m_students->setCurrentIndex(std::clamp(current, 0, int(m_reports.size()) - 1));
@@ -244,7 +247,9 @@ SpeakingEvaluationReportBatchDialog::SpeakingEvaluationReportBatchDialog(const Q
         SpeakingEvaluationReportsDialog dialog(std::move(selected), m_scope->currentIndex() == 1 ? m_current : 0, m_actions, this, false); dialog.exec();
     });
     connect(m_export, &QPushButton::clicked, this, [this] { exportReports(); });
-    preview->setEnabled(!reports.isEmpty() && reports.size() <= 25); updateControls();
+    preview->setEnabled(!reports.isEmpty()
+        && reports.size() <= Application::SpeakingEvaluationMaximumRowCount);
+    updateControls();
 }
 QList<Service::StudentReport> SpeakingEvaluationReportBatchDialog::selectedReports() const
 {
@@ -254,7 +259,8 @@ QList<Service::StudentReport> SpeakingEvaluationReportBatchDialog::selectedRepor
 void SpeakingEvaluationReportBatchDialog::updateControls()
 {
     m_keep->setVisible(m_mode == Mode::SaveAs && m_scope->currentIndex() == 1 && m_reports.size() > 1);
-    m_export->setEnabled(!selectedReports().isEmpty() && m_reports.size() <= 25);
+    m_export->setEnabled(!selectedReports().isEmpty()
+        && m_reports.size() <= Application::SpeakingEvaluationMaximumRowCount);
     m_note->setText(m_renderer->currentIndex() == 0
         ? batchText("This is the recommended method for creating reports.")
 #ifdef Q_OS_MACOS

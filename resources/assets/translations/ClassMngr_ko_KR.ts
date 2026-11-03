@@ -5853,6 +5853,12 @@ Rm: %1</source>
         <source>Retry</source>
         <translation>다시 시도</translation>
     </message>
+
+    <message>
+        <location filename="../../../src/features/roster/ui/roster_editor_widget.cpp" line="289"/>
+        <source>This roster contains saved rows after row %1. Rows above this limit remain stored at their original row numbers. Removing a custom column also removes that column from those saved rows.</source>
+        <translation>이 명단에는 %1행 뒤에 저장된 행이 있습니다. %1행 이후 행은 원래 행 번호로 보존됩니다. 사용자 지정 열을 제거하면 저장된 행에서도 해당 열이 제거됩니다.</translation>
+    </message>
 </context>
 <context>
     <name>RosterHeaderView</name>
@@ -6024,6 +6030,10 @@ Rm: %1</source>
 </context>
 <context>
     <name>RosterPrintDialog</name>
+    <message><source>Confirm Roster Output</source><translation>명단 출력 확인</translation></message>
+    <message><source>Student counts could not be checked, so roster output was canceled.</source><translation>학생 수를 확인할 수 없어 명단 출력을 취소했습니다.</translation></message>
+    <message><source>This layout can include %1 of %2 students across the selected rosters. %3 students will not appear in the output. Continue?</source><translation>이 서식에는 선택한 명단의 학생 %2명 중 %1명만 표시할 수 있습니다. %3명은 출력되지 않습니다. 계속하시겠습니까?</translation></message>
+    <message><source>Proceed</source><translation>계속</translation></message>
     <message><source>Save As...</source><translation>다른 이름으로 저장...</translation></message>
     <message>
         <location filename="../../../src/features/roster/ui/roster_print_dialog.cpp" line="+239"/>
@@ -7350,8 +7360,12 @@ GS 팀: %7명 생성, %8명 업데이트, %9명 변경 없음</translation>
     </message>
     <message>
         <location line="+25"/>
-        <source>Select students. Eligible students without comments are selected automatically.</source>
-        <translation>학생을 선택하세요. 코멘트가 없는 대상 학생은 자동으로 선택됩니다.</translation>
+        <source>Eligible students without comments are selected automatically, up to 25. Each prompt includes at most 25 students; deselect students to choose another group.</source>
+        <translation>코멘트가 없는 대상 학생은 최대 25명까지 자동으로 선택됩니다. 프롬프트 하나에는 최대 25명을 포함할 수 있으며, 다른 학생을 선택하려면 학생 선택을 해제하세요.</translation>
+    </message>
+    <message>
+        <source>%1 of %2 students selected. Each prompt is limited to 25 students; deselect students to choose another group.</source>
+        <translation>%2명 중 %1명 선택됨. 프롬프트 하나에는 최대 25명까지 포함됩니다. 다른 학생을 선택하려면 선택을 해제하세요.</translation>
     </message>
     <message>
         <location line="+20"/>
@@ -8323,6 +8337,12 @@ macOS 안내에서 허용을 선택하세요. 일괄 작업이 끝나면 임시 
         <location line="+62"/>
         <source>Match Roster Name</source>
         <translation>명단 이름과 연결</translation>
+    </message>
+
+    <message>
+        <location filename="../../../src/features/speaking_eval/ui/speaking_eval_page_actions.cpp" line="148"/>
+        <source>Saved evaluation rows above %1 are hidden and preserved at their original row numbers. Increase the maximum row setting to view them.</source>
+        <translation>평가의 %1행 이후 데이터는 숨겨져 있지만 원래 행 번호로 보존됩니다. 확인하려면 최대 행 수를 늘리세요.</translation>
     </message>
 </context>
 <context>
@@ -12039,9 +12059,35 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
         <source>Templates / Print</source>
         <translation>템플릿 / 인쇄</translation>
     </message>
+
+    <message>
+        <location filename="../../../src/next/ui/roster_editor_widget.cpp" line="932"/>
+        <source>This roster has saved rows after row %1. They remain stored at their original row numbers.</source>
+        <translation>이 명단에는 %1행 뒤에 저장된 행이 있습니다. 해당 행은 원래 행 번호로 보존됩니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/next/ui/roster_editor_widget.cpp" line="1089"/>
+        <location filename="../../../src/next/ui/roster_editor_widget.cpp" line="1100"/>
+        <source>Stored rows after row %1 could not be checked. The column was not removed.</source>
+        <translation>%1행 뒤의 저장된 행을 확인할 수 없어 열을 삭제하지 않았습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/next/ui/roster_editor_widget.cpp" line="1109"/>
+        <source>Remove Column Data After Row %1?</source>
+        <translation>%1행 이후 열 데이터를 삭제할까요?</translation>
+    </message>
+    <message>
+        <location filename="../../../src/next/ui/roster_editor_widget.cpp" line="1113"/>
+        <source>The &quot;%1&quot; column has stored data after row %2. Removing it will also delete that data.</source>
+        <translation>&quot;%1&quot; 열에 %2행 이후 저장된 데이터가 있습니다. 열을 삭제하면 해당 데이터도 삭제됩니다.</translation>
+    </message>
 </context>
 <context>
     <name>NextRosterOutput</name>
+    <message><source>Confirm Roster Output</source><translation>명단 출력 확인</translation></message>
+    <message><source>This layout can include %1 of %2 students across the selected rosters. %3 students will not appear in the output. Continue?</source><translation>이 서식에는 선택한 명단의 학생 %2명 중 %1명만 표시할 수 있습니다. %3명은 출력되지 않습니다. 계속하시겠습니까?</translation></message>
+    <message><source>Proceed</source><translation>계속</translation></message>
+    <message><source>Cancel</source><translation>취소</translation></message>
     <message>
         <source>Save Rosters as PDF</source>
         <translation>명단을 PDF로 저장</translation>
@@ -12236,5 +12282,92 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message><source>Legacy campus import is unavailable.</source><translation>이전 캠퍼스 데이터를 가져올 수 없습니다.</translation></message>
     <message><source>Save or discard edits before importing legacy campus data.</source><translation>이전 데이터를 가져오기 전에 변경 사항을 저장하거나 취소하세요.</translation></message>
     <message><source>Legacy campus data imported.</source><translation>이전 캠퍼스 데이터를 가져왔습니다.</translation></message>
+</context>
+<context>
+    <name>RosterRowPreferencesGroup</name>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="36"/>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="106"/>
+        <source>Set the maximum number of rows for Class Roster and Speaking Evaluation.</source>
+        <translation>명단 및 말하기 평가의 최대 행 수를 설정합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="38"/>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="98"/>
+        <source>Maximum Rows:</source>
+        <translation>최대 행 수:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="43"/>
+        <source>Display All Rows</source>
+        <translation>모든 행 표시</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="44"/>
+        <source>Display 5 Extra Rows</source>
+        <translation>추가 5개 행 표시</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="45"/>
+        <source>Display 10 Extra Rows</source>
+        <translation>추가 10개 행 표시</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="46"/>
+        <source>Display 15 Extra Rows</source>
+        <translation>추가 15개 행 표시</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="47"/>
+        <source>Display 20 Extra Rows</source>
+        <translation>추가 20개 행 표시</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="48"/>
+        <source>Display 25 Extra Rows</source>
+        <translation>추가 25개 행 표시</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="49"/>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="108"/>
+        <source>Show all rows, or show blank rows after the last row with data.</source>
+        <translation>모든 행을 표시하거나 데이터가 있는 마지막 행 뒤에 빈 행을 표시합니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="92"/>
+        <source>Roster and Speaking Evaluation</source>
+        <translation>명단 및 말하기 평가</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="103"/>
+        <source>Rows to Display:</source>
+        <translation>표시할 행:</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="137"/>
+        <source>Confirm Maximum Rows</source>
+        <translation>최대 행 수 확인</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="138"/>
+        <source>Is this number correct?</source>
+        <translation>이 숫자가 맞습니까?</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="154"/>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="176"/>
+        <source>Unable to Save Preference</source>
+        <translation>설정을 저장할 수 없음</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="155"/>
+        <source>The maximum row setting could not be saved.</source>
+        <translation>최대 행 설정을 저장할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location filename="../../../src/ui/shared/widgets/roster_row_preferences_group.h" line="177"/>
+        <source>The row display setting could not be saved.</source>
+        <translation>행 표시 설정을 저장할 수 없습니다.</translation>
+    </message>
 </context>
 </TS>

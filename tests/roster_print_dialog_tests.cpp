@@ -1,5 +1,6 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "core/settingsmanager.h"
 #include "data/database/database_session.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/teacher_repository.h"
@@ -18,6 +19,7 @@
 #include <QListWidgetItem>
 #include <QMessageBox>
 #include <QPointer>
+#include <QPushButton>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTemporaryDir>
@@ -226,8 +228,10 @@ class RosterPrintDialogTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void cleanup();
     void selectedClassListPreservesOrderIdsAndCheckState();
+    void outputConfirmsStudentsBeyondTemplateCapacity();
     void closedDatabaseLeavesClassListEmptyAndSilent();
     void classListReadFailureShowsWarningAndLeavesListEnabledAndEmpty();
     void teacherReadFailureRetainsClassFieldsAndDefaultTeacherFormatting();
@@ -241,11 +245,23 @@ private slots:
     void skipsOrphanColumnsAndMergesValidSiblingColumns();
     void failedRosterReadProvidesNoExtraInfoColumns();
     void classListReadFailurePreservesRenderedExtraInfoControls();
+
+private:
+    QTemporaryDir m_settingsDirectory;
 };
+
+void RosterPrintDialogTests::initTestCase()
+{
+    QVERIFY(m_settingsDirectory.isValid());
+    qputenv("CLASSMNGR_SETTINGS_ROOT", m_settingsDirectory.path().toUtf8());
+    SettingsManager::instance().clear();
+    SettingsManager::instance().sync();
+}
 
 void RosterPrintDialogTests::cleanup()
 {
     DialogServices::setUserPromptServiceForTesting(nullptr);
+    QVERIFY(SettingsManager::instance().writeMaximumRosterRowsPreference(25));
 }
 
 void RosterPrintDialogTests::closedDatabaseLeavesClassListEmptyAndSilent()
@@ -391,6 +407,88 @@ void RosterPrintDialogTests::selectedClassListPreservesOrderIdsAndCheckState()
     QCOMPARE(teacherMetricsAfter.statementCount
                  - teacherMetricsBefore.statementCount,
              1);
+}
+
+void RosterPrintDialogTests::outputConfirmsStudentsBeyondTemplateCapacity()
+{
+    RosterPrintDialogFixture fixture;
+    QString error;
+    QVERIFY2(fixture.initialize(&error), qPrintable(error));
+    int teacherId = 0;
+    QVERIFY2(fixture.createTeacher(&teacherId, &error), qPrintable(error));
+    int classId = 0;
+    QVERIFY2(fixture.createClass(
+        QStringLiteral("Capacity Class"),
+        QStringLiteral("E4"),
+        QStringLiteral("Theseus"),
+        teacherId,
+        {{QStringLiteral("Monday"), QStringLiteral("4:00 PM"),
+            QStringLiteral("4:50 PM")}},
+        &classId,
+        &error), qPrintable(error));
+
+    Roster roster;
+    roster.columns = Roster::BaseColumns;
+    roster.columnWidths.fill(120, roster.columns.size());
+    for (int index = 0; index < 30; ++index)
+    {
+        QStringList row(roster.columns.size(), QString{});
+        if (index < 25)
+        {
+            row[0] = QStringLiteral("Student%1").arg(
+                QChar(static_cast<ushort>('A' + index)));
+            row[1] = QStringLiteral("\uAE40\uBBFC\uC9C0");
+        }
+        else if (index == 29)
+        {
+            row[0] = QStringLiteral("TailStudent");
+            row[1] = QStringLiteral("\uAE40\uBBFC\uC9C0");
+        }
+        roster.rows.append(std::move(row));
+    }
+    const Status saved = fixture.services.rosterService()->saveRoster(
+        classId, roster);
+    QVERIFY2(saved, saved ? "" : qPrintable(saved.error()));
+
+    FakeUserPromptService prompts;
+    DialogServices::setUserPromptServiceForTesting(&prompts);
+    QVERIFY(SettingsManager::instance().writeMaximumRosterRowsPreference(25));
+    RosterPrintDialog hiddenTailDialog(
+        &fixture.services,
+        classId,
+        RosterTemplatePrintService::Scope::CurrentClass,
+        RosterPrintDialog::Action::Print);
+    auto* const hiddenTailPrintButton =
+        hiddenTailDialog.findChild<QPushButton*>(
+            QStringLiteral("rosterPrintButton"));
+    QVERIFY(hiddenTailPrintButton);
+    hiddenTailPrintButton->click();
+    QCOMPARE(prompts.confirmations.size(), 0);
+    QCOMPARE(hiddenTailDialog.result(), QDialog::Accepted);
+
+    QVERIFY(SettingsManager::instance().writeMaximumRosterRowsPreference(100));
+    prompts.scriptedChoices.enqueue(PromptChoice::Rejected);
+    prompts.scriptedChoices.enqueue(PromptChoice::Accepted);
+    RosterPrintDialog dialog(
+        &fixture.services,
+        classId,
+        RosterTemplatePrintService::Scope::CurrentClass,
+        RosterPrintDialog::Action::Print);
+
+    auto* const printButton = dialog.findChild<QPushButton*>(
+        QStringLiteral("rosterPrintButton"));
+    QVERIFY(printButton);
+    printButton->click();
+    QCOMPARE(prompts.confirmations.size(), 1);
+    QVERIFY(prompts.confirmations.front().message.contains(
+        QStringLiteral("25 of 26")));
+    QVERIFY(prompts.confirmations.front().message.contains(
+        QStringLiteral("1 students")));
+    QCOMPARE(dialog.result(), 0);
+
+    printButton->click();
+    QCOMPARE(prompts.confirmations.size(), 2);
+    QCOMPARE(dialog.result(), QDialog::Accepted);
 }
 
 void RosterPrintDialogTests::

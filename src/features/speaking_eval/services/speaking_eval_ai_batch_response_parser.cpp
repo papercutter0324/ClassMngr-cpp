@@ -19,12 +19,12 @@ SpeakingEvalAiBatchParseResult parseSpeakingEvalAiBatchResponse(
 
     const QRegularExpression completeBlock(
         QStringLiteral(
-            R"(<<<(STUDENT_[0-9]{2})>>>\s*(.*?)\s*<<<END_\1>>>)"
+            R"(<<<(STUDENT_[0-9]{2,3})>>>\s*(.*?)\s*<<<END_\1>>>)"
             ),
         QRegularExpression::DotMatchesEverythingOption
         );
     const QRegularExpression openingMarker(
-        QStringLiteral(R"(<<<(STUDENT_[0-9]{2})>>>)")
+        QStringLiteral(R"(<<<(STUDENT_[0-9]{2,3})>>>)")
         );
 
     QHash<QString, int> completeCounts;

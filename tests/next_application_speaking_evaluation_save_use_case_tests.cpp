@@ -382,7 +382,7 @@ rejectsIncompleteMatrixAndInvalidCoordinates()
     RecordingSpeakingEvaluationSavePort port;
 
     Application::SpeakingEvaluationSaveRequest incomplete = request("42");
-    incomplete.evaluation.rows.pop_back();
+    incomplete.evaluation.rows.clear();
     auto result = Application::SpeakingEvaluationSaveUseCase::execute(
         incomplete,
         port
@@ -398,7 +398,8 @@ rejectsIncompleteMatrixAndInvalidCoordinates()
 
     Application::SpeakingEvaluationSaveRequest invalidCell = request("42");
     invalidCell.evaluation.changedCells.push_back({
-        Application::SpeakingEvaluationCellChangeRowIndex{25},
+        Application::SpeakingEvaluationCellChangeRowIndex{
+            Application::SpeakingEvaluationMaximumRowCount},
         Application::SpeakingEvaluationCellChangeColumnIndex{0}
     });
     result = Application::SpeakingEvaluationSaveUseCase::execute(
@@ -416,9 +417,10 @@ rejectsOversizedMatrixRowsAndCellsBeforeCallingPort()
     RecordingSpeakingEvaluationSavePort port;
 
     Application::SpeakingEvaluationSaveRequest tooManyRows = request("42");
-    tooManyRows.evaluation.rows.emplace_back(
-        Application::SpeakingEvaluationColumnCount
-        );
+    tooManyRows.evaluation.rows.resize(
+        Application::SpeakingEvaluationMaximumRowCount + 1,
+        std::vector<std::u16string>(
+            Application::SpeakingEvaluationColumnCount));
     auto result = Application::SpeakingEvaluationSaveUseCase::execute(
         tooManyRows,
         port

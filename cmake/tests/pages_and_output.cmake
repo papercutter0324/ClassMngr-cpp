@@ -1705,6 +1705,8 @@ classmngr_add_qt_test(
     NAME RosterPrintDialog
     SOURCES
         tests/roster_print_dialog_tests.cpp
+    INCLUDE_DIRECTORIES
+        "${PROJECT_SOURCE_DIR}/tests"
     LIBRARIES
         Qt6::Test
         Qt6::Widgets
