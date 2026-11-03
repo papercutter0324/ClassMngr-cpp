@@ -69,6 +69,10 @@ TestingClassesManagerPage::TestingClassesManagerPage(
     )
     : Page(context, parent)
     , m_actions(std::move(actions))
+    , m_splitterStatePersistence(
+          m_actions.splitterStatePort,
+          Application::SplitterStateKey::TestingClassesManager
+          )
     , m_model(new TestingClassesModel(this))
     , m_autosaveTimer(new QTimer(this))
     , m_saveMode(m_actions.saveMode)
@@ -80,6 +84,9 @@ TestingClassesManagerPage::TestingClassesManagerPage(
         static_cast<void>(saveChanges());
     });
     buildUi();
+    m_splitterStatePersistence.restoreAfterConfiguration(
+        findChild<QSplitter*>(QStringLiteral("testingClassesSplitter"))
+        );
 }
 
 TestingClassesModel* TestingClassesManagerPage::model() const noexcept
@@ -217,6 +224,8 @@ PageOperationResult<void> TestingClassesManagerPage::onActivating()
 
 void TestingClassesManagerPage::onSuspending() noexcept
 {
+    m_splitterStatePersistence.save();
+
     m_pageActive = false;
     m_autosaveTimer->stop();
     m_dirty = false;

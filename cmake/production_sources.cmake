@@ -826,6 +826,7 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/my_classes_summary_model.h"
     "src/next/ui/classes_navigator_page.cpp"
     "src/next/ui/classes_navigator_page.h"
+    "src/next/ui/splitter_state_persistence.h"
     "src/next/ui/speaking_evaluation_page.cpp"
     "src/next/ui/speaking_evaluation_page.h"
     "src/next/ui/speaking_evaluation_ai_dialogs.cpp"

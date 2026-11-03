@@ -2,6 +2,7 @@
 
 #include "next/application/save_mode_preferences.h"
 #include "next/application/schedule_testing_class_choices_query.h"
+#include "next/application/splitter_state_port.h"
 #include "next/application/testing_class_create.h"
 #include "next/application/testing_class_delete.h"
 #include "next/application/testing_class_details_read_query.h"
@@ -9,6 +10,7 @@
 #include "next/application/testing_teacher_choices_read_query.h"
 #include "next/ui/page.h"
 #include "next/ui/roster_editor_widget.h"
+#include "next/ui/splitter_state_persistence.h"
 #include "next/ui/testing_classes_model.h"
 
 #include <QColor>
@@ -16,6 +18,7 @@
 #include <QWidget>
 
 #include <functional>
+#include <memory>
 #include <optional>
 
 class QComboBox;
@@ -40,6 +43,7 @@ enum class TestingClassesUnsavedChoice
 struct TestingClassesManagerPageActions final
 {
     Application::SaveMode saveMode = Application::SaveMode::Automatic;
+    std::shared_ptr<Application::SplitterStatePort> splitterStatePort;
     std::function<QString()> workspaceIdentity;
     std::function<std::optional<QString>()> activeWorkspacePath;
     std::function<Application::ScheduleTestingClassChoicesReadResult(
@@ -147,6 +151,7 @@ private:
     void deleteSelectedClass();
 
     TestingClassesManagerPageActions m_actions;
+    SplitterStatePersistence m_splitterStatePersistence;
     TestingClassesModel* m_model = nullptr;
     QListView* m_classList = nullptr;
     QWidget* m_editorWidget = nullptr;

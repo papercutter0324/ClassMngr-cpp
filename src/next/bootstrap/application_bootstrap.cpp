@@ -27,6 +27,7 @@
 #include "core/settingsmanager.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "next/platform/settings_manager_window_geometry_port.h"
+#include "next/platform/settings_manager_splitter_state_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "next/platform/settings_manager_preferences_port.h"
 #include "next/platform/settings_manager_save_mode_preferences_port.h"
@@ -1639,6 +1640,8 @@ Application::StartupResult ApplicationBootstrap::start()
                     Ui::ClassesNavigatorPageActions actions;
                     actions.saveMode =
                         Platform::SettingsManagerSaveModePreferencesPort().read();
+                    actions.splitterStatePort = std::make_shared<
+                        Platform::SettingsManagerSplitterStatePort>();
                     actions.activeWorkspacePath = [this]()
                         -> std::optional<QString> {
                         if (!m_applicationRuntime)
@@ -1896,6 +1899,8 @@ Application::StartupResult ApplicationBootstrap::start()
                         Ui::SpeakingEvaluationPageActions actions;
                         actions.saveMode =
                             Platform::SettingsManagerSaveModePreferencesPort().read();
+                        actions.splitterStatePort = std::make_shared<
+                            Platform::SettingsManagerSplitterStatePort>();
                         actions.activeWorkspacePath = [this]()
                             -> std::optional<QString> {
                             if (!m_applicationRuntime)
@@ -2035,6 +2040,8 @@ Application::StartupResult ApplicationBootstrap::start()
                         Ui::TestingClassesManagerPageActions actions;
                         actions.saveMode =
                             Platform::SettingsManagerSaveModePreferencesPort().read();
+                        actions.splitterStatePort = std::make_shared<
+                            Platform::SettingsManagerSplitterStatePort>();
                         actions.rosterEditor.output.readChoices = Platform::rosterOutputChoicesAtPath;
                         actions.rosterEditor.output.inspectTruncation = Platform::rosterOutputTruncationAtPath;
                     actions.rosterEditor.output.savePdf = [] (const QString& path, const Output::RosterOutputRequest& request, const QString& pdf, const RosterTemplateRenderer::Fonts& fonts) {
@@ -2165,6 +2172,8 @@ Application::StartupResult ApplicationBootstrap::start()
                 m_shell->pageHost().registerPage(
                     classTransferWorkflowPageDescriptor([this] {
                         Ui::ClassTransferWorkflowPageActions actions;
+                        actions.splitterStatePort = std::make_shared<
+                            Platform::SettingsManagerSplitterStatePort>();
                         actions.activeWorkspacePath = [this]()
                             -> std::optional<QString> {
                             if (!m_applicationRuntime)

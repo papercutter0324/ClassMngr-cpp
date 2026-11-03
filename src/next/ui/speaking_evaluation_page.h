@@ -6,6 +6,7 @@
 #include "next/application/ai_comment_provider_preferences.h"
 #include "next/application/ai_comment_voice_preferences.h"
 #include "next/application/save_mode_preferences.h"
+#include "next/application/splitter_state_port.h"
 #include "next/application/selected_class_grade_read_port.h"
 #include "next/application/speaking_evaluation_query.h"
 #include "next/application/speaking_evaluation_ai_batch_eligibility.h"
@@ -15,6 +16,7 @@
 #include "next/ui/speaking_evaluation_reports_dialog.h"
 #include "next/ui/page.h"
 #include "next/ui/speaking_evaluation_model.h"
+#include "next/ui/splitter_state_persistence.h"
 #include "next/domain/course.h"
 
 #include <QString>
@@ -47,6 +49,7 @@ enum class SpeakingEvaluationUnsavedChoice
 struct SpeakingEvaluationPageActions final
 {
     Application::SaveMode saveMode = Application::SaveMode::Automatic;
+    std::shared_ptr<Application::SplitterStatePort> splitterStatePort;
     std::function<QString()> workspaceIdentity;
     std::function<std::optional<QString>()> activeWorkspacePath;
     std::function<std::optional<Domain::ClassId>()> preferredClassSelection;
@@ -166,6 +169,7 @@ private:
     [[nodiscard]] bool askQuestionableKoreanNameLengths() const;
 
     SpeakingEvaluationPageActions m_actions;
+    SplitterStatePersistence m_splitterStatePersistence;
     SpeakingEvaluationClassListModel* m_classModel = nullptr;
     SpeakingEvaluationTableModel* m_matrixModel = nullptr;
     QListView* m_classList = nullptr;

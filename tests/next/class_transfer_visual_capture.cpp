@@ -13,6 +13,7 @@
 #include "next/ui/class_transfer_workflow_page.h"
 #include "next/ui/page_host.h"
 #include "preferences_test_ports.h"
+#include "splitter_state_test_port.h"
 
 #include <QAbstractItemModel>
 #include <QApplication>
@@ -269,6 +270,8 @@ struct PageHarness final
             .factory = [this](const Ui::PageContext& context)
                 -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
                 Ui::ClassTransferWorkflowPageActions actions;
+                actions.splitterStatePort = std::make_shared<
+                    Test::MemorySplitterStatePort>();
                 actions.activeWorkspacePath = [this]() -> std::optional<QString> {
                     return path.isEmpty() ? std::nullopt
                         : std::optional<QString>(path);

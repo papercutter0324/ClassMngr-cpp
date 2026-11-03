@@ -12,6 +12,7 @@
 #include "next/ui/roster_table_model.h"
 #include "next/ui/testing_classes_manager_page.h"
 #include "preferences_test_ports.h"
+#include "splitter_state_test_port.h"
 
 #include <QApplication>
 #include <QComboBox>
@@ -297,6 +298,8 @@ enum class CaptureState
         .factory = [&databasePath](const Ui::PageContext& context)
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             Ui::TestingClassesManagerPageActions actions;
+            actions.splitterStatePort = std::make_shared<
+                Test::MemorySplitterStatePort>();
             actions.workspaceIdentity = [&databasePath] { return databasePath; };
             actions.activeWorkspacePath = [&databasePath] {
                 return std::optional<QString>(databasePath);

@@ -13,6 +13,7 @@
 #include "next/ui/roster_table_model.h"
 #include "next/ui/testing_classes_manager_page.h"
 #include "preferences_test_ports.h"
+#include "splitter_state_test_port.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
 
 #include <QApplication>
@@ -24,6 +25,7 @@
 #include <QPushButton>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QSplitter>
 #include <QTabWidget>
 #include <QTemporaryDir>
 #include <QTableView>
@@ -200,6 +202,8 @@ struct PageHarness final
     std::unique_ptr<Resources::ResourceCatalog> catalog;
     std::unique_ptr<Resources::ResourceLoader> loader;
     std::unique_ptr<Ui::PageHost> host;
+    std::shared_ptr<Test::MemorySplitterStatePort> splitterStatePort =
+        std::make_shared<Test::MemorySplitterStatePort>();
     QString path;
     Application::SaveMode saveMode = Application::SaveMode::Manual;
     Ui::TestingClassesUnsavedChoice unsavedChoice =
@@ -230,6 +234,7 @@ struct PageHarness final
                 -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
                 Ui::TestingClassesManagerPageActions actions;
                 actions.saveMode = saveMode;
+                actions.splitterStatePort = splitterStatePort;
                 actions.workspaceIdentity = [this] { return path; };
                 actions.activeWorkspacePath = [this]() -> std::optional<QString> {
                     return path.isEmpty() ? std::nullopt
@@ -363,6 +368,7 @@ private slots:
     void pathDeleteCascadesAndRollbackKeepsSiblingAndOrdinaryClass();
     void newClassCreateFailureRollsBackAndCanRetry();
     void visiblePageSaveDiscardCancelAndSelectionRecovery();
+    void splitterStateSavesOnSuspensionWithoutResettingRetainedPage();
     void visiblePageAddDeleteLifecycle();
     void manualAutomaticAndPendingCreateSaveBehavior();
     void visiblePageFailedSaveRetainsDraftAndRetrySucceeds();
@@ -679,6 +685,39 @@ visiblePageSaveDiscardCancelAndSelectionRecovery()
         path, typedClassId(alphaId));
     QVERIFY(alpha);
     QCOMPARE(alpha.value().name, std::u16string(u"Alpha Saved"));
+}
+
+void TestingClassesManagerTests::
+splitterStateSavesOnSuspensionWithoutResettingRetainedPage()
+{
+    PageHarness harness;
+    QVERIFY(harness.initialize());
+    QVERIFY(harness.activate());
+    Ui::TestingClassesManagerPage* const page = harness.page();
+    QVERIFY(page);
+    QSplitter* const splitter = page->findChild<QSplitter*>(
+        QStringLiteral("testingClassesSplitter"));
+    QVERIFY(splitter);
+    QCOMPARE(harness.splitterStatePort->reads.size(), std::size_t(1));
+    QCOMPARE(harness.splitterStatePort->reads.front(),
+        Application::SplitterStateKey::TestingClassesManager);
+
+    splitter->setSizes({430, 570});
+    const QByteArray savedState = splitter->saveState();
+    QVERIFY(harness.host->activatePage(QStringLiteral("other")));
+    QCOMPARE(harness.splitterStatePort->writeCount(
+        Application::SplitterStateKey::TestingClassesManager), 1);
+    const std::string written = harness.splitterStatePort->payloads.at(
+        Application::SplitterStateKey::TestingClassesManager);
+    QCOMPARE(QByteArray(written.data(), static_cast<qsizetype>(written.size())),
+        savedState);
+
+    splitter->setSizes({650, 350});
+    const QList<int> currentSizes = splitter->sizes();
+    QVERIFY(harness.host->activatePage(QStringLiteral("testing_classes")));
+    QCOMPARE(harness.page(), page);
+    QCOMPARE(harness.splitterStatePort->reads.size(), std::size_t(1));
+    QCOMPARE(splitter->sizes(), currentSizes);
 }
 
 void TestingClassesManagerTests::visiblePageAddDeleteLifecycle()

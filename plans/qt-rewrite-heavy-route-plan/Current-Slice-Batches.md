@@ -6,12 +6,13 @@
    keep Legacy storage behavior, and require callbacks for Next Roster output.
 2. **8.1.6 Main-window geometry — complete:** restore through a dedicated
    Application port and SettingsManager adapter; persist only on accepted close.
-3. **8.1.7 Splitter state — in progress:** define the stable Next page splitters
-   in scope, then persist their sizes through isolated keys and lifecycle-safe
-   restoration. Discovery complete; distinguish retained page splitters from
-   transient workflow UI.
-4. **8.1.8 Application icon:** apply the icon to the Next window and native
-   Windows/macOS application targets.
+3. **8.1.7 Splitter state — complete:** persist four retained Next page
+   splitters with isolated settings keys, one-time restore, and suspension save;
+   the transient Schedule Import review splitter remains unchanged.
+4. **8.1.8 Application icon — in progress:** apply existing PNG/ICO/ICNS assets
+   to the Next window and native Windows/macOS target metadata. Discovery found
+   the assets and Legacy native configuration; Next has no icon assignment or
+   equivalent native icon wiring.
 5. **8.1.9 Font-family lookup:** remove direct `QFontDatabase` policy lookups
    from Navigation and Teacher Profile.
 6. **8.2.1 QtPdf viewer session:** move document load/status/render/close and

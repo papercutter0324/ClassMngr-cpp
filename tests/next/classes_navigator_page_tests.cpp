@@ -6,6 +6,7 @@
 #include "next/ui/roster_table_model.h"
 #include "next/ui/selected_class_editor.h"
 #include "preferences_test_ports.h"
+#include "splitter_state_test_port.h"
 
 #include <QApplication>
 #include <QComboBox>
@@ -15,6 +16,7 @@
 #include <QListView>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QSplitter>
 #include <QTimer>
 #include <QTabBar>
 #include <QTabWidget>
@@ -198,6 +200,8 @@ struct PageFixture final
     std::unique_ptr<Resources::ResourceCatalog> catalog;
     std::unique_ptr<Resources::ResourceLoader> loader;
     std::unique_ptr<Ui::PageHost> host;
+    std::shared_ptr<Test::MemorySplitterStatePort> splitterStatePort =
+        std::make_shared<Test::MemorySplitterStatePort>();
     ReadState state;
 
     bool initialize()
@@ -221,6 +225,7 @@ struct PageFixture final
                 -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
                 Ui::ClassesNavigatorPageActions actions;
                 actions.saveMode = state.saveMode;
+                actions.splitterStatePort = splitterStatePort;
                 actions.workspaceIdentity = [this] { return state.identity; };
                 actions.activeWorkspacePath = [this]() -> std::optional<QString> {
                     return state.workspaceOpen
@@ -771,6 +776,9 @@ class ClassesNavigatorPageTests final : public QObject
 
 private slots:
     void loadsLazilyAndKeepsAlwaysGroupedSmallListsPlusAll();
+    void splitterStateSavesOnSuspensionWithoutResettingRetainedPage();
+    void splitterStateRestoresSavedArrangementInClassesPage();
+    void splitterStateRestoresOnceAndKeepsDefaultsForMissingOrInvalidData();
     void appliesSourceVisibilityDayAndWeekendFilters();
     void listFailureClearsProjectionAndRetryRecovers();
     void metadataFailureKeepsNameOnlyListAndRetryEnriches();
@@ -839,6 +847,140 @@ loadsLazilyAndKeepsAlwaysGroupedSmallListsPlusAll()
     QVERIFY(page->selectedClassId().has_value());
     QCOMPARE(page->selectedClassId()->value(), std::string("7"));
     QCOMPARE(page->classList()->model()->rowCount(), 2);
+}
+
+void ClassesNavigatorPageTests::
+splitterStateSavesOnSuspensionWithoutResettingRetainedPage()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    QVERIFY(fixture.activate());
+    fixture.host->resize(1200, 800);
+    fixture.host->show();
+    QApplication::processEvents();
+
+    Ui::ClassesNavigatorPage* const page = fixture.page();
+    QVERIFY(page);
+    QSplitter* const splitter = page->findChild<QSplitter*>(
+        QStringLiteral("classesNavigatorContentSplitter"));
+    QVERIFY(splitter);
+    QCOMPARE(fixture.splitterStatePort->reads.size(), std::size_t(1));
+    QCOMPARE(fixture.splitterStatePort->reads.front(),
+        Application::SplitterStateKey::ClassesNavigatorContent);
+    const QList<int> defaultSizes = splitter->sizes();
+    QVERIFY(defaultSizes.size() == 2);
+    QVERIFY(defaultSizes[0] < defaultSizes[1]);
+
+    splitter->setSizes({500, 500});
+    const QByteArray savedState = splitter->saveState();
+    QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    QCOMPARE(fixture.splitterStatePort->writeCount(
+        Application::SplitterStateKey::ClassesNavigatorContent), 1);
+    const std::string written = fixture.splitterStatePort->payloads.at(
+        Application::SplitterStateKey::ClassesNavigatorContent);
+    QCOMPARE(QByteArray(written.data(), static_cast<qsizetype>(written.size())),
+        savedState);
+
+    splitter->setSizes({650, 350});
+    const QList<int> currentSizes = splitter->sizes();
+    QVERIFY(fixture.host->activatePage(QStringLiteral("classes")));
+    QCOMPARE(fixture.page(), page);
+    QCOMPARE(fixture.splitterStatePort->reads.size(), std::size_t(1));
+    QCOMPARE(splitter->sizes(), currentSizes);
+}
+
+void ClassesNavigatorPageTests::
+splitterStateRestoresSavedArrangementInClassesPage()
+{
+    QSplitter savedStateSource(Qt::Horizontal);
+    savedStateSource.addWidget(new QWidget(&savedStateSource));
+    savedStateSource.addWidget(new QWidget(&savedStateSource));
+    savedStateSource.resize(1000, 500);
+    savedStateSource.setSizes({680, 320});
+    const QByteArray state = savedStateSource.saveState();
+
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    fixture.splitterStatePort->seed(
+        Application::SplitterStateKey::ClassesNavigatorContent,
+        std::string(state.constData(), static_cast<std::size_t>(state.size()))
+        );
+    QVERIFY(fixture.activate());
+    fixture.host->resize(1200, 800);
+    fixture.host->show();
+    QApplication::processEvents();
+
+    Ui::ClassesNavigatorPage* const page = fixture.page();
+    QVERIFY(page);
+    QSplitter* const splitter = page->findChild<QSplitter*>(
+        QStringLiteral("classesNavigatorContentSplitter"));
+    QVERIFY(splitter);
+    QCOMPARE(fixture.splitterStatePort->reads.size(), std::size_t(1));
+    QVERIFY(splitter->sizes()[0] > splitter->sizes()[1]);
+}
+
+void ClassesNavigatorPageTests::
+splitterStateRestoresOnceAndKeepsDefaultsForMissingOrInvalidData()
+{
+    using Key = Application::SplitterStateKey;
+    const Key key = Key::ClassesNavigatorContent;
+    QVERIFY_THROWS_EXCEPTION(
+        std::invalid_argument,
+        Ui::SplitterStatePersistence(nullptr, key)
+        );
+
+    auto configureSplitter = [](QSplitter& splitter, const QList<int>& sizes) {
+        splitter.addWidget(new QWidget(&splitter));
+        splitter.addWidget(new QWidget(&splitter));
+        splitter.resize(1000, 500);
+        splitter.setSizes(sizes);
+    };
+
+    QSplitter source(Qt::Horizontal);
+    configureSplitter(source, {680, 320});
+    const QByteArray sourceState = source.saveState();
+    const std::string validPayload(
+        sourceState.constData(),
+        static_cast<std::size_t>(sourceState.size())
+        );
+
+    auto missingPort = std::make_shared<Test::MemorySplitterStatePort>();
+    QSplitter missing(Qt::Horizontal);
+    configureSplitter(missing, {300, 700});
+    const QList<int> missingDefaults = missing.sizes();
+    Ui::SplitterStatePersistence missingPersistence(missingPort, key);
+    missingPersistence.restoreAfterConfiguration(&missing);
+    QCOMPARE(missing.sizes(), missingDefaults);
+
+    auto invalidPort = std::make_shared<Test::MemorySplitterStatePort>();
+    invalidPort->seed(key, "invalid-state-payload");
+    QSplitter invalid(Qt::Horizontal);
+    configureSplitter(invalid, {300, 700});
+    const QList<int> invalidDefaults = invalid.sizes();
+    Ui::SplitterStatePersistence invalidPersistence(invalidPort, key);
+    invalidPersistence.restoreAfterConfiguration(&invalid);
+    QCOMPARE(invalid.sizes(), invalidDefaults);
+
+    auto validPort = std::make_shared<Test::MemorySplitterStatePort>();
+    validPort->seed(key, validPayload);
+    QSplitter restored(Qt::Horizontal);
+    configureSplitter(restored, {300, 700});
+    Ui::SplitterStatePersistence persistence(validPort, key);
+    persistence.restoreAfterConfiguration(&restored);
+    QCOMPARE(restored.sizes(), source.sizes());
+
+    restored.setSizes({420, 580});
+    const QList<int> currentSizes = restored.sizes();
+    const std::size_t readsBeforeRepeat = validPort->reads.size();
+    persistence.restoreAfterConfiguration(&restored);
+    QCOMPARE(validPort->reads.size(), readsBeforeRepeat);
+    QCOMPARE(restored.sizes(), currentSizes);
+
+    persistence.save();
+    QCOMPARE(validPort->writeCount(key), 1);
+    const std::string saved = validPort->payloads.at(key);
+    QCOMPARE(QByteArray(saved.data(), static_cast<qsizetype>(saved.size())),
+        restored.saveState());
 }
 
 void ClassesNavigatorPageTests::

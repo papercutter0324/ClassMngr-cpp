@@ -9,6 +9,7 @@
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/page_host.h"
 #include "preferences_test_ports.h"
+#include "splitter_state_test_port.h"
 
 #include <QApplication>
 #include <QDir>
@@ -248,6 +249,8 @@ bool captureNext(
         .factory = [&databasePath, &activeSelection](const Ui::PageContext& context)
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             Ui::ClassesNavigatorPageActions actions;
+            actions.splitterStatePort = std::make_shared<
+                Test::MemorySplitterStatePort>();
             actions.workspaceIdentity = [&databasePath] { return databasePath; };
             actions.activeWorkspacePath = [&databasePath] {
                 return std::optional<QString>(databasePath);

@@ -157,6 +157,28 @@ empty/invalid payload defaults, and exact-key binary round-trip. The bootstrap
 suite also ran its embedded visual-capture slots; dedicated visual-capture
 targets compiled but were not run or visually reviewed. No full suite was run.
 
+### 8.1.7 — Next splitter state (accepted)
+
+Added a dedicated `SplitterStatePort` and SettingsManager adapter with four
+isolated `ui/next/splitters/...` keys for the retained Classes Navigator,
+Testing Classes Manager, Speaking Evaluation, and Class Transfer page
+splitters. The transient Schedule Import review splitter remains unchanged.
+Each page requires the port, restores its configured splitter state once, and
+saves on suspension. Page reactivation retains the live splitter without
+reapplying stored state. Missing or invalid payloads preserve the current
+defaults; the adapter syncs writes so the final active-page save during
+PageHost destruction is flushed.
+
+On macOS 27 ARM64 with Qt 6.12.0 and Apple Clang 21, the incremental Debug
+build passed in `build/macos-clang-debug` for `ClassMngrNext`, the four focused
+page targets, the settings-adapter target, and affected visual-capture and
+Schedule targets. Independent CTest verification passed the four page suites
+and `ClassMngrNextPlatformSettingsManagerSplitterStatePortTests` (5/5).
+Coverage includes isolated keys, binary round-trip, absent/invalid defaults,
+one-time restoration, suspension persistence, and retained-page reactivation.
+The full suite was not run; visual captures were compiled but not visually
+reviewed.
+
 ## Objective
 
 

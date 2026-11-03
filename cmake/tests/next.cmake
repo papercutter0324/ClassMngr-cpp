@@ -4129,6 +4129,7 @@ set_tests_properties(ClassMngrNextSpeakingEvaluationPageTests
 # the legacy classes page and detail editor features.
 add_executable(ClassMngrNextClassesNavigatorPageTests
     tests/next/classes_navigator_page_tests.cpp
+    tests/next/splitter_state_test_port.h
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
@@ -6935,6 +6936,15 @@ classmngr_add_qt_test(
     NAME NextPlatformSettingsManagerDialogGeometryPreferencesPort
     SOURCES
         tests/next_platform_settings_manager_dialog_geometry_preferences_port_tests.cpp
+    LIBRARIES
+        ClassMngrNext::Platform
+        Qt6::Test
+)
+
+classmngr_add_qt_test(
+    NAME NextPlatformSettingsManagerSplitterStatePort
+    SOURCES
+        tests/next_platform_settings_manager_splitter_state_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

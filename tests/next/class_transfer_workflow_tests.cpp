@@ -17,6 +17,7 @@
 #include "next/ui/class_transfer_workflow_page.h"
 #include "next/ui/page_host.h"
 #include "preferences_test_ports.h"
+#include "splitter_state_test_port.h"
 
 #include <QAbstractItemModel>
 #include <QApplication>
@@ -29,6 +30,7 @@
 #include <QPushButton>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QSplitter>
 #include <QTableView>
 #include <QTabWidget>
 #include <QTemporaryDir>
@@ -197,12 +199,20 @@ namespace
     return teacher;
 }
 
+class EmptyTransferPage final : public Ui::Page
+{
+public:
+    using Ui::Page::Page;
+};
+
 struct PageHarness final
 {
     Test::MemoryPreferences preferences;
     std::unique_ptr<Resources::ResourceCatalog> catalog;
     std::unique_ptr<Resources::ResourceLoader> loader;
     std::unique_ptr<Ui::PageHost> host;
+    std::shared_ptr<Test::MemorySplitterStatePort> splitterStatePort =
+        std::make_shared<Test::MemorySplitterStatePort>();
     QString path;
     std::optional<Domain::ClassId> selectedClass;
 
@@ -224,6 +234,7 @@ struct PageHarness final
             .factory = [this](const Ui::PageContext& context)
                 -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
                 Ui::ClassTransferWorkflowPageActions actions;
+                actions.splitterStatePort = splitterStatePort;
                 actions.activeWorkspacePath = [this]() -> std::optional<QString> {
                     return path.isEmpty() ? std::nullopt
                         : std::optional<QString>(path);
@@ -263,7 +274,20 @@ struct PageHarness final
                         context, std::move(actions)));
             }
         };
-        return static_cast<bool>(host->registerPage(std::move(transfer)));
+        if (!host->registerPage(std::move(transfer)))
+        {
+            return false;
+        }
+        Ui::PageDescriptor other{
+            .id = *Ui::PageId::fromString(QStringLiteral("other")),
+            .label = QStringLiteral("Other"),
+            .factory = [](const Ui::PageContext& context)
+                -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+                return std::unique_ptr<Ui::Page>(
+                    std::make_unique<EmptyTransferPage>(context));
+            }
+        };
+        return static_cast<bool>(host->registerPage(std::move(other)));
     }
 
     [[nodiscard]] Ui::ClassTransferWorkflowPage* page() const
@@ -293,6 +317,7 @@ class ClassTransferWorkflowTests final : public QObject
 
 private Q_SLOTS:
     void workspaceStoreTransferRoundTripsFullPackageAndRemapsTeacherId();
+    void splitterStateSavesOnSuspensionWithoutResettingRetainedPage();
     void visiblePageExportsReviewsAppliesAndClearsOnWorkspaceChange();
     void applyFailureKeepsReviewAndDestinationTransactionRollsBack();
     void importRejectsMalformedUnsupportedAndUnreadableFiles();
@@ -300,6 +325,40 @@ private Q_SLOTS:
     void createReplaceSkipAndAmbiguousTeacherChoicesWorkInVisiblePage();
     void scheduleConflictAndStaleReplacementKeepReviewRetryable();
 };
+
+void ClassTransferWorkflowTests::
+splitterStateSavesOnSuspensionWithoutResettingRetainedPage()
+{
+    PageHarness harness;
+    QVERIFY(harness.initialize());
+    QVERIFY(harness.activate());
+
+    Ui::ClassTransferWorkflowPage* const page = harness.page();
+    QVERIFY(page);
+    QSplitter* const splitter = page->findChild<QSplitter*>(
+        QStringLiteral("classTransferWorkflowSplitter"));
+    QVERIFY(splitter);
+    QCOMPARE(harness.splitterStatePort->reads.size(), std::size_t(1));
+    QCOMPARE(harness.splitterStatePort->reads.front(),
+        Application::SplitterStateKey::ClassTransferWorkflow);
+
+    splitter->setSizes({460, 540});
+    const QByteArray savedState = splitter->saveState();
+    QVERIFY(harness.host->activatePage(QStringLiteral("other")));
+    QCOMPARE(harness.splitterStatePort->writeCount(
+        Application::SplitterStateKey::ClassTransferWorkflow), 1);
+    const std::string written = harness.splitterStatePort->payloads.at(
+        Application::SplitterStateKey::ClassTransferWorkflow);
+    QCOMPARE(QByteArray(written.data(), static_cast<qsizetype>(written.size())),
+        savedState);
+
+    splitter->setSizes({650, 350});
+    const QList<int> currentSizes = splitter->sizes();
+    QVERIFY(harness.host->activatePage(QStringLiteral("class_transfer")));
+    QCOMPARE(harness.page(), page);
+    QCOMPARE(harness.splitterStatePort->reads.size(), std::size_t(1));
+    QCOMPARE(splitter->sizes(), currentSizes);
+}
 
 void ClassTransferWorkflowTests::workspaceStoreTransferRoundTripsFullPackageAndRemapsTeacherId()
 {

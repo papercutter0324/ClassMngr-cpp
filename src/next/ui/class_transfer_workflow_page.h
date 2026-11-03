@@ -4,11 +4,14 @@
 #include "next/application/class_transfer_export_query.h"
 #include "next/application/class_transfer_preview_query.h"
 #include "next/application/classes_list_read_query.h"
+#include "next/application/splitter_state_port.h"
 #include "next/ui/page.h"
+#include "next/ui/splitter_state_persistence.h"
 
 #include <QString>
 
 #include <functional>
+#include <memory>
 #include <optional>
 
 class QAbstractItemView;
@@ -24,6 +27,7 @@ namespace ClassMngr::Next::Ui
 
 struct ClassTransferWorkflowPageActions final
 {
+    std::shared_ptr<Application::SplitterStatePort> splitterStatePort;
     std::function<std::optional<QString>()> activeWorkspacePath;
     std::function<Domain::Result<std::optional<QString>>()> chooseImportFile;
     std::function<Domain::Result<std::optional<QString>>()> chooseExportFile;
@@ -91,6 +95,7 @@ private:
     [[nodiscard]] bool ensureReviewPathIsCurrent();
 
     ClassTransferWorkflowPageActions m_actions;
+    SplitterStatePersistence m_splitterStatePersistence;
     ClassSelectionModel* m_classSelectionModel = nullptr;
     ReviewModel* m_classReviewModel = nullptr;
     ReviewModel* m_teacherReviewModel = nullptr;

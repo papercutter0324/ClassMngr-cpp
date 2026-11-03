@@ -6,13 +6,16 @@
 #include "next/application/class_create.h"
 #include "next/application/class_delete.h"
 #include "next/application/save_mode_preferences.h"
+#include "next/application/splitter_state_port.h"
 #include "next/ui/classes_navigator_model.h"
 #include "next/ui/selected_class_editor.h"
 #include "next/ui/page.h"
+#include "next/ui/splitter_state_persistence.h"
 
 #include <QString>
 
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -32,6 +35,7 @@ namespace ClassMngr::Next::Ui
 struct ClassesNavigatorPageActions final
 {
     Application::SaveMode saveMode = Application::SaveMode::Automatic;
+    std::shared_ptr<Application::SplitterStatePort> splitterStatePort;
     std::function<QString()> workspaceIdentity;
     std::function<std::optional<QString>()> activeWorkspacePath;
     std::function<Application::ClassesListReadResult(const QString&)> readClasses;
@@ -165,6 +169,7 @@ private:
         ) const;
 
     ClassesNavigatorPageActions m_actions;
+    SplitterStatePersistence m_splitterStatePersistence;
     ClassesNavigatorModel* m_model = nullptr;
     QTabBar* m_gradeTabs = nullptr;
     QListView* m_classList = nullptr;

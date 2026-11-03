@@ -132,10 +132,15 @@ ClassesNavigatorPage::ClassesNavigatorPage(
     )
     : Page(context, parent)
     , m_actions(std::move(actions))
+    , m_splitterStatePersistence(
+          m_actions.splitterStatePort,
+          Application::SplitterStateKey::ClassesNavigatorContent
+          )
     , m_model(new ClassesNavigatorModel(this))
 {
     setObjectName(QStringLiteral("classesNavigatorPage"));
     buildUi();
+    m_splitterStatePersistence.restoreAfterConfiguration(m_contentSplitter);
 }
 
 ClassesNavigatorModel* ClassesNavigatorPage::model() const noexcept
@@ -208,6 +213,8 @@ PageOperationResult<void> ClassesNavigatorPage::onActivating()
 
 void ClassesNavigatorPage::onSuspending() noexcept
 {
+    m_splitterStatePersistence.save();
+
     if (const auto path = activePath(); path && m_actions.readPreferences)
     {
         try

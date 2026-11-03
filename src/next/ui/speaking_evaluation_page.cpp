@@ -292,6 +292,10 @@ SpeakingEvaluationPage::SpeakingEvaluationPage(
     )
     : Page(context, parent)
     , m_actions(std::move(actions))
+    , m_splitterStatePersistence(
+          m_actions.splitterStatePort,
+          Application::SplitterStateKey::SpeakingEvaluationContent
+          )
     , m_classModel(new SpeakingEvaluationClassListModel(this))
     , m_matrixModel(new SpeakingEvaluationTableModel(this))
     , m_autoSaveTimer(new QTimer(this))
@@ -425,6 +429,7 @@ SpeakingEvaluationPage::SpeakingEvaluationPage(
     splitter->setStretchFactor(1, 1);
     splitter->setSizes({205, 1000});
     root->addWidget(splitter, 1);
+    m_splitterStatePersistence.restoreAfterConfiguration(splitter);
 
     connect(m_classList->selectionModel(), &QItemSelectionModel::currentChanged,
         this, [this](const QModelIndex& current, const QModelIndex&) {
@@ -641,6 +646,8 @@ PageOperationResult<void> SpeakingEvaluationPage::onActivating()
 
 void SpeakingEvaluationPage::onSuspending() noexcept
 {
+    m_splitterStatePersistence.save();
+
     m_active = false;
     m_autoSaveTimer->stop();
     // The host resolves a dirty page before suspension. Retain the draft if a

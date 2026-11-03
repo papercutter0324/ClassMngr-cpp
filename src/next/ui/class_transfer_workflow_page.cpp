@@ -518,12 +518,19 @@ ClassTransferWorkflowPage::ClassTransferWorkflowPage(
     )
     : Page(context, parent)
     , m_actions(std::move(actions))
+    , m_splitterStatePersistence(
+          m_actions.splitterStatePort,
+          Application::SplitterStateKey::ClassTransferWorkflow
+          )
     , m_classSelectionModel(new ClassSelectionModel(this))
     , m_classReviewModel(new ReviewModel(ReviewModel::Kind::Classes, this))
     , m_teacherReviewModel(new ReviewModel(ReviewModel::Kind::Teachers, this))
 {
     buildUi();
     retranslateUi();
+    m_splitterStatePersistence.restoreAfterConfiguration(
+        findChild<QSplitter*>(QStringLiteral("classTransferWorkflowSplitter"))
+        );
 }
 
 QListView* ClassTransferWorkflowPage::exportClassList() const noexcept
@@ -630,6 +637,7 @@ void ClassTransferWorkflowPage::buildUi()
     layout->addLayout(buttons);
 
     auto* const splitter = new QSplitter(Qt::Horizontal, this);
+    splitter->setObjectName(QStringLiteral("classTransferWorkflowSplitter"));
     m_exportClassList = new QListView(splitter);
     m_exportClassList->setObjectName(QStringLiteral("classTransferExportClassList"));
     m_exportClassList->setModel(m_classSelectionModel);
@@ -764,6 +772,7 @@ PageOperationResult<void> ClassTransferWorkflowPage::onActivating()
 
 void ClassTransferWorkflowPage::onSuspending() noexcept
 {
+    m_splitterStatePersistence.save();
 }
 
 bool ClassTransferWorkflowPage::refreshClasses()

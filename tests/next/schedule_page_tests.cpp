@@ -17,6 +17,7 @@
 #include "next/ui/schedule_testing_assignment_dialog.h"
 #include "next/ui/testing_classes_manager_page.h"
 #include "preferences_test_ports.h"
+#include "splitter_state_test_port.h"
 #include "sql_script_runner.h"
 
 #include <QApplication>
@@ -466,6 +467,8 @@ struct PageFixture final
             .factory = [this](const Ui::PageContext& context)
                 -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
                 Ui::TestingClassesManagerPageActions actions;
+                actions.splitterStatePort = std::make_shared<
+                    Test::MemorySplitterStatePort>();
                 actions.workspaceIdentity = [this] { return identity; };
                 actions.activeWorkspacePath = [this]()
                     -> std::optional<QString> {

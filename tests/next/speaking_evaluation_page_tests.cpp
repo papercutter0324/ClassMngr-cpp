@@ -14,6 +14,7 @@
 #include "next/ui/speaking_evaluation_page.h"
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 #include "preferences_test_ports.h"
+#include "splitter_state_test_port.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -42,6 +43,7 @@
 #include <QStringList>
 #include <QStyle>
 #include <QStyleOptionButton>
+#include <QSplitter>
 #include <QTabWidget>
 #include <QTableView>
 #include <QTemporaryDir>
@@ -332,6 +334,9 @@ public:
 class PageHarness final
 {
 public:
+    std::shared_ptr<Test::MemorySplitterStatePort> splitterStatePort =
+        std::make_shared<Test::MemorySplitterStatePort>();
+
     PageHarness()
     {
         m_reportActions.assets.latinFamily = QStringLiteral("Arial");
@@ -360,6 +365,7 @@ public:
                 -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
                 Ui::SpeakingEvaluationPageActions actions;
                 actions.saveMode = saveMode;
+                actions.splitterStatePort = splitterStatePort;
                 actions.workspaceIdentity = [&state] { return state.identity; };
                 actions.activeWorkspacePath = [&state]() -> std::optional<QString> {
                     return state.path;
@@ -626,6 +632,7 @@ private slots:
     void rowPreferencesDisplayExtrasExtendAndRetainTailRows();
     void saveReopenPersistsUnicodeAndOnlyChangedCells();
     void largeNavigationUsesOneMatrixAndReleasesItOnSuspension();
+    void splitterStateSavesOnSuspensionWithoutResettingRetainedPage();
     void selectionSaveDiscardAndFailureRetryPreserveDrafts();
     void saveOnSwitchPersistsBeforeLoadingAndFailureKeepsDraft();
     void automaticModeDebouncesAndSavesOnce();
@@ -812,6 +819,43 @@ void SpeakingEvaluationPageTests::largeNavigationUsesOneMatrixAndReleasesItOnSus
     QCOMPARE(page->residentMatrixCount(), std::size_t(1));
     QCOMPARE(page->classModel()->summaryCount(), std::size_t(96));
     QCOMPARE(page->selectedEvaluationName(), QStringLiteral("Winter"));
+}
+
+void SpeakingEvaluationPageTests::
+splitterStateSavesOnSuspensionWithoutResettingRetainedPage()
+{
+    FakeEvaluationState state;
+    PageHarness harness;
+    QVERIFY(harness.initialize(state));
+    harness.host().resize(1200, 800);
+    harness.host().show();
+    QApplication::processEvents();
+
+    Ui::SpeakingEvaluationPage* const page = harness.page();
+    QVERIFY(page);
+    QSplitter* const splitter = page->findChild<QSplitter*>(
+        QStringLiteral("speakingEvaluationContentSplitter"));
+    QVERIFY(splitter);
+    QCOMPARE(harness.splitterStatePort->reads.size(), std::size_t(1));
+    QCOMPARE(harness.splitterStatePort->reads.front(),
+        Application::SplitterStateKey::SpeakingEvaluationContent);
+
+    splitter->setSizes({460, 540});
+    const QByteArray savedState = splitter->saveState();
+    QVERIFY(harness.host().activatePage(QStringLiteral("other")));
+    QCOMPARE(harness.splitterStatePort->writeCount(
+        Application::SplitterStateKey::SpeakingEvaluationContent), 1);
+    const std::string written = harness.splitterStatePort->payloads.at(
+        Application::SplitterStateKey::SpeakingEvaluationContent);
+    QCOMPARE(QByteArray(written.data(), static_cast<qsizetype>(written.size())),
+        savedState);
+
+    splitter->setSizes({650, 350});
+    const QList<int> currentSizes = splitter->sizes();
+    QVERIFY(harness.host().activatePage(QStringLiteral("speaking_evaluation")));
+    QCOMPARE(harness.page(), page);
+    QCOMPARE(harness.splitterStatePort->reads.size(), std::size_t(1));
+    QCOMPARE(splitter->sizes(), currentSizes);
 }
 
 void SpeakingEvaluationPageTests::selectionSaveDiscardAndFailureRetryPreserveDrafts()

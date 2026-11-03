@@ -321,6 +321,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/save_mode_preferences.h
     src/next/application/theme_preferences_port.h
     src/next/application/dialog_geometry_preferences_port.h
+    src/next/application/splitter_state_port.h
     src/next/application/window_geometry_port.h
     src/next/application/directory_preference_path.h
     src/next/application/file_dialog_directory_preferences.h
@@ -614,6 +615,7 @@ set(CLASSMNGR_NEXT_PLATFORM_SOURCES
     src/next/platform/settings_manager_save_mode_preferences_port.h
     src/next/platform/settings_manager_theme_preferences_port.h
     src/next/platform/settings_manager_dialog_geometry_preferences_port.h
+    src/next/platform/settings_manager_splitter_state_port.h
     src/next/platform/settings_manager_window_geometry_port.h
     src/next/platform/settings_manager_language_preferences_port.h
     src/next/platform/settings_manager_upcoming_birthday_dismissal_port.h
