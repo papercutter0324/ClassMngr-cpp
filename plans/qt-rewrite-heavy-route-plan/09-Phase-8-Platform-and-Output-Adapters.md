@@ -490,6 +490,21 @@ Focused CTest execution passed both affected suites:
 English and Korean calendar captures in light and dark palettes were generated
 and visually reviewed. No full test suite was run.
 
+### 8.6.1 — Transfer export codec (accepted)
+
+The mapped/staged reader was audited and left intact. Both `saveFile` overloads
+now share bounded incremental JSON output with an 8 KiB buffer and Qt-escaped
+1,024 UTF-16-unit chunks. A count-only preflight enforces the inclusive 16 MiB
+cap before writing, preserving validation error order and the single timestamp.
+
+Incremental macOS builds passed for `ClassMngrClassTransferSupport` and
+`ClassMngrClassTransferExportCodecParityTests`; focused CTest passed 1/1:
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R '^ClassMngrClassTransferExportCodecParityTests$'`.
+Coverage includes exact Qt-indented byte parity for Legacy and portable output
+with escaped, control, and Unicode strings; exact-cap acceptance; over-cap
+destination preservation; and mapped-reader behavior. No full suite or memory
+measurement was run; Phase 9 retains the memory gate.
+
 ## Objective
 
 

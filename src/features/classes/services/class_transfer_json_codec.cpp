@@ -1,13 +1,17 @@
 #include "class_transfer_json_codec.h"
 
+#include <QByteArrayView>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonParseError>
+#include <QJsonValue>
 #include <QObject>
 #include <QSaveFile>
 #include <QSet>
+#include <QStringView>
 
+#include <algorithm>
 #include <cstring>
 #include <limits>
 
@@ -1409,6 +1413,392 @@ QJsonObject classToJson(const ClassExportClass& value)
         {QStringLiteral("speaking_evaluations"), evaluations}};
 }
 
+QStringView jsonText(const QString& value) { return value; }
+QStringView jsonText(const std::u16string& value) { return QStringView(value); }
+QStringView jsonText(const ClassExportClassKey& value) { return jsonText(value.value()); }
+QStringView jsonText(const ClassExportTeacherKey& value) { return jsonText(value.value()); }
+int jsonWidth(const int value) { return value; }
+int jsonWidth(const ClassExportRosterColumnWidth& value) { return value.rawValue(); }
+
+// File output retains only this buffer and one small scalar-encoding chunk.
+// The public DOM-producing APIs remain available for in-memory consumers.
+class JsonFileOutput final
+{
+public:
+    explicit JsonFileOutput(QSaveFile& file, const bool writeBytes = true)
+        : m_file(file), m_writeBytes(writeBytes)
+    {
+        if (m_writeBytes) m_buffer.reserve(BufferBytes);
+    }
+
+    [[nodiscard]] bool good() const noexcept { return m_failure == Failure::None; }
+    [[nodiscard]] bool exceededLimit() const noexcept { return m_failure == Failure::Limit; }
+    [[nodiscard]] const QString& writeError() const noexcept { return m_writeError; }
+
+    void raw(const QByteArrayView bytes)
+    {
+        if (!good()) return;
+        if (bytes.size() > kClassTransferMaximumEncodedFileBytes - m_encodedBytes)
+        {
+            m_failure = Failure::Limit;
+            m_file.cancelWriting();
+            return;
+        }
+        m_encodedBytes += bytes.size();
+        if (!m_writeBytes) return;
+        qsizetype offset = 0;
+        while (offset < bytes.size() && good())
+        {
+            const qsizetype count = std::min(
+                BufferBytes - m_buffer.size(), bytes.size() - offset);
+            m_buffer.append(bytes.data() + offset, count);
+            offset += count;
+            if (m_buffer.size() == BufferBytes) flush();
+        }
+    }
+
+    void indent(const int depth)
+    {
+        for (int index = 0; index < depth && good(); ++index) raw("    ");
+    }
+
+    void string(const QStringView value)
+    {
+        raw("\"");
+        for (qsizetype offset = 0; offset < value.size() && good();)
+        {
+            qsizetype count = std::min(StringChunkUnits, value.size() - offset);
+            // Keep a valid UTF-16 pair together so Qt encodes it exactly as it
+            // does when serializing the original complete QString. Isolated
+            // surrogates still receive Qt's normal JSON escape treatment.
+            if (offset + count < value.size()
+                && value.at(offset + count - 1).isHighSurrogate()
+                && value.at(offset + count).isLowSurrogate())
+            {
+                --count;
+            }
+            const QByteArray encoded = QJsonValue(value.sliced(offset, count).toString())
+                .toJson(QJsonDocument::Compact);
+            raw(QByteArrayView(encoded).sliced(1, encoded.size() - 2));
+            offset += count;
+        }
+        raw("\"");
+    }
+
+    void integer(const int value)
+    {
+        raw(QJsonValue(value).toJson(QJsonDocument::Compact));
+    }
+
+    template<class Range, class WriteValue>
+    void array(const Range& values, const int depth, WriteValue writeValue)
+    {
+        raw("[\n");
+        bool any = false;
+        for (const auto& value : values)
+        {
+            if (!good()) break;
+            if (any) raw(",\n");
+            indent(depth + 1);
+            writeValue(value, depth + 1);
+            any = true;
+        }
+        if (any) raw("\n");
+        indent(depth);
+        raw("]");
+    }
+
+    [[nodiscard]] bool finish()
+    {
+        if (good()) flush();
+        return good();
+    }
+
+private:
+    enum class Failure { None, Limit, Write };
+    static constexpr qsizetype BufferBytes = 8 * 1024;
+    static constexpr qsizetype StringChunkUnits = 1024;
+
+    void flush()
+    {
+        if (m_buffer.isEmpty()) return;
+        if (m_file.write(m_buffer) != m_buffer.size())
+        {
+            m_writeError = m_file.errorString();
+            m_failure = Failure::Write;
+            m_file.cancelWriting();
+        }
+        m_buffer.clear();
+    }
+
+    QSaveFile& m_file;
+    bool m_writeBytes;
+    QByteArray m_buffer;
+    qint64 m_encodedBytes = 0;
+    Failure m_failure = Failure::None;
+    QString m_writeError;
+};
+
+class JsonObjectOutput final
+{
+public:
+    JsonObjectOutput(JsonFileOutput& output, const int depth)
+        : m_output(output), m_depth(depth)
+    {
+        m_output.raw("{\n");
+    }
+
+    template<class WriteValue>
+    void value(const QStringView key, WriteValue writeValue)
+    {
+        if (!m_output.good()) return;
+        if (m_any) m_output.raw(",\n");
+        m_output.indent(m_depth + 1);
+        m_output.string(key);
+        m_output.raw(": ");
+        m_any = true;
+        writeValue(m_depth + 1);
+    }
+
+    template<class Text>
+    void text(const QStringView key, const Text& text)
+    {
+        value(key, [&](int) { m_output.string(jsonText(text)); });
+    }
+
+    void integer(const QStringView key, const int number)
+    {
+        value(key, [&](int) { m_output.integer(number); });
+    }
+
+    void finish()
+    {
+        if (m_any) m_output.raw("\n");
+        m_output.indent(m_depth);
+        m_output.raw("}");
+    }
+
+private:
+    JsonFileOutput& m_output;
+    int m_depth;
+    bool m_any = false;
+};
+
+template<class Texts>
+void writeTextArray(JsonFileOutput& output, const Texts& texts, const int depth)
+{
+    output.array(texts, depth, [&](const auto& text, int)
+    {
+        output.string(jsonText(text));
+    });
+}
+
+template<class Rows>
+void writeRows(JsonFileOutput& output, const Rows& rows, const int depth)
+{
+    output.array(rows, depth, [&](const auto& row, const int rowDepth)
+    {
+        writeTextArray(output, row, rowDepth);
+    });
+}
+
+template<class Times>
+void writeTimes(JsonFileOutput& output, const Times& times, const int depth)
+{
+    output.array(times, depth, [&](const auto& time, const int timeDepth)
+    {
+        JsonObjectOutput object(output, timeDepth);
+        object.text(u"day", time.day);
+        object.text(u"end_time", time.endTime);
+        object.text(u"start_time", time.startTime);
+        object.finish();
+    });
+}
+
+// Object members follow QJsonObject's sorted order, including its indented
+// layout. This preserves existing encoded-size and byte-format contracts.
+template<class Info>
+void writeInfo(JsonFileOutput& output, const Info& info, const int depth)
+{
+    JsonObjectOutput object(output, depth);
+    object.text(u"class_color", info.classColor);
+    object.text(u"class_grade", info.classGrade);
+    object.text(u"class_level", info.classLevel);
+    object.text(u"essay_book", info.essayBook);
+    object.text(u"font_color", info.fontColor);
+    object.value(u"intensive_times", [&](const int valueDepth)
+    {
+        writeTimes(output, info.intensiveTimes, valueDepth);
+    });
+    object.text(u"notes", info.notes);
+    object.text(u"reading_book", info.readingBook);
+    object.value(u"regular_times", [&](const int valueDepth)
+    {
+        writeTimes(output, info.classTimes, valueDepth);
+    });
+    object.text(u"time_filler_activities", info.timeFillerActivities);
+    object.finish();
+}
+
+template<class RosterType>
+void writeRoster(JsonFileOutput& output, const RosterType& roster, const int depth)
+{
+    JsonObjectOutput object(output, depth);
+    object.value(u"column_widths", [&](const int valueDepth)
+    {
+        output.array(roster.columnWidths, valueDepth, [&](const auto& width, int)
+        {
+            output.integer(jsonWidth(width));
+        });
+    });
+    object.value(u"columns", [&](const int valueDepth)
+    {
+        writeTextArray(output, roster.columns, valueDepth);
+    });
+    object.value(u"rows", [&](const int valueDepth)
+    {
+        writeRows(output, roster.rows, valueDepth);
+    });
+    object.finish();
+}
+
+template<class Evaluations>
+void writeEvaluations(JsonFileOutput& output, const Evaluations& evaluations, const int depth)
+{
+    output.array(evaluations, depth, [&](const auto& evaluation, const int valueDepth)
+    {
+        JsonObjectOutput object(output, valueDepth);
+        object.text(u"name", evaluation.name);
+        object.value(u"rows", [&](const int rowsDepth)
+        {
+            writeRows(output, evaluation.rows, rowsDepth);
+        });
+        object.finish();
+    });
+}
+
+template<class TransferTeacher>
+void writeTeacher(JsonFileOutput& output, const TransferTeacher& value, const int depth)
+{
+    const auto& teacher = value.teacher;
+    JsonObjectOutput object(output, depth);
+    object.text(u"birthday", teacher.birthday);
+    object.text(u"internet_type", teacher.internetType);
+    object.text(u"key", value.key);
+    object.text(u"notes", teacher.notes);
+    object.text(u"phone_number", teacher.phoneNumber);
+    object.text(u"preferred_name", teacher.preferredName);
+    object.text(u"preferred_romanization", teacher.preferredRomanization);
+    object.text(u"projection_type", teacher.projectionType);
+    object.text(u"room_number", teacher.roomNumber);
+    object.text(u"teacher_en", teacher.teacherEn);
+    object.text(u"teacher_kr", teacher.teacherKr);
+    object.text(u"wifi_name", teacher.wifiName);
+    object.text(u"wifi_password", teacher.wifiPassword);
+    object.text(u"zoom_id", teacher.zoomId);
+    object.text(u"zoom_password", teacher.zoomPassword);
+    object.finish();
+}
+
+template<class TransferClass>
+void writeClass(JsonFileOutput& output, const TransferClass& value, const int depth)
+{
+    JsonObjectOutput object(output, depth);
+    object.value(u"info", [&](const int valueDepth)
+    {
+        writeInfo(output, value.info, valueDepth);
+    });
+    object.text(u"key", value.key);
+    object.text(u"name", value.name);
+    object.value(u"roster", [&](const int valueDepth)
+    {
+        writeRoster(output, value.roster, valueDepth);
+    });
+    object.value(u"speaking_evaluations", [&](const int valueDepth)
+    {
+        writeEvaluations(output, value.evaluations, valueDepth);
+    });
+    object.text(u"teacher_ref", value.teacherKey);
+    object.finish();
+}
+
+QString packageTimestamp(const ClassTransferPackage& package)
+{
+    const QDateTime exportedAt = package.exportedAtUtc.isValid()
+        ? package.exportedAtUtc.toUTC() : QDateTime::currentDateTimeUtc();
+    return exportedAt.toString(Qt::ISODateWithMs);
+}
+QString packageTimestamp(const ClassTransferPortablePackage& package)
+{
+    return QString::fromStdString(package.exportedAtUtc.value());
+}
+int packageVersion(const ClassTransferPackage& package) { return package.version; }
+int packageVersion(const ClassTransferPortablePackage& package) { return package.version.value(); }
+
+template<class Package>
+void writePackage(
+    JsonFileOutput& output,
+    const Package& package,
+    const QString& timestamp
+    )
+{
+    JsonObjectOutput object(output, 0);
+    object.value(u"classes", [&](const int depth)
+    {
+        output.array(package.classes, depth, [&](const auto& value, const int valueDepth)
+        {
+            writeClass(output, value, valueDepth);
+        });
+    });
+    object.text(u"exported_at_utc", timestamp);
+    object.text(u"format", FormatName);
+    object.value(u"teachers", [&](const int depth)
+    {
+        output.array(package.teachers, depth, [&](const auto& value, const int valueDepth)
+        {
+            writeTeacher(output, value, valueDepth);
+        });
+    });
+    object.integer(u"version", packageVersion(package));
+    object.finish();
+    output.raw("\n");
+}
+
+template<class Package>
+Status savePackage(const QString& filePath, const Package& package)
+{
+    if (filePath.trimmed().isEmpty())
+        return std::unexpected(QObject::tr("No export path was provided."));
+
+    QSaveFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly))
+        return std::unexpected(QObject::tr("Unable to open the class package for writing:\n%1")
+                                   .arg(file.errorString()));
+
+    // Preserve the existing error order: open errors precede size validation,
+    // and an oversized package is rejected before any disk write can fail.
+    // Both passes share the same bounded encoder and timestamp text.
+    const QString timestamp = packageTimestamp(package);
+    JsonFileOutput countOnly(file, false);
+    writePackage(countOnly, package, timestamp);
+    if (!countOnly.finish())
+        return std::unexpected(QObject::tr("The class package exceeds the 16 MiB file limit."));
+
+    JsonFileOutput output(file);
+    writePackage(output, package, timestamp);
+    if (!output.finish())
+    {
+        file.cancelWriting();
+        return std::unexpected(output.exceededLimit()
+            ? QObject::tr("The class package exceeds the 16 MiB file limit.")
+            : QObject::tr("Unable to write the class package:\n%1").arg(output.writeError()));
+    }
+    if (!file.commit())
+        return std::unexpected(QObject::tr("Unable to finish writing the class package:\n%1")
+                                   .arg(file.errorString()));
+    return {};
+}
+
 }
 
 QJsonObject ClassTransferJsonCodec::toJson(
@@ -1604,50 +1994,7 @@ Status ClassTransferJsonCodec::saveFile(
     const ClassTransferPackage& package
     )
 {
-    if (filePath.trimmed().isEmpty())
-    {
-        return std::unexpected(QObject::tr("No export path was provided."));
-    }
-
-    QSaveFile file(filePath);
-
-    if (!file.open(QIODevice::WriteOnly))
-    {
-        return std::unexpected(
-            QObject::tr("Unable to open the class package for writing:\n%1")
-                .arg(file.errorString())
-            );
-    }
-
-    const QByteArray bytes =
-        QJsonDocument(toJson(package)).toJson(QJsonDocument::Indented);
-
-    if (bytes.size() > kClassTransferMaximumEncodedFileBytes)
-    {
-        file.cancelWriting();
-        return std::unexpected(
-            QObject::tr("The class package exceeds the 16 MiB file limit.")
-            );
-    }
-
-    if (file.write(bytes) != bytes.size())
-    {
-        file.cancelWriting();
-        return std::unexpected(
-            QObject::tr("Unable to write the class package:\n%1")
-                .arg(file.errorString())
-            );
-    }
-
-    if (!file.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Unable to finish writing the class package:\n%1")
-                .arg(file.errorString())
-            );
-    }
-
-    return {};
+    return savePackage(filePath, package);
 }
 
 Status ClassTransferJsonCodec::saveFile(
@@ -1655,50 +2002,7 @@ Status ClassTransferJsonCodec::saveFile(
     const ClassTransferPortablePackage& package
     )
 {
-    if (filePath.trimmed().isEmpty())
-    {
-        return std::unexpected(QObject::tr("No export path was provided."));
-    }
-
-    QSaveFile file(filePath);
-
-    if (!file.open(QIODevice::WriteOnly))
-    {
-        return std::unexpected(
-            QObject::tr("Unable to open the class package for writing:\n%1")
-                .arg(file.errorString())
-            );
-    }
-
-    const QByteArray bytes =
-        QJsonDocument(toJson(package)).toJson(QJsonDocument::Indented);
-
-    if (bytes.size() > kClassTransferMaximumEncodedFileBytes)
-    {
-        file.cancelWriting();
-        return std::unexpected(
-            QObject::tr("The class package exceeds the 16 MiB file limit.")
-            );
-    }
-
-    if (file.write(bytes) != bytes.size())
-    {
-        file.cancelWriting();
-        return std::unexpected(
-            QObject::tr("Unable to write the class package:\n%1")
-                .arg(file.errorString())
-            );
-    }
-
-    if (!file.commit())
-    {
-        return std::unexpected(
-            QObject::tr("Unable to finish writing the class package:\n%1")
-                .arg(file.errorString())
-            );
-    }
-
-    return {};
+    return savePackage(filePath, package);
 }
 
 Result<ClassTransferPackage> ClassTransferJsonCodec::loadFile(

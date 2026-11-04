@@ -16,6 +16,9 @@
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
+#include <optional>
+#include <string>
+
 namespace
 {
 struct Fixture
@@ -120,6 +123,7 @@ class ClassTransferExportCodecParityTests : public QObject
     Q_OBJECT
 private slots:
     void completeExportPreservesSchemaOrderAndEveryPayload();
+    void fileSerializationPreservesEscapedUnicodeAndControlText();
     void failurePrecedence_data();
     void failurePrecedence();
     void fileErrorsRetainTheirMessages();
@@ -224,6 +228,107 @@ void ClassTransferExportCodecParityTests::completeExportPreservesSchemaOrderAndE
         QStringLiteral("Extended tail note"));
     logTranscript({{QStringLiteral("case"), QStringLiteral("complete-export")}, {QStringLiteral("package"), normalized(*actual)}});
 }
+
+void ClassTransferExportCodecParityTests::
+fileSerializationPreservesEscapedUnicodeAndControlText()
+{
+    Fixture fixture;
+    QVERIFY(fixture.open());
+
+    QString escapedText = QStringLiteral("Quote: \"; slash: /; backslash: \\\\; line one\nline two; tab\t;");
+    escapedText.append(QChar(0));
+    escapedText.append(QChar(1));
+    escapedText += QString::fromUtf8(" Korean: 한글; supplementary: 🎓");
+
+    struct SavedJson final
+    {
+        QByteArray bytes;
+        QJsonObject object;
+    };
+    const auto readSavedJson = [](const QString& path, QString& error)
+        -> std::optional<SavedJson>
+    {
+        QFile savedFile(path);
+        if (!savedFile.open(QIODevice::ReadOnly))
+        {
+            error = savedFile.errorString();
+            return std::nullopt;
+        }
+        QJsonParseError parseError;
+        const QByteArray bytes = savedFile.readAll();
+        const QJsonDocument document = QJsonDocument::fromJson(bytes, &parseError);
+        if (parseError.error != QJsonParseError::NoError
+            || !document.isObject())
+        {
+            error = parseError.error != QJsonParseError::NoError
+                ? parseError.errorString()
+                : QStringLiteral("The saved class package root is not an object.");
+            return std::nullopt;
+        }
+        return SavedJson{bytes, document.object()};
+    };
+
+    auto legacyPackage = fixture.services.dataService()->databaseSession()
+        ->classTransferRepository()->buildPackage({fixture.ids.first()});
+    QVERIFY(legacyPackage);
+    legacyPackage->teachers.front().teacher.notes = escapedText;
+    legacyPackage->classes.front().name = escapedText;
+    legacyPackage->classes.front().info.notes = escapedText;
+    legacyPackage->classes.front().roster.rows.front().front() = escapedText;
+
+    const QString legacyPath = fixture.directory.filePath(
+        QStringLiteral("legacy-escaped.json"));
+    const auto legacySaved = ClassTransferJsonCodec::saveFile(
+        legacyPath, *legacyPackage);
+    QVERIFY2(legacySaved, legacySaved ? "" : qPrintable(legacySaved.error()));
+    QString readError;
+    const auto legacyFileObject = readSavedJson(legacyPath, readError);
+    QVERIFY2(legacyFileObject.has_value(), qPrintable(readError));
+    const QJsonObject expectedLegacy = ClassTransferJsonCodec::toJson(
+        *legacyPackage);
+    QCOMPARE(legacyFileObject->bytes,
+             QJsonDocument(expectedLegacy).toJson(QJsonDocument::Indented));
+    QCOMPARE(legacyFileObject->object, expectedLegacy);
+    QCOMPARE(legacyFileObject->object.value(QStringLiteral("classes")).toArray()
+                 .at(0).toObject().value(QStringLiteral("name")).toString(),
+             escapedText);
+
+#ifdef CLASSMNGR_TYPED_EXPORT
+    using namespace ClassMngr::Next;
+    Application::ClassTransferExportRequest request;
+    request.classIds.push_back(*Domain::ClassId::fromString(
+        std::to_string(fixture.ids.first())));
+    Platform::ApplicationServicesClassTransferExportSourceReadPort port(
+        fixture.services);
+    auto portablePackageResult = Application::ClassTransferExportQuery(port)
+        .execute(request);
+    QVERIFY(portablePackageResult);
+    auto portablePackage = std::move(portablePackageResult.value());
+    const std::u16string portableText = escapedText.toStdU16String();
+    portablePackage.teachers.front().teacher.notes = portableText;
+    portablePackage.classes.front().name = portableText;
+    portablePackage.classes.front().info.notes = portableText;
+    portablePackage.classes.front().roster.rows.front().front() = portableText;
+
+    const QString portablePath = fixture.directory.filePath(
+        QStringLiteral("portable-escaped.json"));
+    const auto portableSaved = ClassTransferJsonCodec::saveFile(
+        portablePath, portablePackage);
+    QVERIFY2(portableSaved, portableSaved ? "" : qPrintable(portableSaved.error()));
+    readError.clear();
+    const auto portableFileObject = readSavedJson(portablePath, readError);
+    QVERIFY2(portableFileObject.has_value(), qPrintable(readError));
+    const QJsonObject expectedPortable = ClassTransferJsonCodec::toJson(
+        portablePackage);
+    QCOMPARE(portableFileObject->bytes,
+             QJsonDocument(expectedPortable).toJson(QJsonDocument::Indented));
+    QCOMPARE(portableFileObject->object, expectedPortable);
+    QCOMPARE(portableFileObject->object.value(QStringLiteral("classes")).toArray()
+                 .at(0).toObject().value(QStringLiteral("name")).toString(),
+             escapedText);
+#endif
+}
+
 void ClassTransferExportCodecParityTests::failurePrecedence_data()
 {
     QTest::addColumn<int>("scenario");
