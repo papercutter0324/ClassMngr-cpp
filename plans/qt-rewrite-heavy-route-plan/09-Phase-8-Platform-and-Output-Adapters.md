@@ -618,6 +618,16 @@ Static Tester accepted the change. Ruby YAML parsing and `git diff --check`
 passed; PowerShell was unavailable, and Windows package CI is pending. The
 Linux CMake cycle and macOS disk-image exit remain open, so Phase 9 stays gated.
 
+### 8.7.7 — Linux CMake link-group cycle
+
+The Linux dependency cycle is addressed by keeping the Runtime/WorkspaceStore
+`RESCAN` group and moving WorkspaceStore, Sub Prep, and Calendar UI edges out of
+`ClassMngrRuntime`'s public interface into the legacy runtime closure. The
+no-RESCAN fallback and Apple test runtime retain their required dependencies.
+Static review and `git diff --check` passed. This Darwin host has no Linux
+release preset or `QT_LINUX_PREFIX`, so local Linux configure was unavailable;
+Linux package configure/build CI remains pending. Phase 9 remains gated.
+
 ## Objective
 
 

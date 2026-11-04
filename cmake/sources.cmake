@@ -530,7 +530,6 @@ target_link_libraries(ClassMngrRuntime
     PUBLIC
         ClassMngrBuildSettings
         ClassMngrSignature
-        ClassMngrWorkspaceStore
         ClassMngrCalendarImportParser
         ClassMngrClassTransferSupport
         ClassMngrTeacherImportParser
@@ -538,7 +537,6 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrSchedulePrint
         ClassMngrQtPdfPrint
         ClassMngrRosterTemplateRenderer
-        ClassMngrSubPrepShared
         ClassMngrSpeakingEvalReportEngine
         ClassMngrSpeakingEvalPowerPointAdapter
         ${_classmngr_legacy_runtime_dependencies}
@@ -567,8 +565,17 @@ else()
     target_link_libraries(ClassMngrLegacyRuntimeClosure
         INTERFACE
             ClassMngrRuntime
+            ClassMngrWorkspaceStore
     )
 endif()
+
+# Keep the shared Sub Prep services alongside the runtime closure instead of
+# in the runtime's transitive interface. The services depend on WorkspaceStore,
+# which is a member of the RESCAN group above.
+target_link_libraries(ClassMngrLegacyRuntimeClosure
+    INTERFACE
+        ClassMngrSubPrepShared
+)
 
 # macOS test doubles cannot override symbols from a static archive with the
 # current Apple linker. A flat-namespace shared runtime reuses the production

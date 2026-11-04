@@ -863,8 +863,8 @@ set_target_properties(ClassMngrNextCalendarUi
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
 )
-target_link_libraries(ClassMngrRuntime
-    PUBLIC
+target_link_libraries(ClassMngrLegacyRuntimeClosure
+    INTERFACE
         ClassMngrNextCalendarUi
 )
 if(TARGET ClassMngrTestRuntime)

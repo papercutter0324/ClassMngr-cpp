@@ -2,12 +2,12 @@
 
 ## Phase 8 — Active Batch 5 (3 candidates)
 
-1. **8.7.6 Windows redistributable package validation — static acceptance
-   passed; package CI pending:** use the exact architecture-specific signed VC
+1. **8.7.6 Windows redistributable package validation — committed; package CI
+   pending:** use the exact architecture-specific signed VC
    redist package name; validate its version, signer, and staged hash without
    treating the x86 installer stub as the runtime payload architecture.
-2. **8.7.7 Linux CMake link-group cycle — solution mapped; implementation
-   pending:** preserve the Runtime/WorkspaceStore RESCAN group while removing
+2. **8.7.7 Linux CMake link-group cycle — implemented; static review accepted; package CI pending:**
+   preserve the Runtime/WorkspaceStore RESCAN group while removing
    reverse interface edges through shared Sub Prep and Calendar UI targets.
 3. **8.7.8 macOS disk-image cleanup — solution mapped; implementation
    pending:** handle a busy read-only verification mount without losing package
