@@ -31,9 +31,9 @@
 10. **8.2.5 Sub Prep output — complete:** Next uses the bounded projection and
     injected output operations; packaged SQL PDF parity passed separately from
     the still-open memory lifecycle gate.
-11. **8.2.6 Speaking Evaluation reports — in progress:** route report generation through the
-    operation boundary with staged cleanup and bounded rendering.
-12. **8.3.1 PowerPoint automation:** isolate availability, launch, failure,
+11. **8.2.6 Speaking Evaluation reports — complete:** Next printing uses the
+    ordered staged PDFs through `PdfPrintOperation`; Legacy keeps its fallback.
+12. **8.3.1 PowerPoint automation — in progress:** isolate availability, launch, failure,
     cleanup, and cancellation behind an application port.
 13. **8.4.1 Update installation:** move download/resume/cancel/launch/reveal
     behavior behind Next application/platform adapters.

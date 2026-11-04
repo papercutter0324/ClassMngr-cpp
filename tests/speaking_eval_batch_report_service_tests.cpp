@@ -1088,10 +1088,24 @@ void SpeakingEvalBatchReportServiceTests::
     request.outputDirectory = outputDirectory.path();
 
     int printerCallCount = 0;
+    QStringList stagedPathsSeenByPrinter;
+    QString printTitleSeenByPrinter;
+    bool stagedPathsWereAvailable = false;
     const QString printError = QStringLiteral("The printer rejected the job.");
-    request.printCallback = [printStatus, printError, &printerCallCount]()
+    request.printCallback = [printStatus, printError, &printerCallCount,
+        &stagedPathsSeenByPrinter, &printTitleSeenByPrinter,
+        &stagedPathsWereAvailable](QWidget*, const QStringList& stagedPaths,
+        const QString& printTitle)
     {
         ++printerCallCount;
+        stagedPathsSeenByPrinter = stagedPaths;
+        printTitleSeenByPrinter = printTitle;
+        stagedPathsWereAvailable = !stagedPaths.isEmpty();
+        for (const QString& path : stagedPaths)
+        {
+            stagedPathsWereAvailable = stagedPathsWereAvailable
+                && QFileInfo(path).isFile() && QFileInfo(path).size() > 0;
+        }
         return DocumentOutputResult{
             static_cast<DocumentOutputStatus>(printStatus),
             printError,
@@ -1107,6 +1121,19 @@ void SpeakingEvalBatchReportServiceTests::
     QCOMPARE(result.status, expectedStatus);
     QVERIFY(!result.succeeded());
     QCOMPARE(printerCallCount, 1);
+    QVERIFY(stagedPathsWereAvailable);
+    QCOMPARE(stagedPathsSeenByPrinter.size(), reportCount);
+    QCOMPARE(printTitleSeenByPrinter, reportCount == 1
+        ? QStringLiteral("Print Speaking Evaluation Report")
+        : QStringLiteral("Print Speaking Evaluation Reports"));
+    for (int index = 0; index < stagedPathsSeenByPrinter.size(); ++index)
+    {
+        QCOMPARE(QFileInfo(stagedPathsSeenByPrinter.at(index)).fileName(),
+            SpeakingEvalBatchReportService::safeFileName(
+                reports.at(index).report.englishName,
+                reports.at(index).report.koreanName));
+        QVERIFY(!QFileInfo::exists(stagedPathsSeenByPrinter.at(index)));
+    }
     if (expectedStatus == DocumentOutputStatus::Failed)
     {
         QCOMPARE(result.message, printError);
@@ -1194,7 +1221,8 @@ void SpeakingEvalBatchReportServiceTests::preCommitCancellationHasNoSavedOutput(
         return false;
     };
     int printerCallCount = 0;
-    request.printCallback = [&printerCallCount]()
+    request.printCallback = [&printerCallCount](
+        QWidget*, const QStringList&, const QString&)
     {
         ++printerCallCount;
         return DocumentOutputResult{

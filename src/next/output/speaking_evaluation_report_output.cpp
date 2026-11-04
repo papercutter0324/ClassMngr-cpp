@@ -91,6 +91,63 @@ SpeakingEvaluationReportRunResult runSpeakingEvaluationReports(
                 static_cast<void>(coordinator.requestCancellation());
             return !worker.m_canceled;
         };
+        if (request.printReports)
+        {
+            const Platform::PdfPrintOperationFactory printOperationFactory =
+                actions.printOperationFactory;
+            request.printCallback = [printOperationFactory](
+                QWidget* parent,
+                const QStringList& documentPaths,
+                const QString& dialogTitle) {
+                if (!printOperationFactory)
+                {
+                    return DocumentOutputResult{
+                        DocumentOutputStatus::Failed,
+                        QObject::tr("The PDF print operation is unavailable.")
+                    };
+                }
+                std::unique_ptr<Platform::PdfPrintOperation> operation =
+                    printOperationFactory();
+                if (!operation)
+                {
+                    return DocumentOutputResult{
+                        DocumentOutputStatus::Failed,
+                        QObject::tr("The PDF print operation is unavailable.")
+                    };
+                }
+                const Platform::PdfPrintResult result =
+                    operation->printLocalDocuments({
+                        .parent = parent,
+                        .documentPaths = documentPaths,
+                        .dialogTitle = dialogTitle,
+                        .pageOrientation = QPageLayout::Portrait,
+                        .preferredPageSize = QPageSize::A4,
+                        .fitToPage = true
+                    });
+                switch (result.status)
+                {
+                case Platform::PdfPrintStatus::Sent:
+                    return DocumentOutputResult{
+                        DocumentOutputStatus::Completed,
+                        result.message
+                    };
+                case Platform::PdfPrintStatus::Canceled:
+                    return DocumentOutputResult{
+                        DocumentOutputStatus::Canceled,
+                        result.message
+                    };
+                case Platform::PdfPrintStatus::Failed:
+                    return DocumentOutputResult{
+                        DocumentOutputStatus::Failed,
+                        result.message
+                    };
+                }
+                return DocumentOutputResult{
+                    DocumentOutputStatus::Failed,
+                    QObject::tr("The PDF print operation returned an unknown result.")
+                };
+            };
+        }
         DocumentOutputResult output;
         if (request.renderer == Service::Renderer::PowerPoint)
         {

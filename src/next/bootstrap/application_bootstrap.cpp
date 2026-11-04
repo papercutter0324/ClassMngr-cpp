@@ -2071,6 +2071,8 @@ Application::StartupResult ApplicationBootstrap::start()
                             ? m_coreServices->interFont->get().familyNames().value(0) : QStringLiteral("Inter");
                         actions.reports.assets.koreanFamily = m_coreServices->pretendardFont
                             ? m_coreServices->pretendardFont->get().familyNames().value(0) : QStringLiteral("Pretendard");
+                        actions.reports.run.printOperationFactory =
+                            Platform::makeQtPdfPrintOperation;
                         actions.reports.showPowerPointDataAccessNotice =
                             Platform::SettingsManagerPowerPointDataAccessNoticePort().read().showPowerPointDataAccessNotice;
                         actions.preferredAiCommentProvider = [] {

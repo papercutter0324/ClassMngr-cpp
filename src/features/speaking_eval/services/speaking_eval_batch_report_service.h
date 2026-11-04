@@ -48,9 +48,11 @@ struct Request
     QString documentsRoot;
     std::function<bool(int completed, int total, const QString& studentName)>
         progressCallback;
-    // Replaces the printer operation when supplied, allowing deterministic
-    // post-commit print outcomes in service tests.
-    std::function<Result()> printCallback;
+    // Replaces the printer operation when supplied. The staged PDFs remain
+    // alive for the synchronous call; an empty callback keeps the Legacy
+    // PdfPrintService path.
+    std::function<Result(QWidget*, const QStringList&, const QString&)>
+        printCallback;
     std::function<bool(const SpeakingEvalReportData&, const QString&, QString*)>
         internalRenderer;
     // A deterministic automation boundary; real host automation is used when

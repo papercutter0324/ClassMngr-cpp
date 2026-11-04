@@ -2,6 +2,7 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "next/application/report_job_state.h"
+#include "next/platform/pdf_print_operation.h"
 #include "next/resources/resource_loader.h"
 #include <expected>
 #include <functional>
@@ -19,6 +20,7 @@ struct SpeakingEvaluationReportRunActions
     std::function<bool(const QString&)> confirmPowerPointRetry;
     std::function<bool()> confirmPowerPointDataAccess;
     std::function<std::expected<QString, QString>(SpeakingEvalReportTemplate)> resolvePowerPointRoot;
+    Platform::PdfPrintOperationFactory printOperationFactory;
 };
 struct SpeakingEvaluationReportRunResult
 {

@@ -7,6 +7,7 @@
 #include "next/application/speaking_evaluation_private_notes_split.h"
 #include "next/platform/workspace_store_speaking_evaluation_ports.h"
 #include "next/platform/workspace_store_speaking_evaluation_report_port.h"
+#include "next/platform/pdf_print_operation.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
@@ -66,6 +67,39 @@ using namespace ClassMngr::Next;
 
 namespace
 {
+
+class CallbackPdfPrintOperation final : public Platform::PdfPrintOperation
+{
+public:
+    using LocalPrintCallback = std::function<Platform::PdfPrintResult(
+        const Platform::LocalPdfBatchPrintRequest&)>;
+
+    explicit CallbackPdfPrintOperation(LocalPrintCallback callback)
+        : m_localPrintCallback(std::move(callback))
+    {
+    }
+
+    Platform::PdfPrintResult printReadyDocument(
+        const Platform::ReadyPdfPrintRequest&) override
+    {
+        return {Platform::PdfPrintStatus::Failed,
+            QStringLiteral("Unexpected ready-document print request.")};
+    }
+
+    Platform::PdfPrintResult printLocalDocuments(
+        const Platform::LocalPdfBatchPrintRequest& request) override
+    {
+        return m_localPrintCallback
+            ? m_localPrintCallback(request)
+            : Platform::PdfPrintResult{
+                Platform::PdfPrintStatus::Failed,
+                QStringLiteral("Missing local print callback.")
+            };
+    }
+
+private:
+    LocalPrintCallback m_localPrintCallback;
+};
 
 Domain::ClassId classId(const int value)
 {
@@ -647,6 +681,9 @@ private slots:
     void aiBatchAcceptsOneHundredCandidatesAndCapsEachPrompt();
     void reportContextUsesPathScopedWorkspaceStoreAndOmitsCredentials();
     void currentReportSaveAsPdfAndPrintActionsUseOutputEngine();
+    void nextPrintOperationUsesOrderedStagedPdfsAndMapsResults_data();
+    void nextPrintOperationUsesOrderedStagedPdfsAndMapsResults();
+    void nextPrintRequestFailsWhenOperationFactoryIsMissing();
     void reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs();
     void reportsRespectConfiguredMaximumForStoredTailRows();
     void batchCheckIndicatorMouseAndKeyboardEventsToggleSelection();
@@ -1735,6 +1772,11 @@ currentReportSaveAsPdfAndPrintActionsUseOutputEngine()
     int pathChooserCalls = 0;
     int printCalls = 0;
     bool stagedPdfWasAvailableToPrinter = false;
+    QStringList printedDocumentPaths;
+    QString printDialogTitle;
+    QPageLayout::Orientation printOrientation = QPageLayout::Landscape;
+    std::optional<QPageSize::PageSizeId> preferredPrintPageSize;
+    bool printFitToPage = false;
 
     PageHarness harness;
     auto& reportActions = harness.reportActions();
@@ -1747,27 +1789,27 @@ currentReportSaveAsPdfAndPrintActionsUseOutputEngine()
         [&stagingDirectories](const QString& path) {
             stagingDirectories.append(path);
         };
-    reportActions.engineOverrides.printCallback = [&] {
-        ++printCalls;
-        if (!stagingDirectories.isEmpty())
-        {
-            const QStringList stagedPdfs = QDir(stagingDirectories.constLast())
-                .entryList({QStringLiteral("*.pdf")}, QDir::Files);
-            if (stagedPdfs.size() == 1)
-            {
-                QPdfDocument stagedDocument;
-                stagedPdfWasAvailableToPrinter = stagedDocument.load(
-                    QDir(stagingDirectories.constLast()).filePath(
-                        stagedPdfs.constFirst())) == QPdfDocument::Error::None
-                    && stagedDocument.pageCount() == 1;
-            }
-        }
-        return DocumentOutputResult{
-            DocumentOutputStatus::Completed,
-            QStringLiteral("Synthetic print job accepted."),
-            {},
-            {}
-        };
+    reportActions.run.printOperationFactory = [&] {
+        return std::make_unique<CallbackPdfPrintOperation>(
+            [&](const Platform::LocalPdfBatchPrintRequest& request) {
+                ++printCalls;
+                printedDocumentPaths = request.documentPaths;
+                printDialogTitle = request.dialogTitle;
+                printOrientation = request.pageOrientation;
+                preferredPrintPageSize = request.preferredPageSize;
+                printFitToPage = request.fitToPage;
+                if (request.documentPaths.size() == 1)
+                {
+                    QPdfDocument stagedDocument;
+                    stagedPdfWasAvailableToPrinter = stagedDocument.load(
+                        request.documentPaths.constFirst()) == QPdfDocument::Error::None
+                        && stagedDocument.pageCount() == 1;
+                }
+                return Platform::PdfPrintResult{
+                    Platform::PdfPrintStatus::Sent,
+                    QStringLiteral("Synthetic print job accepted.")
+                };
+            });
     };
     reportActions.choosePdfPath = [&] (QWidget*, const QString& suggested) {
         ++pathChooserCalls;
@@ -1825,6 +1867,13 @@ currentReportSaveAsPdfAndPrintActionsUseOutputEngine()
     QCOMPARE(pathChooserCalls, 1);
     QCOMPARE(printCalls, 1);
     QVERIFY(stagedPdfWasAvailableToPrinter);
+    QCOMPARE(printedDocumentPaths.size(), 1);
+    QCOMPARE(printDialogTitle,
+        QStringLiteral("Print Speaking Evaluation Report"));
+    QCOMPARE(printOrientation, QPageLayout::Portrait);
+    QVERIFY(preferredPrintPageSize.has_value());
+    QCOMPARE(*preferredPrintPageSize, QPageSize::A4);
+    QVERIFY(printFitToPage);
     QCOMPARE(progressNames,
         (QStringList{QStringLiteral("Ada Park (김민지)"),
             QStringLiteral("Ada Park (김민지)")}));
@@ -1837,6 +1886,157 @@ currentReportSaveAsPdfAndPrintActionsUseOutputEngine()
     QCOMPARE(speakingEvalReportAssetResidency().sessions, 0);
     QCOMPARE(speakingEvalReportAssetResidency().templates, 0);
     QCOMPARE(speakingEvalReportAssetResidency().decodedImageBytes, qsizetype(0));
+}
+
+void SpeakingEvaluationPageTests::
+    nextPrintOperationUsesOrderedStagedPdfsAndMapsResults_data()
+{
+    QTest::addColumn<int>("printStatus");
+    QTest::newRow("sent") << static_cast<int>(Platform::PdfPrintStatus::Sent);
+    QTest::newRow("canceled") << static_cast<int>(Platform::PdfPrintStatus::Canceled);
+    QTest::newRow("failed") << static_cast<int>(Platform::PdfPrintStatus::Failed);
+}
+
+void SpeakingEvaluationPageTests::
+    nextPrintOperationUsesOrderedStagedPdfsAndMapsResults()
+{
+    QFETCH(int, printStatus);
+
+    QWidget parent;
+    SpeakingEvalBatchReportService::Request request;
+    request.parent = &parent;
+    request.printReports = true;
+    SpeakingEvalReportData firstReport;
+    firstReport.englishName = QStringLiteral("First Ordered Student");
+    SpeakingEvalReportData secondReport;
+    secondReport.englishName = QStringLiteral("Second Ordered Student");
+    request.reports = {
+        {firstReport.englishName, firstReport},
+        {secondReport.englishName, secondReport}
+    };
+    request.internalRenderer = [](
+        const SpeakingEvalReportData&, const QString& path, QString* error) {
+        QFile file(path);
+        const QByteArray pdf = QByteArrayLiteral("%PDF-synthetic-report");
+        if (!file.open(QIODevice::WriteOnly) || file.write(pdf) != pdf.size())
+        {
+            if (error) *error = QStringLiteral("Could not stage synthetic report.");
+            return false;
+        }
+        return true;
+    };
+    QString stagingDirectory;
+    request.stagingDirectoryCreated = [&stagingDirectory](const QString& path) {
+        stagingDirectory = path;
+    };
+
+    int factoryCalls = 0;
+    int printCalls = 0;
+    bool parentMatched = false;
+    bool stagedPdfsAvailableDuringPrint = false;
+    QStringList printedPaths;
+    QString printTitle;
+    QPageLayout::Orientation orientation = QPageLayout::Landscape;
+    std::optional<QPageSize::PageSizeId> pageSize;
+    bool fitToPage = false;
+    const QString printError = QStringLiteral("Synthetic printer failure.");
+    Output::SpeakingEvaluationReportRunActions actions;
+    actions.printOperationFactory = [&]() -> std::unique_ptr<Platform::PdfPrintOperation> {
+        ++factoryCalls;
+        return std::make_unique<CallbackPdfPrintOperation>(
+            [&](const Platform::LocalPdfBatchPrintRequest& printRequest) {
+                ++printCalls;
+                parentMatched = printRequest.parent == &parent;
+                printedPaths = printRequest.documentPaths;
+                printTitle = printRequest.dialogTitle;
+                orientation = printRequest.pageOrientation;
+                pageSize = printRequest.preferredPageSize;
+                fitToPage = printRequest.fitToPage;
+                stagedPdfsAvailableDuringPrint = printRequest.documentPaths.size() == 2;
+                for (const QString& path : printRequest.documentPaths)
+                {
+                    stagedPdfsAvailableDuringPrint =
+                        stagedPdfsAvailableDuringPrint
+                        && QFileInfo(path).isFile() && QFileInfo(path).size() > 0;
+                }
+                return Platform::PdfPrintResult{
+                    static_cast<Platform::PdfPrintStatus>(printStatus),
+                    printError
+                };
+            });
+    };
+
+    const auto result = Output::runSpeakingEvaluationReports(
+        std::move(request), actions);
+
+    const auto printerStatus = static_cast<Platform::PdfPrintStatus>(printStatus);
+    const DocumentOutputStatus expectedStatus =
+        printerStatus == Platform::PdfPrintStatus::Sent
+            ? DocumentOutputStatus::Completed
+            : printerStatus == Platform::PdfPrintStatus::Canceled
+                ? DocumentOutputStatus::Canceled
+                : DocumentOutputStatus::Failed;
+    QCOMPARE(result.output.status, expectedStatus);
+    QCOMPARE(factoryCalls, 1);
+    QCOMPARE(printCalls, 1);
+    QVERIFY(parentMatched);
+    QVERIFY(stagedPdfsAvailableDuringPrint);
+    QCOMPARE(printedPaths.size(), 2);
+    QCOMPARE(QFileInfo(printedPaths.at(0)).fileName(),
+        SpeakingEvalBatchReportService::safeFileName(
+            firstReport.englishName, firstReport.koreanName));
+    QCOMPARE(QFileInfo(printedPaths.at(1)).fileName(),
+        SpeakingEvalBatchReportService::safeFileName(
+            secondReport.englishName, secondReport.koreanName));
+    QCOMPARE(printTitle, QStringLiteral("Print Speaking Evaluation Reports"));
+    QCOMPARE(orientation, QPageLayout::Portrait);
+    QVERIFY(pageSize.has_value());
+    QCOMPARE(*pageSize, QPageSize::A4);
+    QVERIFY(fitToPage);
+    QVERIFY(!stagingDirectory.isEmpty());
+    QVERIFY(!QFileInfo::exists(stagingDirectory));
+    QVERIFY(result.output.savedPdfPaths.isEmpty());
+    QVERIFY(result.output.savedArchivePath.isEmpty());
+    if (printerStatus == Platform::PdfPrintStatus::Failed)
+    {
+        QCOMPARE(result.output.message, printError);
+    }
+}
+
+void SpeakingEvaluationPageTests::
+    nextPrintRequestFailsWhenOperationFactoryIsMissing()
+{
+    SpeakingEvalBatchReportService::Request request;
+    request.printReports = true;
+    request.reports = {
+        {QStringLiteral("Synthetic Student"), SpeakingEvalReportData{}}
+    };
+    request.internalRenderer = [](
+        const SpeakingEvalReportData&, const QString& path, QString* error) {
+        QFile file(path);
+        const QByteArray pdf = QByteArrayLiteral("%PDF-synthetic-report");
+        if (!file.open(QIODevice::WriteOnly) || file.write(pdf) != pdf.size())
+        {
+            if (error) *error = QStringLiteral("Could not stage synthetic report.");
+            return false;
+        }
+        return true;
+    };
+    QString stagingDirectory;
+    request.stagingDirectoryCreated = [&stagingDirectory](const QString& path) {
+        stagingDirectory = path;
+    };
+
+    const auto result = Output::runSpeakingEvaluationReports(
+        std::move(request), {});
+
+    QCOMPARE(result.output.status, DocumentOutputStatus::Failed);
+    QCOMPARE(result.output.message,
+        QStringLiteral("The PDF print operation is unavailable."));
+    QVERIFY(!stagingDirectory.isEmpty());
+    QVERIFY(!QFileInfo::exists(stagingDirectory));
+    QVERIFY(result.output.savedPdfPaths.isEmpty());
+    QVERIFY(result.output.savedArchivePath.isEmpty());
 }
 
 void SpeakingEvaluationPageTests::

@@ -726,15 +726,16 @@ Result exportResolvedReports(
     {
         const bool printingOneReport =
             request.reports.size() == 1;
+        const QString printTitle = printingOneReport
+            ? QObject::tr("Print Speaking Evaluation Report")
+            : QObject::tr("Print Speaking Evaluation Reports");
         const PdfPrintService::Result printResult = request.printCallback
-            ? request.printCallback()
+            ? request.printCallback(request.parent, stagedPdfPaths, printTitle)
             : PdfPrintService::printPdfDocuments(
                   {
                       request.parent,
                       stagedPdfPaths,
-                      printingOneReport
-                          ? QObject::tr("Print Speaking Evaluation Report")
-                          : QObject::tr("Print Speaking Evaluation Reports"),
+                      printTitle,
                       QPageLayout::Portrait,
                       QPageSize::A4,
                       true

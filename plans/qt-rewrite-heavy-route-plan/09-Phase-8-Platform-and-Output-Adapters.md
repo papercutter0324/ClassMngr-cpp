@@ -372,6 +372,30 @@ written under dedicated `/private/tmp`; no PDF byte-identity claim is made.
 No memory lifecycle verification was run. Separate Sub Prep memory acceptance
 remains open under the memory plan.
 
+### 8.2.6 — Speaking Evaluation output (accepted)
+
+The shared print callback now accepts the parent widget, ordered staged-file
+paths, and a singular/plural title. An empty callback preserves Legacy's
+`PdfPrintService` path. Next installs a `PdfPrintOperation` callback, maps
+Sent/Canceled/Failed results, and uses portrait, A4, and fit-to-page settings.
+Staged files remain available through synchronous printing and are then
+cleaned up. The bounded 100-report route is preserved.
+
+In the standard macOS Debug configuration, builds passed for
+`ClassMngrSpeakingEvalBatchReportServiceTests`,
+`ClassMngrNextSpeakingEvaluationPageTests`, and
+`ClassMngrNextBootstrapTests` (exit 0). Focused CTest, including
+`NextStartupWorkspaceDependencyBoundary`, passed 4/4. QtTest results were 84
+service cases passed with 5 gated PowerPoint skips, 33 Next page cases passed,
+and 89 Bootstrap cases passed. Standard and advanced PDF-widget raster
+comparisons and the maximum-row test passed. Duplicate-library, offscreen, and
+font warnings were the only reported warnings. No native printer UI or
+physical printing was exercised, and no Next/Legacy report-output parity
+claim was measured.
+
+The Save As chooser, output-folder chooser, and desktop folder-open paths
+remain unchanged as separate dialog/URL integration work for later discovery.
+
 ## Objective
 
 
