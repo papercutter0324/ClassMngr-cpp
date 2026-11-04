@@ -270,6 +270,20 @@ set_target_properties(ClassMngrScheduleImportRules
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
 )
+add_library(ClassMngrSchedulePdfRenderer STATIC
+    ${CLASSMNGR_SCHEDULE_PDF_RENDERER_SOURCES}
+)
+target_link_libraries(ClassMngrSchedulePdfRenderer
+    PUBLIC
+        ClassMngrBuildSettings
+        ClassMngrScheduleImportRules
+        Qt6::Gui
+)
+set_target_properties(ClassMngrSchedulePdfRenderer
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 add_library(ClassMngrSchedulePrint STATIC
     ${CLASSMNGR_SCHEDULE_PRINT_SOURCES}
 )
@@ -277,7 +291,7 @@ target_link_libraries(ClassMngrSchedulePrint
     PUBLIC
         ClassMngrBuildSettings
         ClassMngrQtPdfPrint
-        ClassMngrScheduleImportRules
+        ClassMngrSchedulePdfRenderer
         Qt6::Gui
         Qt6::Pdf
         Qt6::Widgets

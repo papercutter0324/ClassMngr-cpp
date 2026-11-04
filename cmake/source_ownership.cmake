@@ -72,6 +72,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrScheduleImportRules
         ${CLASSMNGR_SCHEDULE_IMPORT_RULES_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrSchedulePdfRenderer
+        ${CLASSMNGR_SCHEDULE_PDF_RENDERER_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrSchedulePrint
         ${CLASSMNGR_SCHEDULE_PRINT_SOURCES}
     )

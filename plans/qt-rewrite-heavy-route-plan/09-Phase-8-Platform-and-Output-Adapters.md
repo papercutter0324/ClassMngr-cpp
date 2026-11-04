@@ -285,6 +285,39 @@ dialog, so changed contents with the same page count could print, and deleted
 or inaccessible inputs can fail after acceptance; current callers use
 operation-scoped temporary outputs.
 
+### 8.2.3 — Schedule output (accepted)
+
+Extracted the existing schedule PDF layout and writer into
+`SchedulePdfRenderer`. Legacy `SchedulePrintService` remains the compatibility
+wrapper with its existing print flow; Next Schedule output calls the renderer
+directly and uses 8.2.2 `PdfPrintOperation` for printing. The Next target no
+longer links `ClassMngrSchedulePrint`, and the dependency-boundary CTest passed.
+Request, projection, dialogs, style/theme/font/orientation/path semantics are
+preserved. Save As does not invoke a printer. Print creates a temporary PDF
+and synchronously borrows a stack-owned ready document to the print operation,
+releasing it when the operation returns.
+
+The independent Tester incrementally built `ClassMngrSchedulePdfRenderer`,
+`ClassMngrSchedulePrintPdfTests`, `ClassMngrNext`,
+`ClassMngrNextScheduleOutputAdapterTests`,
+`ClassMngrNextNormalScheduleImportIntegrationTests`, and
+`ClassMngrNextSchedulePageTests` in `build/macos-clang-debug` with `-j4`
+(exit 0). Focused CTest passed 5/5 for those four test suites and
+`NextStartupWorkspaceDependencyBoundary`. QtTest counts were Legacy PDF 10,
+Schedule page 13, adapter 5, and integration 18. `git diff --check` passed;
+no full suite was run.
+
+On the controlled macOS/Qt 6.12 fallback-font host, production Next Save As
+matched the frozen `legacy-page-1.png` raster exactly at 1754×1240: zero
+changed pixels and zero mean absolute channel difference (SHA-256
+`eff64821b32270a3d9803f79ef2db869f6a63d3729f080ae2fd6406d6a53c175`). Fresh
+PDFs each loaded as one A4 landscape page (842×595 points) and contained Alice
+and E6-Helios/Poseidon/Gaia/Hera; their bytes differ from the archived PDF.
+This establishes fixture raster parity, not PDF-byte identity or all-platform
+parity. `Sans Serif` was unavailable and the host fallback font was used. No
+native print dialog, physical print, Windows/Linux runtime, or full repository
+suite was exercised.
+
 ## Objective
 
 

@@ -2102,6 +2102,44 @@ captureImportedScheduleOutputEvidenceWhenConfigured()
     QVERIFY(!legacyPageImage.isNull());
     QVERIFY(!nextPageImage.isNull());
     QCOMPARE(legacyPageImage.size(), nextPageImage.size());
+
+    // This evidence capture runs on the controlled C51 host. Its archived
+    // raster used Qt's fallback for the unavailable Sans Serif request; this
+    // comparison does not claim cross-platform pixel parity.
+    const QString frozenBaselinePath = QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR))
+        .filePath(QStringLiteral(
+            "docs/qt-rewrite/visual-baseline/next/phase-7/"
+            "schedule-import-output-c51/legacy-page-1.png"));
+    const QImage frozenLegacyPageImage(frozenBaselinePath);
+    QVERIFY2(!frozenLegacyPageImage.isNull(), qPrintable(frozenBaselinePath));
+    QCOMPARE(frozenLegacyPageImage.size(), nextPageImage.size());
+
+    quint64 frozenChangedPixels = 0;
+    quint64 frozenAbsoluteChannelDifference = 0;
+    for (int y = 0; y < pageImageSize.height(); ++y)
+    {
+        for (int x = 0; x < pageImageSize.width(); ++x)
+        {
+            const QRgb frozenPixel = frozenLegacyPageImage.pixel(x, y);
+            const QRgb nextPixel = nextPageImage.pixel(x, y);
+            if (frozenPixel != nextPixel)
+            {
+                ++frozenChangedPixels;
+            }
+            frozenAbsoluteChannelDifference += static_cast<quint64>(qAbs(
+                qRed(frozenPixel) - qRed(nextPixel)));
+            frozenAbsoluteChannelDifference += static_cast<quint64>(qAbs(
+                qGreen(frozenPixel) - qGreen(nextPixel)));
+            frozenAbsoluteChannelDifference += static_cast<quint64>(qAbs(
+                qBlue(frozenPixel) - qBlue(nextPixel)));
+        }
+    }
+    const double frozenMeanAbsoluteChannelDifference =
+        static_cast<double>(frozenAbsoluteChannelDifference)
+        / static_cast<double>(pageImageSize.width() * pageImageSize.height() * 3);
+    QCOMPARE(frozenChangedPixels, quint64(0));
+    QCOMPARE(frozenMeanAbsoluteChannelDifference, 0.0);
+
     const QString legacyImagePath = QDir(outputDirectory).filePath(
         QStringLiteral("legacy-page-1.png"));
     const QString nextImagePath = QDir(outputDirectory).filePath(
@@ -2215,6 +2253,23 @@ captureImportedScheduleOutputEvidenceWhenConfigured()
             {QStringLiteral("nextImage"), QFileInfo(nextImagePath).fileName()},
             {QStringLiteral("sideBySideImage"),
                 QStringLiteral("page-comparison.png")}
+        }},
+        {QStringLiteral("frozenBaselineComparison"), QJsonObject{
+            {QStringLiteral("referenceImage"), QStringLiteral(
+                "docs/qt-rewrite/visual-baseline/next/phase-7/"
+                "schedule-import-output-c51/legacy-page-1.png")},
+            {QStringLiteral("renderedDpi"), 150},
+            {QStringLiteral("imageWidth"), pageImageSize.width()},
+            {QStringLiteral("imageHeight"), pageImageSize.height()},
+            {QStringLiteral("changedPixels"),
+                static_cast<double>(frozenChangedPixels)},
+            {QStringLiteral("meanAbsoluteChannelDifference"),
+                frozenMeanAbsoluteChannelDifference},
+            {QStringLiteral("hostScope"), QStringLiteral(
+                "controlled C51 host only; not all-platform pixel parity")},
+            {QStringLiteral("fontLimit"), QStringLiteral(
+                "committed baseline requested unavailable Sans Serif and used "
+                "the host Qt fallback")}
         }},
         {QStringLiteral("physicalPrintPerformed"), false}
     };

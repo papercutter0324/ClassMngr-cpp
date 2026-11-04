@@ -86,7 +86,7 @@ if(NOT _roster_renderer_links STREQUAL "Qt6::Gui")
 endif()
 
 set(_expected_next_schedule_output_links
-    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrSchedulePrint|Qt6::Widgets"
+    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrSchedulePdfRenderer|Qt6::Widgets|Qt6::Pdf"
 )
 if(NOT _next_schedule_output_links STREQUAL _expected_next_schedule_output_links)
     message(FATAL_ERROR

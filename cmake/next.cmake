@@ -789,8 +789,9 @@ target_link_libraries(ClassMngrNextScheduleOutput
     PRIVATE
         ClassMngrBuildSettings
         ClassMngrNext::Application
-        ClassMngrSchedulePrint
+        ClassMngrSchedulePdfRenderer
         Qt6::Widgets
+        Qt6::Pdf
 )
 set_target_properties(ClassMngrNextScheduleOutput
     PROPERTIES
@@ -977,8 +978,9 @@ classmngr_next_assert_dependencies(ClassMngrNextDocumentCatalog
 classmngr_next_assert_dependencies(ClassMngrNextScheduleOutput
     "$<LINK_ONLY:ClassMngrBuildSettings>"
     "$<LINK_ONLY:ClassMngrNext::Application>"
-    "$<LINK_ONLY:ClassMngrSchedulePrint>"
+    "$<LINK_ONLY:ClassMngrSchedulePdfRenderer>"
     "$<LINK_ONLY:Qt6::Widgets>"
+    "$<LINK_ONLY:Qt6::Pdf>"
 )
 classmngr_next_assert_dependencies(ClassMngrNextSubPrepOutput
     ClassMngrSubPrepShared

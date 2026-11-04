@@ -22,10 +22,11 @@
 7. **8.2.2 PDF/print operation adapter — complete:** add separate borrowed-
    document and ordered-batch print operations; the viewer uses the injected
    port, and batch PDF lifetimes are serial while preserving one print job.
-8. **8.2.3 Schedule output — in progress:** remove the legacy print-service
-   forwarding path and verify schedule output parity.
-9. **8.2.4 Roster output:** route preview/print/save through the operation
-   adapter and preserve existing Next/Legacy output comparisons.
+8. **8.2.3 Schedule output — complete:** Next renders through the extracted
+   `SchedulePdfRenderer` and uses `PdfPrintOperation` for print; its target no
+   longer links `ClassMngrSchedulePrint`. Frozen C51 raster matched exactly.
+9. **8.2.4 Roster output — in progress:** route preview, print, and save
+   through output boundaries while preserving existing Next/Legacy comparisons.
 10. **8.2.5 Sub Prep output:** use the bounded projection for the packaged SQL
     route and record output/memory evidence separately.
 11. **8.2.6 Speaking Evaluation reports:** route report generation through the

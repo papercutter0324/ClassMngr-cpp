@@ -117,7 +117,6 @@ qt_add_executable(ClassMngrBasePageTests
 
     qt_add_executable(ClassMngrSchedulePrintPdfTests
         tests/schedule_print_pdf_tests.cpp
-        src/features/schedule/services/schedule_print_service.cpp
         src/features/schedule/ui/schedule_print_document_adapter.cpp
         src/features/schedule/ui/schedule_time_formatter.cpp
         src/features/schedule/ui/schedule_view_model.cpp
@@ -135,6 +134,7 @@ qt_add_executable(ClassMngrBasePageTests
 
     target_link_libraries(ClassMngrSchedulePrintPdfTests
         PRIVATE
+            ClassMngrSchedulePrint
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf

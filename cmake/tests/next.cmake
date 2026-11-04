@@ -8374,6 +8374,37 @@ set_tests_properties(ClassMngrNextSchedulePageTests
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
+add_executable(ClassMngrNextScheduleOutputAdapterTests
+    tests/next/qt_schedule_output_adapter_tests.cpp
+)
+target_compile_features(ClassMngrNextScheduleOutputAdapterTests
+    PRIVATE cxx_std_23
+)
+target_include_directories(ClassMngrNextScheduleOutputAdapterTests
+    PRIVATE "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextScheduleOutputAdapterTests
+    PRIVATE
+        ClassMngrNextScheduleOutput
+        ClassMngrSchedulePdfRenderer
+        Qt6::Pdf
+        Qt6::Test
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrNextScheduleOutputAdapterTests
+    PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextScheduleOutputAdapterTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextScheduleOutputAdapterTests
+    COMMAND ClassMngrNextScheduleOutputAdapterTests
+)
+set_tests_properties(ClassMngrNextScheduleOutputAdapterTests
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
+
 # Exercise the regular Next Schedule page's complete normal-workspace import
 # route against real .tps stores and .xlsx fixtures. The setup import target
 # remains a separate lifecycle regression test.

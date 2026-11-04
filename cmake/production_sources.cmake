@@ -685,6 +685,11 @@ set(CLASSMNGR_QT_PDF_PRINT_SOURCES
     "src/ui/shared/printing/pdf_print_service_internal.h"
 )
 
+set(CLASSMNGR_SCHEDULE_PDF_RENDERER_SOURCES
+    "src/features/schedule/services/schedule_pdf_renderer.cpp"
+    "src/features/schedule/services/schedule_pdf_renderer.h"
+)
+
 set(CLASSMNGR_SCHEDULE_PRINT_SOURCES
     "src/features/schedule/services/schedule_print_service.cpp"
     "src/features/schedule/services/schedule_print_service.h"
