@@ -15,6 +15,7 @@
 #include "next/application/calendar_event_type_color_preferences.h"
 #include "next/application/calendar_page_campus_directory_query_port.h"
 #include "next/application/current_campus_preferences.h"
+#include "next/ui/calendar_view.h"
 #include "next/ui/page.h"
 
 #include <QDate>
@@ -22,6 +23,7 @@
 
 #include <array>
 #include <functional>
+#include <memory>
 #include <vector>
 
 class QComboBox;
@@ -32,7 +34,6 @@ class QListWidgetItem;
 class QNetworkAccessManager;
 class QObject;
 class QPushButton;
-class QQuickWidget;
 class QWidget;
 class QVBoxLayout;
 class QShowEvent;
@@ -87,6 +88,7 @@ struct CalendarPageActions final
     QString calendarImportTemporaryFileTemplate;
     std::function<QNetworkAccessManager*(QObject*)>
         calendarImportNetworkAccessManagerFactory;
+    CalendarViewFactory calendarViewFactory;
 };
 
 struct CalendarPageRuntimeMetrics final
@@ -127,7 +129,7 @@ public:
     [[nodiscard]] CalendarPageRuntimeMetrics runtimeMetrics() const;
     [[nodiscard]] CalendarEventModel* eventModel() const noexcept;
     [[nodiscard]] CalendarEventCache* eventCache() const noexcept;
-    [[nodiscard]] QQuickWidget* calendarView() const noexcept;
+    [[nodiscard]] QWidget* calendarViewWidget() const noexcept;
     [[nodiscard]] QListWidget* upcomingList() const noexcept;
 
 protected:
@@ -149,7 +151,7 @@ private:
     };
 
     void buildShell();
-    void ensureCalendarContent();
+    [[nodiscard]] bool ensureCalendarContent();
     void activateVisibleContent();
     void releaseCalendarContent() noexcept;
     void reloadWorkspaceState();
@@ -179,7 +181,7 @@ private:
     QWidget* m_content = nullptr;
     QVBoxLayout* m_contentLayout = nullptr;
     QWidget* m_calendarCard = nullptr;
-    QQuickWidget* m_calendarView = nullptr;
+    std::unique_ptr<CalendarView> m_calendarView;
     QListWidget* m_upcomingList = nullptr;
     QComboBox* m_upcomingScope = nullptr;
     QLabel* m_status = nullptr;

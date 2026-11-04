@@ -289,10 +289,70 @@ private:
     std::shared_ptr<CalendarImportTestState> m_state;
 };
 
+struct CalendarViewTestState final
+{
+    int factoryCalls = 0;
+    int destructionCount = 0;
+    int paletteApplyCount = 0;
+    int eventTypeColorApplyCount = 0;
+    bool lastRequestHasBorrowedProviders = false;
+    bool providersAliveWhenViewDestroyed = true;
+    QDate lastRequestedMonth;
+    std::function<void(int, int)> displayedMonthChanged;
+};
+
+class FakeCalendarView final : public Ui::CalendarView
+{
+public:
+    FakeCalendarView(
+        const Ui::CalendarViewRequest& request,
+        CalendarViewTestState& state,
+        const bool loaded
+        )
+        : m_widget(new QWidget(request.parent)),
+          m_eventModel(request.eventModel),
+          m_academicProvider(request.academicProvider),
+          m_state(state),
+          m_loaded(loaded)
+    {
+        m_widget->setObjectName(QStringLiteral("fakeCalendarViewWidget"));
+    }
+
+    ~FakeCalendarView() override
+    {
+        m_state.providersAliveWhenViewDestroyed =
+            m_state.providersAliveWhenViewDestroyed
+            && !m_eventModel.isNull() && !m_academicProvider.isNull();
+        ++m_state.destructionCount;
+        delete m_widget;
+    }
+
+    QWidget* widget() const noexcept override { return m_widget; }
+    bool isLoaded() const noexcept override { return m_loaded; }
+
+    void applyPalette(const QPalette&, bool) override
+    {
+        ++m_state.paletteApplyCount;
+    }
+
+    void setEventTypeColors(const QVariantMap&, const QVariantMap&) override
+    {
+        ++m_state.eventTypeColorApplyCount;
+    }
+
+private:
+    QWidget* m_widget = nullptr;
+    QPointer<CalendarEventModel> m_eventModel;
+    QPointer<AcademicCalendarProvider> m_academicProvider;
+    CalendarViewTestState& m_state;
+    bool m_loaded = false;
+};
+
 class CalendarPageFixture final
 {
 public:
     Test::MemoryPreferences preferences;
+    CalendarViewTestState calendarViewState;
     std::unique_ptr<QTranslator> koreanTranslator;
     std::unique_ptr<Resources::ResourceCatalog> catalog;
     std::unique_ptr<Resources::ResourceLoader> loader;
@@ -304,6 +364,7 @@ public:
     QString calendarImportTemporaryFileTemplate;
     std::function<QNetworkAccessManager*(QObject*)>
         calendarImportNetworkAccessManagerFactory;
+    Ui::CalendarViewFactory calendarViewFactory;
     std::string holidayColorOverride;
     Ui::CalendarPage* page = nullptr;
     bool lazyBeforeActivation = false;
@@ -420,6 +481,7 @@ public:
             calendarImportTemporaryFileTemplate;
         actions.calendarImportNetworkAccessManagerFactory =
             calendarImportNetworkAccessManagerFactory;
+        actions.calendarViewFactory = calendarViewFactory;
         actions.readEvent = [this](
             const QString&,
             const Domain::CalendarEventId& id)
@@ -567,9 +629,10 @@ public:
                     auto instance = std::make_unique<Ui::CalendarPage>(
                         context, std::move(actions));
                     page = instance.get();
-                    lazyBeforeActivation = !instance->calendarView()
+                    lazyBeforeActivation = !instance->calendarViewWidget()
                         && !instance->eventCache()
-                        && !instance->eventModel();
+                        && !instance->eventModel()
+                        && calendarViewState.factoryCalls == 0;
                     return std::unique_ptr<Ui::Page>(std::move(instance));
                 }
             })
@@ -646,6 +709,7 @@ class CalendarPageTests final : public QObject
 
 private slots:
     void calendarContentIsLazyBoundedAndReleased();
+    void injectedCalendarViewFailureReleasesProvidersAndRetriesWithState();
     void eventTypeFilterAffectsUpcomingButNotMonthGrid();
     void cancellingAnEventDialogWritesNothing();
     void savingEventPreservesCivilIsoDates();
@@ -677,7 +741,7 @@ void CalendarPageTests::calendarContentIsLazyBoundedAndReleased()
     CalendarPageFixture fixture;
     QVERIFY(fixture.initialize(false));
     QVERIFY(fixture.lazyBeforeActivation);
-    QVERIFY(fixture.page->calendarView());
+    QVERIFY(fixture.page->calendarViewWidget());
     QCOMPARE(fixture.page->runtimeMetrics().calendarRootObjectCount, 1);
     const auto initial = fixture.page->runtimeMetrics();
     QVERIFY(initial.visibleGridDayCount >= 28);
@@ -708,13 +772,118 @@ void CalendarPageTests::calendarContentIsLazyBoundedAndReleased()
     QCOMPARE(fixture.page->runtimeMetrics().calendarRootObjectCount, 1);
 }
 
+void CalendarPageTests::
+injectedCalendarViewFailureReleasesProvidersAndRetriesWithState()
+{
+    CalendarPageFixture fixture;
+    fixture.calendarViewFactory = [&fixture](
+        const Ui::CalendarViewRequest& request)
+    {
+        ++fixture.calendarViewState.factoryCalls;
+        fixture.calendarViewState.lastRequestHasBorrowedProviders =
+            request.parent && request.eventModel && request.academicProvider
+            && request.callbacks.dayActivated
+            && request.callbacks.eventActivated
+            && request.callbacks.displayedMonthChanged;
+        fixture.calendarViewState.lastRequestedMonth = request.shownMonth;
+
+        if (fixture.calendarViewState.factoryCalls == 1)
+        {
+            // A partial view whose QML root failed to load must be discarded.
+            return Ui::CalendarViewCreationResult{
+                std::make_unique<FakeCalendarView>(
+                    request, fixture.calendarViewState, false),
+                QString{}
+            };
+        }
+
+        fixture.calendarViewState.displayedMonthChanged =
+            request.callbacks.displayedMonthChanged;
+        return Ui::CalendarViewCreationResult{
+            std::make_unique<FakeCalendarView>(
+                request, fixture.calendarViewState, true),
+            QString{}
+        };
+    };
+
+    QVERIFY(fixture.initialize(false));
+    QVERIFY(fixture.lazyBeforeActivation);
+    QCOMPARE(fixture.calendarViewState.factoryCalls, 1);
+    QCOMPARE(fixture.calendarViewState.destructionCount, 1);
+    QVERIFY(fixture.calendarViewState.providersAliveWhenViewDestroyed);
+    QVERIFY(fixture.calendarViewState.lastRequestHasBorrowedProviders);
+    QVERIFY(!fixture.page->calendarViewWidget());
+    QVERIFY(!fixture.page->eventModel());
+    QVERIFY(!fixture.page->eventCache());
+    QCOMPARE(fixture.page->runtimeMetrics().calendarViewCount, 0);
+    QCOMPARE(fixture.page->runtimeMetrics().liveHeavySessionCount, 0);
+    auto* const status = fixture.page->findChild<QLabel*>(
+        QStringLiteral("calendarPageStatus"));
+    QVERIFY(status && !status->isHidden());
+    QVERIFY(status->text().contains(QStringLiteral("could not be loaded")));
+
+    QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    QVERIFY(fixture.host->activatePage(QStringLiteral("calendar")));
+    QCOMPARE(fixture.calendarViewState.factoryCalls, 2);
+    QVERIFY(fixture.calendarViewState.lastRequestHasBorrowedProviders);
+    QCOMPARE(fixture.calendarViewState.lastRequestedMonth,
+             QDate::currentDate().year() < 2026
+                 ? QDate(2026, 1, 1)
+                 : QDate(QDate::currentDate().year(),
+                         QDate::currentDate().month(), 1));
+    QVERIFY(fixture.page->calendarViewWidget());
+    QCOMPARE(fixture.page->runtimeMetrics().calendarRootObjectCount, 1);
+    QVERIFY(fixture.page->eventModel());
+    QVERIFY(fixture.page->eventCache());
+    QCOMPARE(fixture.page->runtimeMetrics().liveHeavySessionCount, 1);
+    QCOMPARE(fixture.calendarViewState.paletteApplyCount, 1);
+    QVERIFY(fixture.calendarViewState.eventTypeColorApplyCount > 0);
+    QVERIFY(fixture.calendarViewState.displayedMonthChanged);
+
+    fixture.calendarViewState.displayedMonthChanged(2026, 10);
+    auto* const scope = fixture.page->findChild<QComboBox*>(
+        QStringLiteral("calendarUpcomingScope"));
+    auto* const holidayFilter = fixture.page->findChild<QPushButton*>(
+        QStringLiteral("calendarEventTypeFilter1"));
+    QVERIFY(scope && holidayFilter);
+    scope->setCurrentIndex(2);
+    holidayFilter->click();
+    QVERIFY(!holidayFilter->isChecked());
+
+    QPointer<CalendarEventModel> model(fixture.page->eventModel());
+    QPointer<AcademicCalendarProvider> provider(
+        fixture.page->findChild<AcademicCalendarProvider*>());
+    QVERIFY(model && provider);
+    QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    QCOMPARE(fixture.calendarViewState.destructionCount, 2);
+    QVERIFY(fixture.calendarViewState.providersAliveWhenViewDestroyed);
+    QVERIFY(model.isNull());
+    QVERIFY(provider.isNull());
+    QVERIFY(!fixture.page->calendarViewWidget());
+    QVERIFY(!fixture.page->eventModel());
+    QVERIFY(!fixture.page->eventCache());
+    QCOMPARE(fixture.page->runtimeMetrics().liveHeavySessionCount, 0);
+
+    QVERIFY(fixture.host->activatePage(QStringLiteral("calendar")));
+    QCOMPARE(fixture.calendarViewState.factoryCalls, 3);
+    QVERIFY(fixture.calendarViewState.lastRequestHasBorrowedProviders);
+    QCOMPARE(fixture.calendarViewState.lastRequestedMonth, QDate(2026, 10, 1));
+    QVERIFY(fixture.page->calendarViewWidget());
+    QCOMPARE(fixture.page->findChild<QComboBox*>(
+                 QStringLiteral("calendarUpcomingScope"))->currentIndex(), 2);
+    QVERIFY(!fixture.page->findChild<QPushButton*>(
+        QStringLiteral("calendarEventTypeFilter1"))->isChecked());
+    QCOMPARE(fixture.page->runtimeMetrics().liveHeavySessionCount, 1);
+}
+
 void CalendarPageTests::eventTypeFilterAffectsUpcomingButNotMonthGrid()
 {
     CalendarPageFixture fixture;
     fixture.holidayColorOverride = "#1255aa";
     QVERIFY(fixture.initialize(true, false, true));
 
-    QQuickWidget* const calendarView = fixture.page->calendarView();
+    QQuickWidget* const calendarView = fixture.page->findChild<QQuickWidget*>(
+        QStringLiteral("nextCalendarMonthGrid"));
     QVERIFY(calendarView);
     QVERIFY(calendarView->rootObject());
     QVERIFY(calendarView->rootObject()->setProperty(
@@ -2206,9 +2375,11 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
                 importServer.networkAccessManagerFactory();
             QVERIFY2(fixture.initialize(true, korean, true),
                 qPrintable(fixture.initializationError));
-            QVERIFY(fixture.page->calendarView());
-            QVERIFY(fixture.page->calendarView()->rootObject());
-            QVERIFY(fixture.page->calendarView()->rootObject()->setProperty(
+            QQuickWidget* const calendarView = fixture.page->findChild<QQuickWidget*>(
+                QStringLiteral("nextCalendarMonthGrid"));
+            QVERIFY(calendarView);
+            QVERIFY(calendarView->rootObject());
+            QVERIFY(calendarView->rootObject()->setProperty(
                 "shownDate",
                 QDateTime(visibleMonth, QTime(0, 0))));
             auto* upcomingScope = fixture.page->findChild<QComboBox*>(
@@ -2227,7 +2398,7 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
             QCOMPARE(pageTitle->text(), korean
                 ? QStringLiteral("캘린더")
                 : QStringLiteral("Calendar"));
-            QVERIFY(fixture.page->calendarView());
+            QVERIFY(fixture.page->calendarViewWidget());
             const auto activeMetrics = fixture.page->runtimeMetrics();
             QCOMPARE(activeMetrics.calendarRootObjectCount, 1);
             QVERIFY2(activeMetrics.cacheEventCount >= 3,

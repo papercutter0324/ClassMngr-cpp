@@ -2,10 +2,12 @@
 #include "data/database/workspace_store.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "features/my_info/data/typed_signature_renderer.h"
+#include "features/calendar/ui/academic_calendar_provider.h"
 #include "features/calendar/ui/calendar_event_model.h"
 #include "next/application/personal_details_save_use_case.h"
 #include "next/application/my_workspace_schedule_read.h"
 #include "next/ui/calendar_event_dialog.h"
+#include "next/ui/calendar_view.h"
 #include "next/platform/workspace_store_personal_details_port.h"
 #include "next/platform/workspace_store_my_workspace_schedule_read_port.h"
 #include "next/resources/resource_catalog.h"
@@ -28,9 +30,8 @@
 #include <QLabel>
 #include <QListWidget>
 #include <QLineEdit>
+#include <QPointer>
 #include <QPushButton>
-#include <QQuickItem>
-#include <QQuickWidget>
 #include <QPalette>
 #include <QScrollArea>
 #include <QTabBar>
@@ -198,6 +199,50 @@ public:
     }
 };
 
+struct WorkspaceCalendarViewState final
+{
+    int factoryCalls = 0;
+    int destructionCount = 0;
+    bool requestHasBorrowedProviders = false;
+    bool providersAliveWhenViewDestroyed = true;
+};
+
+class WorkspaceFakeCalendarView final : public Ui::CalendarView
+{
+public:
+    WorkspaceFakeCalendarView(
+        const Ui::CalendarViewRequest& request,
+        WorkspaceCalendarViewState& state
+        )
+        : m_widget(new QWidget(request.parent)),
+          m_eventModel(request.eventModel),
+          m_academicProvider(request.academicProvider),
+          m_state(state)
+    {
+        m_widget->setObjectName(QStringLiteral("workspaceFakeCalendarView"));
+    }
+
+    ~WorkspaceFakeCalendarView() override
+    {
+        m_state.providersAliveWhenViewDestroyed =
+            m_state.providersAliveWhenViewDestroyed
+            && !m_eventModel.isNull() && !m_academicProvider.isNull();
+        ++m_state.destructionCount;
+        delete m_widget;
+    }
+
+    QWidget* widget() const noexcept override { return m_widget; }
+    bool isLoaded() const noexcept override { return true; }
+    void applyPalette(const QPalette&, bool) override {}
+    void setEventTypeColors(const QVariantMap&, const QVariantMap&) override {}
+
+private:
+    QWidget* m_widget = nullptr;
+    QPointer<CalendarEventModel> m_eventModel;
+    QPointer<AcademicCalendarProvider> m_academicProvider;
+    WorkspaceCalendarViewState& m_state;
+};
+
 struct PageFixture final
 {
     QTemporaryDir directory;
@@ -213,8 +258,10 @@ struct PageFixture final
     QByteArray chosenImage;
     int warningCount = 0;
     Test::MemoryPreferences preferences;
+    WorkspaceCalendarViewState calendarViewState;
     std::unique_ptr<Resources::ResourceCatalog> catalog;
     std::unique_ptr<Resources::ResourceLoader> loader;
+    Ui::CalendarViewFactory calendarViewFactory;
     std::unique_ptr<Ui::PageHost> host;
     Ui::CalendarPage* standaloneCalendar = nullptr;
 
@@ -229,6 +276,7 @@ struct PageFixture final
         actions.readCampusDirectory = [] {
             return std::vector<Application::CalendarPageCampusMetadata>{};
         };
+        actions.calendarViewFactory = calendarViewFactory;
         return actions;
     }
 
@@ -903,7 +951,7 @@ workspaceScheduleAndCalendarContentAreLazyAndReleased()
                 .contains(QStringLiteral("First Teacher")));
     QCOMPARE(scheduleModel->data(scheduleModel->index(0, 3)).toString(),
              QStringLiteral("Room 101"));
-    QVERIFY(!calendar->calendarView());
+    QVERIFY(!calendar->calendarViewWidget());
     QVERIFY(!calendar->eventModel());
     QVERIFY(!calendar->eventCache());
 
@@ -911,11 +959,11 @@ workspaceScheduleAndCalendarContentAreLazyAndReleased()
     QCOMPARE(fixture.scheduleReadCount, 1);
     QCOMPARE(fixture.personalDetailsReadCount, 0);
     QCOMPARE(scheduleModel->rowCount(), 0);
-    QVERIFY(!calendar->calendarView());
+    QVERIFY(!calendar->calendarViewWidget());
     QCOMPARE(calendar->runtimeMetrics().liveHeavySessionCount, 0);
 
     fixture.host->show();
-    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarView(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarViewWidget(), 5000);
     QTRY_VERIFY_WITH_TIMEOUT(
         !calendar->runtimeMetrics().cacheLoading, 5000);
     QVERIFY(calendar->eventModel());
@@ -932,7 +980,7 @@ workspaceScheduleAndCalendarContentAreLazyAndReleased()
     QCOMPARE(scheduleModel->rowCount(), 1);
 
     tabs->setCurrentIndex(2);
-    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarView(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarViewWidget(), 5000);
     QCOMPARE(calendar->runtimeMetrics().calendarViewConstructionCount, 2);
     tabs->setCurrentIndex(0);
     QCOMPARE(fixture.personalDetailsReadCount, 1);
@@ -1094,8 +1142,9 @@ void NextMyWorkspacePageTests::embeddedCalendarControlsFiltersAndDayActivationWo
     tabs->setCurrentIndex(2);
     fixture.host->resize(1280, 920);
     fixture.host->show();
-    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarView(), 5000);
-    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarView()->rootObject(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarViewWidget(), 5000);
+    QTRY_COMPARE_WITH_TIMEOUT(
+        calendar->runtimeMetrics().calendarRootObjectCount, 1, 5000);
     QTRY_VERIFY_WITH_TIMEOUT(!calendar->runtimeMetrics().cacheLoading, 5000);
 
     QVERIFY(!calendar->findChild<QPushButton*>(QStringLiteral("calendarNewEvent")));
@@ -1220,29 +1269,55 @@ embeddedCalendarMatchesLegacyViewportAndLightCanvasInDarkTheme()
     fixture.host->resize(1024, 768);
     fixture.host->show();
     tabs->setCurrentIndex(2);
-    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarView(), 5000);
-    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarView()->rootObject(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarViewWidget(), 5000);
+    QTRY_COMPARE_WITH_TIMEOUT(
+        calendar->runtimeMetrics().calendarRootObjectCount, 1, 5000);
     QTRY_COMPARE_WITH_TIMEOUT(viewport->mapTo(page, QPoint{}), QPoint(44, 185), 5000);
     QTRY_COMPARE_WITH_TIMEOUT(viewport->size(), QSize(936, 495), 5000);
 
-    QObject* const root = calendar->calendarView()->rootObject();
-    QCOMPARE(root->property("calendarBackground").value<QColor>(),
-             QColor(QStringLiteral("#f5f3ee")));
-    QCOMPARE(root->property("headerBackground").value<QColor>(),
-             QColor(QStringLiteral("#e2e1dc")));
-    QCOMPARE(root->property("cellBackground").value<QColor>(),
-             QColor(QStringLiteral("#f5f3ee")));
-    QCOMPARE(root->property("weekendBackground").value<QColor>(),
-             QColor(QStringLiteral("#e8edf1")));
-    QCOMPARE(root->property("gridLineColor").value<QColor>(),
-             QColor(QStringLiteral("#cbc9c2")));
+    const QImage calendarImage = calendar->calendarViewWidget()->grab().toImage();
+    QVERIFY(!calendarImage.isNull());
+    const auto containsColor = [&calendarImage](const QColor& expected)
+    {
+        for (int y = 0; y < calendarImage.height(); ++y)
+        {
+            for (int x = 0; x < calendarImage.width(); ++x)
+            {
+                if (calendarImage.pixelColor(x, y) == expected)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    QVERIFY(containsColor(QColor(QStringLiteral("#f5f3ee"))));
+    QVERIFY(containsColor(QColor(QStringLiteral("#e2e1dc"))));
+    QVERIFY(containsColor(QColor(QStringLiteral("#e8edf1"))));
+    QVERIFY(containsColor(QColor(QStringLiteral("#cbc9c2"))));
 }
 
 void NextMyWorkspacePageTests::
 embeddedCalendarReleasesAndRestoresAcrossTabAndPageLifecycle()
 {
     PageFixture fixture;
+    fixture.calendarViewFactory = [&fixture](
+        const Ui::CalendarViewRequest& request)
+    {
+        ++fixture.calendarViewState.factoryCalls;
+        fixture.calendarViewState.requestHasBorrowedProviders =
+            request.parent && request.eventModel && request.academicProvider
+            && request.callbacks.dayActivated
+            && request.callbacks.eventActivated
+            && request.callbacks.displayedMonthChanged;
+        return Ui::CalendarViewCreationResult{
+            std::make_unique<WorkspaceFakeCalendarView>(
+                request, fixture.calendarViewState),
+            QString{}
+        };
+    };
     QVERIFY(fixture.initialize(false));
+    QCOMPARE(fixture.calendarViewState.factoryCalls, 0);
     Ui::MyWorkspacePage* const page = fixture.page();
     auto* const tabs = page->findChild<QTabBar*>(
         QStringLiteral("nextMyWorkspaceTabBar"));
@@ -1250,9 +1325,12 @@ embeddedCalendarReleasesAndRestoresAcrossTabAndPageLifecycle()
         QStringLiteral("nextMyWorkspaceEmbeddedCalendar"));
     QVERIFY(tabs && calendar);
     tabs->setCurrentIndex(2);
+    QCOMPARE(fixture.calendarViewState.factoryCalls, 0);
     fixture.host->resize(1280, 920);
     fixture.host->show();
-    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarView(), 5000);
+    QTRY_COMPARE_WITH_TIMEOUT(fixture.calendarViewState.factoryCalls, 1, 5000);
+    QVERIFY(calendar->calendarViewWidget());
+    QVERIFY(fixture.calendarViewState.requestHasBorrowedProviders);
     QCOMPARE(calendar->runtimeMetrics().liveHeavySessionCount, 1);
 
     auto* const scope = calendar->findChild<QComboBox*>(
@@ -1266,12 +1344,22 @@ embeddedCalendarReleasesAndRestoresAcrossTabAndPageLifecycle()
     const int constructions = calendar->runtimeMetrics()
         .calendarViewConstructionCount;
 
+    QPointer<CalendarEventModel> model(calendar->eventModel());
+    QPointer<AcademicCalendarProvider> provider(
+        calendar->findChild<AcademicCalendarProvider*>());
+    QVERIFY(model && provider);
     tabs->setCurrentIndex(1);
     QCOMPARE(calendar->runtimeMetrics().calendarViewCount, 0);
     QVERIFY(!calendar->eventCache());
+    QCOMPARE(fixture.calendarViewState.destructionCount, 1);
+    QVERIFY(fixture.calendarViewState.providersAliveWhenViewDestroyed);
+    QVERIFY(model.isNull());
+    QVERIFY(provider.isNull());
     QCOMPARE(calendar->runtimeMetrics().liveHeavySessionCount, 0);
     tabs->setCurrentIndex(2);
-    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarView(), 5000);
+    QTRY_COMPARE_WITH_TIMEOUT(fixture.calendarViewState.factoryCalls, 2, 5000);
+    QVERIFY(calendar->calendarViewWidget());
+    QVERIFY(fixture.calendarViewState.requestHasBorrowedProviders);
     QCOMPARE(calendar->runtimeMetrics().calendarViewConstructionCount,
              constructions + 1);
     QCOMPARE(calendar->findChild<QComboBox*>(
@@ -1282,9 +1370,13 @@ embeddedCalendarReleasesAndRestoresAcrossTabAndPageLifecycle()
 
     QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
     QCOMPARE(calendar->runtimeMetrics().calendarViewCount, 0);
+    QCOMPARE(fixture.calendarViewState.destructionCount, 2);
+    QVERIFY(fixture.calendarViewState.providersAliveWhenViewDestroyed);
     QCOMPARE(calendar->runtimeMetrics().liveHeavySessionCount, 0);
     QVERIFY(fixture.host->activatePage(QStringLiteral("my_workspace")));
-    QTRY_VERIFY_WITH_TIMEOUT(calendar->calendarView(), 5000);
+    QTRY_COMPARE_WITH_TIMEOUT(fixture.calendarViewState.factoryCalls, 3, 5000);
+    QVERIFY(calendar->calendarViewWidget());
+    QVERIFY(fixture.calendarViewState.requestHasBorrowedProviders);
     QCOMPARE(calendar->runtimeMetrics().calendarViewConstructionCount,
              constructions + 2);
     QCOMPARE(calendar->findChild<QComboBox*>(
@@ -1309,28 +1401,28 @@ standaloneAndEmbeddedCalendarTransitionsStayExclusiveAndRollbackSafely()
     tabs->setCurrentIndex(2);
     fixture.host->resize(1280, 920);
     fixture.host->show();
-    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarView(), 5000);
-    QQuickWidget* const embeddedView = embedded->calendarView();
+    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarViewWidget(), 5000);
+    QWidget* const embeddedView = embedded->calendarViewWidget();
 
     const auto activationFailure = fixture.host->activatePage(
         QStringLiteral("activation_failure"));
     QVERIFY(!activationFailure);
     QCOMPARE(fixture.host->activePageKey(),
              std::optional<QString>(QStringLiteral("my_workspace")));
-    QCOMPARE(embedded->calendarView(), embeddedView);
+    QCOMPARE(embedded->calendarViewWidget(), embeddedView);
     QCOMPARE(embedded->runtimeMetrics().liveHeavySessionCount, 1);
 
     QVERIFY(fixture.host->activatePage(QStringLiteral("calendar")));
-    QVERIFY(!embedded->calendarView());
+    QVERIFY(!embedded->calendarViewWidget());
     QVERIFY(fixture.standaloneCalendar);
-    QTRY_VERIFY_WITH_TIMEOUT(fixture.standaloneCalendar->calendarView(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(fixture.standaloneCalendar->calendarViewWidget(), 5000);
     QCOMPARE(fixture.standaloneCalendar->runtimeMetrics().liveHeavySessionCount, 1);
     QVERIFY(!embedded->eventModel());
     QVERIFY(!embedded->eventCache());
 
     QVERIFY(fixture.host->activatePage(QStringLiteral("my_workspace")));
-    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarView(), 5000);
-    QVERIFY(!fixture.standaloneCalendar->calendarView());
+    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarViewWidget(), 5000);
+    QVERIFY(!fixture.standaloneCalendar->calendarViewWidget());
     QCOMPARE(embedded->runtimeMetrics().liveHeavySessionCount, 1);
     QVERIFY(embedded->runtimeMetrics().peakLiveHeavySessionCount <= 1);
 }
@@ -1348,7 +1440,7 @@ void NextMyWorkspacePageTests::calendarWorkspaceReplacementAndCloseClearBothRout
     tabs->setCurrentIndex(2);
     fixture.host->resize(1280, 920);
     fixture.host->show();
-    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarView(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarViewWidget(), 5000);
     const auto containsUpcoming = [](const Ui::CalendarPage* calendar,
                                      const QString& title) {
         const QListWidget* const upcoming = calendar->upcomingList();
@@ -1383,7 +1475,7 @@ void NextMyWorkspacePageTests::calendarWorkspaceReplacementAndCloseClearBothRout
 
     QVERIFY(fixture.host->activatePage(QStringLiteral("calendar")));
     QVERIFY(fixture.standaloneCalendar);
-    QTRY_VERIFY_WITH_TIMEOUT(fixture.standaloneCalendar->calendarView(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(fixture.standaloneCalendar->calendarViewWidget(), 5000);
     QCOMPARE(fixture.standaloneCalendar->runtimeMetrics().cacheEventCount, 0);
 
     fixture.activeStore = &fixture.firstStore;

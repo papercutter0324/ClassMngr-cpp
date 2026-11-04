@@ -40,9 +40,9 @@
 14. **8.4.2 Next application package — complete:** replace package contents
     under existing updater assets; verify the manifest, Qt runtime/QML, direct
     resources, notices, and final archive/image or installer payloads.
-15. **8.5.1 Calendar view — in progress:** put lazy QML creation/release behind a calendar
+15. **8.5.1 Calendar view — complete:** put lazy QML creation/release behind a calendar
     view interface with the compact event model.
-16. **8.6.1 Transfer codec:** stage or stream JSON read/write while preserving
+16. **8.6.1 Transfer codec — in progress:** stage or stream JSON read/write while preserving
     the 16 MiB compatibility and validation contract.
 17. **8.6.2 Transfer workflow ownership:** retain compact preview state, avoid
     full-package copies, and release operation data on success/failure/cancel.

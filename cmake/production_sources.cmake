@@ -774,6 +774,8 @@ set(CLASSMNGR_NEXT_CALENDAR_UI_SOURCES
     "src/next/ui/calendar_event_import_service.h"
     "src/next/ui/calendar_page.cpp"
     "src/next/ui/calendar_page.h"
+    "src/next/ui/calendar_view.cpp"
+    "src/next/ui/calendar_view.h"
     "src/next/ui/calendar_preferences_dialog.cpp"
     "src/next/ui/calendar_preferences_dialog.h"
 )

@@ -475,6 +475,21 @@ Publisher tag/version, asset filenames, and the eight-entry/eight-checksum
 contract are unchanged. The macOS signature is ad hoc; no Developer ID signing
 or notarization was performed.
 
+### 8.5.1 — Calendar view adapter (accepted)
+
+Extracted an injectable `CalendarView` interface and QML factory. `CalendarPage`
+still creates its model and providers lazily on entry, releases the view before
+its borrowed providers, and discards partial state after a failed load so a
+later activation can retry. The QML component and compact `CalendarEventModel`
+contract are unchanged.
+
+Incremental macOS builds passed for `ClassMngr`,
+`ClassMngrNextCalendarPageTests`, and `ClassMngrNextMyWorkspacePageTests`.
+Focused CTest execution passed both affected suites:
+`ctest --test-dir build/macos-clang-debug --output-on-failure -R 'ClassMngrNext(CalendarPage|MyWorkspacePage)Tests'`.
+English and Korean calendar captures in light and dark palettes were generated
+and visually reviewed. No full test suite was run.
+
 ## Objective
 
 
