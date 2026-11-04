@@ -917,6 +917,14 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/font_size_presenter.h"
 )
 
+# Keep MSVC's object section limit accommodation local to the translation
+# unit that exceeds it, including targets that reuse this shared source list.
+set_source_files_properties(
+    "${PROJECT_SOURCE_DIR}/src/next/bootstrap/application_bootstrap.cpp"
+    PROPERTIES
+        COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:MSVC>:/bigobj>"
+)
+
 set(CLASSMNGR_NEXT_STARTUP_UPDATE_SOURCES
     "src/next/bootstrap/update_coordinator.cpp"
     "src/next/bootstrap/update_coordinator.h"

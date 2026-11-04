@@ -118,7 +118,7 @@ def _entry_for_path(path: Path, root: Path, platform: str) -> dict[str, Any]:
         return {"path": relative, "kind": "directory"}
     if stat.S_ISLNK(info.st_mode):
         target = os.readlink(path)
-        if os.path.isabs(target):
+        if PurePosixPath(target).is_absolute():
             if platform != "macos" or relative != "Applications" or target != "/Applications":
                 raise PackageError(f"package symlink must have a relative target: {relative}")
             target_bytes = os.fsencode(target)

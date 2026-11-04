@@ -5,10 +5,15 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import plistlib
+import stat
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Iterator
+from unittest.mock import patch
 
 from verify_next_package import PackageError, create_package_manifest, verify_package
 
@@ -20,6 +25,104 @@ QT_VERSION = "6.12.0"
 def _write(path: Path, contents: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(contents)
+
+
+class _StatModeOverlay:
+    """Expose fixture mode bits that Windows filesystems do not represent."""
+
+    def __init__(
+        self,
+        result: os.stat_result,
+        mode: int,
+        file_attributes: int | None = None,
+    ) -> None:
+        self._result = result
+        self.st_mode = mode
+        self.st_file_attributes = (
+            file_attributes
+            if file_attributes is not None
+            else getattr(result, "st_file_attributes", 0)
+        )
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self._result, name)
+
+
+@contextmanager
+def _windows_posix_package_semantics(
+    root: Path,
+    executable_relative_path: str,
+    symlink_targets: dict[str, str] | None = None,
+    executable_is_marked_executable: bool = True,
+) -> Iterator[None]:
+    """Model POSIX executable bits and symlinks for package fixtures on Windows."""
+    if os.name != "nt":
+        yield
+        return
+
+    executable = root / executable_relative_path
+    symlinks = {root / relative: target for relative, target in (symlink_targets or {}).items()}
+    original_stat = Path.stat
+    original_lstat = os.lstat
+    original_readlink = os.readlink
+    original_islink = os.path.islink
+
+    def overlay_mode(result: os.stat_result, mode_bits: int, file_type: int | None = None) -> _StatModeOverlay:
+        mode = result.st_mode | mode_bits
+        file_attributes = getattr(result, "st_file_attributes", 0)
+        if file_type is not None:
+            mode = (mode & ~0o170000) | file_type
+            if file_type == stat.S_IFLNK:
+                file_attributes |= stat.FILE_ATTRIBUTE_REPARSE_POINT
+        return _StatModeOverlay(result, mode, file_attributes)
+
+    def stat_with_posix_mode(path: Path, *args: object, **kwargs: object) -> os.stat_result:
+        result = original_stat(path, *args, **kwargs)
+        if path == executable:
+            if executable_is_marked_executable:
+                return overlay_mode(result, stat.S_IXUSR)
+            mode = result.st_mode & ~(stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            return _StatModeOverlay(result, mode)
+        return result
+
+    def lstat_with_posix_mode(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        *args: object,
+        **kwargs: object,
+    ) -> os.stat_result:
+        result = original_lstat(path, *args, **kwargs)
+        fixture_path = Path(path)
+        if fixture_path == executable:
+            if executable_is_marked_executable:
+                return overlay_mode(result, stat.S_IXUSR)
+            mode = result.st_mode & ~(stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+            return _StatModeOverlay(result, mode)
+        if fixture_path in symlinks:
+            return overlay_mode(result, 0, stat.S_IFLNK)
+        return result
+
+    def readlink_with_posix_target(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        *args: object,
+        **kwargs: object,
+    ) -> str:
+        fixture_path = Path(path)
+        if fixture_path in symlinks:
+            return symlinks[fixture_path]
+        return original_readlink(path, *args, **kwargs)
+
+    def islink_with_posix_target(path: str | bytes | os.PathLike[str] | os.PathLike[bytes]) -> bool:
+        if Path(path) in symlinks:
+            return True
+        return original_islink(path)
+
+    with (
+        patch.object(Path, "stat", new=stat_with_posix_mode),
+        patch("os.lstat", new=lstat_with_posix_mode),
+        patch("os.readlink", new=readlink_with_posix_target),
+        patch("os.path.islink", new=islink_with_posix_target),
+    ):
+        yield
 
 
 def _make_resource_stage(root: Path) -> None:
@@ -179,7 +282,11 @@ def _make_macos_package(root: Path) -> None:
             b"SPDXVersion: SPDX-2.3\nDocumentName: package fixture\n",
         )
 
-    (root / "Applications").symlink_to("/Applications")
+    applications_link = root / "Applications"
+    if os.name == "nt":
+        _write(applications_link, b"macOS Applications symlink fixture")
+    else:
+        applications_link.symlink_to("/Applications")
 
 
 def _make_windows_package(root: Path) -> None:
@@ -235,6 +342,9 @@ class VerifyNextPackageTests(unittest.TestCase):
         self.root = Path(self.temp_dir.name) / "ClassMngr-linux-x86_64"
         self.root.mkdir()
         _make_linux_package(self.root)
+        self.enterContext(
+            _windows_posix_package_semantics(self.root, "bin/ClassMngr")
+        )
 
     def _create_manifest(self) -> None:
         create_package_manifest(
@@ -285,6 +395,21 @@ class VerifyNextPackageTests(unittest.TestCase):
         )
         self.assertFalse(result["separate_resource_asset"])
 
+    def test_rejects_non_executable_posix_program(self) -> None:
+        executable = self.root / "bin/ClassMngr"
+        executable.chmod(0o644)
+        with _windows_posix_package_semantics(
+            self.root,
+            "bin/ClassMngr",
+            executable_is_marked_executable=False,
+        ):
+            self._create_manifest()
+            with self.assertRaisesRegex(
+                PackageError,
+                "ClassMngr executable is not marked executable",
+            ):
+                verify_package(self.root, "linux", "x86_64", VERSION, QT_VERSION)
+
     def test_rejects_missing_qt_sqlite_plugin(self) -> None:
         self._create_manifest()
         (self.root / "lib/plugins/sqldrivers/libqsqlite.so").unlink()
@@ -323,34 +448,66 @@ class VerifyNextPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir) / "macos-package"
             root.mkdir()
-            _make_macos_package(root)
-            manifest = create_package_manifest(
+            with _windows_posix_package_semantics(
                 root,
-                "macos",
-                "universal",
-                VERSION,
-                QT_VERSION,
-            )
-            result = verify_package(root, "macos", "universal", VERSION, QT_VERSION)
+                "ClassMngr.app/Contents/MacOS/ClassMngr",
+                {"Applications": "/Applications"},
+            ):
+                _make_macos_package(root)
+                manifest = create_package_manifest(
+                    root,
+                    "macos",
+                    "universal",
+                    VERSION,
+                    QT_VERSION,
+                )
+                result = verify_package(root, "macos", "universal", VERSION, QT_VERSION)
 
         self.assertEqual(manifest["manifest_path"], "ClassMngr.package-manifest.json")
         self.assertEqual(manifest["executable"], "ClassMngr.app/Contents/MacOS/ClassMngr")
         self.assertEqual(result["license_files"], 13)
         self.assertGreater(result["sha256_checked"], 10)
 
+    def test_rejects_unapproved_macos_absolute_symlink(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "macos-package"
+            root.mkdir()
+            with _windows_posix_package_semantics(
+                root,
+                "ClassMngr.app/Contents/MacOS/ClassMngr",
+                {"Applications": "/tmp/Applications"},
+            ):
+                _make_macos_package(root)
+                with self.assertRaisesRegex(
+                    PackageError,
+                    "package symlink must have a relative target: Applications",
+                ):
+                    create_package_manifest(
+                        root,
+                        "macos",
+                        "universal",
+                        VERSION,
+                        QT_VERSION,
+                    )
+
     def test_rejects_unused_macos_sql_driver(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir) / "macos-package"
             root.mkdir()
-            _make_macos_package(root)
-            _write(
-                root / "ClassMngr.app/Contents/PlugIns/sqldrivers/libqsqlodbc.dylib",
-                b"unused SQL driver",
-            )
-            create_package_manifest(root, "macos", "universal", VERSION, QT_VERSION)
+            with _windows_posix_package_semantics(
+                root,
+                "ClassMngr.app/Contents/MacOS/ClassMngr",
+                {"Applications": "/Applications"},
+            ):
+                _make_macos_package(root)
+                _write(
+                    root / "ClassMngr.app/Contents/PlugIns/sqldrivers/libqsqlodbc.dylib",
+                    b"unused SQL driver",
+                )
+                create_package_manifest(root, "macos", "universal", VERSION, QT_VERSION)
 
-            with self.assertRaisesRegex(PackageError, "unused Qt SQL drivers"):
-                verify_package(root, "macos", "universal", VERSION, QT_VERSION)
+                with self.assertRaisesRegex(PackageError, "unused Qt SQL drivers"):
+                    verify_package(root, "macos", "universal", VERSION, QT_VERSION)
 
     def test_accepts_complete_windows_x64_package(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -6,6 +6,14 @@ foreach(_classmngr_next_bootstrap_source IN LISTS
     )
 endforeach()
 
+# Source-file properties are directory-scoped, so repeat the narrow MSVC
+# object-section limit workaround in this app subdirectory.
+set_source_files_properties(
+    "${PROJECT_SOURCE_DIR}/src/next/bootstrap/application_bootstrap.cpp"
+    PROPERTIES
+        COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:MSVC>:/bigobj>"
+)
+
 qt_add_executable(ClassMngrNext
     MANUAL_FINALIZATION
     "${PROJECT_SOURCE_DIR}/${CLASSMNGR_NEXT_MAIN_SOURCE}"
