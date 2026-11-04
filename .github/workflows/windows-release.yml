@@ -286,13 +286,24 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Pinned vcpkg bootstrap failed with exit code $LASTEXITCODE." }
           $vcpkgExe = Join-Path $vcpkgRoot "vcpkg.exe"
           & $vcpkgExe install `
+            "boost-algorithm:x64-windows-static" `
+            "boost-container:x64-windows-static" `
+            "boost-config:x64-windows-static" `
+            "boost-core:x64-windows-static" `
             "boost-date-time:x64-windows-static" `
             "boost-foreach:x64-windows-static" `
             "boost-filesystem:x64-windows-static" `
             "boost-format:x64-windows-static" `
-            "boost-iostreams:x64-windows-static" `
+            "boost-integer:x64-windows-static" `
+            "boost-iostreams[bzip2,zlib]:x64-windows-static" `
+            "boost-lexical-cast:x64-windows-static" `
             "boost-program-options:x64-windows-static" `
+            "boost-ptr-container:x64-windows-static" `
+            "boost-range:x64-windows-static" `
+            "boost-smart-ptr:x64-windows-static" `
             "boost-system:x64-windows-static" `
+            "boost-typeof:x64-windows-static" `
+            "boost-unordered:x64-windows-static" `
             "bzip2:x64-windows-static" `
             "liblzma:x64-windows-static" `
             "zlib:x64-windows-static"
