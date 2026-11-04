@@ -111,7 +111,7 @@ private:
     QPushButton* m_applyButton = nullptr;
     QPushButton* m_cancelReviewButton = nullptr;
     QPushButton* m_refreshPreviewButton = nullptr;
-    std::optional<Application::ClassTransferPortablePackage> m_package;
+    std::shared_ptr<const Application::ClassTransferPortablePackage> m_package;
     std::optional<Application::ClassTransferPreviewResult> m_preview;
     std::optional<QString> m_loadedWorkspacePath;
     std::optional<QString> m_reviewWorkspacePath;

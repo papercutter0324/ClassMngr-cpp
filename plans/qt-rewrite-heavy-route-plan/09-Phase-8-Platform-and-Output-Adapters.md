@@ -505,6 +505,24 @@ with escaped, control, and Unicode strings; exact-cap acceptance; over-cap
 destination preservation; and mapped-reader behavior. No full suite or memory
 measurement was run; Phase 9 retains the memory gate.
 
+### 8.6.2 — Transfer apply workflow ownership (accepted)
+
+The page and `ClassTransferApplyCommand` now share one immutable Portable
+package handle, removing the deep command copy; Legacy conversion takes a const
+reference. Retryable apply errors retain the same handle. Success, cancellation,
+invalid replacement, and workspace change release it, and cleanup frees review
+row-vector capacity.
+
+Incremental macOS production and test builds passed in the standard folder:
+`cmake --build build/macos-clang-debug --target ClassMngr ClassMngrNext --parallel 4`
+and `cmake --build build/macos-clang-debug --target ClassMngrNextClassTransferWorkflowTests ClassMngrNextApplicationClassTransferApplyUseCaseTests ClassMngrClassTransferApplyPackageAdapterTests ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests --parallel 4`.
+Focused CTest passed 4/4 in 6.47 seconds, including weak-handle identity,
+retry/success/cancel release, and null-handle validation coverage. The initial
+platform suite exposed a stale assertion expecting 25 rows; commit `4b5f2de9`
+updated storage to `MaximumRowCount=100`, and the assertion now checks 100 rows
+with bounds 0–99 while retaining wide-ID and retained-marker checks. No full
+suite or memory measurement was run; Phase 9 owns the memory gate.
+
 ## Objective
 
 

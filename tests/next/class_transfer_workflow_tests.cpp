@@ -36,6 +36,7 @@
 #include <QTemporaryDir>
 #include <QtTest/QtTest>
 
+#include <functional>
 #include <memory>
 #include <limits>
 #include <optional>
@@ -215,6 +216,12 @@ struct PageHarness final
         std::make_shared<Test::MemorySplitterStatePort>();
     QString path;
     std::optional<Domain::ClassId> selectedClass;
+    std::vector<std::weak_ptr<const Application::ClassTransferPortablePackage>>
+        appliedPackageHandles;
+    bool repeatedApplyUsesSamePackageIdentity = true;
+    std::function<Application::ClassTransferApplyResult(
+        const QString&, Application::ClassTransferApplyCommand)>
+        applyImportOverride;
 
     [[nodiscard]] bool initialize()
     {
@@ -260,9 +267,24 @@ struct PageHarness final
                     const Application::ClassTransferPreviewRequest& request) {
                     return Platform::previewClassTransferAtPath(activePath, request);
                 };
-                actions.applyImport = [](
+                actions.applyImport = [this](
                     const QString& activePath,
                     Application::ClassTransferApplyCommand request) {
+                    const std::weak_ptr<const Application::ClassTransferPortablePackage>
+                        packageHandle = request.package;
+                    if (!appliedPackageHandles.empty())
+                    {
+                        repeatedApplyUsesSamePackageIdentity =
+                            repeatedApplyUsesSamePackageIdentity
+                            && !appliedPackageHandles.back().owner_before(packageHandle)
+                            && !packageHandle.owner_before(
+                                appliedPackageHandles.back());
+                    }
+                    appliedPackageHandles.push_back(packageHandle);
+                    if (applyImportOverride)
+                    {
+                        return applyImportOverride(activePath, std::move(request));
+                    }
                     return Platform::applyClassTransferAtPath(
                         activePath, std::move(request));
                 };
@@ -320,6 +342,7 @@ private Q_SLOTS:
     void splitterStateSavesOnSuspensionWithoutResettingRetainedPage();
     void visiblePageExportsReviewsAppliesAndClearsOnWorkspaceChange();
     void applyFailureKeepsReviewAndDestinationTransactionRollsBack();
+    void failedApplyCancellationReleasesPackage();
     void importRejectsMalformedUnsupportedAndUnreadableFiles();
     void historicalLargePackageLoadsIntoOneReviewProjectionWithinLimit();
     void createReplaceSkipAndAmbiguousTeacherChoicesWorkInVisiblePage();
@@ -453,7 +476,8 @@ void ClassTransferWorkflowTests::workspaceStoreTransferRoundTripsFullPackageAndR
     });
     QVERIFY(preview);
     const auto applied = Platform::applyClassTransferAtPath(destinationPath, {
-        exported.value(), {
+        std::make_shared<const Application::ClassTransferPortablePackage>(
+            exported.value()), {
             .classes = {{Application::ClassTransferPackageClassIndex{0},
                 Application::ClassTransferReviewClassAction::Create, std::nullopt}},
             .teachers = {{
@@ -636,6 +660,8 @@ void ClassTransferWorkflowTests::applyFailureKeepsReviewAndDestinationTransactio
     QVERIFY(page->applyButton()->isEnabled());
     QVERIFY(!page->applyImport());
     QVERIFY(page->hasRetainedPackage());
+    QCOMPARE(harness.appliedPackageHandles.size(), std::size_t(1));
+    QVERIFY(!harness.appliedPackageHandles.front().expired());
     QVERIFY(page->statusLabel()->property("classTransferError").toBool());
     {
         WorkspaceStore destination;
@@ -647,6 +673,67 @@ void ClassTransferWorkflowTests::applyFailureKeepsReviewAndDestinationTransactio
     }
     QVERIFY(page->applyImport());
     QVERIFY(!page->hasRetainedPackage());
+    QCOMPARE(harness.appliedPackageHandles.size(), std::size_t(2));
+    QVERIFY(harness.repeatedApplyUsesSamePackageIdentity);
+    QVERIFY(harness.appliedPackageHandles.front().expired());
+    QVERIFY(harness.appliedPackageHandles.back().expired());
+}
+
+void ClassTransferWorkflowTests::failedApplyCancellationReleasesPackage()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString sourcePath = directory.filePath(QStringLiteral("cancel-source.tps"));
+    const QString destinationPath = directory.filePath(QStringLiteral("cancel-destination.tps"));
+    {
+        WorkspaceStore source;
+        QVERIFY(source.open(sourcePath));
+        QVERIFY(createCompleteSourceClass(source) > 0);
+    }
+    {
+        WorkspaceStore destination;
+        QVERIFY(destination.open(destinationPath));
+    }
+    const auto exported = Platform::exportClassTransferAtPath(
+        sourcePath, {{*Domain::ClassId::fromString("1")}});
+    QVERIFY(exported);
+    const QString packagePath = directory.filePath(
+        QStringLiteral("cancel-package.json"));
+    QVERIFY(ClassTransferJsonCodec::saveFile(packagePath, exported.value()));
+
+    PageHarness harness;
+    harness.path = destinationPath;
+    harness.applyImportOverride = [](
+        const QString&, Application::ClassTransferApplyCommand)
+    {
+        return Application::ClassTransferApplyResult::failure({
+            .code = Domain::ErrorCode::Conflict,
+            .message = "injected apply failure",
+            .recoverable = true
+        });
+    };
+    QVERIFY(harness.initialize());
+    QVERIFY(harness.activate());
+    auto* const page = harness.page();
+    QVERIFY(page);
+    QVERIFY(page->loadImportFile(packagePath));
+    QVERIFY(page->applyButton()->isEnabled());
+    QVERIFY(!page->applyImport());
+    QVERIFY(page->hasRetainedPackage());
+    QCOMPARE(harness.appliedPackageHandles.size(), std::size_t(1));
+    const std::weak_ptr<const Application::ClassTransferPortablePackage>
+        failedPackage = harness.appliedPackageHandles.front();
+    QVERIFY(!failedPackage.expired());
+
+    page->cancelImportReview();
+
+    QVERIFY(!page->hasRetainedPackage());
+    QVERIFY(failedPackage.expired());
+    QCOMPARE(page->classReviewTable()->model()->rowCount(), 0);
+    QCOMPARE(page->teacherReviewTable()->model()->rowCount(), 0);
+    QVERIFY(!page->applyButton()->isEnabled());
+    QVERIFY(page->statusLabel()->text().contains(
+        QStringLiteral("Package review cancelled")));
 }
 
 void ClassTransferWorkflowTests::createReplaceSkipAndAmbiguousTeacherChoicesWorkInVisiblePage()

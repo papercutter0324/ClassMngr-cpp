@@ -42,7 +42,11 @@ Application::ClassTransferApplyCommand command()
         Application::ClassTransferReviewClassAction::Create,
         std::nullopt
     });
-    return {.package = std::move(package), .choices = std::move(choices)};
+    return {
+        .package = std::make_shared<const Application::ClassTransferPortablePackage>(
+            std::move(package)),
+        .choices = std::move(choices)
+    };
 }
 }
 
@@ -89,6 +93,7 @@ forwardsPackageChoicesAndSummary()
         .skippedClassCount = Application::ClassTransferSkippedClassCount{3}
     });
     auto request = command();
+    const auto* const packageIdentity = request.package.get();
 
     const auto result = Application::ClassTransferApplyUseCase::execute(
         std::move(request),
@@ -97,8 +102,10 @@ forwardsPackageChoicesAndSummary()
 
     QVERIFY(result);
     QCOMPARE(port.calls, 1);
-    QCOMPARE(port.received.package.classes.size(), std::size_t(1));
-    QCOMPARE(port.received.package.classes.front().key.value(),
+    QVERIFY(port.received.package);
+    QCOMPARE(port.received.package.get(), packageIdentity);
+    QCOMPARE(port.received.package->classes.size(), std::size_t(1));
+    QCOMPARE(port.received.package->classes.front().key.value(),
         std::u16string(u"class-1"));
     QCOMPARE(port.received.choices.classes.size(), std::size_t(1));
     QCOMPARE(port.received.choices.classes.front().packageClassIndex.rawValue(), 0);

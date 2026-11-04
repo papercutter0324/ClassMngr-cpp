@@ -44,8 +44,9 @@
     view interface with the compact event model.
 16. **8.6.1 Transfer codec — complete:** stage or stream JSON read/write while preserving
     the 16 MiB compatibility and validation contract.
-17. **8.6.2 Transfer workflow ownership — in progress:** retain compact preview state, avoid
-    full-package copies, and release operation data on success/failure/cancel.
+17. **8.6.2 Transfer workflow ownership — complete:** share one immutable
+    package, preserve retry state on apply errors, and release it on success,
+    cancel, invalid load, and workspace change.
 
 Large-package peak-and-return measurement remains under the Phase 9/11 memory
 and release-test gates; do not duplicate those gates in this batch.

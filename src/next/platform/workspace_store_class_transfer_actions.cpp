@@ -318,9 +318,16 @@ public:
                         "The destination workspace is unavailable."));
             }
 
+            if (!command.package)
+            {
+                return Application::ClassTransferApplyResult::failure(
+                    operationError(Domain::ErrorCode::Validation,
+                        "The class package is unavailable."));
+            }
+
             const auto normalized = ClassTransferPackageValidator::normalizedAndValidated(
                 Data::Legacy::toLegacyClassTransferPackage(
-                    std::move(command.package)));
+                    *command.package));
             if (!normalized)
             {
                 return Application::ClassTransferApplyResult::failure(

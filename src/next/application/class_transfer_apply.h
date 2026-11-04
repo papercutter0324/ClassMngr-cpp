@@ -5,6 +5,7 @@
 #include "next/domain/domain_types.h"
 #include "next/domain/operation_result.h"
 
+#include <memory>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -36,7 +37,9 @@ private:
 
 struct ClassTransferApplyCommand final
 {
-    ClassTransferPortablePackage package;
+    // Review and apply share one immutable payload. Failed applies can retain
+    // the review for retry without copying its roster/evaluation records.
+    std::shared_ptr<const ClassTransferPortablePackage> package;
     ClassTransferApplyRequest choices;
 };
 

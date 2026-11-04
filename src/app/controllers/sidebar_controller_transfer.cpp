@@ -21,6 +21,7 @@ using namespace SidebarControllerPrivate;
 #include <QDir>
 #include <QFileInfo>
 
+#include <memory>
 #include <utility>
 
 namespace
@@ -230,8 +231,9 @@ void SidebarController::importClasses()
 
     const QStringList selectedKeys = m_sidebar->selectedKeys();
     ClassMngr::Next::Application::ClassTransferApplyCommand command{
-        .package = ClassMngr::Data::Legacy::toPortableClassTransferPackage(
-            std::move(*package)),
+        .package = std::make_shared<const ClassMngr::Next::Application::ClassTransferPortablePackage>(
+            ClassMngr::Data::Legacy::toPortableClassTransferPackage(
+                std::move(*package))),
         .choices = std::move(choices)
     };
     ClassMngr::Next::Platform::ApplicationServicesClassTransferApplyPort port(

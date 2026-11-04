@@ -6,13 +6,14 @@
 #include <QtTest/QtTest>
 
 #include <limits>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
 namespace Application = ClassMngr::Next::Application;
 namespace Legacy = ClassMngr::Data::Legacy;
 static_assert(std::is_same_v<decltype(Application::ClassTransferApplyCommand::package),
-    Application::ClassTransferPortablePackage>);
+    std::shared_ptr<const Application::ClassTransferPortablePackage>>);
 static_assert(std::is_same_v<decltype(std::declval<Application::ClassExportTeacher>().key),
     Application::ClassExportTeacherKey>);
 static_assert(std::is_same_v<decltype(std::declval<Application::ClassExportClass>().key),

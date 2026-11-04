@@ -64,10 +64,19 @@ public:
                     );
             }
 
+            if (!command.package)
+            {
+                return failure(
+                    Domain::ErrorCode::Validation,
+                    "The class package is unavailable.",
+                    true
+                    );
+            }
+
             const auto normalized =
                 ClassTransferPackageValidator::normalizedAndValidated(
                     ClassMngr::Data::Legacy::toLegacyClassTransferPackage(
-                        std::move(command.package))
+                        *command.package)
                     );
             if (!normalized)
             {

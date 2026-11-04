@@ -502,7 +502,7 @@ public:
     void clear()
     {
         beginResetModel();
-        m_rows.clear();
+        std::vector<Row>{}.swap(m_rows);
         endResetModel();
     }
 
@@ -590,7 +590,7 @@ int ClassTransferWorkflowPage::exportedClassChoiceCount() const noexcept
 
 bool ClassTransferWorkflowPage::hasRetainedPackage() const noexcept
 {
-    return m_package.has_value();
+    return static_cast<bool>(m_package);
 }
 
 QString ClassTransferWorkflowPage::reviewedWorkspacePath() const
@@ -915,19 +915,17 @@ bool ClassTransferWorkflowPage::loadImportFile(const QString& inputPath)
         static_cast<void>(refreshClasses());
     }
     m_reviewWorkspacePath = path;
-    std::optional<Application::ClassTransferPortablePackage> parsedPackage;
     {
-        const auto legacy = ClassTransferJsonCodec::loadFile(inputPath);
+        auto legacy = ClassTransferJsonCodec::loadFile(inputPath);
         if (!legacy)
         {
             clearReview();
             setStatus(legacy.error(), true);
             return false;
         }
-        parsedPackage = Data::Legacy::toPortableClassTransferPackage(
-            std::move(*legacy));
+        m_package = std::make_shared<const Application::ClassTransferPortablePackage>(
+            Data::Legacy::toPortableClassTransferPackage(std::move(*legacy)));
     }
-    m_package = std::move(parsedPackage);
     refreshPreview();
     return m_preview.has_value();
 }
@@ -1060,13 +1058,13 @@ void ClassTransferWorkflowPage::refreshReviewChoices()
         m_resolutionChoice->setCurrentIndex(selected);
     }
     m_resolutionChoice->setEnabled(row >= 0 && !choices.empty());
-    m_refreshPreviewButton->setEnabled(m_package.has_value());
-    m_cancelReviewButton->setEnabled(m_package.has_value());
+    m_refreshPreviewButton->setEnabled(static_cast<bool>(m_package));
+    m_cancelReviewButton->setEnabled(static_cast<bool>(m_package));
 }
 
 void ClassTransferWorkflowPage::refreshApplyState()
 {
-    const bool ready = m_package.has_value() && m_preview.has_value();
+    const bool ready = m_package && m_preview.has_value();
     bool valid = false;
     QString validationMessage;
     if (ready)
@@ -1127,7 +1125,7 @@ bool ClassTransferWorkflowPage::applyImport()
     }
 
     const auto applied = m_actions.applyImport(*m_reviewWorkspacePath,
-        Application::ClassTransferApplyCommand{*m_package, choices});
+        Application::ClassTransferApplyCommand{m_package, choices});
     if (!applied)
     {
         setStatus(utf8Text(applied.error().message), true);

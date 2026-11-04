@@ -77,8 +77,12 @@ Application::ClassTransferApplyCommand createCommand(
         Application::ClassTransferReviewTeacherAction::Create,
         std::nullopt
     });
-    return {.package = ClassMngr::Data::Legacy::toPortableClassTransferPackage(
-        std::move(package)), .choices = std::move(choices)};
+    return {
+        .package = std::make_shared<const Application::ClassTransferPortablePackage>(
+            ClassMngr::Data::Legacy::toPortableClassTransferPackage(
+                std::move(package))),
+        .choices = std::move(choices)
+    };
 }
 
 Application::ClassTransferApplyCommand createManyCreatesCommand(
@@ -113,8 +117,9 @@ Application::ClassTransferApplyCommand createManyCreatesCommand(
         std::nullopt
     });
     return {
-        .package = ClassMngr::Data::Legacy::toPortableClassTransferPackage(
-            std::move(package)),
+        .package = std::make_shared<const Application::ClassTransferPortablePackage>(
+            ClassMngr::Data::Legacy::toPortableClassTransferPackage(
+                std::move(package))),
         .choices = std::move(choices)
     };
 }
@@ -149,8 +154,9 @@ Application::ClassTransferApplyCommand createReplaceAndSkipCommand(
         teacherId(static_cast<int>(existingTeacherId))
     });
     return {
-        .package = ClassMngr::Data::Legacy::toPortableClassTransferPackage(
-            std::move(package)),
+        .package = std::make_shared<const Application::ClassTransferPortablePackage>(
+            ClassMngr::Data::Legacy::toPortableClassTransferPackage(
+                std::move(package))),
         .choices = std::move(choices)
     };
 }
@@ -250,6 +256,7 @@ class NextPlatformApplicationServicesClassTransferApplyPortTests final
 private slots:
     void rejectsUnavailableSessionWithoutFallback();
     void rejectsInvalidPayloadWithoutWrites();
+    void rejectsUnavailablePackageHandleWithoutWrites();
     void rejectsMalformedCallerChoicesAsInvalidInput();
     void failedImportTransactionStartIsTechnicalWithoutWrites();
     void rejectsStaleChoiceWithoutWrites();
@@ -314,6 +321,28 @@ rejectsInvalidPayloadWithoutWrites()
 }
 
 void NextPlatformApplicationServicesClassTransferApplyPortTests::
+rejectsUnavailablePackageHandleWithoutWrites()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+    auto command = createCommand();
+    command.package.reset();
+    Platform::ApplicationServicesClassTransferApplyPort port(services);
+
+    const auto result = port.apply(std::move(command));
+
+    QVERIFY(!result);
+    QCOMPARE(result.error().code, Domain::ErrorCode::Validation);
+    QVERIFY(result.error().recoverable);
+    QCOMPARE(result.error().message,
+        std::string("The class package is unavailable."));
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("teachers")), 0);
+    QCOMPARE(count(services.workspaceStore()->database(), QStringLiteral("classes")), 0);
+}
+
+void NextPlatformApplicationServicesClassTransferApplyPortTests::
 rejectsMalformedCallerChoicesAsInvalidInput()
 {
     QTemporaryDir directory;
@@ -324,7 +353,7 @@ rejectsMalformedCallerChoicesAsInvalidInput()
     command.choices.classes.front().packageClassIndex =
         Application::ClassTransferPackageClassIndex{8};
     const ::ClassTransferPackage legacyPackage =
-        ClassMngr::Data::Legacy::toLegacyClassTransferPackage(command.package);
+        ClassMngr::Data::Legacy::toLegacyClassTransferPackage(*command.package);
     const auto repositoryResult = services.workspaceStore()
         ->classTransferRepository()->importClasses(
             legacyPackage, command.choices);
@@ -453,7 +482,7 @@ preflightsScheduleConflictBeforeWrites()
     QVERIFY(changesBefore >= 0);
     auto command = createCommand(std::move(package));
     const ::ClassTransferPackage legacyPackage =
-        ClassMngr::Data::Legacy::toLegacyClassTransferPackage(command.package);
+        ClassMngr::Data::Legacy::toLegacyClassTransferPackage(*command.package);
     const auto detailed = services.workspaceStore()->classTransferRepository()
         ->importClassesWithFailureDetails(legacyPackage, command.choices);
     QVERIFY(!detailed);
@@ -543,7 +572,7 @@ createsWithNormalizedPayloadAndTypedSummary()
     QCOMPARE(stored->roomNumber, QStringLiteral("405"));
     QCOMPARE(stored->phoneNumber, QStringLiteral("010-1234-5678"));
 
-    QVERIFY2(createCommand().package.teachers.front().teacher.teacherEn
+    QVERIFY2(createCommand().package->teachers.front().teacher.teacherEn
         != stored->teacherEn.toStdU16String(),
         "fixture should require normalization");
 }
@@ -1025,15 +1054,18 @@ importsSpeakingEvaluationWithWideGeneratedId()
     storedRows.prepare(QStringLiteral(
         "SELECT COUNT(*), MIN(evaluation_id), MAX(evaluation_id), "
         "MIN(typeof(evaluation_id)), MAX(typeof(evaluation_id)) "
+        ", MIN(row_index), MAX(row_index) "
         "FROM speaking_eval_data WHERE evaluation_id = ?"));
     storedRows.addBindValue(expectedEvaluationId);
     QVERIFY(storedRows.exec());
     QVERIFY(storedRows.next());
-    QCOMPARE(storedRows.value(0).toInt(), SpeakingEval::RowCount);
+    QCOMPARE(storedRows.value(0).toInt(), SpeakingEval::MaximumRowCount);
     QCOMPARE(storedRows.value(1).toLongLong(), expectedEvaluationId);
     QCOMPARE(storedRows.value(2).toLongLong(), expectedEvaluationId);
     QCOMPARE(storedRows.value(3).toString(), QStringLiteral("integer"));
     QCOMPARE(storedRows.value(4).toString(), QStringLiteral("integer"));
+    QCOMPARE(storedRows.value(5).toInt(), 0);
+    QCOMPARE(storedRows.value(6).toInt(), SpeakingEval::MaximumRowCount - 1);
 
     const auto readback = services.workspaceStore()->classTransferRepository()
         ->readExportSource({*importedClassId});

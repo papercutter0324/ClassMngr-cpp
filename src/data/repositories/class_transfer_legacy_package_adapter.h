@@ -125,7 +125,7 @@ toPortableClassTransferPackage(::ClassTransferPackage package)
 }
 
 [[nodiscard]] inline ::ClassTransferPackage toLegacyClassTransferPackage(
-    ClassMngr::Next::Application::ClassTransferPortablePackage package)
+    const ClassMngr::Next::Application::ClassTransferPortablePackage& package)
 {
     using namespace ClassTransferPackageDetail;
     ::ClassTransferPackage result;
