@@ -944,20 +944,18 @@ set(CLASSMNGR_CALENDAR_QML_FILES
 )
 
 set(CLASSMNGR_SPEAKING_EVAL_REPORT_ENGINE_SOURCES
+    "src/features/speaking_eval/services/speaking_eval_powerpoint_automation_port.h"
+    "src/features/speaking_eval/services/speaking_eval_report_batch_types.h"
     "src/features/speaking_eval/ui/speaking_eval_private_notes_editor.cpp"
     "src/features/speaking_eval/ui/speaking_eval_private_notes_editor.h"
     "src/core/zip_archive_writer.cpp"
     "src/core/zip_archive_writer.h"
     "src/features/speaking_eval/services/speaking_eval_internal_pdf_renderer.cpp"
     "src/features/speaking_eval/services/speaking_eval_internal_pdf_renderer.h"
-    "src/features/speaking_eval/services/speaking_eval_powerpoint_automation.cpp"
-    "src/features/speaking_eval/services/speaking_eval_powerpoint_automation.h"
     "src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.cpp"
     "src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.h"
     "src/features/speaking_eval/services/speaking_eval_powerpoint_scripts.cpp"
     "src/features/speaking_eval/services/speaking_eval_powerpoint_scripts.h"
-    "src/features/speaking_eval/services/speaking_eval_powerpoint_workspace.cpp"
-    "src/features/speaking_eval/services/speaking_eval_powerpoint_workspace.h"
     "src/features/speaking_eval/services/speaking_eval_report_asset_resolver.cpp"
     "src/features/speaking_eval/services/speaking_eval_report_asset_resolver.h"
     "src/features/speaking_eval/services/speaking_eval_report_data.h"
@@ -980,6 +978,15 @@ set(CLASSMNGR_SPEAKING_EVAL_REPORT_ENGINE_SOURCES
     "src/shared/speaking_evaluation/report_batch_engine.cpp"
     "src/shared/speaking_evaluation/report_projection.cpp"
     "src/shared/speaking_evaluation/report_projection.h"
+)
+
+set(CLASSMNGR_SPEAKING_EVAL_POWERPOINT_ADAPTER_SOURCES
+    "src/features/speaking_eval/services/speaking_eval_powerpoint_automation.cpp"
+    "src/features/speaking_eval/services/speaking_eval_powerpoint_automation.h"
+    "src/features/speaking_eval/services/speaking_eval_powerpoint_workspace.cpp"
+    "src/features/speaking_eval/services/speaking_eval_powerpoint_workspace.h"
+    "src/shared/speaking_evaluation/qt_powerpoint_automation_adapter.cpp"
+    "src/shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
 )
 
 set(CLASSMNGR_NEXT_SPEAKING_EVALUATION_OUTPUT_SOURCES

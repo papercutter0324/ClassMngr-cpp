@@ -32,6 +32,8 @@ bool resetDirectory(
 }
 }
 
+SpeakingEvalPowerPointWorkspace::SpeakingEvalPowerPointWorkspace() = default;
+
 SpeakingEvalPowerPointWorkspace::~SpeakingEvalPowerPointWorkspace()
 {
     cleanup();
@@ -39,9 +41,34 @@ SpeakingEvalPowerPointWorkspace::~SpeakingEvalPowerPointWorkspace()
 
 bool SpeakingEvalPowerPointWorkspace::prepare(
     const QString& stagingDirectory,
-    QString* errorMessage
+    QString* errorMessage,
+    const QString& workspaceRoot
     )
 {
+    if (!workspaceRoot.isEmpty())
+    {
+        if (!QDir().mkpath(workspaceRoot))
+        {
+            if (errorMessage) *errorMessage = QObject::tr("A temporary PowerPoint batch folder could not be created.");
+            return false;
+        }
+        m_temporaryDirectory = std::make_unique<QTemporaryDir>(
+            QDir(workspaceRoot).filePath(QStringLiteral("powerpoint-batch-XXXXXX")));
+        if (!m_temporaryDirectory->isValid())
+        {
+            if (errorMessage) *errorMessage = QObject::tr("A temporary PowerPoint batch folder could not be created.");
+            return false;
+        }
+        m_automationDirectory = QDir(m_temporaryDirectory->path()).filePath(QStringLiteral("automation"));
+        m_presentationDirectory = QDir(m_temporaryDirectory->path()).filePath(QStringLiteral("presentation"));
+        if (!QDir().mkpath(m_automationDirectory) || !QDir().mkpath(m_presentationDirectory))
+        {
+            if (errorMessage) *errorMessage = QObject::tr("A temporary PowerPoint batch folder could not be created.");
+            cleanup();
+            return false;
+        }
+        return true;
+    }
 #ifdef Q_OS_MACOS
     Q_UNUSED(stagingDirectory);
     const QString operation = QUuid::createUuid().toString(QUuid::WithoutBraces);
@@ -201,18 +228,33 @@ bool SpeakingEvalPowerPointWorkspace::removePresentationDirectory(
     return true;
 }
 
-void SpeakingEvalPowerPointWorkspace::cleanup()
+bool SpeakingEvalPowerPointWorkspace::release(QString* errorMessage)
 {
-#ifdef Q_OS_MACOS
+    bool removed = true;
     if (m_cleanupPresentationDirectory)
     {
-        removeDirectory(m_presentationDirectory);
-        m_cleanupPresentationDirectory = false;
+        const bool current = removeDirectory(m_presentationDirectory);
+        removed = current && removed;
+        if (current) m_cleanupPresentationDirectory = false;
     }
     if (m_cleanupAutomationDirectory)
     {
-        removeDirectory(m_automationDirectory);
-        m_cleanupAutomationDirectory = false;
+        const bool current = removeDirectory(m_automationDirectory);
+        removed = current && removed;
+        if (current) m_cleanupAutomationDirectory = false;
     }
-#endif
+    if (m_temporaryDirectory)
+    {
+        if (m_temporaryDirectory->remove()) m_temporaryDirectory.reset();
+        else removed = false;
+    }
+    if (!removed && errorMessage)
+        *errorMessage = QObject::tr("PowerPoint's temporary report files could not be removed.");
+    return removed;
+}
+
+void SpeakingEvalPowerPointWorkspace::cleanup()
+{
+    QString ignored;
+    static_cast<void>(release(&ignored));
 }

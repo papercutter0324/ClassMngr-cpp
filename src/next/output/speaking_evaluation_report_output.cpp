@@ -75,8 +75,15 @@ SpeakingEvaluationReportRunResult runSpeakingEvaluationReports(
     InPlaceWorker worker;
     Application::ReportJobCoordinator coordinator(worker);
     const auto progress = request.progressCallback;
-    const auto available = [&] { return request.powerPointRenderer ||
-        (actions.powerPointAvailable ? actions.powerPointAvailable() : Service::isPowerPointRendererAvailable()); };
+    if (!request.powerPointAutomation)
+        request.powerPointAutomation = actions.powerPointAutomation;
+    const auto availability = [&] {
+        return request.powerPointAutomation
+            ? request.powerPointAutomation->availability()
+            : SpeakingEvalPowerPointAvailability{false,
+                QObject::tr("The PowerPoint automation operation is unavailable.")};
+    };
+    const auto available = [&] { return availability().available; };
     const auto attempt = [&]() {
         ++result.attempts;
         const auto generation = coordinator.startJob(static_cast<std::size_t>(request.reports.size()));
@@ -151,10 +158,10 @@ SpeakingEvaluationReportRunResult runSpeakingEvaluationReports(
         DocumentOutputResult output;
         if (request.renderer == Service::Renderer::PowerPoint)
         {
-            if (!available()) output = {DocumentOutputStatus::Failed, Service::powerPointRendererAvailabilityMessage()};
+            if (!available()) output = {DocumentOutputStatus::Failed, availability().message};
             else if (actions.confirmPowerPointDataAccess && !actions.confirmPowerPointDataAccess())
                 output = {DocumentOutputStatus::Canceled, QObject::tr("Report export was canceled.")};
-            else if (request.documentsRoot.isEmpty() && !request.powerPointRenderer && actions.resolvePowerPointRoot)
+            else if (request.documentsRoot.isEmpty() && actions.resolvePowerPointRoot)
             {
                 auto root = actions.resolvePowerPointRoot(request.reports.isEmpty()
                     ? SpeakingEvalReportTemplate::Standard : request.reports.constFirst().report.reportTemplate);

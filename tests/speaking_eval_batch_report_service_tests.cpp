@@ -1,4 +1,6 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
+#include "shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
+#include "features/speaking_eval/services/speaking_eval_powerpoint_automation.h"
 #include "features/speaking_eval/services/speaking_eval_ai_batch_response_parser.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
@@ -55,6 +57,8 @@
 #include <QUrl>
 
 #include <functional>
+#include <memory>
+#include <utility>
 #include <string>
 
 class SpeakingEvalPromptPreviewCapturedUrlHandler final : public QObject
@@ -454,45 +458,29 @@ int matchingPixelCount(
     return count;
 }
 
-#ifdef Q_OS_MACOS
-QString classMngrPowerPointWorkspace()
+class CallbackPowerPointPort final : public SpeakingEvalPowerPointAutomationPort
 {
-    return QDir(
-        QStandardPaths::writableLocation(
-            QStandardPaths::AppDataLocation
-            )
-        ).filePath(QStringLiteral("PowerPointBatch"));
-}
-
-QString powerPointPrivateWorkspace()
-{
-    return QDir(
-        QStandardPaths::writableLocation(
-            QStandardPaths::HomeLocation
-            )
-        ).filePath(
-            QStringLiteral(
-                "Library/Containers/com.microsoft.Powerpoint/Data/Documents/ClassMngr/PowerPointBatch"
-                )
-            );
-}
-
-bool createStaleWorkspaceFile(
-    const QString& directoryPath,
-    const QString& fileName
-    )
-{
-    QDir directory(directoryPath);
-    if ((!directory.exists() && !QDir().mkpath(directoryPath)))
+public:
+    SpeakingEvalPowerPointAvailability state{true, QStringLiteral("Fixture PowerPoint unavailable.")};
+    std::function<DocumentOutputResult(const SpeakingEvalPowerPointBatchRequest&)> render;
+    SpeakingEvalPowerPointAvailability availability() const override { return state; }
+    DocumentOutputResult renderBatch(const SpeakingEvalPowerPointBatchRequest& request) override
     {
-        return false;
+        return render ? render(request) : DocumentOutputResult{
+            DocumentOutputStatus::Failed, QStringLiteral("Missing fixture renderer.")};
     }
+};
 
-    QFile staleFile(directory.filePath(fileName));
-    return staleFile.open(QIODevice::WriteOnly)
-        && staleFile.write("stale") == 5;
+std::shared_ptr<SpeakingEvalPowerPointAutomationPort> observedPowerPointPort(QStringList* paths)
+{
+    QtSpeakingEvalPowerPoint::Actions actions;
+    actions.workspaceCreated = [paths](const QString& automation, const QString& presentation) {
+        paths->append(automation);
+        paths->append(presentation);
+    };
+    return makeQtSpeakingEvalPowerPointAutomationPort(std::move(actions));
 }
-#endif
+
 
 class AiCommentProviderPreferenceRestorer final
 {
@@ -552,6 +540,13 @@ private slots:
     void preCommitCancellationHasNoSavedOutput();
     void operationStagingDirectoryIsRemovedAfterSuccessFailureAndCancel();
     void deterministicPowerPointAdapterStagesAndCommitsBatchFiles();
+    void powerPointPortRejectsUnavailableAndIncompleteOutput_data();
+    void powerPointPortRejectsUnavailableAndIncompleteOutput();
+    void qtPowerPointAdapterReleasesWorkspace_data();
+    void qtPowerPointAdapterReleasesWorkspace();
+    void powerPointProcessRunnerHandlesFailuresAndCancellation_data();
+    void powerPointProcessRunnerHandlesFailuresAndCancellation();
+
     void batchExportPresentationSurfacesCommittedOutput();
     void existingBatchArchiveRequiresOverwritePermission();
     void duplicateBatchFileNamesAreRejected();
@@ -1362,6 +1357,7 @@ deterministicPowerPointAdapterStagesAndCommitsBatchFiles()
 
     QString stagingPath;
     QStringList stagedPaths;
+    QList<int> progress;
     auto request = SpeakingEvalBatchReportService::Request{};
     request.reports = reports;
     request.renderer = SpeakingEvalBatchReportService::Renderer::PowerPoint;
@@ -1371,14 +1367,16 @@ deterministicPowerPointAdapterStagesAndCommitsBatchFiles()
     request.stagingDirectoryCreated = [&stagingPath](const QString& path) {
         stagingPath = path;
     };
-    request.powerPointRenderer = [&stagedPaths](
-        const SpeakingEvalBatchReportService::Request&,
-        const QStringList& pdfPaths, const QString&)
+    auto automation = std::make_shared<CallbackPowerPointPort>();
+    request.powerPointAutomation = automation;
+    request.progressCallback = [&](int completed, int, const QString&) { progress.append(completed); return true; };
+    automation->render = [&stagedPaths](const SpeakingEvalPowerPointBatchRequest& batch)
     {
-        stagedPaths = pdfPaths;
-        for (const QString& path : pdfPaths)
+        stagedPaths = batch.outputPaths;
+        for (int index = 0; index < batch.outputPaths.size(); ++index)
         {
-            QFile file(path);
+            if (batch.progressCallback) batch.progressCallback(index, batch.outputPaths.size(), batch.reports.at(index).displayName);
+            QFile file(batch.outputPaths.at(index));
             if (!file.open(QIODevice::WriteOnly)
                 || file.write("%PDF-test") != 9)
             {
@@ -1387,6 +1385,7 @@ deterministicPowerPointAdapterStagesAndCommitsBatchFiles()
                     QStringLiteral("simulated PowerPoint write failure")};
             }
         }
+        if (batch.progressCallback) batch.progressCallback(batch.outputPaths.size(), batch.outputPaths.size(), {});
         return SpeakingEvalBatchReportService::Result{
             SpeakingEvalBatchReportService::Status::Completed,
             QStringLiteral("PowerPoint adapter completed")};
@@ -1398,11 +1397,238 @@ deterministicPowerPointAdapterStagesAndCommitsBatchFiles()
     QVERIFY(!stagingPath.isEmpty());
     QVERIFY(!QFileInfo::exists(stagingPath));
     QCOMPARE(stagedPaths.size(), 2);
+    QCOMPARE(progress, QList<int>({0, 1, 2}));
     QCOMPARE(result.savedPdfPaths.size(), 2);
     for (const QString& path : result.savedPdfPaths)
         QVERIFY(QFileInfo::exists(path));
     QVERIFY(QFileInfo::exists(result.savedArchivePath));
     QCOMPARE(storedZipEntries(result.savedArchivePath).size(), 2);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    powerPointPortRejectsUnavailableAndIncompleteOutput_data()
+{
+    QTest::addColumn<QString>("mode");
+    for (const char* mode : {"missing-port", "unavailable", "canceled", "failed", "missing-pdf", "empty-pdf"})
+        QTest::newRow(mode) << QString::fromLatin1(mode);
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    powerPointPortRejectsUnavailableAndIncompleteOutput()
+{
+    QFETCH(QString, mode);
+    QTemporaryDir output;
+    QVERIFY(output.isValid());
+    SpeakingEvalBatchReportService::Request request;
+    request.reports = {{QStringLiteral("Fixture Student"), SpeakingEvalReportData{}}};
+    request.renderer = SpeakingEvalBatchReportService::Renderer::PowerPoint;
+    request.savePdf = true;
+    request.outputDirectory = output.path();
+    QString staging;
+    request.stagingDirectoryCreated = [&](const QString& path) { staging = path; };
+    int calls = 0;
+    auto automation = std::make_shared<CallbackPowerPointPort>();
+    automation->state.available = mode != QStringLiteral("unavailable");
+    automation->render = [&](const SpeakingEvalPowerPointBatchRequest& batch) {
+        ++calls;
+        if (mode == QStringLiteral("canceled"))
+            return DocumentOutputResult{DocumentOutputStatus::Canceled, QStringLiteral("Fixture canceled.")};
+        if (mode == QStringLiteral("failed"))
+            return DocumentOutputResult{DocumentOutputStatus::Failed, QStringLiteral("Fixture failed.")};
+        if (mode == QStringLiteral("empty-pdf"))
+        {
+            QFile empty(batch.outputPaths.constFirst());
+            if (!empty.open(QIODevice::WriteOnly))
+                return DocumentOutputResult{DocumentOutputStatus::Failed, empty.errorString()};
+        }
+        return DocumentOutputResult{DocumentOutputStatus::Completed, {}};
+    };
+    if (mode != QStringLiteral("missing-port")) request.powerPointAutomation = automation;
+    const auto result = SpeakingEvalBatchReportService::exportResolvedReports(request);
+    QCOMPARE(result.status, mode == QStringLiteral("canceled")
+        ? DocumentOutputStatus::Canceled : DocumentOutputStatus::Failed);
+    if (mode == QStringLiteral("unavailable") || mode == QStringLiteral("missing-port"))
+    {
+        QCOMPARE(calls, 0);
+        QVERIFY(staging.isEmpty());
+    }
+    else
+    {
+        QCOMPARE(calls, 1);
+        QVERIFY(!staging.isEmpty());
+        QVERIFY(!QFileInfo::exists(staging));
+    }
+    if (mode == QStringLiteral("unavailable"))
+        QCOMPARE(result.message, automation->state.message);
+    if (mode == QStringLiteral("failed"))
+        QCOMPARE(result.message, QStringLiteral("Fixture failed."));
+    if (mode.endsWith(QStringLiteral("pdf")))
+        QVERIFY(result.message.contains(QStringLiteral("every report PDF")));
+    QVERIFY(QDir(output.path()).entryList(QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+}
+
+void SpeakingEvalBatchReportServiceTests::qtPowerPointAdapterReleasesWorkspace_data()
+{
+    QTest::addColumn<int>("host");
+    QTest::addColumn<QString>("mode");
+    for (const auto host : {QtSpeakingEvalPowerPoint::Host::Windows, QtSpeakingEvalPowerPoint::Host::MacOS})
+        for (const char* mode : {"completed", "canceled", "failed", "missing-pdf", "empty-pdf", "cleanup-failed"})
+            QTest::newRow(qPrintable(QString::number(static_cast<int>(host)) + QLatin1Char('-') + QString::fromLatin1(mode)))
+                << static_cast<int>(host) << QString::fromLatin1(mode);
+}
+
+void SpeakingEvalBatchReportServiceTests::qtPowerPointAdapterReleasesWorkspace()
+{
+    QFETCH(int, host);
+    QFETCH(QString, mode);
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const QString documents = QDir(root.path()).filePath(QStringLiteral("documents"));
+    const auto& layout = speakingEvalReportTemplateLayout(SpeakingEvalReportTemplate::Standard);
+    const QString templatePath = QDir(documents).filePath(layout.powerPointResourcePath);
+    QVERIFY(QDir().mkpath(QFileInfo(templatePath).absolutePath()));
+    QFile templateFile(templatePath);
+    QVERIFY(templateFile.open(QIODevice::WriteOnly));
+    QCOMPARE(templateFile.write("fixture-template"), qint64(16));
+    templateFile.close();
+    const QString staging = QDir(root.path()).filePath(QStringLiteral("staging"));
+    QVERIFY(QDir().mkpath(staging));
+    QList<SpeakingEvalBatchReportService::StudentReport> reports{
+        {QStringLiteral("First"), SpeakingEvalReportData{}},
+        {QStringLiteral("Second"), SpeakingEvalReportData{}}
+    };
+    const QStringList targets{
+        QDir(staging).filePath(QStringLiteral("first.pdf")),
+        QDir(staging).filePath(QStringLiteral("second.pdf"))};
+    QStringList workspacePaths;
+    QList<int> progress;
+    int runnerCalls = 0;
+    QtSpeakingEvalPowerPoint::Actions actions;
+    actions.host = static_cast<QtSpeakingEvalPowerPoint::Host>(host);
+    actions.availability = [] { return SpeakingEvalPowerPointAvailability{true, {}}; };
+    actions.executable = [] { return QStringLiteral("fixture-host-executable"); };
+    actions.workspaceRoot = QDir(root.path()).filePath(QStringLiteral("host-workspaces"));
+    if (mode == QStringLiteral("cleanup-failed"))
+        actions.releaseWorkspace = [](SpeakingEvalPowerPointWorkspace&, QString* error) {
+            *error = QStringLiteral("Fixture workspace cleanup failed.");
+            return false;
+        };
+    actions.workspaceCreated = [&](const QString& automation, const QString& presentation) {
+        workspacePaths = {automation, presentation};
+    };
+    bool requestPreserved = false;
+    const auto selectedHost = actions.host;
+    actions.run = [&](const SpeakingEvalPowerPointAutomation::Request& request, QString* error) {
+        ++runnerCalls;
+        requestPreserved = request.reports.size() == 2
+            && request.timeoutPerReportMs == 5 * 60 * 1000
+            && QFileInfo(request.arguments.constFirst()).fileName()
+                == (selectedHost == QtSpeakingEvalPowerPoint::Host::Windows
+                    ? QStringLiteral("-NoProfile") : QStringLiteral("export-batch.applescript"));
+        const QString scriptPath = selectedHost == QtSpeakingEvalPowerPoint::Host::Windows
+            ? request.arguments.value(5) : request.arguments.value(0);
+        requestPreserved = requestPreserved && QFileInfo(scriptPath).isFile()
+            && request.executable == QStringLiteral("fixture-host-executable")
+            && request.reports.at(0).displayName == QStringLiteral("First")
+            && request.reports.at(1).displayName == QStringLiteral("Second");
+        if (request.progressCallback) request.progressCallback(0, 2, QStringLiteral("First"));
+        if (mode == QStringLiteral("canceled")) return SpeakingEvalPowerPointAutomation::Status::Canceled;
+        if (mode == QStringLiteral("failed"))
+        {
+            *error = QStringLiteral("Fixture host launch failed.");
+            return SpeakingEvalPowerPointAutomation::Status::Failed;
+        }
+        for (int index = 0; index < request.reports.size(); ++index)
+        {
+            if (mode == QStringLiteral("missing-pdf") && index == 1) continue;
+            QFile pdf(request.reports.at(index).pdfPath);
+            if (!pdf.open(QIODevice::WriteOnly))
+                return SpeakingEvalPowerPointAutomation::Status::Failed;
+            if (mode != QStringLiteral("empty-pdf"))
+                pdf.write(QByteArray("%PDF-fixture-") + QByteArray::number(index));
+            pdf.close();
+            if (request.progressCallback) request.progressCallback(index + 1, 2,
+                index == 0 ? QStringLiteral("Second") : QString{});
+        }
+        return SpeakingEvalPowerPointAutomation::Status::Completed;
+    };
+    auto port = makeQtSpeakingEvalPowerPointAutomationPort(std::move(actions));
+    const auto result = port->renderBatch({reports, documents, targets, staging,
+        [&](int completed, int, const QString&) { progress.append(completed); return true; }});
+    QCOMPARE(runnerCalls, 1);
+    QVERIFY(requestPreserved);
+    QCOMPARE(workspacePaths.size(), 2);
+    for (const QString& path : workspacePaths) QVERIFY(!QFileInfo::exists(path));
+    QCOMPARE(result.status, mode == QStringLiteral("completed") ? DocumentOutputStatus::Completed
+        : mode == QStringLiteral("canceled") ? DocumentOutputStatus::Canceled : DocumentOutputStatus::Failed);
+    QVERIFY(!progress.isEmpty());
+    QCOMPARE(progress.constFirst(), 0);
+    if (mode == QStringLiteral("completed"))
+    {
+        QCOMPARE(progress, QList<int>({0, 1, 2}));
+        for (int index = 0; index < targets.size(); ++index)
+        {
+            QFile target(targets.at(index));
+            QVERIFY(target.open(QIODevice::ReadOnly));
+            QCOMPARE(target.readAll(), QByteArray("%PDF-fixture-") + QByteArray::number(index));
+        }
+    }
+    if (mode == QStringLiteral("failed"))
+        QCOMPARE(result.message, QStringLiteral("Fixture host launch failed."));
+    if (mode == QStringLiteral("cleanup-failed"))
+        QCOMPARE(result.message, QStringLiteral("Fixture workspace cleanup failed."));
+}
+
+void SpeakingEvalBatchReportServiceTests::powerPointProcessRunnerHandlesFailuresAndCancellation_data()
+{
+    QTest::addColumn<QString>("mode");
+    for (const char* mode : {"completed", "launch-failure", "nonzero", "missing-pdf", "empty-pdf", "timeout", "canceled"})
+        QTest::newRow(mode) << QString::fromLatin1(mode);
+}
+
+void SpeakingEvalBatchReportServiceTests::powerPointProcessRunnerHandlesFailuresAndCancellation()
+{
+    QFETCH(QString, mode);
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    SpeakingEvalPowerPointAutomation::Request request;
+    request.executable = mode == QStringLiteral("launch-failure")
+        ? directory.filePath(QStringLiteral("missing-executable"))
+        : QStringLiteral(CLASSMNGR_POWERPOINT_PROCESS_FIXTURE);
+    request.workingDirectory = directory.path();
+    request.cancelPath = directory.filePath(QStringLiteral("cancel"));
+    request.timeoutPerReportMs = mode == QStringLiteral("timeout") ? 10 : 3000;
+    request.reports = {
+        {QStringLiteral("First"), directory.filePath(QStringLiteral("first.pdf")), directory.filePath(QStringLiteral("first.done"))},
+        {QStringLiteral("Second"), directory.filePath(QStringLiteral("second.pdf")), directory.filePath(QStringLiteral("second.done"))}
+    };
+    request.arguments = {QStringLiteral("--powerpoint-process-fixture"), mode,
+        request.cancelPath, request.reports.at(0).pdfPath, request.reports.at(0).completionPath,
+        request.reports.at(1).pdfPath, request.reports.at(1).completionPath};
+    QList<int> progress;
+    request.progressCallback = [&](int completed, int total, const QString&) {
+        progress.append(completed);
+        return total == 2 && (mode != QStringLiteral("canceled") || completed < 1);
+    };
+    QString error;
+    const auto result = SpeakingEvalPowerPointAutomation::run(request, &error);
+    QCOMPARE(result, mode == QStringLiteral("completed") ? SpeakingEvalPowerPointAutomation::Status::Completed
+        : mode == QStringLiteral("canceled") ? SpeakingEvalPowerPointAutomation::Status::Canceled
+        : SpeakingEvalPowerPointAutomation::Status::Failed);
+    if (mode == QStringLiteral("completed")) QCOMPARE(progress, QList<int>({0, 1, 2}));
+    if (mode == QStringLiteral("canceled"))
+    {
+        QCOMPARE(progress, QList<int>({0, 1}));
+        QVERIFY(QFileInfo::exists(request.cancelPath));
+    }
+    if (mode == QStringLiteral("launch-failure")) QVERIFY(error.contains(QStringLiteral("could not be started")));
+    if (mode == QStringLiteral("nonzero")) QVERIFY(error.contains(QStringLiteral("fixture process diagnostic")));
+    if (mode == QStringLiteral("timeout"))
+    {
+        QVERIFY(error.contains(QStringLiteral("did not finish")));
+        QVERIFY(QFileInfo::exists(request.cancelPath));
+    }
+    if (mode.endsWith(QStringLiteral("pdf"))) QVERIFY(error.contains(QStringLiteral("did not create a PDF")));
 }
 
 void SpeakingEvalBatchReportServiceTests::
@@ -6725,20 +6951,7 @@ void SpeakingEvalBatchReportServiceTests::
     QTemporaryDir outputDirectory;
     QVERIFY(outputDirectory.isValid());
 
-#ifdef Q_OS_MACOS
-    QVERIFY(
-        createStaleWorkspaceFile(
-            classMngrPowerPointWorkspace(),
-            QStringLiteral("cancel-requested")
-            )
-        );
-    QVERIFY(
-        createStaleWorkspaceFile(
-            powerPointPrivateWorkspace(),
-            QStringLiteral("stale-file")
-            )
-        );
-#endif
+
 
     const SpeakingEvalReportTemplate reportTemplate =
         static_cast<SpeakingEvalReportTemplate>(
@@ -6799,6 +7012,8 @@ void SpeakingEvalBatchReportServiceTests::
     request.keepIndividualPdfFiles = true;
     request.outputDirectory = outputDirectory.path();
 
+    QStringList actualWorkspaces;
+    request.powerPointAutomation = observedPowerPointPort(&actualWorkspaces);
     const SpeakingEvalBatchReportService::Result result =
         SpeakingEvalBatchReportService::exportReports(request);
 
@@ -7050,10 +7265,8 @@ void SpeakingEvalBatchReportServiceTests::
             );
     }
 
-#ifdef Q_OS_MACOS
-    QVERIFY(!QFileInfo::exists(classMngrPowerPointWorkspace()));
-    QVERIFY(!QFileInfo::exists(powerPointPrivateWorkspace()));
-#endif
+    QVERIFY(!actualWorkspaces.isEmpty());
+    for (const QString& path : actualWorkspaces) QVERIFY(!QFileInfo::exists(path));
 }
 
 void SpeakingEvalBatchReportServiceTests::
@@ -7095,6 +7308,8 @@ void SpeakingEvalBatchReportServiceTests::
         return completed < 1;
     };
 
+    QStringList actualWorkspaces;
+    request.powerPointAutomation = observedPowerPointPort(&actualWorkspaces);
     const SpeakingEvalBatchReportService::Result result =
         SpeakingEvalBatchReportService::exportReports(request);
 
@@ -7109,10 +7324,8 @@ void SpeakingEvalBatchReportServiceTests::
         QStringList()
         );
 
-#ifdef Q_OS_MACOS
-    QVERIFY(!QFileInfo::exists(classMngrPowerPointWorkspace()));
-    QVERIFY(!QFileInfo::exists(powerPointPrivateWorkspace()));
-#endif
+    QVERIFY(!actualWorkspaces.isEmpty());
+    for (const QString& path : actualWorkspaces) QVERIFY(!QFileInfo::exists(path));
 }
 
 QTEST_MAIN(SpeakingEvalBatchReportServiceTests)

@@ -49,6 +49,7 @@ function(classmngr_check_source_ownership)
         ${CLASSMNGR_FONT_MANAGER_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrSpeakingEvalReportEngine ${CLASSMNGR_SPEAKING_EVAL_REPORT_ENGINE_SOURCES})
+    _classmngr_record_manifest(ClassMngrSpeakingEvalPowerPointAdapter ${CLASSMNGR_SPEAKING_EVAL_POWERPOINT_ADAPTER_SOURCES})
     _classmngr_record_manifest(ClassMngrUpdater ${CLASSMNGR_UPDATER_SOURCES})
     _classmngr_record_manifest(ClassMngrUpdatePresentation
         ${CLASSMNGR_UPDATE_PRESENTATION_SOURCES}

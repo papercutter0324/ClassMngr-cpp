@@ -448,6 +448,13 @@ target_include_directories(ClassMngrSpeakingEvalReportEngine PUBLIC "${PROJECT_S
 target_link_libraries(ClassMngrSpeakingEvalReportEngine PUBLIC ClassMngrQtPdfPrint ClassMngrClassTransferSupport ClassMngrScheduleImportRules PRIVATE ZLIB::ZLIB)
 set_target_properties(ClassMngrSpeakingEvalReportEngine PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
 
+# Host automation is composed by both runtimes; the engine owns only its port.
+add_library(ClassMngrSpeakingEvalPowerPointAdapter STATIC ${CLASSMNGR_SPEAKING_EVAL_POWERPOINT_ADAPTER_SOURCES})
+target_compile_features(ClassMngrSpeakingEvalPowerPointAdapter PUBLIC cxx_std_23)
+target_include_directories(ClassMngrSpeakingEvalPowerPointAdapter PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(ClassMngrSpeakingEvalPowerPointAdapter PUBLIC ClassMngrSpeakingEvalReportEngine)
+set_target_properties(ClassMngrSpeakingEvalPowerPointAdapter PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
+
 # Shared Qt-only Sub Prep presentation and document services are source-owned
 # once and linked by both runtimes. The Next executable supplies inactive
 # profiler hooks; Legacy resolves the same hooks through its Core target.
@@ -506,6 +513,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrRosterTemplateRenderer
         ClassMngrSubPrepShared
         ClassMngrSpeakingEvalReportEngine
+        ClassMngrSpeakingEvalPowerPointAdapter
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
         ClassMngrSQLiteSnapshot
@@ -567,6 +575,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrRosterTemplateRenderer
             ClassMngrSubPrepShared
             ClassMngrSpeakingEvalReportEngine
+            ClassMngrSpeakingEvalPowerPointAdapter
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE
             ClassMngrSQLiteSnapshot

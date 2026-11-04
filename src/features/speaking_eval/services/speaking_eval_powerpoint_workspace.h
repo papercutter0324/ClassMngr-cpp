@@ -10,7 +10,7 @@ class QTemporaryDir;
 class SpeakingEvalPowerPointWorkspace final
 {
 public:
-    SpeakingEvalPowerPointWorkspace() = default;
+    SpeakingEvalPowerPointWorkspace();
     ~SpeakingEvalPowerPointWorkspace();
 
     SpeakingEvalPowerPointWorkspace(
@@ -22,8 +22,11 @@ public:
 
     [[nodiscard]] bool prepare(
         const QString& stagingDirectory,
-        QString* errorMessage
+        QString* errorMessage,
+        const QString& workspaceRoot = {}
         );
+
+    [[nodiscard]] bool release(QString* errorMessage);
 
     [[nodiscard]] QString automationDirectory() const;
     [[nodiscard]] QString presentationDirectory() const;

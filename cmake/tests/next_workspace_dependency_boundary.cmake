@@ -68,7 +68,7 @@ if(NOT _next_links STREQUAL _expected_next_links)
 endif()
 
 set(_expected_next_speaking_evaluation_output_links
-    "ClassMngrSpeakingEvalReportEngine|ClassMngrNext::Resources|ClassMngrWorkspaceStore|Qt6::Sql"
+    "ClassMngrSpeakingEvalReportEngine|ClassMngrNext::Resources|ClassMngrWorkspaceStore|Qt6::Sql|ClassMngrSpeakingEvalPowerPointAdapter"
 )
 if(NOT _next_speaking_evaluation_output_links STREQUAL
    _expected_next_speaking_evaluation_output_links)

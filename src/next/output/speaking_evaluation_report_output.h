@@ -16,7 +16,7 @@ resolveSpeakingEvaluationReportAssets(Resources::ResourceLoader&, SpeakingEvalRe
 
 struct SpeakingEvaluationReportRunActions
 {
-    std::function<bool()> powerPointAvailable;
+    std::shared_ptr<SpeakingEvalPowerPointAutomationPort> powerPointAutomation;
     std::function<bool(const QString&)> confirmPowerPointRetry;
     std::function<bool()> confirmPowerPointDataAccess;
     std::function<std::expected<QString, QString>(SpeakingEvalReportTemplate)> resolvePowerPointRoot;

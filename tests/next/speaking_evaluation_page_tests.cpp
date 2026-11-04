@@ -68,6 +68,18 @@ using namespace ClassMngr::Next;
 namespace
 {
 
+class CallbackPowerPointPort final : public SpeakingEvalPowerPointAutomationPort
+{
+public:
+    SpeakingEvalPowerPointAvailability state{true, QStringLiteral("Fixture automation unavailable.")};
+    std::function<DocumentOutputResult(const SpeakingEvalPowerPointBatchRequest&)> render;
+    SpeakingEvalPowerPointAvailability availability() const override { return state; }
+    DocumentOutputResult renderBatch(const SpeakingEvalPowerPointBatchRequest& request) override
+    {
+        return render(request);
+    }
+};
+
 class CallbackPdfPrintOperation final : public Platform::PdfPrintOperation
 {
 public:
@@ -684,6 +696,9 @@ private slots:
     void nextPrintOperationUsesOrderedStagedPdfsAndMapsResults_data();
     void nextPrintOperationUsesOrderedStagedPdfsAndMapsResults();
     void nextPrintRequestFailsWhenOperationFactoryIsMissing();
+    void nextPowerPointUsesInjectedAutomationAndApplicationActions_data();
+    void nextPowerPointUsesInjectedAutomationAndApplicationActions();
+    void nextPowerPointRequestFailsWhenAutomationPortIsMissing();
     void reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs();
     void reportsRespectConfiguredMaximumForStoredTailRows();
     void batchCheckIndicatorMouseAndKeyboardEventsToggleSelection();
@@ -2037,6 +2052,115 @@ void SpeakingEvaluationPageTests::
     QVERIFY(!QFileInfo::exists(stagingDirectory));
     QVERIFY(result.output.savedPdfPaths.isEmpty());
     QVERIFY(result.output.savedArchivePath.isEmpty());
+}
+
+void SpeakingEvaluationPageTests::nextPowerPointUsesInjectedAutomationAndApplicationActions_data()
+{
+    QTest::addColumn<QString>("mode");
+    for (const char* mode : {"completed", "unavailable", "canceled", "failed", "consent-canceled", "retry"})
+        QTest::newRow(mode) << QString::fromLatin1(mode);
+}
+
+void SpeakingEvaluationPageTests::nextPowerPointUsesInjectedAutomationAndApplicationActions()
+{
+    QFETCH(QString, mode);
+    QTemporaryDir output;
+    QVERIFY(output.isValid());
+    SpeakingEvalBatchReportService::Request request;
+    request.renderer = mode == QStringLiteral("retry")
+        ? SpeakingEvalBatchReportService::Renderer::Internal
+        : SpeakingEvalBatchReportService::Renderer::PowerPoint;
+    SpeakingEvalReportData firstReport;
+    firstReport.englishName = QStringLiteral("First");
+    SpeakingEvalReportData secondReport;
+    secondReport.englishName = QStringLiteral("Second");
+    request.reports = {{firstReport.englishName, firstReport},
+        {secondReport.englishName, secondReport}};
+    request.savePdf = true;
+    request.keepIndividualPdfFiles = true;
+    request.outputDirectory = output.path();
+    request.internalRenderer = [](const SpeakingEvalReportData&, const QString&, QString* error) {
+        *error = QStringLiteral("Fixture internal renderer failure.");
+        return false;
+    };
+    QList<int> progress;
+    request.progressCallback = [&](int completed, int, const QString&) {
+        progress.append(completed); return true;
+    };
+    QString staging;
+    request.stagingDirectoryCreated = [&](const QString& path) { staging = path; };
+    int renders = 0;
+    bool requestMatched = false;
+    auto automation = std::make_shared<CallbackPowerPointPort>();
+    automation->state.available = mode != QStringLiteral("unavailable");
+    automation->render = [&](const SpeakingEvalPowerPointBatchRequest& batch) {
+        ++renders;
+        requestMatched = batch.reports.size() == 2
+            && batch.documentsRoot == QStringLiteral("fixture-resolved-template-root")
+            && batch.outputPaths.size() == 2
+            && QFileInfo(batch.outputPaths.at(0)).fileName() == QStringLiteral("report-000000.pdf")
+            && QFileInfo(batch.outputPaths.at(1)).fileName() == QStringLiteral("report-000001.pdf");
+        if (mode == QStringLiteral("canceled"))
+            return DocumentOutputResult{DocumentOutputStatus::Canceled, QStringLiteral("Fixture automation canceled.")};
+        if (mode == QStringLiteral("failed"))
+            return DocumentOutputResult{DocumentOutputStatus::Failed, QStringLiteral("Fixture automation failed.")};
+        for (int index = 0; index < batch.outputPaths.size(); ++index)
+        {
+            if (batch.progressCallback) batch.progressCallback(index, 2, batch.reports.at(index).displayName);
+            QFile pdf(batch.outputPaths.at(index));
+            if (!pdf.open(QIODevice::WriteOnly) || pdf.write("%PDF-fixture") != 12)
+                return DocumentOutputResult{DocumentOutputStatus::Failed, QStringLiteral("Fixture write failed.")};
+        }
+        if (batch.progressCallback) batch.progressCallback(2, 2, {});
+        return DocumentOutputResult{DocumentOutputStatus::Completed, {}};
+    };
+    int consentCalls = 0;
+    int rootCalls = 0;
+    int retryCalls = 0;
+    Output::SpeakingEvaluationReportRunActions actions;
+    actions.powerPointAutomation = automation;
+    actions.confirmPowerPointDataAccess = [&] { ++consentCalls; return mode != QStringLiteral("consent-canceled"); };
+    actions.resolvePowerPointRoot = [&](SpeakingEvalReportTemplate) -> std::expected<QString, QString> {
+        ++rootCalls; return QStringLiteral("fixture-resolved-template-root");
+    };
+    actions.confirmPowerPointRetry = [&](const QString&) { ++retryCalls; return true; };
+    const auto result = Output::runSpeakingEvaluationReports(std::move(request), actions);
+    const bool completed = mode == QStringLiteral("completed") || mode == QStringLiteral("retry");
+    QCOMPARE(result.output.status, completed ? DocumentOutputStatus::Completed
+        : mode == QStringLiteral("canceled") || mode == QStringLiteral("consent-canceled")
+            ? DocumentOutputStatus::Canceled : DocumentOutputStatus::Failed);
+    QCOMPARE(result.attempts, mode == QStringLiteral("retry") ? 2 : 1);
+    QCOMPARE(retryCalls, mode == QStringLiteral("retry") ? 1 : 0);
+    QCOMPARE(consentCalls, mode == QStringLiteral("unavailable") ? 0 : 1);
+    QCOMPARE(rootCalls, mode == QStringLiteral("unavailable") || mode == QStringLiteral("consent-canceled") ? 0 : 1);
+    QCOMPARE(renders, mode == QStringLiteral("unavailable") || mode == QStringLiteral("consent-canceled") ? 0 : 1);
+    if (renders) QVERIFY(requestMatched);
+    if (!staging.isEmpty()) QVERIFY(!QFileInfo::exists(staging));
+    if (completed)
+    {
+        QCOMPARE(result.output.savedPdfPaths.size(), 2);
+        QVERIFY(QFileInfo::exists(result.output.savedArchivePath));
+        QVERIFY(progress.size() >= 3);
+        QCOMPARE(progress.sliced(progress.size() - 3), QList<int>({0, 1, 2}));
+    }
+    else QVERIFY(QDir(output.path()).entryList(QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+    if (mode == QStringLiteral("unavailable")) QCOMPARE(result.output.message, automation->state.message);
+    if (mode == QStringLiteral("failed")) QCOMPARE(result.output.message, QStringLiteral("Fixture automation failed."));
+}
+
+void SpeakingEvaluationPageTests::nextPowerPointRequestFailsWhenAutomationPortIsMissing()
+{
+    QTemporaryDir output;
+    QVERIFY(output.isValid());
+    SpeakingEvalBatchReportService::Request request;
+    request.renderer = SpeakingEvalBatchReportService::Renderer::PowerPoint;
+    request.reports = {{QStringLiteral("Fixture"), SpeakingEvalReportData{}}};
+    request.savePdf = true;
+    request.outputDirectory = output.path();
+    const auto result = Output::runSpeakingEvaluationReports(std::move(request));
+    QCOMPARE(result.output.status, DocumentOutputStatus::Failed);
+    QCOMPARE(result.output.message, QStringLiteral("The PowerPoint automation operation is unavailable."));
+    QVERIFY(QDir(output.path()).entryList(QDir::Files | QDir::NoDotAndDotDot).isEmpty());
 }
 
 void SpeakingEvaluationPageTests::

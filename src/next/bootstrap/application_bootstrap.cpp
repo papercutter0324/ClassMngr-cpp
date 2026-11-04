@@ -59,6 +59,7 @@
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "next/platform/qt_schedule_output_adapter.h"
 #include "next/platform/pdf_print_operation.h"
+#include "shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -2073,6 +2074,8 @@ Application::StartupResult ApplicationBootstrap::start()
                             ? m_coreServices->pretendardFont->get().familyNames().value(0) : QStringLiteral("Pretendard");
                         actions.reports.run.printOperationFactory =
                             Platform::makeQtPdfPrintOperation;
+                        actions.reports.run.powerPointAutomation =
+                            makeQtSpeakingEvalPowerPointAutomationPort();
                         actions.reports.showPowerPointDataAccessNotice =
                             Platform::SettingsManagerPowerPointDataAccessNoticePort().read().showPowerPointDataAccessNotice;
                         actions.preferredAiCommentProvider = [] {

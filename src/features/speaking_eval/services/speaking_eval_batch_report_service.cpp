@@ -1,11 +1,25 @@
 #include "speaking_eval_batch_report_service.h"
 #include "core/resource_paths.h"
+#include "shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
 
 namespace SpeakingEvalBatchReportService
 {
-Result exportReports(const Request& request)
+bool isPowerPointRendererAvailable()
 {
-    if (request.renderer != Renderer::PowerPoint || request.powerPointRenderer
+    return makeQtSpeakingEvalPowerPointAutomationPort()->availability().available;
+}
+
+QString powerPointRendererAvailabilityMessage()
+{
+    return makeQtSpeakingEvalPowerPointAutomationPort()->availability().message;
+}
+
+Result exportReports(const Request& input)
+{
+    Request request = input;
+    if (!request.powerPointAutomation)
+        request.powerPointAutomation = makeQtSpeakingEvalPowerPointAutomationPort();
+    if (request.renderer != Renderer::PowerPoint
         || !request.documentsRoot.isEmpty())
         return exportResolvedReports(request);
     auto lease = ResourcePaths::Documents::acquire();

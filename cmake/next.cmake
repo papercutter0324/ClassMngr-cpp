@@ -762,7 +762,7 @@ set_target_properties(ClassMngrNextWorkspace
 add_library(ClassMngrNextSpeakingEvaluationOutput STATIC ${CLASSMNGR_NEXT_SPEAKING_EVALUATION_OUTPUT_SOURCES})
 target_compile_features(ClassMngrNextSpeakingEvaluationOutput PUBLIC cxx_std_23)
 target_include_directories(ClassMngrNextSpeakingEvaluationOutput PUBLIC "${PROJECT_SOURCE_DIR}/src")
-target_link_libraries(ClassMngrNextSpeakingEvaluationOutput PUBLIC ClassMngrSpeakingEvalReportEngine PRIVATE ClassMngrNext::Resources ClassMngrWorkspaceStore Qt6::Sql)
+target_link_libraries(ClassMngrNextSpeakingEvaluationOutput PUBLIC ClassMngrSpeakingEvalReportEngine PRIVATE ClassMngrNext::Resources ClassMngrWorkspaceStore Qt6::Sql ClassMngrSpeakingEvalPowerPointAdapter)
 set_target_properties(ClassMngrNextSpeakingEvaluationOutput PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
 
 # Roster output owns a path-bound sparse source and a Qt-only output dialog.

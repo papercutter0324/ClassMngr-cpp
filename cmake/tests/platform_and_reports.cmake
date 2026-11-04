@@ -318,6 +318,13 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
+    add_executable(ClassMngrPowerPointProcessFixture
+        tests/powerpoint_process_fixture.cpp)
+    target_compile_features(ClassMngrPowerPointProcessFixture PRIVATE cxx_std_23)
+    target_link_libraries(ClassMngrPowerPointProcessFixture PRIVATE Qt6::Core)
+    set_target_properties(ClassMngrPowerPointProcessFixture PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF)
+    set_property(GLOBAL APPEND PROPERTY CLASSMNGR_TEST_SUPPORT_TARGETS ClassMngrPowerPointProcessFixture)
+
     qt_add_executable(ClassMngrSpeakingEvalBatchReportServiceTests
         tests/speaking_eval_batch_report_service_tests.cpp
         src/core/fontmanager.cpp
@@ -351,11 +358,15 @@ qt_add_executable(ClassMngrAcademicCalendarTests
     target_compile_definitions(ClassMngrSpeakingEvalBatchReportServiceTests
         PRIVATE
             CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
+            CLASSMNGR_POWERPOINT_PROCESS_FIXTURE="$<TARGET_FILE:ClassMngrPowerPointProcessFixture>"
     )
+
+    add_dependencies(ClassMngrSpeakingEvalBatchReportServiceTests ClassMngrPowerPointProcessFixture)
 
     target_link_libraries(ClassMngrSpeakingEvalBatchReportServiceTests
         PRIVATE
             ClassMngrSpeakingEvalReportEngine
+            ClassMngrSpeakingEvalPowerPointAdapter
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf

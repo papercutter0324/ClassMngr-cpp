@@ -1,7 +1,8 @@
 #pragma once
 
 #include "domain/models/document_output_result.h"
-#include "features/speaking_eval/services/speaking_eval_report_data.h"
+#include "features/speaking_eval/services/speaking_eval_report_batch_types.h"
+#include "features/speaking_eval/services/speaking_eval_powerpoint_automation_port.h"
 #include "domain/models/class_info.h"
 
 #include <QList>
@@ -9,6 +10,7 @@
 #include <QStringList>
 
 #include <functional>
+#include <memory>
 
 class QWidget;
 
@@ -23,13 +25,6 @@ enum class Renderer
 
 using Status = DocumentOutputStatus;
 using Result = DocumentOutputResult;
-
-struct StudentReport
-{
-    QString displayName;
-    SpeakingEvalReportData report;
-    int sourceRow = -1;
-};
 
 struct Request
 {
@@ -55,10 +50,7 @@ struct Request
         printCallback;
     std::function<bool(const SpeakingEvalReportData&, const QString&, QString*)>
         internalRenderer;
-    // A deterministic automation boundary; real host automation is used when
-    // this seam is empty. The callback must produce every requested staged PDF.
-    std::function<Result(const Request&, const QStringList&, const QString&)>
-        powerPointRenderer;
+    std::shared_ptr<SpeakingEvalPowerPointAutomationPort> powerPointAutomation;
     std::function<void(const QString&)> stagingDirectoryCreated;
 };
 
@@ -81,6 +73,7 @@ struct Request
     const QString& outputDirectory
     );
 
+// Legacy composition conveniences. Explicit-resource/Next callers inject the port.
 [[nodiscard]] bool isPowerPointRendererAvailable();
 
 [[nodiscard]] QString powerPointRendererAvailabilityMessage();

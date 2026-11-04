@@ -33,9 +33,9 @@
     the still-open memory lifecycle gate.
 11. **8.2.6 Speaking Evaluation reports — complete:** Next printing uses the
     ordered staged PDFs through `PdfPrintOperation`; Legacy keeps its fallback.
-12. **8.3.1 PowerPoint automation — in progress:** isolate availability, launch, failure,
-    cleanup, and cancellation behind an application port.
-13. **8.4.1 Update installation:** move download/resume/cancel/launch/reveal
+12. **8.3.1 PowerPoint automation — complete:** isolate availability, launch,
+    failure, cleanup, and cancellation behind an application port.
+13. **8.4.1 Update installation — in progress:** move download/resume/cancel/launch/reveal
     behavior behind Next application/platform adapters.
 14. **8.4.2 Next application package:** produce one update artifact with the
     Next executable, Qt runtime/plugins, resources, QML, licenses, and metadata.

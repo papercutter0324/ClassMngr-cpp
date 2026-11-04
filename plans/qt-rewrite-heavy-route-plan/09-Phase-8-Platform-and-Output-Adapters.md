@@ -396,6 +396,25 @@ claim was measured.
 The Save As chooser, output-folder chooser, and desktop folder-open paths
 remain unchanged as separate dialog/URL integration work for later discovery.
 
+### 8.3.1 — PowerPoint automation adapter (accepted)
+
+The shared report engine now depends on a neutral PowerPoint automation port.
+The Qt host adapter owns availability checks, process/workspace handling,
+script execution, and cleanup; Legacy's wrapper and Next Bootstrap compose it,
+and Next injects the port. macOS build repairs moved the workspace constructor
+out of line for incomplete `QTemporaryDir` and made pure script generators
+compile on all hosts without changing script contents.
+
+The focused build passed for `ClassMngrSpeakingEvalBatchReportServiceTests`,
+`ClassMngrNextSpeakingEvaluationPageTests`,
+`ClassMngrNextBootstrapTests`, and `ClassMngrPowerPointProcessFixture` using
+`-j4`. Focused CTest passed 5/5 in 38.69 seconds: service 109 passed, 0
+failed, 5 skipped; mixed-template 3/0/0; Bootstrap 89/0/0; Next page 40/0/0;
+dependency boundary 1/1. Four Office integration cases and one generated-assets
+case were skipped because the integration gate was unset. The standalone
+process fixture was up to date; runner behavior cases ran through the Legacy
+service suite. Native PowerPoint automation was not exercised.
+
 ## Objective
 
 

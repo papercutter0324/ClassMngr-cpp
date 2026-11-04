@@ -1,12 +1,8 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "features/speaking_eval/services/speaking_eval_report_output_policy.h"
 #include "features/speaking_eval/services/speaking_eval_report_output.h"
-#include "features/speaking_eval/services/speaking_eval_report_asset_resolver.h"
 #include "features/speaking_eval/services/speaking_eval_internal_pdf_renderer.h"
-#include "features/speaking_eval/services/speaking_eval_powerpoint_automation.h"
 #include "features/speaking_eval/services/speaking_eval_powerpoint_job_model.h"
-#include "features/speaking_eval/services/speaking_eval_powerpoint_scripts.h"
-#include "features/speaking_eval/services/speaking_eval_powerpoint_workspace.h"
 
 #include "core/utils/file_name_utils.h"
 #include "core/zip_archive_writer.h"
@@ -15,19 +11,15 @@
 
 #include <QDir>
 #include <QFileInfo>
-#include <QJsonDocument>
 #include <QObject>
 #include <QPageLayout>
 #include <QPageSize>
-#include <QSaveFile>
 #include <QTemporaryDir>
 
 namespace SpeakingEvalBatchReportService
 {
 namespace
 {
-
-constexpr int PowerPointTimeoutMs = 5 * 60 * 1000;
 
 Result completed(
     const QStringList& savedPdfPaths = {},
@@ -74,300 +66,6 @@ Result failed(
     };
 }
 
-enum class PowerPointBatchStatus
-{
-    Completed,
-    Canceled,
-    Failed
-};
-
-bool writeUtf8File(
-    const QString& path,
-    const QByteArray& data,
-    QString* errorMessage
-    )
-{
-    QSaveFile file(path);
-    if (!file.open(QIODevice::WriteOnly)
-        || file.write(data) != data.size()
-        || !file.commit())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr("Unable to prepare PowerPoint automation.");
-        }
-        return false;
-    }
-
-    return true;
-}
-
-
-PowerPointBatchStatus renderPowerPointBatch(
-    const SpeakingEvalPowerPointJobModel::BatchJob& batch,
-    const QString& automationDirectory,
-    const QString& presentationDirectory,
-    const std::function<
-        bool(int completed, int total, const QString& studentName)
-        >& progressCallback,
-    QString* errorMessage
-    )
-{
-    if (batch.students.isEmpty()
-        || automationDirectory.trimmed().isEmpty()
-        || presentationDirectory.trimmed().isEmpty())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = QObject::tr(
-                "The temporary PowerPoint batch is unavailable."
-                );
-        }
-        return PowerPointBatchStatus::Failed;
-    }
-
-    const QDir automation(automationDirectory);
-    const QDir presentation(presentationDirectory);
-    const QString preparedPptxPath =
-        automation.filePath(QStringLiteral("report-template.pptx"));
-    const QString pptxPath =
-        presentation.filePath(QStringLiteral("report-template.pptx"));
-    const QString jobPath =
-        automation.filePath(QStringLiteral("batch.json"));
-    const QString cancelPath =
-        automation.filePath(QStringLiteral("cancel-requested"));
-    const QString scriptPath =
-        automation.filePath(
-#ifdef Q_OS_WIN
-            QStringLiteral("export-batch.ps1")
-#else
-            QStringLiteral("export-batch.applescript")
-#endif
-            );
-
-    QString preparedSignaturePath;
-    if (!SpeakingEvalReportAssetResolver::copyResourceToFile(
-            batch.templateProfile.resourcePath,
-            preparedPptxPath,
-            errorMessage
-            )
-        || !SpeakingEvalReportAssetResolver::prepareSignatureImage(
-            batch.signatureImage,
-            automationDirectory,
-            &preparedSignaturePath,
-            errorMessage
-            ))
-    {
-        return PowerPointBatchStatus::Failed;
-    }
-
-    QString signaturePath = preparedSignaturePath;
-    if (automationDirectory != presentationDirectory)
-    {
-        if (!SpeakingEvalReportAssetResolver::copyFileReplacing(
-                preparedPptxPath,
-                pptxPath,
-                QObject::tr(
-                    "The PowerPoint template could not be copied into PowerPoint's private workspace."
-                    ),
-                errorMessage
-                ))
-        {
-            return PowerPointBatchStatus::Failed;
-        }
-
-        signaturePath.clear();
-        if (!preparedSignaturePath.isEmpty())
-        {
-            signaturePath =
-                presentation.filePath(
-                    QStringLiteral("signature.png")
-                    );
-            if (!SpeakingEvalReportAssetResolver::copyFileReplacing(
-                    preparedSignaturePath,
-                    signaturePath,
-                    QObject::tr(
-                        "The signature could not be copied into PowerPoint's private workspace."
-                        ),
-                    errorMessage
-                    ))
-            {
-                return PowerPointBatchStatus::Failed;
-            }
-        }
-    }
-
-    QString executable;
-    QStringList arguments;
-
-#ifdef Q_OS_WIN
-    executable = SpeakingEvalPowerPointAutomation::executable();
-    if (executable.isEmpty())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = powerPointRendererAvailabilityMessage();
-        }
-        return PowerPointBatchStatus::Failed;
-    }
-
-    const QByteArray jobJson =
-        QByteArrayLiteral("\xEF\xBB\xBF")
-        + QJsonDocument(
-            SpeakingEvalPowerPointJobModel::toJson(
-                batch,
-                pptxPath,
-                signaturePath,
-                cancelPath
-                )
-            ).toJson(QJsonDocument::Compact);
-    if (!writeUtf8File(jobPath, jobJson, errorMessage)
-        || !writeUtf8File(
-            scriptPath,
-            SpeakingEvalPowerPointScripts::windowsScript().toUtf8(),
-            errorMessage
-            ))
-    {
-        return PowerPointBatchStatus::Failed;
-    }
-
-    arguments = {
-        QStringLiteral("-NoProfile"),
-        QStringLiteral("-NonInteractive"),
-        QStringLiteral("-ExecutionPolicy"),
-        QStringLiteral("Bypass"),
-        QStringLiteral("-File"),
-        scriptPath,
-        jobPath
-    };
-#elif defined(Q_OS_MACOS)
-    executable = SpeakingEvalPowerPointAutomation::executable();
-    if (executable.isEmpty())
-    {
-        if (errorMessage)
-        {
-            *errorMessage = powerPointRendererAvailabilityMessage();
-        }
-        return PowerPointBatchStatus::Failed;
-    }
-
-    if (!writeUtf8File(
-            scriptPath,
-            SpeakingEvalPowerPointScripts::macScript().toUtf8(),
-            errorMessage
-            ))
-    {
-        return PowerPointBatchStatus::Failed;
-    }
-
-    const SpeakingEvalPowerPointJobModel::TemplateProfile& profile =
-        batch.templateProfile;
-    arguments = {
-        scriptPath,
-        pptxPath,
-        profile.scoreTableOnMaster
-            ? QStringLiteral("true")
-            : QStringLiteral("false"),
-        profile.scoreTableName,
-        QString::number(profile.minimumTableRows),
-        QString::number(profile.minimumTableColumns),
-        QString::number(profile.firstGradeColumn),
-        QString::number(profile.neutralFillRed),
-        QString::number(profile.neutralFillGreen),
-        QString::number(profile.neutralFillBlue),
-        signaturePath,
-        QString::number(profile.signatureBounds.left()),
-        QString::number(profile.signatureBounds.top()),
-        QString::number(profile.signatureBounds.width()),
-        QString::number(profile.signatureBounds.height()),
-        profile.signatureAlignsBottomLeft
-            ? QStringLiteral("true")
-            : QStringLiteral("false"),
-        cancelPath,
-        QString::number(batch.students.size())
-    };
-    for (
-        const SpeakingEvalPowerPointJobModel::StudentJob& job :
-        batch.students
-        )
-    {
-        arguments.append(
-            QStringList{
-                SpeakingEvalPowerPointScripts::macTextArgument(job.displayName),
-                job.pdfPath,
-                job.completionPath,
-                SpeakingEvalPowerPointScripts::macTextArgument(job.englishName),
-                SpeakingEvalPowerPointScripts::macTextArgument(job.koreanName),
-                SpeakingEvalPowerPointScripts::macTextArgument(job.classLabel),
-                SpeakingEvalPowerPointScripts::macTextArgument(job.nativeTeacher),
-                SpeakingEvalPowerPointScripts::macTextArgument(job.koreanTeacher),
-                SpeakingEvalPowerPointScripts::macTextArgument(job.date),
-                SpeakingEvalPowerPointScripts::macTextArgument(job.comments),
-                SpeakingEvalPowerPointScripts::macTextArgument(
-                    QString::fromLatin1(
-                        SpeakingEvalPowerPointJobModel::CommentFontName
-                        )
-                    ),
-                QString::number(job.commentsFontSizePoints),
-                SpeakingEvalPowerPointScripts::macTextArgument(job.overallGrade),
-                job.scores[0],
-                job.scores[1],
-                job.scores[2],
-                job.scores[3],
-                job.scores[4],
-                job.scores[5]
-            }
-            );
-    }
-#else
-    Q_UNUSED(jobPath);
-    Q_UNUSED(scriptPath);
-    Q_UNUSED(cancelPath);
-    if (errorMessage)
-    {
-        *errorMessage = powerPointRendererAvailabilityMessage();
-    }
-    return PowerPointBatchStatus::Failed;
-#endif
-
-    QList<SpeakingEvalPowerPointAutomation::ReportMarker> reports;
-    reports.reserve(batch.students.size());
-    for (
-        const SpeakingEvalPowerPointJobModel::StudentJob& job :
-        batch.students
-        )
-    {
-        reports.append({
-            job.displayName,
-            job.pdfPath,
-            job.completionPath
-        });
-    }
-
-    const SpeakingEvalPowerPointAutomation::Status status =
-        SpeakingEvalPowerPointAutomation::run(
-            {
-                executable,
-                arguments,
-                automationDirectory,
-                cancelPath,
-                reports,
-                PowerPointTimeoutMs,
-                progressCallback
-            },
-            errorMessage
-            );
-    switch (status)
-    {
-    case SpeakingEvalPowerPointAutomation::Status::Completed:
-        return PowerPointBatchStatus::Completed;
-    case SpeakingEvalPowerPointAutomation::Status::Canceled:
-        return PowerPointBatchStatus::Canceled;
-    case SpeakingEvalPowerPointAutomation::Status::Failed:
-    default:
-        return PowerPointBatchStatus::Failed;
-    }
-}
 
 } // namespace
 
@@ -417,16 +115,6 @@ QString safeFileName(
         );
 }
 
-bool isPowerPointRendererAvailable()
-{
-    return SpeakingEvalPowerPointAutomation::isAvailable();
-}
-
-QString powerPointRendererAvailabilityMessage()
-{
-    return SpeakingEvalPowerPointAutomation::availabilityMessage();
-}
-
 Result exportResolvedReports(
     const Request& request
     )
@@ -466,11 +154,13 @@ Result exportResolvedReports(
             );
     }
 
-    if (request.renderer == Renderer::PowerPoint
-        && !request.powerPointRenderer
-        && !isPowerPointRendererAvailable())
+    if (request.renderer == Renderer::PowerPoint)
     {
-        return failed(powerPointRendererAvailabilityMessage());
+        const auto availability = request.powerPointAutomation
+            ? request.powerPointAutomation->availability()
+            : SpeakingEvalPowerPointAvailability{false,
+                QObject::tr("The PowerPoint automation operation is unavailable.")};
+        if (!availability.available) return failed(availability.message);
     }
 
     const bool creatingBatchArchive =
@@ -522,101 +212,22 @@ Result exportResolvedReports(
 
     QStringList stagedPdfPaths;
     stagedPdfPaths.reserve(request.reports.size());
-    SpeakingEvalPowerPointWorkspace powerPointWorkspace;
-    if (request.renderer == Renderer::PowerPoint && request.powerPointRenderer)
+    if (request.renderer == Renderer::PowerPoint)
     {
         for (int index = 0; index < request.reports.size(); ++index)
             stagedPdfPaths.append(stagingDirectory.filePath(
                 QStringLiteral("report-%1.pdf").arg(index, 6, 10, QLatin1Char('0'))));
-        const Result rendered = request.powerPointRenderer(request, stagedPdfPaths, stagingDirectory.path());
+        const Result rendered = request.powerPointAutomation->renderBatch({
+            request.reports,
+            request.documentsRoot,
+            stagedPdfPaths,
+            stagingDirectory.path(),
+            request.progressCallback
+        });
         if (rendered.status != Status::Completed) return rendered;
         for (const QString& path : stagedPdfPaths)
             if (!QFileInfo(path).isFile() || QFileInfo(path).size() <= 0)
                 return failed(QObject::tr("PowerPoint did not create every report PDF."));
-    }
-    else if (request.renderer == Renderer::PowerPoint)
-    {
-        if (request.documentsRoot.trimmed().isEmpty())
-            return failed(QObject::tr("The PowerPoint template resources are unavailable."));
-
-        if (!powerPointWorkspace.prepare(
-                stagingDirectory.path(),
-                &errorMessage
-                ))
-        {
-            return failed(errorMessage);
-        }
-
-        QStringList powerPointPdfPaths;
-        powerPointPdfPaths.reserve(request.reports.size());
-        for (int index = 0; index < request.reports.size(); ++index)
-        {
-            const QString fileName =
-                QStringLiteral("report-%1.pdf")
-                    .arg(index, 6, 10, QLatin1Char('0'));
-            stagedPdfPaths.append(
-                QDir(
-                    powerPointWorkspace.automationDirectory()
-                    ).filePath(fileName)
-                );
-            powerPointPdfPaths.append(
-                QDir(
-                    powerPointWorkspace.presentationDirectory()
-                    ).filePath(fileName)
-                );
-        }
-
-        const SpeakingEvalPowerPointJobModel::BatchJob batch =
-            SpeakingEvalPowerPointJobModel::build(
-                request.reports,
-                powerPointPdfPaths,
-                powerPointWorkspace.automationDirectory(),
-                request.documentsRoot
-                );
-        const PowerPointBatchStatus powerPointStatus =
-            renderPowerPointBatch(
-                batch,
-                powerPointWorkspace.automationDirectory(),
-                powerPointWorkspace.presentationDirectory(),
-                request.progressCallback,
-                &errorMessage
-                );
-        if (powerPointStatus == PowerPointBatchStatus::Canceled)
-        {
-            return canceled();
-        }
-        if (powerPointStatus == PowerPointBatchStatus::Failed)
-        {
-            return failed(errorMessage);
-        }
-
-        QStringList displayNames;
-        displayNames.reserve(batch.students.size());
-        for (
-            const SpeakingEvalPowerPointJobModel::StudentJob& job :
-            batch.students
-            )
-        {
-            displayNames.append(job.displayName);
-        }
-
-        if (powerPointWorkspace.usesSeparatePresentationDirectory()
-            && !powerPointWorkspace.copyOutputFiles(
-                powerPointPdfPaths,
-                stagedPdfPaths,
-                displayNames,
-                &errorMessage
-                ))
-        {
-            return failed(errorMessage);
-        }
-
-        if (!powerPointWorkspace.removePresentationDirectory(
-                &errorMessage
-                ))
-        {
-            return failed(errorMessage);
-        }
     }
     else
     {

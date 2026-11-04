@@ -15,7 +15,6 @@ QString macTextArgument(
         );
 }
 
-#ifdef Q_OS_WIN
 QString windowsScript()
 {
     return QString::fromUtf8(R"PS(
@@ -261,9 +260,7 @@ if ($canceled) {
 }
 )PS");
 }
-#endif
 
-#ifdef Q_OS_MACOS
 QString macScript()
 {
     return QString::fromUtf8(R"APPLESCRIPT(
@@ -537,5 +534,4 @@ on run argv
 end run
 )APPLESCRIPT");
 }
-#endif
 }
