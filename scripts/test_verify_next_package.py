@@ -223,7 +223,10 @@ def _make_linux_package(root: Path) -> None:
         )
 
 
-def _make_macos_package(root: Path) -> None:
+def _make_macos_package(
+    root: Path,
+    applications_target: str = "/Applications",
+) -> None:
     app = root / "ClassMngr.app"
     executable = app / "Contents/MacOS/ClassMngr"
     _write(executable, b"ClassMngr universal fake executable")
@@ -286,7 +289,7 @@ def _make_macos_package(root: Path) -> None:
     if os.name == "nt":
         _write(applications_link, b"macOS Applications symlink fixture")
     else:
-        applications_link.symlink_to("/Applications")
+        applications_link.symlink_to(applications_target)
 
 
 def _make_windows_package(root: Path) -> None:
@@ -472,12 +475,13 @@ class VerifyNextPackageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir) / "macos-package"
             root.mkdir()
+            absolute_target = "/tmp/Applications"
             with _windows_posix_package_semantics(
                 root,
                 "ClassMngr.app/Contents/MacOS/ClassMngr",
-                {"Applications": "/tmp/Applications"},
+                {"Applications": absolute_target},
             ):
-                _make_macos_package(root)
+                _make_macos_package(root, applications_target=absolute_target)
                 with self.assertRaisesRegex(
                     PackageError,
                     "package symlink must have a relative target: Applications",
