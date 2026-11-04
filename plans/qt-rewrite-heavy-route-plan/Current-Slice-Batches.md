@@ -18,12 +18,12 @@
 6. **8.2.1 QtPdf viewer session — complete:** the selected-document
    load/status/render/close and borrowed-stream release behind a session-scoped
    platform owner. `DocumentViewerPage` retains application state and controls;
-  generated/print PDFs stay out of this session boundary.
-7. **8.2.2 PDF/print operation adapter — in progress:** isolate layout,
-   fonts/images, resources, printer selection, preview, file output, and cleanup
-   from viewer session ownership.
-8. **8.2.3 Schedule output:** remove the legacy print-service forwarding path
-   and verify schedule output parity.
+   generated/print PDFs stay out of this session boundary.
+7. **8.2.2 PDF/print operation adapter — complete:** add separate borrowed-
+   document and ordered-batch print operations; the viewer uses the injected
+   port, and batch PDF lifetimes are serial while preserving one print job.
+8. **8.2.3 Schedule output — in progress:** remove the legacy print-service
+   forwarding path and verify schedule output parity.
 9. **8.2.4 Roster output:** route preview/print/save through the operation
    adapter and preserve existing Next/Legacy output comparisons.
 10. **8.2.5 Sub Prep output:** use the bounded projection for the packaged SQL

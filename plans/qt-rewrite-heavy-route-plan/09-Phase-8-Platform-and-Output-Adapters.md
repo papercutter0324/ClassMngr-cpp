@@ -255,6 +255,36 @@ uses a modal print dialog, so destruction from inside that callback is outside
 the supported contract. The native macOS print dialog was not opened, and no
 repository-wide suite was run.
 
+### 8.2.2 — PDF/print operation adapter (accepted)
+
+Added the Qt Platform `PdfPrintOperation` with separate borrowed-ready-document
+and ordered local-batch operations. `DocumentViewerPage` invokes it inside the
+viewer session's synchronous borrow; the viewer remains sole owner of its active
+document and stream. The adapter delegates to shared Qt printing mechanics.
+Shared batch printing validates and releases each document before the dialog,
+stores page counts, determines orientation from the selected range, then
+reopens and renders documents serially into one print job. Schedule, Roster,
+Sub Prep, and Speaking Evaluation migrations remain in 8.2.3–8.2.6.
+
+Focused verification passed the incremental build
+`cmake --build build/macos-clang-debug --target ClassMngrNext ClassMngrQtPdfPrint ClassMngrNextDocumentViewerTests -j 8`, despite Ninja reporting
+`premature end of file; recovering` (exit 0, no compile or link failures).
+`ctest --test-dir build/macos-clang-debug -R '^(ClassMngrNextDocumentViewerTests|ClassMngrNextPlatformQtPdfSessionReleaseTests|NextStartupWorkspaceDependencyBoundary)$' --output-on-failure`
+passed 3/3; `QT_QPA_PLATFORM=offscreen QT_SCALE_FACTOR=1
+./build/macos-clang-debug/ClassMngrNextDocumentViewerTests -v1` passed 17/17.
+`git diff --check` passed. Coverage verifies source order, global page ranges,
+orientation, release before dialog, at most one ready document, PDF output
+reload, pre-dialog missing/corrupt errors, and cancellation cleanup. No full
+suite was run.
+
+The production success path of the new Qt adapter was source-reviewed but not
+runtime-driven because it opens printer UI. No native macOS print dialog,
+physical print, or Linux/Windows runtime was exercised. Page-image lifetime was
+code-inspected, not instrumented. Batch inputs are reopened after the modal
+dialog, so changed contents with the same page count could print, and deleted
+or inaccessible inputs can fail after acceptance; current callers use
+operation-scoped temporary outputs.
+
 ## Objective
 
 

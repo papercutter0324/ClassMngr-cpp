@@ -1,6 +1,7 @@
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include "ui/shared/printing/pdf_print_dialog.h"
+#include "ui/shared/printing/pdf_print_service_internal.h"
 
 #include <QFileInfo>
 #include <QImage>
@@ -98,6 +99,76 @@ Result sent()
         QObject::tr("Print job sent.")
     };
 }
+
+class LoadedBatchDocument final
+{
+public:
+    LoadedBatchDocument(
+        const QString& path,
+        const Internal::BatchDocumentPass pass,
+        const Internal::BatchPrintTestHooks& hooks
+        )
+        : m_path(path), m_pass(pass), m_hooks(hooks)
+    {
+    }
+
+    ~LoadedBatchDocument()
+    {
+        m_document.reset();
+        if (m_hooks.documentReleased)
+        {
+            m_hooks.documentReleased(m_path, m_pass, m_wasReady);
+        }
+    }
+
+    [[nodiscard]] static std::unique_ptr<LoadedBatchDocument> load(
+        const QString& path,
+        const Internal::BatchDocumentPass pass,
+        const Internal::BatchPrintTestHooks& hooks
+        )
+    {
+        auto loaded = std::unique_ptr<LoadedBatchDocument>(
+            new LoadedBatchDocument(path, pass, hooks)
+            );
+        if (hooks.documentLoadStarted)
+        {
+            hooks.documentLoadStarted(path, pass);
+        }
+
+        loaded->m_document = std::make_unique<QPdfDocument>();
+        const QPdfDocument::Error loadError =
+            loaded->m_document->load(path);
+        if (loadError != QPdfDocument::Error::None
+            || loaded->m_document->status() != QPdfDocument::Status::Ready
+            || loaded->m_document->pageCount() <= 0)
+        {
+            return {};
+        }
+
+        loaded->m_wasReady = true;
+        if (hooks.documentReady)
+        {
+            hooks.documentReady(
+                path,
+                pass,
+                loaded->m_document->pageCount()
+                );
+        }
+        return loaded;
+    }
+
+    [[nodiscard]] QPdfDocument* document() const noexcept
+    {
+        return m_document.get();
+    }
+
+private:
+    QString m_path;
+    Internal::BatchDocumentPass m_pass;
+    const Internal::BatchPrintTestHooks& m_hooks;
+    std::unique_ptr<QPdfDocument> m_document;
+    bool m_wasReady = false;
+};
 
 QString documentDisplayName(
     const QString& documentPath
@@ -684,6 +755,16 @@ Result printPdfDocuments(
     const BatchRequest& request
     )
 {
+    return Internal::printPdfDocumentsWithHooks(request, {});
+}
+
+namespace Internal
+{
+Result printPdfDocumentsWithHooks(
+    const BatchRequest& request,
+    const BatchPrintTestHooks& hooks
+    )
+{
     if (request.documentPaths.isEmpty())
     {
         return failed(
@@ -692,7 +773,7 @@ Result printPdfDocuments(
     }
 
 #ifdef Q_OS_LINUX
-    if (QPrinterInfo::availablePrinterNames().isEmpty())
+    if (!hooks.executeDialog && QPrinterInfo::availablePrinterNames().isEmpty())
     {
         return failed(
             QObject::tr("No printers are available.")
@@ -700,16 +781,20 @@ Result printPdfDocuments(
     }
 #endif
 
-    std::vector<std::unique_ptr<QPdfDocument>> documents;
-    documents.reserve(request.documentPaths.size());
+    std::vector<int> documentPageCounts;
+    documentPageCounts.reserve(
+        static_cast<std::size_t>(request.documentPaths.size())
+        );
     int pageCount = 0;
 
     for (const QString& documentPath : request.documentPaths)
     {
-        auto document = std::make_unique<QPdfDocument>();
-        if (document->load(documentPath) != QPdfDocument::Error::None
-            || document->status() != QPdfDocument::Status::Ready
-            || document->pageCount() <= 0)
+        auto document = LoadedBatchDocument::load(
+            documentPath,
+            BatchDocumentPass::Validation,
+            hooks
+            );
+        if (!document)
         {
             return failed(
                 QObject::tr("Unable to open \"%1\" for printing.")
@@ -717,8 +802,9 @@ Result printPdfDocuments(
                 );
         }
 
-        pageCount += document->pageCount();
-        documents.push_back(std::move(document));
+        const int documentPageCount = document->document()->pageCount();
+        pageCount += documentPageCount;
+        documentPageCounts.push_back(documentPageCount);
     }
 
     QPrinter printer(QPrinter::HighResolution);
@@ -753,7 +839,10 @@ Result printPdfDocuments(
         );
 #endif
 
-    if (dialog.exec() != QDialog::Accepted)
+    const int dialogResult = hooks.executeDialog
+        ? hooks.executeDialog(dialog, printer)
+        : dialog.exec();
+    if (dialogResult != QDialog::Accepted)
     {
         return canceled();
     }
@@ -769,38 +858,58 @@ Result printPdfDocuments(
     }
 
     int firstIncludedGlobalPage = 0;
-    QPdfDocument* firstIncludedDocument = nullptr;
+    std::size_t firstIncludedDocumentIndex = 0;
     int firstIncludedDocumentPage = -1;
-    for (const std::unique_ptr<QPdfDocument>& document : documents)
+    for (std::size_t documentIndex = 0;
+         documentIndex < documentPageCounts.size();
+         ++documentIndex)
     {
-        for (int pageIndex = 0; pageIndex < document->pageCount(); ++pageIndex)
+        const int documentEndPage =
+            firstIncludedGlobalPage + documentPageCounts[documentIndex];
+        if (firstPage <= documentEndPage)
         {
-            ++firstIncludedGlobalPage;
-            if (
-                firstIncludedGlobalPage >= firstPage
-                && firstIncludedGlobalPage <= lastPage
-                )
-            {
-                firstIncludedDocument = document.get();
-                firstIncludedDocumentPage = pageIndex;
-                break;
-            }
-        }
-
-        if (firstIncludedDocument)
-        {
+            firstIncludedDocumentIndex = documentIndex;
+            firstIncludedDocumentPage = firstPage - firstIncludedGlobalPage - 1;
             break;
         }
+        firstIncludedGlobalPage = documentEndPage;
     }
 
-    if (firstIncludedDocument)
+    QPageLayout::Orientation firstOrientation = request.pageOrientation;
+    auto firstIncludedDocument = LoadedBatchDocument::load(
+        request.documentPaths.at(
+            static_cast<qsizetype>(firstIncludedDocumentIndex)
+            ),
+        BatchDocumentPass::Orientation,
+        hooks
+        );
+    if (!firstIncludedDocument
+        || firstIncludedDocument->document()->pageCount()
+            != documentPageCounts[firstIncludedDocumentIndex])
     {
-        printer.setPageOrientation(
-            pageOrientation(
-                firstIncludedDocument,
-                firstIncludedDocumentPage,
-                request.pageOrientation
-                )
+        return failed(
+            QObject::tr("Unable to open \"%1\" for printing.")
+                .arg(documentDisplayName(request.documentPaths.at(
+                    static_cast<qsizetype>(firstIncludedDocumentIndex)
+                    )))
+            );
+    }
+    firstOrientation = pageOrientation(
+        firstIncludedDocument->document(),
+        firstIncludedDocumentPage,
+        request.pageOrientation
+        );
+
+    printer.setPageOrientation(firstOrientation);
+    if (hooks.firstPageOrientationSelected)
+    {
+        hooks.firstPageOrientationSelected(
+            request.documentPaths.at(
+                static_cast<qsizetype>(firstIncludedDocumentIndex)
+                ),
+            firstIncludedDocumentPage,
+            firstPage,
+            firstOrientation
             );
     }
 
@@ -817,15 +926,46 @@ Result printPdfDocuments(
             );
     }
 
-    int globalPage = 0;
+    int globalPageBase = 0;
     int printedPageCount = 0;
-    for (const std::unique_ptr<QPdfDocument>& document : documents)
+    for (std::size_t documentIndex = 0;
+         documentIndex < documentPageCounts.size();
+         ++documentIndex)
     {
-        for (int pageIndex = 0;
-             pageIndex < document->pageCount();
-             ++pageIndex)
+        const int documentPageCount = documentPageCounts[documentIndex];
+        const int documentFirstGlobalPage = globalPageBase + 1;
+        const int documentLastGlobalPage =
+            globalPageBase + documentPageCount;
+        if (documentLastGlobalPage < firstPage
+            || documentFirstGlobalPage > lastPage)
         {
-            ++globalPage;
+            globalPageBase += documentPageCount;
+            continue;
+        }
+
+        const QString& documentPath = request.documentPaths.at(
+            static_cast<qsizetype>(documentIndex)
+            );
+        auto document = documentIndex == firstIncludedDocumentIndex
+            ? std::move(firstIncludedDocument)
+            : LoadedBatchDocument::load(
+                documentPath,
+                BatchDocumentPass::Rendering,
+                hooks
+                );
+        if (!document
+            || document->document()->pageCount() != documentPageCount)
+        {
+            painter.end();
+            return failed(
+                QObject::tr("Unable to open \"%1\" for printing.")
+                    .arg(documentDisplayName(documentPath))
+                );
+        }
+
+        for (int pageIndex = 0; pageIndex < documentPageCount; ++pageIndex)
+        {
+            const int globalPage = globalPageBase + pageIndex + 1;
             if (globalPage < firstPage || globalPage > lastPage)
             {
                 continue;
@@ -835,7 +975,7 @@ Result printPdfDocuments(
             {
                 printer.setPageOrientation(
                     pageOrientation(
-                        document.get(),
+                        document->document(),
                         pageIndex,
                         request.pageOrientation
                         )
@@ -850,8 +990,12 @@ Result printPdfDocuments(
                 }
             }
 
+            if (hooks.pageWillPrint)
+            {
+                hooks.pageWillPrint(documentPath, pageIndex, globalPage);
+            }
             if (!renderPdfPageToPrinter(
-                    document.get(),
+                    document->document(),
                     pageIndex,
                     printer,
                     painter,
@@ -866,6 +1010,7 @@ Result printPdfDocuments(
 
             ++printedPageCount;
         }
+        globalPageBase += documentPageCount;
     }
 
     if (printedPageCount == 0)
@@ -892,4 +1037,5 @@ Result printPdfDocuments(
 
     return sent();
 }
+} // namespace Internal
 }

@@ -11,7 +11,10 @@
 namespace ClassMngr::Next::Ui
 {
 
-PageHostResult<void> registerDocumentViewerPage(PageHost& pageHost)
+PageHostResult<void> registerDocumentViewerPage(
+    PageHost& pageHost,
+    Platform::PdfPrintOperationFactory printOperationFactory
+    )
 {
     const auto pageId = PageId::fromString(
         QString::fromLatin1(kDocumentViewerPageKey)
@@ -30,10 +33,17 @@ PageHostResult<void> registerDocumentViewerPage(PageHost& pageHost)
         .label = QCoreApplication::translate("MenuBuilder", "Documents"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
-        .factory = [](const PageContext& context)
+        .factory = [printOperationFactory = std::move(printOperationFactory)](
+            const PageContext& context
+            )
             -> PageOperationResult<std::unique_ptr<Page>> {
             std::unique_ptr<Page> page =
-                std::make_unique<DocumentViewerPage>(context);
+                std::make_unique<DocumentViewerPage>(
+                    context,
+                    nullptr,
+                    Platform::makeQtPdfViewerSession,
+                    printOperationFactory
+                    );
             return std::move(page);
         },
         .resourcePolicy = PageResourcePolicy::PageScoped,

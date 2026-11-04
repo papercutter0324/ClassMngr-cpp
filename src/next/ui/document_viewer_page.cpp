@@ -2,7 +2,6 @@
 
 #include "next/application/document_catalog_use_case.h"
 #include "next/ui/dialog_geometry_preferences_callbacks.h"
-#include "ui/shared/printing/pdf_print_service.h"
 
 #include <QCheckBox>
 #include <QCoreApplication>
@@ -100,15 +99,31 @@ QString documentErrorText(const QPdfDocument::Error error)
     return viewerText("Unknown error.");
 }
 
+std::unique_ptr<Platform::PdfPrintOperation> makePrintOperation(
+    Platform::PdfPrintOperationFactory& factory
+    )
+{
+    if (factory)
+    {
+        if (auto operation = factory())
+        {
+            return operation;
+        }
+    }
+    return Platform::makeQtPdfPrintOperation();
+}
+
 }  // namespace
 
 DocumentViewerPage::DocumentViewerPage(
     const PageContext& context,
     QWidget* parent,
-    Platform::PdfViewerSessionFactory sessionFactory
+    Platform::PdfViewerSessionFactory sessionFactory,
+    Platform::PdfPrintOperationFactory printOperationFactory
     )
     : Page(context, parent)
     , m_pdfSession(sessionFactory(context.resourceLoader(), this))
+    , m_printOperationFactory(std::move(printOperationFactory))
     , m_exportResourcePort(context.resourceLoader())
 {
     buildUi();
@@ -391,13 +406,6 @@ void DocumentViewerPage::setLifecycleObserver(LifecycleObserver observer)
 void DocumentViewerPage::setCloseWaiterForTesting(CloseWaiter waiter)
 {
     m_pdfSession->setCloseWaiterForTesting(std::move(waiter));
-}
-
-void DocumentViewerPage::setPrintActionHandlerForTesting(
-    PrintActionHandler handler
-    )
-{
-    m_printActionHandler = std::move(handler);
 }
 
 void DocumentViewerPage::setSaveCopyActionsForTesting(
@@ -883,25 +891,19 @@ void DocumentViewerPage::printSelectedDocument()
     const auto geometryPreferences =
         settingsManagerDialogGeometryPreferencesCallbacks();
     m_pdfSession->withReadyDocument([&](QPdfDocument* document) {
-        if (m_printActionHandler)
-        {
-            m_printActionHandler(
-                document,
-                documentName,
-                pageIndex,
-                geometryPreferences
-                );
-            return;
-        }
-        const auto result = PdfPrintService::printPdfDocument({
+        auto printOperation = makePrintOperation(m_printOperationFactory);
+        const auto result = printOperation->printReadyDocument({
             .parent = this,
             .document = document,
             .documentPath = documentName,
             .currentPageIndex = pageIndex,
             .dialogTitle = viewerText("Print File"),
-            .dialogGeometryPreferences = geometryPreferences
+            .dialogGeometryPreferences = {
+                geometryPreferences.read,
+                geometryPreferences.write
+            }
         });
-        if (result.status == PdfPrintService::Status::Failed)
+        if (result.status == Platform::PdfPrintStatus::Failed)
         {
             QMessageBox::warning(this, viewerText("Print File"), result.message);
         }

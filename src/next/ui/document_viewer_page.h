@@ -2,6 +2,7 @@
 
 #include "next/application/document_catalog_projection.h"
 #include "next/application/document_content_session.h"
+#include "next/platform/pdf_print_operation.h"
 #include "next/platform/pdf_viewer_session.h"
 #include "next/platform/document_export_resource_port.h"
 #include "next/ui/page.h"
@@ -41,12 +42,6 @@ public:
         const QString& phase
         )>;
     using CloseWaiter = std::function<bool()>;
-    using PrintActionHandler = std::function<void(
-        QPdfDocument* document,
-        const QString& documentName,
-        int pageIndex,
-        const DialogGeometryPreferencesCallbacks& geometryPreferences
-        )>;
     using SaveCopyRequestProvider = std::function<
         std::optional<SaveCopyRequest>(
             const QString& suggestedPath,
@@ -58,7 +53,9 @@ public:
         const PageContext& context,
         QWidget* parent = nullptr,
         Platform::PdfViewerSessionFactory sessionFactory =
-            Platform::makeQtPdfViewerSession
+            Platform::makeQtPdfViewerSession,
+        Platform::PdfPrintOperationFactory printOperationFactory =
+            Platform::makeQtPdfPrintOperation
         );
     ~DocumentViewerPage() override;
 
@@ -91,7 +88,6 @@ public:
 
     void setLifecycleObserver(LifecycleObserver observer);
     void setCloseWaiterForTesting(CloseWaiter waiter);
-    void setPrintActionHandlerForTesting(PrintActionHandler handler);
     void setSaveCopyActionsForTesting(
         SaveCopyRequestProvider requestProvider,
         OpenSavedCopyHandler openHandler
@@ -125,6 +121,7 @@ private:
         ) const;
 
     std::unique_ptr<Platform::PdfViewerSession> m_pdfSession;
+    Platform::PdfPrintOperationFactory m_printOperationFactory;
     Platform::DocumentExportResourcePort m_exportResourcePort;
     Application::DocumentContentSession m_contentSession;
     std::optional<Application::DocumentContentSession::SessionToken>
@@ -150,7 +147,6 @@ private:
     quint64 m_requestSequence = 0;
     bool m_releasing = false;
     LifecycleObserver m_lifecycleObserver;
-    PrintActionHandler m_printActionHandler;
     SaveCopyRequestProvider m_saveCopyRequestProvider;
     OpenSavedCopyHandler m_openSavedCopyHandler;
 };

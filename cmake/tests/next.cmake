@@ -62,6 +62,7 @@ add_executable(ClassMngrNextDocumentViewerTests
     src/next/ui/document_catalog_navigation.cpp
     src/next/ui/document_viewer_page.cpp
     src/next/platform/qt_pdf_viewer_session.cpp
+    src/next/platform/qt_pdf_print_operation_adapter.cpp
     src/next/ui/document_viewer_route.cpp
     src/next/ui/navigation_model.cpp
     src/next/ui/page_host.cpp

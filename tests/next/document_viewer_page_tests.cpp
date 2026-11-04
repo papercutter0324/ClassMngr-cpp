@@ -1,5 +1,6 @@
 #include "next/application/document_catalog_projection.h"
 #include "next/platform/resource_document_catalog_port.h"
+#include "next/platform/pdf_print_operation.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_diagnostics.h"
 #include "next/resources/resource_loader.h"
@@ -9,6 +10,7 @@
 #include "next/ui/document_viewer_route.h"
 #include "preferences_test_ports.h"
 #include "font_family_availability_test_support.h"
+#include "ui/shared/printing/pdf_print_service_internal.h"
 
 #include <QCoreApplication>
 #include <QApplication>
@@ -21,6 +23,7 @@
 #include <QPdfDocument>
 #include <QPdfPageNavigator>
 #include <QPdfView>
+#include <QPointer>
 #include <QPushButton>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -127,7 +130,9 @@ struct ViewerHarness final
 {
     explicit ViewerHarness(
         Resources::ResourceLoader& loader,
-        Application::DocumentCatalogProjection documentProjection
+        Application::DocumentCatalogProjection documentProjection,
+        Platform::PdfPrintOperationFactory printOperationFactory =
+            Platform::makeQtPdfPrintOperation
         )
         : projection(std::move(documentProjection))
     {
@@ -138,7 +143,10 @@ struct ViewerHarness final
             Test::emptyFontFamilyAvailabilityPort()
             );
         shell->setDocumentCatalogProjection(projection);
-        const auto registered = registerDocumentViewerPage(shell->pageHost());
+        const auto registered = registerDocumentViewerPage(
+            shell->pageHost(),
+            std::move(printOperationFactory)
+            );
         if (!registered)
         {
             qFatal("Could not register viewer page: %s",
@@ -190,6 +198,62 @@ struct ViewerHarness final
     Test::MemoryPreferences preferences;
     Application::DocumentCatalogProjection projection;
     std::unique_ptr<ApplicationShell> shell;
+};
+
+struct PrintOperationCalls final
+{
+    int singleDocumentCalls = 0;
+    int batchCalls = 0;
+    QPointer<QPdfDocument> borrowedDocument;
+    QString singleDocumentPath;
+    QString singleDialogTitle;
+    int singlePageIndex = -1;
+    bool hasGeometryRead = false;
+    bool hasGeometryWrite = false;
+    std::function<void(QPdfDocument*)> duringSinglePrint;
+};
+
+class RecordingPdfPrintOperation final : public Platform::PdfPrintOperation
+{
+public:
+    explicit RecordingPdfPrintOperation(std::shared_ptr<PrintOperationCalls> calls)
+        : m_calls(std::move(calls))
+    {
+    }
+
+    Platform::PdfPrintResult printReadyDocument(
+        const Platform::ReadyPdfPrintRequest& request
+        ) override
+    {
+        ++m_calls->singleDocumentCalls;
+        m_calls->borrowedDocument = request.document;
+        m_calls->singleDocumentPath = request.documentPath;
+        m_calls->singleDialogTitle = request.dialogTitle;
+        m_calls->singlePageIndex = request.currentPageIndex;
+        m_calls->hasGeometryRead = static_cast<bool>(
+            request.dialogGeometryPreferences.read
+            );
+        m_calls->hasGeometryWrite = static_cast<bool>(
+            request.dialogGeometryPreferences.write
+            );
+        if (m_calls->duringSinglePrint)
+        {
+            m_calls->duringSinglePrint(request.document);
+        }
+        return {Platform::PdfPrintStatus::Sent, QStringLiteral("Print job sent.")};
+    }
+
+    Platform::PdfPrintResult printLocalDocuments(
+        const Platform::LocalPdfBatchPrintRequest& request
+        ) override
+    {
+        Q_UNUSED(request);
+        ++m_calls->batchCalls;
+        return {Platform::PdfPrintStatus::Sent, QStringLiteral("Print job sent.")};
+    }
+
+private:
+    std::shared_ptr<PrintOperationCalls> m_calls;
 };
 
 bool copyFile(const QString& source, const QString& target);
@@ -295,7 +359,9 @@ private slots:
     void unknownAndCorruptSelectionsShowErrorsWithoutRetainingContent();
     void pdfAndOfficeExportsAreAtomicFileBackedCopies();
     void copyCancellationAndCorruptSourcePreserveTheDestination();
-    void openAfterSaveAndPrintCapabilityUseDeterministicHandlers();
+    void selectedDocumentPrintUsesInjectedBorrowedOperation();
+    void batchPrintPreservesOrderRangeAndOneDocumentLifetime();
+    void batchPrintValidatesBeforeDialogAndReleasesOnCancellation();
     void koreanViewerCloseButtonUsesSharedActionTranslation();
     void pageNavigationClampsToTheOneBasedPageRange();
     void zoomEntryButtonsAndFitModesUpdateThePdfView();
@@ -751,9 +817,16 @@ void DocumentViewerPageTests::copyCancellationAndCorruptSourcePreserveTheDestina
 }
 
 void DocumentViewerPageTests::
-openAfterSaveAndPrintCapabilityUseDeterministicHandlers()
+selectedDocumentPrintUsesInjectedBorrowedOperation()
 {
-    ViewerHarness harness(*m_loader, m_projection);
+    const auto printCalls = std::make_shared<PrintOperationCalls>();
+    ViewerHarness harness(
+        *m_loader,
+        m_projection,
+        [printCalls] {
+            return std::make_unique<RecordingPdfPrintOperation>(printCalls);
+        }
+        );
     const Domain::DocumentId printableId = id("document_guides_lesson_planning");
     harness.select(printableId);
     auto* const viewer = harness.viewer();
@@ -768,24 +841,26 @@ openAfterSaveAndPrintCapabilityUseDeterministicHandlers()
         );
     QVERIFY(printButton);
     QVERIFY(exportButton);
-    int printCalls = 0;
-    viewer->setPrintActionHandlerForTesting(
-        [&printCalls](
-            QPdfDocument* document,
-            const QString&,
-            int pageIndex,
-            const DialogGeometryPreferencesCallbacks& geometryPreferences
-            ) {
-            QVERIFY(document);
-            QCOMPARE(document->status(), QPdfDocument::Status::Ready);
-            QCOMPARE(pageIndex, 0);
-            QVERIFY(geometryPreferences.read);
-            QVERIFY(geometryPreferences.write);
-            ++printCalls;
-        }
-        );
+    bool reentrantReleaseRejected = false;
+    printCalls->duringSinglePrint = [&](QPdfDocument* document) {
+        QVERIFY(document);
+        QCOMPARE(document->status(), QPdfDocument::Status::Ready);
+        reentrantReleaseRejected = !viewer->closeDocument();
+        QVERIFY(viewer->hasActivePrimaryStream());
+        QVERIFY(viewer->hasLoadedDocument());
+    };
     printButton->click();
-    QCOMPARE(printCalls, 1);
+    QCOMPARE(printCalls->singleDocumentCalls, 1);
+    QCOMPARE(printCalls->batchCalls, 0);
+    QVERIFY(reentrantReleaseRejected);
+    QVERIFY(printCalls->borrowedDocument);
+    QVERIFY(viewer->hasLoadedDocument());
+    QVERIFY(viewer->hasActivePrimaryStream());
+    QVERIFY(!printCalls->singleDocumentPath.isEmpty());
+    QCOMPARE(printCalls->singlePageIndex, 0);
+    QCOMPARE(printCalls->singleDialogTitle, QStringLiteral("Print File"));
+    QVERIFY(printCalls->hasGeometryRead);
+    QVERIFY(printCalls->hasGeometryWrite);
 
     QTemporaryDir output;
     QVERIFY(output.isValid());
@@ -827,8 +902,202 @@ openAfterSaveAndPrintCapabilityUseDeterministicHandlers()
     QTRY_VERIFY_WITH_TIMEOUT(viewer->hasLoadedDocument(), 10000);
     QVERIFY(!viewer->canPrint());
     printButton->click();
-    QCOMPARE(printCalls, 1);
+    QCOMPARE(printCalls->singleDocumentCalls, 1);
+    QCOMPARE(printCalls->batchCalls, 0);
     QVERIFY(viewer->closeDocument());
+}
+
+void DocumentViewerPageTests::batchPrintPreservesOrderRangeAndOneDocumentLifetime()
+{
+    QTemporaryDir output;
+    QVERIFY(output.isValid());
+    const QString firstPath = QDir(resourceRoot()).filePath(
+        QStringLiteral("assets/documents/Guides/DYB Lesson Planning Guide.pdf")
+        );
+    const QString secondPath = QDir(resourceRoot()).filePath(
+        QStringLiteral("assets/documents/Guides/PowerPoint Keyboard Shortcuts.pdf")
+        );
+    QPdfDocument firstDocument;
+    QPdfDocument secondDocument;
+    QCOMPARE(firstDocument.load(firstPath), QPdfDocument::Error::None);
+    QCOMPARE(secondDocument.load(secondPath), QPdfDocument::Error::None);
+    QVERIFY(firstDocument.pageCount() > 0);
+    QVERIFY(secondDocument.pageCount() > 0);
+
+    const int firstCount = firstDocument.pageCount();
+    const int secondCount = secondDocument.pageCount();
+    const QSizeF firstSecondDocumentPageSize = secondDocument.pagePointSize(0);
+    const QPageLayout::Orientation expectedFirstOrientation =
+        firstSecondDocumentPageSize.width() > firstSecondDocumentPageSize.height()
+            ? QPageLayout::Landscape
+            : QPageLayout::Portrait;
+    firstDocument.close();
+    secondDocument.close();
+    const QStringList sourcePaths{firstPath, secondPath, firstPath};
+    const QString outputPath = output.filePath(QStringLiteral("batch-output.pdf"));
+    QStringList loadOrder;
+    QStringList printedPages;
+    int activeDocuments = 0;
+    int maximumActiveDocuments = 0;
+    int dialogCalls = 0;
+    bool dialogSawReleasedDocuments = false;
+    QString orientationPath;
+    int orientationPage = -1;
+    int orientationGlobalPage = -1;
+    QPageLayout::Orientation selectedFirstOrientation = QPageLayout::Portrait;
+
+    PdfPrintService::Internal::BatchPrintTestHooks hooks;
+    hooks.documentLoadStarted = [&](
+        const QString& path,
+        PdfPrintService::Internal::BatchDocumentPass pass
+        ) {
+        loadOrder.append(path + QLatin1Char(':') + QString::number(static_cast<int>(pass)));
+    };
+    hooks.documentReady = [&](const QString&, auto, int pageCount) {
+        QVERIFY(pageCount > 0);
+        ++activeDocuments;
+        maximumActiveDocuments = std::max(maximumActiveDocuments, activeDocuments);
+    };
+    hooks.documentReleased = [&](const QString&, auto, bool wasReady) {
+        if (wasReady)
+        {
+            --activeDocuments;
+        }
+    };
+    hooks.executeDialog = [&](QPrintDialog&, QPrinter& printer) -> int {
+        ++dialogCalls;
+        dialogSawReleasedDocuments = activeDocuments == 0;
+        printer.setOutputFormat(QPrinter::PdfFormat);
+        printer.setOutputFileName(outputPath);
+        printer.setPrintRange(QPrinter::PageRange);
+        printer.setFromTo(firstCount + 1, firstCount + secondCount + 1);
+        return static_cast<int>(QDialog::Accepted);
+    };
+    hooks.firstPageOrientationSelected = [&](
+        const QString& path,
+        int pageIndex,
+        int globalPage,
+        QPageLayout::Orientation orientation
+        ) {
+        orientationPath = path;
+        orientationPage = pageIndex;
+        orientationGlobalPage = globalPage;
+        selectedFirstOrientation = orientation;
+    };
+    hooks.pageWillPrint = [&](const QString& path, int pageIndex, int globalPage) {
+        printedPages.append(QStringLiteral("%1:%2:%3")
+            .arg(path)
+            .arg(pageIndex)
+            .arg(globalPage));
+    };
+
+    const auto result = PdfPrintService::Internal::printPdfDocumentsWithHooks(
+        {
+            .documentPaths = sourcePaths,
+            .dialogTitle = QStringLiteral("Batch test"),
+            .fitToPage = true
+        },
+        hooks
+        );
+    QCOMPARE(result.status, PdfPrintService::Status::Sent);
+    QCOMPARE(dialogCalls, 1);
+    QVERIFY(dialogSawReleasedDocuments);
+    QCOMPARE(activeDocuments, 0);
+    QCOMPARE(maximumActiveDocuments, 1);
+    QCOMPARE(orientationPath, secondPath);
+    QCOMPARE(orientationPage, 0);
+    QCOMPARE(orientationGlobalPage, firstCount + 1);
+    QCOMPARE(selectedFirstOrientation, expectedFirstOrientation);
+    QCOMPARE(loadOrder, QStringList({
+        firstPath + QStringLiteral(":0"),
+        secondPath + QStringLiteral(":0"),
+        firstPath + QStringLiteral(":0"),
+        secondPath + QStringLiteral(":1"),
+        firstPath + QStringLiteral(":2")
+    }));
+    QCOMPARE(printedPages.size(), secondCount + 1);
+    for (int pageIndex = 0; pageIndex < secondCount; ++pageIndex)
+    {
+        QCOMPARE(printedPages.at(pageIndex), QStringLiteral("%1:%2:%3")
+            .arg(secondPath)
+            .arg(pageIndex)
+            .arg(firstCount + pageIndex + 1));
+    }
+    QCOMPARE(printedPages.constLast(), QStringLiteral("%1:0:%2")
+        .arg(firstPath)
+        .arg(firstCount + secondCount + 1));
+
+    QPdfDocument printedDocument;
+    QCOMPARE(printedDocument.load(outputPath), QPdfDocument::Error::None);
+    QCOMPARE(printedDocument.pageCount(), secondCount + 1);
+}
+
+void DocumentViewerPageTests::batchPrintValidatesBeforeDialogAndReleasesOnCancellation()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString goodPath = QDir(resourceRoot()).filePath(
+        QStringLiteral("assets/documents/Guides/DYB Lesson Planning Guide.pdf")
+        );
+    const QString missingPath = temporary.filePath(QStringLiteral("missing.pdf"));
+    const QString corruptPath = temporary.filePath(QStringLiteral("corrupt.pdf"));
+    QFile corrupt(corruptPath);
+    QVERIFY(corrupt.open(QIODevice::WriteOnly));
+    QCOMPARE(corrupt.write("not a pdf"), qint64(9));
+    corrupt.close();
+
+    int dialogCalls = 0;
+    int activeDocuments = 0;
+    bool dialogSawReleasedDocuments = false;
+    QStringList startedPaths;
+    PdfPrintService::Internal::BatchPrintTestHooks hooks;
+    hooks.documentLoadStarted = [&](const QString& path, auto) {
+        startedPaths.append(path);
+    };
+    hooks.documentReady = [&](const QString&, auto, int) { ++activeDocuments; };
+    hooks.documentReleased = [&](const QString&, auto, bool wasReady) {
+        if (wasReady)
+        {
+            --activeDocuments;
+        }
+    };
+    hooks.executeDialog = [&](QPrintDialog&, QPrinter&) -> int {
+        ++dialogCalls;
+        dialogSawReleasedDocuments = activeDocuments == 0;
+        return static_cast<int>(QDialog::Rejected);
+    };
+
+    const auto missing = PdfPrintService::Internal::printPdfDocumentsWithHooks(
+        {.documentPaths = {goodPath, missingPath}},
+        hooks
+        );
+    QCOMPARE(missing.status, PdfPrintService::Status::Failed);
+    QVERIFY(missing.message.contains(QStringLiteral("missing.pdf")));
+    QCOMPARE(dialogCalls, 0);
+    QCOMPARE(activeDocuments, 0);
+    QCOMPARE(startedPaths, QStringList({goodPath, missingPath}));
+
+    startedPaths.clear();
+    const auto invalid = PdfPrintService::Internal::printPdfDocumentsWithHooks(
+        {.documentPaths = {goodPath, corruptPath}},
+        hooks
+        );
+    QCOMPARE(invalid.status, PdfPrintService::Status::Failed);
+    QVERIFY(invalid.message.contains(QStringLiteral("corrupt.pdf")));
+    QCOMPARE(dialogCalls, 0);
+    QCOMPARE(activeDocuments, 0);
+    QCOMPARE(startedPaths, QStringList({goodPath, corruptPath}));
+
+    startedPaths.clear();
+    const auto canceled = PdfPrintService::Internal::printPdfDocumentsWithHooks(
+        {.documentPaths = {goodPath}},
+        hooks
+        );
+    QCOMPARE(canceled.status, PdfPrintService::Status::Canceled);
+    QCOMPARE(dialogCalls, 1);
+    QCOMPARE(activeDocuments, 0);
+    QVERIFY(dialogSawReleasedDocuments);
+    QCOMPARE(startedPaths, QStringList({goodPath}));
 }
 
 void DocumentViewerPageTests::koreanViewerCloseButtonUsesSharedActionTranslation()

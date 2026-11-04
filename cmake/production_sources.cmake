@@ -682,6 +682,7 @@ set(CLASSMNGR_QT_PDF_PRINT_SOURCES
     "src/ui/shared/printing/pdf_print_dialog_widgets.cpp"
     "src/ui/shared/printing/pdf_print_service.cpp"
     "src/ui/shared/printing/pdf_print_service.h"
+    "src/ui/shared/printing/pdf_print_service_internal.h"
 )
 
 set(CLASSMNGR_SCHEDULE_PRINT_SOURCES
@@ -791,6 +792,8 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/platform/qt_pdf_viewer_session.cpp"
     "src/next/platform/qt_pdf_viewer_session.h"
     "src/next/platform/pdf_viewer_session.h"
+    "src/next/platform/qt_pdf_print_operation_adapter.cpp"
+    "src/next/platform/pdf_print_operation.h"
     "src/next/ui/document_viewer_page.cpp"
     "src/next/ui/document_viewer_page.h"
     "src/next/ui/document_viewer_route.cpp"
