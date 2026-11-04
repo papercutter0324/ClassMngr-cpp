@@ -217,6 +217,115 @@ jobs:
         shell: pwsh
         run: choco install innosetup --yes --no-progress
 
+      - name: Check out pinned innoextract source
+        uses: actions/checkout@v6
+        with:
+          repository: dscharrer/innoextract
+          ref: 376a13e7c41cc5528b6088d0dd16ec1b323a8d37
+          path: build/ci-tools/innoextract-source
+          persist-credentials: false
+
+      - name: Check out pinned vcpkg dependency ports
+        uses: actions/checkout@v6
+        with:
+          repository: microsoft/vcpkg
+          ref: 9eec002df1cd109f8f104cd966a763daf9751489
+          path: build/ci-tools/vcpkg
+          persist-credentials: false
+
+      - name: Build pinned innoextract for payload inspection
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $innoextractCommit = "376a13e7c41cc5528b6088d0dd16ec1b323a8d37"
+          $vcpkgCommit = "9eec002df1cd109f8f104cd966a763daf9751489"
+          $toolRoot = Join-Path $env:GITHUB_WORKSPACE "build\ci-tools"
+          $innoextractSource = Join-Path $toolRoot "innoextract-source"
+          $vcpkgRoot = Join-Path $toolRoot "vcpkg"
+          foreach ($source in @(
+            @{ Path = $innoextractSource; Commit = $innoextractCommit; Name = "innoextract" },
+            @{ Path = $vcpkgRoot; Commit = $vcpkgCommit; Name = "vcpkg" }
+          )) {
+            $actualCommit = (git -C $source.Path rev-parse HEAD).Trim()
+            if ($LASTEXITCODE -ne 0 -or $actualCommit -ne $source.Commit) {
+              throw "$($source.Name) checkout resolved to '$actualCommit', expected '$($source.Commit)'."
+            }
+          }
+
+          $innoextractCmake = Join-Path $innoextractSource "CMakeLists.txt"
+          $cmakeContent = [System.IO.File]::ReadAllText($innoextractCmake)
+          $boostBlockPattern = '(?m)^find_package\(Boost REQUIRED COMPONENTS\r?\n\tiostreams\r?\n\tfilesystem\r?\n\tdate_time\r?\n\tsystem\r?\n\tprogram_options\r?\n\)'
+          $boostBlockMatches = [regex]::Matches($cmakeContent, $boostBlockPattern)
+          if ($boostBlockMatches.Count -ne 1) {
+            throw "Expected exactly one unpatched Boost component block in pinned innoextract CMakeLists.txt; found $($boostBlockMatches.Count)."
+          }
+          $boostReplacement = @(
+            'set(BOOST_REQUIRED_COMPONENTS',
+            "`tiostreams",
+            "`tfilesystem",
+            "`tdate_time",
+            "`tprogram_options",
+            ')',
+            'find_package(Boost REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})',
+            'if(Boost_MAJOR_VERSION EQUAL 1 AND Boost_MINOR_VERSION LESS 69)',
+            "`tlist(APPEND BOOST_REQUIRED_COMPONENTS system)",
+            'find_package(Boost REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})',
+            'endif()'
+          ) -join "`n"
+          $boostBlock = $boostBlockMatches[0]
+          $cmakeContent = $cmakeContent.Substring(0, $boostBlock.Index) +
+            $boostReplacement +
+            $cmakeContent.Substring($boostBlock.Index + $boostBlock.Length)
+          [System.IO.File]::WriteAllText(
+            $innoextractCmake,
+            $cmakeContent,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+
+          & (Join-Path $vcpkgRoot "bootstrap-vcpkg.bat") -disableMetrics
+          if ($LASTEXITCODE -ne 0) { throw "Pinned vcpkg bootstrap failed with exit code $LASTEXITCODE." }
+          $vcpkgExe = Join-Path $vcpkgRoot "vcpkg.exe"
+          & $vcpkgExe install `
+            "boost-date-time:x64-windows-static" `
+            "boost-filesystem:x64-windows-static" `
+            "boost-iostreams:x64-windows-static" `
+            "boost-program-options:x64-windows-static" `
+            "boost-system:x64-windows-static" `
+            "bzip2:x64-windows-static" `
+            "liblzma:x64-windows-static" `
+            "zlib:x64-windows-static"
+          if ($LASTEXITCODE -ne 0) { throw "Pinned innoextract dependency installation failed with exit code $LASTEXITCODE." }
+
+          $buildRoot = Join-Path $toolRoot "innoextract-build"
+          $installRoot = Join-Path $toolRoot "innoextract-install"
+          $toolchainFile = Join-Path $vcpkgRoot "scripts\buildsystems\vcpkg.cmake"
+          & cmake -S $innoextractSource -B $buildRoot `
+            -G "Visual Studio 17 2022" -A x64 `
+            "-DCMAKE_TOOLCHAIN_FILE=$toolchainFile" `
+            "-DVCPKG_TARGET_TRIPLET=x64-windows-static" `
+            "-DCMAKE_INSTALL_PREFIX=$installRoot" `
+            -DSTRICT_USE=ON `
+            -DWITH_CONV=win32 `
+            -DUSE_LZMA=ON `
+            -DUSE_STATIC_LIBS=ON `
+            -DBUILD_TESTS=OFF
+          if ($LASTEXITCODE -ne 0) { throw "Pinned innoextract CMake configuration failed with exit code $LASTEXITCODE." }
+          & cmake --build $buildRoot --config Release --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw "Pinned innoextract build failed with exit code $LASTEXITCODE." }
+          & cmake --install $buildRoot --config Release
+          if ($LASTEXITCODE -ne 0) { throw "Pinned innoextract install failed with exit code $LASTEXITCODE." }
+
+          $innoextractExe = Join-Path $installRoot "bin\innoextract.exe"
+          if (-not (Test-Path -LiteralPath $innoextractExe -PathType Leaf)) {
+            throw "Pinned innoextract build did not produce $innoextractExe."
+          }
+          $versionOutput = (& $innoextractExe --version --silent 2>&1 | Out-String).Trim()
+          if ($LASTEXITCODE -ne 0 -or $versionOutput -ne "1.10-dev + $($innoextractCommit.Substring(0, 7))") {
+            throw "Pinned innoextract version check failed: '$versionOutput'."
+          }
+          if (-not $env:GITHUB_ENV) { throw "GITHUB_ENV is unavailable; cannot expose innoextract to the verifier." }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CLASSMNGR_INNOEXTRACT_PATH=$innoextractExe" -Encoding utf8
+
       - name: Stage signed Visual C++ redistributable
         shell: pwsh
         run: |
@@ -729,7 +838,8 @@ jobs:
           & "scripts\installer\verify_next_package.ps1" `
             -Architecture $architecture `
             -ProjectVersion $Matches[1] `
-            -QtVersion $env:QT_VERSION
+            -QtVersion $env:QT_VERSION `
+            -InnoExtractPath $env:CLASSMNGR_INNOEXTRACT_PATH
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v7

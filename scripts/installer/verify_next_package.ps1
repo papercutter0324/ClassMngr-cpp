@@ -8,7 +8,10 @@ param(
     [string]$ProjectVersion,
 
     [Parameter(Mandatory = $true)]
-    [string]$QtVersion
+    [string]$QtVersion,
+
+    [Parameter(Mandatory = $true)]
+    [string]$InnoExtractPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -40,21 +43,19 @@ if ($actualHash -ne $expectedHash) {
     throw "Final installer SHA-256 $actualHash does not match sidecar $expectedHash."
 }
 
-$sevenZipCommand = Get-Command 7z.exe -ErrorAction SilentlyContinue
-$sevenZipPath = if ($sevenZipCommand) { $sevenZipCommand.Source } else { $null }
-if (-not $sevenZipPath) {
-    foreach ($candidate in @(
-        (Join-Path $env:ProgramFiles "7-Zip\7z.exe"),
-        (Join-Path ${env:ProgramFiles(x86)} "7-Zip\7z.exe")
-    )) {
-        if (Test-Path -LiteralPath $candidate) {
-            $sevenZipPath = $candidate
-            break
-        }
-    }
+$expectedInnoExtractCommit = "376a13e7c41cc5528b6088d0dd16ec1b323a8d37"
+$expectedInnoExtractVersion = "1.10-dev + $($expectedInnoExtractCommit.Substring(0, 7))"
+if (-not (Test-Path -LiteralPath $InnoExtractPath -PathType Leaf)) {
+    throw "The pinned innoextract executable was not found at $InnoExtractPath."
 }
-if (-not $sevenZipPath) {
-    throw "7-Zip is required to inspect the final Inno Setup payload on both Windows architectures."
+$InnoExtractPath = (Resolve-Path -LiteralPath $InnoExtractPath).Path
+$innoExtractVersionOutput = (& $InnoExtractPath --version --silent 2>&1 | Out-String).Trim()
+$innoExtractVersionExitCode = $LASTEXITCODE
+if ($innoExtractVersionExitCode -ne 0) {
+    throw "Pinned innoextract returned exit code $innoExtractVersionExitCode while reporting its version: $innoExtractVersionOutput"
+}
+if ($innoExtractVersionOutput -ne $expectedInnoExtractVersion) {
+    throw "Expected innoextract built from $expectedInnoExtractCommit ($expectedInnoExtractVersion); found '$innoExtractVersionOutput'."
 }
 
 $verifierPath = Join-Path $repoRoot "scripts\verify_next_package.py"
@@ -89,6 +90,9 @@ function Invoke-PackageVerifier {
 
 $runSuffix = "$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
 $extractRoot = Join-Path $env:RUNNER_TEMP "ClassMngr-$Architecture-inno-payload-$runSuffix"
+if (Test-Path -LiteralPath $extractRoot) {
+    throw "The run-specific Inno payload directory already exists: $extractRoot."
+}
 New-Item -ItemType Directory -Path $extractRoot | Out-Null
 $installRoot = $null
 $smokeRoot = $null
@@ -100,11 +104,13 @@ $oldForceStderr = $null
 $environmentChanged = $false
 
 try {
-    $extractLog = Join-Path $extractRoot "7z-extract.log"
-    & $sevenZipPath x $installer.FullName "-o$extractRoot" -y -bb0 *> $extractLog
-    if ($LASTEXITCODE -ne 0) {
+    $extractLog = Join-Path $extractRoot "innoextract.log"
+    & $InnoExtractPath --no-extract-unknown --test --extract --silent `
+        --output-dir $extractRoot -- $installer.FullName *> $extractLog
+    $extractExitCode = $LASTEXITCODE
+    if ($extractExitCode -ne 0) {
         $details = Get-Content -LiteralPath $extractLog -Raw -ErrorAction SilentlyContinue
-        throw "7-Zip could not extract the Inno Setup payload: $details"
+        throw "Pinned innoextract failed to extract the Inno Setup payload (exit code $extractExitCode): $details"
     }
 
     if (-not (Test-Path -LiteralPath $stagedRedistributable -PathType Leaf)) {
