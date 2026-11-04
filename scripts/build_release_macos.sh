@@ -178,11 +178,55 @@ hdiutil verify "${DISK_IMAGE}"
 
 DMG_MOUNT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/classmngr-release-dmg.XXXXXX")"
 DMG_MOUNTED=0
+detach_dmg_mount() {
+    local max_attempts="${1:-1}"
+    local attempt
+    local status
+
+    for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+        if hdiutil detach "${DMG_MOUNT_DIR}"; then
+            DMG_MOUNTED=0
+            return 0
+        else
+            status=$?
+        fi
+
+        echo "hdiutil detach attempt ${attempt}/${max_attempts} failed with exit status ${status}." >&2
+        if (( status != 16 || attempt == max_attempts )); then
+            return "${status}"
+        fi
+
+        if sleep "${attempt}"; then
+            :
+        else
+            status=$?
+            echo "Unable to wait before retrying hdiutil detach (exit status ${status})." >&2
+            return "${status}"
+        fi
+    done
+}
+
 cleanup_dmg_mount() {
+    local exit_status=$?
+    local detach_status
+
+    trap - EXIT
     if (( DMG_MOUNTED )); then
-        hdiutil detach "${DMG_MOUNT_DIR}" -quiet || true
+        if detach_dmg_mount; then
+            :
+        else
+            detach_status=$?
+            echo "Warning: final hdiutil detach attempt failed with exit status ${detach_status}." >&2
+        fi
     fi
-    rmdir "${DMG_MOUNT_DIR}" 2>/dev/null || true
+    if (( ! DMG_MOUNTED )); then
+        if rmdir "${DMG_MOUNT_DIR}"; then
+            :
+        else
+            echo "Warning: unable to remove temporary disk-image mount directory: ${DMG_MOUNT_DIR}" >&2
+        fi
+    fi
+    exit "${exit_status}"
 }
 trap cleanup_dmg_mount EXIT
 hdiutil attach "${DISK_IMAGE}" \
@@ -206,10 +250,16 @@ python "${PROJECT_ROOT}/scripts/verify_next_package.py" verify \
     --architecture universal \
     --version "${PROJECT_VERSION}" \
     --qt-version "${QT_VERSION}"
-hdiutil detach "${DMG_MOUNT_DIR}" -quiet
-DMG_MOUNTED=0
-rmdir "${DMG_MOUNT_DIR}"
-trap - EXIT
+if detach_dmg_mount 3; then
+    if rmdir "${DMG_MOUNT_DIR}"; then
+        trap - EXIT
+    else
+        echo "Warning: unable to remove temporary disk-image mount directory: ${DMG_MOUNT_DIR}" >&2
+    fi
+else
+    DETACH_STATUS=$?
+    echo "Warning: verified package disk image remains mounted after detach attempt(s) (exit status ${DETACH_STATUS}); continuing to checksum generation. The EXIT trap will make one final detach attempt." >&2
+fi
 
 HASH="$(shasum -a 256 "${DISK_IMAGE}" | awk '{print $1}')"
 printf '%s  %s\n' \

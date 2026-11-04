@@ -628,6 +628,22 @@ Static review and `git diff --check` passed. This Darwin host has no Linux
 release preset or `QT_LINUX_PREFIX`, so local Linux configure was unavailable;
 Linux package configure/build CI remains pending. Phase 9 remains gated.
 
+### 8.7.8 — macOS disk-image cleanup
+
+After mounted-package verification succeeds, the release script retries
+`hdiutil detach` status 16 up to three times and reports failures. If detach or
+temporary-directory removal still fails, it warns and continues to checksum
+generation; the EXIT trap retains one final best-effort detach attempt.
+Verification failures remain fatal and preserve their exit status.
+
+`bash -n` and `git diff --check` passed. A temporary harness covered retry
+success, persistent detach failures, other detach errors, verification failure,
+and directory-removal failure; checksum generation continued after cleanup
+failures, and verification failure retained its original status. It did not
+exercise a real macOS mount. The prior package run's exit 16 is still inferred
+to be a busy detach, and macOS package CI remains pending. Phase 9 remains
+gated.
+
 ## Objective
 
 

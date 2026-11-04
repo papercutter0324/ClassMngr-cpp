@@ -9,8 +9,8 @@
 2. **8.7.7 Linux CMake link-group cycle — implemented; static review accepted; package CI pending:**
    preserve the Runtime/WorkspaceStore RESCAN group while removing
    reverse interface edges through shared Sub Prep and Calendar UI targets.
-3. **8.7.8 macOS disk-image cleanup — solution mapped; implementation
-   pending:** handle a busy read-only verification mount without losing package
+3. **8.7.8 macOS disk-image cleanup — implemented; static acceptance passed; package CI pending:**
+   handle a busy read-only verification mount without losing package
    validation, checksum generation, or artifact upload.
 
 ## Phase 9 — Next Batch (20 candidates; gated on Phase 8 package CI)
