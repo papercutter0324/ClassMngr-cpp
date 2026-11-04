@@ -444,6 +444,37 @@ fixtures fail at `QTcpServer::listen()` before reaching tested behavior. Real
 installer/folder actions were not invoked, and the Linux branch was not
 runtime-tested on macOS.
 
+### 8.4.2 — Next application packaging (accepted)
+
+The Next app package replaces contents under the existing app/update asset
+identities; it does not add a separate resource update asset. Independent
+package verifier tests passed 11/11, covering manifest tree/hash integrity,
+resource catalog and direct hashes, Qt plugin/QML runtime, licenses/SBOMs, and
+absence of Legacy `.rcc` payloads. The macOS staged package verifier covered
+885 paths, 466 SHA-256 checks, 187 direct resource hashes, and 21 license/SBOM
+files. Its universal executable contains arm64+x86_64 with minimum macOS 14.4;
+ad-hoc `codesign --verify --deep --strict` passed. The
+`ClassMngr-0.19.0-macos-universal.dmg` in
+`/private/tmp/classmngr-phase842-build/dmg-retry/` was created and verified
+with `hdiutil` and its checksum sidecar (SHA-256
+`a5e34bfc3c8d6d7f36706fb9e3cf2254f7b5608a098210246118f78f6396ee8c`). The
+package executor mounted it read-only, verified the mounted tree, and detached.
+An independent mount was not repeated: `hdiutil` attach failed with “Device
+not configured”; the tester confirmed counts from the executor's prior report.
+
+Windows release wiring stages the matching VS 2022 v143 redist outside the app
+package, validates Authenticode and PE architecture, passes it to Inno, and
+checks the embedded hash. The Inno helper checks x64 and ARM64 payloads, x64
+installed Next startup stages, artifacts, and checksums. Eight synthetic CMake
+ON/OFF x64/ARM64 cases passed; actual Windows PowerShell, Inno, and runtime
+execution remain CI-only. Linux workflow extracts and verifies the final
+tarball; YAML and extracted shell syntax passed, while package execution remains
+CI-only.
+
+Publisher tag/version, asset filenames, and the eight-entry/eight-checksum
+contract are unchanged. The macOS signature is ad hoc; no Developer ID signing
+or notarization was performed.
+
 ## Objective
 
 

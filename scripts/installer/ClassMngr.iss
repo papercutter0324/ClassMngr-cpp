@@ -28,6 +28,11 @@
   #define SourceDir "..\..\dist\ClassMngr-windows-" + AppArch
 #endif
 
+#define VCRedistSource GetEnv("CLASSMNGR_INSTALLER_VC_REDIST_PATH")
+#if VCRedistSource == ""
+  #error CLASSMNGR_INSTALLER_VC_REDIST_PATH must point to the staged architecture-matching redistributable.
+#endif
+
 #define OutputDir GetEnv("CLASSMNGR_INSTALLER_OUTPUT_DIR")
 #if OutputDir == ""
   #define OutputDir "..\..\dist"
@@ -96,6 +101,9 @@ Type: files; Name: "{app}\dxil.dll"
 Type: files; Name: "{app}\opengl32sw.dll"
 Type: files; Name: "{app}\qt.conf"
 Type: files; Name: "{app}\vc_redist.*.exe"
+Type: files; Name: "{app}\*.rcc"
+Type: filesandordirs; Name: "{app}\resource-packs"
+Type: filesandordirs; Name: "{app}\resources\resource-packs"
 
 [Files]
 #if SignToolName != ""
@@ -104,7 +112,7 @@ Source: "{#SourceDir}\ClassMngr.exe"; DestDir: "{app}"; Flags: ignoreversion sig
 Source: "{#SourceDir}\ClassMngr.exe"; DestDir: "{app}"; Flags: ignoreversion
 #endif
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Excludes: "ClassMngr.exe,{#VCRedistFileName}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#SourceDir}\{#VCRedistFileName}"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "{#VCRedistSource}"; DestDir: "{tmp}"; Flags: deleteafterinstall
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\ClassMngr.exe"; Tasks: startmenuentry

@@ -1,5 +1,13 @@
 include_guard(GLOBAL)
 
+option(CLASSMNGR_NEXT_RELEASE_PACKAGE
+    "Package ClassMngrNext under the existing ClassMngr product identity"
+    OFF
+)
+if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+endif()
+
 option(CLASSMNGR_RUN_WINDEPLOYQT "Run windeployqt after building ClassMngr on Windows." OFF)
 
 set(CLASSMNGR_WINDOWS_ARM64 OFF)
@@ -136,7 +144,7 @@ if(WIN32)
     )
     string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
         "    NO_TRANSLATIONS\n"
-        "    INCLUDE_PLUGINS qoffscreen\n"
+        "    INCLUDE_PLUGINS qoffscreen qsqlite\n"
         "    EXCLUDE_PLUGIN_TYPES qmltooling\n"
         "    EXCLUDE_PLUGINS qsqlibase qsqlmimer qsqloci qsqlodbc qsqlpsql\n"
     )

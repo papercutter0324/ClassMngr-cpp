@@ -155,17 +155,94 @@ endif()
 
 qt_finalize_target(ClassMngrNext)
 
+if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+    install(TARGETS ClassMngrNext
+        BUNDLE DESTINATION .
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        COMPONENT Runtime
+    )
+
+    if(APPLE)
+        set(_classmngr_next_deploy_executable
+            "$<TARGET_FILE_NAME:ClassMngrNext>.app"
+        )
+    else()
+        set(_classmngr_next_deploy_executable
+            "$<TARGET_FILE:ClassMngrNext>"
+        )
+    endif()
+
+    set(_classmngr_next_deploy_postamble "")
+    set(_classmngr_next_deploy_plugin_options
+        "INCLUDE_PLUGINS qsqlite qoffscreen"
+    )
+    if(APPLE)
+        set(_classmngr_next_deploy_postamble [=[
+set(CLASSMNGR_NEXT_BAD_SQL_DRIVERS
+    libqsqlmimer.dylib
+    libqsqlodbc.dylib
+    libqsqlpsql.dylib
+)
+set(CLASSMNGR_NEXT_APP_SQL_DRIVER_DIR
+    "${QT_DEPLOY_PREFIX}/ClassMngr.app/Contents/PlugIns/sqldrivers"
+)
+foreach(driver IN LISTS CLASSMNGR_NEXT_BAD_SQL_DRIVERS)
+    if(EXISTS "${CLASSMNGR_NEXT_APP_SQL_DRIVER_DIR}/${driver}")
+        file(REMOVE "${CLASSMNGR_NEXT_APP_SQL_DRIVER_DIR}/${driver}")
+    endif()
+endforeach()
+]=])
+    endif()
+    if(WIN32)
+        set(_classmngr_next_deploy_plugin_options "")
+        set(_classmngr_next_deploy_postamble
+            "qt_deploy_translations(\n"
+            "    LOCALES en ko\n"
+            "${CLASSMNGR_QT_DEPLOY_TRANSLATION_OPTIONS}"
+            ")\n"
+        )
+    endif()
+
+    qt6_generate_deploy_script(
+        TARGET ClassMngrNext
+        OUTPUT_SCRIPT classmngr_next_deploy_script
+        CONTENT "
+${CLASSMNGR_QT_DEPLOY_PREAMBLE}
+qt_deploy_qml_imports(TARGET ClassMngrNext PLUGINS_FOUND plugins_found)
+qt_deploy_runtime_dependencies(
+    EXECUTABLE \"${_classmngr_next_deploy_executable}\"
+    ADDITIONAL_MODULES \${plugins_found}
+    GENERATE_QT_CONF
+    ${_classmngr_next_deploy_plugin_options}
+${CLASSMNGR_QT_DEPLOY_OPTIONS}
+)
+${_classmngr_next_deploy_postamble}
+"
+    )
+    install(SCRIPT "${classmngr_next_deploy_script}" COMPONENT Runtime)
+endif()
+
 add_custom_target(ClassMngrNextResourcePackage
     DEPENDS
         ClassMngrNextResourceCatalog
         ${CLASSMNGR_NEXT_TRANSLATION_OUTPUTS}
 )
 add_dependencies(ClassMngrNextResourcePackage ClassMngrNext)
+if(CLASSMNGR_NEXT_RELEASE_PACKAGE AND TARGET ClassMngrInstaller)
+    add_dependencies(ClassMngrInstaller ClassMngrNextResourcePackage)
+endif()
 
 if(APPLE)
     set(CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT
         "ClassMngr.app/Contents/Resources"
     )
+    if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+        # Keep canonical Next resources separate from Qt's deployed `qml` tree.
+        set(CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT
+            "ClassMngr.app/Contents/Resources/ClassMngr"
+        )
+    endif()
 elseif(WIN32)
     set(CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT
         "${CMAKE_INSTALL_BINDIR}/resources"
@@ -193,9 +270,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 if(APPLE)
-    # The executable lives in ClassMngr.app/Contents/MacOS while the resource
-    # component is installed in ClassMngr.app/Contents/Resources.
-    set(CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT "../Resources")
+    # The executable lives in ClassMngr.app/Contents/MacOS. Release staging
+    # keeps canonical resources under Resources/ClassMngr beside Qt's qml tree.
+    if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+        set(CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT "../Resources/ClassMngr")
+    else()
+        set(CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT "../Resources")
+    endif()
 elseif(WIN32)
     # The Windows preset installs the executable into CMAKE_INSTALL_BINDIR and
     # the resource component into the sibling `resources` directory.
@@ -245,18 +326,119 @@ target_compile_definitions(ClassMngrNextResources
         "CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT=\"${CLASSMNGR_NEXT_RESOURCE_RELATIVE_ROOT}\""
 )
 
+if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+    set(_classmngr_next_resource_install_exclusions)
+else()
+    set(_classmngr_next_resource_install_exclusions EXCLUDE_FROM_ALL)
+endif()
+
 install(DIRECTORY "${CLASSMNGR_NEXT_RESOURCE_ROOT}/assets/"
     DESTINATION "${CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT}/assets"
     COMPONENT ClassMngrNextResources
-    EXCLUDE_FROM_ALL
+    ${_classmngr_next_resource_install_exclusions}
 )
 install(FILES ${CLASSMNGR_NEXT_TRANSLATION_OUTPUTS}
     DESTINATION "${CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT}/assets/translations"
     COMPONENT ClassMngrNextResources
-    EXCLUDE_FROM_ALL
+    ${_classmngr_next_resource_install_exclusions}
 )
 install(FILES "${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
     DESTINATION "${CLASSMNGR_NEXT_RESOURCE_INSTALL_ROOT}"
     COMPONENT ClassMngrNextResources
-    EXCLUDE_FROM_ALL
+    ${_classmngr_next_resource_install_exclusions}
 )
+
+if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+    if(APPLE)
+        set(CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT
+            "ClassMngr.app/Contents/Resources/licenses"
+        )
+    else()
+        set(CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT "licenses")
+    endif()
+
+    install(FILES
+        "${PROJECT_SOURCE_DIR}/licenses/fonts/inter/LICENSE.txt"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/fonts/inter"
+        COMPONENT Runtime
+    )
+    install(FILES
+        "${PROJECT_SOURCE_DIR}/licenses/fonts/pretendard/LICENSE.txt"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/fonts/pretendard"
+        COMPONENT Runtime
+    )
+    install(FILES
+        "${PROJECT_SOURCE_DIR}/licenses/fonts/just-another-hand/LICENSE.txt"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/fonts/just-another-hand"
+        COMPONENT Runtime
+    )
+    install(FILES
+        "${PROJECT_SOURCE_DIR}/licenses/fonts/caveat/LICENSE.txt"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/fonts/caveat"
+        COMPONENT Runtime
+    )
+    install(FILES
+        "${PROJECT_SOURCE_DIR}/licenses/fonts/dancing-script/LICENSE.txt"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/fonts/dancing-script"
+        COMPONENT Runtime
+    )
+    install(FILES
+        "${PROJECT_SOURCE_DIR}/licenses/fonts/great-vibes/LICENSE.txt"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/fonts/great-vibes"
+        COMPONENT Runtime
+    )
+    install(FILES
+        "${PROJECT_SOURCE_DIR}/licenses/qt-eventcalendar/BSD-3-Clause.txt"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/qt-eventcalendar"
+        COMPONENT Runtime
+    )
+
+    get_filename_component(_classmngr_next_qt_version_root
+        "${QT6_INSTALL_PREFIX}" DIRECTORY
+    )
+    get_filename_component(_classmngr_next_qt_install_root
+        "${_classmngr_next_qt_version_root}" DIRECTORY
+    )
+    set(_classmngr_next_qt_license_dir
+        "${_classmngr_next_qt_install_root}/Licenses"
+    )
+    foreach(_classmngr_next_qt_license IN ITEMS LICENSE LICENSE.GPL3-EXCEPT)
+        if(NOT EXISTS "${_classmngr_next_qt_license_dir}/${_classmngr_next_qt_license}")
+            message(FATAL_ERROR
+                "Required Qt runtime license file was not found: "
+                "${_classmngr_next_qt_license_dir}/${_classmngr_next_qt_license}"
+            )
+        endif()
+    endforeach()
+
+    install(FILES "${_classmngr_next_qt_license_dir}/LICENSE"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/qt"
+        RENAME Qt-LICENSE.txt
+        COMPONENT Runtime
+    )
+    install(FILES "${_classmngr_next_qt_license_dir}/LICENSE.GPL3-EXCEPT"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/qt"
+        RENAME Qt-GPL3-EXCEPTION.txt
+        COMPONENT Runtime
+    )
+
+    set(_classmngr_next_qt_sbom_root "${QT6_INSTALL_PREFIX}/sbom")
+    foreach(_classmngr_next_qt_component IN ITEMS qtbase qtdeclarative qtpdf)
+        file(GLOB _classmngr_next_component_sbom
+            LIST_DIRECTORIES FALSE
+            "${_classmngr_next_qt_sbom_root}/${_classmngr_next_qt_component}-*.spdx"
+            "${_classmngr_next_qt_sbom_root}/${_classmngr_next_qt_component}-*.spdx.json"
+            "${_classmngr_next_qt_sbom_root}/${_classmngr_next_qt_component}-*.cdx.json"
+        )
+        if(NOT _classmngr_next_component_sbom)
+            message(FATAL_ERROR
+                "Required Qt module SBOM was not found for ${_classmngr_next_qt_component} "
+                "under ${_classmngr_next_qt_sbom_root}"
+            )
+        endif()
+        install(FILES ${_classmngr_next_component_sbom}
+            DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/qt/sbom"
+            COMPONENT Runtime
+        )
+    endforeach()
+endif()

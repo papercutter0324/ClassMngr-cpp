@@ -6,6 +6,9 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 QT_PREFIX="${QT_MACOS_PREFIX:-}"
 PRESET="macos-clang-release"
 TARGET_MINIMUM_VERSION="14.4"
+QT_VERSION="${QT_VERSION:-6.12.0}"
+BUILD_DIR="${CLASSMNGR_RELEASE_BUILD_DIR:-${PROJECT_ROOT}/build/macos-clang-release-next-package}"
+OUTPUT_DIR="${CLASSMNGR_RELEASE_OUTPUT_DIR:-${BUILD_DIR}/release-output}"
 
 if [[ -z "${QT_PREFIX}" ]]; then
     echo "QT_MACOS_PREFIX must point at a Qt macOS installation." >&2
@@ -42,19 +45,31 @@ echo "Building ${PRESET} installer"
 cmake \
     --fresh \
     --preset "${PRESET}" \
+    -B "${BUILD_DIR}" \
     "-DCMAKE_PREFIX_PATH=${QT_PREFIX}" \
+    -DCLASSMNGR_NEXT_RELEASE_PACKAGE=ON \
+    "-DCLASSMNGR_INSTALLER_OUTPUT_DIR=${OUTPUT_DIR}" \
     "$@"
-cmake --build --preset "${PRESET}-installer"
+cmake --build "${BUILD_DIR}" --target ClassMngrInstaller --parallel
 
-STAGED_APP="${PROJECT_ROOT}/build/${PRESET}/installer-stage/ClassMngr.app"
+STAGED_APP="${BUILD_DIR}/installer-stage/ClassMngr.app"
 APP_EXECUTABLE="${STAGED_APP}/Contents/MacOS/ClassMngr"
-DISK_IMAGE="${PROJECT_ROOT}/dist/ClassMngr-${PROJECT_VERSION}-macos-universal.dmg"
-CHECKSUMS="${PROJECT_ROOT}/dist/checksums-macos.txt"
+DISK_IMAGE="${OUTPUT_DIR}/ClassMngr-${PROJECT_VERSION}-macos-universal.dmg"
+CHECKSUMS="${OUTPUT_DIR}/checksums-macos.txt"
+PACKAGE_REPORT="${BUILD_DIR}/reports/macos-next-package.json"
 
 if [[ ! -f "${APP_EXECUTABLE}" ]]; then
     echo "Expected staged app was not created: ${STAGED_APP}" >&2
     exit 1
 fi
+
+python "${PROJECT_ROOT}/scripts/verify_next_package.py" verify \
+    --package-root "${BUILD_DIR}/installer-stage" \
+    --platform macos \
+    --architecture universal \
+    --version "${PROJECT_VERSION}" \
+    --qt-version "${QT_VERSION}" \
+    --report "${PACKAGE_REPORT}"
 
 ARCHITECTURES="$(lipo -archs "${APP_EXECUTABLE}")"
 if [[ " ${ARCHITECTURES} " != *" arm64 "* \
@@ -148,6 +163,11 @@ for driver in libqsqlmimer.dylib libqsqlodbc.dylib libqsqlpsql.dylib; do
 done
 
 codesign --verify --deep --strict "${STAGED_APP}"
+SIGNATURE_DETAILS="$(codesign -dv --verbose=4 "${STAGED_APP}" 2>&1)"
+if [[ "${SIGNATURE_DETAILS}" != *"Signature=adhoc"* ]]; then
+    echo "Expected an ad-hoc macOS app signature; no Developer ID signature was requested." >&2
+    exit 1
+fi
 
 if [[ ! -f "${DISK_IMAGE}" ]]; then
     echo "Expected disk image was not created: ${DISK_IMAGE}" >&2
@@ -155,6 +175,41 @@ if [[ ! -f "${DISK_IMAGE}" ]]; then
 fi
 
 hdiutil verify "${DISK_IMAGE}"
+
+DMG_MOUNT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/classmngr-release-dmg.XXXXXX")"
+DMG_MOUNTED=0
+cleanup_dmg_mount() {
+    if (( DMG_MOUNTED )); then
+        hdiutil detach "${DMG_MOUNT_DIR}" -quiet || true
+    fi
+    rmdir "${DMG_MOUNT_DIR}" 2>/dev/null || true
+}
+trap cleanup_dmg_mount EXIT
+hdiutil attach "${DISK_IMAGE}" \
+    -readonly \
+    -nobrowse \
+    -quiet \
+    -mountpoint "${DMG_MOUNT_DIR}"
+DMG_MOUNTED=1
+if [[ ! -d "${DMG_MOUNT_DIR}/ClassMngr.app" ]]; then
+    echo "The disk image does not contain ClassMngr.app at its root." >&2
+    exit 1
+fi
+if [[ ! -L "${DMG_MOUNT_DIR}/Applications" \
+    || "$(readlink "${DMG_MOUNT_DIR}/Applications")" != "/Applications" ]]; then
+    echo "The disk image is missing its /Applications shortcut." >&2
+    exit 1
+fi
+python "${PROJECT_ROOT}/scripts/verify_next_package.py" verify \
+    --package-root "${DMG_MOUNT_DIR}" \
+    --platform macos \
+    --architecture universal \
+    --version "${PROJECT_VERSION}" \
+    --qt-version "${QT_VERSION}"
+hdiutil detach "${DMG_MOUNT_DIR}" -quiet
+DMG_MOUNTED=0
+rmdir "${DMG_MOUNT_DIR}"
+trap - EXIT
 
 HASH="$(shasum -a 256 "${DISK_IMAGE}" | awk '{print $1}')"
 printf '%s  %s\n' \
@@ -165,3 +220,4 @@ printf '%s  %s\n' \
 echo "macOS release artifacts:"
 echo "  ${DISK_IMAGE}"
 echo "  ${CHECKSUMS}"
+echo "  ${PACKAGE_REPORT}"

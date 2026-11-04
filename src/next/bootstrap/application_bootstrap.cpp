@@ -115,6 +115,10 @@
 
 #include <cstdio>
 #include <cstring>
+
+#ifndef CLASSMNGR_NEXT_PRODUCT_NAME
+#define CLASSMNGR_NEXT_PRODUCT_NAME "ClassMngrNext"
+#endif
 #include <algorithm>
 #include <exception>
 #include <optional>
@@ -1093,23 +1097,23 @@ int ApplicationBootstrap::run(int argc, char* argv[])
     if (argc == 2 && argv != nullptr && argv[1] != nullptr
         && std::strcmp(argv[1], "--version") == 0)
     {
-        std::printf("ClassMngrNext launch version=%s\n", CLASSMNGR_NEXT_VERSION);
+        std::printf("%s launch version=%s\n", CLASSMNGR_NEXT_PRODUCT_NAME, CLASSMNGR_NEXT_VERSION);
         return 0;
     }
 
     QApplication application(argc, argv);
-    QApplication::setApplicationName(QStringLiteral("ClassMngrNext"));
+    QApplication::setApplicationName(QStringLiteral(CLASSMNGR_NEXT_PRODUCT_NAME));
     QApplication::setApplicationVersion(QStringLiteral(CLASSMNGR_NEXT_VERSION));
 
     ApplicationBootstrap bootstrap(application);
     const Application::StartupResult startup = bootstrap.start();
     if (!startup.succeeded())
     {
-        std::fprintf(stderr, "ClassMngrNext could not start its initial experience.\n");
+        std::fprintf(stderr, "%s could not start its initial experience.\n", CLASSMNGR_NEXT_PRODUCT_NAME);
         return 1;
     }
 
-    std::printf("ClassMngrNext launch version=%s\n", CLASSMNGR_NEXT_VERSION);
+    std::printf("%s launch version=%s\n", CLASSMNGR_NEXT_PRODUCT_NAME, CLASSMNGR_NEXT_VERSION);
     const int eventLoopExitCode = application.exec();
     static_cast<void>(bootstrap.shutdown());
     return eventLoopExitCode;

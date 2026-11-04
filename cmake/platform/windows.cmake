@@ -24,6 +24,35 @@ if(WIN32)
     set(CLASSMNGR_INSTALLER_SCRIPT
         "${PROJECT_SOURCE_DIR}/scripts/installer/ClassMngr.iss"
     )
+    set(CLASSMNGR_INSTALLER_VC_REDIST_FILE "" CACHE FILEPATH
+        "Architecture-matching VS 2022 v143 redistributable staged outside the app package"
+    )
+
+    if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+        set(_classmngr_windows_target_dependencies)
+        set(_classmngr_windows_verification_commands
+            COMMAND "${Python3_EXECUTABLE}"
+                "${PROJECT_SOURCE_DIR}/scripts/verify_next_package.py"
+                create
+                --package-root "${CLASSMNGR_INSTALLER_SOURCE_DIR}"
+                --platform windows
+                --architecture "${CLASSMNGR_INSTALLER_ARCH}"
+                --version "${PROJECT_VERSION}"
+                --qt-version "${Qt6_VERSION}"
+            COMMAND "${Python3_EXECUTABLE}"
+                "${PROJECT_SOURCE_DIR}/scripts/verify_next_package.py"
+                verify
+                --package-root "${CLASSMNGR_INSTALLER_SOURCE_DIR}"
+                --platform windows
+                --architecture "${CLASSMNGR_INSTALLER_ARCH}"
+                --version "${PROJECT_VERSION}"
+                --qt-version "${Qt6_VERSION}"
+                --report "${CMAKE_BINARY_DIR}/reports/windows-${CLASSMNGR_INSTALLER_ARCH}-next-package.json"
+        )
+    else()
+        set(_classmngr_windows_target_dependencies ClassMngr)
+        set(_classmngr_windows_verification_commands)
+    endif()
 
     find_program(CLASSMNGR_ISCC_EXECUTABLE
         NAMES ISCC.exe iscc.exe iscc
@@ -39,6 +68,33 @@ if(WIN32)
     )
 
     if(CLASSMNGR_ISCC_EXECUTABLE)
+        set(_classmngr_expected_vc_redist_file
+            "vc_redist.${CLASSMNGR_INSTALLER_ARCH}.exe"
+        )
+        if(CLASSMNGR_INSTALLER_VC_REDIST_FILE)
+            get_filename_component(_classmngr_vc_redist_filename
+                "${CLASSMNGR_INSTALLER_VC_REDIST_FILE}" NAME
+            )
+            if(NOT EXISTS "${CLASSMNGR_INSTALLER_VC_REDIST_FILE}"
+                OR IS_DIRECTORY "${CLASSMNGR_INSTALLER_VC_REDIST_FILE}")
+                message(FATAL_ERROR
+                    "Set CLASSMNGR_INSTALLER_VC_REDIST_FILE to the staged, signed "
+                    "${_classmngr_expected_vc_redist_file} from the VS 2022 v143 redist tree."
+                )
+            endif()
+            if(NOT _classmngr_vc_redist_filename STREQUAL _classmngr_expected_vc_redist_file)
+                message(FATAL_ERROR
+                    "CLASSMNGR_INSTALLER_VC_REDIST_FILE must name "
+                    "${_classmngr_expected_vc_redist_file}; found ${_classmngr_vc_redist_filename}."
+                )
+            endif()
+        elseif(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+            message(FATAL_ERROR
+                "Set CLASSMNGR_INSTALLER_VC_REDIST_FILE to the staged, signed "
+                "${_classmngr_expected_vc_redist_file} from the VS 2022 v143 redist tree."
+            )
+        endif()
+
         add_custom_target(ClassMngrInstaller
             COMMAND
                 "${CMAKE_COMMAND}" -E rm -rf
@@ -48,16 +104,18 @@ if(WIN32)
                 --install "${CMAKE_BINARY_DIR}"
                 --config "$<CONFIG>"
                 --prefix "${CLASSMNGR_INSTALLER_SOURCE_DIR}"
+            ${_classmngr_windows_verification_commands}
             COMMAND
                 "${CMAKE_COMMAND}" -E env
                 "CLASSMNGR_APP_VERSION=${PROJECT_VERSION}"
                 "CLASSMNGR_INSTALLER_ARCH=${CLASSMNGR_INSTALLER_ARCH}"
                 "CLASSMNGR_INSTALLER_SOURCE_DIR=${CLASSMNGR_INSTALLER_SOURCE_DIR}"
+                "CLASSMNGR_INSTALLER_VC_REDIST_PATH=${CLASSMNGR_INSTALLER_VC_REDIST_FILE}"
                 "CLASSMNGR_INSTALLER_OUTPUT_DIR=${CLASSMNGR_INSTALLER_OUTPUT_DIR}"
                 "CLASSMNGR_INSTALLER_SIGN_TOOL=${CLASSMNGR_INSTALLER_SIGN_TOOL}"
                 "${CLASSMNGR_ISCC_EXECUTABLE}"
                 "${CLASSMNGR_INSTALLER_SCRIPT}"
-            DEPENDS ClassMngr
+            DEPENDS ${_classmngr_windows_target_dependencies}
             BYPRODUCTS
                 "${CLASSMNGR_INSTALLER_OUTPUT_DIR}/ClassMngr-${PROJECT_VERSION}-win-${CLASSMNGR_INSTALLER_ARCH}.exe"
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"

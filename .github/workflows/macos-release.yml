@@ -19,10 +19,10 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
-      - "scripts/check_resource_pack_references.py"
+      - "scripts/test_verify_next_package.py"
+      - "scripts/verify_next_package.py"
       - "scripts/build_release_macos.sh"
-      - "scripts/deploy_release_macos.sh"
-      - "scripts/write_build_report.py"
+      - "scripts/phase4/audit_resource_stage.py"
       - "src/**"
       - "third_party/sqlite/**"
   pull_request:
@@ -33,10 +33,10 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
-      - "scripts/check_resource_pack_references.py"
+      - "scripts/test_verify_next_package.py"
+      - "scripts/verify_next_package.py"
       - "scripts/build_release_macos.sh"
-      - "scripts/deploy_release_macos.sh"
-      - "scripts/write_build_report.py"
+      - "scripts/phase4/audit_resource_stage.py"
       - "src/**"
       - "third_party/sqlite/**"
 
@@ -94,30 +94,21 @@ jobs:
 
       - name: Build and verify disk image
         shell: bash
+        env:
+          CLASSMNGR_RELEASE_BUILD_DIR: ${{ github.workspace }}/build/macos-next-release-package
+          CLASSMNGR_RELEASE_OUTPUT_DIR: ${{ github.workspace }}/build/macos-next-release-package/release-output
         run: bash scripts/build_release_macos.sh
 
-      - name: Check packaged resource references and write build report
+      - name: Run focused package verifier tests
         shell: bash
-        run: |
-          build_dir="build/macos-clang-release"
-          package_root="build/macos-clang-release/installer-stage/ClassMngr.app"
-          python scripts/check_resource_pack_references.py \
-            --repository . \
-            --build-dir "${build_dir}" \
-            --pack-directory "${package_root}/Contents/Resources/resource-packs" \
-            --output artifacts/build-reports/macos-universal-resource-pack-references.json
-          python scripts/write_build_report.py \
-            --package-root "${package_root}" \
-            --build-dir "${build_dir}" \
-            --output artifacts/build-reports/macos-universal.json
+        run: python scripts/test_verify_next_package.py
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v7
         with:
           name: ClassMngr-macos-universal
           path: |
-            dist/ClassMngr-*-macos-universal.dmg
-            dist/checksums-macos.txt
-            artifacts/build-reports/macos-universal.json
-            artifacts/build-reports/macos-universal-resource-pack-references.json
+            build/macos-next-release-package/release-output/ClassMngr-*-macos-universal.dmg
+            build/macos-next-release-package/release-output/checksums-macos.txt
+            build/macos-next-release-package/reports/macos-next-package.json
           if-no-files-found: error

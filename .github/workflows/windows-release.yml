@@ -35,10 +35,11 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
-      - "scripts/check_resource_pack_references.py"
+      - "scripts/test_verify_next_package.py"
+      - "scripts/verify_next_package.py"
+      - "scripts/phase4/audit_resource_stage.py"
       - "scripts/installer/**"
       - "scripts/phase7/**"
-      - "scripts/write_build_report.py"
       - "src/**"
       - "tests/phase7_next_memory_fixture_tests.cpp"
       - "third_party/sqlite/**"
@@ -50,10 +51,11 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
-      - "scripts/check_resource_pack_references.py"
+      - "scripts/test_verify_next_package.py"
+      - "scripts/verify_next_package.py"
+      - "scripts/phase4/audit_resource_stage.py"
       - "scripts/installer/**"
       - "scripts/phase7/**"
-      - "scripts/write_build_report.py"
       - "src/**"
       - "tests/phase7_next_memory_fixture_tests.cpp"
       - "third_party/sqlite/**"
@@ -215,6 +217,105 @@ jobs:
         shell: pwsh
         run: choco install innosetup --yes --no-progress
 
+      - name: Stage signed Visual C++ redistributable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $architecture = "${{ matrix.architecture }}"
+          $redistributableName = "vc_redist.$architecture.exe"
+          $expectedMachine = if ($architecture -eq "arm64") { "ARM64" } else { "x64" }
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path -LiteralPath $vswhere -PathType Leaf)) {
+            throw "vswhere.exe was not found at $vswhere."
+          }
+          $vsInstallationPath = (& $vswhere -latest -products '*' -version "[17.0,18.0)" -property installationPath |
+            Where-Object { $_ } | Select-Object -First 1)
+          if ($LASTEXITCODE -ne 0 -or -not $vsInstallationPath) {
+            throw "Unable to locate a Visual Studio 2022 installation with vswhere."
+          }
+
+          $redistRoot = Join-Path $vsInstallationPath "VC\Redist\MSVC\v143"
+          if (-not (Test-Path -LiteralPath $redistRoot -PathType Container)) {
+            throw "The VS 2022 v143 redistributable tree was not found: $redistRoot"
+          }
+          $candidates = @(Get-ChildItem -LiteralPath $redistRoot -Recurse -File -Filter $redistributableName)
+          if ($candidates.Count -eq 0) {
+            throw "No $redistributableName was found under the VS 2022 v143 tree $redistRoot."
+          }
+
+          $versionedCandidates = @(
+            foreach ($candidate in $candidates) {
+              $versionText = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($candidate.FullName).FileVersion
+              try {
+                $fileVersion = [version]$versionText
+              }
+              catch {
+                throw "Unable to parse file version '$versionText' for $($candidate.FullName)."
+              }
+              [pscustomobject]@{
+                File = $candidate
+                Version = $fileVersion
+                VersionText = $versionText
+              }
+            }
+          )
+          $selected = $versionedCandidates |
+            Sort-Object -Property @{ Expression = "Version"; Descending = $true }, `
+              @{ Expression = { $_.File.FullName }; Descending = $false } |
+            Select-Object -First 1
+
+          $signature = Get-AuthenticodeSignature -LiteralPath $selected.File.FullName
+          if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid) {
+            throw "The selected $redistributableName Authenticode signature is '$($signature.Status)': $($selected.File.FullName)"
+          }
+          if ($signature.SignerCertificate.Subject -notmatch '(^|,\s*)CN=Microsoft Corporation(,|$)') {
+            throw "The selected $redistributableName is not signed by Microsoft Corporation: $($signature.SignerCertificate.Subject)"
+          }
+
+          $dumpbin = Get-ChildItem -Path (Join-Path $vsInstallationPath "VC\Tools\MSVC\*\bin\Hostx64\x64\dumpbin.exe") `
+            -File -ErrorAction SilentlyContinue |
+            Sort-Object -Property FullName -Descending |
+            Select-Object -First 1
+          if (-not $dumpbin) {
+            throw "dumpbin.exe was not found in the selected Visual Studio installation."
+          }
+          $headerLines = & $dumpbin.FullName /headers $selected.File.FullName 2>&1
+          $dumpbinExitCode = $LASTEXITCODE
+          $headers = $headerLines -join "`n"
+          if ($dumpbinExitCode -ne 0) {
+            throw "dumpbin could not inspect $($selected.File.FullName): $headers"
+          }
+          if ($headers -notmatch "machine \($expectedMachine\)") {
+            throw "$redistributableName did not have the expected $expectedMachine PE architecture."
+          }
+
+          $stagingDirectory = Join-Path $Env:GITHUB_WORKSPACE "build\windows-$architecture-release\installer-prerequisites"
+          New-Item -ItemType Directory -Path $stagingDirectory -Force | Out-Null
+          $stagedPath = Join-Path $stagingDirectory $redistributableName
+          Copy-Item -LiteralPath $selected.File.FullName -Destination $stagedPath -Force
+          $stagedSignature = Get-AuthenticodeSignature -LiteralPath $stagedPath
+          if ($stagedSignature.Status -ne [System.Management.Automation.SignatureStatus]::Valid) {
+            throw "The staged $redistributableName failed Authenticode validation: $($stagedSignature.Status)"
+          }
+          $stagedHash = (Get-FileHash -LiteralPath $stagedPath -Algorithm SHA256).Hash
+          Write-Host "Selected VS 2022 v143 redistributable: $($selected.File.FullName)"
+          Write-Host "File version: $($selected.VersionText)"
+          Write-Host "Authenticode status: $($signature.Status)"
+          Write-Host "Authenticode signer: $($signature.SignerCertificate.Subject)"
+          Write-Host "PE architecture: $expectedMachine"
+          Write-Host "Staged path: $stagedPath"
+          Write-Host "SHA-256: $stagedHash"
+          "CLASSMNGR_INSTALLER_VC_REDIST_FILE=$stagedPath" | Add-Content -LiteralPath $env:GITHUB_ENV
+          @"
+          ### Staged Visual C++ redistributable
+          - Architecture: $expectedMachine
+          - File version: $($selected.VersionText)
+          - Authenticode status: $($signature.Status)
+          - Authenticode signer: $($signature.SignerCertificate.Subject)
+          - Source: $($selected.File.FullName)
+          - SHA-256: $stagedHash
+          "@ | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
+
       - name: Configure
         shell: pwsh
         run: |
@@ -230,6 +331,8 @@ jobs:
             "--fresh",
             "--preset", "windows-$architecture-release",
             "-DCMAKE_PREFIX_PATH=$targetQtPrefix",
+            "-DCLASSMNGR_INSTALLER_VC_REDIST_FILE=$env:CLASSMNGR_INSTALLER_VC_REDIST_FILE",
+            "-DCLASSMNGR_NEXT_RELEASE_PACKAGE=ON",
             "-DBUILD_TESTING=$testingEnabled"
           )
           if ($architecture -eq "arm64") {
@@ -348,89 +451,6 @@ jobs:
           path: docs/qt-rewrite/visual-baseline/next/phase-7/initial-setup-lifecycle/initial-setup-lifecycle.json
           if-no-files-found: warn
 
-      - name: Smoke test packaged application startup
-        if: matrix.architecture == 'x64'
-        shell: pwsh
-        run: |
-          Set-Location $Env:GITHUB_WORKSPACE
-
-          $stageDirectory = Join-Path `
-            $Env:GITHUB_WORKSPACE `
-            'build\windows-x64-release\installer-stage\ClassMngr-windows-x64'
-          $application = Join-Path $stageDirectory 'ClassMngr.exe'
-          $metricsPath = Join-Path $stageDirectory 'startup-metrics.json'
-          $buildPackDirectory = Join-Path `
-            $Env:GITHUB_WORKSPACE `
-            'build\windows-x64-release\resource-packs'
-          $hiddenBuildPackDirectory = "$buildPackDirectory.__startup_smoke_test"
-
-          if (-not (Test-Path -LiteralPath $application)) {
-            throw "Packaged application was not found: $application"
-          }
-          if (-not (Test-Path -LiteralPath $buildPackDirectory)) {
-            throw "Build resource packs were not found: $buildPackDirectory"
-          }
-          if (Test-Path -LiteralPath $hiddenBuildPackDirectory) {
-            throw "Unexpected pre-existing smoke-test path: $hiddenBuildPackDirectory"
-          }
-
-          # The executable is compiled with this development-only absolute
-          # pack path.  Hide it while testing so the staged package must use
-          # its own adjacent resources, just as it will after installation.
-          Move-Item -LiteralPath $buildPackDirectory -Destination $hiddenBuildPackDirectory
-          try {
-            $startupArguments = @(
-              '--startup-performance-test',
-              '--startup-performance-output',
-              $metricsPath
-            )
-            $process = Start-Process `
-              -FilePath $application `
-              -WorkingDirectory $stageDirectory `
-              -ArgumentList $startupArguments `
-              -Wait `
-              -PassThru
-
-            if ($process.ExitCode -ne 0) {
-              throw "Packaged application startup smoke test failed with exit code $($process.ExitCode)."
-            }
-            if (-not (Test-Path -LiteralPath $metricsPath)) {
-              throw "Packaged application did not write startup metrics."
-            }
-
-            $metrics = Get-Content -LiteralPath $metricsPath -Raw | ConvertFrom-Json
-            if ($metrics.format -cne 'classmngr-startup-profile-v2') {
-              throw "Unexpected startup metrics format '$($metrics.format)'; expected classmngr-startup-profile-v2."
-            }
-
-            $checkpointNames = @($metrics.checkpoints | ForEach-Object { $_.name })
-            $startupCompleteCount = @($checkpointNames | Where-Object { $_ -ceq 'startup-complete' }).Count
-            if ($startupCompleteCount -ne 1) {
-              throw "Expected exactly one startup-complete checkpoint; found $startupCompleteCount."
-            }
-
-            $pageLoadedIndex = [Array]::LastIndexOf($checkpointNames, 'startup-page-loaded')
-            $windowShownIndex = [Array]::LastIndexOf($checkpointNames, 'window-shown')
-            $startupCompleteIndex = [Array]::LastIndexOf($checkpointNames, 'startup-complete')
-            if ($pageLoadedIndex -lt 0 -or $windowShownIndex -le $pageLoadedIndex -or $startupCompleteIndex -le $windowShownIndex) {
-              throw "Expected startup-page-loaded < window-shown < startup-complete; found indices $pageLoadedIndex, $windowShownIndex, $startupCompleteIndex."
-            }
-
-            foreach ($checkpoint in @('splash-shown', 'resource-system-initialized')) {
-              if ($checkpointNames -ccontains $checkpoint) {
-                throw "Unexpected legacy startup checkpoint '$checkpoint' in packaged startup metrics."
-              }
-            }
-            foreach ($field in @('progressUpdates', 'finalProgress')) {
-              if ($metrics.PSObject.Properties.Name -ccontains $field) {
-                throw "Unexpected progress-only field '$field' in startup metrics; expected the lifecycle-only v2 schema."
-              }
-            }
-          }
-          finally {
-            Move-Item -LiteralPath $hiddenBuildPackDirectory -Destination $buildPackDirectory
-          }
-
       - name: Diagnostics — environment, build and tooling
         shell: pwsh
         run: |
@@ -490,7 +510,9 @@ jobs:
             $dumpbinCandidates | Select-Object FullName | Format-Table -AutoSize
             $chosen = $dumpbinCandidates | Sort-Object FullName -Descending | Select-Object -First 1
             Write-Host "Using dumpbin: $($chosen.FullName)"
-            $executable = "build\\windows-${{ matrix.architecture }}-release\\Release\\ClassMngr.exe"
+            $executable = Join-Path `
+              $Env:GITHUB_WORKSPACE `
+              "build\\windows-${{ matrix.architecture }}-release\\installer-stage\\ClassMngr-windows-${{ matrix.architecture }}\\ClassMngr.exe"
             if (Test-Path -LiteralPath $executable) {
               & $chosen.FullName /headers $executable 2>&1 | Select-Object -First 60 | ForEach-Object { Write-Host $_ }
             } else {
@@ -502,7 +524,10 @@ jobs:
         shell: pwsh
         run: |
           $architecture = "${{ matrix.architecture }}"
-          $executable = "build\\windows-$architecture-release\\Release\\ClassMngr.exe"
+          $packageRoot = Join-Path `
+            $Env:GITHUB_WORKSPACE `
+            "build\\windows-$architecture-release\\installer-stage\\ClassMngr-windows-$architecture"
+          $executable = Join-Path $packageRoot "ClassMngr.exe"
           $expectedMachine = if ($architecture -eq "arm64") { "ARM64" } else { "x64" }
 
           if (-not (Test-Path -LiteralPath $executable)) {
@@ -552,30 +577,44 @@ jobs:
           $checksumPath = "dist\\checksums-windows-$architecture.txt"
           "$hash  $($installers[0].Name)" | Set-Content -LiteralPath $checksumPath -Encoding utf8NoBOM
 
-      - name: Check packaged resource references and write build report
+      - name: Verify staged Next package contents
         shell: pwsh
         run: |
           $architecture = "${{ matrix.architecture }}"
-          $buildDirectory = "build\windows-$architecture-release"
           $packageRoot = Join-Path `
             $Env:GITHUB_WORKSPACE `
             "build\windows-$architecture-release\installer-stage\ClassMngr-windows-$architecture"
-          $packDirectory = Join-Path $packageRoot "resources\resource-packs"
-          $referenceReport = "artifacts\build-reports\windows-$architecture-resource-pack-references.json"
-          $buildReport = "artifacts\build-reports\windows-$architecture.json"
+          $cmakeText = Get-Content -LiteralPath "CMakeLists.txt" -Raw
+          if ($cmakeText -notmatch 'project\(\s*ClassMngr\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)') {
+            throw "Unable to read the ClassMngr project version from CMakeLists.txt."
+          }
+          $projectVersion = $Matches[1]
+          $report = "build\windows-$architecture-release\reports\windows-$architecture-next-package.json"
 
-          python scripts/check_resource_pack_references.py `
-            --repository . `
-            --build-dir $buildDirectory `
-            --pack-directory $packDirectory `
-            --output $referenceReport
-          if ($LASTEXITCODE -ne 0) { throw "Resource-pack reference check failed." }
-
-          python scripts/write_build_report.py `
+          python scripts/verify_next_package.py verify `
             --package-root $packageRoot `
-            --build-dir $buildDirectory `
-            --output $buildReport
-          if ($LASTEXITCODE -ne 0) { throw "Build report generation failed." }
+            --platform windows `
+            --architecture $architecture `
+            --version $projectVersion `
+            --qt-version $env:QT_VERSION `
+            --report $report
+          if ($LASTEXITCODE -ne 0) { throw "Next package verification failed." }
+
+          python scripts/test_verify_next_package.py
+          if ($LASTEXITCODE -ne 0) { throw "Package verifier tests failed." }
+
+      - name: Verify final Windows installer payload and installed Next app
+        shell: pwsh
+        run: |
+          $architecture = "${{ matrix.architecture }}"
+          $cmakeText = Get-Content -LiteralPath "CMakeLists.txt" -Raw
+          if ($cmakeText -notmatch 'project\(\s*ClassMngr\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)') {
+            throw "Unable to read the ClassMngr project version from CMakeLists.txt."
+          }
+          & "scripts\installer\verify_next_package.ps1" `
+            -Architecture $architecture `
+            -ProjectVersion $Matches[1] `
+            -QtVersion $env:QT_VERSION
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v7
@@ -584,6 +623,6 @@ jobs:
           path: |
             dist/ClassMngr-*-win-${{ matrix.architecture }}.exe
             dist/checksums-windows-${{ matrix.architecture }}.txt
-            artifacts/build-reports/windows-${{ matrix.architecture }}.json
-            artifacts/build-reports/windows-${{ matrix.architecture }}-resource-pack-references.json
+            build/windows-${{ matrix.architecture }}-release/reports/windows-${{ matrix.architecture }}-next-package.json
+            build/windows-${{ matrix.architecture }}-release/reports/windows-${{ matrix.architecture }}-final-package.json
           if-no-files-found: error

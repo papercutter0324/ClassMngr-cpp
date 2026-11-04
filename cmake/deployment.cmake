@@ -1,5 +1,7 @@
 include_guard(GLOBAL)
 
+if(NOT CLASSMNGR_NEXT_RELEASE_PACKAGE)
+
 if(WIN32 AND CLASSMNGR_RUN_WINDEPLOYQT)
     add_custom_command(TARGET ClassMngr POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E env
@@ -69,3 +71,5 @@ ${CLASSMNGR_QT_DEPLOY_POSTAMBLE}
 "
 )
 install(SCRIPT ${deploy_script})
+
+endif()

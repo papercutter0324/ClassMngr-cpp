@@ -37,8 +37,17 @@ if(WIN32)
         "${CMAKE_CURRENT_BINARY_DIR}/generated/ClassMngrNext.rc"
     )
     file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated")
+    if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+        set(_classmngr_next_windows_rc_template
+            "${PROJECT_SOURCE_DIR}/resources/windows/ClassMngr.rc.in"
+        )
+    else()
+        set(_classmngr_next_windows_rc_template
+            "${PROJECT_SOURCE_DIR}/resources/windows/ClassMngrNext.rc.in"
+        )
+    endif()
     configure_file(
-        "${PROJECT_SOURCE_DIR}/resources/windows/ClassMngrNext.rc.in"
+        "${_classmngr_next_windows_rc_template}"
         "${_classmngr_next_windows_rc}"
         @ONLY
     )
@@ -62,6 +71,33 @@ set_target_properties(ClassMngrNext
         RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}"
         AUTOGEN_BUILD_DIR "${PROJECT_BINARY_DIR}/ClassMngrNext_autogen"
 )
+
+if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+    set_target_properties(ClassMngrNext
+        PROPERTIES
+            OUTPUT_NAME ClassMngr
+            RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/next-package-build"
+    )
+    target_compile_definitions(ClassMngrNext
+        PRIVATE
+            CLASSMNGR_NEXT_PRODUCT_NAME="ClassMngr"
+    )
+
+    if(APPLE)
+        set_target_properties(ClassMngrNext
+            PROPERTIES
+                MACOSX_BUNDLE_GUI_IDENTIFIER "com.PaperCloud.ClassMngr"
+                MACOSX_BUNDLE_BUNDLE_NAME "ClassMngr"
+                MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
+                MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
+        )
+    elseif(WIN32)
+        set_target_properties(ClassMngrNext
+            PROPERTIES
+                WIN32_EXECUTABLE TRUE
+        )
+    endif()
+endif()
 
 target_compile_definitions(ClassMngrNext
     PRIVATE

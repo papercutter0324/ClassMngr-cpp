@@ -30,8 +30,9 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
-      - "scripts/check_resource_pack_references.py"
-      - "scripts/write_build_report.py"
+      - "scripts/test_verify_next_package.py"
+      - "scripts/verify_next_package.py"
+      - "scripts/phase4/audit_resource_stage.py"
       - "scripts/phase0/**"
       - "src/**"
       - "third_party/sqlite/**"
@@ -43,8 +44,9 @@ on:
       - "cmake/**"
       - "licenses/**"
       - "resources/**"
-      - "scripts/check_resource_pack_references.py"
-      - "scripts/write_build_report.py"
+      - "scripts/test_verify_next_package.py"
+      - "scripts/verify_next_package.py"
+      - "scripts/phase4/audit_resource_stage.py"
       - "scripts/phase0/**"
       - "src/**"
       - "third_party/sqlite/**"
@@ -146,18 +148,56 @@ jobs:
           cmake --fresh --preset linux-gcc-release \
             "-DCMAKE_PREFIX_PATH=${QT_LINUX_PREFIX}" \
             "-DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/dist/ClassMngr-linux-x86_64" \
+            -DCLASSMNGR_NEXT_RELEASE_PACKAGE=ON \
             -DBUILD_TESTING=OFF
 
       - name: Build and install
         shell: bash
         run: |
-          cmake --build --preset linux-gcc-release --parallel
+          cmake --build --preset linux-gcc-release \
+            --target ClassMngrNextResourcePackage \
+            --parallel
           cmake --install build/linux-gcc-release
 
       - name: Verify architecture and package
         shell: bash
         run: |
           executable="dist/ClassMngr-linux-x86_64/bin/ClassMngr"
+          project_version="$(
+            awk '
+              /project[[:space:]]*[(][[:space:]]*ClassMngr/ {
+                in_project = 1
+              }
+              in_project && /VERSION[[:space:]]+[0-9]+\.[0-9]+\.[0-9]+/ {
+                for (field = 1; field <= NF; ++field) {
+                  if ($field == "VERSION") {
+                    print $(field + 1)
+                    exit
+                  }
+                }
+              }
+            ' CMakeLists.txt
+          )"
+
+          if [[ -z "${project_version}" ]]; then
+            echo "Unable to read ClassMngr project version." >&2
+            exit 1
+          fi
+
+          python scripts/test_verify_next_package.py
+          python scripts/verify_next_package.py create \
+            --package-root "dist/ClassMngr-linux-x86_64" \
+            --platform linux \
+            --architecture x86_64 \
+            --version "${project_version}" \
+            --qt-version "${QT_VERSION}"
+          python scripts/verify_next_package.py verify \
+            --package-root "dist/ClassMngr-linux-x86_64" \
+            --platform linux \
+            --architecture x86_64 \
+            --version "${project_version}" \
+            --qt-version "${QT_VERSION}" \
+            --report artifacts/build-reports/linux-x86_64-next-package.json
 
           test -x "${executable}"
           file "${executable}"
@@ -170,22 +210,20 @@ jobs:
           (
             cd dist
             sha256sum ClassMngr-linux-x86_64.tar.gz > checksums-linux.txt
+            sha256sum --check checksums-linux.txt
           )
 
-      - name: Check packaged resource references and write build report
-        shell: bash
-        run: |
-          build_dir="build/linux-gcc-release"
-          package_root="dist/ClassMngr-linux-x86_64"
-          python scripts/check_resource_pack_references.py \
-            --repository . \
-            --build-dir "${build_dir}" \
-            --pack-directory "${package_root}/bin/resources/resource-packs" \
-            --output artifacts/build-reports/linux-x86_64-resource-pack-references.json
-          python scripts/write_build_report.py \
-            --package-root "${package_root}" \
-            --build-dir "${build_dir}" \
-            --output artifacts/build-reports/linux-x86_64.json
+          package_extract_root="$(mktemp -d "${RUNNER_TEMP}/classmngr-linux-package.XXXXXX")"
+          trap 'rm -rf "${package_extract_root}"' EXIT
+          tar -xzf dist/ClassMngr-linux-x86_64.tar.gz -C "${package_extract_root}"
+          mkdir -p artifacts/build-reports
+          python scripts/verify_next_package.py verify \
+            --package-root "${package_extract_root}/ClassMngr-linux-x86_64" \
+            --platform linux \
+            --architecture x86_64 \
+            --version "${project_version}" \
+            --qt-version "${QT_VERSION}" \
+            --report artifacts/build-reports/linux-x86_64-final-package.json
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v7
@@ -194,8 +232,8 @@ jobs:
           path: |
             dist/ClassMngr-linux-x86_64.tar.gz
             dist/checksums-linux.txt
-            artifacts/build-reports/linux-x86_64.json
-            artifacts/build-reports/linux-x86_64-resource-pack-references.json
+            artifacts/build-reports/linux-x86_64-next-package.json
+            artifacts/build-reports/linux-x86_64-final-package.json
           if-no-files-found: error
 
       - name: Check Linux Phase 0 runner and validator contracts
@@ -210,6 +248,23 @@ jobs:
         run: |
           sudo apt-get install --yes --no-install-recommends xauth xvfb
 
+      - name: Stage Legacy application for supplemental Phase 0
+        if: ${{ inputs.run_phase0_baseline }}
+        shell: bash
+        run: |
+          legacy_root="${GITHUB_WORKSPACE}/dist/ClassMngr-linux-x86_64-phase0"
+          cmake --fresh --preset linux-gcc-release \
+            -B build/linux-gcc-phase0-legacy \
+            "-DCMAKE_PREFIX_PATH=${QT_LINUX_PREFIX}" \
+            "-DCMAKE_INSTALL_PREFIX=${legacy_root}" \
+            -DCLASSMNGR_NEXT_RELEASE_PACKAGE=OFF \
+            -DBUILD_TESTING=OFF
+          cmake --build build/linux-gcc-phase0-legacy \
+            --target ClassMngr \
+            --parallel
+          cmake --install build/linux-gcc-phase0-legacy \
+            --prefix "${legacy_root}"
+
       - name: Run supplemental Linux x64 Phase 0 baseline
         if: ${{ inputs.run_phase0_baseline }}
         shell: bash
@@ -218,7 +273,7 @@ jobs:
         run: |
           python scripts/phase0/run_phase0_evidence_linux.py \
             --evidence-root "${PHASE0_EVIDENCE_ROOT}" \
-            --package-root "dist/ClassMngr-linux-x86_64" \
+            --package-root "dist/ClassMngr-linux-x86_64-phase0" \
             --qt-prefix "${QT_LINUX_PREFIX}" \
             --timeout-seconds 900 \
             --parallel 4

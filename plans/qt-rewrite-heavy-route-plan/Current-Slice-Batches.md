@@ -37,9 +37,10 @@
     failure, cleanup, and cancellation behind an application port.
 13. **8.4.1 Update installation — complete:** move download/resume/cancel/
     launch/reveal behavior behind Next application/platform adapters.
-14. **8.4.2 Next application package — in progress:** produce one update artifact with the
-    Next executable, Qt runtime/plugins, resources, QML, licenses, and metadata.
-15. **8.5.1 Calendar view:** put lazy QML creation/release behind a calendar
+14. **8.4.2 Next application package — complete:** replace package contents
+    under existing updater assets; verify the manifest, Qt runtime/QML, direct
+    resources, notices, and final archive/image or installer payloads.
+15. **8.5.1 Calendar view — in progress:** put lazy QML creation/release behind a calendar
     view interface with the compact event model.
 16. **8.6.1 Transfer codec:** stage or stream JSON read/write while preserving
     the 16 MiB compatibility and validation contract.
