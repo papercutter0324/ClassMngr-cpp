@@ -23,6 +23,7 @@ on:
   push:
     branches:
       - main
+      - Qt-Rewrite
     paths:
       - ".github/workflows/linux-release.yml"
       - "CMakeLists.txt"

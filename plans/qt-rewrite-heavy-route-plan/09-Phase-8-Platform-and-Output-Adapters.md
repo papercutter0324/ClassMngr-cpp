@@ -538,6 +538,17 @@ actionlint were unavailable. The full Windows package workflow remains pending
 after the batch push. This entry does not establish the Phase 8 exit gate or
 Phase 9 readiness.
 
+### 8.7.2 — macOS/Linux package triggers
+
+The macOS and Linux release workflows now include `Qt-Rewrite` alongside
+`main` under `push.branches`. Path filters, `workflow_dispatch`,
+`workflow_call`, runners, package steps, and permissions are unchanged.
+
+Ruby Psych parsed both YAML files; removing the added branch line from each
+makes it byte-for-byte identical to `HEAD`. `git diff --check` passed;
+`actionlint` was unavailable. Package CI results remain pending after the
+batch push, and Phase 9 remains gated.
+
 ## Objective
 
 

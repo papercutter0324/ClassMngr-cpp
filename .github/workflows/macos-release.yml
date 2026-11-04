@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - main
+      - Qt-Rewrite
     paths:
       - ".github/workflows/macos-release.yml"
       - "CMakeLists.txt"

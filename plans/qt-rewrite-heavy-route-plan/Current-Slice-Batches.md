@@ -2,13 +2,13 @@
 
 ## Phase 8 — Active Batch 3 (2 candidates)
 
-1. **8.7.1 Windows redistributable staging — static review accepted; package CI
-   pending:** log the Visual Studio query result and exit status, add the narrow
+1. **8.7.1 Windows redistributable staging — committed; package CI pending:**
+   log the Visual Studio query result and exit status, add the narrow
    documented VS 2022 runner-path fallback, and preserve architecture and
    Authenticode validation.
-2. **8.7.2 macOS/Linux package triggers — static review accepted; package CI
-   pending:** run the existing path-filtered package workflows on `Qt-Rewrite`
-   pushes while retaining manual dispatch.
+2. **8.7.2 macOS/Linux package triggers — static review accepted; commit and
+   package CI pending:** run the existing path-filtered package workflows on
+   `Qt-Rewrite` pushes while retaining manual dispatch.
 
 ## Phase 9 — Next Batch (20 candidates; gated on Phase 8 package CI)
 
