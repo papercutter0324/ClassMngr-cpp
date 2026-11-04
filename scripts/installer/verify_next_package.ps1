@@ -260,7 +260,7 @@ try {
             $record = $stageMatches[$index]
             $stageName = $record.Groups["stage"].Value
             if ($stageName -ne $expectedStages[$index]) {
-                throw "Next startup stage order mismatch at $index: expected '$($expectedStages[$index])', found '$stageName'."
+                throw "Next startup stage order mismatch at ${index}: expected '$($expectedStages[$index])', found '$stageName'."
             }
             $expectedOutcome = if ($stageName -eq "workspace-opened") { "warning" } else { "completed" }
             if ($record.Groups["outcome"].Value -ne $expectedOutcome) {
