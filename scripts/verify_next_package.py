@@ -38,10 +38,11 @@ EVENTCALENDAR_LICENSE = (
     "BSD-3-Clause",
 )
 QT_LICENSES = {
-    "licenses/qt/Qt-LICENSE.txt": ("Qt runtime and modules", "LGPL-3.0 / GPL-3.0 terms"),
+    "licenses/qt/Qt-LICENSE.txt": ("Qt runtime and modules (LGPL option)", "LGPL-3.0-only"),
+    "licenses/qt/Qt-GPL3-LICENSE.txt": ("Qt modules (GPL option)", "GPL-3.0-only"),
     "licenses/qt/Qt-GPL3-EXCEPTION.txt": (
-        "Qt modules covered by the Qt GPL exception",
-        "GPL-3.0 WITH Qt-GPL-exception-1.0",
+        "Qt modules under the GPL option with the Qt GPL exception",
+        "GPL-3.0-only WITH Qt-GPL-exception-1.0",
     ),
 }
 QT_SBOM_MODULES = {"qtbase", "qtdeclarative", "qtpdf"}

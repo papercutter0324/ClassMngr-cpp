@@ -107,7 +107,8 @@ def _make_linux_package(root: Path) -> None:
         "licenses/fonts/dancing-script/LICENSE.txt": "SIL OPEN FONT LICENSE Version 1.1",
         "licenses/fonts/great-vibes/LICENSE.txt": "SIL OPEN FONT LICENSE Version 1.1",
         "licenses/qt-eventcalendar/BSD-3-Clause.txt": "BSD 3-Clause License",
-        "licenses/qt/Qt-LICENSE.txt": "LGPLv3 and GPLv3",
+        "licenses/qt/Qt-LICENSE.txt": "GNU LESSER GENERAL PUBLIC LICENSE Version 3",
+        "licenses/qt/Qt-GPL3-LICENSE.txt": "GNU GENERAL PUBLIC LICENSE Version 3",
         "licenses/qt/Qt-GPL3-EXCEPTION.txt": "Qt Company GPL Exception 1.0",
     }
     for relative, contents in license_files.items():
@@ -166,7 +167,8 @@ def _make_macos_package(root: Path) -> None:
         "fonts/dancing-script/LICENSE.txt": "SIL OPEN FONT LICENSE Version 1.1",
         "fonts/great-vibes/LICENSE.txt": "SIL OPEN FONT LICENSE Version 1.1",
         "qt-eventcalendar/BSD-3-Clause.txt": "BSD 3-Clause License",
-        "qt/Qt-LICENSE.txt": "LGPLv3 and GPLv3",
+        "qt/Qt-LICENSE.txt": "GNU LESSER GENERAL PUBLIC LICENSE Version 3",
+        "qt/Qt-GPL3-LICENSE.txt": "GNU GENERAL PUBLIC LICENSE Version 3",
         "qt/Qt-GPL3-EXCEPTION.txt": "Qt Company GPL Exception 1.0",
     }
     for relative, contents in license_files.items():
@@ -213,7 +215,8 @@ def _make_windows_package(root: Path) -> None:
         "fonts/dancing-script/LICENSE.txt": "SIL OPEN FONT LICENSE Version 1.1",
         "fonts/great-vibes/LICENSE.txt": "SIL OPEN FONT LICENSE Version 1.1",
         "qt-eventcalendar/BSD-3-Clause.txt": "BSD 3-Clause License",
-        "qt/Qt-LICENSE.txt": "LGPLv3 and GPLv3",
+        "qt/Qt-LICENSE.txt": "GNU LESSER GENERAL PUBLIC LICENSE Version 3",
+        "qt/Qt-GPL3-LICENSE.txt": "GNU GENERAL PUBLIC LICENSE Version 3",
         "qt/Qt-GPL3-EXCEPTION.txt": "Qt Company GPL Exception 1.0",
     }
     for relative, contents in license_files.items():
@@ -243,7 +246,13 @@ class VerifyNextPackageTests(unittest.TestCase):
         )
 
     def test_accepts_complete_linux_next_package(self) -> None:
-        self._create_manifest()
+        manifest = create_package_manifest(
+            self.root,
+            "linux",
+            "x86_64",
+            VERSION,
+            QT_VERSION,
+        )
         result = verify_package(self.root, "linux", "x86_64", VERSION, QT_VERSION)
 
         self.assertEqual(result["product"], "ClassMngr")
@@ -251,7 +260,29 @@ class VerifyNextPackageTests(unittest.TestCase):
         self.assertGreater(result["sha256_checked"], 10)
         self.assertEqual(result["resource_catalog"]["hash_checked"], 1)
         self.assertEqual(result["resource_catalog"]["generated_qm"], 5)
-        self.assertEqual(result["license_files"], 12)
+        self.assertEqual(result["license_files"], 13)
+        qt_license_metadata = {
+            entry["path"]: (entry["component"], entry["license"])
+            for entry in manifest["license_inventory"]
+            if entry["path"].startswith("licenses/qt/Qt-")
+        }
+        self.assertEqual(
+            qt_license_metadata,
+            {
+                "licenses/qt/Qt-LICENSE.txt": (
+                    "Qt runtime and modules (LGPL option)",
+                    "LGPL-3.0-only",
+                ),
+                "licenses/qt/Qt-GPL3-LICENSE.txt": (
+                    "Qt modules (GPL option)",
+                    "GPL-3.0-only",
+                ),
+                "licenses/qt/Qt-GPL3-EXCEPTION.txt": (
+                    "Qt modules under the GPL option with the Qt GPL exception",
+                    "GPL-3.0-only WITH Qt-GPL-exception-1.0",
+                ),
+            },
+        )
         self.assertFalse(result["separate_resource_asset"])
 
     def test_rejects_missing_qt_sqlite_plugin(self) -> None:
@@ -304,7 +335,7 @@ class VerifyNextPackageTests(unittest.TestCase):
 
         self.assertEqual(manifest["manifest_path"], "ClassMngr.package-manifest.json")
         self.assertEqual(manifest["executable"], "ClassMngr.app/Contents/MacOS/ClassMngr")
-        self.assertEqual(result["license_files"], 12)
+        self.assertEqual(result["license_files"], 13)
         self.assertGreater(result["sha256_checked"], 10)
 
     def test_rejects_unused_macos_sql_driver(self) -> None:
@@ -332,7 +363,7 @@ class VerifyNextPackageTests(unittest.TestCase):
         self.assertEqual(manifest["executable"], "ClassMngr.exe")
         self.assertEqual(manifest["resource_root"], "resources")
         self.assertEqual(result["updater_assets"], ["ClassMngr-0.19.0-win-x64.exe"])
-        self.assertEqual(result["license_files"], 12)
+        self.assertEqual(result["license_files"], 13)
         self.assertGreater(result["sha256_checked"], 10)
 
     def test_rejects_missing_windows_platform_plugin(self) -> None:

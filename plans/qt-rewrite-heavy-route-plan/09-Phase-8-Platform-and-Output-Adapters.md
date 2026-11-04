@@ -564,6 +564,25 @@ passed; PowerShell was unavailable, and Windows runtime CI is pending. The
 Phase 8 package gate remains blocked by missing Qt license notices on Linux
 and macOS (runs `41799924350` and `41799924549`); Phase 9 remains gated.
 
+### 8.7.4 — Qt license staging
+
+CMake now stages three checked-in, verbatim Qt 6.12.0 license texts from
+official `qt/qtbase` tag `v6.12.0`: `LICENSES/LGPL-3.0-only.txt` (blob
+`65c5ca88a67c30becee01c5a8816d964b03862f9`),
+`LICENSES/GPL-3.0-only.txt` (blob
+`94a9ed024d3859793618152ea559a168bbcbb5e2`), and
+`LICENSES/Qt-GPL-exception-1.0.txt` (blob
+`d0322bf0e4e1d484d35cc6a1d96fa2b65b9d579b`). Provenance is recorded in
+`licenses/qt/UPSTREAM.md`; the package inventory lists LGPL, GPL, and the Qt
+exception separately. Installed Qt SBOM staging and validation remain.
+
+The focused `python3 scripts/test_verify_next_package.py` verifier passed
+11/11, and the static Tester accepted the contract. The upstream exception
+text retains its one blank line at EOF to preserve the source hash;
+`git diff --check` reports that line when checking the untracked text file,
+while tracked code changes are clean. Full Windows, macOS, and Linux package
+CI remains pending, and Phase 9 remains gated.
+
 ## Objective
 
 

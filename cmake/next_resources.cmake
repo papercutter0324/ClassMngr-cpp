@@ -393,30 +393,32 @@ if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
         COMPONENT Runtime
     )
 
-    get_filename_component(_classmngr_next_qt_version_root
-        "${QT6_INSTALL_PREFIX}" DIRECTORY
+    set(_classmngr_next_qt_license_source_dir
+        "${PROJECT_SOURCE_DIR}/licenses/qt"
     )
-    get_filename_component(_classmngr_next_qt_install_root
-        "${_classmngr_next_qt_version_root}" DIRECTORY
-    )
-    set(_classmngr_next_qt_license_dir
-        "${_classmngr_next_qt_install_root}/Licenses"
-    )
-    foreach(_classmngr_next_qt_license IN ITEMS LICENSE LICENSE.GPL3-EXCEPT)
-        if(NOT EXISTS "${_classmngr_next_qt_license_dir}/${_classmngr_next_qt_license}")
+    foreach(_classmngr_next_qt_license IN ITEMS
+            LGPL-3.0-only.txt
+            GPL-3.0-only.txt
+            Qt-GPL-exception-1.0.txt)
+        if(NOT EXISTS "${_classmngr_next_qt_license_source_dir}/${_classmngr_next_qt_license}")
             message(FATAL_ERROR
-                "Required Qt runtime license file was not found: "
-                "${_classmngr_next_qt_license_dir}/${_classmngr_next_qt_license}"
+                "Required checked-in Qt license text was not found: "
+                "${_classmngr_next_qt_license_source_dir}/${_classmngr_next_qt_license}"
             )
         endif()
     endforeach()
 
-    install(FILES "${_classmngr_next_qt_license_dir}/LICENSE"
+    install(FILES "${_classmngr_next_qt_license_source_dir}/LGPL-3.0-only.txt"
         DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/qt"
         RENAME Qt-LICENSE.txt
         COMPONENT Runtime
     )
-    install(FILES "${_classmngr_next_qt_license_dir}/LICENSE.GPL3-EXCEPT"
+    install(FILES "${_classmngr_next_qt_license_source_dir}/GPL-3.0-only.txt"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/qt"
+        RENAME Qt-GPL3-LICENSE.txt
+        COMPONENT Runtime
+    )
+    install(FILES "${_classmngr_next_qt_license_source_dir}/Qt-GPL-exception-1.0.txt"
         DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/qt"
         RENAME Qt-GPL3-EXCEPTION.txt
         COMPONENT Runtime
