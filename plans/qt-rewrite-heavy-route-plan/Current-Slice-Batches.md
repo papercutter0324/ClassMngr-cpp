@@ -1,14 +1,15 @@
 # Current Slice Batches
 
-## Phase 8 — Active Batch 3 (2 candidates)
+## Phase 8 — Active Batch 4 (2 candidates)
 
-1. **8.7.1 Windows redistributable staging — committed; package CI pending:**
-   log the Visual Studio query result and exit status, add the narrow
-   documented VS 2022 runner-path fallback, and preserve architecture and
-   Authenticode validation.
-2. **8.7.2 macOS/Linux package triggers — static review accepted; commit and
-   package CI pending:** run the existing path-filtered package workflows on
-   `Qt-Rewrite` pushes while retaining manual dispatch.
+1. **8.7.3 Windows redistributable architecture selection — static acceptance
+   passed; Windows package CI pending:** inspect and log every filename match,
+   then select the newest signed candidate whose PE machine matches the
+   requested app architecture.
+2. **8.7.4 Qt license staging — implementation in progress:** package the
+   canonical Qt 6.12.0 LGPL, GPL, and GPL-exception texts from verified
+   upstream sources; update CMake and package license inventory while
+   preserving installed Qt SBOMs.
 
 ## Phase 9 — Next Batch (20 candidates; gated on Phase 8 package CI)
 

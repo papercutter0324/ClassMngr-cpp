@@ -549,6 +549,21 @@ makes it byte-for-byte identical to `HEAD`. `git diff --check` passed;
 `actionlint` was unavailable. Package CI results remain pending after the
 batch push, and Phase 9 remains gated.
 
+### 8.7.3 — Windows redistributable architecture selection
+
+At pushed SHA `c6fcae8e`, Windows run `41799924542` failed on x64 and ARM64
+after `vswhere` succeeded; its logs omitted candidate path and machine. The
+workflow now logs each matching candidate's path, version, and PE machine,
+then selects the highest-version candidate only after successful `dumpbin`
+inspection confirms the target machine. No-match diagnostics are included.
+Authenticode validity and Microsoft-signer checks, staged signature/hash
+checks, and installer/package checks remain in place.
+
+Static Tester accepted the change. Ruby YAML parsing and `git diff --check`
+passed; PowerShell was unavailable, and Windows runtime CI is pending. The
+Phase 8 package gate remains blocked by missing Qt license notices on Linux
+and macOS (runs `41799924350` and `41799924549`); Phase 9 remains gated.
+
 ## Objective
 
 
