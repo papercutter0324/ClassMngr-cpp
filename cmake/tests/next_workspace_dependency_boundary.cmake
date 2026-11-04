@@ -61,6 +61,12 @@ foreach(_line IN LISTS _report_lines)
         set(_next_workspace_domain_sources "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_DOMAIN_TYPE=(.*)$")
         set(_next_workspace_domain_type "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^DOMAIN_ARCHIVE_LINKS=(.*)$")
+        set(_domain_archive_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^COLOR_VALIDATION_LINKS=(.*)$")
+        set(_color_validation_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^CLASS_TRANSFER_SUPPORT_LINKS=(.*)$")
+        set(_class_transfer_support_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^DOCUMENT_CATALOG_TEST_LINKS=(.*)$")
         set(_document_catalog_test_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^BOOTSTRAP_TEST_LINKS=(.*)$")
@@ -273,6 +279,28 @@ if(NOT _next_workspace_domain_type STREQUAL "STATIC_LIBRARY"
     message(FATAL_ERROR
         "ClassMngrNextWorkspaceDomain must be a static archive with only the DomainArchive target link: "
         "type=${_next_workspace_domain_type}, links=[${_next_workspace_domain_links}]"
+    )
+endif()
+set(_expected_domain_archive_links
+    "ClassMngrBuildSettings|Qt6::Gui|ClassMngrColorValidation"
+)
+if(NOT _domain_archive_links STREQUAL _expected_domain_archive_links)
+    message(FATAL_ERROR
+        "ClassMngrDomainArchive must use the narrow color validator without a Core or Runtime edge: "
+        "[${_domain_archive_links}]"
+    )
+endif()
+if(NOT _color_validation_links STREQUAL "ClassMngrBuildSettings|Qt6::Gui")
+    message(FATAL_ERROR
+        "ClassMngrColorValidation must stay limited to build settings and Qt GUI/Core: "
+        "[${_color_validation_links}]"
+    )
+endif()
+if(NOT _class_transfer_support_links STREQUAL
+   "ClassMngrBuildSettings|Qt6::Widgets|ClassMngrColorValidation")
+    message(FATAL_ERROR
+        "ClassMngrClassTransferSupport must retain its complete color validation link contract: "
+        "[${_class_transfer_support_links}]"
     )
 endif()
 string(FIND "${_next_workspace_domain_sources}" "ClassMngrStudentName" _student_name_object_index)

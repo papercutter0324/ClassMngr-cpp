@@ -1,8 +1,8 @@
 # Current Slice Batches
 
-## Phase 8 — Active Batch 6 (1 candidate)
+## Phase 8 — Active Batch 7 (1 candidate)
 
-1. **8.7.9 Linux package linker closure correction — implemented; static review accepted; package CI pending:** resolve legacy Classroom and Roster symbols from WorkspaceStore and Sub Prep while preserving the SCC-free CMake interfaces and Runtime/WorkspaceStore RESCAN group.
+1. **8.7.10 Linux package color-validation dependency — implemented; static review accepted; package CI pending:** supply `ColorUtils::canonicalHexColor` from a leaf provider after DomainArchive without pulling the broader class-transfer archive or duplicating source ownership.
 
 ## Phase 9 — Next Batch (20 candidates; gated on Phase 8 package CI)
 

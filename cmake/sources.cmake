@@ -100,6 +100,27 @@ classmngr_add_production_objects(
     LIBRARIES
         Qt6::Core
 )
+add_library(ClassMngrColorValidation STATIC
+    ${CLASSMNGR_COLOR_VALIDATION_SOURCES}
+)
+target_compile_features(ClassMngrColorValidation
+    PUBLIC
+        cxx_std_23
+)
+target_include_directories(ClassMngrColorValidation
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrColorValidation
+    PUBLIC
+        ClassMngrBuildSettings
+        Qt6::Gui
+)
+set_target_properties(ClassMngrColorValidation
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 classmngr_add_production_objects(
     TARGET ClassMngrCore
     SOURCES ${CLASSMNGR_CORE_SOURCES}
@@ -372,6 +393,8 @@ target_link_libraries(ClassMngrDomainArchive
     PUBLIC
         ClassMngrBuildSettings
         Qt6::Gui
+    PRIVATE
+        ClassMngrColorValidation
 )
 target_include_directories(ClassMngrDomainArchive
     PUBLIC
@@ -442,6 +465,8 @@ target_link_libraries(ClassMngrClassTransferSupport
     PUBLIC
         ClassMngrBuildSettings
         Qt6::Widgets
+    PRIVATE
+        ClassMngrColorValidation
 )
 set_target_properties(ClassMngrClassTransferSupport
     PROPERTIES

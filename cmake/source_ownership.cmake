@@ -44,6 +44,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrStudentName
         ${CLASSMNGR_STUDENT_NAME_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrColorValidation
+        ${CLASSMNGR_COLOR_VALIDATION_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrCore ${CLASSMNGR_CORE_SOURCES})
     _classmngr_record_manifest(ClassMngrFontManager
         ${CLASSMNGR_FONT_MANAGER_SOURCES}

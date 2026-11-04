@@ -52,6 +52,12 @@ set(CLASSMNGR_STUDENT_NAME_SOURCES
     "src/core/utils/student_name_utils.h"
 )
 
+# Canonical color input validation is shared by Domain and Legacy UI users.
+# Keep the implementation separate from the broader color dialog support.
+set(CLASSMNGR_COLOR_VALIDATION_SOURCES
+    "src/core/utils/color_validation.cpp"
+)
+
 # The application update-check closure is shared by the legacy runtime and
 # the narrow Next startup-update composition. Keep it outside ClassMngrCore.
 set(CLASSMNGR_UPDATER_SOURCES

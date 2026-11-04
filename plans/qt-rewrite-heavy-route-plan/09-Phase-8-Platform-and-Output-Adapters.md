@@ -658,6 +658,18 @@ on this Darwin host; Linux package CI must confirm link order and symbols. The
 prior Windows and macOS runs were still in progress at the last check. Phase 9
 remains gated.
 
+### 8.7.10 — Linux package color-validation dependency
+
+At SHA `76bba91f0bc65be0f4f09392ff8ec52c650178c5`, Linux rerun `41816907048`
+resolved the Classroom/Roster symbols but exposed an undefined
+`ColorUtils::canonicalHexColor` reference, whose implementation was owned by
+the earlier ClassMngrClassTransferSupport archive. The function was extracted
+to a separately owned `ClassMngrColorValidation` leaf target, privately linked
+by ClassMngrDomainArchive and ClassMngrClassTransferSupport. Source ownership
+and exact dependency-boundary assertions were updated; static review passed.
+No local build or test was run. Package CI is pending, so Phase 9 remains
+gated.
+
 ## Objective
 
 

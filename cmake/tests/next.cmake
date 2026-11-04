@@ -1844,6 +1844,18 @@ get_target_property(_classmngr_next_workspace_domain_type
     ClassMngrNextWorkspaceDomain
     TYPE
 )
+get_target_property(_classmngr_domain_archive_links
+    ClassMngrDomainArchive
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_color_validation_links
+    ClassMngrColorValidation
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_class_transfer_support_links
+    ClassMngrClassTransferSupport
+    LINK_LIBRARIES
+)
 get_target_property(_classmngr_document_catalog_test_links
     ClassMngrNextResourceDocumentCatalogTests
     LINK_LIBRARIES
@@ -1893,6 +1905,9 @@ foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_next_workspace_domain_links
         _classmngr_next_workspace_domain_sources
         _classmngr_next_workspace_domain_type
+        _classmngr_domain_archive_links
+        _classmngr_color_validation_links
+        _classmngr_class_transfer_support_links
         _classmngr_document_catalog_test_links
         _classmngr_bootstrap_test_links
         _classmngr_document_catalog_library_links
@@ -1934,6 +1949,9 @@ file(WRITE "${_classmngr_next_boundary_report}"
     "NEXT_WORKSPACE_DOMAIN_LINKS=${_classmngr_next_workspace_domain_links}\n"
     "NEXT_WORKSPACE_DOMAIN_SOURCES=${_classmngr_next_workspace_domain_sources}\n"
     "NEXT_WORKSPACE_DOMAIN_TYPE=${_classmngr_next_workspace_domain_type}\n"
+    "DOMAIN_ARCHIVE_LINKS=${_classmngr_domain_archive_links}\n"
+    "COLOR_VALIDATION_LINKS=${_classmngr_color_validation_links}\n"
+    "CLASS_TRANSFER_SUPPORT_LINKS=${_classmngr_class_transfer_support_links}\n"
     "DOCUMENT_CATALOG_TEST_LINKS=${_classmngr_document_catalog_test_links}\n"
     "BOOTSTRAP_TEST_LINKS=${_classmngr_bootstrap_test_links}\n"
     "DOCUMENT_CATALOG_LIBRARY_LINKS=${_classmngr_document_catalog_library_links}\n"

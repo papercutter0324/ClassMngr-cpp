@@ -7,7 +7,6 @@
 #include <QColor>
 #include <QColorDialog>
 #include <QDialog>
-#include <QRegularExpression>
 
 namespace
 {
@@ -175,23 +174,6 @@ QString ColorUtils::getContrastingFontColor(
     return blackContrast >= whiteContrast
         ? "#000000"
         : "#FFFFFF";
-}
-
-std::optional<QString> ColorUtils::canonicalHexColor(
-    const QString& color
-    )
-{
-    static const QRegularExpression hexColorExpression(
-        QStringLiteral("^#[0-9A-Fa-f]{6}$")
-        );
-
-    const QString normalized = color.trimmed();
-    if (!hexColorExpression.match(normalized).hasMatch())
-    {
-        return std::nullopt;
-    }
-
-    return normalized.toUpper();
 }
 
 QColor ColorUtils::getColor(
