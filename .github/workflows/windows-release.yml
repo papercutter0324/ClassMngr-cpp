@@ -287,7 +287,9 @@ jobs:
           $vcpkgExe = Join-Path $vcpkgRoot "vcpkg.exe"
           & $vcpkgExe install `
             "boost-date-time:x64-windows-static" `
+            "boost-foreach:x64-windows-static" `
             "boost-filesystem:x64-windows-static" `
+            "boost-format:x64-windows-static" `
             "boost-iostreams:x64-windows-static" `
             "boost-program-options:x64-windows-static" `
             "boost-system:x64-windows-static" `
