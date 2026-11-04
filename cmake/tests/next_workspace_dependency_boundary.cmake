@@ -269,9 +269,9 @@ if(NOT _next_workspace_type STREQUAL "OBJECT_LIBRARY")
     )
 endif()
 if(NOT _next_workspace_domain_type STREQUAL "STATIC_LIBRARY"
-   OR NOT _next_workspace_domain_links STREQUAL "ClassMngrDomain")
+   OR NOT _next_workspace_domain_links STREQUAL "ClassMngrDomainArchive")
     message(FATAL_ERROR
-        "ClassMngrNextWorkspaceDomain must be a static archive with only the Domain target link: "
+        "ClassMngrNextWorkspaceDomain must be a static archive with only the DomainArchive target link: "
         "type=${_next_workspace_domain_type}, links=[${_next_workspace_domain_links}]"
     )
 endif()

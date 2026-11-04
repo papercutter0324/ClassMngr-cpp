@@ -1,17 +1,8 @@
 # Current Slice Batches
 
-## Phase 8 — Active Batch 5 (3 candidates)
+## Phase 8 — Active Batch 6 (1 candidate)
 
-1. **8.7.6 Windows redistributable package validation — committed; package CI
-   pending:** use the exact architecture-specific signed VC
-   redist package name; validate its version, signer, and staged hash without
-   treating the x86 installer stub as the runtime payload architecture.
-2. **8.7.7 Linux CMake link-group cycle — implemented; static review accepted; package CI pending:**
-   preserve the Runtime/WorkspaceStore RESCAN group while removing
-   reverse interface edges through shared Sub Prep and Calendar UI targets.
-3. **8.7.8 macOS disk-image cleanup — implemented; static acceptance passed; package CI pending:**
-   handle a busy read-only verification mount without losing package
-   validation, checksum generation, or artifact upload.
+1. **8.7.9 Linux package linker closure correction — implemented; static review accepted; package CI pending:** resolve legacy Classroom and Roster symbols from WorkspaceStore and Sub Prep while preserving the SCC-free CMake interfaces and Runtime/WorkspaceStore RESCAN group.
 
 ## Phase 9 — Next Batch (20 candidates; gated on Phase 8 package CI)
 

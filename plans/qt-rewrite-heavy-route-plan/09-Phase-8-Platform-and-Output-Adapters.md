@@ -644,6 +644,20 @@ exercise a real macOS mount. The prior package run's exit 16 is still inferred
 to be a busy detach, and macOS package CI remains pending. Phase 9 remains
 gated.
 
+### 8.7.9 — Linux package domain-model link closure
+
+At pushed SHA `3808d5da9d4fa4c76a7df5e9d14d31a8234b45ed`, Linux run
+`41813392564` configured successfully but failed linking `ClassMngrNext`:
+`ClassMngrNextWorkspaceDomain` was scanned before Sub Prep and WorkspaceStore,
+leaving `Classroom` and `Roster::BaseColumns` undefined. The correction puts the
+existing Domain objects in one `ClassMngrDomainArchive`, shared privately by
+WorkspaceStore, Runtime, and Apple TestRuntime; NextWorkspaceDomain now uses
+that archive, and its exact dependency assertion is updated. Static review
+accepted the target graph and source ownership. No local Linux build was run
+on this Darwin host; Linux package CI must confirm link order and symbols. The
+prior Windows and macOS runs were still in progress at the last check. Phase 9
+remains gated.
+
 ## Objective
 
 

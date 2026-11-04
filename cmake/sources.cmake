@@ -357,6 +357,36 @@ classmngr_add_production_objects(
     LIBRARIES
         Qt6::Gui
 )
+
+# WorkspaceStore and the shared Sub Prep adapter use legacy domain model
+# definitions. Keep their compiled owner narrow and linkable from Next without
+# pulling the monolithic Runtime into that executable.
+add_library(ClassMngrDomainArchive STATIC
+    "$<TARGET_OBJECTS:ClassMngrDomain>"
+)
+target_compile_features(ClassMngrDomainArchive
+    PUBLIC
+        cxx_std_23
+)
+target_link_libraries(ClassMngrDomainArchive
+    PUBLIC
+        ClassMngrBuildSettings
+        Qt6::Gui
+)
+target_include_directories(ClassMngrDomainArchive
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+set_target_properties(ClassMngrDomainArchive
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+target_link_libraries(ClassMngrWorkspaceStore
+    PRIVATE
+        ClassMngrDomainArchive
+)
+
 classmngr_add_production_objects(
     TARGET ClassMngrUiShared
     SOURCES ${CLASSMNGR_UI_SHARED_SOURCES}
@@ -518,7 +548,6 @@ add_library(ClassMngrRuntime STATIC
     $<TARGET_OBJECTS:ClassMngrCore>
     $<TARGET_OBJECTS:ClassMngrUpdater>
     $<TARGET_OBJECTS:ClassMngrData>
-    $<TARGET_OBJECTS:ClassMngrDomain>
     $<TARGET_OBJECTS:ClassMngrUpdatePresentation>
     $<TARGET_OBJECTS:ClassMngrUiShared>
     $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
@@ -541,6 +570,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrSpeakingEvalPowerPointAdapter
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
+        ClassMngrDomainArchive
         ClassMngrSQLiteSnapshot
 )
 
@@ -587,7 +617,6 @@ if(APPLE AND BUILD_TESTING)
         $<TARGET_OBJECTS:ClassMngrCore>
         $<TARGET_OBJECTS:ClassMngrUpdater>
         $<TARGET_OBJECTS:ClassMngrData>
-        $<TARGET_OBJECTS:ClassMngrDomain>
         $<TARGET_OBJECTS:ClassMngrUpdatePresentation>
         $<TARGET_OBJECTS:ClassMngrUiShared>
         $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
@@ -612,6 +641,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrSpeakingEvalPowerPointAdapter
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE
+            ClassMngrDomainArchive
             ClassMngrSQLiteSnapshot
     )
 
