@@ -22,6 +22,22 @@ namespace SubPrepPackageService
 {
 using FolderOpener = std::function<bool(const QUrl&)>;
 
+enum class PrintStatus
+{
+    Sent,
+    Canceled,
+    Failed
+};
+
+struct PrintResult final
+{
+    PrintStatus status = PrintStatus::Failed;
+    QString message;
+};
+
+using PrintLocalDocuments = std::function<PrintResult(
+    QWidget*, const QStringList& orderedDocumentPaths)>;
+
 enum class Status
 {
     Completed,
@@ -45,6 +61,7 @@ struct Request
     bool printPaperCopies = false;
     bool openFolderAfterGeneration = true;
     FolderOpener folderOpener;
+    PrintLocalDocuments printLocalDocuments;
     RosterTemplateRenderer::TemplateId rosterTemplate =
         RosterTemplateRenderer::TemplateId::ByDay;
     QStringList selectedExtraColumns;

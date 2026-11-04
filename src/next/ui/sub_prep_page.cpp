@@ -1208,23 +1208,26 @@ void SubPrepPage::generateSubPrep()
         .selectedDays = selectedWeekdays,
         .mode = mode
     };
-    auto printSource = m_actions.readPrintSource(printRequest);
-    if (!printSource)
+    SubPrepPrintService::Request subPrep;
     {
-        setStatus(operationError(printSource.error()), true);
-        return;
-    }
-    auto classInformation = SubPrepPrintSourceMapper::toClassInformation(
-        printSource.value(), printRequest);
-    if (!classInformation)
-    {
-        setStatus(operationError(classInformation.error()), true);
-        return;
+        const auto printSource = m_actions.readPrintSource(printRequest);
+        if (!printSource)
+        {
+            setStatus(operationError(printSource.error()), true);
+            return;
+        }
+        auto classInformation = SubPrepPrintSourceMapper::toClassInformation(
+            printSource.value(), printRequest);
+        if (!classInformation)
+        {
+            setStatus(operationError(classInformation.error()), true);
+            return;
+        }
+
+        subPrep.classInformation = std::move(classInformation.value());
     }
 
-    SubPrepPrintService::Request subPrep;
     subPrep.parent = this;
-    subPrep.classInformation = std::move(classInformation.value());
     subPrep.classMaterials = m_classMaterials->toPlainText();
     subPrep.gradingInstructions = m_gradingInstructions->toPlainText();
     subPrep.specialInstructions = m_specialInstructions->toPlainText();
@@ -1284,6 +1287,8 @@ void SubPrepPage::generateSubPrep()
     packageRequest.createFolder = createFolder->isChecked();
     packageRequest.printPaperCopies = printPaper->isChecked();
     packageRequest.openFolderAfterGeneration = openFolder->isChecked();
+    packageRequest.printLocalDocuments = m_actions.printLocalDocuments;
+    packageRequest.folderOpener = m_actions.openExternalUrl;
     packageRequest.targetRoot = folderEdit->text();
     packageRequest.userName = nameEdit->text();
     packageRequest.rosterTemplate = static_cast<RosterTemplateRenderer::TemplateId>(rosterTemplate->currentData().toInt());

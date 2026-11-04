@@ -28,9 +28,10 @@
 9. **8.2.4 Roster output — complete:** Save As uses the file dialog adapter,
    Print uses `PdfPrintOperation`, and Preview owns its generated PDF session;
    four Next/Legacy template parity cases pass.
-10. **8.2.5 Sub Prep output — in progress:** use the bounded projection for the packaged SQL
-    route and record output/memory evidence separately.
-11. **8.2.6 Speaking Evaluation reports:** route report generation through the
+10. **8.2.5 Sub Prep output — complete:** Next uses the bounded projection and
+    injected output operations; packaged SQL PDF parity passed separately from
+    the still-open memory lifecycle gate.
+11. **8.2.6 Speaking Evaluation reports — in progress:** route report generation through the
     operation boundary with staged cleanup and bounded rendering.
 12. **8.3.1 PowerPoint automation:** isolate availability, launch, failure,
     cleanup, and cancellation behind an application port.

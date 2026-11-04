@@ -26,6 +26,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <exception>
 #include <memory>
 #include <optional>
 #include <string>
@@ -1209,6 +1210,22 @@ Result generateForNext(Request request)
         return failed(preflightFailureMessage(planned.reason));
     }
 
+    if (planned.plan->output.printPaperCopies
+        && !request.printLocalDocuments)
+    {
+        return failed(
+            QObject::tr("The Sub Prep print operation is unavailable.")
+            );
+    }
+    if (planned.plan->output.folder
+        && planned.plan->output.folder->openAfterGeneration
+        && !request.folderOpener)
+    {
+        return failed(
+            QObject::tr("The Sub Prep folder opener is unavailable.")
+            );
+    }
+
     return generateWithPlan(std::move(request), *planned.plan, true);
 }
 
@@ -1374,26 +1391,72 @@ static Result generateWithPlan(
 
     if (printPaperCopies)
     {
-        const PdfPrintService::Result printResult =
-            PdfPrintService::printPdfDocuments(
-                {
-                    request.parent,
-                    documentPaths,
-                    QObject::tr("Print Sub Prep Package"),
-                    QPageLayout::Portrait,
-                    QPageSize::A4,
-                    true
-                }
-                );
-
-        if (printResult.status == PdfPrintService::Status::Failed)
+        if (finalizeRosterText)
         {
-            printFailure = printResult.message;
+            try
+            {
+                if (!request.printLocalDocuments)
+                {
+                    printFailure = QObject::tr(
+                        "The Sub Prep print operation is unavailable."
+                        );
+                }
+                else
+                {
+                    const PrintResult printResult = request.printLocalDocuments(
+                        request.parent,
+                        documentPaths
+                        );
+                    if (printResult.status
+                        == PrintStatus::Failed)
+                    {
+                        printFailure = printResult.message.trimmed().isEmpty()
+                            ? QObject::tr("The Sub Prep print operation failed.")
+                            : printResult.message;
+                    }
+                    else
+                    {
+                        printCanceled = printResult.status
+                            == PrintStatus::Canceled;
+                    }
+                }
+            }
+            catch (const std::exception&)
+            {
+                printFailure = QObject::tr(
+                    "The Sub Prep print operation failed."
+                    );
+            }
+            catch (...)
+            {
+                printFailure = QObject::tr(
+                    "The Sub Prep print operation failed."
+                    );
+            }
         }
         else
         {
-            printCanceled =
-                printResult.status == PdfPrintService::Status::Canceled;
+            const PdfPrintService::Result printResult =
+                PdfPrintService::printPdfDocuments(
+                    {
+                        request.parent,
+                        documentPaths,
+                        QObject::tr("Print Sub Prep Package"),
+                        QPageLayout::Portrait,
+                        QPageSize::A4,
+                        true
+                    }
+                    );
+
+            if (printResult.status == PdfPrintService::Status::Failed)
+            {
+                printFailure = printResult.message;
+            }
+            else
+            {
+                printCanceled =
+                    printResult.status == PdfPrintService::Status::Canceled;
+            }
         }
 
         if (printFailure.isEmpty() && !printCanceled && !folderCreated)
@@ -1406,9 +1469,29 @@ static Result generateWithPlan(
     if (folderCreated && folderPlan->openAfterGeneration)
     {
         const QUrl packageUrl = QUrl::fromLocalFile(packageDirectory);
-        const bool opened = request.folderOpener
-            ? request.folderOpener(packageUrl)
-            : QDesktopServices::openUrl(packageUrl);
+        bool opened = false;
+        if (finalizeRosterText)
+        {
+            try
+            {
+                opened = request.folderOpener
+                    && request.folderOpener(packageUrl);
+            }
+            catch (const std::exception&)
+            {
+                opened = false;
+            }
+            catch (...)
+            {
+                opened = false;
+            }
+        }
+        else
+        {
+            opened = request.folderOpener
+                ? request.folderOpener(packageUrl)
+                : QDesktopServices::openUrl(packageUrl);
+        }
         folderOpenFailed = !opened;
         if (folderOpenFailed)
         {

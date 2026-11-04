@@ -944,6 +944,8 @@ private slots:
     void classIdsForDaysProjectsScheduleOrderAndAllEntryKinds();
     void intensiveScheduleControlsSelectedDayFiltering();
     void printOnlyUsesPacketOrderAndReportsCancellation();
+    void nextPrintCallbackPreservesOrderedPathsAndTemporaryLifetime();
+    void nextFolderOpenRequiresCallbackAndPreservesGeneratedPackage();
     void rosterSourceFailuresDoNotCommitPartialPackages();
     void largePackageGeneratesOutputReferenceWhenConfigured();
     void nextLargePackageFinalizesSourceTextAndPreservesAllPixels();
@@ -1644,6 +1646,206 @@ void SubPrepPackageServiceTests
             QDir(expectedFailedPrintDirectory).absolutePath()
             );
     }
+}
+
+void SubPrepPackageServiceTests
+    ::nextPrintCallbackPreservesOrderedPathsAndTemporaryLifetime()
+{
+    SubPrepPackageService::Request missingPrintCallback =
+        packageRequest(QString(), QString());
+    missingPrintCallback.createFolder = false;
+    missingPrintCallback.printPaperCopies = true;
+    const SubPrepPackageService::Result missingPrintResult =
+        SubPrepPackageService::generateForNext(
+            std::move(missingPrintCallback));
+    QCOMPARE(missingPrintResult.status, SubPrepPackageService::Status::Failed);
+    QCOMPARE(missingPrintResult.message,
+        QStringLiteral("The Sub Prep print operation is unavailable."));
+
+    for (const SubPrepPackageService::PrintStatus printStatus : {
+             SubPrepPackageService::PrintStatus::Sent,
+             SubPrepPackageService::PrintStatus::Canceled,
+             SubPrepPackageService::PrintStatus::Failed
+         })
+    {
+        SubPrepPackageService::Request request =
+            packageRequest(QString(), QString());
+        request.createFolder = false;
+        request.printPaperCopies = true;
+
+        QStringList capturedPaths;
+        QWidget* capturedParent = nullptr;
+        QString temporaryDirectory;
+        bool allDocumentsExistDuringPrint = false;
+        int printCalls = 0;
+        request.printLocalDocuments = [&] (
+            QWidget* parent, const QStringList& orderedDocumentPaths) {
+            ++printCalls;
+            capturedParent = parent;
+            capturedPaths = orderedDocumentPaths;
+            temporaryDirectory = QFileInfo(orderedDocumentPaths.value(0)).absolutePath();
+            allDocumentsExistDuringPrint = orderedDocumentPaths.size() == 2;
+            for (const QString& documentPath : orderedDocumentPaths)
+            {
+                allDocumentsExistDuringPrint = allDocumentsExistDuringPrint
+                    && QFileInfo(documentPath).isFile();
+            }
+            const QString message = printStatus
+                    == SubPrepPackageService::PrintStatus::Failed
+                ? QStringLiteral("Fixture print operation failed.")
+                : QStringLiteral("Fixture print operation result.");
+            return SubPrepPackageService::PrintResult{
+                printStatus,
+                message
+            };
+        };
+
+        const SubPrepPackageService::Result generated =
+            SubPrepPackageService::generateForNext(std::move(request));
+        QCOMPARE(printCalls, 1);
+        QVERIFY(allDocumentsExistDuringPrint);
+        QVERIFY(capturedParent == nullptr);
+        QCOMPARE(capturedPaths.size(), 2);
+        QCOMPARE(QFileInfo(capturedPaths.at(0)).fileName(),
+            QStringLiteral("Sub Prep.pdf"));
+        QCOMPARE(QFileInfo(capturedPaths.at(1)).fileName(),
+            QStringLiteral("Rosters - By Day.pdf"));
+        QCOMPARE(generated.documentPaths, capturedPaths);
+        QVERIFY(!QFileInfo::exists(temporaryDirectory));
+        for (const QString& documentPath : capturedPaths)
+        {
+            QVERIFY(!QFileInfo::exists(documentPath));
+        }
+
+        if (printStatus == SubPrepPackageService::PrintStatus::Sent)
+        {
+            QCOMPARE(generated.status, SubPrepPackageService::Status::Completed);
+            QVERIFY(!generated.printCanceled);
+        }
+        else if (printStatus
+            == SubPrepPackageService::PrintStatus::Canceled)
+        {
+            QCOMPARE(generated.status, SubPrepPackageService::Status::Canceled);
+            QVERIFY(generated.printCanceled);
+        }
+        else
+        {
+            QCOMPARE(generated.status, SubPrepPackageService::Status::Failed);
+            QCOMPARE(generated.message,
+                QStringLiteral("Fixture print operation failed."));
+        }
+    }
+
+    for (const SubPrepPackageService::PrintStatus printStatus : {
+             SubPrepPackageService::PrintStatus::Canceled,
+             SubPrepPackageService::PrintStatus::Failed
+         })
+    {
+        QTemporaryDir targetRoot;
+        QVERIFY(targetRoot.isValid());
+        SubPrepPackageService::Request request = packageRequest(
+            targetRoot.path(), QStringLiteral("Next print retention"));
+        request.printPaperCopies = true;
+        request.printLocalDocuments = [printStatus](
+            QWidget*, const QStringList&) {
+            return SubPrepPackageService::PrintResult{
+                printStatus,
+                QStringLiteral("Fixture printer result.")
+            };
+        };
+        const SubPrepPackageService::Result generated =
+            SubPrepPackageService::generateForNext(std::move(request));
+        QVERIFY(generated.folderCreated);
+        QCOMPARE(generated.documentPaths.size(), 2);
+        for (const QString& documentPath : generated.documentPaths)
+        {
+            QVERIFY(QFileInfo(documentPath).isFile());
+        }
+        if (printStatus
+            == SubPrepPackageService::PrintStatus::Canceled)
+        {
+            QCOMPARE(generated.status, SubPrepPackageService::Status::Completed);
+            QVERIFY(generated.printCanceled);
+        }
+        else
+        {
+            QCOMPARE(generated.status, SubPrepPackageService::Status::Failed);
+            QVERIFY(!generated.printCanceled);
+        }
+    }
+}
+
+void SubPrepPackageServiceTests
+    ::nextFolderOpenRequiresCallbackAndPreservesGeneratedPackage()
+{
+    QTemporaryDir missingCallbackRoot;
+    QVERIFY(missingCallbackRoot.isValid());
+    const QString missingTargetRoot = QDir(missingCallbackRoot.path())
+        .filePath(QStringLiteral("missing-callback"));
+    SubPrepPackageService::Request missingCallback = packageRequest(
+        missingTargetRoot, QStringLiteral("Next folder opener")
+        );
+    missingCallback.openFolderAfterGeneration = true;
+    const SubPrepPackageService::Result missingResult =
+        SubPrepPackageService::generateForNext(std::move(missingCallback));
+    QCOMPARE(missingResult.status, SubPrepPackageService::Status::Failed);
+    QCOMPARE(missingResult.message,
+        QStringLiteral("The Sub Prep folder opener is unavailable."));
+    QVERIFY(!QFileInfo::exists(missingTargetRoot));
+
+    QTemporaryDir failedOpenRoot;
+    QVERIFY(failedOpenRoot.isValid());
+    const QString failedOpenName = QStringLiteral("Next folder failure");
+    const QString expectedFailedDirectory = QDir(failedOpenRoot.path())
+        .filePath(SubPrepPackageService::datedFolderName(
+            failedOpenName, {QDate(2026, 7, 21)}));
+    int failedOpenCalls = 0;
+    QUrl failedOpenUrl;
+    SubPrepPackageService::Request failedOpen = packageRequest(
+        failedOpenRoot.path(), failedOpenName);
+    failedOpen.openFolderAfterGeneration = true;
+    failedOpen.folderOpener = [&](const QUrl& url) {
+        ++failedOpenCalls;
+        failedOpenUrl = url;
+        return false;
+    };
+    const SubPrepPackageService::Result failedOpenResult =
+        SubPrepPackageService::generateForNext(std::move(failedOpen));
+    QCOMPARE(failedOpenResult.status, SubPrepPackageService::Status::Failed);
+    QCOMPARE(failedOpenCalls, 1);
+    QCOMPARE(failedOpenUrl, QUrl::fromLocalFile(expectedFailedDirectory));
+    QCOMPARE(failedOpenResult.outputDirectory, expectedFailedDirectory);
+    QVERIFY(failedOpenResult.folderCreated);
+    QCOMPARE(failedOpenResult.documentPaths.size(), 2);
+    for (const QString& documentPath : failedOpenResult.documentPaths)
+    {
+        QVERIFY(QFileInfo(documentPath).isFile());
+    }
+
+    QTemporaryDir successfulOpenRoot;
+    QVERIFY(successfulOpenRoot.isValid());
+    const QString successfulOpenName = QStringLiteral("Next folder success");
+    const QString expectedSuccessfulDirectory = QDir(successfulOpenRoot.path())
+        .filePath(SubPrepPackageService::datedFolderName(
+            successfulOpenName, {QDate(2026, 7, 21)}));
+    int successfulOpenCalls = 0;
+    QUrl successfulOpenUrl;
+    SubPrepPackageService::Request successfulOpen = packageRequest(
+        successfulOpenRoot.path(), successfulOpenName);
+    successfulOpen.openFolderAfterGeneration = true;
+    successfulOpen.folderOpener = [&](const QUrl& url) {
+        ++successfulOpenCalls;
+        successfulOpenUrl = url;
+        return true;
+    };
+    const SubPrepPackageService::Result successfulOpenResult =
+        SubPrepPackageService::generateForNext(std::move(successfulOpen));
+    QCOMPARE(successfulOpenResult.status,
+        SubPrepPackageService::Status::Completed);
+    QCOMPARE(successfulOpenCalls, 1);
+    QCOMPARE(successfulOpenUrl,
+        QUrl::fromLocalFile(expectedSuccessfulDirectory));
+    QVERIFY(successfulOpenResult.folderCreated);
 }
 
 void SubPrepPackageServiceTests::

@@ -348,6 +348,30 @@ four template parity rows passed. Offscreen Qt emitted the expected size-hint
 and `Sans Serif` fallback warnings. Native printer UI and physical printing
 were not exercised.
 
+### 8.2.5 — Sub Prep output (accepted)
+
+The page query result now lives only through mapping, and the mapped request
+is retained through Sub Prep PDF rendering. Next supplies a neutral package
+callback that Bootstrap maps to ordered `PdfPrintOperation` and
+`ExternalUrlLaunchPort` operations. The shared service no longer references
+Next Platform; Legacy direct output behavior remains.
+
+The standard `build/macos-clang-debug` build passed for
+`ClassMngrSubPrepPackageServiceTests`,
+`ClassMngrNextSubPrepPageTests`, `ClassMngrStartupPerformanceTests`, and
+`ClassMngrNextSubPrepSqlParityCapture` (exit 0; duplicate-library linker
+warnings only). Focused CTest passed 3/3. Legacy
+`capturesMatchedSqlSubPrepForC53` passed 3/3 in 11.573s against the SQL oracle
+of 750 students and 30 headers. The Next matched-SQL capture passed for 12
+Sub Prep and 5 roster pages (17 total), with matching dimensions, zero changed
+pixels, and SQL text/font/hash gates passing. The strict Next audit covered 5
+pages and 15 page-font records with zero unmapped or control codes; the Legacy
+audit diagnostic showed expected control-code mappings. C53 artifacts were
+written under dedicated `/private/tmp`; no PDF byte-identity claim is made.
+
+No memory lifecycle verification was run. Separate Sub Prep memory acceptance
+remains open under the memory plan.
+
 ## Objective
 
 

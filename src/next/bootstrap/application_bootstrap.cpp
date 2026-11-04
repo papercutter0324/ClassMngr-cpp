@@ -1031,6 +1031,57 @@ Ui::SubPrepPageActions ApplicationBootstrap::subPrepPageActions()
         if (auto* active = gateway()) { return active->createSubPrepRosterOutputSourceReadPort(); }
         return std::unique_ptr<Application::SubPrepRosterOutputSourceReadPort>{};
     };
+    actions.printLocalDocuments = [](
+        QWidget* parent,
+        const QStringList& orderedDocumentPaths) {
+        std::unique_ptr<Platform::PdfPrintOperation> operation =
+            Platform::makeQtPdfPrintOperation();
+        if (!operation)
+        {
+            return SubPrepPackageService::PrintResult{
+                SubPrepPackageService::PrintStatus::Failed,
+                QCoreApplication::translate(
+                    "SubPrepPage",
+                    "Unable to create the Sub Prep print operation."
+                    )
+            };
+        }
+        const Platform::PdfPrintResult result =
+            operation->printLocalDocuments({
+                .parent = parent,
+                .documentPaths = orderedDocumentPaths,
+                .dialogTitle = QCoreApplication::translate(
+                    "SubPrepPage",
+                    "Print Sub Prep Package"
+                    ),
+                .pageOrientation = QPageLayout::Portrait,
+                .preferredPageSize = QPageSize::A4,
+                .fitToPage = true
+            });
+        switch (result.status)
+        {
+        case Platform::PdfPrintStatus::Sent:
+            return SubPrepPackageService::PrintResult{
+                SubPrepPackageService::PrintStatus::Sent,
+                result.message
+            };
+        case Platform::PdfPrintStatus::Canceled:
+            return SubPrepPackageService::PrintResult{
+                SubPrepPackageService::PrintStatus::Canceled,
+                {}
+            };
+        case Platform::PdfPrintStatus::Failed:
+        default:
+            return SubPrepPackageService::PrintResult{
+                SubPrepPackageService::PrintStatus::Failed,
+                result.message
+            };
+        }
+    };
+    const auto externalUrlLaunchPort = m_coreServices->externalUrlLaunchPort;
+    actions.openExternalUrl = [externalUrlLaunchPort](const QUrl& url) {
+        return externalUrlLaunchPort->openUrl(url);
+    };
     return actions;
 }
 

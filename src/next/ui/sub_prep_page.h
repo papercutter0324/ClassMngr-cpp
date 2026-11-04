@@ -8,6 +8,7 @@
 #include "next/application/sub_prep_personal_zoom_preferences.h"
 #include "next/application/sub_prep_print_source_query.h"
 #include "next/application/sub_prep_roster_output_source_query.h"
+#include "features/sub_prep/services/sub_prep_package_service.h"
 #include "next/application/sub_prep_schedule_summary_query.h"
 #include "next/application/sub_prep_weekday.h"
 #include "next/application/current_campus_preferences.h"
@@ -17,6 +18,7 @@
 #include "next/ui/page.h"
 
 #include <QString>
+#include <QUrl>
 
 #include <functional>
 #include <memory>
@@ -72,6 +74,8 @@ struct SubPrepPageActions final
     std::function<std::unique_ptr<
         Application::SubPrepRosterOutputSourceReadPort>()>
         createRosterOutputSourceReadPort;
+    SubPrepPackageService::PrintLocalDocuments printLocalDocuments;
+    std::function<bool(const QUrl&)> openExternalUrl;
 };
 
 struct SubPrepPageVisualMetrics final
