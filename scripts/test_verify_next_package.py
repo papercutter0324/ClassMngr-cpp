@@ -60,6 +60,9 @@ def _windows_posix_package_semantics(
         yield
         return
 
+    # The verifier resolves package_root before constructing package paths.
+    # Match that canonical root so Windows path aliases compare consistently.
+    root = root.resolve(strict=True)
     executable = root / executable_relative_path
     symlinks = {root / relative: target for relative, target in (symlink_targets or {}).items()}
     original_stat = os.stat
