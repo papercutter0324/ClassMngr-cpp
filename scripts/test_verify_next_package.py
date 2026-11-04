@@ -62,8 +62,7 @@ def _windows_posix_package_semantics(
 
     executable = root / executable_relative_path
     symlinks = {root / relative: target for relative, target in (symlink_targets or {}).items()}
-    path_type = type(executable)
-    original_stat = path_type.stat
+    original_stat = os.stat
     original_lstat = os.lstat
     original_readlink = os.readlink
     original_islink = os.path.islink
@@ -77,13 +76,24 @@ def _windows_posix_package_semantics(
                 file_attributes |= stat.FILE_ATTRIBUTE_REPARSE_POINT
         return _StatModeOverlay(result, mode, file_attributes)
 
-    def stat_with_posix_mode(path: Path, *args: object, **kwargs: object) -> os.stat_result:
+    def stat_with_posix_mode(
+        path: str | bytes | os.PathLike[str] | os.PathLike[bytes],
+        *args: object,
+        **kwargs: object,
+    ) -> os.stat_result:
         result = original_stat(path, *args, **kwargs)
-        if path == executable:
+        try:
+            fixture_path = Path(path)
+        except TypeError:
+            return result
+        if fixture_path == executable:
             if executable_is_marked_executable:
                 return overlay_mode(result, stat.S_IXUSR)
             mode = result.st_mode & ~(stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
             return _StatModeOverlay(result, mode)
+        # Python 3.13 pathlib implements Path.lstat() through stat(follow_symlinks=False).
+        if fixture_path in symlinks and not kwargs.get("follow_symlinks", True):
+            return overlay_mode(result, 0, stat.S_IFLNK)
         return result
 
     def lstat_with_posix_mode(
@@ -118,9 +128,9 @@ def _windows_posix_package_semantics(
         return original_islink(path)
 
     with (
-        # Patch the concrete path class so pathlib version-specific overrides
-        # still expose the synthetic POSIX mode bits on Windows.
-        patch.object(path_type, "stat", new=stat_with_posix_mode),
+        # Patch os.stat so pathlib implementations that route lstat() through
+        # stat(follow_symlinks=False) also expose the synthetic POSIX metadata.
+        patch("os.stat", new=stat_with_posix_mode),
         patch("os.lstat", new=lstat_with_posix_mode),
         patch("os.readlink", new=readlink_with_posix_target),
         patch("os.path.islink", new=islink_with_posix_target),
