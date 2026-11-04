@@ -415,6 +415,35 @@ case were skipped because the integration gate was unset. The standalone
 process fixture was up to date; runner behavior cases ran through the Legacy
 service suite. Native PowerPoint automation was not exercised.
 
+### 8.4.1 — Update operations ports (accepted)
+
+Added Qt-free Next Application contracts for download events and cleanup,
+package actions, and the application artifact value. Qt adapters wrap the
+existing downloader and installer, preserving hash/size validation,
+resume/reuse, cleanup, and process actions. The shared dialog no longer
+references `UpdateDownloader`, `UpdateInstaller`, or `Q_OS_LINUX`; Next
+`UpdateCoordinator` and Legacy `UpdateController` inject the ports, including
+cleanup policy and current artifact. `ClassMngrUpdateOperations` owns
+downloader/installer sources, `ClassMngrNextUpdateAdapters` links it directly,
+and `ClassMngrUpdatePresentation` owns only dialog sources.
+
+The final build passed for `ClassMngrUpdateOperations`,
+`ClassMngrNextUpdateAdapters`, `ClassMngrUpdatePresentation`, `ClassMngr`,
+`ClassMngrNext`, `ClassMngrNextBootstrapTests`,
+`ClassMngrNextUpdateCoordinatorTests`, `ClassMngrUpdaterTests`, and
+`ClassMngrUpdateControllerAutomaticStartupTests`. Focused CTest passed 4/4 in
+24.01s: Bootstrap, startup/workspace dependency boundary, Next coordinator,
+and shared update presentation. The boundary report confirms the direct
+Update Operations dependency and unique source ownership. The download-failure
+fake-port recheck passed 3 QtTest cases and coordinator CTest 1/1. Offline
+selected updater cases passed 15/15; selected Legacy controller port/data
+cases passed 11/11; unconfigured-startup cases passed 3/3.
+
+The full updater and Legacy controller suites were not run because their HTTP
+fixtures fail at `QTcpServer::listen()` before reaching tested behavior. Real
+installer/folder actions were not invoked, and the Linux branch was not
+runtime-tested on macOS.
+
 ## Objective
 
 

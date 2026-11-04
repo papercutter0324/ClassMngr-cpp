@@ -12,6 +12,8 @@ namespace ClassMngr::Next::Application
 class SkippedUpdateVersionPreferencesPort;
 class StartupUpdateCheckPort;
 class StartupUpdateCheckUseCase;
+class UpdateDownloadPort;
+class UpdatePackageActionPort;
 struct StartupUpdateCheckResult;
 }
 
@@ -73,6 +75,10 @@ private:
     QPointer<UpdateDialog> m_dialog;
     std::unique_ptr<ClassMngr::Next::Application::StartupUpdateCheckPort>
         m_startupUpdateCheckPort;
+    std::unique_ptr<ClassMngr::Next::Application::UpdateDownloadPort>
+        m_updateDownloadPort;
+    std::unique_ptr<ClassMngr::Next::Application::UpdatePackageActionPort>
+        m_packageActionPort;
     std::unique_ptr<ClassMngr::Next::Application::StartupUpdateCheckUseCase>
         m_startupUpdateCheckUseCase;
     bool m_startupCheckActive = false;

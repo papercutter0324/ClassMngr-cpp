@@ -1,9 +1,10 @@
 #pragma once
 
-#include "core/updater/update_downloader.h"
 #include "core/updater/update_service.h"
 #include "next/application/manual_update_check.h"
 #include "next/application/manual_update_check_use_case.h"
+#include "next/application/update_download.h"
+#include "next/application/update_package_action.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 
 #include <memory>
@@ -38,12 +39,15 @@ public:
 
     explicit UpdateDialog(
         ClassMngr::Next::Application::ManualUpdateCheckPort& manualUpdateCheckPort,
+        ClassMngr::Next::Application::UpdateDownloadPort& updateDownloadPort,
+        ClassMngr::Next::Application::UpdatePackageActionPort& packageActionPort,
         bool startupComplete,
         QWidget* parent = nullptr,
         const QString& skippedVersion = QString(),
         ResourcePackPlaceholder resourcePackPlaceholder = ResourcePackPlaceholder::Show,
         DialogGeometryPreferencesCallbacks geometryPreferences = {}
         );
+    ~UpdateDialog() override;
 
     void refreshForOpen();
     void setStartupComplete(
@@ -112,6 +116,9 @@ private slots:
         );
     void handleDownloadVerifying();
     void handleDownloadDiscarded();
+    void handleDownloadEvent(
+        ClassMngr::Next::Application::UpdateDownloadEvent event
+        );
 
 private:
     enum class PrimaryAction
@@ -182,10 +189,12 @@ private:
     void installOrRevealUpdate();
 
 private:
-    UpdateDownloader* m_downloader = nullptr;
+    ClassMngr::Next::Application::UpdateDownloadPort& m_updateDownloadPort;
+    ClassMngr::Next::Application::UpdatePackageActionPort& m_packageActionPort;
     std::unique_ptr<
         ClassMngr::Next::Application::ManualUpdateCheckUseCase
         > m_manualUpdateCheckUseCase;
+    std::shared_ptr<int> m_callbackLifetime = std::make_shared<int>(0);
 
     QFrame* m_programFrame = nullptr;
     QLabel* m_statusIndicator = nullptr;

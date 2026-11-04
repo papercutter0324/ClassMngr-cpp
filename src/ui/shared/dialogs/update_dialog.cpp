@@ -1,7 +1,6 @@
 #include "update_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
-#include "core/updater/update_installer.h"
 #include "next/application/manual_update_check_use_case.h"
 #include "ui/shared/widgets/text_fit_push_button.h"
 
@@ -17,7 +16,6 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QTimeZone>
-#include <QtGlobal>
 #include <QVBoxLayout>
 
 #include <type_traits>
@@ -61,10 +59,30 @@ UpdateCheckResult toPresentationResult(
     };
 }
 
+ClassMngr::Next::Application::UpdateArtifact applicationArtifact(
+    const UpdateCheckResult& result
+    )
+{
+    return {
+        .platformKey = ClassMngr::Next::Application::UpdateArtifactPlatformKey(
+            result.artifact.platformKey.toStdString()),
+        .url = ClassMngr::Next::Application::EncodedUrlText(
+            result.artifact.url.toEncoded().toStdString()),
+        .fileName = ClassMngr::Next::Application::UpdateArtifactFileName(
+            result.artifact.fileName.toStdString()),
+        .sha256 = ClassMngr::Next::Application::UpdateArtifactSha256(
+            result.artifact.sha256.toStdString()),
+        .sizeBytes = ClassMngr::Next::Application::UpdateArtifactSizeBytes(
+            result.artifact.sizeBytes)
+    };
+}
+
 } // namespace ClassMngr::Next::UiShared::Details
 
 UpdateDialog::UpdateDialog(
     ClassMngr::Next::Application::ManualUpdateCheckPort& manualUpdateCheckPort,
+    ClassMngr::Next::Application::UpdateDownloadPort& updateDownloadPort,
+    ClassMngr::Next::Application::UpdatePackageActionPort& packageActionPort,
     bool startupComplete,
     QWidget* parent,
     const QString& skippedVersion,
@@ -76,13 +94,26 @@ UpdateDialog::UpdateDialog(
           parent,
           std::move(geometryPreferences)
           )
-    , m_downloader(new UpdateDownloader(this))
+    , m_updateDownloadPort(updateDownloadPort)
+    , m_packageActionPort(packageActionPort)
     , m_startupComplete(startupComplete)
     , m_skippedVersion(skippedVersion.trimmed())
 {
     buildUi(resourcePackPlaceholder);
     connectSignals();
     showInitialState();
+
+    const QPointer<UpdateDialog> downloadGuard(this);
+    const std::weak_ptr<int> downloadLifetime(m_callbackLifetime);
+    m_updateDownloadPort.setObserver([downloadGuard, downloadLifetime](
+        ClassMngr::Next::Application::UpdateDownloadEvent event
+        ) mutable
+        {
+            if (downloadGuard && !downloadLifetime.expired())
+            {
+                downloadGuard->handleDownloadEvent(std::move(event));
+            }
+        });
 
     m_manualUpdateCheckUseCase = std::make_unique<
         ClassMngr::Next::Application::ManualUpdateCheckUseCase
@@ -99,6 +130,12 @@ UpdateDialog::UpdateDialog(
         });
 }
 
+UpdateDialog::~UpdateDialog()
+{
+    m_callbackLifetime.reset();
+    m_updateDownloadPort.setObserver({});
+}
+
 void UpdateDialog::setSkippedVersion(
     const QString& version
     )
@@ -106,7 +143,7 @@ void UpdateDialog::setSkippedVersion(
     m_skippedVersion =
         version.trimmed();
 
-    if (m_hasResult && !m_downloader->isBusy())
+    if (m_hasResult && !m_updateDownloadPort.isBusy())
     {
         showResult(m_result);
     }
@@ -172,8 +209,8 @@ void UpdateDialog::setStartupComplete(
         && !m_downloadedFilePath.isEmpty()
         && m_hasResult
         && m_result.updateAvailable
-        && m_downloader->hasCompletedDownload(
-            m_result.artifact
+        && m_updateDownloadPort.hasCompletedDownload(
+            ClassMngr::Next::UiShared::Details::applicationArtifact(m_result)
             )
         )
     {
@@ -185,9 +222,9 @@ void UpdateDialog::closeEvent(
     QCloseEvent* event
     )
 {
-    if (m_downloader->isBusy())
+    if (m_updateDownloadPort.isBusy())
     {
-        m_downloader->pause();
+        m_updateDownloadPort.pause();
     }
 
     DialogShell::closeEvent(event);
@@ -276,6 +313,55 @@ void UpdateDialog::handleManualCheckEvent(
     }, std::move(event));
 }
 
+void UpdateDialog::handleDownloadEvent(
+    ClassMngr::Next::Application::UpdateDownloadEvent event
+    )
+{
+    std::visit([this](auto value)
+    {
+        using Value = std::decay_t<decltype(value)>;
+        if constexpr (std::is_same_v<Value,
+            ClassMngr::Next::Application::UpdateDownloadPreparing>)
+        {
+            handleDownloadPreparing(value.bytesAvailable, value.bytesTotal);
+        }
+        else if constexpr (std::is_same_v<Value,
+            ClassMngr::Next::Application::UpdateDownloadStarted>)
+        {
+            handleDownloadStarted();
+        }
+        else if constexpr (std::is_same_v<Value,
+            ClassMngr::Next::Application::UpdateDownloadProgress>)
+        {
+            handleDownloadProgress(value.bytesReceived, value.bytesTotal);
+        }
+        else if constexpr (std::is_same_v<Value,
+            ClassMngr::Next::Application::UpdateDownloadPaused>)
+        {
+            handleDownloadPaused(value.bytesReceived, value.bytesTotal);
+        }
+        else if constexpr (std::is_same_v<Value,
+            ClassMngr::Next::Application::UpdateDownloadVerifying>)
+        {
+            handleDownloadVerifying();
+        }
+        else if constexpr (std::is_same_v<Value,
+            ClassMngr::Next::Application::UpdateDownloadSucceeded>)
+        {
+            handleDownloadSucceeded(QString::fromStdString(value.filePath));
+        }
+        else if constexpr (std::is_same_v<Value,
+            ClassMngr::Next::Application::UpdateDownloadFailed>)
+        {
+            handleDownloadFailed(QString::fromStdString(value.message));
+        }
+        else
+        {
+            handleDownloadDiscarded();
+        }
+    }, std::move(event));
+}
+
 void UpdateDialog::forceCheck()
 {
     if (m_manualUpdateCheckUseCase)
@@ -292,14 +378,14 @@ void UpdateDialog::handlePrimaryAction()
     case PrimaryAction::Resume:
         if (m_hasResult && m_result.updateAvailable)
         {
-            m_downloader->download(
-                m_result.artifact
+            m_updateDownloadPort.startOrResume(
+                ClassMngr::Next::UiShared::Details::applicationArtifact(m_result)
                 );
         }
         return;
 
     case PrimaryAction::Pause:
-        m_downloader->pause();
+        m_updateDownloadPort.pause();
         return;
 
     case PrimaryAction::Install:
@@ -351,7 +437,7 @@ void UpdateDialog::handleSecondaryAction()
         return;
 
     case SecondaryAction::DiscardDownload:
-        m_downloader->discard();
+        m_updateDownloadPort.discard();
         return;
 
     case SecondaryAction::None:
@@ -715,55 +801,6 @@ void UpdateDialog::buildUi(ResourcePackPlaceholder resourcePackPlaceholder)
 void UpdateDialog::connectSignals()
 {
     connect(
-        m_downloader,
-        &UpdateDownloader::downloadPreparing,
-        this,
-        &UpdateDialog::handleDownloadPreparing
-        );
-    connect(
-        m_downloader,
-        &UpdateDownloader::downloadStarted,
-        this,
-        &UpdateDialog::handleDownloadStarted
-        );
-    connect(
-        m_downloader,
-        &UpdateDownloader::downloadProgress,
-        this,
-        &UpdateDialog::handleDownloadProgress
-        );
-    connect(
-        m_downloader,
-        &UpdateDownloader::downloadPaused,
-        this,
-        &UpdateDialog::handleDownloadPaused
-        );
-    connect(
-        m_downloader,
-        &UpdateDownloader::downloadVerifying,
-        this,
-        &UpdateDialog::handleDownloadVerifying
-        );
-    connect(
-        m_downloader,
-        &UpdateDownloader::downloadSucceeded,
-        this,
-        &UpdateDialog::handleDownloadSucceeded
-        );
-    connect(
-        m_downloader,
-        &UpdateDownloader::downloadFailed,
-        this,
-        &UpdateDialog::handleDownloadFailed
-        );
-    connect(
-        m_downloader,
-        &UpdateDownloader::downloadDiscarded,
-        this,
-        &UpdateDialog::handleDownloadDiscarded
-        );
-
-    connect(
         m_checkButton,
         &QPushButton::clicked,
         this,
@@ -862,7 +899,9 @@ void UpdateDialog::showResult(
 
     if (result.updateAvailable)
     {
-        if (m_downloader->hasCompletedDownload(result.artifact))
+        const auto artifact =
+            ClassMngr::Next::UiShared::Details::applicationArtifact(result);
+        if (m_updateDownloadPort.hasCompletedDownload(artifact))
         {
             if (!m_downloadedFilePath.isEmpty())
             {
@@ -872,16 +911,14 @@ void UpdateDialog::showResult(
 
             // Re-enter the downloader so it can verify the saved artifact and
             // report the verified file path through downloadSucceeded().
-            m_downloader->download(
-                result.artifact
-                );
+            m_updateDownloadPort.startOrResume(artifact);
             return;
         }
 
-        if (m_downloader->hasResumableDownload(result.artifact))
+        if (m_updateDownloadPort.hasResumableDownload(artifact))
         {
             showPausedDownload(
-                m_downloader->resumableBytes(result.artifact),
+                m_updateDownloadPort.resumableBytes(artifact),
                 result.artifact.sizeBytes
                 );
             return;
@@ -961,37 +998,22 @@ void UpdateDialog::showReadyToInstall()
             + tr("Installation will be available after ClassMngr finishes starting.");
     }
 
-#if defined(Q_OS_LINUX)
+    const bool reveal = m_packageActionPort.primaryAction()
+        == ClassMngr::Next::Application::UpdatePackageActionKind::RevealInFolder;
     setStatus(
         QStringLiteral("✓"),
         QStringLiteral("#35a853"),
-        tr("Download Complete"),
+        reveal ? tr("Download Complete") : tr("Ready to Install"),
         details
         );
     configureActions(
         false,
         false,
-        PrimaryAction::Reveal,
-        tr("Open Download Folder"),
+        reveal ? PrimaryAction::Reveal : PrimaryAction::Install,
+        reveal ? tr("Open Download Folder") : tr("Install and Close"),
         m_startupComplete,
-        tr("Close")
+        reveal ? tr("Close") : tr("Not Now")
         );
-#else
-    setStatus(
-        QStringLiteral("✓"),
-        QStringLiteral("#35a853"),
-        tr("Ready to Install"),
-        details
-        );
-    configureActions(
-        false,
-        false,
-        PrimaryAction::Install,
-        tr("Install and Close"),
-        m_startupComplete,
-        tr("Not Now")
-        );
-#endif
 
     configureSecondaryAction(
         SecondaryAction::None,
@@ -1096,14 +1118,14 @@ void UpdateDialog::showOperationFailure(
 
     if (
         m_hasResult
-        && m_downloader->hasResumableDownload(
-            m_result.artifact
+        && m_updateDownloadPort.hasResumableDownload(
+            ClassMngr::Next::UiShared::Details::applicationArtifact(m_result)
             )
         )
     {
         showPausedDownload(
-            m_downloader->resumableBytes(
-                m_result.artifact
+            m_updateDownloadPort.resumableBytes(
+                ClassMngr::Next::UiShared::Details::applicationArtifact(m_result)
                 ),
             m_result.artifact.sizeBytes
             );
@@ -1268,25 +1290,25 @@ void UpdateDialog::installOrRevealUpdate()
         return;
     }
 
-#if defined(Q_OS_LINUX)
-    if (
-        const Status status =
-            UpdateInstaller::revealInFolder(
-                m_downloadedFilePath
-                );
-        !status
-        )
+    if (m_packageActionPort.primaryAction()
+        == ClassMngr::Next::Application::UpdatePackageActionKind::RevealInFolder)
     {
-        showOperationFailure(status.error());
+        const auto result = m_packageActionPort.revealInFolder(
+            m_downloadedFilePath.toStdString());
+        if (!result.succeeded)
+        {
+            showOperationFailure(QString::fromStdString(result.message));
+            return;
+        }
+
+        DialogServices::showInformation(
+            this,
+            tr("Linux Update Downloaded"),
+            tr("Extract the downloaded archive and replace your existing ClassMngr application directory when convenient.")
+            );
         return;
     }
 
-    DialogServices::showInformation(
-        this,
-        tr("Linux Update Downloaded"),
-        tr("Extract the downloaded archive and replace your existing ClassMngr application directory when convenient.")
-        );
-#else
     const PromptChoice response =
         DialogServices::confirm(
             this,
@@ -1301,15 +1323,11 @@ void UpdateDialog::installOrRevealUpdate()
         return;
     }
 
-    if (
-        const Status status =
-            UpdateInstaller::launch(
-                m_downloadedFilePath
-                );
-        !status
-        )
+    const auto result = m_packageActionPort.launchInstaller(
+        m_downloadedFilePath.toStdString());
+    if (!result.succeeded)
     {
-        showOperationFailure(status.error());
+        showOperationFailure(QString::fromStdString(result.message));
         return;
     }
 
@@ -1320,5 +1338,4 @@ void UpdateDialog::installOrRevealUpdate()
         qApp,
         &QCoreApplication::quit
         );
-#endif
 }

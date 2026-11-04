@@ -11,8 +11,24 @@ foreach(_line IN LISTS _report_lines)
         set(_next_speaking_evaluation_output_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_STARTUP_UPDATE_LINKS=(.*)$")
         set(_next_startup_update_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_UPDATE_ADAPTER_LINKS=(.*)$")
+        set(_next_update_adapter_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_UPDATE_ADAPTER_SOURCES=(.*)$")
+        set(_next_update_adapter_sources "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^NEXT_UPDATE_ADAPTER_TYPE=(.*)$")
+        set(_next_update_adapter_type "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^UPDATE_OPERATIONS_LINKS=(.*)$")
+        set(_update_operations_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^UPDATE_OPERATIONS_SOURCES=(.*)$")
+        set(_update_operations_sources "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^UPDATE_OPERATIONS_TYPE=(.*)$")
+        set(_update_operations_type "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^RUNTIME_LINKS=(.*)$")
+        set(_runtime_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^UPDATE_PRESENTATION_LINKS=(.*)$")
         set(_update_presentation_links "${CMAKE_MATCH_1}")
+    elseif(_line MATCHES "^UPDATE_PRESENTATION_SOURCES=(.*)$")
+        set(_update_presentation_sources "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^UPDATER_LINKS=(.*)$")
         set(_updater_links "${CMAKE_MATCH_1}")
     elseif(_line MATCHES "^NEXT_WORKSPACE_LINKS=(.*)$")
@@ -119,7 +135,7 @@ if(NOT _next_calendar_ui_dependencies STREQUAL _expected_next_calendar_ui_depend
 endif()
 
 set(_expected_next_startup_update_links
-    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrUpdater|ClassMngrUpdatePresentation|ClassMngrSettings|Qt6::Widgets|Qt6::Network"
+    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrNextUpdateAdapters|ClassMngrUpdater|ClassMngrUpdatePresentation|ClassMngrSettings|Qt6::Widgets|Qt6::Network"
 )
 if(NOT _next_startup_update_links STREQUAL _expected_next_startup_update_links)
     message(FATAL_ERROR
@@ -128,8 +144,67 @@ if(NOT _next_startup_update_links STREQUAL _expected_next_startup_update_links)
     )
 endif()
 
+if(NOT _next_update_adapter_type STREQUAL "STATIC_LIBRARY"
+   OR NOT _next_update_adapter_sources MATCHES "qt_update_download_port\\.cpp"
+   OR NOT _next_update_adapter_sources MATCHES "qt_update_package_action_port\\.cpp")
+    message(FATAL_ERROR
+        "The Qt update adapters need one shared static owner: "
+        "type=${_next_update_adapter_type}, "
+        "sources=[${_next_update_adapter_sources}]"
+    )
+endif()
+foreach(_required_adapter_link IN ITEMS
+        ClassMngrNext::Application
+        ClassMngrUpdateOperations
+        Qt6::Network)
+    string(FIND "${_next_update_adapter_links}" "${_required_adapter_link}"
+        _adapter_dependency_index)
+    if(_adapter_dependency_index EQUAL -1)
+        message(FATAL_ERROR
+            "ClassMngrNextUpdateAdapters is missing ${_required_adapter_link}: "
+            "[${_next_update_adapter_links}]"
+        )
+    endif()
+endforeach()
+if(NOT _update_operations_type STREQUAL "STATIC_LIBRARY"
+   OR NOT _update_operations_sources MATCHES "update_downloader\\.cpp"
+   OR NOT _update_operations_sources MATCHES "update_installer\\.cpp")
+    message(FATAL_ERROR
+        "Updater operations need one narrow static source owner: "
+        "type=${_update_operations_type}, sources=[${_update_operations_sources}]"
+    )
+endif()
+foreach(_required_operation_link IN ITEMS
+        ClassMngrUpdater
+        Qt6::Network
+        Qt6::Widgets)
+    string(FIND "${_update_operations_links}" "${_required_operation_link}"
+        _operation_dependency_index)
+    if(_operation_dependency_index EQUAL -1)
+        message(FATAL_ERROR
+            "ClassMngrUpdateOperations is missing ${_required_operation_link}: "
+            "[${_update_operations_links}]"
+        )
+    endif()
+endforeach()
+if(_update_presentation_sources MATCHES "update_downloader\\.cpp"
+   OR _update_presentation_sources MATCHES "update_installer\\.cpp")
+    message(FATAL_ERROR
+        "Updater operation sources must not be compiled with presentation objects: "
+        "[${_update_presentation_sources}]"
+    )
+endif()
+string(FIND "${_runtime_links}" "ClassMngrNextUpdateAdapters"
+    _runtime_adapter_dependency_index)
+if(_runtime_adapter_dependency_index EQUAL -1)
+    message(FATAL_ERROR
+        "The Legacy runtime must link the shared Qt update adapter target: "
+        "[${_runtime_links}]"
+    )
+endif()
+
 if(NOT _update_presentation_links STREQUAL
-   "ClassMngrBuildSettings|ClassMngrUpdater|ClassMngrQtPdfPrint|Qt6::Widgets|Qt6::Network")
+   "ClassMngrBuildSettings|ClassMngrUpdater|ClassMngrQtPdfPrint|Qt6::Widgets|Qt6::Network|ClassMngrNext::Application")
     message(FATAL_ERROR "Unexpected shared update presentation closure: [${_update_presentation_links}]")
 endif()
 
@@ -149,8 +224,17 @@ if(NOT _document_catalog_test_links STREQUAL "ClassMngrNext::DocumentCatalog")
     )
 endif()
 
+string(FIND "${_bootstrap_test_links}" "ClassMngrNextUpdateAdapters"
+    _bootstrap_update_adapter_index)
+if(_bootstrap_update_adapter_index EQUAL -1)
+    message(FATAL_ERROR
+        "The Next composition test must link the shared Qt updater adapters: "
+        "[${_bootstrap_test_links}]"
+    )
+endif()
+
 set(_expected_bootstrap_test_links
-    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrSubPrepShared|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrQtPdfPrint|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::PdfWidgets|Qt6::Widgets"
+    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrSubPrepShared|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrQtPdfPrint|ClassMngrNextStartupUpdates|ClassMngrNextUpdateAdapters|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::PdfWidgets|Qt6::Widgets"
 )
 if(NOT _bootstrap_test_links STREQUAL _expected_bootstrap_test_links)
     message(FATAL_ERROR

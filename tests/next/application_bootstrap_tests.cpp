@@ -10,6 +10,8 @@
 #include "next/bootstrap/application_bootstrap.h"
 #include "next/bootstrap/update_coordinator.h"
 #include "next/platform/settings_manager_skipped_update_version_port.h"
+#include "next/platform/qt_update_download_port.h"
+#include "next/platform/qt_update_package_action_port.h"
 #include "ui/shared/dialogs/update_dialog.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_descriptor.h"
@@ -2688,6 +2690,8 @@ void ApplicationBootstrapTests::manualUpdateActionSharesCoordinatorBeforeStartup
     GlobalPreferencesSettingsGuard globalPreferences;
     Platform::SettingsManagerAutomaticUpdatePreferencesPort automatic;
     Platform::SettingsManagerSkippedUpdateVersionPort skipped;
+    Platform::QtUpdateDownloadPort downloadPort;
+    Platform::QtUpdatePackageActionPort packageActionPort;
     QVERIFY(automatic.write({false}));
     StartupPreferencesGuard preferences(
         static_cast<int>(Application::LanguagePreference::English),
@@ -2700,10 +2704,12 @@ void ApplicationBootstrapTests::manualUpdateActionSharesCoordinatorBeforeStartup
     Bootstrap::ApplicationBootstrap bootstrap(
         *qApp, {}, silentStartupDiagnosticsSinkFactory(),
         resolverForRoot(resources.resourceRoot()), std::nullopt, {},
-        [&shell, &ports, &automatic, &skipped, &factoryCalls] {
+        [&shell, &ports, &automatic, &skipped, &downloadPort,
+            &packageActionPort, &factoryCalls] {
             ++factoryCalls;
             return std::make_unique<Bootstrap::UpdateCoordinator>(
-                ports, ports, automatic, skipped, true, true, shell.data());
+                ports, ports, downloadPort, packageActionPort, automatic,
+                skipped, true, true, shell.data());
         });
     QVERIFY(bootstrap.start().succeeded());
     shell = bootstrap.shell();

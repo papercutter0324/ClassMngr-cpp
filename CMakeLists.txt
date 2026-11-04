@@ -240,11 +240,13 @@ target_link_libraries(ClassMngrFeatures
 target_link_libraries(ClassMngrRuntime
     PUBLIC
         ClassMngrNext::Application
+        ClassMngrNextUpdateAdapters
 )
 if(TARGET ClassMngrTestRuntime)
     target_link_libraries(ClassMngrTestRuntime
         PUBLIC
             ClassMngrNext::Application
+            ClassMngrNextUpdateAdapters
     )
 endif()
 target_link_libraries(ClassMngr

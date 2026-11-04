@@ -5,6 +5,8 @@
 #include "core/updater/update_service.h"
 #include "next/application/startup_update_check_use_case.h"
 #include "next/platform/settings_manager_skipped_update_version_port.h"
+#include "next/platform/qt_update_download_port.h"
+#include "next/platform/qt_update_package_action_port.h"
 #include "next/platform/update_service_manual_check_port.h"
 #include "next/platform/update_service_startup_check_port.h"
 #include "ui/shared/dialogs/update_dialog.h"
@@ -1502,7 +1504,9 @@ void UpdateControllerAutomaticStartupTests::manualDialogObservesConcurrentStartu
     ClassMngr::Next::Platform::UpdateServiceStartupCheckPort startupPort(&service);
     StartupUpdateCheckUseCase startupUseCase(startupPort);
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualPort(&service);
-    UpdateDialog dialog(manualPort, true);
+    ClassMngr::Next::Platform::QtUpdateDownloadPort downloadPort;
+    ClassMngr::Next::Platform::QtUpdatePackageActionPort packageActionPort;
+    UpdateDialog dialog(manualPort, downloadPort, packageActionPort, true);
 
     QCOMPARE(startupUseCase.start({
         .startupComplete = true,

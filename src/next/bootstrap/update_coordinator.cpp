@@ -1,7 +1,6 @@
 #include "next/bootstrap/update_coordinator.h"
 #include "next/ui/dialog_geometry_preferences_callbacks.h"
 
-#include "core/updater/update_downloader.h"
 #include "core/updater/version.h"
 #include "ui/shared/dialogs/update_dialog.h"
 
@@ -38,12 +37,16 @@ Application::ManualUpdateCheckResult manualResult(
 UpdateCoordinator::UpdateCoordinator(
     Application::StartupUpdateCheckPort& startupPort,
     Application::ManualUpdateCheckPort& manualPort,
+    Application::UpdateDownloadPort& updateDownloadPort,
+    Application::UpdatePackageActionPort& packageActionPort,
     const Application::AutomaticUpdatePreferencesPort& automaticPreferences,
     const Application::SkippedUpdateVersionPreferencesPort& skippedPreferences,
     bool checkOnStartup,
     bool hasReleasesApiUrl,
     QWidget* presentationParent)
     : m_manualPort(manualPort)
+    , m_updateDownloadPort(updateDownloadPort)
+    , m_packageActionPort(packageActionPort)
     , m_automaticPreferences(automaticPreferences)
     , m_skippedPreferences(skippedPreferences)
     , m_startup(startupPort)
@@ -63,7 +66,8 @@ void UpdateCoordinator::runMaintenance()
     if (!m_maintenanceRun)
     {
         m_maintenanceRun = true;
-        UpdateDownloader::cleanupDownloads(UpdateDownloader::CleanupMode::OrphansOnly);
+        m_updateDownloadPort.cleanup(
+            Application::UpdateDownloadCleanupPolicy::OrphansOnly);
     }
 }
 
@@ -163,11 +167,16 @@ bool UpdateCoordinator::reconcile(const Application::ManualUpdateCheckResult& re
 
 void UpdateCoordinator::maintainDownloads(const Application::ManualUpdateCheckResult& result)
 {
-    const auto mapped = UiShared::Details::toPresentationResult(result);
-    UpdateDownloader::cleanupDownloads(
-        result.updateAvailable ? UpdateDownloader::CleanupMode::KeepOnlyArtifact
-                               : UpdateDownloader::CleanupMode::RemoveAll,
-        result.updateAvailable ? std::optional<UpdateArtifact>(mapped.artifact) : std::nullopt);
+    m_updateDownloadPort.cleanup(
+        result.updateAvailable
+            ? Application::UpdateDownloadCleanupPolicy::KeepOnlyArtifact
+            : Application::UpdateDownloadCleanupPolicy::RemoveAll,
+        result.updateAvailable
+            ? std::optional<Application::UpdateArtifact>(Application::UpdateArtifact{
+                result.artifact.platformKey, result.artifact.url,
+                result.artifact.fileName, result.artifact.sha256,
+                result.artifact.sizeBytes})
+            : std::nullopt);
 }
 
 UpdateDialog* UpdateCoordinator::ensureDialog(bool automatic)
@@ -180,7 +189,8 @@ UpdateDialog* UpdateCoordinator::ensureDialog(bool automatic)
         return m_dialog;
     }
     auto* dialog = new UpdateDialog(
-        m_manualPort, true, m_parent, skipped,
+        m_manualPort, m_updateDownloadPort, m_packageActionPort,
+        true, m_parent, skipped,
         UpdateDialog::ResourcePackPlaceholder::Omit,
         Ui::settingsManagerDialogGeometryPreferencesCallbacks());
     dialog->setAttribute(Qt::WA_DeleteOnClose);

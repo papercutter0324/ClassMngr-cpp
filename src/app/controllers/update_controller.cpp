@@ -2,7 +2,6 @@
 
 #include "app/mainwindow.h"
 #include "core/updater/update_configuration.h"
-#include "core/updater/update_downloader.h"
 #include "core/updater/update_service.h"
 #include "core/updater/version.h"
 #include "next/application/startup_update_check_use_case.h"
@@ -11,6 +10,8 @@
 #include "next/platform/settings_manager_skipped_update_version_port.h"
 #include "next/platform/update_service_manual_check_port.h"
 #include "next/platform/update_service_startup_check_port.h"
+#include "next/platform/qt_update_download_port.h"
+#include "next/platform/qt_update_package_action_port.h"
 #include "ui/shared/actions/action_registry.h"
 #include "ui/shared/dialogs/update_dialog.h"
 
@@ -81,31 +82,44 @@ UpdateController::UpdateController(
         );
     m_startupUpdateCheckPort = std::make_unique<
         ClassMngr::Next::Platform::UpdateServiceStartupCheckPort>(m_service);
+    m_updateDownloadPort = std::make_unique<
+        ClassMngr::Next::Platform::QtUpdateDownloadPort>();
+    m_packageActionPort = std::make_unique<
+        ClassMngr::Next::Platform::QtUpdatePackageActionPort>();
     m_startupUpdateCheckUseCase = std::make_unique<
         ClassMngr::Next::Application::StartupUpdateCheckUseCase>(
             *m_startupUpdateCheckPort);
 }
 
-UpdateController::~UpdateController() = default;
+UpdateController::~UpdateController()
+{
+    if (m_dialog)
+    {
+        m_dialog->close();
+        delete m_dialog.data();
+    }
+}
 
 void UpdateController::handleCheckSucceeded(
     const ClassMngr::Next::Application::StartupUpdateCheckResult& result
     )
 {
     const bool latestVersionIsSkipped = reconcileSkippedVersion(result);
-    const UpdateArtifact artifact{
-        .platformKey = QString::fromStdString(result.artifact.platformKey.value()),
-        .url = QUrl::fromEncoded(QByteArray::fromStdString(
-            result.artifact.url.value())),
-        .fileName = QString::fromStdString(result.artifact.fileName.rawValue()),
-        .sha256 = QString::fromStdString(result.artifact.sha256.value()),
-        .sizeBytes = result.artifact.sizeBytes.value()
+    const ClassMngr::Next::Application::UpdateArtifact artifact{
+        .platformKey = result.artifact.platformKey,
+        .url = result.artifact.url,
+        .fileName = result.artifact.fileName,
+        .sha256 = result.artifact.sha256,
+        .sizeBytes = result.artifact.sizeBytes
     };
-    UpdateDownloader::cleanupDownloads(
+    m_updateDownloadPort->cleanup(
         result.updateAvailable
-            ? UpdateDownloader::CleanupMode::KeepOnlyArtifact
-            : UpdateDownloader::CleanupMode::RemoveAll,
-        result.updateAvailable ? std::optional<UpdateArtifact>(artifact) : std::nullopt
+            ? ClassMngr::Next::Application::UpdateDownloadCleanupPolicy::KeepOnlyArtifact
+            : ClassMngr::Next::Application::UpdateDownloadCleanupPolicy::RemoveAll,
+        result.updateAvailable
+            ? std::optional<ClassMngr::Next::Application::UpdateArtifact>(
+                artifact)
+            : std::nullopt
         );
 
     if (result.updateAvailable && !hasVisibleDialog()
@@ -280,9 +294,8 @@ void UpdateController::runStartupMaintenance()
     }
 
     m_startupMaintenanceRun = true;
-    UpdateDownloader::cleanupDownloads(
-        UpdateDownloader::CleanupMode::OrphansOnly
-        );
+    m_updateDownloadPort->cleanup(
+        ClassMngr::Next::Application::UpdateDownloadCleanupPolicy::OrphansOnly);
 }
 
 void UpdateController::startAutomaticCheck()
@@ -417,6 +430,8 @@ UpdateDialog* UpdateController::ensureDialog(
     auto* dialog =
         new UpdateDialog(
             *manualUpdateCheckPort,
+            *m_updateDownloadPort,
+            *m_packageActionPort,
             m_startupComplete,
             m_startupComplete ? m_window.data() : nullptr,
             skippedText

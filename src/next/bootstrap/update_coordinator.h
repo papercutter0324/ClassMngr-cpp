@@ -2,6 +2,8 @@
 
 #include "next/application/automatic_update_preferences.h"
 #include "next/application/manual_update_check.h"
+#include "next/application/update_download.h"
+#include "next/application/update_package_action.h"
 #include "next/application/skipped_update_version_preferences.h"
 #include "next/application/startup_update_check_use_case.h"
 #include "next/bootstrap/startup_update_dispatcher.h"
@@ -23,6 +25,8 @@ public:
     UpdateCoordinator(
         Application::StartupUpdateCheckPort& startupPort,
         Application::ManualUpdateCheckPort& manualPort,
+        Application::UpdateDownloadPort& updateDownloadPort,
+        Application::UpdatePackageActionPort& packageActionPort,
         const Application::AutomaticUpdatePreferencesPort& automaticPreferences,
         const Application::SkippedUpdateVersionPreferencesPort& skippedPreferences,
         bool checkOnStartup,
@@ -42,6 +46,8 @@ private:
     void runMaintenance();
 
     Application::ManualUpdateCheckPort& m_manualPort;
+    Application::UpdateDownloadPort& m_updateDownloadPort;
+    Application::UpdatePackageActionPort& m_packageActionPort;
     const Application::AutomaticUpdatePreferencesPort& m_automaticPreferences;
     const Application::SkippedUpdateVersionPreferencesPort& m_skippedPreferences;
     Application::StartupUpdateCheckUseCase m_startup;

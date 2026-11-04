@@ -51,6 +51,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrSpeakingEvalReportEngine ${CLASSMNGR_SPEAKING_EVAL_REPORT_ENGINE_SOURCES})
     _classmngr_record_manifest(ClassMngrSpeakingEvalPowerPointAdapter ${CLASSMNGR_SPEAKING_EVAL_POWERPOINT_ADAPTER_SOURCES})
     _classmngr_record_manifest(ClassMngrUpdater ${CLASSMNGR_UPDATER_SOURCES})
+    _classmngr_record_manifest(ClassMngrUpdateOperations
+        ${CLASSMNGR_UPDATE_OPERATION_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrUpdatePresentation
         ${CLASSMNGR_UPDATE_PRESENTATION_SOURCES}
     )
@@ -105,6 +108,9 @@ function(classmngr_check_source_ownership)
     )
     _classmngr_record_manifest(ClassMngrNextStartupUpdates
         ${CLASSMNGR_NEXT_STARTUP_UPDATE_SOURCES}
+    )
+    _classmngr_record_manifest(ClassMngrNextUpdateAdapters
+        ${CLASSMNGR_NEXT_UPDATE_ADAPTER_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrNextDocumentCatalog
         ${CLASSMNGR_NEXT_DOCUMENT_CATALOG_SOURCES}

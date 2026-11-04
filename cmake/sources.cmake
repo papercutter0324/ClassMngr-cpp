@@ -146,6 +146,33 @@ classmngr_add_production_objects(
         Qt6::Core
         Qt6::Network
 )
+add_library(ClassMngrUpdateOperations STATIC
+    ${CLASSMNGR_UPDATE_OPERATION_SOURCES}
+)
+target_compile_features(ClassMngrUpdateOperations
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrUpdateOperations
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrUpdateOperations
+    PUBLIC
+        ClassMngrBuildSettings
+    PRIVATE
+        ClassMngrUpdater
+        Qt6::Network
+        Qt6::Widgets
+)
+set_target_properties(ClassMngrUpdateOperations
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 classmngr_add_production_objects(
     TARGET ClassMngrSettings
     SOURCES ${CLASSMNGR_SETTINGS_SOURCES}

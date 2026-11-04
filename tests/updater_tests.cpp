@@ -459,6 +459,44 @@ public:
     ManualUpdate::ManualUpdateCheckCompletion m_completion;
     ManualUpdate::ManualUpdateCheckObserver m_observer;
 };
+
+class TestUpdateDownloadPort final : public ManualUpdate::UpdateDownloadPort
+{
+public:
+    void setObserver(ManualUpdate::UpdateDownloadObserver value) override
+    { observer = std::move(value); }
+    void startOrResume(const ManualUpdate::UpdateArtifact&) override {}
+    void pause() override {}
+    void discard() override {}
+    bool isBusy() const override { return false; }
+    bool hasResumableDownload(const ManualUpdate::UpdateArtifact&) const override
+    { return false; }
+    std::int64_t resumableBytes(const ManualUpdate::UpdateArtifact&) const override
+    { return 0; }
+    bool hasCompletedDownload(const ManualUpdate::UpdateArtifact&) const override
+    { return false; }
+    void cleanup(ManualUpdate::UpdateDownloadCleanupPolicy,
+        std::optional<ManualUpdate::UpdateArtifact>) override {}
+
+    ManualUpdate::UpdateDownloadObserver observer;
+};
+
+class TestUpdatePackageActionPort final : public ManualUpdate::UpdatePackageActionPort
+{
+public:
+    ManualUpdate::UpdatePackageActionKind primaryAction() const override
+    { return ManualUpdate::UpdatePackageActionKind::InstallOrLaunch; }
+    ManualUpdate::UpdatePackageActionResult launchInstaller(const std::string&) override
+    { return ManualUpdate::UpdatePackageActionResult::success(); }
+    ManualUpdate::UpdatePackageActionResult revealInFolder(const std::string&) override
+    { return ManualUpdate::UpdatePackageActionResult::success(); }
+};
+
+struct TestUpdateDialogOperations final
+{
+    TestUpdateDownloadPort download;
+    TestUpdatePackageActionPort packageAction;
+};
 }
 
 class UpdaterTests : public QObject
@@ -809,9 +847,12 @@ void UpdaterTests::dialogShowsDisabledResourcePackSection()
         QUrl(QStringLiteral("https://example.com/releases"));
     UpdateService service(configuration);
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualCheckPort(&service);
+    TestUpdateDialogOperations operations;
 
     UpdateDialog dialog(
         manualCheckPort,
+        operations.download,
+        operations.packageAction,
         true
         );
 
@@ -844,7 +885,8 @@ void UpdaterTests::dialogOpenWithoutCacheStartsIfStaleCheck()
     configuration.releasesApiUrl = server.url();
     UpdateService service(configuration);
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualPort(&service);
-    UpdateDialog dialog(manualPort, true);
+    TestUpdateDialogOperations operations;
+    UpdateDialog dialog(manualPort, operations.download, operations.packageAction, true);
 
     QVERIFY(!service.hasResult());
     dialog.refreshForOpen();
@@ -893,7 +935,8 @@ void UpdaterTests::dialogOpenWithStaleCachePreservesResultAndDispatchesIfStale()
     };
     port.m_snapshot.resultFresh = false;
 
-    UpdateDialog dialog(port, true);
+    TestUpdateDialogOperations operations;
+    UpdateDialog dialog(port, operations.download, operations.packageAction, true);
     dialog.refreshForOpen();
 
     QVERIFY(port.lastPolicy.has_value());
@@ -956,7 +999,8 @@ void UpdaterTests::dialogReleaseDateUsesLocalizedShortFormatAndSuppressesInvalid
         };
         port.m_snapshot.resultFresh = true;
 
-        UpdateDialog dialog(port, true);
+        TestUpdateDialogOperations operations;
+        UpdateDialog dialog(port, operations.download, operations.packageAction, true);
         dialog.refreshForOpen();
 
         QLabel* const details = dialog.findChild<QLabel*>(
@@ -1006,7 +1050,8 @@ void UpdaterTests::dialogPassesTypedArtifactSizeToLegacyProgress()
     };
     port.m_snapshot.resultFresh = true;
 
-    UpdateDialog dialog(port, true);
+    TestUpdateDialogOperations operations;
+    UpdateDialog dialog(port, operations.download, operations.packageAction, true);
     dialog.refreshForOpen();
     QVERIFY(QMetaObject::invokeMethod(
         &dialog,
@@ -1072,7 +1117,8 @@ void UpdaterTests::dialogShowsInvalidResponseFailure()
     configuration.releasesApiUrl = server.url();
     UpdateService service(configuration);
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualPort(&service);
-    UpdateDialog dialog(manualPort, true);
+    TestUpdateDialogOperations operations;
+    UpdateDialog dialog(manualPort, operations.download, operations.packageAction, true);
     QSignalSpy failedSpy(&service, &UpdateService::checkFailed);
 
     dialog.refreshForOpen();
@@ -1103,7 +1149,8 @@ void UpdaterTests::dialogShowsNetworkFailure()
     configuration.releasesApiUrl = unavailableUrl;
     UpdateService service(configuration);
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualPort(&service);
-    UpdateDialog dialog(manualPort, true);
+    TestUpdateDialogOperations operations;
+    UpdateDialog dialog(manualPort, operations.download, operations.packageAction, true);
     QSignalSpy failedSpy(&service, &UpdateService::checkFailed);
 
     dialog.refreshForOpen();
@@ -1139,7 +1186,8 @@ void UpdaterTests::dialogRetryForcesCheckWithFreshCache()
     QVERIFY(succeededSpy.wait(5000));
 
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualPort(&service);
-    UpdateDialog dialog(manualPort, true);
+    TestUpdateDialogOperations operations;
+    UpdateDialog dialog(manualPort, operations.download, operations.packageAction, true);
     dialog.refreshForOpen();
     QCOMPARE(server.requestCount(), 1);
 
@@ -1189,8 +1237,11 @@ void UpdaterTests::dialogShowsDownloadActionForAvailableUpdate()
     QVERIFY(succeededSpy.wait(5000));
 
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort manualCheckPort(&service);
+    TestUpdateDialogOperations operations;
     UpdateDialog dialog(
         manualCheckPort,
+        operations.download,
+        operations.packageAction,
         true
         );
     QCOMPARE(server.requestCount(), 1);
@@ -1243,8 +1294,11 @@ void UpdaterTests::dialogShowsSkipAndUnskipActions()
     QVERIFY(succeededSpy.wait(5000));
 
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort availableManualPort(&service);
+    TestUpdateDialogOperations availableOperations;
     UpdateDialog availableDialog(
         availableManualPort,
+        availableOperations.download,
+        availableOperations.packageAction,
         true
         );
     availableDialog.refreshForOpen();
@@ -1270,8 +1324,11 @@ void UpdaterTests::dialogShowsSkipAndUnskipActions()
         );
 
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort skippedManualPort(&service);
+    TestUpdateDialogOperations skippedOperations;
     UpdateDialog skippedDialog(
         skippedManualPort,
+        skippedOperations.download,
+        skippedOperations.packageAction,
         true,
         nullptr,
         QStringLiteral("9.9.9")
@@ -1352,8 +1409,11 @@ void UpdaterTests::dialogUsesConsistentProgramStatusLayout()
     QVERIFY(currentSucceededSpy.wait(5000));
 
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort currentManualPort(&currentService);
+    TestUpdateDialogOperations currentOperations;
     UpdateDialog currentDialog(
         currentManualPort,
+        currentOperations.download,
+        currentOperations.packageAction,
         true
         );
     currentDialog.refreshForOpen();
@@ -1406,8 +1466,11 @@ void UpdaterTests::dialogUsesConsistentProgramStatusLayout()
     QVERIFY(availableSucceededSpy.wait(5000));
 
     ClassMngr::Next::Platform::UpdateServiceManualCheckPort availableManualPort(&availableService);
+    TestUpdateDialogOperations availableOperations;
     UpdateDialog availableDialog(
         availableManualPort,
+        availableOperations.download,
+        availableOperations.packageAction,
         true
         );
     availableDialog.refreshForOpen();

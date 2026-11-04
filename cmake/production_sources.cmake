@@ -67,12 +67,18 @@ set(CLASSMNGR_UPDATER_SOURCES
     "src/core/updater/version.h"
 )
 
-# The complete update presentation is shared without the legacy UI/Core umbrellas.
-set(CLASSMNGR_UPDATE_PRESENTATION_SOURCES
+# Downloader and installer implementations are a narrow reusable operation
+# dependency for the Qt updater adapters. Keep them separate from presentation
+# objects so adapters own a complete link closure.
+set(CLASSMNGR_UPDATE_OPERATION_SOURCES
     "src/core/updater/update_downloader.cpp"
     "src/core/updater/update_downloader.h"
     "src/core/updater/update_installer.cpp"
     "src/core/updater/update_installer.h"
+)
+
+# The complete update presentation is shared without the legacy UI/Core umbrellas.
+set(CLASSMNGR_UPDATE_PRESENTATION_SOURCES
     "src/ui/shared/dialogs/update_dialog.cpp"
     "src/ui/shared/dialogs/update_dialog.h"
     "src/ui/shared/dialogs/user_prompt_service.cpp"
@@ -908,6 +914,13 @@ set(CLASSMNGR_NEXT_STARTUP_UPDATE_SOURCES
     "src/next/bootstrap/update_coordinator.h"
     "src/next/bootstrap/startup_update_dispatcher.cpp"
     "src/next/bootstrap/startup_update_dispatcher.h"
+)
+
+set(CLASSMNGR_NEXT_UPDATE_ADAPTER_SOURCES
+    "src/next/platform/qt_update_download_port.cpp"
+    "src/next/platform/qt_update_download_port.h"
+    "src/next/platform/qt_update_package_action_port.cpp"
+    "src/next/platform/qt_update_package_action_port.h"
 )
 
 set(CLASSMNGR_NEXT_DOCUMENT_CATALOG_SOURCES

@@ -463,6 +463,7 @@ target_link_libraries(ClassMngrNextBootstrapTests
         ClassMngrNext::DocumentCatalog
         ClassMngrQtPdfPrint
         ClassMngrNextStartupUpdates
+        ClassMngrNextUpdateAdapters
         ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser
         Qt6::Concurrent
@@ -1749,9 +1750,41 @@ get_target_property(_classmngr_next_startup_update_links
     ClassMngrNextStartupUpdates
     LINK_LIBRARIES
 )
+get_target_property(_classmngr_next_update_adapter_links
+    ClassMngrNextUpdateAdapters
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_next_update_adapter_sources
+    ClassMngrNextUpdateAdapters
+    SOURCES
+)
+get_target_property(_classmngr_next_update_adapter_type
+    ClassMngrNextUpdateAdapters
+    TYPE
+)
+get_target_property(_classmngr_update_operations_links
+    ClassMngrUpdateOperations
+    LINK_LIBRARIES
+)
+get_target_property(_classmngr_update_operations_sources
+    ClassMngrUpdateOperations
+    SOURCES
+)
+get_target_property(_classmngr_update_operations_type
+    ClassMngrUpdateOperations
+    TYPE
+)
+get_target_property(_classmngr_runtime_links
+    ClassMngrRuntime
+    LINK_LIBRARIES
+)
 get_target_property(_classmngr_update_presentation_links
     ClassMngrUpdatePresentation
     LINK_LIBRARIES
+)
+get_target_property(_classmngr_update_presentation_sources
+    ClassMngrUpdatePresentation
+    SOURCES
 )
 get_target_property(_classmngr_updater_links
     ClassMngrUpdater
@@ -1835,8 +1868,16 @@ foreach(_classmngr_next_boundary_value IN ITEMS
         _classmngr_next_startup_links
         _classmngr_next_speaking_evaluation_output_links
         _classmngr_next_startup_update_links
+        _classmngr_next_update_adapter_links
+        _classmngr_next_update_adapter_sources
+        _classmngr_next_update_adapter_type
+        _classmngr_update_operations_links
+        _classmngr_update_operations_sources
+        _classmngr_update_operations_type
+        _classmngr_runtime_links
         _classmngr_updater_links
         _classmngr_update_presentation_links
+        _classmngr_update_presentation_sources
         _classmngr_next_workspace_links
         _classmngr_next_roster_output_links
         _classmngr_roster_renderer_links
@@ -1868,8 +1909,16 @@ file(WRITE "${_classmngr_next_boundary_report}"
     "NEXT_LINKS=${_classmngr_next_startup_links}\n"
     "NEXT_SPEAKING_EVALUATION_OUTPUT_LINKS=${_classmngr_next_speaking_evaluation_output_links}\n"
     "NEXT_STARTUP_UPDATE_LINKS=${_classmngr_next_startup_update_links}\n"
+    "NEXT_UPDATE_ADAPTER_LINKS=${_classmngr_next_update_adapter_links}\n"
+    "NEXT_UPDATE_ADAPTER_SOURCES=${_classmngr_next_update_adapter_sources}\n"
+    "NEXT_UPDATE_ADAPTER_TYPE=${_classmngr_next_update_adapter_type}\n"
+    "UPDATE_OPERATIONS_LINKS=${_classmngr_update_operations_links}\n"
+    "UPDATE_OPERATIONS_SOURCES=${_classmngr_update_operations_sources}\n"
+    "UPDATE_OPERATIONS_TYPE=${_classmngr_update_operations_type}\n"
+    "RUNTIME_LINKS=${_classmngr_runtime_links}\n"
     "UPDATER_LINKS=${_classmngr_updater_links}\n"
     "UPDATE_PRESENTATION_LINKS=${_classmngr_update_presentation_links}\n"
+    "UPDATE_PRESENTATION_SOURCES=${_classmngr_update_presentation_sources}\n"
     "NEXT_WORKSPACE_LINKS=${_classmngr_next_workspace_links}\n"
     "NEXT_ROSTER_OUTPUT_LINKS=${_classmngr_next_roster_output_links}\n"
     "ROSTER_RENDERER_LINKS=${_classmngr_roster_renderer_links}\n"
@@ -2953,6 +3002,7 @@ classmngr_add_qt_test(
         tests/next_platform_speaking_evaluation_qt_text_match_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
+        ClassMngrNextUpdateAdapters
         Qt6::Test
 )
 

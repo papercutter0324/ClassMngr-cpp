@@ -50,6 +50,9 @@ set(CLASSMNGR_NEXT_DOMAIN_SOURCES
 )
 
 set(CLASSMNGR_NEXT_APPLICATION_SOURCES
+    src/next/application/update_artifact.h
+    src/next/application/update_download.h
+    src/next/application/update_package_action.h
     src/next/application/academic_calendar_schedule_preferences.h
     src/next/application/academic_term_year.h
     src/next/application/academic_term_week_count.h
@@ -904,6 +907,35 @@ set_target_properties(ClassMngrNextDocumentCatalog
 
 # Keep the asynchronous startup update composition narrow: it uses the
 # application contract, saved settings, and the dedicated updater closure.
+add_library(ClassMngrNextUpdateAdapters STATIC
+    ${CLASSMNGR_NEXT_UPDATE_ADAPTER_SOURCES}
+)
+target_compile_features(ClassMngrNextUpdateAdapters
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextUpdateAdapters
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextUpdateAdapters
+    PUBLIC
+        ClassMngrBuildSettings
+        ClassMngrNext::Application
+        Qt6::Core
+    PRIVATE
+        ClassMngrUpdateOperations
+        Qt6::Network
+)
+set_target_properties(ClassMngrNextUpdateAdapters
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+
 add_library(ClassMngrNextStartupUpdates STATIC
     ${CLASSMNGR_NEXT_STARTUP_UPDATE_SOURCES}
 )
@@ -919,6 +951,7 @@ target_link_libraries(ClassMngrNextStartupUpdates
     PRIVATE
         ClassMngrBuildSettings
         ClassMngrNext::Application
+        ClassMngrNextUpdateAdapters
         ClassMngrUpdater
         ClassMngrUpdatePresentation
         ClassMngrSettings
@@ -929,6 +962,11 @@ set_target_properties(ClassMngrNextStartupUpdates
     PROPERTIES
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
+)
+
+target_link_libraries(ClassMngrUpdatePresentation
+    PRIVATE
+        ClassMngrNext::Application
 )
 
 function(classmngr_next_assert_dependencies target)

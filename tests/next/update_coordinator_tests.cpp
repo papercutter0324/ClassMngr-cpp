@@ -2,11 +2,11 @@
 #include "next/platform/settings_manager_skipped_update_version_port.h"
 #include "core/settingsmanager.h"
 #include "ui/shared/dialogs/update_dialog.h"
+#include "ui/shared/dialogs/user_prompt_service.h"
 
 #include <QApplication>
 #include <QDir>
 #include <QCryptographicHash>
-#include <QSignalSpy>
 #include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -18,6 +18,9 @@
 #include <QTemporaryDir>
 #include <QTranslator>
 #include <QtTest>
+
+#include <optional>
+#include <vector>
 
 using namespace ClassMngr::Next;
 
@@ -110,6 +113,161 @@ public:
     }
 };
 
+class FakeUpdateDownloadPort final : public Application::UpdateDownloadPort
+{
+public:
+    struct CleanupCall final
+    {
+        Application::UpdateDownloadCleanupPolicy policy;
+        std::optional<Application::UpdateArtifact> artifact;
+    };
+
+    void setObserver(Application::UpdateDownloadObserver value) override
+    {
+        if (value)
+        {
+            lastObserver = value;
+        }
+        observer = std::move(value);
+    }
+    void startOrResume(const Application::UpdateArtifact& artifact) override
+    {
+        lastArtifact = artifact;
+        ++startOrResumeCalls;
+        busy = true;
+        publishEvent(Application::UpdateDownloadStarted{});
+    }
+    void pause() override
+    {
+        ++pauseCalls;
+        busy = false;
+        resumable = true;
+        completed = false;
+        publishEvent(Application::UpdateDownloadPaused{bytes, totalBytes});
+    }
+    void discard() override
+    {
+        ++discardCalls;
+        busy = false;
+        resumable = false;
+        completed = false;
+        publishEvent(Application::UpdateDownloadDiscarded{});
+    }
+    bool isBusy() const override { return busy; }
+    bool hasResumableDownload(const Application::UpdateArtifact&) const override
+    { return resumable; }
+    std::int64_t resumableBytes(const Application::UpdateArtifact&) const override
+    { return bytes; }
+    bool hasCompletedDownload(const Application::UpdateArtifact&) const override
+    { return completed; }
+    void cleanup(Application::UpdateDownloadCleanupPolicy policy,
+        std::optional<Application::UpdateArtifact> artifact) override
+    { cleanupCalls.push_back({policy, std::move(artifact)}); }
+
+    void publishEvent(Application::UpdateDownloadEvent event)
+    {
+        const auto current = observer;
+        if (current)
+        {
+            current(std::move(event));
+        }
+    }
+
+    void complete(const std::string& filePath)
+    {
+        busy = false;
+        resumable = false;
+        completed = true;
+        publishEvent(Application::UpdateDownloadSucceeded{filePath});
+    }
+
+    void emitLate(Application::UpdateDownloadEvent event) const
+    {
+        if (lastObserver)
+        {
+            lastObserver(std::move(event));
+        }
+    }
+
+    Application::UpdateDownloadObserver observer;
+    Application::UpdateDownloadObserver lastObserver;
+    std::vector<CleanupCall> cleanupCalls;
+    std::optional<Application::UpdateArtifact> lastArtifact;
+    std::int64_t bytes = 512;
+    std::int64_t totalBytes = 1024;
+    int startOrResumeCalls = 0;
+    int pauseCalls = 0;
+    int discardCalls = 0;
+    bool busy = false;
+    bool resumable = false;
+    bool completed = false;
+};
+
+class FakeUpdatePackageActionPort final : public Application::UpdatePackageActionPort
+{
+public:
+    Application::UpdatePackageActionKind primaryAction() const override
+    { return action; }
+    Application::UpdatePackageActionResult launchInstaller(const std::string& filePath) override
+    {
+        ++launchCalls;
+        lastFilePath = filePath;
+        return launchResult;
+    }
+    Application::UpdatePackageActionResult revealInFolder(const std::string& filePath) override
+    {
+        ++revealCalls;
+        lastFilePath = filePath;
+        return revealResult;
+    }
+
+    Application::UpdatePackageActionKind action =
+        Application::UpdatePackageActionKind::InstallOrLaunch;
+    Application::UpdatePackageActionResult launchResult =
+        Application::UpdatePackageActionResult::success();
+    Application::UpdatePackageActionResult revealResult =
+        Application::UpdatePackageActionResult::success();
+    std::string lastFilePath;
+    int launchCalls = 0;
+    int revealCalls = 0;
+};
+
+struct UpdatePorts final
+{
+    FakeUpdateDownloadPort downloads;
+    FakeUpdatePackageActionPort packageActions;
+};
+
+class ScriptedPrompts final : public IUserPromptService
+{
+public:
+    void showMessage(const PromptRequest& request) override
+    { messages.push_back(request); }
+    void showMessageAsync(const PromptRequest& request) override
+    { messages.push_back(request); }
+    PromptChoice confirm(const PromptRequest& request) override
+    {
+        confirmations.push_back(request);
+        return nextChoice;
+    }
+    UnsavedChangesChoice confirmUnsavedChanges(const UnsavedChangesRequest&) override
+    { return UnsavedChangesChoice::Cancel; }
+    QString chooseAction(const ActionPromptRequest&) override { return {}; }
+
+    PromptChoice nextChoice = PromptChoice::Accepted;
+    std::vector<PromptRequest> confirmations;
+    std::vector<PromptRequest> messages;
+};
+
+class PromptServiceGuard final
+{
+public:
+    explicit PromptServiceGuard(IUserPromptService& service)
+    { DialogServices::setUserPromptServiceForTesting(&service); }
+    ~PromptServiceGuard()
+    { DialogServices::setUserPromptServiceForTesting(nullptr); }
+};
+
 UpdateDialog* dialogFor(QWidget& parent)
 { return parent.findChild<UpdateDialog*>(); }
 QLabel* title(UpdateDialog* dialog)
@@ -117,26 +275,6 @@ QLabel* title(UpdateDialog* dialog)
 QPushButton* button(UpdateDialog* dialog, const char* name)
 { return dialog->findChild<QPushButton*>(QLatin1String(name)); }
 
-void savedDownload(UpdateDownloader& downloader, const UpdateArtifact& artifact,
-    const QByteArray& bytes, const QString& status)
-{
-    QVERIFY(QDir().mkpath(downloader.downloadDirectory()));
-    const QString path = QDir(downloader.downloadDirectory()).filePath(artifact.fileName);
-    QFile payload(status == "completed" ? path : path + ".part");
-    QVERIFY(payload.open(QIODevice::WriteOnly));
-    QCOMPARE(payload.write(bytes), bytes.size());
-    payload.close();
-    QFile metadata(path + ".download.json");
-    QVERIFY(metadata.open(QIODevice::WriteOnly));
-    QVERIFY(metadata.write(QJsonDocument(QJsonObject{
-        {"schemaVersion", 1}, {"platform", artifact.platformKey},
-        {"url", artifact.url.toString()}, {"fileName", artifact.fileName},
-        {"sha256", artifact.sha256}, {"sizeBytes", artifact.sizeBytes},
-        {"etag", "fixture"}, {"lastModified", ""}, {"status", status},
-        {"createdAtUtc", QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
-        {"updatedAtUtc", QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)}
-    }).toJson()) > 0);
-}
 }
 
 class UpdateCoordinatorTests final : public QObject
@@ -151,6 +289,10 @@ private slots:
     void persistedSkipUnskipAndStalePreferenceReconciliation();
     void preferenceWriteFailuresRemainVisible();
     void downloadPresentationAndDiscardWithoutNetwork();
+    void downloadFailureRemainsVisibleAndCanBeRetried();
+    void cleanupPolicyTracksCurrentArtifact();
+    void packageActionsRemainInjectedAndResultBearing();
+    void completedPackageWaitsForStartupCompletion();
     void cancelDestroysDialogAndSuppressesLateCompletion();
     void bilingualThemeCaptures();
 private:
@@ -172,8 +314,10 @@ void UpdateCoordinatorTests::disabledAutomaticStillAllowsManualCheckAndRetry()
     AutomaticPreferences automatic;
     Platform::SettingsManagerSkippedUpdateVersionPort skipped;
     QVERIFY(skipped.clear());
+    UpdatePorts updatePorts;
     QWidget parent;
-    Bootstrap::UpdateCoordinator coordinator(checks, checks, automatic, skipped, true, true, &parent);
+    Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+        updatePorts.packageActions, automatic, skipped, true, true, &parent);
     coordinator.dispatch();
     QCOMPARE(checks.startupCalls, 0);
     coordinator.openManual();
@@ -194,6 +338,9 @@ void UpdateCoordinatorTests::disabledAutomaticStillAllowsManualCheckAndRetry()
     button(dialog, "updateCheckButton")->click();
     checks.succeed(false);
     QCOMPARE(title(dialog)->text(), QStringLiteral("You're Up to Date"));
+    QCOMPARE(updatePorts.downloads.cleanupCalls.back().policy,
+        Application::UpdateDownloadCleanupPolicy::RemoveAll);
+    QVERIFY(!updatePorts.downloads.cleanupCalls.back().artifact.has_value());
     coordinator.openManual();
     QCOMPARE(checks.manualCalls, 3); // Fresh results do not send another request.
 }
@@ -208,10 +355,13 @@ void UpdateCoordinatorTests::updateDialogPersistsGeometryThroughNextComposition(
         QStringLiteral("ui/dialogs/update/geometry"),
         QByteArray()
         );
+    UpdatePorts updatePorts;
     QWidget parent;
     Bootstrap::UpdateCoordinator coordinator(
         checks,
         checks,
+        updatePorts.downloads,
+        updatePorts.packageActions,
         automatic,
         skipped,
         true,
@@ -238,8 +388,10 @@ void UpdateCoordinatorTests::manualOpenObservesSharedStartupAndCache()
     automatic.enabled = true;
     Platform::SettingsManagerSkippedUpdateVersionPort skipped;
     QVERIFY(skipped.clear());
+    UpdatePorts updatePorts;
     QWidget parent;
-    Bootstrap::UpdateCoordinator coordinator(checks, checks, automatic, skipped, true, true, &parent);
+    Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+        updatePorts.packageActions, automatic, skipped, true, true, &parent);
     coordinator.dispatch();
     QCOMPARE(checks.startupCalls, 1);
     coordinator.openManual();
@@ -263,8 +415,10 @@ void UpdateCoordinatorTests::automaticPromptHonorsSkippedVersionAndReconcilesInv
     QVERIFY(skipped.write({Application::SkippedUpdateVersionText("2.0.0")}));
     {
         SharedChecks checks;
+        UpdatePorts updatePorts;
         QWidget parent;
-        Bootstrap::UpdateCoordinator coordinator(checks, checks, automatic, skipped, true, true, &parent);
+        Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+            updatePorts.packageActions, automatic, skipped, true, true, &parent);
         coordinator.dispatch();
         checks.succeed();
         QVERIFY(!dialogFor(parent));
@@ -276,8 +430,10 @@ void UpdateCoordinatorTests::automaticPromptHonorsSkippedVersionAndReconcilesInv
     QVERIFY(skipped.write({Application::SkippedUpdateVersionText("invalid-version")}));
     {
         SharedChecks checks;
+        UpdatePorts updatePorts;
         QWidget parent;
-        Bootstrap::UpdateCoordinator coordinator(checks, checks, automatic, skipped, true, true, &parent);
+        Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+            updatePorts.packageActions, automatic, skipped, true, true, &parent);
         coordinator.dispatch();
         checks.succeed();
         QVERIFY(dialogFor(parent)->isVisible());
@@ -293,8 +449,10 @@ void UpdateCoordinatorTests::persistedSkipUnskipAndStalePreferenceReconciliation
     AutomaticPreferences automatic;
     Platform::SettingsManagerSkippedUpdateVersionPort skipped;
     QVERIFY(skipped.clear());
+    UpdatePorts updatePorts;
     QWidget parent;
-    Bootstrap::UpdateCoordinator coordinator(checks, checks, automatic, skipped, true, true, &parent);
+    Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+        updatePorts.packageActions, automatic, skipped, true, true, &parent);
     coordinator.openManual();
     checks.succeed();
     button(dialogFor(parent), "updateSecondaryButton")->click();
@@ -320,8 +478,10 @@ void UpdateCoordinatorTests::preferenceWriteFailuresRemainVisible()
     AutomaticPreferences automatic;
     QVERIFY(Platform::SettingsManagerSkippedUpdateVersionPort().clear());
     Platform::SettingsManagerSkippedUpdateVersionPort skipped([](QSettings&) { return QSettings::AccessError; });
+    UpdatePorts updatePorts;
     QWidget parent;
-    Bootstrap::UpdateCoordinator coordinator(checks, checks, automatic, skipped, true, true, &parent);
+    Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+        updatePorts.packageActions, automatic, skipped, true, true, &parent);
     coordinator.openManual();
     checks.succeed();
     button(dialogFor(parent), "updateSecondaryButton")->click();
@@ -341,54 +501,208 @@ void UpdateCoordinatorTests::downloadPresentationAndDiscardWithoutNetwork()
     AutomaticPreferences automatic;
     Platform::SettingsManagerSkippedUpdateVersionPort skipped;
     QVERIFY(skipped.clear());
+    UpdatePorts updatePorts;
     QWidget parent;
-    Bootstrap::UpdateCoordinator coordinator(checks, checks, automatic, skipped, false, false, &parent);
+    Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+        updatePorts.packageActions, automatic, skipped, false, false, &parent);
     coordinator.openManual();
     checks.succeed();
     auto* dialog = dialogFor(parent);
-    auto* downloader = dialog->findChild<UpdateDownloader*>();
-    QVERIFY(downloader);
-    const auto artifact = UiShared::Details::toPresentationResult(*checks.state.cachedResult).artifact;
-    savedDownload(*downloader, artifact, QByteArray(512, 'x'), "partial");
-    QSignalSpy networkStarted(downloader, &UpdateDownloader::downloadStarted);
-    QSignalSpy failed(downloader, &UpdateDownloader::downloadFailed);
-    // Start from an on-disk fixture and pause during preparation, before any
-    // network request can be dispatched. This exercises the actual buttons.
+    QVERIFY(dialog);
+    QVERIFY(updatePorts.downloads.cleanupCalls.size() >= 2U);
+    QCOMPARE(updatePorts.downloads.cleanupCalls.front().policy,
+        Application::UpdateDownloadCleanupPolicy::OrphansOnly);
+    QCOMPARE(updatePorts.downloads.cleanupCalls.back().policy,
+        Application::UpdateDownloadCleanupPolicy::KeepOnlyArtifact);
+    QVERIFY(updatePorts.downloads.cleanupCalls.back().artifact.has_value());
+    QCOMPARE(updatePorts.downloads.cleanupCalls.back().artifact->fileName.rawValue(),
+        "ClassMngr-2.0.0.dmg");
+
     button(dialog, "updatePrimaryButton")->click();
-    QCOMPARE(downloader->state(), UpdateDownloader::State::Preparing);
+    QCOMPARE(updatePorts.downloads.startOrResumeCalls, 1);
+    QCOMPARE(title(dialog)->text(), QStringLiteral("Downloading Update"));
+    QVERIFY(updatePorts.downloads.lastArtifact.has_value());
+    updatePorts.downloads.publishEvent(Application::UpdateDownloadProgress{512, 1024});
+    QCOMPARE(dialog->findChild<QProgressBar*>("programUpdateProgress")->value(), 50);
     button(dialog, "updatePrimaryButton")->click();
-    QCOMPARE(downloader->state(), UpdateDownloader::State::Paused);
-    QCoreApplication::processEvents();
-    QCOMPARE(networkStarted.count(), 0);
-    QCOMPARE(failed.count(), 0);
+    QCOMPARE(updatePorts.downloads.pauseCalls, 1);
+    QVERIFY(updatePorts.downloads.resumable);
     QCOMPARE(title(dialog)->text(), QStringLiteral("Download Paused"));
     QVERIFY(button(dialog, "updatePrimaryButton")->text().contains("Resume"));
-    button(dialog, "updateSecondaryButton")->click();
-    QCOMPARE(downloader->state(), UpdateDownloader::State::Idle);
-    QCOMPARE(title(dialog)->text(), QStringLiteral("Update Available"));
-    QVERIFY(!QFile::exists(QDir(downloader->downloadDirectory()).filePath(artifact.fileName + ".part")));
-    // Deterministic transfer signals cover presentation without a live server.
-    emit downloader->downloadStarted();
-    emit downloader->downloadProgress(512, 1024);
-    QCOMPARE(title(dialog)->text(), QStringLiteral("Downloading Update"));
-    QCOMPARE(dialog->findChild<QProgressBar*>("programUpdateProgress")->value(), 50);
-    emit downloader->downloadPaused(512, 1024);
-    button(dialog, "updateSecondaryButton")->click();
-    // The real downloader rehashes this complete saved fixture and reaches
-    // installation readiness without downloading or launching an installer.
-    savedDownload(*downloader, artifact, QByteArray(1024 * 1024, 'x'), "completed");
-    const int startsBeforeReuse = networkStarted.count();
+    QVERIFY(button(dialog, "updateSecondaryButton")->isEnabled());
     button(dialog, "updatePrimaryButton")->click();
-    QTRY_COMPARE(downloader->state(), UpdateDownloader::State::Completed);
-    QCOMPARE(networkStarted.count(), startsBeforeReuse);
-    QCOMPARE(failed.count(), 0);
-#if defined(Q_OS_LINUX)
-    QCOMPARE(button(dialog, "updatePrimaryButton")->text(), QStringLiteral("Open Download Folder"));
-#else
-    QCOMPARE(button(dialog, "updatePrimaryButton")->text(), QStringLiteral("Install and Close"));
-#endif
+    QCOMPARE(updatePorts.downloads.startOrResumeCalls, 2);
+    QCOMPARE(title(dialog)->text(), QStringLiteral("Downloading Update"));
+
+    // Closing the dialog is another pause path and retains resumable state.
+    dialog->close();
+    QCOMPARE(updatePorts.downloads.pauseCalls, 2);
+    QVERIFY(updatePorts.downloads.resumable);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+    QVERIFY(!dialogFor(parent));
+    QVERIFY(!updatePorts.downloads.observer);
+
+    coordinator.openManual();
+    dialog = dialogFor(parent);
+    QVERIFY(dialog);
+    QCOMPARE(title(dialog)->text(), QStringLiteral("Download Paused"));
+    button(dialog, "updateSecondaryButton")->click();
+    QCOMPARE(updatePorts.downloads.discardCalls, 1);
+    QVERIFY(!updatePorts.downloads.resumable);
+    QCOMPARE(title(dialog)->text(), QStringLiteral("Update Available"));
+}
+
+void UpdateCoordinatorTests::downloadFailureRemainsVisibleAndCanBeRetried()
+{
+    SharedChecks checks;
+    AutomaticPreferences automatic;
+    Platform::SettingsManagerSkippedUpdateVersionPort skipped;
+    UpdatePorts updatePorts;
+    QWidget parent;
+    Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+        updatePorts.packageActions, automatic, skipped, false, false, &parent);
+    coordinator.openManual();
+    checks.succeed();
+
+    auto* dialog = dialogFor(parent);
+    QVERIFY(dialog);
+    button(dialog, "updatePrimaryButton")->click();
+    QCOMPARE(title(dialog)->text(), QStringLiteral("Downloading Update"));
+
+    updatePorts.downloads.busy = false;
+    updatePorts.downloads.publishEvent(
+        Application::UpdateDownloadFailed{"Fixture service error"});
+
+    QCOMPARE(title(dialog)->text(), QStringLiteral("Update Available"));
+    QVERIFY(dialog->findChild<QLabel*>("programUpdateDetails")->text().contains(
+        QStringLiteral("The update download failed: Fixture service error")));
     QVERIFY(button(dialog, "updatePrimaryButton")->isEnabled());
-    downloader->discard();
+    QCOMPARE(button(dialog, "updatePrimaryButton")->text(),
+        QStringLiteral("Download Update"));
+
+    button(dialog, "updatePrimaryButton")->click();
+    QCOMPARE(updatePorts.downloads.startOrResumeCalls, 2);
+    QCOMPARE(title(dialog)->text(), QStringLiteral("Downloading Update"));
+}
+
+void UpdateCoordinatorTests::cleanupPolicyTracksCurrentArtifact()
+{
+    AutomaticPreferences automatic;
+    automatic.enabled = true;
+    Platform::SettingsManagerSkippedUpdateVersionPort skipped;
+    SharedChecks checks;
+    UpdatePorts updatePorts;
+    QWidget parent;
+    Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+        updatePorts.packageActions, automatic, skipped, true, true, &parent);
+    coordinator.dispatch();
+    QCOMPARE(updatePorts.downloads.cleanupCalls.size(), 1U);
+    QCOMPARE(updatePorts.downloads.cleanupCalls.back().policy,
+        Application::UpdateDownloadCleanupPolicy::OrphansOnly);
+    checks.succeed();
+    QVERIFY(updatePorts.downloads.cleanupCalls.size() >= 2U);
+    QCOMPARE(updatePorts.downloads.cleanupCalls.back().policy,
+        Application::UpdateDownloadCleanupPolicy::KeepOnlyArtifact);
+    QVERIFY(updatePorts.downloads.cleanupCalls.back().artifact.has_value());
+    QCOMPARE(updatePorts.downloads.cleanupCalls.back().artifact->fileName.rawValue(),
+        "ClassMngr-2.0.0.dmg");
+
+    SharedChecks noUpdateChecks;
+    UpdatePorts noUpdatePorts;
+    QWidget noUpdateParent;
+    Bootstrap::UpdateCoordinator noUpdateCoordinator(noUpdateChecks, noUpdateChecks,
+        noUpdatePorts.downloads, noUpdatePorts.packageActions, automatic, skipped,
+        true, true, &noUpdateParent);
+    noUpdateCoordinator.openManual();
+    noUpdateChecks.succeed(false);
+    QCOMPARE(noUpdatePorts.downloads.cleanupCalls.back().policy,
+        Application::UpdateDownloadCleanupPolicy::RemoveAll);
+    QVERIFY(!noUpdatePorts.downloads.cleanupCalls.back().artifact.has_value());
+}
+
+void UpdateCoordinatorTests::packageActionsRemainInjectedAndResultBearing()
+{
+    ScriptedPrompts prompts;
+    PromptServiceGuard promptsGuard(prompts);
+    SharedChecks checks;
+    AutomaticPreferences automatic;
+    Platform::SettingsManagerSkippedUpdateVersionPort skipped;
+    UpdatePorts updatePorts;
+    updatePorts.downloads.completed = true;
+    QWidget parent;
+    Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+        updatePorts.packageActions, automatic, skipped, true, true, &parent);
+    coordinator.openManual();
+    checks.succeed();
+    auto* dialog = dialogFor(parent);
+    QCOMPARE(updatePorts.downloads.startOrResumeCalls, 1); // Reverify saved package.
+    updatePorts.downloads.complete("/fixture/verified-package.exe");
+    QCOMPARE(title(dialog)->text(), QStringLiteral("Ready to Install"));
+
+    prompts.nextChoice = PromptChoice::Rejected;
+    button(dialog, "updatePrimaryButton")->click();
+    QCOMPARE(prompts.confirmations.size(), 1U);
+    QCOMPARE(updatePorts.packageActions.launchCalls, 0);
+    QVERIFY(dialog->isVisible());
+
+    prompts.nextChoice = PromptChoice::Accepted;
+    updatePorts.packageActions.launchResult =
+        Application::UpdatePackageActionResult::failure("fixture launch failure");
+    button(dialog, "updatePrimaryButton")->click();
+    QCOMPARE(updatePorts.packageActions.launchCalls, 1);
+    QCOMPARE(updatePorts.packageActions.lastFilePath,
+        std::string("/fixture/verified-package.exe"));
+    QVERIFY(dialog->findChild<QLabel*>("programUpdateDetails")->text()
+        .contains("fixture launch failure"));
+    QVERIFY(dialog->isVisible());
+
+    updatePorts.packageActions.launchResult =
+        Application::UpdatePackageActionResult::success();
+    button(dialog, "updatePrimaryButton")->click();
+    QCOMPARE(updatePorts.packageActions.launchCalls, 2);
+    QCOMPARE(dialog->result(), QDialog::Accepted);
+
+    SharedChecks revealChecks;
+    UpdatePorts revealPorts;
+    revealPorts.packageActions.action = Application::UpdatePackageActionKind::RevealInFolder;
+    QWidget revealParent;
+    Bootstrap::UpdateCoordinator revealCoordinator(revealChecks, revealChecks,
+        revealPorts.downloads, revealPorts.packageActions, automatic, skipped,
+        true, true, &revealParent);
+    revealCoordinator.openManual();
+    revealChecks.succeed();
+    auto* revealDialog = dialogFor(revealParent);
+    revealPorts.downloads.complete("/fixture/verified.tar.gz");
+    QCOMPARE(title(revealDialog)->text(), QStringLiteral("Download Complete"));
+    revealPorts.packageActions.revealResult =
+        Application::UpdatePackageActionResult::failure("fixture reveal failure");
+    button(revealDialog, "updatePrimaryButton")->click();
+    QCOMPARE(revealPorts.packageActions.revealCalls, 1);
+    QVERIFY(revealDialog->findChild<QLabel*>("programUpdateDetails")->text()
+        .contains("fixture reveal failure"));
+    revealPorts.packageActions.revealResult =
+        Application::UpdatePackageActionResult::success();
+    button(revealDialog, "updatePrimaryButton")->click();
+    QCOMPARE(revealPorts.packageActions.revealCalls, 2);
+    QCOMPARE(prompts.messages.size(), 1U);
+    QCOMPARE(prompts.messages.back().title, QStringLiteral("Linux Update Downloaded"));
+}
+
+void UpdateCoordinatorTests::completedPackageWaitsForStartupCompletion()
+{
+    SharedChecks checks;
+    UpdatePorts updatePorts;
+    updatePorts.downloads.completed = true;
+    UpdateDialog dialog(checks, updatePorts.downloads,
+        updatePorts.packageActions, false);
+    dialog.refreshForOpen();
+    checks.succeed();
+    QCOMPARE(updatePorts.downloads.startOrResumeCalls, 1);
+    updatePorts.downloads.complete("/fixture/verified-package.exe");
+    QCOMPARE(title(&dialog)->text(), QStringLiteral("Ready to Install"));
+    QVERIFY(!button(&dialog, "updatePrimaryButton")->isEnabled());
+    dialog.setStartupComplete(true);
+    QVERIFY(button(&dialog, "updatePrimaryButton")->isEnabled());
 }
 
 void UpdateCoordinatorTests::cancelDestroysDialogAndSuppressesLateCompletion()
@@ -399,14 +713,23 @@ void UpdateCoordinatorTests::cancelDestroysDialogAndSuppressesLateCompletion()
         AutomaticPreferences automatic;
         automatic.enabled = fromStartup;
         Platform::SettingsManagerSkippedUpdateVersionPort skipped;
+        UpdatePorts updatePorts;
         QWidget parent;
-        Bootstrap::UpdateCoordinator coordinator(checks, checks, automatic, skipped, true, true, &parent);
+        Bootstrap::UpdateCoordinator coordinator(checks, checks, updatePorts.downloads,
+            updatePorts.packageActions, automatic, skipped, true, true, &parent);
         if (fromStartup) coordinator.dispatch();
         coordinator.openManual();
         QPointer<UpdateDialog> dialog = dialogFor(parent);
+        const auto pendingDownloadEvent = updatePorts.downloads.lastObserver;
         coordinator.cancel();
         QVERIFY(!dialog);
         QVERIFY(!checks.observer);
+        QVERIFY(!updatePorts.downloads.observer);
+        if (pendingDownloadEvent)
+        {
+            pendingDownloadEvent(Application::UpdateDownloadSucceeded{
+                "/fixture/late-package.exe"});
+        }
         checks.succeed();
         coordinator.openManual();
         QVERIFY(!dialogFor(parent));
@@ -436,8 +759,11 @@ void UpdateCoordinatorTests::bilingualThemeCaptures()
             AutomaticPreferences automatic;
             Platform::SettingsManagerSkippedUpdateVersionPort skipped;
             QVERIFY(skipped.clear());
+            UpdatePorts updatePorts;
             QWidget parent;
-            Bootstrap::UpdateCoordinator coordinator(checks, checks, automatic, skipped, true, true, &parent);
+            Bootstrap::UpdateCoordinator coordinator(checks, checks,
+                updatePorts.downloads, updatePorts.packageActions,
+                automatic, skipped, true, true, &parent);
             coordinator.openManual();
             auto* dialog = dialogFor(parent);
             const auto capture = [&](const QString& state) {
@@ -466,13 +792,12 @@ void UpdateCoordinatorTests::bilingualThemeCaptures()
             capture("skipped");
             QVERIFY(skipped.clear());
             coordinator.openManual();
-            auto* downloader = dialog->findChild<UpdateDownloader*>();
-            emit downloader->downloadStarted();
-            emit downloader->downloadProgress(512, 1024);
+            updatePorts.downloads.publishEvent(Application::UpdateDownloadStarted{});
+            updatePorts.downloads.publishEvent(Application::UpdateDownloadProgress{512, 1024});
             capture("downloading");
-            emit downloader->downloadPaused(512, 1024);
+            updatePorts.downloads.publishEvent(Application::UpdateDownloadPaused{512, 1024});
             capture("paused");
-            emit downloader->downloadSucceeded(QStringLiteral("/fixture/verified.dmg"));
+            updatePorts.downloads.complete("/fixture/verified.dmg");
             capture("install");
             button(dialog, "updateCheckButton")->click();
             // A new fixture completion supplies deterministic terminal states.
