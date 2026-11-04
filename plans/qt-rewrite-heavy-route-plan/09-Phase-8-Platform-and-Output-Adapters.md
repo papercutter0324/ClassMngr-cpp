@@ -670,6 +670,31 @@ and exact dependency-boundary assertions were updated; static review passed.
 No local build or test was run. Package CI is pending, so Phase 9 remains
 gated.
 
+### 8.7.11 — Qt Concurrent package runtime artifact
+
+At SHA `5cad12853814d8cd348b6f22ad3c9a788d5c3a2a`, Linux run `41820638403`
+built and linked, but strict package verification failed because the package
+did not contain Qt Concurrent. Windows run `41820638202` failed the same
+verifier check for x64 and ARM64. The exact reason Qt's automatic deployment
+omitted the library is unproven.
+
+`cmake/next_resources.cmake` now installs the imported runtime artifact
+`Qt6::Concurrent` in the Runtime component before the generated Qt deployment
+script: Windows DLLs go to `${CMAKE_INSTALL_BINDIR}`, Linux libraries to
+`${CMAKE_INSTALL_LIBDIR}`, and macOS dylibs/frameworks to
+`ClassMngr.app/Contents/Frameworks`. Static review accepted the rule. No local
+build or test was run. At the same SHA, macOS run `41820638665` passed the
+disk-image build and package verification. Its checksum reported VALID; the
+focused verifier checked 853 paths, 451 hashes, 187 direct-resource hashes,
+and 22 license/SBOM files, then uploaded `ClassMngr-macos-universal` (DMG,
+checksum, and JSON report). The package step passed and no cleanup failure
+surfaced, though the log does not expose the explicit detach command or result.
+
+Linux and Windows still failed strict package verification for missing Qt
+Concurrent. Fresh package CI for the explicit staging rule remains pending;
+the macOS run does not verify that rule. The Phase 8 package gate and Phase 9
+remain gated.
+
 ## Objective
 
 

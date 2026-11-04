@@ -163,6 +163,25 @@ if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
         COMPONENT Runtime
     )
 
+    if(WIN32)
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::Concurrent
+            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+            COMPONENT Runtime
+        )
+    elseif(APPLE)
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::Concurrent
+            LIBRARY DESTINATION "ClassMngr.app/Contents/Frameworks"
+            COMPONENT Runtime
+            FRAMEWORK DESTINATION "ClassMngr.app/Contents/Frameworks"
+            COMPONENT Runtime
+        )
+    elseif(UNIX)
+        install(IMPORTED_RUNTIME_ARTIFACTS Qt6::Concurrent
+            LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+            COMPONENT Runtime
+        )
+    endif()
+
     if(APPLE)
         set(_classmngr_next_deploy_executable
             "$<TARGET_FILE_NAME:ClassMngrNext>.app"

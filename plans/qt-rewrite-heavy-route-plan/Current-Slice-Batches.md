@@ -1,8 +1,8 @@
 # Current Slice Batches
 
-## Phase 8 — Active Batch 7 (1 candidate)
+## Phase 8 — Active Batch 8 (1 candidate)
 
-1. **8.7.10 Linux package color-validation dependency — implemented; static review accepted; package CI pending:** supply `ColorUtils::canonicalHexColor` from a leaf provider after DomainArchive without pulling the broader class-transfer archive or duplicating source ownership.
+1. **8.7.11 Qt Concurrent runtime staging — implemented; static review accepted; package CI pending:** install the imported `Qt6::Concurrent` runtime artifact into platform-appropriate package locations so the existing strict module verifier sees the module on each release platform.
 
 ## Phase 9 — Next Batch (20 candidates; gated on Phase 8 package CI)
 
