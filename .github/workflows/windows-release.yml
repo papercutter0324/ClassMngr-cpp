@@ -80,7 +80,7 @@ jobs:
   build:
     name: Windows ${{ matrix.architecture == 'x64' && 'x64' || 'ARM64' }}
     runs-on: windows-2022
-    timeout-minutes: 120
+    timeout-minutes: 360
     strategy:
       fail-fast: false
       matrix:
@@ -842,6 +842,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Package verifier tests failed." }
 
       - name: Verify final Windows installer payload and installed Next app
+        timeout-minutes: 360
         shell: pwsh
         run: |
           $architecture = "${{ matrix.architecture }}"
@@ -849,11 +850,65 @@ jobs:
           if ($cmakeText -notmatch 'project\(\s*ClassMngr\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)') {
             throw "Unable to read the ClassMngr project version from CMakeLists.txt."
           }
-          & "scripts\installer\verify_next_package.ps1" `
-            -Architecture $architecture `
-            -ProjectVersion $Matches[1] `
-            -QtVersion $env:QT_VERSION `
-            -InnoExtractPath $env:CLASSMNGR_INNOEXTRACT_PATH
+          $projectVersion = $Matches[1]
+          $verificationScript = Join-Path $Env:GITHUB_WORKSPACE "scripts\installer\verify_next_package.ps1"
+          $extractRoot = Join-Path $env:RUNNER_TEMP `
+            "ClassMngr-$architecture-inno-payload-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          $extractLog = Join-Path $extractRoot "innoextract.log"
+          $verificationStartedAt = [DateTime]::UtcNow
+          Write-Host "Starting final Windows installer verification for $architecture at $($verificationStartedAt.ToString('o'))."
+          $installer = Get-ChildItem -Path "dist" -Filter "*win-$architecture.exe" -File -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if ($installer) {
+            Write-Host "Installer: $($installer.FullName) ($([Math]::Round($installer.Length / 1MB, 1)) MiB)."
+          }
+
+          $verificationJob = Start-Job -ScriptBlock {
+            param($ScriptPath, $Architecture, $ProjectVersion, $QtVersion, $InnoExtractPath)
+            & $ScriptPath `
+              -Architecture $Architecture `
+              -ProjectVersion $ProjectVersion `
+              -QtVersion $QtVersion `
+              -InnoExtractPath $InnoExtractPath
+          } -ArgumentList @(
+            $verificationScript,
+            $architecture,
+            $projectVersion,
+            $env:QT_VERSION,
+            $env:CLASSMNGR_INNOEXTRACT_PATH
+          )
+
+          $verificationStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+          try {
+            while ($verificationJob.State -in @("NotStarted", "Running")) {
+              $null = Wait-Job -Job $verificationJob -Timeout 60
+              Receive-Job -Job $verificationJob -ErrorAction Continue
+              if ($verificationJob.State -in @("NotStarted", "Running")) {
+                $logStatus = "not created"
+                if (Test-Path -LiteralPath $extractLog -PathType Leaf) {
+                  $logInfo = Get-Item -LiteralPath $extractLog
+                  $logStatus = "$($logInfo.Length) bytes, last written $($logInfo.LastWriteTimeUtc.ToString('o'))"
+                }
+                $entryCount = if (Test-Path -LiteralPath $extractRoot -PathType Container) {
+                  @(Get-ChildItem -LiteralPath $extractRoot -Force -ErrorAction SilentlyContinue).Count
+                } else {
+                  0
+                }
+                Write-Host "Still verifying $architecture after $([Math]::Round($verificationStopwatch.Elapsed.TotalMinutes, 1)) minutes; extraction root entries=$entryCount; innoextract log=$logStatus."
+              }
+            }
+
+            if ($verificationJob.State -ne "Completed") {
+              throw "Final Windows installer verification ended with job state '$($verificationJob.State)'."
+            }
+            Write-Host "Final Windows installer verification for $architecture completed in $([Math]::Round($verificationStopwatch.Elapsed.TotalMinutes, 1)) minutes."
+          } finally {
+            if ($verificationJob.State -in @("NotStarted", "Running")) {
+              Stop-Job -Job $verificationJob -ErrorAction SilentlyContinue
+            }
+            Receive-Job -Job $verificationJob -ErrorAction Continue
+            Remove-Job -Job $verificationJob -Force -ErrorAction SilentlyContinue
+          }
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v7

@@ -559,12 +559,77 @@ try {
         machineArchitecture = $env:PROCESSOR_ARCHITECTURE
     }
 
-    $releaseExecutable = Join-Path $BuildDirectory "Release\ClassMngrNext.exe"
-    if (-not (Test-Path -LiteralPath $releaseExecutable -PathType Leaf)) {
-        throw "Windows x64 Release ClassMngrNext.exe was not found: $releaseExecutable"
+    $cmakeCachePath = Join-Path $BuildDirectory "CMakeCache.txt"
+    if (-not (Test-Path -LiteralPath $cmakeCachePath -PathType Leaf)) {
+        throw "CMake cache was not found for the Windows x64 Release build: $cmakeCachePath"
     }
+    $cmakeCacheLines = @(Get-Content -LiteralPath $cmakeCachePath)
+    $releasePackageSetting = @(
+        $cmakeCacheLines |
+            Where-Object { $_ -match '^CLASSMNGR_NEXT_RELEASE_PACKAGE:BOOL=' }
+    )
+    if ($releasePackageSetting.Count -ne 1) {
+        throw "Expected exactly one CLASSMNGR_NEXT_RELEASE_PACKAGE setting in $cmakeCachePath; found $($releasePackageSetting.Count)."
+    }
+    $releasePackageValue = ($releasePackageSetting[0] -split '=', 2)[1]
+    if ($releasePackageValue -notin @("ON", "OFF")) {
+        throw "Unsupported CLASSMNGR_NEXT_RELEASE_PACKAGE value in ${cmakeCachePath}: $releasePackageValue"
+    }
+
+    $configurationTypesSetting = @(
+        $cmakeCacheLines |
+            Where-Object { $_ -match '^CMAKE_CONFIGURATION_TYPES:[^=]+=' }
+    )
+    if ($configurationTypesSetting.Count -gt 1) {
+        throw "Expected at most one CMAKE_CONFIGURATION_TYPES setting in $cmakeCachePath; found $($configurationTypesSetting.Count)."
+    }
+    $configurationTypesValue = if ($configurationTypesSetting.Count -eq 1) {
+        ($configurationTypesSetting[0] -split '=', 2)[1]
+    } else {
+        ""
+    }
+    $configurationTypes = @()
+    if (-not [string]::IsNullOrWhiteSpace($configurationTypesValue)) {
+        $configurationTypes = @($configurationTypesValue -split ';')
+    }
+    $releaseConfigurationDirectory = ""
+    if ($configurationTypes.Count -gt 0) {
+        if ($configurationTypes -notcontains "Release") {
+            throw "The configured multi-config generator does not provide a Release configuration: $($configurationTypes -join ', ')"
+        }
+        # Multi-config generators append the selected configuration to
+        # RUNTIME_OUTPUT_DIRECTORY.
+        $releaseConfigurationDirectory = "Release"
+    } else {
+        $buildTypeSetting = @(
+            $cmakeCacheLines |
+                Where-Object { $_ -match '^CMAKE_BUILD_TYPE:[^=]+=' }
+        )
+        if ($buildTypeSetting.Count -ne 1 -or
+            (($buildTypeSetting[0] -split '=', 2)[1] -ine "Release")) {
+            throw "The configured single-config build is not a Release build: $cmakeCachePath"
+        }
+    }
+
+    # Release-package mode renames and relocates the app target. Single-config
+    # Release generators write directly into RUNTIME_OUTPUT_DIRECTORY.
+    if ($releasePackageValue -eq "ON") {
+        $releaseOutputDirectory = Join-Path $BuildDirectory "next-package-build"
+        $releaseExecutableName = "ClassMngr.exe"
+    } else {
+        $releaseOutputDirectory = $BuildDirectory
+        $releaseExecutableName = "ClassMngrNext.exe"
+    }
+    if (-not [string]::IsNullOrEmpty($releaseConfigurationDirectory)) {
+        $releaseOutputDirectory = Join-Path $releaseOutputDirectory $releaseConfigurationDirectory
+    }
+    $releaseExecutable = Join-Path $releaseOutputDirectory $releaseExecutableName
+    if (-not (Test-Path -LiteralPath $releaseExecutable -PathType Leaf)) {
+        throw "Windows x64 Release application executable was not found for CLASSMNGR_NEXT_RELEASE_PACKAGE=${releasePackageValue}: $releaseExecutable"
+    }
+    $releaseExecutable = [System.IO.Path]::GetFullPath($releaseExecutable)
     if ((Get-PeArchitecture -Path $releaseExecutable) -ne "x64") {
-        throw "Release ClassMngrNext.exe is not a PE x64 image."
+        throw "Release application executable is not a PE x64 image: $releaseExecutable"
     }
     $stageRoot = Join-Path $TemporaryRoot "staged-next"
     [void][System.IO.Directory]::CreateDirectory($stageRoot)
