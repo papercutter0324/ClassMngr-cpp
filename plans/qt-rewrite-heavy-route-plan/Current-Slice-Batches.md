@@ -1,15 +1,17 @@
 # Current Slice Batches
 
-## Phase 8 — Active Batch 4 (2 candidates)
+## Phase 8 — Active Batch 5 (3 candidates)
 
-1. **8.7.3 Windows redistributable architecture selection — committed; Windows
-   package CI pending:** inspect and log every filename match, then select the
-   newest signed candidate whose PE machine matches the requested app
-   architecture.
-2. **8.7.4 Qt license staging — focused acceptance passed; commit and package
-   CI pending:** package the canonical Qt 6.12.0 LGPL, GPL, and GPL-exception
-   texts from verified upstream sources; update CMake and package license
-   inventory while preserving installed Qt SBOMs.
+1. **8.7.6 Windows redistributable package validation — static acceptance
+   passed; package CI pending:** use the exact architecture-specific signed VC
+   redist package name; validate its version, signer, and staged hash without
+   treating the x86 installer stub as the runtime payload architecture.
+2. **8.7.7 Linux CMake link-group cycle — solution mapped; implementation
+   pending:** preserve the Runtime/WorkspaceStore RESCAN group while removing
+   reverse interface edges through shared Sub Prep and Calendar UI targets.
+3. **8.7.8 macOS disk-image cleanup — solution mapped; implementation
+   pending:** handle a busy read-only verification mount without losing package
+   validation, checksum generation, or artifact upload.
 
 ## Phase 9 — Next Batch (20 candidates; gated on Phase 8 package CI)
 

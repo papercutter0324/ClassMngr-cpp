@@ -583,6 +583,41 @@ text retains its one blank line at EOF to preserve the source hash;
 while tracked code changes are clean. Full Windows, macOS, and Linux package
 CI remains pending, and Phase 9 remains gated.
 
+### 8.7.5 — Phase 8 Batch 4 package matrix
+
+At SHA `7de5aa471c75bd274e1102464b8f2f02c4f23e5b`, Windows run `41806105651`
+failed on x64 and ARM64 because the selected architecture-named
+`vc_redist.*.exe` files have x86 outer PE images; installer and package checks
+did not run. Linux run `41806105416` failed during CMake configure/generate
+with a strong dependency cycle involving
+`RESCAN:{ClassMngrRuntime,ClassMngrWorkspaceStore}`, `ClassMngrSubPrepShared`,
+and `ClassMngrNextCalendarUi`; no build or package verifier ran.
+
+macOS run `41806105824` passed image verification and the mounted package
+verifier (853 paths, 451 hashes, 187 direct-resource hashes, 22 license/SBOM
+files, and 82 universal binaries). The combined disk-image step then exited 16
+before focused verifier tests and artifact upload. `hdiutil detach` is the
+likely failure point: it is the script command after the last successful
+verifier output, but the logs do not prove this.
+
+The Phase 8 package gate did not pass, and no artifact was uploaded for any
+workflow. Phase 9 remains gated.
+
+### 8.7.6 — Windows redistributable package validation
+
+Windows run `41806105651` reported PE machine `x86` for both architecture-named
+v143 redistributable installers (`14.44.35211.0`). This identifies the outer
+installer stub and does not establish the runtime payload architecture. Source
+review confirmed Microsoft's architecture-specific package naming, the
+`ClassMngr.iss` mapping, and the verifier's exact embedded filename/hash. The
+workflow now accepts only the matrix-derived filename under the VS2022 v143
+tree and selects the newest valid version. Authenticode, Microsoft signer, and
+staged-hash checks remain, as does the separate `ClassMngr.exe` PE check.
+
+Static Tester accepted the change. Ruby YAML parsing and `git diff --check`
+passed; PowerShell was unavailable, and Windows package CI is pending. The
+Linux CMake cycle and macOS disk-image exit remain open, so Phase 9 stays gated.
+
 ## Objective
 
 
