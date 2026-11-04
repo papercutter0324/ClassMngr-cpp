@@ -329,17 +329,24 @@ Preview; Preview Save and Print reuse that same PDF. Direct `QFileDialog` and
 `PdfPrintService` fallbacks are absent. The existing truncation policy and all
 four Next/Legacy template parity cases remain.
 
-The original `build/macos-clang-debug` tree was missing, and the available
-release tree had `BUILD_TESTING=OFF`, so verification used a separate scratch
-configure at `/private/tmp/classmngr-p824-roster-debug` (AppleClang 21, Ninja,
-macOS Debug, Qt 6.12, arm64+x86_64, deployment target 14.4) without changing
-those trees. `ClassMngrNextRosterOutputTests` built with exit 0; focused CTest
-for `ClassMngrNextRosterOutputTests` and
-`NextStartupWorkspaceDependencyBoundary` passed 2/2. The verbose Roster suite
-passed 18 tests with none failed or skipped, and all four template parity
-rows passed. `git diff --check` passed. Offscreen Qt emitted
-`propagateSizeHints` and `Sans Serif` fallback warnings. Native printer UI and
-physical printing were not exercised.
+Verification used a fresh configure in the standard
+`build/macos-clang-debug` folder on macOS with AppleClang 21, Ninja, Qt 6.12,
+Debug, arm64+x86_64, deployment target 14.4, and `BUILD_TESTING=ON`.
+
+```sh
+cmake --build build/macos-clang-debug --target ClassMngrNextRosterOutputTests --parallel 4
+```
+
+The build exited 0. Focused CTest passed 2/2:
+
+```sh
+ctest --test-dir build/macos-clang-debug -R 'ClassMngrNextRosterOutputTests|NextStartupWorkspaceDependencyBoundary' --output-on-failure
+```
+
+The verbose Roster suite passed 18 tests with none failed or skipped, and all
+four template parity rows passed. Offscreen Qt emitted the expected size-hint
+and `Sans Serif` fallback warnings. Native printer UI and physical printing
+were not exercised.
 
 ## Objective
 
