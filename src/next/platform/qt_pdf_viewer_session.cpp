@@ -144,22 +144,27 @@ void QtPdfViewerSession::releaseConsumers(bool recreate)
         timedOut = !waitForNull();
         record(QStringLiteral("qpdf-document-close"), QStringLiteral("after"));
     }
-    // Normal close waits for Null, then detaches the rendering consumer. A
-    // timeout destroys it before the document, with the stream still alive.
+    // A timeout or final teardown destroys the rendering consumer before the
+    // document, with the stream still alive.
     if (m_view && (timedOut || !recreate))
     {
         record(QStringLiteral("qpdf-view-destroy"), QStringLiteral("before"));
         m_view.reset();
         record(QStringLiteral("qpdf-view-destroy"), QStringLiteral("after"));
     }
-    else if (m_view)
+    auto previousDocument = std::move(m_document);
+    if (recreate && m_view)
     {
-        m_view->setDocument(nullptr);
+        // Qt 6.12's QPdfView cannot safely accept a null document. Rebind the
+        // existing widget to a live, empty document before retiring the old
+        // document and its stream; this also preserves its layout and settings.
+        createDocument();
+        m_view->setDocument(m_document.get());
     }
-    if (m_document)
+    if (previousDocument)
     {
         record(QStringLiteral("qpdf-document-destroy"), QStringLiteral("before"));
-        m_document.reset();
+        previousDocument.reset();
         record(QStringLiteral("qpdf-document-destroy"), QStringLiteral("after"));
     }
     if (m_content)
@@ -170,12 +175,11 @@ void QtPdfViewerSession::releaseConsumers(bool recreate)
     }
     if (recreate)
     {
-        createDocument();
-        if (m_view)
+        if (!m_document)
         {
-            m_view->setDocument(m_document.get());
+            createDocument();
         }
-        else
+        if (!m_view)
         {
             createView();
         }

@@ -62,7 +62,8 @@ def _windows_posix_package_semantics(
 
     executable = root / executable_relative_path
     symlinks = {root / relative: target for relative, target in (symlink_targets or {}).items()}
-    original_stat = Path.stat
+    path_type = type(executable)
+    original_stat = path_type.stat
     original_lstat = os.lstat
     original_readlink = os.readlink
     original_islink = os.path.islink
@@ -117,7 +118,9 @@ def _windows_posix_package_semantics(
         return original_islink(path)
 
     with (
-        patch.object(Path, "stat", new=stat_with_posix_mode),
+        # Patch the concrete path class so pathlib version-specific overrides
+        # still expose the synthetic POSIX mode bits on Windows.
+        patch.object(path_type, "stat", new=stat_with_posix_mode),
         patch("os.lstat", new=lstat_with_posix_mode),
         patch("os.readlink", new=readlink_with_posix_target),
         patch("os.path.islink", new=islink_with_posix_target),

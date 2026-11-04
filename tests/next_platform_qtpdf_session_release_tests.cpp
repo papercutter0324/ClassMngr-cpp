@@ -13,6 +13,7 @@
 #include <QPointer>
 #include <QStringList>
 #include <QTemporaryDir>
+#include <QVBoxLayout>
 #include <QWidget>
 #include <QtTest/QtTest>
 
@@ -80,6 +81,7 @@ class NextPlatformQtPdfSessionReleaseTests final : public QObject
 private slots:
     void constructionIsLazy();
     void closeAndReplacementUseFreshDocumentAndStreamGeneration();
+    void failedOpenKeepsAnEmptyBoundViewAndCanReopen();
     void destroyingAnActiveOwnerClosesConsumersBeforeStream();
     void timeoutDestroysViewThenDocumentThenStreamAndReopens();
     void queuedStatusesCannotReachReplacementOrClosedSession();
@@ -107,24 +109,58 @@ void NextPlatformQtPdfSessionReleaseTests::closeAndReplacementUseFreshDocumentAn
     auto resources = loader([&](const auto& value) { diagnostics.push_back(value); });
     QVERIFY(resources);
     QWidget parent;
+    QVBoxLayout layout(&parent);
+    QPointer<QPdfDocument> retiring;
+    int bindings = 0;
     Platform::QtPdfViewerSession session(*resources, &parent);
+    QPointer<QPdfView> view(session.view());
+    layout.addWidget(view);
+    view->setZoomFactor(1.25);
+    view->setPageSpacing(13);
+    retiring = view->document();
+    connect(view, &QPdfView::documentChanged, &session, [&](QPdfDocument* document) {
+        QVERIFY(document);
+        QVERIFY(retiring);
+        QVERIFY(document != retiring.data());
+        QCOMPARE(retiring->status(), QPdfDocument::Status::Null);
+        QCOMPARE(document->status(), QPdfDocument::Status::Null);
+        ++bindings;
+    });
     QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:1")));
+    QCOMPARE(bindings, 1);
     QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
     const int pages = session.pageCount();
     QPointer<QPdfDocument> first(session.findChild<QPdfDocument*>());
     QVERIFY(first);
+    retiring = first;
     QCOMPARE(session.error(), QPdfDocument::Error::None);
     QVERIFY(session.pagePointSize(0).isValid());
     bool nullWithStreamOpen = false;
+    int documentsRetired = 0;
     session.setLifecycleObserver([&](const QString& operation, const QString& phase) {
         if (operation == QStringLiteral("qpdf-document-close") && phase == QStringLiteral("after"))
         {
             nullWithStreamOpen = session.status() == QPdfDocument::Status::Null && session.hasActiveStream();
         }
+        if (operation == QStringLiteral("qpdf-document-destroy") && phase == QStringLiteral("before"))
+        {
+            QVERIFY(retiring);
+            QCOMPARE(session.view(), view.data());
+            QVERIFY(view->document());
+            QVERIFY(view->document() != retiring.data());
+            QCOMPARE(view->document()->status(), QPdfDocument::Status::Null);
+            ++documentsRetired;
+        }
     });
     // open() also owns replacement cleanup; no external close is needed.
     QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:2")));
     QVERIFY(first.isNull());
+    QCOMPARE(bindings, 2);
+    QCOMPARE(documentsRetired, 1);
+    QCOMPARE(session.view(), view.data());
+    QCOMPARE(layout.indexOf(view), 0);
+    QCOMPARE(view->zoomFactor(), 1.25);
+    QCOMPARE(view->pageSpacing(), 13);
     QVERIFY(nullWithStreamOpen);
     QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
     QCOMPARE(session.pageCount(), pages);
@@ -137,11 +173,43 @@ void NextPlatformQtPdfSessionReleaseTests::closeAndReplacementUseFreshDocumentAn
     }
     QCOMPARE(diagnostics[0].scope.ownerLabel(), QStringLiteral("Viewer:1"));
     QCOMPARE(diagnostics[1].scope.ownerLabel(), QStringLiteral("Viewer:2"));
+    retiring = view->document();
     QVERIFY(session.release());
+    QCOMPARE(bindings, 3);
+    QCOMPARE(documentsRetired, 2);
+    QVERIFY(retiring.isNull());
     QVERIFY(!session.hasActiveStream());
     QCOMPARE(session.status(), QPdfDocument::Status::Null);
+    retiring = view->document();
     QVERIFY(session.release());
+    QCOMPARE(bindings, 4);
+    QCOMPARE(documentsRetired, 3);
+    QVERIFY(retiring.isNull());
+    QCOMPARE(session.view(), view.data());
+    QCOMPARE(layout.indexOf(view), 0);
     session.setLifecycleObserver({});
+}
+
+void NextPlatformQtPdfSessionReleaseTests::failedOpenKeepsAnEmptyBoundViewAndCanReopen()
+{
+    auto resources = loader();
+    QVERIFY(resources);
+    QWidget parent;
+    Platform::QtPdfViewerSession session(*resources, &parent);
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:before-failure")));
+    QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+    QPointer<QPdfView> view(session.view());
+    QPointer<QPdfDocument> document(view->document());
+    QVERIFY(!session.open(Domain::DocumentContentReference(
+        "resource://documents/Guides/missing.pdf"), QStringLiteral("Viewer:missing")));
+    QVERIFY(document.isNull());
+    QCOMPARE(session.view(), view.data());
+    QVERIFY(view->document());
+    QCOMPARE(view->document()->status(), QPdfDocument::Status::Null);
+    QVERIFY(!session.hasActiveStream());
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:after-failure")));
+    QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+    QCOMPARE(session.view(), view.data());
 }
 
 void NextPlatformQtPdfSessionReleaseTests::destroyingAnActiveOwnerClosesConsumersBeforeStream()
