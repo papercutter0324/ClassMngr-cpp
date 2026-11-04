@@ -225,22 +225,131 @@ jobs:
           $redistributableName = "vc_redist.$architecture.exe"
           $expectedMachine = if ($architecture -eq "arm64") { "ARM64" } else { "x64" }
           $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
-          if (-not (Test-Path -LiteralPath $vswhere -PathType Leaf)) {
-            throw "vswhere.exe was not found at $vswhere."
+          $vswhereStdout = ""
+          $vswhereStderr = ""
+          $vswhereExitCode = $null
+          $vswhereUnavailableReason = $null
+          if (Test-Path -LiteralPath $vswhere -PathType Leaf) {
+            $vswhereStartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+            $vswhereStartInfo.FileName = $vswhere
+            $vswhereStartInfo.UseShellExecute = $false
+            $vswhereStartInfo.RedirectStandardOutput = $true
+            $vswhereStartInfo.RedirectStandardError = $true
+            foreach ($argument in @(
+              "-latest",
+              "-products", "*",
+              "-version", "[17.0,18.0)",
+              "-property", "installationPath"
+            )) {
+              $vswhereStartInfo.ArgumentList.Add($argument)
+            }
+
+            $vswhereProcess = [System.Diagnostics.Process]::new()
+            $vswhereProcess.StartInfo = $vswhereStartInfo
+            try {
+              if (-not $vswhereProcess.Start()) {
+                throw "The vswhere process did not start."
+              }
+              $stdoutTask = $vswhereProcess.StandardOutput.ReadToEndAsync()
+              $stderrTask = $vswhereProcess.StandardError.ReadToEndAsync()
+              $vswhereProcess.WaitForExit()
+              $vswhereStdout = $stdoutTask.GetAwaiter().GetResult()
+              $vswhereStderr = $stderrTask.GetAwaiter().GetResult()
+              $vswhereExitCode = $vswhereProcess.ExitCode
+            }
+            catch {
+              $vswhereUnavailableReason = "Unable to run vswhere at ${vswhere}: $($_.Exception.Message)"
+            }
+            finally {
+              $vswhereProcess.Dispose()
+            }
           }
-          $vsInstallationPath = (& $vswhere -latest -products '*' -version "[17.0,18.0)" -property installationPath |
-            Where-Object { $_ } | Select-Object -First 1)
-          if ($LASTEXITCODE -ne 0 -or -not $vsInstallationPath) {
-            throw "Unable to locate a Visual Studio 2022 installation with vswhere."
+          else {
+            $vswhereUnavailableReason = "vswhere.exe was not found at $vswhere."
           }
 
-          $redistRoot = Join-Path $vsInstallationPath "VC\Redist\MSVC\v143"
-          if (-not (Test-Path -LiteralPath $redistRoot -PathType Container)) {
-            throw "The VS 2022 v143 redistributable tree was not found: $redistRoot"
+          $vswhereStdoutJson = ConvertTo-Json -InputObject $vswhereStdout -Compress
+          $vswhereStderrJson = ConvertTo-Json -InputObject $vswhereStderr -Compress
+          Write-Host "vswhere stdout (JSON-escaped): $vswhereStdoutJson"
+          Write-Host "vswhere stderr (JSON-escaped): $vswhereStderrJson"
+          if ($null -eq $vswhereExitCode) {
+            Write-Host "vswhere exit code: unavailable ($vswhereUnavailableReason)"
           }
-          $candidates = @(Get-ChildItem -LiteralPath $redistRoot -Recurse -File -Filter $redistributableName)
-          if ($candidates.Count -eq 0) {
-            throw "No $redistributableName was found under the VS 2022 v143 tree $redistRoot."
+          else {
+            Write-Host "vswhere exit code: $vswhereExitCode"
+          }
+
+          $vsInstallationPath = $null
+          $redistRoot = $null
+          $candidates = @()
+          $vsDiscoverySource = "vswhere"
+          if ($null -eq $vswhereUnavailableReason -and $vswhereExitCode -eq 0) {
+            $queryPaths = @(
+              $vswhereStdout -split '\r?\n' |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { $_ }
+            )
+            $queryPath = $queryPaths | Select-Object -First 1
+            if (-not $queryPath) {
+              $vswhereUnavailableReason = "vswhere returned no installation path."
+            }
+            elseif (-not (Test-Path -LiteralPath $queryPath -PathType Container)) {
+              $vswhereUnavailableReason = "vswhere returned a missing installation directory: $queryPath"
+            }
+            else {
+              $queryRedistRoot = Join-Path $queryPath "VC\Redist\MSVC\v143"
+              if (-not (Test-Path -LiteralPath $queryRedistRoot -PathType Container)) {
+                $vswhereUnavailableReason = "The VS 2022 v143 redistributable tree was not found: $queryRedistRoot"
+              }
+              else {
+                try {
+                  $queryCandidates = @(
+                    Get-ChildItem -LiteralPath $queryRedistRoot -Recurse -File -Filter $redistributableName -ErrorAction Stop
+                  )
+                }
+                catch {
+                  $vswhereUnavailableReason = "Unable to inspect the VS 2022 v143 tree ${queryRedistRoot}: $($_.Exception.Message)"
+                }
+                if (-not $vswhereUnavailableReason) {
+                  if ($queryCandidates.Count -eq 0) {
+                    $vswhereUnavailableReason = "No $redistributableName was found under the VS 2022 v143 tree $queryRedistRoot."
+                  }
+                  else {
+                    $vsInstallationPath = $queryPath
+                    $redistRoot = $queryRedistRoot
+                    $candidates = $queryCandidates
+                  }
+                }
+              }
+            }
+          }
+          elseif ($null -eq $vswhereUnavailableReason) {
+            $vswhereUnavailableReason = "vswhere exited with code $vswhereExitCode."
+          }
+
+          if ($vswhereUnavailableReason) {
+            $fallbackInstallationPath = "C:\Program Files\Microsoft Visual Studio\2022\Enterprise"
+            $fallbackRedistRoot = Join-Path $fallbackInstallationPath "VC\Redist\MSVC\v143"
+            Write-Host "vswhere discovery was unusable: $vswhereUnavailableReason"
+            Write-Host "Trying documented VS 2022 Enterprise fallback: $fallbackInstallationPath"
+            if (-not (Test-Path -LiteralPath $fallbackRedistRoot -PathType Container)) {
+              throw "Unable to stage ${redistributableName}: vswhere discovery was unusable ($vswhereUnavailableReason); the fallback v143 redistributable tree was not found: $fallbackRedistRoot"
+            }
+            try {
+              $fallbackCandidates = @(
+                Get-ChildItem -LiteralPath $fallbackRedistRoot -Recurse -File -Filter $redistributableName -ErrorAction Stop
+              )
+            }
+            catch {
+              throw "Unable to stage ${redistributableName}: vswhere discovery was unusable ($vswhereUnavailableReason); unable to inspect the fallback v143 tree ${fallbackRedistRoot}: $($_.Exception.Message)"
+            }
+            if ($fallbackCandidates.Count -eq 0) {
+              throw "Unable to stage ${redistributableName}: vswhere discovery was unusable ($vswhereUnavailableReason); the fallback v143 tree contains no ${redistributableName}: $fallbackRedistRoot"
+            }
+            $vsInstallationPath = $fallbackInstallationPath
+            $redistRoot = $fallbackRedistRoot
+            $candidates = $fallbackCandidates
+            $vsDiscoverySource = "documented VS 2022 Enterprise fallback"
           }
 
           $versionedCandidates = @(
@@ -298,6 +407,7 @@ jobs:
             throw "The staged $redistributableName failed Authenticode validation: $($stagedSignature.Status)"
           }
           $stagedHash = (Get-FileHash -LiteralPath $stagedPath -Algorithm SHA256).Hash
+          Write-Host "Visual Studio discovery route: $vsDiscoverySource"
           Write-Host "Selected VS 2022 v143 redistributable: $($selected.File.FullName)"
           Write-Host "File version: $($selected.VersionText)"
           Write-Host "Authenticode status: $($signature.Status)"
@@ -309,6 +419,7 @@ jobs:
           @"
           ### Staged Visual C++ redistributable
           - Architecture: $expectedMachine
+          - Discovery route: $vsDiscoverySource
           - File version: $($selected.VersionText)
           - Authenticode status: $($signature.Status)
           - Authenticode signer: $($signature.SignerCertificate.Subject)

@@ -523,6 +523,21 @@ updated storage to `MaximumRowCount=100`, and the assertion now checks 100 rows
 with bounds 0–99 while retaining wide-ID and retained-marker checks. No full
 suite or memory measurement was run; Phase 9 owns the memory gate.
 
+### 8.7.1 — Windows redistributable staging
+
+Package run `41794662707` failed on both x64 and ARM64 at Visual Studio 2022
+discovery, before package configure or build. The same-SHA rerun (attempt 2)
+failed at the same point. The repair records stdout, stderr, and exit status,
+and documents a narrow VS 2022 Enterprise fallback requiring the v143 tree
+and requested architecture payload. Existing Authenticode, signer, PE
+architecture, and staged-package checks are preserved.
+
+Static review accepted the candidate for commit; this does not establish a
+runtime pass. Ruby YAML parsing and `git diff --check` passed; PowerShell and
+actionlint were unavailable. The full Windows package workflow remains pending
+after the batch push. This entry does not establish the Phase 8 exit gate or
+Phase 9 readiness.
+
 ## Objective
 
 
