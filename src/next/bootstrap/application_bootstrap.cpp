@@ -58,6 +58,7 @@
 #include "next/platform/qt_external_url_launch_adapter.h"
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "next/platform/qt_schedule_output_adapter.h"
+#include "next/platform/pdf_print_operation.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -1840,6 +1841,17 @@ Application::StartupResult ApplicationBootstrap::start()
                     actions.rosterEditor.output.savePdf = [] (const QString& path, const Output::RosterOutputRequest& request, const QString& pdf, const RosterTemplateRenderer::Fonts& fonts) {
                         return Platform::saveRosterOutputPdfAtPath(path, request, pdf, fonts);
                     };
+                    actions.rosterEditor.output.saveFileDialog = [](
+                        QWidget* parent,
+                        const Application::SaveFileDialogRequest& request) {
+                        Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+                            directoryPreferences;
+                        Ui::QtFileDialogPresenter fileDialog(
+                            directoryPreferences, parent);
+                        return fileDialog.saveFile(request);
+                    };
+                    actions.rosterEditor.output.printOperationFactory =
+                        Platform::makeQtPdfPrintOperation;
                     actions.rosterEditor.output.fonts = {
                         QFont(m_coreServices->interFont ? m_coreServices->interFont->get().familyNames().value(0) : QStringLiteral("Inter")),
                         QFont(m_coreServices->pretendardFont ? m_coreServices->pretendardFont->get().familyNames().value(0) : QStringLiteral("Pretendard"))};
@@ -2058,13 +2070,29 @@ Application::StartupResult ApplicationBootstrap::start()
                             Platform::SettingsManagerSplitterStatePort>();
                         actions.rosterEditor.output.readChoices = Platform::rosterOutputChoicesAtPath;
                         actions.rosterEditor.output.inspectTruncation = Platform::rosterOutputTruncationAtPath;
-                    actions.rosterEditor.output.savePdf = [] (const QString& path, const Output::RosterOutputRequest& request, const QString& pdf, const RosterTemplateRenderer::Fonts& fonts) {
-                        return Platform::saveRosterOutputPdfAtPath(path, request, pdf, fonts);
-                    };
-                    actions.rosterEditor.output.fonts = {
-                        QFont(m_coreServices->interFont ? m_coreServices->interFont->get().familyNames().value(0) : QStringLiteral("Inter")),
-                        QFont(m_coreServices->pretendardFont ? m_coreServices->pretendardFont->get().familyNames().value(0) : QStringLiteral("Pretendard"))};
-                    actions.rosterEditor.saveMode = actions.saveMode;
+                        actions.rosterEditor.output.savePdf = [] (
+                            const QString& path,
+                            const Output::RosterOutputRequest& request,
+                            const QString& pdf,
+                            const RosterTemplateRenderer::Fonts& fonts) {
+                            return Platform::saveRosterOutputPdfAtPath(
+                                path, request, pdf, fonts);
+                        };
+                        actions.rosterEditor.output.saveFileDialog = [](
+                            QWidget* parent,
+                            const Application::SaveFileDialogRequest& request) {
+                            Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+                                directoryPreferences;
+                            Ui::QtFileDialogPresenter fileDialog(
+                                directoryPreferences, parent);
+                            return fileDialog.saveFile(request);
+                        };
+                        actions.rosterEditor.output.printOperationFactory =
+                            Platform::makeQtPdfPrintOperation;
+                        actions.rosterEditor.output.fonts = {
+                            QFont(m_coreServices->interFont ? m_coreServices->interFont->get().familyNames().value(0) : QStringLiteral("Inter")),
+                            QFont(m_coreServices->pretendardFont ? m_coreServices->pretendardFont->get().familyNames().value(0) : QStringLiteral("Pretendard"))};
+                        actions.rosterEditor.saveMode = actions.saveMode;
                         actions.rosterEditor.readRoster = [](
                             const QString& databasePath,
                             const Domain::ClassId& classId) {

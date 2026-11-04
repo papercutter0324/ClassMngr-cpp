@@ -1,7 +1,10 @@
 #pragma once
+#include "next/application/file_dialog_port.h"
 #include "next/output/roster_output.h"
+#include "next/platform/pdf_print_operation.h"
 #include "shared/roster/roster_template_print_truncation.h"
 #include <QPageLayout>
+#include <functional>
 class QWidget;
 namespace ClassMngr::Next::Ui
 {
@@ -12,9 +15,11 @@ struct RosterOutputActions final
         const QString&, const Output::RosterOutputRequest&)> inspectTruncation;
     std::function<DocumentOutputResult(const QString&, const Output::RosterOutputRequest&, const QString&,
         const RosterTemplateRenderer::Fonts&)> savePdf;
-    // Optional UI seams allow deterministic cancellation/failure checks.
-    std::function<QString(QWidget*)> chooseSavePath;
-    std::function<DocumentOutputResult(QWidget*, const QString&, QPageLayout::Orientation)> printPdf;
+    using SaveFileDialogResponse = Application::FileDialogResponse<
+        Application::SavedFileDialogSelection>;
+    std::function<Domain::Result<SaveFileDialogResponse>(
+        QWidget*, const Application::SaveFileDialogRequest&)> saveFileDialog;
+    Platform::PdfPrintOperationFactory printOperationFactory;
     RosterTemplateRenderer::Fonts fonts;
 };
 }

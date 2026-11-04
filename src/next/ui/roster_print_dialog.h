@@ -1,7 +1,7 @@
 #pragma once
 #include "next/ui/roster_output_actions.h"
 #include "ui/shared/dialogs/dialog_shell.h"
-#include <QTemporaryDir>
+#include <optional>
 class QComboBox;
 class QListWidget;
 class QLabel;
@@ -20,7 +20,15 @@ private:
     void preview();
     void save();
     void print();
-    QString generate();
+    bool prepareRequest(Output::RosterOutputRequest* selected);
+    [[nodiscard]] DocumentOutputResult generate(
+        const Output::RosterOutputRequest& selected,
+        const QString& outputPath
+        ) const;
+    [[nodiscard]] std::optional<QString> chooseSavePath(
+        QWidget* parent,
+        QString* failureMessage
+        ) const;
     void showResult(const DocumentOutputResult& result);
     DialogGeometryPreferencesCallbacks m_geometryPreferences;
     QString m_path;
@@ -28,7 +36,6 @@ private:
     bool m_testing;
     Output::RosterOutputChoices m_choices;
     RosterOutputActions m_actions;
-    QTemporaryDir m_temporary;
     QComboBox* m_template;
     QComboBox* m_scope;
     QComboBox* m_orientation;

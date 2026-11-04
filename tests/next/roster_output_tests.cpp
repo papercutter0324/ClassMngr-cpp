@@ -12,6 +12,7 @@
 #include "features/roster/services/roster_template_print_service.h"
 #include "next/platform/workspace_store_roster_actions.h"
 #include "next/platform/workspace_store_roster_output.h"
+#include "next/platform/pdf_print_operation.h"
 #include "next/ui/roster_editor_widget.h"
 #include "next/ui/roster_print_dialog.h"
 #include "next/ui/roster_table_model.h"
@@ -45,6 +46,9 @@
 #include <QtTest>
 
 #include <stdexcept>
+#include <functional>
+#include <memory>
+#include <optional>
 #include <string_view>
 
 using namespace ClassMngr::Next;
@@ -52,6 +56,61 @@ namespace R = RosterTemplateRenderer;
 namespace
 {
 Domain::ClassId id(int value) { return *Domain::ClassId::fromString(std::to_string(value)); }
+class CallbackPdfPrintOperation final : public Platform::PdfPrintOperation
+{
+public:
+    using Handler = std::function<Platform::PdfPrintResult(
+        const Platform::ReadyPdfPrintRequest&)>;
+
+    explicit CallbackPdfPrintOperation(Handler handler)
+        : m_handler(std::move(handler))
+    {
+    }
+
+    Platform::PdfPrintResult printReadyDocument(
+        const Platform::ReadyPdfPrintRequest& request) override
+    {
+        return m_handler(request);
+    }
+
+    Platform::PdfPrintResult printLocalDocuments(
+        const Platform::LocalPdfBatchPrintRequest&) override
+    {
+        return {Platform::PdfPrintStatus::Failed, QStringLiteral("Unexpected local batch print")};
+    }
+
+private:
+    Handler m_handler;
+};
+
+void installPrintHandler(
+    Ui::RosterOutputActions& actions,
+    CallbackPdfPrintOperation::Handler handler)
+{
+    actions.printOperationFactory = [handler = std::move(handler)] {
+        return std::make_unique<CallbackPdfPrintOperation>(handler);
+    };
+}
+
+void installSaveFileSelection(
+    Ui::RosterOutputActions& actions,
+    const std::optional<QString>& path)
+{
+    actions.saveFileDialog = [path](
+        QWidget*, const Application::SaveFileDialogRequest&) {
+        Ui::RosterOutputActions::SaveFileDialogResponse response;
+        if (path)
+        {
+            response.selection = Application::SavedFileDialogSelection{
+                Application::FileDialogPath(path->toUtf8().toStdString()),
+                false
+            };
+        }
+        return Domain::Result<Ui::RosterOutputActions::SaveFileDialogResponse>::success(
+            std::move(response));
+    };
+}
+
 QString pdfText(const QString& path, int page = -1)
 {
     QPdfDocument document;
@@ -100,6 +159,13 @@ Ui::RosterOutputActions actions()
     result.savePdf = [](const QString& path, const Output::RosterOutputRequest& request, const QString& pdf, const R::Fonts& fonts) {
         return Platform::saveRosterOutputPdfAtPath(path, request, pdf, fonts);
     };
+    installSaveFileSelection(result, std::nullopt);
+    installPrintHandler(result, [](const Platform::ReadyPdfPrintRequest&) {
+        return Platform::PdfPrintResult{
+            Platform::PdfPrintStatus::Canceled,
+            QStringLiteral("Fixture print was not expected")
+        };
+    });
     result.fonts = {FontManager::getUiFont(-1), FontManager::getKoreanFont(-1)};
     return result;
 }
@@ -225,6 +291,7 @@ private slots:
     void editorSaveGate();
     void rosterDialogRequiresCompleteGeometryCallbacks();
     void dialogCancelFailureAndPreview();
+    void saveFileDialogReceivesRosterPdfRequestAndHandlesFailure();
     void outputWarnsBeforeGeneratingWhenStudentsOverflowTemplate();
     void printPortReceivesGeneratedPdfAndReportsCancelAndFailure();
     void captures();
@@ -599,32 +666,79 @@ void RosterOutputTests::dialogCancelFailureAndPreview()
 {
     QTemporaryDir dir; const auto path = dir.filePath(QStringLiteral("dialog.tps")); QVERIFY(seed(path));
     auto source = actions(); int outputs = 0, prints = 0;
+    QString lastPrintPath;
+    bool previewPdfAliveWhileModal = false;
+    bool previewSaveMatchedSessionPdf = false;
+    int saveDialogCalls = 0;
+    QStringList generatedPaths;
     const auto generate = source.savePdf;
-    source.savePdf = [&](const QString& p, const Output::RosterOutputRequest& r, const QString& out, const R::Fonts& fonts) { ++outputs; return generate(p, r, out, fonts); };
-    source.chooseSavePath = [](QWidget*) { return QString{}; };
-    source.printPdf = [&](QWidget*, const QString&, QPageLayout::Orientation) { ++prints; return DocumentOutputResult{DocumentOutputStatus::Canceled, {}}; };
+    source.savePdf = [&](const QString& p, const Output::RosterOutputRequest& r, const QString& out, const R::Fonts& fonts) {
+        ++outputs;
+        generatedPaths.append(out);
+        return generate(p, r, out, fonts);
+    };
+    source.saveFileDialog = [&](
+        QWidget*, const Application::SaveFileDialogRequest&) {
+        Ui::RosterOutputActions::SaveFileDialogResponse response;
+        if (++saveDialogCalls == 2)
+        {
+            response.selection = Application::SavedFileDialogSelection{
+                Application::FileDialogPath(
+                    dir.filePath(QStringLiteral("preview-saved.pdf"))
+                        .toUtf8().toStdString()),
+                false
+            };
+        }
+        return Domain::Result<Ui::RosterOutputActions::SaveFileDialogResponse>::success(
+            std::move(response));
+    };
+    installPrintHandler(source, [&](const Platform::ReadyPdfPrintRequest& request) {
+        ++prints;
+        lastPrintPath = request.documentPath;
+        return Platform::PdfPrintResult{Platform::PdfPrintStatus::Canceled, {}};
+    });
     const auto choices = source.readChoices(path, id(1), false); QVERIFY(choices);
     Ui::RosterPrintDialog dialog(path, id(1), false, *choices, source,
         noOpGeometryPreferencesCallbacks());
     findButton(dialog, "nextRosterSavePdf")->click(); QCOMPARE(outputs, 0);
     findButton(dialog, "nextRosterPrint")->click(); QCOMPARE(outputs, 1); QCOMPARE(prints, 1);
+    QVERIFY(!QFileInfo::exists(lastPrintPath));
     QTimer::singleShot(0, [&] {
         auto* preview = dialog.findChild<QDialog*>(QStringLiteral("nextRosterPreviewDialog")); QVERIFY(preview);
         QVERIFY(!preview->findChild<QLabel*>(QStringLiteral("nextRosterPreviewPage"))->pixmap().isNull());
-        findButton(*preview, "nextRosterPreviewSavePdf")->click(); findButton(*preview, "nextRosterPreviewPrint")->click(); preview->reject();
+        findButton(*preview, "nextRosterPreviewSavePdf")->click();
+        previewSaveMatchedSessionPdf =
+            generatedPaths.size() == 2
+            && QFileInfo::exists(generatedPaths.at(1))
+            && fileSha256(generatedPaths.at(1))
+                == fileSha256(dir.filePath(QStringLiteral("preview-saved.pdf")));
+        findButton(*preview, "nextRosterPreviewPrint")->click();
+        previewPdfAliveWhileModal = QFileInfo::exists(lastPrintPath);
+        preview->reject();
     });
     findButton(dialog, "nextRosterPreview")->click(); QCOMPARE(outputs, 2); QCOMPARE(prints, 2);
-    source.chooseSavePath = [&](QWidget*) { return dir.filePath(QStringLiteral("saved.pdf")); };
+    QVERIFY(previewSaveMatchedSessionPdf);
+    QCOMPARE(pageCount(dir.filePath(QStringLiteral("preview-saved.pdf"))), 1);
+    QVERIFY(previewPdfAliveWhileModal);
+    QVERIFY(!QFileInfo::exists(lastPrintPath));
+    installSaveFileSelection(source, dir.filePath(QStringLiteral("saved.pdf")));
     Ui::RosterPrintDialog saved(path, id(1), false, *choices, source,
         noOpGeometryPreferencesCallbacks());
+    const int printsBeforeSave = prints;
     findButton(saved, "nextRosterSavePdf")->click(); QCOMPARE(pageCount(dir.filePath(QStringLiteral("saved.pdf"))), 1);
-    source.printPdf = [](QWidget*, const QString&, QPageLayout::Orientation) { return DocumentOutputResult{DocumentOutputStatus::Failed, QStringLiteral("FIXTURE PRINT FAILURE")}; };
+    QCOMPARE(prints, printsBeforeSave);
+    installPrintHandler(source, [](const Platform::ReadyPdfPrintRequest&) {
+        return Platform::PdfPrintResult{
+            Platform::PdfPrintStatus::Failed,
+            QStringLiteral("FIXTURE PRINT FAILURE")
+        };
+    });
     Ui::RosterPrintDialog printFailure(path, id(1), false, *choices, source,
         noOpGeometryPreferencesCallbacks());
     findButton(printFailure, "nextRosterPrint")->click();
     QCOMPARE(printFailure.findChild<QLabel*>(QStringLiteral("nextRosterOutputStatus"))->text(), QStringLiteral("FIXTURE PRINT FAILURE"));
     source.savePdf = [](const QString&, const Output::RosterOutputRequest&, const QString&, const R::Fonts&) { return DocumentOutputResult{DocumentOutputStatus::Failed, QStringLiteral("FIXTURE READ FAILURE")}; };
-    source.chooseSavePath = [&](QWidget*) { return dir.filePath(QStringLiteral("failed.pdf")); };
+    installSaveFileSelection(source, dir.filePath(QStringLiteral("failed.pdf")));
     Ui::RosterPrintDialog failure(path, id(1), false, *choices, source,
         noOpGeometryPreferencesCallbacks());
     findButton(failure, "nextRosterSavePdf")->click(); QVERIFY(!QFile::exists(dir.filePath(QStringLiteral("failed.pdf"))));
@@ -635,6 +749,99 @@ void RosterOutputTests::dialogCancelFailureAndPreview()
         noOpGeometryPreferencesCallbacks());
     QCOMPARE(testing.findChild<QComboBox*>(QStringLiteral("nextRosterTemplate"))->count(), 1);
     QCOMPARE(testing.request().templateId, R::TemplateId::PerClassWithExtraInfo); QCOMPARE(testing.request().scope, Output::RosterOutputScope::CurrentClass);
+}
+
+void RosterOutputTests::saveFileDialogReceivesRosterPdfRequestAndHandlesFailure()
+{
+    QTemporaryDir dir;
+    const QString databasePath = dir.filePath(QStringLiteral("save-dialog.tps"));
+    QVERIFY(seed(databasePath));
+    auto source = actions();
+    const auto choices = source.readChoices(databasePath, id(1), false);
+    QVERIFY(choices);
+
+    Application::SaveFileDialogRequest capturedRequest;
+    int saveCalls = 0;
+    int printCalls = 0;
+    QString generatedPath;
+    source.saveFileDialog = [&capturedRequest](
+        QWidget*, const Application::SaveFileDialogRequest& request) {
+        capturedRequest = request;
+        Ui::RosterOutputActions::SaveFileDialogResponse response;
+        response.selection = Application::SavedFileDialogSelection{
+            Application::FileDialogPath("selected-roster-output"),
+            false
+        };
+        return Domain::Result<Ui::RosterOutputActions::SaveFileDialogResponse>::success(
+            std::move(response));
+    };
+    source.savePdf = [&](const QString&, const Output::RosterOutputRequest&,
+                         const QString& outputPath, const R::Fonts&) {
+        ++saveCalls;
+        generatedPath = outputPath;
+        return DocumentOutputResult{
+            DocumentOutputStatus::Sent,
+            QStringLiteral("FIXTURE SAVE SENT")
+        };
+    };
+    installPrintHandler(source, [&](const Platform::ReadyPdfPrintRequest&) {
+        ++printCalls;
+        return Platform::PdfPrintResult{Platform::PdfPrintStatus::Sent, {}};
+    });
+
+    Ui::RosterPrintDialog accepted(databasePath, id(1), false, *choices, source,
+        noOpGeometryPreferencesCallbacks());
+    findButton(accepted, "nextRosterSavePdf")->click();
+    QCOMPARE(capturedRequest.purpose, Application::FileDialogPurpose::GeneratedPdf);
+    QCOMPARE(QString::fromStdString(capturedRequest.title),
+        QStringLiteral("Save Rosters as PDF"));
+    QCOMPARE(QString::fromStdString(capturedRequest.suggestedFileName),
+        QStringLiteral("Rosters.pdf"));
+    QCOMPARE(capturedRequest.nameFilters.size(), std::size_t(1));
+    QCOMPARE(QString::fromStdString(capturedRequest.nameFilters.front()),
+        QStringLiteral("PDF Files (*.pdf)"));
+    QCOMPARE(QString::fromStdString(capturedRequest.defaultSuffix),
+        QStringLiteral("pdf"));
+    QCOMPARE(generatedPath, QStringLiteral("selected-roster-output.pdf"));
+    QCOMPARE(saveCalls, 1);
+    QCOMPARE(printCalls, 0);
+
+    auto canceledSource = actions();
+    int canceledSaveCalls = 0;
+    installSaveFileSelection(canceledSource, std::nullopt);
+    canceledSource.savePdf = [&](const QString&, const Output::RosterOutputRequest&,
+                                 const QString&, const R::Fonts&) {
+        ++canceledSaveCalls;
+        return DocumentOutputResult{DocumentOutputStatus::Sent, {}};
+    };
+    Ui::RosterPrintDialog canceled(databasePath, id(1), false, *choices,
+        canceledSource, noOpGeometryPreferencesCallbacks());
+    findButton(canceled, "nextRosterSavePdf")->click();
+    QCOMPARE(canceledSaveCalls, 0);
+    QVERIFY(canceled.findChild<QLabel*>(QStringLiteral("nextRosterOutputStatus"))
+        ->text().isEmpty());
+
+    auto failedSource = actions();
+    failedSource.saveFileDialog = [](
+        QWidget*, const Application::SaveFileDialogRequest&) {
+        return Domain::Result<Ui::RosterOutputActions::SaveFileDialogResponse>::failure({
+            Domain::ErrorCode::Technical,
+            "FIXTURE CHOOSER FAILURE",
+            true
+        });
+    };
+    int failedSaveCalls = 0;
+    failedSource.savePdf = [&](const QString&, const Output::RosterOutputRequest&,
+                               const QString&, const R::Fonts&) {
+        ++failedSaveCalls;
+        return DocumentOutputResult{DocumentOutputStatus::Sent, {}};
+    };
+    Ui::RosterPrintDialog failed(databasePath, id(1), false, *choices,
+        failedSource, noOpGeometryPreferencesCallbacks());
+    findButton(failed, "nextRosterSavePdf")->click();
+    QCOMPARE(failedSaveCalls, 0);
+    QCOMPARE(failed.findChild<QLabel*>(QStringLiteral("nextRosterOutputStatus"))
+        ->text(), QStringLiteral("FIXTURE CHOOSER FAILURE"));
 }
 
 void RosterOutputTests::outputWarnsBeforeGeneratingWhenStudentsOverflowTemplate()
@@ -715,10 +922,9 @@ void RosterOutputTests::outputWarnsBeforeGeneratingWhenStudentsOverflowTemplate(
         ++outputs;
         return DocumentOutputResult{DocumentOutputStatus::Sent, {}};
     };
-    source.printPdf = [](QWidget*, const QString&, QPageLayout::Orientation)
-    {
-        return DocumentOutputResult{DocumentOutputStatus::Canceled, {}};
-    };
+    installPrintHandler(source, [](const Platform::ReadyPdfPrintRequest&) {
+        return Platform::PdfPrintResult{Platform::PdfPrintStatus::Canceled, {}};
+    });
     const auto choices = source.readChoices(path, id(1), false);
     QVERIFY(choices);
 
@@ -766,9 +972,12 @@ void RosterOutputTests::printPortReceivesGeneratedPdfAndReportsCancelAndFailure(
     QStringList generatedPaths;
     QStringList submittedPaths;
     QStringList submittedTexts;
+    QStringList submittedTitles;
+    QStringList temporaryDirectories;
     QList<int> submittedPageCounts;
     QList<QPageLayout::Orientation> submittedOrientations;
     QList<bool> submittedPdfReadable;
+    QList<bool> submittedOptionsPreserved;
     int outputCount = 0;
     int printCount = 0;
     DocumentOutputResult printResult{
@@ -784,23 +993,42 @@ void RosterOutputTests::printPortReceivesGeneratedPdfAndReportsCancelAndFailure(
         generatedPaths.append(outputPath);
         return generate(databasePath, request, outputPath, fonts);
     };
-    source.printPdf = [&](QWidget*, const QString& pdfPath,
-                          QPageLayout::Orientation orientation) {
+    installPrintHandler(source, [&](const Platform::ReadyPdfPrintRequest& request) {
         ++printCount;
-        submittedPaths.append(pdfPath);
-        submittedOrientations.append(orientation);
+        submittedPaths.append(request.documentPath);
+        submittedOrientations.append(request.pageOrientation);
+        submittedTitles.append(request.dialogTitle);
+        temporaryDirectories.append(QFileInfo(request.documentPath).absolutePath());
 
-        QPdfDocument document;
-        const bool readable = QFileInfo(pdfPath).isFile()
-            && document.load(pdfPath) == QPdfDocument::Error::None
-            && document.pageCount() > 0;
+        QPdfDocument* document = request.document;
+        const bool readable = document
+            && QFileInfo(request.documentPath).isFile()
+            && document->status() == QPdfDocument::Status::Ready
+            && document->pageCount() > 0;
         submittedPdfReadable.append(readable);
-        submittedPageCounts.append(readable ? document.pageCount() : -1);
+        submittedPageCounts.append(readable ? document->pageCount() : -1);
         submittedTexts.append(
-            readable ? document.getAllText(0).text() : QString{}
+            readable ? document->getAllText(0).text() : QString{}
             );
-        return printResult;
-    };
+        submittedOptionsPreserved.append(
+            request.currentPageIndex == 0
+            && request.dialogTitle == QStringLiteral("Print Rosters")
+            && !request.fitToPageByDefault
+            && request.preferredPageSize == QPageSize::A4
+            && request.lockPreferredPageSize
+            && request.uiFont == source.fonts.ui
+            && static_cast<bool>(request.dialogGeometryPreferences.read)
+            && static_cast<bool>(request.dialogGeometryPreferences.write)
+            );
+        return Platform::PdfPrintResult{
+            printResult.status == DocumentOutputStatus::Canceled
+                ? Platform::PdfPrintStatus::Canceled
+                : printResult.status == DocumentOutputStatus::Sent
+                    ? Platform::PdfPrintStatus::Sent
+                    : Platform::PdfPrintStatus::Failed,
+            printResult.message
+        };
+    });
 
     const auto choices = source.readChoices(path, id(1), false);
     QVERIFY(choices);
@@ -815,11 +1043,15 @@ void RosterOutputTests::printPortReceivesGeneratedPdfAndReportsCancelAndFailure(
     QCOMPARE(submittedPageCounts, QList<int>({1}));
     QCOMPARE(submittedOrientations,
              QList<QPageLayout::Orientation>({QPageLayout::Landscape}));
+    QCOMPARE(submittedTitles, QStringList({QStringLiteral("Print Rosters")}));
+    QCOMPARE(submittedOptionsPreserved, QList<bool>({true}));
     QVERIFY(submittedTexts.front().contains(QStringLiteral("FIXTURE S0")));
     QVERIFY(submittedTexts.front().contains(QStringLiteral("FIXTURE S1")));
     QVERIFY(canceled.findChild<QLabel*>(
         QStringLiteral("nextRosterOutputStatus"))->text()
         != QStringLiteral("FIXTURE PRINT CANCELED"));
+    QVERIFY(!QFileInfo::exists(submittedPaths.front()));
+    QVERIFY(!QFileInfo::exists(temporaryDirectories.front()));
 
     printResult = {
         DocumentOutputStatus::Failed,
@@ -834,9 +1066,44 @@ void RosterOutputTests::printPortReceivesGeneratedPdfAndReportsCancelAndFailure(
     QCOMPARE(submittedPaths.at(1), generatedPaths.at(1));
     QCOMPARE(submittedPdfReadable, QList<bool>({true, true}));
     QCOMPARE(submittedPageCounts, QList<int>({1, 1}));
+    QCOMPARE(submittedOptionsPreserved, QList<bool>({true, true}));
+    QVERIFY(!QFileInfo::exists(submittedPaths.at(1)));
+    QVERIFY(!QFileInfo::exists(temporaryDirectories.at(1)));
     QCOMPARE(failed.findChild<QLabel*>(
         QStringLiteral("nextRosterOutputStatus"))->text(),
         QStringLiteral("FIXTURE PRINT FAILURE"));
+
+    auto invalidPdfSource = actions();
+    invalidPdfSource.savePdf = [](
+        const QString&, const Output::RosterOutputRequest&,
+        const QString& outputPath, const R::Fonts&) {
+        QFile invalidPdf(outputPath);
+        if (!invalidPdf.open(QIODevice::WriteOnly)
+            || invalidPdf.write("not a PDF") != 9)
+        {
+            return DocumentOutputResult{
+                DocumentOutputStatus::Failed,
+                QStringLiteral("FIXTURE INVALID PDF WRITE FAILURE")
+            };
+        }
+        return DocumentOutputResult{DocumentOutputStatus::Sent, {}};
+    };
+    int invalidPdfPrintCalls = 0;
+    installPrintHandler(invalidPdfSource, [&](const Platform::ReadyPdfPrintRequest&) {
+        ++invalidPdfPrintCalls;
+        return Platform::PdfPrintResult{Platform::PdfPrintStatus::Sent, {}};
+    });
+    Ui::RosterPrintDialog invalidPdf(path, id(1), false, *choices,
+        invalidPdfSource, noOpGeometryPreferencesCallbacks());
+    findButton(invalidPdf, "nextRosterPrint")->click();
+    QCOMPARE(invalidPdfPrintCalls, 0);
+    QCOMPARE(invalidPdf.findChild<QLabel*>(
+        QStringLiteral("nextRosterOutputStatus"))->text(),
+        QStringLiteral("Unable to load the generated roster PDF."));
+    findButton(invalidPdf, "nextRosterPreview")->click();
+    QVERIFY(!invalidPdf.findChild<QDialog*>(
+        QStringLiteral("nextRosterPreviewDialog")));
+    QCOMPARE(invalidPdfPrintCalls, 0);
 }
 
 void RosterOutputTests::captures()

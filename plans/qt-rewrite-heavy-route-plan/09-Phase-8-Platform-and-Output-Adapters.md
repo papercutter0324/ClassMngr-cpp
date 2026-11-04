@@ -318,6 +318,29 @@ parity. `Sans Serif` was unavailable and the host fallback font was used. No
 native print dialog, physical print, Windows/Linux runtime, or full repository
 suite was exercised.
 
+### 8.2.4 — Roster output (accepted)
+
+Roster Save As now sends a `GeneratedPdf` request through the existing
+`FileDialogPort`-shaped boundary and writes directly through the atomic
+`savePdf` adapter. Print uses the injected `PdfPrintOperation` with a nonempty
+Ready borrowed PDF, preserving the title, options, and orientation. The
+temporary PDF and document session are local to Print and retained only through
+Preview; Preview Save and Print reuse that same PDF. Direct `QFileDialog` and
+`PdfPrintService` fallbacks are absent. The existing truncation policy and all
+four Next/Legacy template parity cases remain.
+
+The original `build/macos-clang-debug` tree was missing, and the available
+release tree had `BUILD_TESTING=OFF`, so verification used a separate scratch
+configure at `/private/tmp/classmngr-p824-roster-debug` (AppleClang 21, Ninja,
+macOS Debug, Qt 6.12, arm64+x86_64, deployment target 14.4) without changing
+those trees. `ClassMngrNextRosterOutputTests` built with exit 0; focused CTest
+for `ClassMngrNextRosterOutputTests` and
+`NextStartupWorkspaceDependencyBoundary` passed 2/2. The verbose Roster suite
+passed 18 tests with none failed or skipped, and all four template parity
+rows passed. `git diff --check` passed. Offscreen Qt emitted
+`propagateSizeHints` and `Sans Serif` fallback warnings. Native printer UI and
+physical printing were not exercised.
+
 ## Objective
 
 
