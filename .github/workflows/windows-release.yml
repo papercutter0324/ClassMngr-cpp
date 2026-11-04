@@ -842,7 +842,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Package verifier tests failed." }
 
       - name: Verify final Windows installer payload and installed Next app
-        timeout-minutes: 360
+        timeout-minutes: 270
         shell: pwsh
         run: |
           $architecture = "${{ matrix.architecture }}"
@@ -854,9 +854,11 @@ jobs:
           $verificationScript = Join-Path $Env:GITHUB_WORKSPACE "scripts\installer\verify_next_package.ps1"
           $extractRoot = Join-Path $env:RUNNER_TEMP `
             "ClassMngr-$architecture-inno-payload-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
-          $extractLog = Join-Path $extractRoot "innoextract.log"
+          $extractLog = Join-Path $env:RUNNER_TEMP `
+            "ClassMngr-$architecture-innoextract-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT.log"
           $verificationStartedAt = [DateTime]::UtcNow
           Write-Host "Starting final Windows installer verification for $architecture at $($verificationStartedAt.ToString('o'))."
+          Write-Host "Retained innoextract log: $extractLog"
           $installer = Get-ChildItem -Path "dist" -Filter "*win-$architecture.exe" -File -ErrorAction SilentlyContinue |
             Select-Object -First 1
           if ($installer) {
@@ -909,6 +911,14 @@ jobs:
             Receive-Job -Job $verificationJob -ErrorAction Continue
             Remove-Job -Job $verificationJob -Force -ErrorAction SilentlyContinue
           }
+
+      - name: Upload final Windows installer verification log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-final-installer-verification-${{ matrix.architecture }}
+          path: ${{ runner.temp }}/ClassMngr-${{ matrix.architecture }}-innoextract-${{ github.run_id }}-${{ github.run_attempt }}.log
+          if-no-files-found: warn
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v7

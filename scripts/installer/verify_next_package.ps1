@@ -90,6 +90,7 @@ function Invoke-PackageVerifier {
 
 $runSuffix = "$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
 $extractRoot = Join-Path $env:RUNNER_TEMP "ClassMngr-$Architecture-inno-payload-$runSuffix"
+$extractLog = Join-Path $env:RUNNER_TEMP "ClassMngr-$Architecture-innoextract-$runSuffix.log"
 if (Test-Path -LiteralPath $extractRoot) {
     throw "The run-specific Inno payload directory already exists: $extractRoot."
 }
@@ -104,13 +105,16 @@ $oldForceStderr = $null
 $environmentChanged = $false
 
 try {
-    $extractLog = Join-Path $extractRoot "innoextract.log"
-    & $InnoExtractPath --no-extract-unknown --test --extract --silent `
-        --output-dir $extractRoot -- $installer.FullName *> $extractLog
+    Write-Host "Streaming innoextract file progress; full output log: $extractLog"
+    # innoextract supports --list with --test/--extract; --list-sizes emits each
+    # processed filename and byte count even with --silent.
+    & $InnoExtractPath --no-extract-unknown --list --list-sizes --test --extract --silent `
+        --output-dir $extractRoot -- $installer.FullName 2>&1 |
+        Tee-Object -FilePath $extractLog
     $extractExitCode = $LASTEXITCODE
     if ($extractExitCode -ne 0) {
-        $details = Get-Content -LiteralPath $extractLog -Raw -ErrorAction SilentlyContinue
-        throw "Pinned innoextract failed to extract the Inno Setup payload (exit code $extractExitCode): $details"
+        $details = (Get-Content -LiteralPath $extractLog -Tail 80 -ErrorAction SilentlyContinue) -join "`n"
+        throw "Pinned innoextract failed to extract the Inno Setup payload (exit code $extractExitCode). Full output log: $extractLog`nLast output lines:`n$details"
     }
 
     if (-not (Test-Path -LiteralPath $stagedRedistributable -PathType Leaf)) {
