@@ -865,6 +865,48 @@ jobs:
             Write-Host "Installer: $($installer.FullName) ($([Math]::Round($installer.Length / 1MB, 1)) MiB)."
           }
 
+          function Get-ExtractionSnapshot {
+            param([string]$Path)
+
+            $rootExists = Test-Path -LiteralPath $Path -PathType Container
+            $fileCount = 0
+            [long]$totalBytes = 0
+            $latestWriteUtc = $null
+            $latestWritePath = $null
+            $mainExecutablePath = $null
+            $mainExecutableLength = $null
+            $mainExecutableWriteUtc = $null
+            if ($rootExists) {
+              # The package payload is bounded, so scan its files once per
+              # heartbeat to detect writes in nested installer directories too.
+              Get-ChildItem -LiteralPath $Path -File -Recurse -Force -ErrorAction SilentlyContinue |
+                ForEach-Object {
+                  $fileCount++
+                  $totalBytes += [long]$_.Length
+                  if ($null -eq $latestWriteUtc -or $_.LastWriteTimeUtc -gt $latestWriteUtc) {
+                    $latestWriteUtc = $_.LastWriteTimeUtc
+                    $latestWritePath = $_.FullName
+                  }
+                  if ($_.Name -ceq "ClassMngr.exe") {
+                    $mainExecutablePath = $_.FullName
+                    $mainExecutableLength = [long]$_.Length
+                    $mainExecutableWriteUtc = $_.LastWriteTimeUtc
+                  }
+                }
+            }
+
+            [pscustomobject]@{
+              RootExists = $rootExists
+              FileCount = $fileCount
+              TotalBytes = $totalBytes
+              LatestWriteUtc = $latestWriteUtc
+              LatestWritePath = $latestWritePath
+              MainExecutablePath = $mainExecutablePath
+              MainExecutableLength = $mainExecutableLength
+              MainExecutableWriteUtc = $mainExecutableWriteUtc
+            }
+          }
+
           $verificationJob = Start-Job -ScriptBlock {
             param($ScriptPath, $Architecture, $ProjectVersion, $QtVersion, $InnoExtractPath)
             & $ScriptPath `
@@ -881,22 +923,90 @@ jobs:
           )
 
           $verificationStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+          $stallLimit = [TimeSpan]::FromMinutes(45)
+          $lastActivityAt = $verificationStartedAt
+          $lastActivitySnapshot = "verification started; log not sampled; extraction not sampled"
+          $previousLogSnapshot = $null
+          $previousExtractionSnapshot = $null
           try {
             while ($verificationJob.State -in @("NotStarted", "Running")) {
               $null = Wait-Job -Job $verificationJob -Timeout 60
-              Receive-Job -Job $verificationJob -ErrorAction Continue
+              $receivedOutput = @(Receive-Job -Job $verificationJob -ErrorAction Continue)
+              if ($receivedOutput.Count -gt 0) {
+                $receivedOutput | Write-Output
+              }
               if ($verificationJob.State -in @("NotStarted", "Running")) {
                 $logStatus = "not created"
+                $currentLogSnapshot = $null
                 if (Test-Path -LiteralPath $extractLog -PathType Leaf) {
                   $logInfo = Get-Item -LiteralPath $extractLog
                   $logStatus = "$($logInfo.Length) bytes, last written $($logInfo.LastWriteTimeUtc.ToString('o'))"
+                  $currentLogSnapshot = [pscustomobject]@{
+                    Length = [long]$logInfo.Length
+                    LastWriteUtc = $logInfo.LastWriteTimeUtc
+                  }
                 }
+
+                $observedAt = [DateTime]::UtcNow
+                $activityDetails = @()
+                if ($receivedOutput.Count -gt 0) {
+                  $lastOutputLine = ([string]$receivedOutput[-1] -replace '[\r\n]+', ' ').Trim()
+                  if ($lastOutputLine.Length -gt 200) {
+                    $lastOutputLine = $lastOutputLine.Substring(0, 200)
+                  }
+                  $activityDetails += "verifier emitted $($receivedOutput.Count) output record(s); last='$lastOutputLine'"
+                }
+                if ($null -eq $previousLogSnapshot) {
+                  if ($null -ne $currentLogSnapshot) {
+                    $activityDetails += "log created ($logStatus)"
+                  }
+                }
+                elseif ($null -ne $currentLogSnapshot -and
+                  ($currentLogSnapshot.Length -ne $previousLogSnapshot.Length -or
+                    $currentLogSnapshot.LastWriteUtc -ne $previousLogSnapshot.LastWriteUtc)) {
+                  $activityDetails += "log updated ($logStatus)"
+                }
+                $previousLogSnapshot = $currentLogSnapshot
+
+                $currentExtractionSnapshot = Get-ExtractionSnapshot -Path $extractRoot
+                if ($null -eq $previousExtractionSnapshot) {
+                  if ($currentExtractionSnapshot.RootExists) {
+                    $activityDetails += "extraction root created (files=$($currentExtractionSnapshot.FileCount), bytes=$($currentExtractionSnapshot.TotalBytes))"
+                  }
+                }
+                elseif ($currentExtractionSnapshot.RootExists -ne $previousExtractionSnapshot.RootExists -or
+                  $currentExtractionSnapshot.FileCount -ne $previousExtractionSnapshot.FileCount -or
+                  $currentExtractionSnapshot.TotalBytes -ne $previousExtractionSnapshot.TotalBytes -or
+                  $currentExtractionSnapshot.LatestWriteUtc -ne $previousExtractionSnapshot.LatestWriteUtc -or
+                  $currentExtractionSnapshot.LatestWritePath -ne $previousExtractionSnapshot.LatestWritePath -or
+                  $currentExtractionSnapshot.MainExecutablePath -ne $previousExtractionSnapshot.MainExecutablePath -or
+                  $currentExtractionSnapshot.MainExecutableLength -ne $previousExtractionSnapshot.MainExecutableLength -or
+                  $currentExtractionSnapshot.MainExecutableWriteUtc -ne $previousExtractionSnapshot.MainExecutableWriteUtc) {
+                  $activityDetails += "extracted files changed (files=$($currentExtractionSnapshot.FileCount), bytes=$($currentExtractionSnapshot.TotalBytes), ClassMngr.exe=$($currentExtractionSnapshot.MainExecutableLength) bytes at $($currentExtractionSnapshot.MainExecutableWriteUtc), newest=$($currentExtractionSnapshot.LatestWritePath) at $($currentExtractionSnapshot.LatestWriteUtc))"
+                }
+                $previousExtractionSnapshot = $currentExtractionSnapshot
+
                 $entryCount = if (Test-Path -LiteralPath $extractRoot -PathType Container) {
                   @(Get-ChildItem -LiteralPath $extractRoot -Force -ErrorAction SilentlyContinue).Count
                 } else {
                   0
                 }
-                Write-Host "Still verifying $architecture after $([Math]::Round($verificationStopwatch.Elapsed.TotalMinutes, 1)) minutes; extraction root entries=$entryCount; innoextract log=$logStatus."
+
+                $payloadStatus = "not sampled"
+                if ($null -ne $previousExtractionSnapshot) {
+                  $payloadStatus = "files=$($previousExtractionSnapshot.FileCount), bytes=$($previousExtractionSnapshot.TotalBytes), ClassMngr.exe=$($previousExtractionSnapshot.MainExecutableLength) bytes at $($previousExtractionSnapshot.MainExecutableWriteUtc), newest=$($previousExtractionSnapshot.LatestWritePath) at $($previousExtractionSnapshot.LatestWriteUtc)"
+                }
+                if ($activityDetails.Count -gt 0) {
+                  $lastActivityAt = $observedAt
+                  $lastActivitySnapshot = $activityDetails -join "; "
+                }
+
+                $inactiveFor = $observedAt - $lastActivityAt
+                if ($inactiveFor -ge $stallLimit) {
+                  throw "Final Windows installer verification for $architecture observed no verifier or extraction activity for $([Math]::Round($inactiveFor.TotalMinutes, 1)) minutes (limit $($stallLimit.TotalMinutes) minutes). Total elapsed=$([Math]::Round($verificationStopwatch.Elapsed.TotalMinutes, 1)) minutes. Last activity at $($lastActivityAt.ToString('o')) UTC: $lastActivitySnapshot. Current snapshot: extraction root entries=$entryCount; payload $payloadStatus; innoextract log=$logStatus."
+                }
+
+                Write-Host "Still verifying $architecture after $([Math]::Round($verificationStopwatch.Elapsed.TotalMinutes, 1)) minutes; extraction root entries=$entryCount; payload $payloadStatus; innoextract log=$logStatus; last observed activity $([Math]::Round($inactiveFor.TotalMinutes, 1)) minutes ago."
               }
             }
 
