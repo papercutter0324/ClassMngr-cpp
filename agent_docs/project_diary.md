@@ -2,6 +2,20 @@
 
 ## Decisions and Lessons
 
+### Keep Windows startup smoke output off shared log files — 2026-11-05
+
+The installed-app smoke check read stdout and stderr files while the Windows
+process still held them open. The x64 log showed a `ReadAllText` sharing
+violation, while the parent workflow accepted a completed PowerShell job and
+reported success without proving the ten startup stages. Read the live pipes
+asynchronously instead, retain the full stage/outcome/diagnostic assertions,
+and require an explicit verifier success marker in the parent workflow. The
+fix passed Windows x64 and ARM64 Release verification in run `42111769908` at
+`53aaeed2a4b1f1123a12a4f365696968c2b5cc80`; x64 recorded all ten stages in
+order. A local verifier invocation also requires a current installer and its
+`dist/checksums-windows-x64.txt` sidecar; the user-provided invocation stopped
+before extraction because that sidecar was absent.
+
 ### Configurable roster capacity and display window — 2026-11-03
 
 Use one saved roster maximum from 1 to 100 across Legacy and Next roster and

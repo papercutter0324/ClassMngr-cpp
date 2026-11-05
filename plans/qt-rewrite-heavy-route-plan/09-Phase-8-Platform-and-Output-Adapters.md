@@ -37,8 +37,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2, 3, and 7
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
-- Last updated: 2026-11-03
-- Current note: Keep feature code platform-neutral and isolate external integrations.
+- Last updated: 2026-11-05
+- Current note: Windows x64/ARM64 Release package verification now passes at `53aaeed2a4b1f1123a12a4f365696968c2b5cc80`. Phase 8 remains in progress: its exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
 
 ### Slice batches
 
@@ -690,10 +690,44 @@ and 22 license/SBOM files, then uploaded `ClassMngr-macos-universal` (DMG,
 checksum, and JSON report). The package step passed and no cleanup failure
 surfaced, though the log does not expose the explicit detach command or result.
 
-Linux and Windows still failed strict package verification for missing Qt
-Concurrent. Fresh package CI for the explicit staging rule remains pending;
-the macOS run does not verify that rule. The Phase 8 package gate and Phase 9
-remain gated.
+At that revision, Linux and Windows still failed strict package verification
+for missing Qt Concurrent. Fresh package CI for the explicit staging rule was
+pending; the macOS run did not verify that rule. The Phase 8 package gate and
+Phase 9 remained gated at that revision.
+
+### 8.7.12 — Windows Release startup verifier and package gate
+
+At `53aaeed2a4b1f1123a12a4f365696968c2b5cc80`, Windows Release run
+`42111769908` passed final installer verification (step 22) for x64 and
+ARM64. The x64 log confirms all ten installed startup stages in order:
+`process-created`, `core-services-created`, `settings-loaded`,
+`language-loaded`, `theme-loaded`, `required-fonts-loaded`,
+`workspace-opened`, `shell-created`, `initial-page-ready`, and
+`startup-ready`. Both architecture-specific
+`WINDOWS_PACKAGE_VERIFICATION_SUCCESS` sentinels appeared. Final verification
+logs (step 23) and release artifacts (step 25) uploaded for both architectures.
+The verifier fix reads startup output asynchronously and makes the workflow
+fail on verifier errors or a missing success sentinel. Windows Release package
+verification is therefore accepted on both architectures.
+
+Linux Release run `42104507218` passed its package-verification step (step 9)
+and uploaded its artifact at ancestor SHA
+`44e89448a1b463a1428de1d89f43a7cd445fdb27`; the workflow later failed at step
+11 in a supplemental Phase 0 route-contract test because
+`CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE='2026-09-14'` was treated as
+a confined path. macOS Release run `42104507137` passed at that same ancestor
+SHA. These are not Linux/macOS reruns at the Windows verifier fix SHA. Separate
+Phase 4 resource-install-layout run `42111769886` passed on Windows x64, Linux
+x64, and macOS.
+
+The local verifier invocation previously shown stopped at
+`verify_next_package.ps1:32` because
+`dist/checksums-windows-x64.txt` was absent; it did not reach extraction. The
+CI results verify the uploaded Windows packages, but do not establish the
+Phase 8 exit gate: all v2 external integrations must work without platform
+code leaking into feature logic, and generated output must match the baseline
+on every supported platform. Phase 7.5 remains In progress and does not block
+Phase 8. The Linux supplemental route-contract failure is a separate follow-up.
 
 ## Objective
 

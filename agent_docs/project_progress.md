@@ -1,5 +1,23 @@
 # Project Progress
 
+## Current Deployment Continuation — Windows Release Verification — 2026-11-05
+
+Active plan: Qt Rewrite Phase 7.5 cross-platform follow-ups, with Windows
+Release verifier work supporting Phase 8. Deployment ID remains
+`phase75_windows_elevated_capture`; route: Heavy. Commit
+`53aaeed2a4b1f1123a12a4f365696968c2b5cc80` fixes the x64 startup smoke log
+read race and makes the workflow fail on verifier errors or a missing success
+marker. Windows Release run `42111769908` passed x64 and ARM64; x64 logged all
+ten startup stages in order, and both release artifacts and verification logs
+uploaded. Phase 4 resource layout run `42111769886` also passed on Windows,
+Linux, and macOS. The prior Linux Release run `42104507218` passed package
+verification but failed afterward in the supplemental Phase 0 runner-contract
+test; the macOS Release run `42104507137` passed. These results support
+platform packaging progress but do not close Phase 8's broader adapter and
+baseline-output exit gate. Phase 7.5 remains incomplete and does not block
+Phase 8. Branch `Qt-Rewrite` is synchronized to `origin/Qt-Rewrite` at the
+commit above; the two pre-existing local PDF deletions remain uncommitted.
+
 ## Current Work Handoff — configurable-roster-rows (implementation complete)
 
 Implemented configurable roster capacity across the Legacy and Next roster and

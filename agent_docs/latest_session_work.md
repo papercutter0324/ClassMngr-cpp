@@ -1,5 +1,26 @@
 # Latest Session Work
 
+## Current Deployment Handoff — phase75_windows_elevated_capture — 2026-11-05
+
+- Heavy-route Windows Release verification continuation. Commit
+  `53aaeed2a4b1f1123a12a4f365696968c2b5cc80` replaces live reads of files held
+  open by the startup process with asynchronous stdout/stderr reads. The
+  workflow now fails on PowerShell error records or if the verifier omits its
+  success sentinel.
+- Windows Release run `42111769908` passed on x64 and ARM64. Its x64 log
+  explicitly confirms the ten startup stages in order and emits
+  `WINDOWS_PACKAGE_VERIFICATION_SUCCESS:x64`; ARM64 emits its matching marker.
+  Final installer verification and release-artifact upload passed for both.
+- Phase 4 resource-layout run `42111769886` passed on Windows x64, Linux x64,
+  and macOS. Linux Release run `42104507218` passed its package-verification
+  step and then failed a supplemental Phase 0 runner-contract test; macOS
+  Release run `42104507137` passed. Phase 8's full exit gate remains open:
+  these package results do not establish all v2 integrations or baseline
+  output parity. Phase 7.5 remains incomplete but is not a Phase 8 blocker.
+- `Qt-Rewrite` and `origin/Qt-Rewrite` both point to
+  `53aaeed2a4b1f1123a12a4f365696968c2b5cc80`. The only remaining local worktree
+  changes are the two pre-existing deleted C44 PDFs; they were preserved.
+
 ## Current Deployment Handoff — configurable-roster-rows (implementation complete)
 
 - Heavy-route feature work on branch `Qt-Rewrite`. The Legacy and Next
