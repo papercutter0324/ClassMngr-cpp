@@ -107,8 +107,10 @@ $environmentChanged = $false
 try {
     Write-Host "Streaming innoextract file progress; full output log: $extractLog"
     # innoextract supports --list with --test/--extract; --list-sizes emits each
-    # processed filename and byte count even with --silent.
-    & $InnoExtractPath --no-extract-unknown --list --list-sizes --test --extract --silent `
+    # processed filename and byte count even with --silent. Explicit progress
+    # keeps the log active during lengthy processing while silent suppresses
+    # unrelated output.
+    & $InnoExtractPath --no-extract-unknown --list --list-sizes --test --extract --silent --progress=1 `
         --output-dir $extractRoot -- $installer.FullName 2>&1 |
         Tee-Object -FilePath $extractLog
     $extractExitCode = $LASTEXITCODE

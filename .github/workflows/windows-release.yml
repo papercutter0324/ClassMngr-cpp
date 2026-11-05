@@ -920,6 +920,18 @@ jobs:
           path: ${{ runner.temp }}/ClassMngr-${{ matrix.architecture }}-innoextract-${{ github.run_id }}-${{ github.run_attempt }}.log
           if-no-files-found: warn
 
+      - name: Upload unverified Windows installer inputs for diagnostics (failure only)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-installer-verifier-inputs-unverified-${{ matrix.architecture }}
+          path: |
+            dist/ClassMngr-*-win-${{ matrix.architecture }}.exe
+            dist/checksums-windows-${{ matrix.architecture }}.txt
+            build/windows-${{ matrix.architecture }}-release/installer-prerequisites/vc_redist.${{ matrix.architecture }}.exe
+            build/ci-tools/innoextract-install/bin/innoextract.exe
+          if-no-files-found: warn
+
       - name: Upload release artifact
         uses: actions/upload-artifact@v7
         with:
