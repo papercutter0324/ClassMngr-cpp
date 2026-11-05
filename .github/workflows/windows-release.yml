@@ -252,6 +252,13 @@ jobs:
             }
           }
 
+          # Inno Setup 6.5+ stores a zeroed per-file hash when Verification=None.
+          # Upstream marks it as SHA-256, then reads back an output-only file
+          # with no declared size and spins on the failed stream state.
+          $innoextractPatchScript = Join-Path $Env:GITHUB_WORKSPACE `
+            "scripts\installer\patch_innoextract.ps1"
+          & $innoextractPatchScript -SourceRoot $innoextractSource
+
           $innoextractCmake = Join-Path $innoextractSource "CMakeLists.txt"
           $cmakeContent = [System.IO.File]::ReadAllText($innoextractCmake)
           $boostBlockPattern = '(?m)^find_package\(Boost REQUIRED COMPONENTS\r?\n\tiostreams\r?\n\tfilesystem\r?\n\tdate_time\r?\n\tsystem\r?\n\tprogram_options\r?\n\)'
