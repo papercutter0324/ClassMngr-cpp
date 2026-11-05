@@ -148,6 +148,13 @@ if(WIN32)
         "    EXCLUDE_PLUGIN_TYPES qmltooling\n"
         "    EXCLUDE_PLUGINS qsqlibase qsqlmimer qsqloci qsqlodbc qsqlpsql\n"
     )
+    if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
+        # The Windows installer stages and launches its own signed VC redist
+        # from {tmp}; do not add a second copy to the app payload manifest.
+        string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
+            "    NO_COMPILER_RUNTIME\n"
+        )
+    endif()
     string(APPEND CLASSMNGR_QT_DEPLOY_POSTAMBLE
         "qt_deploy_translations(\n"
         "    LOCALES en ko\n"
