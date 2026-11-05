@@ -928,6 +928,9 @@ jobs:
             $env:QT_VERSION,
             $env:CLASSMNGR_INNOEXTRACT_PATH
           )
+          $successSentinel = "WINDOWS_PACKAGE_VERIFICATION_SUCCESS:$architecture"
+          $successSentinelSeen = $false
+          $verificationErrors = @()
 
           $verificationStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
           $stallLimit = [TimeSpan]::FromMinutes(45)
@@ -938,9 +941,19 @@ jobs:
           try {
             while ($verificationJob.State -in @("NotStarted", "Running")) {
               $null = Wait-Job -Job $verificationJob -Timeout 60
-              $receivedOutput = @(Receive-Job -Job $verificationJob -ErrorAction Continue)
+              $receivedOutput = @(Receive-Job -Job $verificationJob `
+                -ErrorAction Continue -ErrorVariable +verificationErrors)
               if ($receivedOutput.Count -gt 0) {
                 $receivedOutput | Write-Output
+                foreach ($outputRecord in $receivedOutput) {
+                  if ([string]$outputRecord -ceq $successSentinel) {
+                    $successSentinelSeen = $true
+                  }
+                }
+              }
+              if (@($verificationErrors).Count -gt 0) {
+                $errorDetails = (@($verificationErrors | ForEach-Object { $_.ToString() }) -join "`n")
+                throw "Final Windows installer verifier emitted PowerShell error record(s):`n$errorDetails"
               }
               if ($verificationJob.State -in @("NotStarted", "Running")) {
                 $logStatus = "not created"
@@ -1017,8 +1030,25 @@ jobs:
               }
             }
 
+            $remainingOutput = @(Receive-Job -Job $verificationJob `
+              -ErrorAction Continue -ErrorVariable +verificationErrors)
+            if ($remainingOutput.Count -gt 0) {
+              $remainingOutput | Write-Output
+              foreach ($outputRecord in $remainingOutput) {
+                if ([string]$outputRecord -ceq $successSentinel) {
+                  $successSentinelSeen = $true
+                }
+              }
+            }
+            if (@($verificationErrors).Count -gt 0) {
+              $errorDetails = (@($verificationErrors | ForEach-Object { $_.ToString() }) -join "`n")
+              throw "Final Windows installer verifier emitted PowerShell error record(s):`n$errorDetails"
+            }
             if ($verificationJob.State -ne "Completed") {
               throw "Final Windows installer verification ended with job state '$($verificationJob.State)'."
+            }
+            if (-not $successSentinelSeen) {
+              throw "Final Windows installer verifier completed without success sentinel '$successSentinel'."
             }
             Write-Host "Final Windows installer verification for $architecture completed in $([Math]::Round($verificationStopwatch.Elapsed.TotalMinutes, 1)) minutes."
           } finally {

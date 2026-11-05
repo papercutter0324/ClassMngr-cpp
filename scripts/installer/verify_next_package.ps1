@@ -103,6 +103,7 @@ $oldSettingsRoot = $null
 $oldQpaPlatform = $null
 $oldForceStderr = $null
 $environmentChanged = $false
+$startupProcessStarted = $false
 
 try {
     Write-Host "Streaming innoextract file progress; full output log: $extractLog"
@@ -189,9 +190,6 @@ try {
         New-Item -ItemType Directory -Path $smokeRoot | Out-Null
         $settingsRoot = Join-Path $smokeRoot "settings"
         New-Item -ItemType Directory -Path $settingsRoot | Out-Null
-        $stdoutPath = Join-Path $smokeRoot "stdout.log"
-        $stderrPath = Join-Path $smokeRoot "stderr.log"
-
         $oldSettingsRoot = [Environment]::GetEnvironmentVariable(
             "CLASSMNGR_SETTINGS_ROOT", [EnvironmentVariableTarget]::Process
         )
@@ -206,36 +204,83 @@ try {
         $env:QT_QPA_PLATFORM = "offscreen"
         $env:QT_FORCE_STDERR_LOGGING = "1"
 
-        $startupProcess = Start-Process -FilePath $installedExecutable `
-            -WorkingDirectory $installRoot `
-            -RedirectStandardOutput $stdoutPath `
-            -RedirectStandardError $stderrPath `
-            -PassThru
+        $startupInfo = [System.Diagnostics.ProcessStartInfo]::new()
+        $startupInfo.FileName = $installedExecutable
+        $startupInfo.WorkingDirectory = $installRoot
+        $startupInfo.UseShellExecute = $false
+        $startupInfo.CreateNoWindow = $true
+        $startupInfo.RedirectStandardOutput = $true
+        $startupInfo.RedirectStandardError = $true
+        $startupProcess = [System.Diagnostics.Process]::new()
+        $startupProcess.StartInfo = $startupInfo
+        if (-not $startupProcess.Start()) {
+            throw "Unable to start the installed Next app for startup verification."
+        }
+        $startupProcessStarted = $true
+        $startupReaders = @(
+            [pscustomobject]@{
+                Reader = $startupProcess.StandardOutput
+                ReadTask = $startupProcess.StandardOutput.ReadLineAsync()
+            },
+            [pscustomobject]@{
+                Reader = $startupProcess.StandardError
+                ReadTask = $startupProcess.StandardError.ReadLineAsync()
+            }
+        )
         $deadline = [DateTime]::UtcNow.AddSeconds(120)
         $startupReady = $false
         $combinedLog = ""
+        $startupLogLines = [System.Collections.Generic.List[string]]::new()
         while ([DateTime]::UtcNow -lt $deadline) {
             $startupProcess.Refresh()
-            $logParts = @()
-            foreach ($logPath in @($stdoutPath, $stderrPath)) {
-                if (Test-Path -LiteralPath $logPath) {
-                    $logParts += [System.IO.File]::ReadAllText($logPath)
+            foreach ($reader in $startupReaders) {
+                while ($null -ne $reader.ReadTask -and $reader.ReadTask.IsCompleted) {
+                    $outputLine = $reader.ReadTask.GetAwaiter().GetResult()
+                    if ($null -eq $outputLine) {
+                        $reader.ReadTask = $null
+                        break
+                    }
+                    $startupLogLines.Add([string]$outputLine)
+                    $reader.ReadTask = $reader.Reader.ReadLineAsync()
                 }
             }
-            $combinedLog = $logParts -join "`n"
+            $combinedLog = $startupLogLines -join "`n"
             if ($combinedLog -match 'ClassMngrNext startup stage=startup-ready outcome=completed') {
                 $startupReady = $true
                 Start-Sleep -Milliseconds 250
-                $logParts = @()
-                foreach ($logPath in @($stdoutPath, $stderrPath)) {
-                    if (Test-Path -LiteralPath $logPath) {
-                        $logParts += [System.IO.File]::ReadAllText($logPath)
+                foreach ($reader in $startupReaders) {
+                    while ($null -ne $reader.ReadTask -and $reader.ReadTask.IsCompleted) {
+                        $outputLine = $reader.ReadTask.GetAwaiter().GetResult()
+                        if ($null -eq $outputLine) {
+                            $reader.ReadTask = $null
+                            break
+                        }
+                        $startupLogLines.Add([string]$outputLine)
+                        $reader.ReadTask = $reader.Reader.ReadLineAsync()
                     }
                 }
-                $combinedLog = $logParts -join "`n"
+                $combinedLog = $startupLogLines -join "`n"
                 break
             }
             if ($startupProcess.HasExited) {
+                $startupProcess.WaitForExit()
+                $readerDrainDeadline = [DateTime]::UtcNow.AddSeconds(10)
+                while ([DateTime]::UtcNow -lt $readerDrainDeadline -and
+                    @($startupReaders | Where-Object { $null -ne $_.ReadTask -and -not $_.ReadTask.IsCompleted }).Count -gt 0) {
+                    Start-Sleep -Milliseconds 10
+                }
+                foreach ($reader in $startupReaders) {
+                    while ($null -ne $reader.ReadTask -and $reader.ReadTask.IsCompleted) {
+                        $outputLine = $reader.ReadTask.GetAwaiter().GetResult()
+                        if ($null -eq $outputLine) {
+                            $reader.ReadTask = $null
+                            break
+                        }
+                        $startupLogLines.Add([string]$outputLine)
+                        $reader.ReadTask = $reader.Reader.ReadLineAsync()
+                    }
+                }
+                $combinedLog = $startupLogLines -join "`n"
                 break
             }
             Start-Sleep -Milliseconds 250
@@ -292,12 +337,13 @@ try {
     }
 }
 finally {
-    if ($startupProcess) {
+    if ($startupProcessStarted) {
         $startupProcess.Refresh()
         if (-not $startupProcess.HasExited) {
             Stop-Process -Id $startupProcess.Id -Force -ErrorAction SilentlyContinue
             [void]$startupProcess.WaitForExit(10000)
         }
+        $startupProcess.Dispose()
     }
     if ($environmentChanged) {
         [Environment]::SetEnvironmentVariable(
@@ -338,3 +384,5 @@ finally {
         Remove-Item -LiteralPath $installRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
+
+Write-Output "WINDOWS_PACKAGE_VERIFICATION_SUCCESS:$Architecture"
