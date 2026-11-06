@@ -3,15 +3,11 @@
 #include "next/application/document_catalog_use_case.h"
 #include "next/ui/dialog_geometry_preferences_callbacks.h"
 
-#include <QCheckBox>
 #include <QCoreApplication>
-#include <QDesktopServices>
 #include <QDir>
 #include <QEvent>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFontMetrics>
-#include <QGridLayout>
 #include <QHBoxLayout>
 #include <QIntValidator>
 #include <QLabel>
@@ -119,12 +115,14 @@ DocumentViewerPage::DocumentViewerPage(
     const PageContext& context,
     QWidget* parent,
     Platform::PdfViewerSessionFactory sessionFactory,
-    Platform::PdfPrintOperationFactory printOperationFactory
+    Platform::PdfPrintOperationFactory printOperationFactory,
+    DocumentViewerPageActions actions
     )
     : Page(context, parent)
     , m_pdfSession(sessionFactory(context.resourceLoader(), this))
     , m_printOperationFactory(std::move(printOperationFactory))
     , m_exportResourcePort(context.resourceLoader())
+    , m_actions(std::move(actions))
 {
     buildUi();
 }
@@ -406,15 +404,6 @@ void DocumentViewerPage::setLifecycleObserver(LifecycleObserver observer)
 void DocumentViewerPage::setCloseWaiterForTesting(CloseWaiter waiter)
 {
     m_pdfSession->setCloseWaiterForTesting(std::move(waiter));
-}
-
-void DocumentViewerPage::setSaveCopyActionsForTesting(
-    SaveCopyRequestProvider requestProvider,
-    OpenSavedCopyHandler openHandler
-    )
-{
-    m_saveCopyRequestProvider = std::move(requestProvider);
-    m_openSavedCopyHandler = std::move(openHandler);
 }
 
 void DocumentViewerPage::buildUi()
@@ -929,57 +918,62 @@ void DocumentViewerPage::saveSelectedCopy()
         initialDirectory = QDir::homePath();
     }
 
-    const QString suggestedPath = QDir(initialDirectory).filePath(fileName);
-    SaveCopyRequest request;
-    if (m_saveCopyRequestProvider)
+    if (!m_actions.saveFileDialog)
     {
-        const auto selected = m_saveCopyRequestProvider(suggestedPath, suffix);
-        if (!selected)
-        {
-            return;
-        }
-        request = *selected;
-    }
-    else
-    {
-        QFileDialog dialog(
-            this,
-            viewerText("Export File"),
-            suggestedPath,
-            suffix.isEmpty()
-                ? QStringLiteral("All Files (*)")
-                : QStringLiteral("%1 Files (*.%2);;All Files (*)")
-                      .arg(suffix.toUpper(), suffix)
-            );
-        dialog.setAcceptMode(QFileDialog::AcceptSave);
-        dialog.setFileMode(QFileDialog::AnyFile);
-        dialog.setDefaultSuffix(suffix);
-        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
-        auto* const openAfterSaving = new QCheckBox(
-            viewerText("Open after saving"),
-            &dialog
-            );
-        if (auto* const grid = qobject_cast<QGridLayout*>(dialog.layout()))
-        {
-            const int row = grid->rowCount();
-            grid->addWidget(
-                openAfterSaving,
-                row,
-                0,
-                1,
-                std::max(1, grid->columnCount())
-                );
-        }
-        if (dialog.exec() != QDialog::Accepted
-            || dialog.selectedFiles().isEmpty())
-        {
-            return;
-        }
-        request.targetPath = dialog.selectedFiles().constFirst();
-        request.openAfterSaving = openAfterSaving->isChecked();
+        return;
     }
 
-    QString targetPath = request.targetPath;
+    const QString filter = suffix.isEmpty()
+        ? QStringLiteral("All Files (*)")
+        : QStringLiteral("%1 Files (*.%2);;All Files (*)")
+              .arg(suffix.toUpper(), suffix);
+    const Application::SaveFileDialogRequest dialogRequest{
+        .purpose = Application::FileDialogPurpose::General,
+        .title = viewerText("Export File").toUtf8().toStdString(),
+        .initialDirectory = Application::FileDialogPath(
+            initialDirectory.toUtf8().toStdString()),
+        .suggestedFileName = fileName.toUtf8().toStdString(),
+        .nameFilters = {filter.toUtf8().toStdString()},
+        .defaultSuffix = suffix.toUtf8().toStdString(),
+        .confirmOverwrite = true,
+        .openAfterSavingText =
+            viewerText("Open after saving").toUtf8().toStdString()
+    };
+    const auto selected = m_actions.saveFileDialog(this, dialogRequest);
+    if (!selected)
+    {
+        const std::string& message = selected.error().message;
+        QMessageBox::warning(
+            this,
+            viewerText("Export File"),
+            QString::fromUtf8(
+                message.data(), static_cast<qsizetype>(message.size()))
+            );
+        return;
+    }
+    if (!selected.value().selection)
+    {
+        return;
+    }
+
+    if (selected.value().preferenceWarning)
+    {
+        const std::string& message =
+            selected.value().preferenceWarning->message;
+        QMessageBox::warning(
+            this,
+            viewerText("Export File"),
+            QString::fromUtf8(
+                message.data(), static_cast<qsizetype>(message.size()))
+            );
+    }
+
+    const Application::SavedFileDialogSelection& selection =
+        *selected.value().selection;
+    const std::string& selectedPath = selection.path.value();
+    QString targetPath = QString::fromUtf8(
+        selectedPath.data(), static_cast<qsizetype>(selectedPath.size()));
+
     if (!suffix.isEmpty() && QFileInfo(targetPath).suffix().isEmpty())
     {
         targetPath += QLatin1Char('.') + suffix;
@@ -990,12 +984,11 @@ void DocumentViewerPage::saveSelectedCopy()
         QMessageBox::warning(this, viewerText("Export File"), error);
         return;
     }
-    if (request.openAfterSaving)
+    if (selection.openAfterSaving)
     {
         const QUrl targetUrl = QUrl::fromLocalFile(targetPath);
-        const bool opened = m_openSavedCopyHandler
-            ? m_openSavedCopyHandler(targetUrl)
-            : QDesktopServices::openUrl(targetUrl);
+        const bool opened = m_actions.openSavedCopy
+            && m_actions.openSavedCopy(targetUrl);
         if (!opened)
         {
             QMessageBox::warning(

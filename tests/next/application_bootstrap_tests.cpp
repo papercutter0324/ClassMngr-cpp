@@ -3732,6 +3732,13 @@ void ApplicationBootstrapTests::preferencesRouteRetranslatesActiveDocumentCatalo
     seams.workspaceGatewayFactory = [] {
         return std::make_unique<Platform::WorkspaceStoreGateway>();
     };
+    auto viewerFileDialogProbe =
+        std::make_shared<InitialSetupFileDialogProbe>();
+    viewerFileDialogProbe->cancelSave = true;
+    seams.documentViewerFileDialogPortFactory = [viewerFileDialogProbe] {
+        return std::make_unique<RecordingInitialSetupFileDialogPort>(
+            viewerFileDialogProbe);
+    };
     Bootstrap::ApplicationBootstrap bootstrap(
         application, {}, silentStartupDiagnosticsSinkFactory(),
         resolverForRoot(resources.resourceRoot()),
@@ -3814,6 +3821,25 @@ void ApplicationBootstrapTests::preferencesRouteRetranslatesActiveDocumentCatalo
         && zoomInput && pageLabel && pageTotalLabel && fitPageButton);
     QCOMPARE(viewerTitle->text(), QStringLiteral("Lesson Planning"));
     QVERIFY(printButton->isVisible() && exportButton->isVisible());
+
+    exportButton->click();
+    QCOMPARE(viewerFileDialogProbe->saveCount, 1);
+    QVERIFY(viewerFileDialogProbe->lastSaveRequest.has_value());
+    QCOMPARE(viewerFileDialogProbe->lastSaveRequest->purpose,
+             Application::FileDialogPurpose::General);
+    QCOMPARE(viewerFileDialogProbe->lastSaveRequest->title,
+             std::string("Export File"));
+    QVERIFY(!viewerFileDialogProbe->lastSaveRequest->initialDirectory.empty());
+    QCOMPARE(viewerFileDialogProbe->lastSaveRequest->suggestedFileName,
+             std::string("DYB Lesson Planning Guide.pdf"));
+    QCOMPARE(viewerFileDialogProbe->lastSaveRequest->nameFilters,
+             std::vector<std::string>{
+                 "PDF Files (*.pdf);;All Files (*)"});
+    QCOMPARE(viewerFileDialogProbe->lastSaveRequest->defaultSuffix,
+             std::string("pdf"));
+    QVERIFY(viewerFileDialogProbe->lastSaveRequest->confirmOverwrite);
+    QCOMPARE(viewerFileDialogProbe->lastSaveRequest->openAfterSavingText,
+             std::string("Open after saving"));
 
     QPdfPageNavigator* const navigator = pdfView->pageNavigator();
     QVERIFY(navigator);

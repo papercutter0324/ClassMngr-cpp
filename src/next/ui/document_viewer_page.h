@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/file_dialog_port.h"
 #include "next/application/document_catalog_projection.h"
 #include "next/application/document_content_session.h"
 #include "next/platform/pdf_print_operation.h"
@@ -22,32 +23,32 @@ class QPdfView;
 class QEvent;
 class QUrl;
 class QVBoxLayout;
+class QWidget;
 
 namespace ClassMngr::Next::Ui
 {
 
 // Presents one selected viewer session. The adapter owns all active QtPdf
 // consumers and the borrowed body; this page owns application state and controls.
+struct DocumentViewerPageActions final
+{
+    using SaveFileDialogResponse = Application::FileDialogResponse<
+        Application::SavedFileDialogSelection>;
+    using OpenSavedCopyHandler = std::function<bool(const QUrl&)>;
+
+    std::function<Domain::Result<SaveFileDialogResponse>(
+        QWidget*, const Application::SaveFileDialogRequest&)> saveFileDialog;
+    OpenSavedCopyHandler openSavedCopy;
+};
+
 class DocumentViewerPage final : public Page
 {
 public:
-    struct SaveCopyRequest final
-    {
-        QString targetPath;
-        bool openAfterSaving = false;
-    };
-
     using LifecycleObserver = std::function<void(
         const QString& operation,
         const QString& phase
         )>;
     using CloseWaiter = std::function<bool()>;
-    using SaveCopyRequestProvider = std::function<
-        std::optional<SaveCopyRequest>(
-            const QString& suggestedPath,
-            const QString& suffix
-            )>;
-    using OpenSavedCopyHandler = std::function<bool(const QUrl&)>;
 
     explicit DocumentViewerPage(
         const PageContext& context,
@@ -55,7 +56,8 @@ public:
         Platform::PdfViewerSessionFactory sessionFactory =
             Platform::makeQtPdfViewerSession,
         Platform::PdfPrintOperationFactory printOperationFactory =
-            Platform::makeQtPdfPrintOperation
+            Platform::makeQtPdfPrintOperation,
+        DocumentViewerPageActions actions = {}
         );
     ~DocumentViewerPage() override;
 
@@ -88,10 +90,6 @@ public:
 
     void setLifecycleObserver(LifecycleObserver observer);
     void setCloseWaiterForTesting(CloseWaiter waiter);
-    void setSaveCopyActionsForTesting(
-        SaveCopyRequestProvider requestProvider,
-        OpenSavedCopyHandler openHandler
-        );
 
 protected:
     void changeEvent(QEvent* event) override;
@@ -128,6 +126,7 @@ private:
         m_contentToken;
     std::optional<Application::DocumentEntryMetadata> m_selectedDocument;
     std::optional<Domain::DocumentId> m_selectedDocumentId;
+    DocumentViewerPageActions m_actions;
     QLabel* m_titleLabel = nullptr;
     QLabel* m_errorLabel = nullptr;
     QLabel* m_pageLabel = nullptr;
@@ -147,8 +146,6 @@ private:
     quint64 m_requestSequence = 0;
     bool m_releasing = false;
     LifecycleObserver m_lifecycleObserver;
-    SaveCopyRequestProvider m_saveCopyRequestProvider;
-    OpenSavedCopyHandler m_openSavedCopyHandler;
 };
 
 }  // namespace ClassMngr::Next::Ui

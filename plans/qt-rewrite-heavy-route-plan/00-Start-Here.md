@@ -7,10 +7,13 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-05
 - Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 is In progress.
-  Slices 8.1.10 and 8.1.11 are accepted after focused Linux Bootstrap and
-  Speaking Evaluation CTest passed; 8.1.12 is active. The 8.7.13 Linux Legacy link
-  closure passes a fresh `ClassMngr` target build, with clean all-target
-  Linux/macOS/Windows x64 Debug and Windows ARM64 Debug CI still running.
+  Slices 8.1.10–8.1.12 are accepted after focused Linux Bootstrap, Speaking
+  Evaluation, and Document Viewer CTest passed; 8.2.7 is active. The 8.7.13
+  Linux Legacy link closure passes a fresh `ClassMngr` target build. Its
+  all-target Linux Debug attempt at `52f1dd98` failed compiling stale
+  calendar-test accessors; the local `calendarViewWidget()` repair awaits
+  requalification after the active batch push. Windows ARM64 Debug passed,
+  while macOS universal and Windows x64 Debug remain in progress.
   Phase 8's all-adapter and generated-output parity gate remains open. See the [Phase 7.5 plan](08.5-Phase-7.5-Cross-Platform-Follow-Ups.md),
   [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), and [current
   batch tracker](Current-Slice-Batches.md).

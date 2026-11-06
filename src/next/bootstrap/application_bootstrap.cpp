@@ -3353,8 +3353,46 @@ Application::StartupResult ApplicationBootstrap::start()
 
         if (initialPageFailure.isEmpty())
         {
+            Ui::DocumentViewerPageActions documentViewerActions;
+            documentViewerActions.saveFileDialog = [this](
+                QWidget* parent,
+                const Application::SaveFileDialogRequest& request) {
+                using Response = Application::FileDialogResponse<
+                    Application::SavedFileDialogSelection>;
+                if (m_startupWorkspaceSeams
+                        .documentViewerFileDialogPortFactory)
+                {
+                    std::unique_ptr<Application::FileDialogPort> fileDialog =
+                        m_startupWorkspaceSeams
+                            .documentViewerFileDialogPortFactory();
+                    if (!fileDialog)
+                    {
+                        return Domain::Result<Response>::failure({
+                            .code = Domain::ErrorCode::Technical,
+                            .message = "The Document Viewer file dialog is unavailable.",
+                            .recoverable = true
+                        });
+                    }
+                    return fileDialog->saveFile(request);
+                }
+
+                Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+                    directoryPreferences;
+                Ui::QtFileDialogPresenter fileDialog(
+                    directoryPreferences, parent);
+                return fileDialog.saveFile(request);
+            };
+            const auto externalUrlLaunchPort =
+                m_coreServices->externalUrlLaunchPort;
+            documentViewerActions.openSavedCopy =
+                [externalUrlLaunchPort](const QUrl& url) {
+                    return externalUrlLaunchPort->openUrl(url);
+                };
             const Ui::PageHostResult<void> viewerRegistration =
-                Ui::registerDocumentViewerPage(m_shell->pageHost());
+                Ui::registerDocumentViewerPage(
+                    m_shell->pageHost(),
+                    Platform::makeQtPdfPrintOperation,
+                    std::move(documentViewerActions));
             if (!viewerRegistration)
             {
                 initialPageFailure = viewerRegistration.error().message;

@@ -2,6 +2,7 @@
 
 #include "next/ui/page_host.h"
 #include "next/platform/pdf_print_operation.h"
+#include "next/ui/document_viewer_page.h"
 
 namespace ClassMngr::Next::Ui
 {
@@ -13,7 +14,8 @@ inline constexpr auto kDocumentViewerPageKey = "document_viewer";
 [[nodiscard]] PageHostResult<void> registerDocumentViewerPage(
     PageHost& pageHost,
     Platform::PdfPrintOperationFactory printOperationFactory =
-        Platform::makeQtPdfPrintOperation
+        Platform::makeQtPdfPrintOperation,
+    DocumentViewerPageActions actions = {}
     );
 
 // Connects the existing typed DocumentId selection boundary to the hidden

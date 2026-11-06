@@ -17,9 +17,9 @@
 #include <QDialog>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QPdfDocument>
 #include <QPdfPageNavigator>
 #include <QPdfView>
@@ -132,7 +132,8 @@ struct ViewerHarness final
         Resources::ResourceLoader& loader,
         Application::DocumentCatalogProjection documentProjection,
         Platform::PdfPrintOperationFactory printOperationFactory =
-            Platform::makeQtPdfPrintOperation
+            Platform::makeQtPdfPrintOperation,
+        DocumentViewerPageActions viewerActions = {}
         )
         : projection(std::move(documentProjection))
     {
@@ -145,7 +146,8 @@ struct ViewerHarness final
         shell->setDocumentCatalogProjection(projection);
         const auto registered = registerDocumentViewerPage(
             shell->pageHost(),
-            std::move(printOperationFactory)
+            std::move(printOperationFactory),
+            std::move(viewerActions)
             );
         if (!registered)
         {
@@ -820,12 +822,45 @@ void DocumentViewerPageTests::
 selectedDocumentPrintUsesInjectedBorrowedOperation()
 {
     const auto printCalls = std::make_shared<PrintOperationCalls>();
+    QTemporaryDir output;
+    QVERIFY(output.isValid());
+    const QString openedCopy = output.filePath(QStringLiteral("opened-copy"));
+    const QString silentCopy = output.filePath(QStringLiteral("silent-copy"));
+    const QString failedOpenCopy = output.filePath(
+        QStringLiteral("failed-open-copy"));
+    int requestNumber = 0;
+    int openCalls = 0;
+    bool openResult = true;
+    QUrl openedUrl;
+    std::optional<Application::SaveFileDialogRequest> saveRequest;
+    DocumentViewerPageActions viewerActions;
+    viewerActions.saveFileDialog = [&](
+        QWidget*, const Application::SaveFileDialogRequest& request) {
+        saveRequest = request;
+        ++requestNumber;
+        const QString path = requestNumber == 1 ? openedCopy
+            : requestNumber == 2 ? silentCopy : failedOpenCopy;
+        using Response = DocumentViewerPageActions::SaveFileDialogResponse;
+        return Domain::Result<Response>::success({
+            .selection = Application::SavedFileDialogSelection{
+                .path = Application::FileDialogPath(
+                    path.toUtf8().toStdString()),
+                .openAfterSaving = requestNumber != 2
+            }
+        });
+    };
+    viewerActions.openSavedCopy = [&](const QUrl& url) {
+        ++openCalls;
+        openedUrl = url;
+        return openResult;
+    };
     ViewerHarness harness(
         *m_loader,
         m_projection,
         [printCalls] {
             return std::make_unique<RecordingPdfPrintOperation>(printCalls);
-        }
+        },
+        std::move(viewerActions)
         );
     const Domain::DocumentId printableId = id("document_guides_lesson_planning");
     harness.select(printableId);
@@ -862,41 +897,43 @@ selectedDocumentPrintUsesInjectedBorrowedOperation()
     QVERIFY(printCalls->hasGeometryRead);
     QVERIFY(printCalls->hasGeometryWrite);
 
-    QTemporaryDir output;
-    QVERIFY(output.isValid());
-    const QString openedCopy = output.filePath(QStringLiteral("opened-copy"));
-    const QString silentCopy = output.filePath(QStringLiteral("silent-copy"));
-    int requestNumber = 0;
-    int openCalls = 0;
-    QUrl openedUrl;
-    viewer->setSaveCopyActionsForTesting(
-        [&](const QString&, const QString&) -> std::optional<DocumentViewerPage::SaveCopyRequest> {
-            ++requestNumber;
-            if (requestNumber == 1)
-            {
-                return DocumentViewerPage::SaveCopyRequest{
-                    .targetPath = openedCopy,
-                    .openAfterSaving = true
-                };
-            }
-            return DocumentViewerPage::SaveCopyRequest{
-                .targetPath = silentCopy,
-                .openAfterSaving = false
-            };
-        },
-        [&](const QUrl& url) {
-            ++openCalls;
-            openedUrl = url;
-            return true;
-        }
-        );
     exportButton->click();
     QVERIFY(QFile::exists(openedCopy + QStringLiteral(".pdf")));
+    QVERIFY(saveRequest.has_value());
+    QCOMPARE(saveRequest->purpose, Application::FileDialogPurpose::General);
+    QCOMPARE(saveRequest->title, std::string("Export File"));
+    QVERIFY(!saveRequest->initialDirectory.empty());
+    QCOMPARE(saveRequest->suggestedFileName,
+             std::string("DYB Lesson Planning Guide.pdf"));
+    QCOMPARE(saveRequest->nameFilters,
+             std::vector<std::string>{"PDF Files (*.pdf);;All Files (*)"});
+    QCOMPARE(saveRequest->defaultSuffix, std::string("pdf"));
+    QVERIFY(saveRequest->confirmOverwrite);
+    QCOMPARE(saveRequest->openAfterSavingText,
+             std::string("Open after saving"));
     QCOMPARE(openCalls, 1);
     QCOMPARE(openedUrl, QUrl::fromLocalFile(openedCopy + QStringLiteral(".pdf")));
     exportButton->click();
     QVERIFY(QFile::exists(silentCopy + QStringLiteral(".pdf")));
     QCOMPARE(openCalls, 1);
+
+    openResult = false;
+    bool openFailureWarningSeen = false;
+    QTimer::singleShot(0, [&] {
+        auto* const warning = qobject_cast<QMessageBox*>(
+            qApp->activeModalWidget());
+        if (!warning)
+        {
+            return;
+        }
+        openFailureWarningSeen = warning->text().contains(
+            failedOpenCopy + QStringLiteral(".pdf"));
+        warning->accept();
+    });
+    exportButton->click();
+    QVERIFY(QFile::exists(failedOpenCopy + QStringLiteral(".pdf")));
+    QCOMPARE(openCalls, 2);
+    QVERIFY(openFailureWarningSeen);
 
     harness.select(id("document_lesson_templates_sp_wr"));
     QTRY_VERIFY_WITH_TIMEOUT(viewer->hasLoadedDocument(), 10000);

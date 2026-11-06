@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-05
-- Current note: Begin 8.1.12 Document Viewer Save Copy integration. Slices 8.1.10 and 8.1.11 route Speaking Evaluation file and folder dialogs through `FileDialogPort` and folder launching through `ExternalUrlLaunchPort`; focused Linux Bootstrap and Speaking Evaluation suites pass. The clean all-target Linux/macOS/Windows x64 Debug and Windows ARM64 Debug checks for 8.7.13 are still running in workflow `42146144532`; package and resource-layout checks on Linux, Windows, and macOS have passed. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
+- Current note: Begin 8.2.7 Schedule generated-output parity matrix. Slices 8.1.10–8.1.12 route Speaking Evaluation and Document Viewer file/shell actions through `FileDialogPort` and `ExternalUrlLaunchPort`; their focused Linux CTest suites pass. Workflow `42146144532` tested the prior pushed head `52f1dd98`: Linux Debug failed to compile Bootstrap tests because stale calendar tests called `calendarView()`; the local fix now uses `calendarViewWidget()` and will be requalified after the active batch push. Windows ARM64 Debug cross-build passed; macOS universal and Windows x64 Debug remain in progress. Package and resource-layout checks passed on Linux, Windows, and macOS. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
 
 ### Slice batches
 
@@ -265,6 +265,28 @@ Bootstrap directory request, folder selection through the port, and
 post-success open-folder callback ordering. The clean all-target Linux
 baseline remains pending in workflow `42146144532`; this is focused evidence,
 not a full-suite result.
+
+### 8.1.12 — Document Viewer Save Copy chooser and open action (accepted)
+
+Document Viewer Save Copy now sends a `General` `SaveFileDialogRequest`
+through Bootstrap's `FileDialogPort`, preserving the document-derived
+suggested filename, initial Documents directory, type filter, default suffix,
+overwrite confirmation, and “Open after saving” option. Cancellation remains
+a no-op, and a selected path without a suffix receives the document's suffix
+before the atomic copy. Opening a saved copy now calls Bootstrap's
+`ExternalUrlLaunchPort`; copy failures and open failures retain their existing
+warning behavior. Direct `QFileDialog` and `QDesktopServices` fallbacks are
+removed from the viewer.
+
+On the Linux x86_64 GCC Debug preset with Qt 6.12.0, the incremental build
+passed for `ClassMngrNextDocumentViewerTests` and
+`ClassMngrNextBootstrapTests`. Focused CTest passed both registrations (17
+Document Viewer cases and 89 Bootstrap cases). Coverage verifies the real
+Bootstrap request and cancellation, typed request details, suffix application,
+optional launch, and the open-failure warning. The broader clean Linux
+baseline workflow `42146144532` is being requalified after its prior pushed
+head failed on stale calendar test accessors; this is focused evidence, not a
+full-suite result.
 
 ### 8.2.1 — Selected-document QtPdf session (accepted)
 

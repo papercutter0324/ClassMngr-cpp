@@ -98,6 +98,10 @@ public:
         // file-dialog port in focused route tests.
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             speakingEvaluationReportsFileDialogPortFactory;
+        // Keeps Document Viewer Save Copy on the file-dialog port in focused
+        // route tests.
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
+            documentViewerFileDialogPortFactory;
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             newProfileFileDialogPortFactory;
         std::function<std::unique_ptr<Application::UserPromptPort>()>
