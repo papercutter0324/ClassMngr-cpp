@@ -2080,6 +2080,37 @@ Application::StartupResult ApplicationBootstrap::start()
                             Platform::makeQtPdfPrintOperation;
                         actions.reports.run.powerPointAutomation =
                             makeQtSpeakingEvalPowerPointAutomationPort();
+                        actions.reports.saveFileDialog = [this](
+                            QWidget* parent,
+                            const Application::SaveFileDialogRequest& request) {
+                            std::unique_ptr<Application::FileDialogPort> fileDialog;
+                            if (m_startupWorkspaceSeams
+                                    .speakingEvaluationReportFileDialogPortFactory)
+                            {
+                                fileDialog = m_startupWorkspaceSeams
+                                    .speakingEvaluationReportFileDialogPortFactory();
+                            }
+                            else
+                            {
+                                Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+                                    directoryPreferences;
+                                fileDialog = std::make_unique<
+                                    Ui::QtFileDialogPresenter>(
+                                        directoryPreferences, parent);
+                            }
+                            using Response =
+                                Application::FileDialogResponse<
+                                    Application::SavedFileDialogSelection>;
+                            if (!fileDialog)
+                            {
+                                return Domain::Result<Response>::failure({
+                                    .code = Domain::ErrorCode::Technical,
+                                    .message = "The Speaking Evaluation report save dialog is unavailable.",
+                                    .recoverable = true
+                                });
+                            }
+                            return fileDialog->saveFile(request);
+                        };
                         actions.reports.showPowerPointDataAccessNotice =
                             Platform::SettingsManagerPowerPointDataAccessNoticePort().read().showPowerPointDataAccessNotice;
                         actions.preferredAiCommentProvider = [] {

@@ -546,6 +546,7 @@ struct InitialSetupFileDialogProbe final
 {
     Application::FileDialogPath selectedPath;
     std::optional<Application::FileDialogPath> openPath;
+    bool cancelSave = false;
     std::optional<Application::SaveFileDialogRequest> lastSaveRequest;
     std::optional<Application::OpenFileDialogRequest> lastOpenRequest;
     int saveCount = 0;
@@ -596,10 +597,14 @@ public:
                 Application::SavedFileDialogSelection>>::success(
                     Application::FileDialogResponse<
                         Application::SavedFileDialogSelection>{
-                        .selection = Application::SavedFileDialogSelection{
-                            .path = m_probe->selectedPath,
-                            .openAfterSaving = false
-                        }
+                        .selection = m_probe->cancelSave
+                            ? std::nullopt
+                            : std::optional<
+                                Application::SavedFileDialogSelection>{
+                                Application::SavedFileDialogSelection{
+                                    .path = m_probe->selectedPath,
+                                    .openAfterSaving = false
+                                }}
                     }
                     );
     }
@@ -1308,6 +1313,29 @@ public:
     {
         return addResource(QStringLiteral("assets/fonts/Inter.ttc"))
             && addResource(QStringLiteral("assets/fonts/PretendardVariable.ttf"));
+    }
+
+    [[nodiscard]] bool addSpeakingEvaluationReportResources() const
+    {
+        const QString relativeDirectory =
+            QStringLiteral("assets/templates/speaking-eval/");
+        const QString sourceDirectory = QDir(configuredResourceRoot())
+            .filePath(relativeDirectory);
+        const QStringList standardResources = QDir(sourceDirectory)
+            .entryList({QStringLiteral("standard-*")}, QDir::Files);
+        if (standardResources.isEmpty())
+        {
+            return false;
+        }
+        for (const QString& resource : standardResources)
+        {
+            if (!addResource(relativeDirectory + resource))
+            {
+                return false;
+            }
+        }
+        return addResource(
+            QStringLiteral("assets/fonts/JustAnotherHand-Regular.ttf"));
     }
 
     [[nodiscard]] bool addDocumentCatalogMetadata() const
@@ -7697,6 +7725,7 @@ speakingEvaluationAiCompositionUsesWorkspaceAndPreferences()
     QVERIFY(resources.isValid());
     QVERIFY(resources.addStartupResources(
         expectedEnglishLocale(), QStringLiteral("light")));
+    QVERIFY(resources.addSpeakingEvaluationReportResources());
     QTemporaryDir temporaryDirectory;
     QVERIFY(temporaryDirectory.isValid());
     const QString workspacePath = temporaryDirectory.filePath(
@@ -7718,6 +7747,14 @@ speakingEvaluationAiCompositionUsesWorkspaceAndPreferences()
     seams.workspaceGatewayFactory = [] {
         return std::make_unique<Platform::WorkspaceStoreGateway>();
     };
+    auto reportSaveDialogProbe =
+        std::make_shared<InitialSetupFileDialogProbe>();
+    reportSaveDialogProbe->cancelSave = true;
+    seams.speakingEvaluationReportFileDialogPortFactory =
+        [reportSaveDialogProbe] {
+            return std::make_unique<RecordingInitialSetupFileDialogPort>(
+                reportSaveDialogProbe);
+        };
     Bootstrap::ApplicationBootstrap bootstrap(
         application,
         {},
@@ -7743,6 +7780,40 @@ speakingEvaluationAiCompositionUsesWorkspaceAndPreferences()
         QStringLiteral("[Did Well]\nClear ideas\n"
                        "[Needs Improvement]\nPractice past tense")));
     page->tableView()->setCurrentIndex(page->matrixModel()->index(0, 9));
+
+    bool reportDialogSeen = false;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationReportsDialog*>(
+            qApp->activeModalWidget());
+        if (!dialog)
+        {
+            return;
+        }
+        reportDialogSeen = true;
+        auto* const saveButton = dialog->findChild<QPushButton*>(
+            QStringLiteral("nextReportSavePdf"));
+        if (!saveButton)
+        {
+            dialog->reject();
+            return;
+        }
+        saveButton->click();
+        dialog->reject();
+    });
+    page->reportsButton()->click();
+    QVERIFY(reportDialogSeen);
+    QCOMPARE(reportSaveDialogProbe->saveCount, 1);
+    QVERIFY(reportSaveDialogProbe->lastSaveRequest.has_value());
+    QCOMPARE(reportSaveDialogProbe->lastSaveRequest->purpose,
+             Application::FileDialogPurpose::GeneratedPdf);
+    QCOMPARE(reportSaveDialogProbe->lastSaveRequest->title,
+             std::string("Save As PDF"));
+    QVERIFY(!reportSaveDialogProbe->lastSaveRequest->suggestedFileName.empty());
+    QCOMPARE(reportSaveDialogProbe->lastSaveRequest->nameFilters,
+             std::vector<std::string>{"PDF (*.pdf)"});
+    QCOMPARE(reportSaveDialogProbe->lastSaveRequest->defaultSuffix,
+             std::string("pdf"));
+    QVERIFY(reportSaveDialogProbe->lastSaveRequest->confirmOverwrite);
 
     CapturedSpeakingEvaluationAiUrlHandler urlHandler;
     SpeakingEvaluationAiHttpsUrlHandlerRegistration urlHandlerRegistration(
@@ -8244,7 +8315,7 @@ calendarRoutesFollowWorkspaceReplacementAndCloseFlows()
         QStringLiteral("nextMyWorkspaceTabBar"));
     QVERIFY(embedded && workspaceTabs);
     workspaceTabs->setCurrentIndex(2);
-    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarView(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarViewWidget(), 5000);
     QVERIFY(embedded->eventCache());
     QCOMPARE(QFileInfo(embedded->eventCache()->databasePath()).canonicalFilePath(),
              QFileInfo(firstPath).canonicalFilePath());
@@ -8277,7 +8348,7 @@ calendarRoutesFollowWorkspaceReplacementAndCloseFlows()
         firstPath.toUtf8().toStdString());
     openAction->trigger();
     QCOMPARE(fileDialogProbe->openCount, 2);
-    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarView(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarViewWidget(), 5000);
     QVERIFY(embedded->eventCache());
     QCOMPARE(QFileInfo(embedded->eventCache()->databasePath()).canonicalFilePath(),
              QFileInfo(firstPath).canonicalFilePath());
@@ -8288,7 +8359,7 @@ calendarRoutesFollowWorkspaceReplacementAndCloseFlows()
     auto* const standalone = dynamic_cast<Ui::CalendarPage*>(
         shell->pageHost().pageInstance(QStringLiteral("calendar")));
     QVERIFY(standalone);
-    QTRY_VERIFY_WITH_TIMEOUT(standalone->calendarView(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(standalone->calendarViewWidget(), 5000);
     QVERIFY(standalone->eventCache());
     QCOMPARE(QFileInfo(standalone->eventCache()->databasePath()).canonicalFilePath(),
              QFileInfo(firstPath).canonicalFilePath());
@@ -8306,7 +8377,7 @@ calendarRoutesFollowWorkspaceReplacementAndCloseFlows()
                 QFileInfo(secondPath).canonicalFilePath().toUtf8().toStdString())));
     QCOMPARE(shell->pageHost().activePageKey(),
              std::optional<QString>(QStringLiteral("my_workspace")));
-    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarView(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(embedded->calendarViewWidget(), 5000);
     QVERIFY(embedded->eventCache());
     QCOMPARE(QFileInfo(embedded->eventCache()->databasePath()).canonicalFilePath(),
              QFileInfo(secondPath).canonicalFilePath());
@@ -8316,7 +8387,7 @@ calendarRoutesFollowWorkspaceReplacementAndCloseFlows()
     QVERIFY(embedded->runtimeMetrics().peakLiveHeavySessionCount <= 1);
 
     QVERIFY(shell->navigateTo(standaloneCalendarId));
-    QTRY_VERIFY_WITH_TIMEOUT(standalone->calendarView(), 5000);
+    QTRY_VERIFY_WITH_TIMEOUT(standalone->calendarViewWidget(), 5000);
     QVERIFY(standalone->eventCache());
     QCOMPARE(QFileInfo(standalone->eventCache()->databasePath()).canonicalFilePath(),
              QFileInfo(secondPath).canonicalFilePath());

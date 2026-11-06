@@ -1,4 +1,5 @@
 #pragma once
+#include "next/application/file_dialog_port.h"
 #include "next/output/speaking_evaluation_report_output.h"
 #include <QDialog>
 #include <functional>
@@ -18,7 +19,10 @@ struct SpeakingEvaluationReportActions
     SpeakingEvalReportAssetEnvironment assets;
     SpeakingEvalBatchReportService::Request engineOverrides;
     Output::SpeakingEvaluationReportRunActions run;
-    std::function<QString(QWidget*, const QString&)> choosePdfPath;
+    using SaveFileDialogResponse = Application::FileDialogResponse<
+        Application::SavedFileDialogSelection>;
+    std::function<Domain::Result<SaveFileDialogResponse>(
+        QWidget*, const Application::SaveFileDialogRequest&)> saveFileDialog;
     std::function<QString(QWidget*, const QString&)> chooseOutputDirectory;
     std::function<bool(QWidget*, int)> confirmOverwrite;
     std::function<void(QWidget*, bool, const QString&, const QString&)> showNotice;

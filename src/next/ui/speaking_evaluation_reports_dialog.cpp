@@ -171,8 +171,55 @@ void SpeakingEvaluationReportsDialog::saveCurrent()
 {
     const int index = m_students->currentIndex(); if (index < 0) return;
     const QString suggested = Service::safeFileName(m_reports.at(index).report.englishName, m_reports.at(index).report.koreanName);
-    QString path = m_actions.choosePdfPath ? m_actions.choosePdfPath(this, suggested)
-        : QFileDialog::getSaveFileName(this, reportText("Save As PDF"), suggested, QStringLiteral("PDF (*.pdf)"));
+    if (!m_actions.saveFileDialog) return;
+    const Application::SaveFileDialogRequest dialogRequest{
+        .purpose = Application::FileDialogPurpose::GeneratedPdf,
+        .title = reportText("Save As PDF").toUtf8().toStdString(),
+        .suggestedFileName = suggested.toUtf8().toStdString(),
+        .nameFilters = {"PDF (*.pdf)"},
+        .defaultSuffix = "pdf",
+        .confirmOverwrite = true
+    };
+    const auto selected = m_actions.saveFileDialog(this, dialogRequest);
+    if (!selected)
+    {
+        const std::string& error = selected.error().message;
+        const QString message = QString::fromUtf8(
+            error.data(), static_cast<qsizetype>(error.size()));
+        if (m_actions.showNotice)
+        {
+            m_actions.showNotice(
+                this, true, batchText("Report Export Failed"), message);
+        }
+        else
+        {
+            QMessageBox::warning(
+                this, batchText("Report Export Failed"), message);
+        }
+        return;
+    }
+    if (!selected.value().selection) return;
+    const std::string& selectedPath = selected.value().selection->path.value();
+    QString path = QString::fromUtf8(
+        selectedPath.data(), static_cast<qsizetype>(selectedPath.size()));
+    if (selected.value().preferenceWarning)
+    {
+        const std::string& warning = selected.value().preferenceWarning->message;
+        const QString message = QString::fromUtf8(
+            warning.data(), static_cast<qsizetype>(warning.size()));
+        if (m_actions.showNotice)
+        {
+            m_actions.showNotice(
+                this, false,
+                reportText("Output Folder Preference Not Saved"), message);
+        }
+        else
+        {
+            QMessageBox::information(
+                this, reportText("Output Folder Preference Not Saved"),
+                message);
+        }
+    }
     if (path.isEmpty()) return;
     if (!path.endsWith(QStringLiteral(".pdf"), Qt::CaseInsensitive)) path += QStringLiteral(".pdf");
     bool overwrite = false;

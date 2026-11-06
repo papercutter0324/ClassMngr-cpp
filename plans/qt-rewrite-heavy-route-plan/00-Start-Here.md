@@ -7,11 +7,11 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-05
 - Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 is In progress.
-  The 8.7.11 Qt Concurrent package passes on Linux, Windows x64/ARM64, and
-  macOS universal. The 8.7.13 Linux Legacy link closure now passes a fresh
-  `ClassMngr` target build; the clean all-target Linux Debug build and Phase 5
-  CTest suite are pending CI. Phase 8's all-adapter and generated-output
-  parity gate remains open. See the [Phase 7.5 plan](08.5-Phase-7.5-Cross-Platform-Follow-Ups.md),
+  Slice 8.1.10 is accepted after focused Linux Bootstrap and Speaking
+  Evaluation CTest passed; 8.1.11 is active. The 8.7.13 Linux Legacy link
+  closure passes a fresh `ClassMngr` target build, with clean all-target
+  Linux/macOS/Windows x64 Debug and Windows ARM64 Debug CI still running.
+  Phase 8's all-adapter and generated-output parity gate remains open. See the [Phase 7.5 plan](08.5-Phase-7.5-Cross-Platform-Follow-Ups.md),
   [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), and [current
   batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate

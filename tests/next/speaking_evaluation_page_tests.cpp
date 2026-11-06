@@ -1776,8 +1776,9 @@ currentReportSaveAsPdfAndPrintActionsUseOutputEngine()
 
     QTemporaryDir outputDirectory;
     QVERIFY(outputDirectory.isValid());
-    const QString pdfPath = outputDirectory.filePath(
-        QStringLiteral("selected-speaking-report.pdf"));
+    const QString selectedPath = outputDirectory.filePath(
+        QStringLiteral("selected-speaking-report"));
+    const QString pdfPath = selectedPath + QStringLiteral(".pdf");
     QStringList progressNames;
     QStringList stagingDirectories;
     QStringList noticeTitles;
@@ -1826,10 +1827,21 @@ currentReportSaveAsPdfAndPrintActionsUseOutputEngine()
                 };
             });
     };
-    reportActions.choosePdfPath = [&] (QWidget*, const QString& suggested) {
+    std::optional<Application::SaveFileDialogRequest> individualSaveRequest;
+    reportActions.saveFileDialog = [&] (
+        QWidget*, const Application::SaveFileDialogRequest& request) {
         ++pathChooserCalls;
-        suggestedFileName = suggested;
-        return pdfPath;
+        individualSaveRequest = request;
+        suggestedFileName = QString::fromUtf8(
+            request.suggestedFileName.data(),
+            static_cast<qsizetype>(request.suggestedFileName.size()));
+        using Response = Ui::SpeakingEvaluationReportActions::SaveFileDialogResponse;
+        return Domain::Result<Response>::success({
+            .selection = Application::SavedFileDialogSelection{
+                .path = Application::FileDialogPath(
+                    selectedPath.toUtf8().toStdString())
+            }
+        });
     };
     reportActions.showNotice = [&] (QWidget*, bool failed,
         const QString& title, const QString& message) {
@@ -1866,6 +1878,14 @@ currentReportSaveAsPdfAndPrintActionsUseOutputEngine()
     QVERIFY(activatePreviewAction(QStringLiteral("nextReportSavePdf")));
     QCOMPARE(pathChooserCalls, 1);
     QVERIFY(!suggestedFileName.isEmpty());
+    QVERIFY(individualSaveRequest.has_value());
+    QCOMPARE(individualSaveRequest->purpose,
+             Application::FileDialogPurpose::GeneratedPdf);
+    QCOMPARE(individualSaveRequest->title, std::string("Save As PDF"));
+    QCOMPARE(individualSaveRequest->nameFilters,
+             std::vector<std::string>{"PDF (*.pdf)"});
+    QCOMPARE(individualSaveRequest->defaultSuffix, std::string("pdf"));
+    QVERIFY(individualSaveRequest->confirmOverwrite);
     QCOMPARE(progressNames,
         QStringList{QStringLiteral("Ada Park (김민지)")});
     QVERIFY(QFileInfo::exists(pdfPath));

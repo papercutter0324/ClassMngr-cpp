@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-05
-- Current note: 8.7.11 Qt Concurrent package verification passes on Linux at `a86e260be63615c075aefa4e460ea96832021fb8`, Windows x64/ARM64, and macOS universal. Slice 8.7.13 expands the Linux Legacy rescan group; a fresh Linux GCC Debug `ClassMngr` target build and link passed. The clean all-target build and Phase 5 CTest gate are pending CI on the pushed change. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
+- Current note: Begin 8.1.11 Speaking Evaluation batch folder and open-folder integration. Slice 8.1.10 routes individual Save As through `FileDialogPort` and passes its focused Linux Bootstrap and Speaking Evaluation suites. The clean all-target Linux/macOS/Windows x64 Debug and Windows ARM64 Debug checks for 8.7.13 are still running in workflow `42146144532`; package and resource-layout checks on Linux, Windows, and macOS have passed. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
 
 ### Slice batches
 
@@ -223,6 +223,27 @@ intended Teacher Profile widgets. Offscreen English/light and Korean/dark
 captures passed runtime assertions; two Next captures were visually reviewed.
 The normal capture launch required offscreen mode because no display was
 available. No repository-wide suite was run.
+
+### 8.1.10 — Speaking Evaluation individual report Save As chooser (accepted)
+
+The individual report Save As action now submits a `GeneratedPdf`
+`SaveFileDialogRequest` through `FileDialogPort`. Bootstrap supplies the Qt
+presenter and remembers the generated-PDF directory; tests can inject the same
+port boundary. The request retains the safe suggested filename, PDF filter,
+`pdf` suffix, and overwrite confirmation. Cancellation remains a no-op, the UI
+still adds `.pdf` when a selected path has no suffix, and chooser errors or
+directory-preference warnings are surfaced. The individual action no longer
+falls back to direct `QFileDialog` use; the batch folder chooser remains for
+8.1.11.
+
+On the Linux x86_64 GCC Debug preset with Qt 6.12.0, the incremental build
+passed for `ClassMngrNextSpeakingEvaluationPageTests` and
+`ClassMngrNextBootstrapTests`. Focused CTest passed both registrations (89
+Bootstrap cases and 40 Speaking Evaluation cases). Coverage verifies the real
+Bootstrap composition request and cancellation, plus the dialog request
+contract and extension behavior using a suffixless selected path. The clean
+all-target Linux baseline remains pending in workflow `42146144532`; this is
+focused evidence, not a full-suite result.
 
 ### 8.2.1 — Selected-document QtPdf session (accepted)
 

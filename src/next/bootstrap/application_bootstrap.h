@@ -94,6 +94,10 @@ public:
         // in focused route tests.
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             subPrepOutputFileDialogPortFactory;
+        // Keeps Speaking Evaluation's individual report Save As chooser on
+        // the file-dialog port in focused route tests.
+        std::function<std::unique_ptr<Application::FileDialogPort>()>
+            speakingEvaluationReportFileDialogPortFactory;
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             newProfileFileDialogPortFactory;
         std::function<std::unique_ptr<Application::UserPromptPort>()>
