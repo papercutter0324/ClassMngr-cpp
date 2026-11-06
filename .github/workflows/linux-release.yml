@@ -237,12 +237,6 @@ jobs:
             artifacts/build-reports/linux-x86_64-final-package.json
           if-no-files-found: error
 
-      - name: Check Linux Phase 0 runner and validator contracts
-        shell: bash
-        run: |
-          python scripts/phase0/test_phase0_linux_runner.py
-          python scripts/phase0/validate_phase0_evidence.py --self-test
-
       - name: Install Xvfb for supplemental Phase 0
         if: ${{ inputs.run_phase0_baseline }}
         shell: bash

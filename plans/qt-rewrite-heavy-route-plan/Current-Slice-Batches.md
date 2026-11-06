@@ -1,50 +1,12 @@
 # Current Slice Batches
 
-## Phase 8 — Active Batch 8 (1 candidate)
+## Phase 7.5 — Active Batch 1 (4 candidates)
 
-1. **8.7.11 Qt Concurrent runtime staging — implemented; static review accepted; package CI pending:** install the imported `Qt6::Concurrent` runtime artifact into platform-appropriate package locations so the existing strict module verifier sees the module on each release platform.
+1. **L7.5.1 Supplemental Linux Phase 0 evidence — deferred by user direction:** keep Phase 0 Complete and exclude its runner-contract check from the Linux package gate; do not run the optional route matrix.
+2. **L7.5.2 Phase 5 Linux Debug suite — active:** requalify the full registered suite at the current source revision and classify failures.
+3. **L7.5.3 Linux Phase 7 expectation — open:** set the required Linux feature-verification scope or transfer it to Phase 10.
+4. **Dense Speaking Evaluation row policy — open:** record a bounded product decision based on the existing row contract.
 
-## Phase 9 — Next Batch (20 candidates; gated on Phase 8 package CI)
+## Phase 8 — Next Batch (1 candidate)
 
-1. **9.1 Measurement contract and artifact schema:** define named checkpoints,
-   metrics, fixture/build provenance, and failure artifacts.
-2. **9.2 Lifecycle instrumentation:** cover page, model, editor, and database
-   result counts and ownership gaps found in the existing diagnostics.
-3. **9.3 Resource instrumentation:** cover image/font/resource-cache ownership
-   and PDF/export lifetime gaps found in the existing diagnostics.
-4. **9.4 Packaged Windows Release runner:** validate installed x64 Release
-   executable, architecture, Qt/CRT configuration, and deployed contents.
-5. **9.5 Empty-workspace startup:** measure cold launch through first render.
-6. **9.6 Representative-workspace startup:** measure startup-ready and first
-   render with a fixed representative fixture.
-7. **9.7 Idle and normal navigation:** capture five-minute idle and settled
-   navigation separately from operation peaks.
-8. **9.8 Repeated workspace/page lifecycle:** verify memory, handles, threads,
-   and return after release.
-9. **9.9 Theme and language rebuild:** verify settled memory across repeated
-   palette and translation changes.
-10. **9.10 Sub Prep 96-class lifecycle:** cover entry, summary, detail, refresh,
-    output, leave, re-entry, widget/editor bounds, and memory return.
-11. **9.11 Large schedule import:** measure parse, review, apply/cancel, and
-    cleanup checkpoints.
-12. **9.12 Large roster editing:** bound item/editor counts and measure release.
-13. **9.13 Campus map lifecycle:** open, close, reopen, and measure decoded
-    dimensions/bytes and release.
-14. **9.14 Document catalog startup:** prove catalog metadata loads without PDF
-    bodies or rendered pages.
-15. **9.15 QtPdf and PDF preview lifecycle:** open, render, close, release,
-    reopen, and measure preview cleanup.
-16. **9.16 Calendar import and presentation:** measure the large import and
-    retain the Phase 8 lazy-view lifecycle.
-17. **9.17 My Classes, Classes, and Speaking navigation:** bound retained page,
-    detail, and editor counts across repeated navigation.
-18. **9.18 Staff Directory and AI batch review:** measure large review routes
-    and bound table/editor counts.
-19. **9.19 Speaking report generation:** measure operation peak, output release,
-    and return to the pre-operation range.
-20. **9.20 Class transfer export/import/cancel:** measure package/preview
-    ownership, cancellation cleanup, peak, and return.
-
-Phase 9 implementation and packaged measurements start only after the Phase 8
-Windows, macOS, and Linux package workflows pass for the completed package
-batch. The Phase 9 exit gate follows candidate 20.
+1. **8.7.11 Qt Concurrent runtime staging — implementation and static review accepted; package requalification at `79cec8a3ed7344973f1321909a6644b31711ce63` in progress:** install the imported `Qt6::Concurrent` runtime artifact into platform-appropriate package locations so the existing strict module verifier sees the module on each release platform. Linux package verification passed before the unrelated Phase 0 check failed; Windows and macOS runs remain pending.
