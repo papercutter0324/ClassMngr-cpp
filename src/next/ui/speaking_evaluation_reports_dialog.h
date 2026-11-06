@@ -23,7 +23,11 @@ struct SpeakingEvaluationReportActions
         Application::SavedFileDialogSelection>;
     std::function<Domain::Result<SaveFileDialogResponse>(
         QWidget*, const Application::SaveFileDialogRequest&)> saveFileDialog;
-    std::function<QString(QWidget*, const QString&)> chooseOutputDirectory;
+    using SelectDirectoryDialogResponse = Application::FileDialogResponse<
+        Application::FileDialogPath>;
+    std::function<Domain::Result<SelectDirectoryDialogResponse>(
+        QWidget*, const Application::SelectDirectoryDialogRequest&)>
+        selectOutputDirectory;
     std::function<bool(QWidget*, int)> confirmOverwrite;
     std::function<void(QWidget*, bool, const QString&, const QString&)> showNotice;
     std::function<void(const QString&)> openOutputFolder;

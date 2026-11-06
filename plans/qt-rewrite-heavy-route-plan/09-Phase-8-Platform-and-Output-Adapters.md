@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-05
-- Current note: Begin 8.1.11 Speaking Evaluation batch folder and open-folder integration. Slice 8.1.10 routes individual Save As through `FileDialogPort` and passes its focused Linux Bootstrap and Speaking Evaluation suites. The clean all-target Linux/macOS/Windows x64 Debug and Windows ARM64 Debug checks for 8.7.13 are still running in workflow `42146144532`; package and resource-layout checks on Linux, Windows, and macOS have passed. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
+- Current note: Begin 8.1.12 Document Viewer Save Copy integration. Slices 8.1.10 and 8.1.11 route Speaking Evaluation file and folder dialogs through `FileDialogPort` and folder launching through `ExternalUrlLaunchPort`; focused Linux Bootstrap and Speaking Evaluation suites pass. The clean all-target Linux/macOS/Windows x64 Debug and Windows ARM64 Debug checks for 8.7.13 are still running in workflow `42146144532`; package and resource-layout checks on Linux, Windows, and macOS have passed. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
 
 ### Slice batches
 
@@ -244,6 +244,27 @@ Bootstrap composition request and cancellation, plus the dialog request
 contract and extension behavior using a suffixless selected path. The clean
 all-target Linux baseline remains pending in workflow `42146144532`; this is
 focused evidence, not a full-suite result.
+
+### 8.1.11 — Speaking Evaluation batch folder and open-folder paths (accepted)
+
+The report batch folder chooser now sends a `GeneratedPdf`
+`SelectDirectoryDialogRequest` through the same `FileDialogPort` seam used by
+individual Save As. Cancellation leaves the folder unchanged, and selection
+or preference errors remain visible in the dialog status. After a successful
+Save As run, the optional “Open Output Folder” action now calls Bootstrap's
+`ExternalUrlLaunchPort` adapter with a local-file URL. The callback remains
+after successful output and before the dialog accepts; failure and cancellation
+do not launch the folder. Direct `QFileDialog` and `QDesktopServices` fallbacks
+have been removed from the Speaking Evaluation report dialog.
+
+On the Linux x86_64 GCC Debug preset with Qt 6.12.0, the incremental build
+passed for `ClassMngrNextSpeakingEvaluationPageTests` and
+`ClassMngrNextBootstrapTests`. Focused CTest passed both registrations (89
+Bootstrap cases and 40 Speaking Evaluation cases). Coverage verifies the
+Bootstrap directory request, folder selection through the port, and
+post-success open-folder callback ordering. The clean all-target Linux
+baseline remains pending in workflow `42146144532`; this is focused evidence,
+not a full-suite result.
 
 ### 8.2.1 — Selected-document QtPdf session (accepted)
 

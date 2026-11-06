@@ -2221,6 +2221,7 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
 
     QTemporaryDir outputRoot;
     QVERIFY(outputRoot.isValid());
+    const QString currentDirectory = outputRoot.filePath(QStringLiteral("current"));
     QStringList renderedNames;
     QStringList stagingDirectories;
     int overwritePromptCount = 0;
@@ -2247,6 +2248,22 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
     reportActions.confirmOverwrite = [&overwritePromptCount](QWidget*, int count) {
         overwritePromptCount = count;
         return false;
+    };
+    std::optional<Application::SelectDirectoryDialogRequest> folderRequest;
+    QString openedOutputFolder;
+    reportActions.selectOutputDirectory = [&] (
+        QWidget*, const Application::SelectDirectoryDialogRequest& request) {
+        folderRequest = request;
+        using Response =
+            Ui::SpeakingEvaluationReportActions::SelectDirectoryDialogResponse;
+        return Domain::Result<Response>::success({
+            .selection = Application::FileDialogPath(
+                currentDirectory.toUtf8().toStdString())
+        });
+    };
+    reportActions.openOutputFolder = [&openedOutputFolder](
+        const QString& path) {
+        openedOutputFolder = path;
     };
     reportActions.showNotice = [](QWidget*, bool, const QString&, const QString&) {};
 
@@ -2300,7 +2317,6 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
     QCOMPARE(speakingEvalReportAssetResidency().templates, 0);
     QCOMPARE(speakingEvalReportAssetResidency().decodedImageBytes, qsizetype(0));
 
-    const QString currentDirectory = outputRoot.filePath(QStringLiteral("current"));
     bool currentBatchSeen = false;
     DocumentOutputResult currentResult;
     QTimer::singleShot(0, [&] {
@@ -2309,7 +2325,17 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
         if (!dialog) return;
         currentBatchSeen = true;
         dialog->scopeSelector()->setCurrentIndex(0);
-        dialog->outputDirectoryEdit()->setText(currentDirectory);
+        auto* const chooseDirectory = dialog->findChild<QPushButton*>(
+            QStringLiteral("nextReportChooseDirectory"));
+        auto* const openAfterSaving = dialog->findChild<QCheckBox*>(
+            QStringLiteral("nextReportOpenOutput"));
+        if (!chooseDirectory || !openAfterSaving)
+        {
+            dialog->reject();
+            return;
+        }
+        chooseDirectory->click();
+        openAfterSaving->setChecked(true);
         dialog->exportButton()->click();
         currentResult = dialog->lastResult().output;
     });
@@ -2319,6 +2345,11 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
     QCOMPARE(currentResult.savedPdfPaths.size(), 1);
     QVERIFY(currentResult.savedArchivePath.isEmpty());
     QVERIFY(QFileInfo::exists(currentResult.savedPdfPaths.constFirst()));
+    QVERIFY(folderRequest.has_value());
+    QCOMPARE(folderRequest->purpose,
+             Application::FileDialogPurpose::GeneratedPdf);
+    QCOMPARE(folderRequest->title, std::string("Choose Output Folder"));
+    QCOMPARE(openedOutputFolder, currentDirectory);
     QCOMPARE(renderedNames, QStringList{QStringLiteral("Bora Lee")});
     QVERIFY(!QFileInfo::exists(stagingDirectories.constLast()));
 

@@ -2085,10 +2085,10 @@ Application::StartupResult ApplicationBootstrap::start()
                             const Application::SaveFileDialogRequest& request) {
                             std::unique_ptr<Application::FileDialogPort> fileDialog;
                             if (m_startupWorkspaceSeams
-                                    .speakingEvaluationReportFileDialogPortFactory)
+                                    .speakingEvaluationReportsFileDialogPortFactory)
                             {
                                 fileDialog = m_startupWorkspaceSeams
-                                    .speakingEvaluationReportFileDialogPortFactory();
+                                    .speakingEvaluationReportsFileDialogPortFactory();
                             }
                             else
                             {
@@ -2111,6 +2111,34 @@ Application::StartupResult ApplicationBootstrap::start()
                             }
                             return fileDialog->saveFile(request);
                         };
+                        actions.reports.selectOutputDirectory = [this](
+                            QWidget* parent,
+                            const Application::SelectDirectoryDialogRequest& request) {
+                            if (m_startupWorkspaceSeams
+                                    .speakingEvaluationReportsFileDialogPortFactory)
+                            {
+                                std::unique_ptr<Application::FileDialogPort>
+                                    fileDialog = m_startupWorkspaceSeams
+                                        .speakingEvaluationReportsFileDialogPortFactory();
+                                using Response =
+                                    Application::FileDialogResponse<
+                                        Application::FileDialogPath>;
+                                if (!fileDialog)
+                                {
+                                    return Domain::Result<Response>::failure({
+                                        .code = Domain::ErrorCode::Technical,
+                                        .message = "The Speaking Evaluation output folder dialog is unavailable.",
+                                        .recoverable = true
+                                    });
+                                }
+                                return fileDialog->selectDirectory(request);
+                            }
+                            Platform::QSettingsFileDialogDirectoryPreferencesAdapter
+                                directoryPreferences;
+                            Ui::QtFileDialogPresenter fileDialog(
+                                directoryPreferences, parent);
+                            return fileDialog.selectDirectory(request);
+                        };
                         actions.reports.showPowerPointDataAccessNotice =
                             Platform::SettingsManagerPowerPointDataAccessNoticePort().read().showPowerPointDataAccessNotice;
                         actions.preferredAiCommentProvider = [] {
@@ -2129,6 +2157,11 @@ Application::StartupResult ApplicationBootstrap::start()
                         };
                         const auto externalUrlLaunchPort =
                             m_coreServices->externalUrlLaunchPort;
+                        actions.reports.openOutputFolder =
+                            [externalUrlLaunchPort](const QString& folder) {
+                                static_cast<void>(externalUrlLaunchPort->openUrl(
+                                    QUrl::fromLocalFile(folder)));
+                            };
                         actions.openExternalUrl = [externalUrlLaunchPort](
                                                       const QUrl& url
                                                       ) {

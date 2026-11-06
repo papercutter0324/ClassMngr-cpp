@@ -6,10 +6,8 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QCoreApplication>
-#include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -20,7 +18,6 @@
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSignalBlocker>
-#include <QUrl>
 #include <QVBoxLayout>
 #include <algorithm>
 
@@ -285,9 +282,35 @@ SpeakingEvaluationReportBatchDialog::SpeakingEvaluationReportBatchDialog(const Q
     connect(m_scope, &QComboBox::currentIndexChanged, this, [this] { updateControls(); });
     connect(m_renderer, &QComboBox::currentIndexChanged, this, [this] { updateControls(); });
     connect(choose, &QPushButton::clicked, this, [this] {
-        const QString folder = m_actions.chooseOutputDirectory ? m_actions.chooseOutputDirectory(this, m_directory->text())
-            : QFileDialog::getExistingDirectory(this, batchText("Choose Output Folder"), m_directory->text());
+        if (!m_actions.selectOutputDirectory) return;
+        const Application::SelectDirectoryDialogRequest dialogRequest{
+            .purpose = Application::FileDialogPurpose::GeneratedPdf,
+            .title = batchText("Choose Output Folder").toUtf8().toStdString(),
+            .initialDirectory = Application::FileDialogPath(
+                m_directory->text().toUtf8().toStdString())
+        };
+        const auto selected = m_actions.selectOutputDirectory(
+            this, dialogRequest);
+        if (!selected)
+        {
+            const std::string& error = selected.error().message;
+            m_status->setText(QString::fromUtf8(
+                error.data(), static_cast<qsizetype>(error.size())));
+            return;
+        }
+        if (!selected.value().selection) return;
+        const std::string& selectedPath =
+            selected.value().selection->value();
+        const QString folder = QString::fromUtf8(
+            selectedPath.data(), static_cast<qsizetype>(selectedPath.size()));
         if (!folder.isEmpty()) m_directory->setText(folder);
+        if (selected.value().preferenceWarning)
+        {
+            const std::string& warning =
+                selected.value().preferenceWarning->message;
+            m_status->setText(QString::fromUtf8(
+                warning.data(), static_cast<qsizetype>(warning.size())));
+        }
     });
     connect(preview, &QPushButton::clicked, this, [this] {
         auto selected = selectedReports(); if (selected.isEmpty()) return;
@@ -358,7 +381,6 @@ void SpeakingEvaluationReportBatchDialog::exportReports()
         if (m_mode == Mode::SaveAs && m_open->isChecked())
         {
             if (m_actions.openOutputFolder) m_actions.openOutputFolder(m_directory->text());
-            else QDesktopServices::openUrl(QUrl::fromLocalFile(m_directory->text()));
         }
         accept();
     }

@@ -546,11 +546,15 @@ struct InitialSetupFileDialogProbe final
 {
     Application::FileDialogPath selectedPath;
     std::optional<Application::FileDialogPath> openPath;
+    std::optional<Application::FileDialogPath> directoryPath;
     bool cancelSave = false;
     std::optional<Application::SaveFileDialogRequest> lastSaveRequest;
     std::optional<Application::OpenFileDialogRequest> lastOpenRequest;
+    std::optional<Application::SelectDirectoryDialogRequest>
+        lastDirectoryRequest;
     int saveCount = 0;
     int openCount = 0;
+    int directoryCount = 0;
 };
 
 class RecordingInitialSetupFileDialogPort final
@@ -611,10 +615,15 @@ public:
 
     [[nodiscard]] Domain::Result<
         Application::FileDialogResponse<Application::FileDialogPath>>
-    selectDirectory(const Application::SelectDirectoryDialogRequest&) override
+    selectDirectory(
+        const Application::SelectDirectoryDialogRequest& request) override
     {
-        return unexpectedCall<
-            Application::FileDialogResponse<Application::FileDialogPath>>();
+        ++m_probe->directoryCount;
+        m_probe->lastDirectoryRequest = request;
+        return Domain::Result<Application::FileDialogResponse<
+            Application::FileDialogPath>>::success({
+                .selection = m_probe->directoryPath
+            });
     }
 
 private:
@@ -7750,7 +7759,9 @@ speakingEvaluationAiCompositionUsesWorkspaceAndPreferences()
     auto reportSaveDialogProbe =
         std::make_shared<InitialSetupFileDialogProbe>();
     reportSaveDialogProbe->cancelSave = true;
-    seams.speakingEvaluationReportFileDialogPortFactory =
+    reportSaveDialogProbe->directoryPath = Application::FileDialogPath(
+        temporaryDirectory.path().toUtf8().toStdString());
+    seams.speakingEvaluationReportsFileDialogPortFactory =
         [reportSaveDialogProbe] {
             return std::make_unique<RecordingInitialSetupFileDialogPort>(
                 reportSaveDialogProbe);
@@ -7814,6 +7825,36 @@ speakingEvaluationAiCompositionUsesWorkspaceAndPreferences()
     QCOMPARE(reportSaveDialogProbe->lastSaveRequest->defaultSuffix,
              std::string("pdf"));
     QVERIFY(reportSaveDialogProbe->lastSaveRequest->confirmOverwrite);
+
+    bool reportBatchDialogSeen = false;
+    QTimer::singleShot(0, [&] {
+        auto* const dialog =
+            dynamic_cast<Ui::SpeakingEvaluationReportBatchDialog*>(
+                qApp->activeModalWidget());
+        if (!dialog)
+        {
+            return;
+        }
+        reportBatchDialogSeen = true;
+        auto* const chooseButton = dialog->findChild<QPushButton*>(
+            QStringLiteral("nextReportChooseDirectory"));
+        if (!chooseButton)
+        {
+            dialog->reject();
+            return;
+        }
+        chooseButton->click();
+        dialog->reject();
+    });
+    page->saveReportsButton()->click();
+    QVERIFY(reportBatchDialogSeen);
+    QCOMPARE(reportSaveDialogProbe->directoryCount, 1);
+    QVERIFY(reportSaveDialogProbe->lastDirectoryRequest.has_value());
+    QCOMPARE(reportSaveDialogProbe->lastDirectoryRequest->purpose,
+             Application::FileDialogPurpose::GeneratedPdf);
+    QCOMPARE(reportSaveDialogProbe->lastDirectoryRequest->title,
+             std::string("Choose Output Folder"));
+    QVERIFY(!reportSaveDialogProbe->lastDirectoryRequest->initialDirectory.empty());
 
     CapturedSpeakingEvaluationAiUrlHandler urlHandler;
     SpeakingEvaluationAiHttpsUrlHandlerRegistration urlHandlerRegistration(
