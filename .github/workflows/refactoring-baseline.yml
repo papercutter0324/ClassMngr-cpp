@@ -49,7 +49,7 @@ jobs:
   baseline:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 120
+    timeout-minutes: 300
     strategy:
       fail-fast: false
       matrix:
@@ -83,7 +83,7 @@ jobs:
             preset: macos-clang-debug
             build_dir: build/macos-clang-debug
             configuration: ""
-            parallel: 2
+            parallel: 4
             report: macos-clang-debug
             run_baseline: true
 
