@@ -514,6 +514,9 @@ bool captureNextSurface(
     const auto* const embeddedCalendar = nextPage->findChild<Ui::CalendarPage*>(
         QStringLiteral("nextMyWorkspaceEmbeddedCalendar"));
     Ui::CalendarPageRuntimeMetrics activeCalendarMetrics;
+    const QWidget* const embeddedCalendarGrid = embeddedCalendar
+        ? embeddedCalendar->calendarViewWidget()
+        : nullptr;
     QJsonObject calendarViewportRect;
     QJsonObject calendarCardRect;
     QJsonObject calendarGridRect;
@@ -526,12 +529,11 @@ bool captureNextSurface(
         {
             const auto* const calendarViewport = nextPage->findChild<QScrollArea*>(
                 QStringLiteral("nextMyWorkspaceCalendarScrollArea"));
-            const auto* const calendarGrid = embeddedCalendar->calendarView();
-            const auto* const calendarCard = calendarGrid
-                ? calendarGrid->parentWidget()
+            const auto* const calendarCard = embeddedCalendarGrid
+                ? embeddedCalendarGrid->parentWidget()
                 : nullptr;
             calendarViewportRect = geometryJson(calendarViewport, nextPage);
-            calendarGridRect = geometryJson(calendarGrid, nextPage);
+            calendarGridRect = geometryJson(embeddedCalendarGrid, nextPage);
             calendarCardRect = geometryJson(calendarCard, nextPage);
             workspaceTabPagesRect = geometryJson(
                 nextPage->findChild<QStackedWidget*>(
@@ -563,8 +565,8 @@ bool captureNextSurface(
             ? activeCalendarMetrics.upcomingResultCount
             : 0);
     if (tabIndex == 2
-        && (!embeddedCalendar || !embeddedCalendar->calendarView()
-            || !embeddedCalendar->calendarView()->rootObject()))
+        && (!embeddedCalendar || !embeddedCalendarGrid
+            || activeCalendarMetrics.calendarRootObjectCount == 0))
     {
         *error = QStringLiteral(
             "The embedded Next My Workspace Calendar content did not activate.");

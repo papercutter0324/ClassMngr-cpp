@@ -179,6 +179,7 @@ add_executable(ClassMngrNextDocumentViewerVisualCapture
     src/next/ui/document_catalog_navigation.cpp
     src/next/ui/document_viewer_page.cpp
     src/next/platform/qt_pdf_viewer_session.cpp
+    src/next/platform/qt_pdf_print_operation_adapter.cpp
     src/next/ui/document_viewer_route.cpp
     src/next/ui/navigation_model.cpp
     src/next/ui/page_host.cpp
@@ -359,7 +360,7 @@ target_compile_definitions(ClassMngrNextCampusDirectoryVisualCapture
 )
 target_link_libraries(ClassMngrNextCampusDirectoryVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
         ClassMngrNext::Resources
         Qt6::Widgets
@@ -608,7 +609,7 @@ target_compile_definitions(ClassMngrTeacherProfileVisualCapture
 )
 target_link_libraries(ClassMngrTeacherProfileVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Resources
         Qt6::Widgets
 )
@@ -666,7 +667,7 @@ target_compile_definitions(ClassMngrMyDetailsSignatureVisualCapture
 )
 target_link_libraries(ClassMngrMyDetailsSignatureVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Resources
         ClassMngrSignature
         Qt6::Widgets
@@ -974,11 +975,10 @@ target_compile_definitions(ClassMngrNextSharedStaffDirectoryVisualCapture
 )
 target_link_libraries(ClassMngrNextSharedStaffDirectoryVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
-        ClassMngrWorkspaceStore
         Qt6::Sql
         Qt6::Widgets
 )
@@ -1198,11 +1198,10 @@ target_compile_definitions(ClassMngrNextTeacherImportVisualCapture
 )
 target_link_libraries(ClassMngrNextTeacherImportVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
-        ClassMngrWorkspaceStore
         ClassMngrTeacherImportParser
         Qt6::Concurrent
         Qt6::Sql
@@ -3822,9 +3821,8 @@ target_compile_definitions(ClassMngrNextMyWorkspaceVisualCapture
 )
 target_link_libraries(ClassMngrNextMyWorkspaceVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Resources
-        ClassMngrWorkspaceStore
         ClassMngrNextWorkspaceDomain
         ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser
@@ -4362,11 +4360,10 @@ target_compile_definitions(ClassMngrNextRosterEditorTests
 target_link_libraries(ClassMngrNextRosterEditorTests
     PRIVATE
         ClassMngrNextRosterOutput
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
         ClassMngrNextWorkspaceDomain
         ClassMngrScheduleImportParser
-        ClassMngrWorkspaceStore
         Qt6::Sql
         Qt6::Test
         Qt6::Widgets
@@ -4488,12 +4485,11 @@ target_compile_definitions(ClassMngrNextClassTransferVisualCapture
 )
 target_link_libraries(ClassMngrNextClassTransferVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrClassTransferSupport
         ClassMngrNext::Application
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
-        ClassMngrWorkspaceStore
         Qt6::Sql
         Qt6::Widgets
 )
@@ -4554,12 +4550,11 @@ target_compile_definitions(ClassMngrNextTestingClassesVisualCapture
 target_link_libraries(ClassMngrNextTestingClassesVisualCapture
     PRIVATE
         ClassMngrNextRosterOutput
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
         ClassMngrNext::Resources
         ClassMngrScheduleImportParser
         ClassMngrNextWorkspaceDomain
-        ClassMngrWorkspaceStore
         Qt6::Sql
         Qt6::Widgets
 )
@@ -4860,12 +4855,11 @@ target_compile_definitions(ClassMngrNextClassesDetailsCoTeacherVisualCapture
 )
 target_link_libraries(ClassMngrNextClassesDetailsCoTeacherVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
         ClassMngrNextRosterOutput
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
-        ClassMngrWorkspaceStore
         Qt6::Sql
         Qt6::Widgets
 )
@@ -4926,12 +4920,11 @@ target_compile_definitions(ClassMngrNextClassesNotesVisualCapture
 )
 target_link_libraries(ClassMngrNextClassesNotesVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
         ClassMngrNextRosterOutput
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
-        ClassMngrWorkspaceStore
         Qt6::Sql
         Qt6::Widgets
 )
@@ -4993,12 +4986,11 @@ target_compile_definitions(ClassMngrNextClassesAnalyticsVisualCapture
 )
 target_link_libraries(ClassMngrNextClassesAnalyticsVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
         ClassMngrNextRosterOutput
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
-        ClassMngrWorkspaceStore
         Qt6::Sql
         Qt6::Widgets
 )
@@ -5077,9 +5069,8 @@ target_compile_definitions(ClassMngrNextMyClassesVisualCapture
 )
 target_link_libraries(ClassMngrNextMyClassesVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Resources
-        ClassMngrWorkspaceStore
         ClassMngrNextWorkspaceDomain
         ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser
@@ -5245,7 +5236,7 @@ target_compile_definitions(ClassMngrNextUpcomingBirthdaysVisualCapture
 )
 target_link_libraries(ClassMngrNextUpcomingBirthdaysVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
         Qt6::Widgets
 )
@@ -8577,11 +8568,10 @@ target_compile_definitions(ClassMngrNextScheduleVisualCapture
 )
 target_link_libraries(ClassMngrNextScheduleVisualCapture
     PRIVATE
-        ClassMngrRuntime
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
         ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
-        ClassMngrWorkspaceStore
         ClassMngrScheduleImportParser
         Qt6::Concurrent
         Qt6::Sql
