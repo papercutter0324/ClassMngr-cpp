@@ -3,7 +3,7 @@
 ## Phase 8 — Active Batch 1 (2 candidates)
 
 1. **8.7.11 Qt Concurrent runtime staging — accepted:** Linux package build, verification, and upload passed at `a86e260be63615c075aefa4e460ea96832021fb8`; Windows x64/ARM64 and macOS universal package verification passed at `79cec8a3ed7344973f1321909a6644b31711ce63` with the same staging implementation. The optional Linux Phase 0 route remained uninvoked.
-2. **8.7.13 Linux Legacy Debug link closure and Phase 5 rerun — next:** include shared Sub Prep and Calendar dependencies in the Runtime rescan closure, then repeat the clean Linux Debug build and Phase 5 suite. This also unblocks Phase 10's focused Linux Phase 7 feature verification.
+2. **8.7.13 Linux Legacy Debug link closure and Phase 5 rerun — implementation and focused target build passed; clean all-target build/CTest pending push:** the Runtime, WorkspaceStore, Sub Prep, and Calendar archives now share one `RESCAN` group. The fresh Linux GCC Debug `ClassMngr` target passed locally; the `refactoring-baseline` workflow must confirm all targets and the Phase 5 suite.
 
 ## Phase 8 — Next Batch (7 candidates discovered)
 

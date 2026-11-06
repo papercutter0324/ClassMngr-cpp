@@ -6,14 +6,14 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-05
-- Current milestone: Phases 0–7 are Complete; Phase 7.5 remains In progress
-  with outstanding platform verification and decisions. Phase 8 is In progress:
-  Windows x64 and ARM64 Release package verification passed at
-  `53aaeed2a4b1f1123a12a4f365696968c2b5cc80`, while the full adapter and
-  generated-output baseline exit gate remains open. See the [Phase 7.5
-  plan](08.5-Phase-7.5-Cross-Platform-Follow-Ups.md), [Phase 7 progress
-  log](08-Phase-7-Progress-Log.md), [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md),
-  and [current batch tracker](Current-Slice-Batches.md).
+- Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 is In progress.
+  The 8.7.11 Qt Concurrent package passes on Linux, Windows x64/ARM64, and
+  macOS universal. The 8.7.13 Linux Legacy link closure now passes a fresh
+  `ClassMngr` target build; the clean all-target Linux Debug build and Phase 5
+  CTest suite are pending CI. Phase 8's all-adapter and generated-output
+  parity gate remains open. See the [Phase 7.5 plan](08.5-Phase-7.5-Cross-Platform-Follow-Ups.md),
+  [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), and [current
+  batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
@@ -36,7 +36,7 @@
 | 5 | 06-Phase-5-Startup-and-Bootstrap-Rewrite.md | Complete | Heavy | 2, 3, 4 |
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
 | 7 | 08-Phase-7-Feature-Migration.md | Complete | Heavy | 2–6 |
-| 7.5 | 08.5-Phase-7.5-Cross-Platform-Follow-Ups.md | In progress | Light | 0–7 |
+| 7.5 | 08.5-Phase-7.5-Cross-Platform-Follow-Ups.md | Complete | Light | 0–7 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | In progress | Heavy | 2, 3, 7 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

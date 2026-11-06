@@ -862,10 +862,24 @@ set_target_properties(ClassMngrNextCalendarUi
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
 )
-target_link_libraries(ClassMngrLegacyRuntimeClosure
-    INTERFACE
-        ClassMngrNextCalendarUi
-)
+# These archives have cyclic references through Runtime, WorkspaceStore,
+# Sub Prep, and Calendar. Rescan the complete set together on supporting
+# linkers; keep the established direct dependency order elsewhere.
+if(_classmngr_legacy_runtime_rescan_supported)
+    target_link_libraries(ClassMngrLegacyRuntimeClosure
+        INTERFACE
+            "$<LINK_GROUP:RESCAN,ClassMngrRuntime,ClassMngrWorkspaceStore,ClassMngrSubPrepShared,ClassMngrNextCalendarUi>"
+    )
+else()
+    target_link_libraries(ClassMngrLegacyRuntimeClosure
+        INTERFACE
+            ClassMngrRuntime
+            ClassMngrWorkspaceStore
+            ClassMngrSubPrepShared
+            ClassMngrNextCalendarUi
+    )
+endif()
+
 if(TARGET ClassMngrTestRuntime)
     # Reuse the resource objects already compiled into Features. Linking this
     # archive by file avoids propagating Resources' INTERFACE_SOURCES again.

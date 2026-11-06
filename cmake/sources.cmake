@@ -599,10 +599,9 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrSQLiteSnapshot
 )
 
-# The legacy runtime and workspace repositories reference symbols from each
-# other. Rescan their static archives together on toolchains that support
-# CMake's portable RESCAN link group; other linkers keep their existing
-# Runtime dependency handling.
+# The legacy runtime, workspace repositories, shared Sub Prep services, and
+# Calendar UI have cyclic static-archive references. The complete closure is
+# assembled after the Calendar UI target is declared in next.cmake.
 add_library(ClassMngrLegacyRuntimeClosure INTERFACE)
 set(_classmngr_legacy_runtime_rescan_supported FALSE)
 if(CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
@@ -610,27 +609,6 @@ if(CMAKE_CXX_LINK_GROUP_USING_RESCAN_SUPPORTED)
 elseif(CMAKE_LINK_GROUP_USING_RESCAN_SUPPORTED)
     set(_classmngr_legacy_runtime_rescan_supported TRUE)
 endif()
-
-if(_classmngr_legacy_runtime_rescan_supported)
-    target_link_libraries(ClassMngrLegacyRuntimeClosure
-        INTERFACE
-            "$<LINK_GROUP:RESCAN,ClassMngrRuntime,ClassMngrWorkspaceStore>"
-    )
-else()
-    target_link_libraries(ClassMngrLegacyRuntimeClosure
-        INTERFACE
-            ClassMngrRuntime
-            ClassMngrWorkspaceStore
-    )
-endif()
-
-# Keep the shared Sub Prep services alongside the runtime closure instead of
-# in the runtime's transitive interface. The services depend on WorkspaceStore,
-# which is a member of the RESCAN group above.
-target_link_libraries(ClassMngrLegacyRuntimeClosure
-    INTERFACE
-        ClassMngrSubPrepShared
-)
 
 # macOS test doubles cannot override symbols from a static archive with the
 # current Apple linker. A flat-namespace shared runtime reuses the production

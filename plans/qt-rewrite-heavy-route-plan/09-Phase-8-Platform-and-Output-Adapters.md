@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-05
-- Current note: 8.7.11 Qt Concurrent package verification passes on Linux at `a86e260be63615c075aefa4e460ea96832021fb8`, Windows x64/ARM64, and macOS universal. The focused Linux Debug `ClassMngr` target now links with the expanded archive rescan closure; the clean all-target build and Phase 5 CTest gate are pending the next push. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
+- Current note: 8.7.11 Qt Concurrent package verification passes on Linux at `a86e260be63615c075aefa4e460ea96832021fb8`, Windows x64/ARM64, and macOS universal. Slice 8.7.13 expands the Linux Legacy rescan group; a fresh Linux GCC Debug `ClassMngr` target build and link passed. The clean all-target build and Phase 5 CTest gate are pending CI on the pushed change. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
 
 ### Slice batches
 
@@ -734,8 +734,28 @@ The local verifier invocation previously shown stopped at
 CI results verify the uploaded Windows packages, but do not establish the
 Phase 8 exit gate: all v2 external integrations must work without platform
 code leaking into feature logic, and generated output must match the baseline
-on every supported platform. Phase 7.5 remains In progress and does not block
+on every supported platform. Phase 7.5 is Complete and does not block
 Phase 8. The Linux supplemental route-contract failure is a separate follow-up.
+
+### 8.7.13 — Linux Legacy Debug link closure and Phase 5 rerun
+
+The clean Linux x64 Debug baseline at `79cec8a3ed7344973f1321909a6644b31711ce63`
+failed while linking Legacy `ClassMngr`, before CTest. The generated link line
+rescanned Runtime and WorkspaceStore, then placed shared Sub Prep and Calendar
+archives outside the group even though those archives both reference Runtime.
+
+The closure now assembles after `ClassMngrNextCalendarUi` is declared. On
+linkers supporting CMake's `RESCAN` group, Runtime, WorkspaceStore,
+`ClassMngrSubPrepShared`, and `ClassMngrNextCalendarUi` are rescanned together.
+The unsupported-linker path retains the direct dependency order.
+
+After clearing the standard `build/linux-gcc-debug` folder, a fresh configure
+with Qt 6.12.0 and GCC 16.2.1 completed. The fresh build of target `ClassMngr`
+and its dependencies passed (400/401 Ninja steps; the target link completed).
+The emitted link command confirms all four static archives are between
+`--start-group` and `--end-group`. The clean all-target build and Phase 5 CTest
+suite remain pending the `refactoring-baseline` workflow triggered by this
+change; no full-suite result is claimed yet.
 
 ## Objective
 
