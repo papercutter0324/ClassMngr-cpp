@@ -14,6 +14,9 @@ on:
       - "scripts/record_refactoring_baseline.py"
       - "scripts/retry_macos_baseline_if_missing_report.py"
       - "scripts/test_retry_macos_baseline_if_missing_report.py"
+      - "scripts/phase8/capture_sub_prep_c53_parity.py"
+      - "scripts/phase7/c53_sub_prep_sql_oracle.py"
+      - "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/writer-probe/check_used_codes.py"
       - "src/**"
       - "tests/**"
   pull_request:
@@ -26,6 +29,9 @@ on:
       - "scripts/record_refactoring_baseline.py"
       - "scripts/retry_macos_baseline_if_missing_report.py"
       - "scripts/test_retry_macos_baseline_if_missing_report.py"
+      - "scripts/phase8/capture_sub_prep_c53_parity.py"
+      - "scripts/phase7/c53_sub_prep_sql_oracle.py"
+      - "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/writer-probe/check_used_codes.py"
       - "src/**"
       - "tests/**"
 
@@ -257,6 +263,14 @@ jobs:
             python scripts/record_refactoring_baseline.py "${arguments[@]}"
           fi
 
+      - name: Capture matched SQL Sub Prep output parity
+        if: matrix.run_baseline
+        shell: bash
+        run: |
+          QT_QPA_PLATFORM=offscreen python scripts/phase8/capture_sub_prep_c53_parity.py \
+            --build-dir "${{ matrix.build_dir }}" \
+            --report "${{ matrix.report }}"
+
       - name: Cross-build Windows ARM64 Debug targets
         if: matrix.preset == 'windows-arm64-debug'
         shell: pwsh
@@ -280,6 +294,7 @@ jobs:
             artifacts/baseline/${{ matrix.report }}.json
             artifacts/schedule-output/${{ matrix.report }}/
             artifacts/roster-output/${{ matrix.report }}/
+            artifacts/sub-prep-output/${{ matrix.report }}/
             ${{ matrix.build_dir }}/Testing/refactoring-baseline.junit.xml
             ${{ matrix.build_dir }}/Testing/Temporary/LastTest.log
             ${{ matrix.build_dir }}/Testing/Temporary/LastTestsFailed.log

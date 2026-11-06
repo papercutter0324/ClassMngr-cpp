@@ -9,10 +9,12 @@
 - Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 is In progress.
   Slices 8.1.10–8.1.12 are accepted after focused Linux Bootstrap, Speaking
   Evaluation, and Document Viewer CTest passed; 8.2.7's Schedule parity
-  capture is implemented and passed locally on Linux, with Windows/macOS
-  evidence scheduled for the active batch push; 8.2.8's four Roster output
-  cases also pass locally on Linux, with the cross-platform captures queued
-  in the same baseline workflow; 8.2.9 is active. The 8.7.13
+  capture and 8.2.8's four Roster output cases pass locally on Linux, and
+  8.2.9's matched-SQL C53 capture now runs in the same Linux/Windows/macOS
+  baseline matrix. Local C53 evidence passed 17 pages with zero changed
+  pixels; the local QtPdf 6.14 module with Qt Core 6.12 makes hosted results
+  necessary for platform acceptance. Windows/macOS evidence is scheduled for
+  the active batch push. 8.2.10 is next. The 8.7.13
   Linux Legacy link closure passes a fresh `ClassMngr` target build. Its
   all-target Linux Debug attempt at `52f1dd98` failed compiling stale
   calendar-test accessors; the local `calendarViewWidget()` repair awaits

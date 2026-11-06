@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-05
-- Current note: Begin 8.2.9 Sub Prep generated-output parity matrix. The 8.2.7 Schedule capture and 8.2.8 Roster four-template capture now emit matched Legacy/Next PDFs, text, geometry, and page rasters from the Refactoring baseline workflow on Linux x64, Windows x64, and macOS universal. Both focused Linux CTest runs pass; Windows/macOS evidence awaits the active batch push. Workflow `42146144532` tested the prior pushed head `52f1dd98`: Linux Debug failed to compile Bootstrap tests because stale calendar tests called `calendarView()`; the local fix now uses `calendarViewWidget()` and will be requalified after the active batch push. Windows ARM64 Debug cross-build passed; macOS universal and Windows x64 Debug remain in progress. Package and resource-layout checks passed on Linux, Windows, and macOS. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
+- Current note: Begin 8.2.10 Speaking Evaluation report-output baseline. The 8.2.7 Schedule, 8.2.8 Roster, and 8.2.9 matched-SQL Sub Prep captures now run in the Refactoring baseline workflow for Linux x64, Windows x64, and macOS universal; local Linux captures pass. C53's fresh Linux run passed 12 Sub Prep and 5 roster pages with zero changed pixels, but local QtPdf resolved to 6.14 while Qt Core reported 6.12, so hosted artifacts are the platform acceptance evidence. Workflow `42146144532` tested prior pushed head `52f1dd98`; Linux Debug failed at stale `calendarView()` test access, now repaired to `calendarViewWidget()` and awaiting a current-head clean all-target/Phase 5 rerun. Windows ARM64 Debug cross-build passed; macOS universal and Windows x64 Debug remain pending. The final Phase 8 gate review must address both v2 adapter behavior and output parity.
 
 ### Slice batches
 
@@ -506,6 +506,27 @@ images had equal hashes, text, and geometry. The Windows x64 and macOS
 universal captures will be collected after the active batch push. See
 [Roster output parity matrix](../../docs/qt-rewrite/visual-baseline/next/phase-8/roster-output-parity/README.md)
 for evidence structure and limitations.
+
+### 8.2.9 — Sub Prep generated-output parity matrix (implementation ready; platform CI pending)
+
+The Refactoring baseline workflow now runs the matched-SQL C53 Legacy/Next
+capture, independent SQL oracle, and used-code audits on Linux x64, Windows
+x64, and macOS universal. It retains the prepared database, paired package
+PDFs, extracted page text, 150-DPI page rasters, comparison manifests, and
+font/code audits in each platform artifact. All 12 Sub Prep pages and 5 By Day
+roster pages must match Legacy page counts, dimensions, and pixels on the same
+host. Raster equality is not compared across operating systems.
+
+The required Linux Debug targets built in `build/linux-gcc-debug`, and the
+fresh local capture passed all 17 pages with zero changed pixels. The SQL
+oracle verified 750 unique weekday roster names and 30 class headers; the
+strict Next used-code audit passed 5 pages and 15 page-font records. The local
+runner reported Qt 6.12 Core while `libQt6Pdf.so.6` resolved to 6.14, so this
+run is a smoke result rather than the platform acceptance result. Windows x64
+and macOS universal captures, plus exact-version hosted results, remain
+pending the active batch push. See [Sub Prep C53 output parity by platform]
+(../../docs/qt-rewrite/visual-baseline/next/phase-8/sub-prep-c53-parity/README.md)
+for artifact contents and reproduction.
 
 ### 8.3.1 — PowerPoint automation adapter (accepted)
 
