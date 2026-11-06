@@ -53,6 +53,14 @@ finding, blocker, or exit-gate detail needs a durable record. Routine
 slice chronology and closed batch history do not need to be archived;
 keep current status in this plan and live batches in the shared tracker.
 
+### Linux Phase 7 coverage intake
+
+Phase 7.5 transfers the missing Linux Phase 7 feature run here. Include focused
+Linux verification of migrated Phase 7 behavior in the Linux GCC parity entry
+after Phase 8 repairs and requalifies the clean Linux Debug link closure in
+8.7.13. This is a focused cross-platform parity requirement; it does not
+reopen Phase 7 or require a second full Phase 7 suite.
+
 ## Objective
 
 Demonstrate that v2 preserves the current user experience and output across supported platforms while meeting the Windows memory target.
@@ -151,6 +159,10 @@ Run the parity suite on:
 - Windows ARM64.
 - macOS universal.
 - Linux GCC build.
+
+For Linux, include the focused migrated Phase 7 feature verification recorded
+in [Linux Phase 7 coverage intake](#linux-phase-7-coverage-intake), in addition
+to the visual, behavioral, and output comparisons below.
 
 Verify:
 
