@@ -1,15 +1,74 @@
 #include "class_info_validator.h"
 
 #include "core/utils/colorutils.h"
+#include "domain/config/class_details_catalog.h"
 #include "domain/validation/class_time_validator.h"
 #include "domain/validation/validation_rules.h"
-#include "features/classes/config/class_info_config.h"
 
 #include <QStringList>
+
+#include <string_view>
+#include <vector>
 
 namespace
 {
 constexpr qsizetype NotesMaximumLength = 10000;
+
+QString fromDomainName(const std::string_view value)
+{
+    return QString::fromUtf8(
+        value.data(),
+        static_cast<qsizetype>(value.size())
+        );
+}
+
+QStringList fromDomainNames(const std::vector<std::string_view>& values)
+{
+    QStringList result;
+    result.reserve(static_cast<qsizetype>(values.size()));
+    for (const std::string_view value : values)
+    {
+        result.append(fromDomainName(value));
+    }
+    return result;
+}
+
+const QStringList& classGrades()
+{
+    static const QStringList grades = fromDomainNames(
+        ClassMngr::Domain::ClassDetailsCatalog::grades()
+        );
+    return grades;
+}
+
+QStringList classLevelsForGrade(const QString& grade)
+{
+    return fromDomainNames(
+        ClassMngr::Domain::ClassDetailsCatalog::levelsForGrade(
+            grade.toStdString()
+            )
+        );
+}
+
+QStringList classReadingBooks(const QString& grade, const QString& level)
+{
+    return fromDomainNames(
+        ClassMngr::Domain::ClassDetailsCatalog::readingBooks(
+            grade.toStdString(),
+            level.toStdString()
+            )
+        );
+}
+
+QStringList classEssayBooks(const QString& grade, const QString& level)
+{
+    return fromDomainNames(
+        ClassMngr::Domain::ClassDetailsCatalog::essayBooks(
+            grade.toStdString(),
+            level.toStdString()
+            )
+        );
+}
 
 ValidationLocation field(const QString& name)
 {
@@ -54,23 +113,23 @@ ValidationResult allowedValue(
 ClassInfo ClassInfoValidator::normalized(const ClassInfo& info)
 {
     ClassInfo normalized = info;
-    normalized.classGrade = canonicalChoice(info.classGrade, ClassInfoConfig::Grades);
+    normalized.classGrade = canonicalChoice(info.classGrade, classGrades());
     const QStringList levels =
-        ClassInfoConfig::levelsForGrade(normalized.classGrade);
+        classLevelsForGrade(normalized.classGrade);
     normalized.classLevel = canonicalChoice(info.classLevel, levels);
-    if (ClassInfoConfig::Grades.contains(normalized.classGrade)
+    if (classGrades().contains(normalized.classGrade)
         && levels.contains(normalized.classLevel))
     {
         normalized.readingBook = canonicalChoice(
             info.readingBook,
-            ClassInfoConfig::readingBooks(
+            classReadingBooks(
                 normalized.classGrade,
                 normalized.classLevel
                 )
             );
         normalized.essayBook = canonicalChoice(
             info.essayBook,
-            ClassInfoConfig::essayBooks(
+            classEssayBooks(
                 normalized.classGrade,
                 normalized.classLevel
                 )
@@ -154,27 +213,27 @@ ValidationResult ClassInfoValidator::validate(const ClassInfo& info)
     {
         result.merge(allowedValue(
             grade,
-            ClassInfoConfig::Grades,
+            classGrades(),
             QStringLiteral("classGrade")
             ));
 
-        const QStringList levels = ClassInfoConfig::levelsForGrade(grade);
+        const QStringList levels = classLevelsForGrade(grade);
         result.merge(allowedValue(
             level,
             levels,
             QStringLiteral("classLevel")
             ));
 
-        if (ClassInfoConfig::Grades.contains(grade) && levels.contains(level))
+        if (classGrades().contains(grade) && levels.contains(level))
         {
             result.merge(allowedValue(
                 info.readingBook.trimmed(),
-                ClassInfoConfig::readingBooks(grade, level),
+                classReadingBooks(grade, level),
                 QStringLiteral("readingBook")
                 ));
             result.merge(allowedValue(
                 info.essayBook.trimmed(),
-                ClassInfoConfig::essayBooks(grade, level),
+                classEssayBooks(grade, level),
                 QStringLiteral("essayBook")
                 ));
         }
