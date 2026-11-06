@@ -6,21 +6,19 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-05
-- Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 is In progress.
-  Slices 8.1.10–8.1.12 are accepted after focused Linux Bootstrap, Speaking
-  Evaluation, and Document Viewer CTest passed; 8.2.7's Schedule parity
-  capture and 8.2.8's four Roster output cases pass locally on Linux, and
-  8.2.9's matched-SQL C53 capture now runs in the same Linux/Windows/macOS
-  baseline matrix. Local C53 evidence passed 17 pages with zero changed
-  pixels; the local QtPdf 6.14 module with Qt Core 6.12 makes hosted results
-  necessary for platform acceptance. Windows/macOS evidence is scheduled for
-  the active batch push. 8.2.10 is next. The 8.7.13
-  Linux Legacy link closure passes a fresh `ClassMngr` target build. Its
-  all-target Linux Debug attempt at `52f1dd98` failed compiling stale
+- Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 is in progress.
+  Slices 8.1.10–8.1.12 are accepted after focused Linux CTest. Slices
+  8.2.7–8.2.10 have local focused Linux evidence and are implementation ready,
+  with Linux hosted toolchain confirmation and Windows x64/macOS universal
+  capture artifacts pending the active batch push. The Speaking Evaluation
+  Standard and Advanced adapter-path capture confirms equal text, page
+  geometry, and same-host raster output; it records that both paths share the
+  renderer. The 8.7.13 Linux Legacy link closure passes a fresh `ClassMngr`
+  target build. Its all-target Debug attempt at `52f1dd98` failed on stale
   calendar-test accessors; the local `calendarViewWidget()` repair awaits
-  requalification after the active batch push. Windows ARM64 Debug passed,
-  while macOS universal and Windows x64 Debug remain in progress.
-  Phase 8's all-adapter and generated-output parity gate remains open. See the [Phase 7.5 plan](08.5-Phase-7.5-Cross-Platform-Follow-Ups.md),
+  requalification after the active batch push. Windows ARM64 Debug passed;
+  macOS universal and Windows x64 Debug remain pending. Phase 8's all-adapter
+  and generated-output parity gate remains open. See the [Phase 7.5 plan](08.5-Phase-7.5-Cross-Platform-Follow-Ups.md),
   [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), and [current
   batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate

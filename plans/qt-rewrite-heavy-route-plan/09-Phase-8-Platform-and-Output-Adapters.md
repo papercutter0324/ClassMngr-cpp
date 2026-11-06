@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-05
-- Current note: Begin 8.2.10 Speaking Evaluation report-output baseline. The 8.2.7 Schedule, 8.2.8 Roster, and 8.2.9 matched-SQL Sub Prep captures now run in the Refactoring baseline workflow for Linux x64, Windows x64, and macOS universal; local Linux captures pass. C53's fresh Linux run passed 12 Sub Prep and 5 roster pages with zero changed pixels, but local QtPdf resolved to 6.14 while Qt Core reported 6.12, so hosted artifacts are the platform acceptance evidence. Workflow `42146144532` tested prior pushed head `52f1dd98`; Linux Debug failed at stale `calendarView()` test access, now repaired to `calendarViewWidget()` and awaiting a current-head clean all-target/Phase 5 rerun. Windows ARM64 Debug cross-build passed; macOS universal and Windows x64 Debug remain pending. The final Phase 8 gate review must address both v2 adapter behavior and output parity.
+- Current note: 8.2.7 Schedule, 8.2.8 Roster, 8.2.9 matched-SQL Sub Prep, and 8.2.10 Speaking Evaluation output captures are implemented and pass focused Linux verification. The 8.2.10 Standard and Advanced matched-input adapter-path comparison records identical text, 540 × 780 point pages, and exact same-host 150-DPI rasters; it does not claim independent renderer parity. Its manifest is retained only after a full successful write and flush. Windows x64/macOS universal captures and hosted Linux toolchain confirmation remain pending the active batch push; C53's local QtPdf resolved to 6.14 while Qt Core reported 6.12. Workflow `42146144532` tested prior pushed head `52f1dd98`; Linux Debug failed at stale `calendarView()` test access, now repaired to `calendarViewWidget()` and awaiting a current-head clean all-target/Phase 5 rerun. Windows ARM64 Debug cross-build passed; macOS universal and Windows x64 Debug remain pending. The final Phase 8 gate review must address both v2 adapter behavior and output parity.
 
 ### Slice batches
 
@@ -527,6 +527,33 @@ and macOS universal captures, plus exact-version hosted results, remain
 pending the active batch push. See [Sub Prep C53 output parity by platform]
 (../../docs/qt-rewrite/visual-baseline/next/phase-8/sub-prep-c53-parity/README.md)
 for artifact contents and reproduction.
+
+### 8.2.10 — Speaking Evaluation report-output baseline (implementation ready; platform CI pending)
+
+The Refactoring baseline workflow opts the existing Speaking Evaluation
+report-service test into a matched-data capture on Linux x64, Windows x64, and
+macOS universal. Standard and Advanced synthetic reports pass through the
+Legacy `SpeakingEvalBatchReportService::exportReports()` API and the Next
+`Output::runSpeakingEvaluationReports()` adapter. Each path must save one PDF
+with the expected extracted text and 540 × 780-point page geometry; the two
+same-host 150-DPI renders must be pixel-identical. The PDFs, PNGs, and JSON
+manifest are uploaded per platform. This demonstrates adapter-path behavior
+for matched inputs: both paths use `exportResolvedReports()`,
+`SpeakingEvalInternalPdfRenderer`, and `SpeakingEvalReportPainter`, so it does
+not claim independent renderer or layout parity. PDF byte identity and
+cross-host raster identity are not gates.
+
+The Linux Debug `ClassMngrSpeakingEvalBatchReportServiceTests` target built
+successfully. Independent verification passed the focused Standard/Advanced
+capture (3 passed, 0 failed, 0 skipped), confirmed equal extracted text and
+pixel-identical 1125 × 1625 rasters for both templates, and verified that an
+unset capture variable skips without writing a manifest and a nonempty output
+directory fails without replacing its contents. The manifest must be fully
+written and flushed before the test passes. This local host uses Qt Core 6.12
+with QtPdf 6.14; Windows x64, macOS universal, and hosted exact-toolchain
+captures remain pending the active batch push. See [Speaking Evaluation
+report output by adapter path](../../docs/qt-rewrite/visual-baseline/next/phase-8/speaking-evaluation-output-parity/README.md)
+for capture details and reproduction.
 
 ### 8.3.1 — PowerPoint automation adapter (accepted)
 

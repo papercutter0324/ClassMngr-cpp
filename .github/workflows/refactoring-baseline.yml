@@ -242,6 +242,7 @@ jobs:
         env:
           CLASSMNGR_C51_SCHEDULE_OUTPUT_DIR: ${{ github.workspace }}/artifacts/schedule-output/${{ matrix.report }}
           CLASSMNGR_ROSTER_OUTPUT_PARITY_DIR: ${{ github.workspace }}/artifacts/roster-output/${{ matrix.report }}
+          CLASSMNGR_SPEAKING_EVALUATION_OUTPUT_PARITY_DIR: ${{ github.workspace }}/artifacts/speaking-evaluation-output-parity/${{ matrix.report }}
         run: |
           arguments=(
             --configure-preset "${{ matrix.preset }}"
@@ -295,6 +296,7 @@ jobs:
             artifacts/schedule-output/${{ matrix.report }}/
             artifacts/roster-output/${{ matrix.report }}/
             artifacts/sub-prep-output/${{ matrix.report }}/
+            artifacts/speaking-evaluation-output-parity/${{ matrix.report }}/
             ${{ matrix.build_dir }}/Testing/refactoring-baseline.junit.xml
             ${{ matrix.build_dir }}/Testing/Temporary/LastTest.log
             ${{ matrix.build_dir }}/Testing/Temporary/LastTestsFailed.log

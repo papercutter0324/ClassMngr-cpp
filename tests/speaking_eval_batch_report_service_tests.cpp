@@ -17,6 +17,9 @@
 #include "fakes/fake_user_prompt_service.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
+#include "next/output/speaking_evaluation_report_output.h"
+#include "next/resources/resource_catalog.h"
+#include "next/resources/resource_loader.h"
 #include "ui/shared/constants/options.h"
 #include "ui/shared/state/option_state_keys.h"
 #include "windows_output_reference_capture.h"
@@ -38,12 +41,14 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPdfDocument>
+#include <QPageSize>
 #include <QPainter>
 #include <QPdfSelection>
 #include <QPointer>
 #include <QProcess>
 #include <QPlainTextEdit>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QSettings>
 #include <QPushButton>
@@ -554,6 +559,7 @@ private slots:
     void caseOnlyBatchFileNamesAreRejected();
     void internalPdfMatchesWidgetRendering_data();
     void internalPdfMatchesWidgetRendering();
+    void legacyAndNextOutputPathsMatchForStandardAndAdvanced();
     void singleReportCanBeSavedToAnExactFilePath();
     void overwriteExistingReportWhenAllowed();
     void previewDialogOffersActionsForTheSelectedReport();
@@ -2078,6 +2084,188 @@ void SpeakingEvalBatchReportServiceTests::
             qPrintable(captureError)
             );
     }
+}
+
+void SpeakingEvalBatchReportServiceTests::
+    legacyAndNextOutputPathsMatchForStandardAndAdvanced()
+{
+    const QByteArray outputValue = qgetenv(
+        "CLASSMNGR_SPEAKING_EVALUATION_OUTPUT_PARITY_DIR");
+    if (outputValue.isEmpty())
+        QSKIP("Set CLASSMNGR_SPEAKING_EVALUATION_OUTPUT_PARITY_DIR to capture output evidence.");
+
+    const QString outputRoot = QString::fromLocal8Bit(outputValue);
+    QDir root(outputRoot);
+    if (QFileInfo::exists(outputRoot))
+    {
+        QVERIFY2(root.entryList(QDir::AllEntries | QDir::NoDotAndDotDot).isEmpty(),
+            "Speaking Evaluation parity output directory must be new or empty.");
+    }
+    else
+    {
+        QVERIFY(QDir().mkpath(outputRoot));
+    }
+
+    const auto catalog = ClassMngr::Next::Resources::ResourceCatalog::load(
+        QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG),
+        QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_ROOT));
+    QVERIFY(catalog.has_value());
+    ClassMngr::Next::Resources::ResourceLoader loader(std::move(*catalog));
+
+    QJsonArray templates;
+    for (const SpeakingEvalReportTemplate reportTemplate : {
+             SpeakingEvalReportTemplate::Standard,
+             SpeakingEvalReportTemplate::Advanced})
+    {
+        const bool advanced = reportTemplate == SpeakingEvalReportTemplate::Advanced;
+        const QString templateName = advanced
+            ? QStringLiteral("advanced") : QStringLiteral("standard");
+        const QString templateDirectory = QDir(outputRoot).filePath(templateName);
+        QVERIFY(QDir().mkpath(templateDirectory));
+        const auto resolvedAssets =
+            ClassMngr::Next::Output::resolveSpeakingEvaluationReportAssets(
+                loader, reportTemplate);
+        QVERIFY2(resolvedAssets.has_value(),
+            resolvedAssets.has_value() ? "" : qPrintable(resolvedAssets.error()));
+
+        SpeakingEvalReportData report = goldenReportData(reportTemplate);
+        report.englishName = advanced
+            ? QStringLiteral("Parity Advanced Student")
+            : QStringLiteral("Parity Standard Student");
+        report.comments = advanced
+            ? QStringLiteral("Synthetic advanced output parity comment.")
+            : QStringLiteral("Synthetic standard output parity comment.");
+        const QList<SpeakingEvalBatchReportService::StudentReport> reports{
+            {report.englishName, report, 0}
+        };
+
+        const QString legacyDirectory =
+            QDir(templateDirectory).filePath(QStringLiteral("legacy"));
+        const QString nextDirectory =
+            QDir(templateDirectory).filePath(QStringLiteral("next"));
+        QVERIFY(QDir().mkpath(legacyDirectory));
+        QVERIFY(QDir().mkpath(nextDirectory));
+
+        SpeakingEvalBatchReportService::Request legacyRequest;
+        legacyRequest.reports = reports;
+        legacyRequest.renderer = SpeakingEvalBatchReportService::Renderer::Internal;
+        legacyRequest.savePdf = true;
+        legacyRequest.keepIndividualPdfFiles = true;
+        legacyRequest.outputDirectory = legacyDirectory;
+        const auto legacyResult =
+            SpeakingEvalBatchReportService::exportReports(legacyRequest);
+        QVERIFY2(legacyResult.status == DocumentOutputStatus::Completed,
+            qPrintable(legacyResult.message));
+        QCOMPARE(legacyResult.savedPdfPaths.size(), 1);
+
+        SpeakingEvalBatchReportService::Request nextRequest = legacyRequest;
+        nextRequest.outputDirectory = nextDirectory;
+        QJsonObject templateEvidence;
+        {
+            SpeakingEvalReportAssetSession assetSession(*resolvedAssets);
+            QVERIFY(assetSession.isValid());
+            const auto nextResult =
+                ClassMngr::Next::Output::runSpeakingEvaluationReports(nextRequest);
+            QVERIFY2(nextResult.output.status == DocumentOutputStatus::Completed,
+                qPrintable(nextResult.output.message));
+            QCOMPARE(nextResult.output.savedPdfPaths.size(), 1);
+
+            QPdfDocument legacyPdf;
+            QCOMPARE(legacyPdf.load(legacyResult.savedPdfPaths.constFirst()),
+                QPdfDocument::Error::None);
+            QCOMPARE(legacyPdf.status(), QPdfDocument::Status::Ready);
+            QPdfDocument nextPdf;
+            QCOMPARE(nextPdf.load(nextResult.output.savedPdfPaths.constFirst()),
+                QPdfDocument::Error::None);
+            QCOMPARE(nextPdf.status(), QPdfDocument::Status::Ready);
+            QCOMPARE(legacyPdf.pageCount(), 1);
+            QCOMPARE(nextPdf.pageCount(), 1);
+
+            const QSizeF expectedPagePoints(540.0, 780.0);
+            const QSizeF legacyPoints = legacyPdf.pagePointSize(0);
+            const QSizeF nextPoints = nextPdf.pagePointSize(0);
+            QVERIFY(qAbs(legacyPoints.width() - expectedPagePoints.width()) < 0.01);
+            QVERIFY(qAbs(legacyPoints.height() - expectedPagePoints.height()) < 0.01);
+            QVERIFY(qAbs(nextPoints.width() - expectedPagePoints.width()) < 0.01);
+            QVERIFY(qAbs(nextPoints.height() - expectedPagePoints.height()) < 0.01);
+
+            const QString legacyText = legacyPdf.getAllText(0).text();
+            const QString nextText = nextPdf.getAllText(0).text();
+            QCOMPARE(legacyText, nextText);
+            QStringList expectedText{
+                report.englishName, report.koreanName, report.classLabel,
+                report.nativeTeacher, report.koreanTeacher, report.date,
+                report.comments
+            };
+            for (const QString& expected : expectedText)
+            {
+                QVERIFY2(nextText.contains(expected),
+                    qPrintable(QStringLiteral("Missing expected PDF text: %1")
+                        .arg(expected)));
+            }
+
+            constexpr int rasterDpi = 150;
+            const QSize rasterSize(
+                qRound(expectedPagePoints.width() * rasterDpi / 72.0),
+                qRound(expectedPagePoints.height() * rasterDpi / 72.0));
+            const QImage legacyPage = legacyPdf.render(0, rasterSize)
+                .convertToFormat(QImage::Format_ARGB32);
+            const QImage nextPage = nextPdf.render(0, rasterSize)
+                .convertToFormat(QImage::Format_ARGB32);
+            QVERIFY(!legacyPage.isNull());
+            QVERIFY(!nextPage.isNull());
+            QCOMPARE(legacyPage.size(), rasterSize);
+            QCOMPARE(nextPage.size(), rasterSize);
+            QVERIFY2(legacyPage == nextPage,
+                "Legacy and Next adapter paths produced different same-host raster pixels.");
+            QVERIFY(legacyPage.save(QDir(templateDirectory)
+                .filePath(QStringLiteral("legacy-150dpi.png"))));
+            QVERIFY(nextPage.save(QDir(templateDirectory)
+                .filePath(QStringLiteral("next-150dpi.png"))));
+
+            templateEvidence = QJsonObject{
+                {QStringLiteral("template"), templateName},
+                {QStringLiteral("legacyPdf"), QStringLiteral("%1/legacy/%2")
+                    .arg(templateName, QFileInfo(legacyResult.savedPdfPaths.constFirst()).fileName())},
+                {QStringLiteral("nextPdf"), QStringLiteral("%1/next/%2")
+                    .arg(templateName, QFileInfo(nextResult.output.savedPdfPaths.constFirst()).fileName())},
+                {QStringLiteral("legacyRaster"), templateName + QStringLiteral("/legacy-150dpi.png")},
+                {QStringLiteral("nextRaster"), templateName + QStringLiteral("/next-150dpi.png")},
+                {QStringLiteral("pageCount"), legacyPdf.pageCount()},
+                {QStringLiteral("pagePointWidth"), legacyPoints.width()},
+                {QStringLiteral("pagePointHeight"), legacyPoints.height()},
+                {QStringLiteral("rasterDpi"), rasterDpi},
+                {QStringLiteral("rasterWidth"), rasterSize.width()},
+                {QStringLiteral("rasterHeight"), rasterSize.height()},
+                {QStringLiteral("expectedTextPresent"), true},
+                {QStringLiteral("legacyNextExtractedTextEqual"), true},
+                {QStringLiteral("sameHostRasterPixelIdentical"), true},
+                {QStringLiteral("changedPixelCount"), 0},
+                {QStringLiteral("extractedText"), nextText}
+            };
+        }
+        templates.append(templateEvidence);
+    }
+
+    const QJsonObject manifest{
+        {QStringLiteral("schema"), QStringLiteral("classmngr-speaking-evaluation-output-parity-v1")},
+        {QStringLiteral("claim"), QStringLiteral(
+            "Matched synthetic-data output evidence for Legacy and Next adapter paths; both use the shared internal PDF renderer and painter.")},
+        {QStringLiteral("syntheticTestContent"), true},
+        {QStringLiteral("operatingSystem"), QSysInfo::productType()},
+        {QStringLiteral("architecture"), QSysInfo::currentCpuArchitecture()},
+        {QStringLiteral("qtVersion"), QString::fromLatin1(qVersion())},
+        {QStringLiteral("templates"), templates}
+    };
+    QFile manifestFile(QDir(outputRoot).filePath(QStringLiteral("manifest.json")));
+    QVERIFY(manifestFile.open(QIODevice::WriteOnly | QIODevice::NewOnly));
+    const QByteArray manifestBytes = QJsonDocument(manifest).toJson(
+        QJsonDocument::Indented);
+    QCOMPARE(manifestFile.write(manifestBytes),
+        static_cast<qint64>(manifestBytes.size()));
+    QVERIFY(manifestFile.flush());
+    QCOMPARE(manifestFile.error(), QFileDevice::NoError);
+    manifestFile.close();
 }
 
 void SpeakingEvalBatchReportServiceTests::overwriteExistingReportWhenAllowed()

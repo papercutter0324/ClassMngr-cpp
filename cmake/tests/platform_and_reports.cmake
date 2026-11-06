@@ -359,13 +359,20 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         PRIVATE
             CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
             CLASSMNGR_POWERPOINT_PROCESS_FIXTURE="$<TARGET_FILE:ClassMngrPowerPointProcessFixture>"
+            CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+            CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
     )
 
-    add_dependencies(ClassMngrSpeakingEvalBatchReportServiceTests ClassMngrPowerPointProcessFixture)
+    add_dependencies(ClassMngrSpeakingEvalBatchReportServiceTests
+        ClassMngrPowerPointProcessFixture
+        ClassMngrNextResourcePackage
+    )
 
     target_link_libraries(ClassMngrSpeakingEvalBatchReportServiceTests
         PRIVATE
             ClassMngrSpeakingEvalReportEngine
+            ClassMngrNextSpeakingEvaluationOutput
+            ClassMngrNext::Resources
             ClassMngrSpeakingEvalPowerPointAdapter
             Qt6::Core
             Qt6::Gui
