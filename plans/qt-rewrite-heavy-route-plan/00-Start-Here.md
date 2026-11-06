@@ -8,7 +8,9 @@
 - Last updated: 2026-11-05
 - Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 is In progress.
   Slices 8.1.10–8.1.12 are accepted after focused Linux Bootstrap, Speaking
-  Evaluation, and Document Viewer CTest passed; 8.2.7 is active. The 8.7.13
+  Evaluation, and Document Viewer CTest passed; 8.2.7's Schedule parity
+  capture is implemented and passed locally on Linux, with Windows/macOS
+  evidence scheduled for the active batch push; 8.2.8 is active. The 8.7.13
   Linux Legacy link closure passes a fresh `ClassMngr` target build. Its
   all-target Linux Debug attempt at `52f1dd98` failed compiling stale
   calendar-test accessors; the local `calendarViewWidget()` repair awaits

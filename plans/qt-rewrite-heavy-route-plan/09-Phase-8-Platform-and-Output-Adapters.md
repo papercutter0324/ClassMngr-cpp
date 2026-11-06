@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-05
-- Current note: Begin 8.2.7 Schedule generated-output parity matrix. Slices 8.1.10–8.1.12 route Speaking Evaluation and Document Viewer file/shell actions through `FileDialogPort` and `ExternalUrlLaunchPort`; their focused Linux CTest suites pass. Workflow `42146144532` tested the prior pushed head `52f1dd98`: Linux Debug failed to compile Bootstrap tests because stale calendar tests called `calendarView()`; the local fix now uses `calendarViewWidget()` and will be requalified after the active batch push. Windows ARM64 Debug cross-build passed; macOS universal and Windows x64 Debug remain in progress. Package and resource-layout checks passed on Linux, Windows, and macOS. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
+- Current note: Begin 8.2.8 Roster generated-output parity matrix. The 8.2.7 Schedule capture now emits matched Legacy/Next PDF, text, page-geometry, and raster evidence on Linux x64, Windows x64, and macOS universal; its focused Linux run passes, and the Windows/macOS evidence awaits the active batch push. Workflow `42146144532` tested the prior pushed head `52f1dd98`: Linux Debug failed to compile Bootstrap tests because stale calendar tests called `calendarView()`; the local fix now uses `calendarViewWidget()` and will be requalified after the active batch push. Windows ARM64 Debug cross-build passed; macOS universal and Windows x64 Debug remain in progress. Package and resource-layout checks passed on Linux, Windows, and macOS. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
 
 ### Slice batches
 
@@ -459,6 +459,31 @@ claim was measured.
 
 The Save As chooser, output-folder chooser, and desktop folder-open paths
 remain unchanged as separate dialog/URL integration work for later discovery.
+
+### 8.2.7 — Schedule generated-output parity matrix (implementation ready; platform CI pending)
+
+The C51 Schedule output evidence capture is enabled in the Refactoring
+baseline CTest run on Linux x64, Windows x64, and macOS universal.
+Each runner captures the production Legacy and Next PDFs, expected text,
+landscape A4 geometry, 150-DPI first-page renders, and host/Qt metadata. The
+archived Phase 7 macOS raster remains a measured reference; it is not compared
+with a cross-platform pixel threshold because font fallback and QtPdf
+rasterization vary by host.
+
+The same-host Legacy/Next raster check allows at most 0.1% changed pixels and
+0.5 mean absolute RGB channel difference on the 0–255 scale. The focused Linux
+x86_64 GCC Debug build of `ClassMngrNextNormalScheduleImportIntegrationTests`
+passed, and focused CTest passed 1/1 (4.66 seconds) on Fedora Linux 44 with
+Qt 6.12.0. Both PDFs contained Alice and all four E6 course labels, had one
+842×595-point landscape page, and rendered to 1754×1240 pixels with zero
+changed pixels and zero mean channel difference. Against the frozen macOS
+image, Linux recorded 140,929 changed pixels and 9.4227 mean channel
+difference; these values are captured for diagnosis, not gated.
+
+The Windows x64 and macOS universal captures will run after publication of the
+active batch. Their artifacts are retained in the Refactoring baseline
+workflow. See [Schedule output parity matrix](../../docs/qt-rewrite/visual-baseline/next/phase-8/schedule-output-parity/README.md)
+for reproduction and tolerance details.
 
 ### 8.3.1 — PowerPoint automation adapter (accepted)
 

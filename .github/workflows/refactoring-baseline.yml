@@ -233,6 +233,8 @@ jobs:
         if: matrix.run_baseline
         id: record
         shell: bash
+        env:
+          CLASSMNGR_C51_SCHEDULE_OUTPUT_DIR: ${{ github.workspace }}/artifacts/schedule-output/${{ matrix.report }}
         run: |
           arguments=(
             --configure-preset "${{ matrix.preset }}"
@@ -275,6 +277,7 @@ jobs:
           name: refactoring-baseline-${{ matrix.report }}
           path: |
             artifacts/baseline/${{ matrix.report }}.json
+            artifacts/schedule-output/${{ matrix.report }}/
             ${{ matrix.build_dir }}/Testing/refactoring-baseline.junit.xml
             ${{ matrix.build_dir }}/Testing/Temporary/LastTest.log
             ${{ matrix.build_dir }}/Testing/Temporary/LastTestsFailed.log
