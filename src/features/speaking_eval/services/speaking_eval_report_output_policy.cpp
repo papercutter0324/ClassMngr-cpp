@@ -74,6 +74,22 @@ QString SpeakingEvalReportOutputPolicy::defaultDirectory(
     const QString& documentsDirectory
     )
 {
+    const QString resolvedDocumentsDirectory = documentsDirectory.trimmed().isEmpty()
+        ? QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
+        : documentsDirectory;
+    return defaultDirectoryFromDocumentsDirectory(
+        classInfo,
+        evaluationName,
+        resolvedDocumentsDirectory
+        );
+}
+
+QString SpeakingEvalReportOutputPolicy::defaultDirectoryFromDocumentsDirectory(
+    const ClassInfo& classInfo,
+    const QString& evaluationName,
+    const QString& documentsDirectory
+    )
+{
     QString className = QStringList{
         classInfo.classGrade.trimmed(),
         classInfo.classLevel.trimmed()
@@ -105,11 +121,8 @@ QString SpeakingEvalReportOutputPolicy::defaultDirectory(
         className += QStringLiteral(" (%1)").arg(schedule);
     }
 
-    const QString root = documentsDirectory.trimmed().isEmpty()
-        ? QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)
-        : documentsDirectory;
     return QDir::cleanPath(
-        QDir(root).filePath(
+        QDir(documentsDirectory).filePath(
             QStringLiteral("DYB/SpeakingEvals/%1/%2")
                 .arg(
                     safeFolderName(className, QObject::tr("Speaking Evaluation")),

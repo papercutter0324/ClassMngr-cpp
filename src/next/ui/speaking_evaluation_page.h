@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/evaluation_default_selection.h"
+#include "next/application/default_output_directories_port.h"
 #include "next/application/classes_list_read_port.h"
 #include "next/application/classes_list_read_query.h"
 #include "next/application/ai_comment_provider_preferences.h"
@@ -67,6 +68,8 @@ struct SpeakingEvaluationPageActions final
         const QString&)> classGradeReadPortFactory;
     std::function<std::unique_ptr<Application::SpeakingEvaluationReportContextReadPort>(
         const QString&)> reportContextReadPortFactory;
+    std::shared_ptr<Application::DefaultOutputDirectoriesPort>
+        defaultOutputDirectoriesPort;
     SpeakingEvaluationReportActions reports;
     std::function<Application::AiCommentProvider()> preferredAiCommentProvider;
     std::function<Application::AiCommentVoice()> preferredAiCommentVoice;

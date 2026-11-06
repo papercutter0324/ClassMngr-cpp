@@ -927,27 +927,32 @@ QString backupName()
 
 QString defaultTargetRoot()
 {
-    QString documentsPath =
-        QStandardPaths::writableLocation(
-            QStandardPaths::DocumentsLocation
-            );
-
-    if (documentsPath.trimmed().isEmpty())
+    const QString documentsDirectory = QStandardPaths::writableLocation(
+        QStandardPaths::DocumentsLocation
+        );
+    QString homeDirectory;
+    if (documentsDirectory.trimmed().isEmpty())
     {
-        QString homePath =
-            QStandardPaths::writableLocation(
-                QStandardPaths::HomeLocation
-                );
-
-        if (homePath.trimmed().isEmpty())
+        homeDirectory = QStandardPaths::writableLocation(
+            QStandardPaths::HomeLocation
+            );
+        if (homeDirectory.trimmed().isEmpty())
         {
-            homePath = QDir::homePath();
+            homeDirectory = QDir::homePath();
         }
-
-        documentsPath = QDir(homePath).filePath(QStringLiteral("Documents"));
     }
+    return defaultTargetRoot(documentsDirectory, homeDirectory);
+}
 
-    return QDir(documentsPath).filePath(
+QString defaultTargetRoot(
+    const QString& documentsDirectory,
+    const QString& homeDirectory
+    )
+{
+    const QString root = documentsDirectory.trimmed().isEmpty()
+        ? QDir(homeDirectory).filePath(QStringLiteral("Documents"))
+        : documentsDirectory;
+    return QDir(root).filePath(
         QStringLiteral("DYB/Sub_Prep")
         );
 }

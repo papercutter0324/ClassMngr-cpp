@@ -90,6 +90,20 @@ struct OutputDirectoryDialogProbe final
     int rosterOutputPortCreateCount = 0;
 };
 
+class FixedDefaultOutputDirectoriesPort final
+    : public Application::DefaultOutputDirectoriesPort
+{
+public:
+    Application::DefaultOutputDirectories directories;
+    mutable int readCount = 0;
+
+    [[nodiscard]] Application::DefaultOutputDirectories read() const override
+    {
+        ++readCount;
+        return directories;
+    }
+};
+
 class SubPrepPageFileDialogPort final : public Application::FileDialogPort
 {
 public:
@@ -161,6 +175,9 @@ struct PageFixture final
     Application::SubPrepPreferences lastSaved;
     std::shared_ptr<OutputDirectoryDialogProbe> outputDirectoryDialog =
         std::make_shared<OutputDirectoryDialogProbe>();
+    std::shared_ptr<FixedDefaultOutputDirectoriesPort>
+        defaultOutputDirectoriesPort =
+            std::make_shared<FixedDefaultOutputDirectoriesPort>();
     int preferencesReadCount = 0;
     int preferencesSaveCount = 0;
     bool preferencesReadFails = false;
@@ -185,6 +202,8 @@ struct PageFixture final
             .factory = [this](const Ui::PageContext& context)
                 -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
                 Ui::SubPrepPageActions actions;
+                actions.defaultOutputDirectoriesPort =
+                    defaultOutputDirectoriesPort;
                 actions.workspaceIdentity = [] {
                     return QStringLiteral("workspace-a");
                 };
@@ -267,8 +286,27 @@ class SubPrepPageTests final : public QObject
 
 private Q_SLOTS:
     void preferencesReadFailureRetainsDraftAndBlocksWritesUntilReload();
+    void defaultTargetRootUsesDocumentsThenHomeInputs();
     void outputDirectoryChooserUsesPortAndPreservesSelectionOnCancel();
 };
+
+void SubPrepPageTests::defaultTargetRootUsesDocumentsThenHomeInputs()
+{
+    QCOMPARE(
+        SubPrepPackageService::defaultTargetRoot(
+            QStringLiteral("/injected/documents"),
+            QStringLiteral("/injected/home")
+            ),
+        QStringLiteral("/injected/documents/DYB/Sub_Prep")
+        );
+    QCOMPARE(
+        SubPrepPackageService::defaultTargetRoot(
+            QString{},
+            QStringLiteral("/injected/home")
+            ),
+        QStringLiteral("/injected/home/Documents/DYB/Sub_Prep")
+        );
+}
 
 void SubPrepPageTests::preferencesReadFailureRetainsDraftAndBlocksWritesUntilReload()
 {
@@ -350,6 +388,10 @@ void SubPrepPageTests::
 outputDirectoryChooserUsesPortAndPreservesSelectionOnCancel()
 {
     PageFixture fixture;
+    fixture.defaultOutputDirectoriesPort->directories = {
+        .documents = "/injected/sub-prep-documents",
+        .home = "/injected/sub-prep-home"
+    };
     QVERIFY(fixture.initialize());
     Ui::SubPrepPage* const page = fixture.page();
     QVERIFY(page);
@@ -416,6 +458,7 @@ outputDirectoryChooserUsesPortAndPreservesSelectionOnCancel()
     QVERIFY(selectionWasApplied);
     QVERIFY(cancelPreservedSelection);
     QVERIFY(outputDialogStayedOpen);
+    QCOMPARE(fixture.defaultOutputDirectoriesPort->readCount, 1);
     QCOMPARE(fixture.outputDirectoryDialog->requests.size(), std::size_t(2));
     const auto& firstRequest = fixture.outputDirectoryDialog->requests.front();
     QCOMPARE(firstRequest.purpose, Application::FileDialogPurpose::SubPrepPackage);
@@ -424,7 +467,8 @@ outputDirectoryChooserUsesPortAndPreservesSelectionOnCancel()
              QStringLiteral("Select Folder"));
     QCOMPARE(QString::fromUtf8(firstRequest.initialDirectory.value().data(),
                                static_cast<qsizetype>(firstRequest.initialDirectory.value().size())),
-             SubPrepPackageService::defaultTargetRoot());
+             QStringLiteral(
+                 "/injected/sub-prep-documents/DYB/Sub_Prep"));
     const auto& secondRequest = fixture.outputDirectoryDialog->requests.back();
     QCOMPARE(QString::fromUtf8(secondRequest.initialDirectory.value().data(),
                                static_cast<qsizetype>(secondRequest.initialDirectory.value().size())),

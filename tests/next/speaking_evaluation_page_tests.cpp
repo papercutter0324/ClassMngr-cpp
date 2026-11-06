@@ -80,6 +80,20 @@ public:
     }
 };
 
+class FixedDefaultOutputDirectoriesPort final
+    : public Application::DefaultOutputDirectoriesPort
+{
+public:
+    Application::DefaultOutputDirectories directories;
+    mutable int readCount = 0;
+
+    [[nodiscard]] Application::DefaultOutputDirectories read() const override
+    {
+        ++readCount;
+        return directories;
+    }
+};
+
 class CallbackPdfPrintOperation final : public Platform::PdfPrintOperation
 {
 public:
@@ -382,6 +396,9 @@ class PageHarness final
 public:
     std::shared_ptr<Test::MemorySplitterStatePort> splitterStatePort =
         std::make_shared<Test::MemorySplitterStatePort>();
+    std::shared_ptr<FixedDefaultOutputDirectoriesPort>
+        defaultOutputDirectoriesPort =
+            std::make_shared<FixedDefaultOutputDirectoriesPort>();
 
     PageHarness()
     {
@@ -412,6 +429,8 @@ public:
                 Ui::SpeakingEvaluationPageActions actions;
                 actions.saveMode = saveMode;
                 actions.splitterStatePort = splitterStatePort;
+                actions.defaultOutputDirectoriesPort =
+                    defaultOutputDirectoriesPort;
                 actions.workspaceIdentity = [&state] { return state.identity; };
                 actions.activeWorkspacePath = [&state]() -> std::optional<QString> {
                     return state.path;
@@ -2226,6 +2245,10 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
     QStringList stagingDirectories;
     int overwritePromptCount = 0;
     PageHarness harness;
+    harness.defaultOutputDirectoriesPort->directories = {
+        .documents = "/injected/speaking-documents",
+        .home = "/injected/speaking-home"
+    };
     auto& reportActions = harness.reportActions();
     reportActions.engineOverrides.internalRenderer = [&renderedNames](
         const SpeakingEvalReportData& report, const QString& path,
@@ -2319,11 +2342,13 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
 
     bool currentBatchSeen = false;
     DocumentOutputResult currentResult;
+    QString injectedDefaultDirectory;
     QTimer::singleShot(0, [&] {
         auto* const dialog = dynamic_cast<Ui::SpeakingEvaluationReportBatchDialog*>(
             qApp->activeModalWidget());
         if (!dialog) return;
         currentBatchSeen = true;
+        injectedDefaultDirectory = dialog->outputDirectoryEdit()->text();
         dialog->scopeSelector()->setCurrentIndex(0);
         auto* const chooseDirectory = dialog->findChild<QPushButton*>(
             QStringLiteral("nextReportChooseDirectory"));
@@ -2341,6 +2366,13 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
     });
     page->saveReportsButton()->click();
     QVERIFY(currentBatchSeen);
+    QCOMPARE(harness.defaultOutputDirectoriesPort->readCount, 1);
+    QCOMPARE(
+        injectedDefaultDirectory,
+        QStringLiteral(
+            "/injected/speaking-documents/DYB/SpeakingEvals/E5 Athena (M - 4pm)/Winter"
+            )
+        );
     QCOMPARE(currentResult.status, DocumentOutputStatus::Completed);
     QCOMPARE(currentResult.savedPdfPaths.size(), 1);
     QVERIFY(currentResult.savedArchivePath.isEmpty());

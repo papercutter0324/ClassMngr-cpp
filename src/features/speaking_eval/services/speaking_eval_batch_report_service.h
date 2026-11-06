@@ -69,6 +69,14 @@ struct Request
     const QString& documentsDirectory = {}
     );
 
+// Explicit-input variant for Next callers. The supplied Documents directory
+// is used directly and no platform location query is performed.
+[[nodiscard]] QString defaultOutputDirectoryFromDocumentsDirectory(
+    const ClassInfo& classInfo,
+    const QString& evaluationName,
+    const QString& documentsDirectory
+    );
+
 [[nodiscard]] QString batchArchivePath(
     const QString& outputDirectory
     );

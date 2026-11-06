@@ -56,6 +56,7 @@
 #include "next/platform/qt_clipboard_write_adapter.h"
 #include "next/platform/qt_font_family_availability_adapter.h"
 #include "next/platform/qt_external_url_launch_adapter.h"
+#include "next/platform/qt_default_output_directories_adapter.h"
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "next/platform/qt_schedule_output_adapter.h"
 #include "next/platform/pdf_print_operation.h"
@@ -863,6 +864,7 @@ struct ApplicationBootstrap::CoreServices final
 Ui::SubPrepPageActions ApplicationBootstrap::subPrepPageActions()
 {
     Ui::SubPrepPageActions actions;
+    actions.defaultOutputDirectoriesPort = defaultOutputDirectoriesPort();
     const auto gateway = [this] {
         return dynamic_cast<Platform::WorkspaceStoreGateway*>(
             m_workspaceGateway.get());
@@ -1088,6 +1090,16 @@ Ui::SubPrepPageActions ApplicationBootstrap::subPrepPageActions()
         return externalUrlLaunchPort->openUrl(url);
     };
     return actions;
+}
+
+std::shared_ptr<Application::DefaultOutputDirectoriesPort>
+ApplicationBootstrap::defaultOutputDirectoriesPort()
+{
+    if (m_startupWorkspaceSeams.defaultOutputDirectoriesPortFactory)
+    {
+        return m_startupWorkspaceSeams.defaultOutputDirectoriesPortFactory();
+    }
+    return std::make_shared<Platform::QtDefaultOutputDirectoriesAdapter>();
 }
 
 int ApplicationBootstrap::run(int argc, char* argv[])
@@ -1979,6 +1991,8 @@ Application::StartupResult ApplicationBootstrap::start()
                 m_shell->pageHost().registerPage(
                     speakingEvaluationPageDescriptor([this] {
                         Ui::SpeakingEvaluationPageActions actions;
+                        actions.defaultOutputDirectoriesPort =
+                            defaultOutputDirectoriesPort();
                         actions.saveMode =
                             Platform::SettingsManagerSaveModePreferencesPort().read();
                         actions.splitterStatePort = std::make_shared<

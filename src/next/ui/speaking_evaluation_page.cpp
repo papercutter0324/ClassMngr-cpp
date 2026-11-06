@@ -1601,8 +1601,16 @@ void SpeakingEvaluationPage::openReports(const int mode)
         }
         else
         {
+            const Application::DefaultOutputDirectories defaultDirectories =
+                m_actions.defaultOutputDirectoriesPort
+                ? m_actions.defaultOutputDirectoriesPort->read()
+                : Application::DefaultOutputDirectories{};
             SpeakingEvaluationReportBatchDialog dialog(reports, current,
-                SpeakingEvalBatchReportService::defaultOutputDirectory(classInfo, m_evaluationName),
+                SpeakingEvalBatchReportService::defaultOutputDirectoryFromDocumentsDirectory(
+                    classInfo,
+                    m_evaluationName,
+                    errorText(defaultDirectories.documents)
+                    ),
                 mode == 1 ? SpeakingEvaluationReportBatchDialog::Mode::SaveAs : SpeakingEvaluationReportBatchDialog::Mode::Print,
                 std::move(actions), this);
             dialog.exec();

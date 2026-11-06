@@ -646,6 +646,32 @@ struct SubPrepOutputFileDialogProbe final
     std::optional<Application::FileDialogPath> selection;
 };
 
+struct DefaultOutputDirectoriesProbe final
+{
+    Application::DefaultOutputDirectories directories;
+    int readCount = 0;
+};
+
+class RecordingDefaultOutputDirectoriesPort final
+    : public Application::DefaultOutputDirectoriesPort
+{
+public:
+    explicit RecordingDefaultOutputDirectoriesPort(
+        std::shared_ptr<DefaultOutputDirectoriesProbe> probe)
+        : m_probe(std::move(probe))
+    {
+    }
+
+    [[nodiscard]] Application::DefaultOutputDirectories read() const override
+    {
+        ++m_probe->readCount;
+        return m_probe->directories;
+    }
+
+private:
+    std::shared_ptr<DefaultOutputDirectoriesProbe> m_probe;
+};
+
 class RecordingSubPrepOutputFileDialogPort final
     : public Application::FileDialogPort
 {
@@ -8509,6 +8535,12 @@ subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle()
         std::make_shared<SubPrepOutputFileDialogProbe>();
     subPrepOutputDialogProbe->selection = Application::FileDialogPath(
         chooserSelectedRoot.toUtf8().toStdString());
+    auto defaultOutputDirectoriesProbe =
+        std::make_shared<DefaultOutputDirectoriesProbe>();
+    defaultOutputDirectoriesProbe->directories = {
+        .documents = "/injected/bootstrap-documents",
+        .home = "/injected/bootstrap-home"
+    };
 
     Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
     seams.commandLineArguments = {QStringLiteral("test-app"), profilePath};
@@ -8521,6 +8553,11 @@ subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle()
         return std::make_unique<RecordingSubPrepOutputFileDialogPort>(
             subPrepOutputDialogProbe);
     };
+    seams.defaultOutputDirectoriesPortFactory =
+        [defaultOutputDirectoriesProbe] {
+            return std::make_shared<RecordingDefaultOutputDirectoriesPort>(
+                defaultOutputDirectoriesProbe);
+        };
     Bootstrap::ApplicationBootstrap bootstrap(
         application, {}, silentStartupDiagnosticsSinkFactory(),
         resolverForRoot(resources.resourceRoot()), std::nullopt,
@@ -8686,6 +8723,7 @@ subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle()
     QVERIFY(!cancelAutomationFailed);
     QVERIFY(chooserSelectionApplied);
     QVERIFY(chooserCancelPreservedSelection);
+    QCOMPARE(defaultOutputDirectoriesProbe->readCount, 1);
     QCOMPARE(subPrepOutputDialogProbe->requests.size(), std::size_t(2));
     const auto& chooserRequest = subPrepOutputDialogProbe->requests.front();
     QCOMPARE(chooserRequest.purpose,
@@ -8698,7 +8736,8 @@ subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle()
                  chooserRequest.initialDirectory.value().data(),
                  static_cast<qsizetype>(
                      chooserRequest.initialDirectory.value().size())),
-             SubPrepPackageService::defaultTargetRoot());
+             QStringLiteral(
+                 "/injected/bootstrap-documents/DYB/Sub_Prep"));
     QCOMPARE(QString::fromUtf8(
                  subPrepOutputDialogProbe->requests.back()
                      .initialDirectory.value().data(),

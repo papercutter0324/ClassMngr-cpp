@@ -2,6 +2,7 @@
 
 #include "next/application/recent_workspace_history.h"
 #include "next/application/file_dialog_port.h"
+#include "next/application/default_output_directories_port.h"
 #include "next/application/shutdown_coordinator.h"
 #include "next/application/startup_coordinator.h"
 #include "next/application/startup_workspace_policy.h"
@@ -98,6 +99,10 @@ public:
         // file-dialog port in focused route tests.
         std::function<std::unique_ptr<Application::FileDialogPort>()>
             speakingEvaluationReportsFileDialogPortFactory;
+        // Lets focused route tests seed the default Documents and Home paths.
+        std::function<std::shared_ptr<
+            Application::DefaultOutputDirectoriesPort>()>
+            defaultOutputDirectoriesPortFactory;
         // Keeps Document Viewer Save Copy on the file-dialog port in focused
         // route tests.
         std::function<std::unique_ptr<Application::FileDialogPort>()>
@@ -191,6 +196,9 @@ private:
     void ensureWorkspaceComposition();
     [[nodiscard]] Ui::InitialSetupPageState initialSetupPageState() const;
     [[nodiscard]] Ui::SubPrepPageActions subPrepPageActions();
+    [[nodiscard]] std::shared_ptr<
+        Application::DefaultOutputDirectoriesPort>
+    defaultOutputDirectoriesPort();
     void beginInitialSetupProfile();
     void createNewTeacherProfile();
     void openExistingTeacherProfile();

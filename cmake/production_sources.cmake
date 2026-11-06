@@ -791,6 +791,7 @@ set(CLASSMNGR_NEXT_MAIN_SOURCE "src/next/main.cpp")
 set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/bootstrap/application_bootstrap.cpp"
     "src/next/platform/qt_font_family_availability_adapter.cpp"
+    "src/next/platform/qt_default_output_directories_adapter.cpp"
     "src/next/platform/qt_clipboard_write_adapter.cpp"
     "src/next/platform/qt_external_url_launch_adapter.cpp"
     "src/next/bootstrap/application_bootstrap.h"

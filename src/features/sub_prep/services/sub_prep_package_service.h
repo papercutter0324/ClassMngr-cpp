@@ -81,6 +81,14 @@ struct Result
 
 [[nodiscard]] QString defaultTargetRoot();
 
+// Pure path policy for callers that receive user locations through an
+// application port. Documents wins when supplied; otherwise Home/Documents
+// is used.
+[[nodiscard]] QString defaultTargetRoot(
+    const QString& documentsDirectory,
+    const QString& homeDirectory
+    );
+
 [[nodiscard]] QString safePathComponent(
     const QString& value,
     const QString& fallback = QStringLiteral("Sub Prep")

@@ -12,6 +12,13 @@ public:
         const QString& evaluationName,
         const QString& documentsDirectory = {}
         );
+    // Pure output path policy for callers that receive Documents through an
+    // application port. Unlike defaultDirectory(), this never queries the OS.
+    [[nodiscard]] static QString defaultDirectoryFromDocumentsDirectory(
+        const ClassInfo& classInfo,
+        const QString& evaluationName,
+        const QString& documentsDirectory
+        );
     [[nodiscard]] static QString batchArchivePath(
         const QString& outputDirectory
         );

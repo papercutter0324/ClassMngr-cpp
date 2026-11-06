@@ -13,6 +13,7 @@
 #include "next/application/sub_prep_weekday.h"
 #include "next/application/current_campus_preferences.h"
 #include "next/application/file_dialog_port.h"
+#include "next/application/default_output_directories_port.h"
 #include "next/application/personal_display_name_preferences.h"
 #include "next/application/sub_prep_campus_directory_query_port.h"
 #include "next/ui/page.h"
@@ -66,6 +67,8 @@ struct SubPrepPageActions final
         Application::FileDialogPath>>(
             const Application::SelectDirectoryDialogRequest&, QWidget*)>
         selectOutputDirectory;
+    std::shared_ptr<Application::DefaultOutputDirectoriesPort>
+        defaultOutputDirectoriesPort;
     std::function<Application::SubPrepCalendarEventIntervalsQueryResult(
         const Application::SubPrepCalendarEventIntervalsRequest&)>
         readCalendarIntervals;

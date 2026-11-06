@@ -1094,7 +1094,17 @@ void SubPrepPage::generateSubPrep()
     layout->addWidget(printPaper);
     layout->addWidget(openFolder);
 
-    auto* folderEdit = new QLineEdit(SubPrepPackageService::defaultTargetRoot(), &dialog);
+    const Application::DefaultOutputDirectories defaultDirectories =
+        m_actions.defaultOutputDirectoriesPort
+        ? m_actions.defaultOutputDirectoriesPort->read()
+        : Application::DefaultOutputDirectories{};
+    auto* folderEdit = new QLineEdit(
+        SubPrepPackageService::defaultTargetRoot(
+            fromUtf8(defaultDirectories.documents),
+            fromUtf8(defaultDirectories.home)
+            ),
+        &dialog
+        );
     folderEdit->setObjectName(QStringLiteral("subPrepOutputFolder"));
     auto* nameEdit = new QLineEdit(&dialog);
     nameEdit->setObjectName(QStringLiteral("subPrepOutputUserName"));

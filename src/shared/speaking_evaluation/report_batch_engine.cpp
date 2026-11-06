@@ -97,6 +97,19 @@ QString defaultOutputDirectory(
         );
 }
 
+QString defaultOutputDirectoryFromDocumentsDirectory(
+    const ClassInfo& classInfo,
+    const QString& evaluationName,
+    const QString& documentsDirectory
+    )
+{
+    return SpeakingEvalReportOutputPolicy::defaultDirectoryFromDocumentsDirectory(
+        classInfo,
+        evaluationName,
+        documentsDirectory
+        );
+}
+
 QString batchArchivePath(
     const QString& outputDirectory
     )
