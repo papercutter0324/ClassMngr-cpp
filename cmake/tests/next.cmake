@@ -8729,7 +8729,30 @@ add_executable(ClassMngrNextRosterOutputTests
 target_compile_features(ClassMngrNextRosterOutputTests PRIVATE cxx_std_23)
 target_include_directories(ClassMngrNextRosterOutputTests PRIVATE "${PROJECT_SOURCE_DIR}/src" "${PROJECT_SOURCE_DIR}/tests")
 target_compile_definitions(ClassMngrNextRosterOutputTests PRIVATE CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}")
-target_link_libraries(ClassMngrNextRosterOutputTests PRIVATE ClassMngrRuntime ClassMngrNextRosterOutput ClassMngrNextWorkspaceDomain Qt6::Sql Qt6::Pdf Qt6::Test Qt6::Widgets)
+# The Legacy output oracle needs its full runtime and the class-info validation
+# archives rescanned together on GNU linkers.
+target_link_libraries(ClassMngrNextRosterOutputTests
+    PRIVATE
+        ClassMngrLegacyRuntimeClosure
+        ClassMngrNextRosterOutput
+        ClassMngrNextWorkspaceDomain
+        Qt6::Sql
+        Qt6::Pdf
+        Qt6::Test
+        Qt6::Widgets
+)
+if(_classmngr_legacy_runtime_rescan_supported)
+    target_link_libraries(ClassMngrNextRosterOutputTests
+        PRIVATE
+            "$<LINK_GROUP:RESCAN,ClassMngrClassTransferSupport,ClassMngrDomainArchive>"
+    )
+else()
+    target_link_libraries(ClassMngrNextRosterOutputTests
+        PRIVATE
+            ClassMngrClassTransferSupport
+            ClassMngrDomainArchive
+    )
+endif()
 set_target_properties(ClassMngrNextRosterOutputTests PROPERTIES AUTOMOC ON AUTOUIC OFF AUTORCC OFF)
 set_property(TARGET ClassMngrNextRosterOutputTests PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE)
 add_dependencies(ClassMngrNextRosterOutputTests ClassMngrNextResourcePackage)

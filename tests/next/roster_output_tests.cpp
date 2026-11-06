@@ -38,6 +38,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStyle>
+#include <QSysInfo>
 #include <QTableView>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -385,19 +386,128 @@ void RosterOutputTests::templateParity()
     request.orientation = landscape ? QPageLayout::Landscape : QPageLayout::Portrait;
     request.extraColumns = {QStringLiteral("FIXTURE EXTRA B"), QStringLiteral("FIXTURE EXTRA A")};
     const auto nextPath = dir.filePath(QStringLiteral("next.pdf")), legacyPath = dir.filePath(QStringLiteral("legacy.pdf"));
-    QCOMPARE(Platform::saveRosterOutputPdfAtPath(path, request, nextPath, actions().fonts).status, DocumentOutputStatus::Sent);
+    const R::Fonts fonts = actions().fonts;
+    QCOMPARE(Platform::saveRosterOutputPdfAtPath(path, request, nextPath, fonts).status, DocumentOutputStatus::Sent);
     QCOMPARE(RosterTemplatePrintService::saveRostersPdf(legacy, legacyPath, request.templateId, request.extraColumns, request.orientation).status, DocumentOutputStatus::Sent);
     QPdfDocument next, old; QCOMPARE(next.load(nextPath), QPdfDocument::Error::None); QCOMPARE(old.load(legacyPath), QPdfDocument::Error::None);
     QCOMPARE(next.pageCount(), old.pageCount());
+    QString templateSlug;
+    switch (templateId)
+    {
+    case 0: templateSlug = QStringLiteral("by-day"); break;
+    case 1: templateSlug = QStringLiteral("daily"); break;
+    default: templateSlug = QStringLiteral("per-class"); break;
+    }
+    const QString caseSlug = templateSlug + QLatin1Char('_')
+        + (landscape ? QStringLiteral("landscape") : QStringLiteral("portrait"));
+    const QString evidenceRoot = qEnvironmentVariable(
+        "CLASSMNGR_ROSTER_OUTPUT_PARITY_DIR").trimmed();
+    QString evidenceDirectory;
+    if (!evidenceRoot.isEmpty())
+    {
+        evidenceDirectory = QDir(evidenceRoot).filePath(caseSlug);
+        QVERIFY2(QDir().mkpath(evidenceDirectory), qPrintable(evidenceDirectory));
+    }
+    QJsonArray pageEvidence;
+    QStringList nextDocumentText;
     for (int page = 0; page < next.pageCount(); ++page)
     {
         QCOMPARE(next.pagePointSize(page), old.pagePointSize(page));
         const auto size = next.pagePointSize(page); QCOMPARE(size.width() > size.height(), landscape);
-        QCOMPARE(next.getAllText(page).text(), old.getAllText(page).text());
-        QCOMPARE(next.render(page, QSize(1000, 1000)), old.render(page, QSize(1000, 1000)));
+        const QString nextText = next.getAllText(page).text();
+        const QString legacyText = old.getAllText(page).text();
+        QCOMPARE(nextText, legacyText);
+        QVERIFY2(nextText.contains(QStringLiteral("FIXTURE")),
+            "Roster PDF page is missing synthetic fixture content.");
+        nextDocumentText.append(nextText);
+        const QImage nextRaster = next.render(page, QSize(1000, 1000));
+        const QImage legacyRaster = old.render(page, QSize(1000, 1000));
+        QVERIFY(!nextRaster.isNull());
+        QVERIFY(!legacyRaster.isNull());
+        QCOMPARE(nextRaster.convertToFormat(QImage::Format_RGB32),
+            legacyRaster.convertToFormat(QImage::Format_RGB32));
+        if (!evidenceDirectory.isEmpty())
+        {
+            const QString pageSuffix = QStringLiteral("page-%1.png").arg(page + 1);
+            const QString nextRasterPath = QDir(evidenceDirectory).filePath(
+                QStringLiteral("next-") + pageSuffix);
+            const QString legacyRasterPath = QDir(evidenceDirectory).filePath(
+                QStringLiteral("legacy-") + pageSuffix);
+            QVERIFY(nextRaster.save(nextRasterPath, "PNG"));
+            QVERIFY(legacyRaster.save(legacyRasterPath, "PNG"));
+            pageEvidence.append(QJsonObject{
+                {QStringLiteral("page"), page + 1},
+                {QStringLiteral("widthPoints"), size.width()},
+                {QStringLiteral("heightPoints"), size.height()},
+                {QStringLiteral("renderWidth"), nextRaster.width()},
+                {QStringLiteral("renderHeight"), nextRaster.height()},
+                {QStringLiteral("textEqual"), true},
+                {QStringLiteral("rasterEqual"), true},
+                {QStringLiteral("legacyText"), legacyText},
+                {QStringLiteral("nextText"), nextText},
+                {QStringLiteral("legacyImage"), QFileInfo(legacyRasterPath).fileName()},
+                {QStringLiteral("legacyImageSha256"),
+                    QString::fromLatin1(fileSha256(legacyRasterPath))},
+                {QStringLiteral("nextImage"), QFileInfo(nextRasterPath).fileName()},
+                {QStringLiteral("nextImageSha256"),
+                    QString::fromLatin1(fileSha256(nextRasterPath))}
+            });
+        }
     }
     if (templateId == 2) { const auto text = pdfText(nextPath); QVERIFY(text.contains(QStringLiteral("FIXTURE B"))); QVERIFY(!text.contains(QStringLiteral("FIXTURE C"))); QVERIFY(text.contains(QStringLiteral("FIXTURE_WIFI"))); QVERIFY(text.contains(QStringLiteral("FIXTURE_ZOOM"))); }
     if (templateId == 1) QVERIFY(!pdfText(nextPath).contains(QStringLiteral("FIXTURE_WIFI")));
+    if (!evidenceDirectory.isEmpty())
+    {
+        const QString nextEvidencePdf = QDir(evidenceDirectory).filePath(
+            QStringLiteral("next.pdf"));
+        const QString legacyEvidencePdf = QDir(evidenceDirectory).filePath(
+            QStringLiteral("legacy.pdf"));
+        QFile::remove(nextEvidencePdf);
+        QFile::remove(legacyEvidencePdf);
+        QVERIFY(QFile::copy(nextPath, nextEvidencePdf));
+        QVERIFY(QFile::copy(legacyPath, legacyEvidencePdf));
+        const QByteArray nextText = nextDocumentText.join(QLatin1Char('\n')).toUtf8();
+        const QJsonObject evidence{
+            {QStringLiteral("case"), caseSlug},
+            {QStringLiteral("fixture"), QStringLiteral("Synthetic FIXTURE values only")},
+            {QStringLiteral("templateId"), templateId},
+            {QStringLiteral("template"), templateSlug},
+            {QStringLiteral("orientation"), landscape
+                ? QStringLiteral("landscape") : QStringLiteral("portrait")},
+            {QStringLiteral("platform"), QJsonObject{
+                {QStringLiteral("product"), QSysInfo::prettyProductName()},
+                {QStringLiteral("operatingSystem"),
+                    QSysInfo::productType() + QStringLiteral(" ")
+                        + QSysInfo::productVersion()},
+                {QStringLiteral("architecture"), QSysInfo::currentCpuArchitecture()},
+                {QStringLiteral("qtVersion"), QString::fromLatin1(qVersion())}
+            }},
+            {QStringLiteral("fonts"), QJsonObject{
+                {QStringLiteral("ui"), fonts.ui.family()},
+                {QStringLiteral("korean"), fonts.korean.family()}
+            }},
+            {QStringLiteral("pageCount"), next.pageCount()},
+            {QStringLiteral("pageCountEqual"), true},
+            {QStringLiteral("pageTextEqual"), true},
+            {QStringLiteral("expectedContentMarkers"),
+                QJsonArray{QStringLiteral("FIXTURE")}},
+            {QStringLiteral("combinedTextSha256"), QString::fromLatin1(
+                QCryptographicHash::hash(nextText, QCryptographicHash::Sha256).toHex())},
+            {QStringLiteral("legacyPdf"), QFileInfo(legacyEvidencePdf).fileName()},
+            {QStringLiteral("legacyPdfSha256"), QString::fromLatin1(
+                fileSha256(legacyEvidencePdf))},
+            {QStringLiteral("nextPdf"), QFileInfo(nextEvidencePdf).fileName()},
+            {QStringLiteral("nextPdfSha256"), QString::fromLatin1(
+                fileSha256(nextEvidencePdf))},
+            {QStringLiteral("pages"), pageEvidence},
+            {QStringLiteral("physicalPrintPerformed"), false}
+        };
+        QFile evidenceFile(QDir(evidenceDirectory).filePath(
+            QStringLiteral("output-evidence.json")));
+        QVERIFY(evidenceFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+        QVERIFY(evidenceFile.write(QJsonDocument(evidence).toJson(
+            QJsonDocument::Indented)) >= 0);
+    }
 }
 
 void RosterOutputTests::syntheticRepresentativeSchemaV6DbProfileExitEvidenceParity()

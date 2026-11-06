@@ -10,7 +10,9 @@
   Slices 8.1.10–8.1.12 are accepted after focused Linux Bootstrap, Speaking
   Evaluation, and Document Viewer CTest passed; 8.2.7's Schedule parity
   capture is implemented and passed locally on Linux, with Windows/macOS
-  evidence scheduled for the active batch push; 8.2.8 is active. The 8.7.13
+  evidence scheduled for the active batch push; 8.2.8's four Roster output
+  cases also pass locally on Linux, with the cross-platform captures queued
+  in the same baseline workflow; 8.2.9 is active. The 8.7.13
   Linux Legacy link closure passes a fresh `ClassMngr` target build. Its
   all-target Linux Debug attempt at `52f1dd98` failed compiling stale
   calendar-test accessors; the local `calendarViewWidget()` repair awaits

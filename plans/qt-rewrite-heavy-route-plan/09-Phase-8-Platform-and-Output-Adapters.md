@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-05
-- Current note: Begin 8.2.8 Roster generated-output parity matrix. The 8.2.7 Schedule capture now emits matched Legacy/Next PDF, text, page-geometry, and raster evidence on Linux x64, Windows x64, and macOS universal; its focused Linux run passes, and the Windows/macOS evidence awaits the active batch push. Workflow `42146144532` tested the prior pushed head `52f1dd98`: Linux Debug failed to compile Bootstrap tests because stale calendar tests called `calendarView()`; the local fix now uses `calendarViewWidget()` and will be requalified after the active batch push. Windows ARM64 Debug cross-build passed; macOS universal and Windows x64 Debug remain in progress. Package and resource-layout checks passed on Linux, Windows, and macOS. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
+- Current note: Begin 8.2.9 Sub Prep generated-output parity matrix. The 8.2.7 Schedule capture and 8.2.8 Roster four-template capture now emit matched Legacy/Next PDFs, text, geometry, and page rasters from the Refactoring baseline workflow on Linux x64, Windows x64, and macOS universal. Both focused Linux CTest runs pass; Windows/macOS evidence awaits the active batch push. Workflow `42146144532` tested the prior pushed head `52f1dd98`: Linux Debug failed to compile Bootstrap tests because stale calendar tests called `calendarView()`; the local fix now uses `calendarViewWidget()` and will be requalified after the active batch push. Windows ARM64 Debug cross-build passed; macOS universal and Windows x64 Debug remain in progress. Package and resource-layout checks passed on Linux, Windows, and macOS. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
 
 ### Slice batches
 
@@ -484,6 +484,28 @@ The Windows x64 and macOS universal captures will run after publication of the
 active batch. Their artifacts are retained in the Refactoring baseline
 workflow. See [Schedule output parity matrix](../../docs/qt-rewrite/visual-baseline/next/phase-8/schedule-output-parity/README.md)
 for reproduction and tolerance details.
+
+### 8.2.8 — Roster generated-output parity matrix (implementation ready; platform CI pending)
+
+The existing four-template `templateParity` cases now retain paired Legacy and
+Next PDFs, per-page rasters, and JSON metadata whenever the Refactoring
+baseline workflow sets `CLASSMNGR_ROSTER_OUTPUT_PARITY_DIR`. It captures By
+Day landscape, Daily portrait, and Per Class portrait/landscape cases on Linux
+x64, Windows x64, and macOS universal. Each case verifies exact page text,
+orientation, point geometry, and 1000×1000 QtPdf raster equality; requested
+font families, host/Qt versions, PDF hashes, and rendered page text are
+recorded. Raster images are compared within each host, not between operating
+systems.
+
+The Linux x86_64 GCC Debug build of `ClassMngrNextRosterOutputTests` passed
+incrementally after using the `ClassMngrLegacyRuntimeClosure` and rescanning
+the test target's Legacy class-transfer/domain archive cycle. Focused CTest
+passed 1/1 (3.87 seconds) on Fedora Linux 44 with Qt 6.12.0. All four cases
+passed and emitted six paired page rasters; every page's Legacy and Next
+images had equal hashes, text, and geometry. The Windows x64 and macOS
+universal captures will be collected after the active batch push. See
+[Roster output parity matrix](../../docs/qt-rewrite/visual-baseline/next/phase-8/roster-output-parity/README.md)
+for evidence structure and limitations.
 
 ### 8.3.1 — PowerPoint automation adapter (accepted)
 

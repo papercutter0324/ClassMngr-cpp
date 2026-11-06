@@ -235,6 +235,7 @@ jobs:
         shell: bash
         env:
           CLASSMNGR_C51_SCHEDULE_OUTPUT_DIR: ${{ github.workspace }}/artifacts/schedule-output/${{ matrix.report }}
+          CLASSMNGR_ROSTER_OUTPUT_PARITY_DIR: ${{ github.workspace }}/artifacts/roster-output/${{ matrix.report }}
         run: |
           arguments=(
             --configure-preset "${{ matrix.preset }}"
@@ -278,6 +279,7 @@ jobs:
           path: |
             artifacts/baseline/${{ matrix.report }}.json
             artifacts/schedule-output/${{ matrix.report }}/
+            artifacts/roster-output/${{ matrix.report }}/
             ${{ matrix.build_dir }}/Testing/refactoring-baseline.junit.xml
             ${{ matrix.build_dir }}/Testing/Temporary/LastTest.log
             ${{ matrix.build_dir }}/Testing/Temporary/LastTestsFailed.log
