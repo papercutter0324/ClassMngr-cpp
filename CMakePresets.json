@@ -146,7 +146,8 @@
       "inherits": "linux-gcc-debug",
       "cacheVariables": {
         "BUILD_TESTING": "OFF",
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/ClassMngr-linux-x86_64"
       }
     },
 
@@ -245,6 +246,13 @@
       "configurePreset": "linux-gcc-release"
     },
     {
+      "name": "linux-gcc-release-install",
+      "configurePreset": "linux-gcc-release",
+      "targets": [
+        "install"
+      ]
+    },
+    {
       "name": "macos-clang-debug",
       "configurePreset": "macos-clang-debug"
     },
@@ -272,7 +280,7 @@
     {
       "name": "linux-gcc-release-artifacts",
       "displayName": "Linux GCC Release Artifacts",
-      "description": "Configure and build the Linux release artifact.",
+      "description": "Configure, build, and install the Linux release artifact.",
       "steps": [
         {
           "type": "configure",
@@ -280,7 +288,7 @@
         },
         {
           "type": "build",
-          "name": "linux-gcc-release"
+          "name": "linux-gcc-release-install"
         }
       ]
     },

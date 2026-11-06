@@ -254,25 +254,33 @@ sudo zypper install \
   xcb-util-wm-devel
 ```
 
-Install the Qt Linux desktop kit next. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.12.0 `gcc_64` desktop kit, because many distro repositories ship an older Qt 6 than this project requires. If your distro provides Qt 6.12.0 or newer, distro Qt packages are fine too as long as they include Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
+The Fedora and other Linux package commands above install native build dependencies; they do not install the Qt SDK. Install the Qt Linux desktop kit separately. The recommended route is the Qt Online Installer or Qt Maintenance Tool with the Qt 6.12.0 `gcc_64` desktop kit, because many distro repositories ship an older Qt 6 than this project requires. If your distro provides Qt 6.12.0 or newer, distro Qt packages are fine too as long as they include Qt Concurrent, Core, Gui, Widgets, Network, Pdf, PdfWidgets, PrintSupport, Sql, Qml, Quick, QuickControls2, QuickWidgets, and LinguistTools. Development builds also require Qt Test.
 
-The checked-in Linux preset contains a maintainer-specific default Qt path. Override it with the Qt kit installed on your machine:
+The Linux preset reads `QT_LINUX_PREFIX` from your environment. Set it to the Qt kit directory containing `lib/cmake/Qt6`, then configure and build:
 
 ```sh
-cmake --preset linux-gcc-release \
-  -DCMAKE_PREFIX_PATH="$HOME/Qt/6.12.0/gcc_64"
-cmake --build --preset linux-gcc-release
+export QT_LINUX_PREFIX="$HOME/Qt/6.12.0/gcc_64"
 
-cmake --install build/linux-gcc-release \
-  --prefix dist/ClassMngr-linux-x86_64
+# Confirm this path contains Qt6Config.cmake before configuring.
+test -f "$QT_LINUX_PREFIX/lib/cmake/Qt6/Qt6Config.cmake"
+
+cmake --preset linux-gcc-release
+cmake --build --preset linux-gcc-release
+cmake --build --preset linux-gcc-release-install
 ```
 
-The standalone app is installed under `dist/ClassMngr-linux-x86_64`. It includes the Qt libraries, plugins, QML files, and license files copied by Qt's deployment tooling, so users do not need Qt installed separately. Distribute the whole installed directory:
+The release preset installs the standalone app under `dist/ClassMngr-linux-x86_64`. It includes the Qt libraries, plugins, QML files, and license files copied by Qt's deployment tooling, so users do not need Qt installed separately. Distribute the whole installed directory:
 
 ```sh
 tar -czf dist/ClassMngr-linux-x86_64.tar.gz \
   -C dist \
   ClassMngr-linux-x86_64
+```
+
+The `linux-gcc-release-artifacts` workflow preset configures, builds, and installs this directory in one command:
+
+```sh
+cmake --workflow --preset linux-gcc-release-artifacts
 ```
 
 For a single-file Linux release, create an AppImage from the installed directory with your preferred AppImage packaging tool. Linux packages may still rely on baseline system libraries such as glibc, graphics drivers, and the user's desktop display stack; they should not require a separate Qt installation.
@@ -293,4 +301,4 @@ On Linux or macOS, use the corresponding `linux-gcc-debug` or `macos-clang-debug
 
 * Use release presets when creating distributable builds.
 * Run the app from the installed directory or bundle, not directly from a partially copied build tree.
-* If CMake cannot find Qt, check that `QT_MACOS_PREFIX`, `QT_MSVC_X64_PREFIX`, `QT_MSVC_ARM64_PREFIX`, or `CMAKE_PREFIX_PATH` points at the matching Qt kit for your compiler and CPU architecture.
+* If CMake cannot find Qt, check that `QT_LINUX_PREFIX`, `QT_MACOS_PREFIX`, `QT_MSVC_X64_PREFIX`, `QT_MSVC_ARM64_PREFIX`, or `CMAKE_PREFIX_PATH` points at the matching Qt kit for your compiler and CPU architecture. For the Linux preset, `QT_LINUX_PREFIX` must name the kit directory containing `lib/cmake/Qt6/Qt6Config.cmake`; the Fedora native dependency command does not install this kit.

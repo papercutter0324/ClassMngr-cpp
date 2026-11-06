@@ -96,7 +96,8 @@ if(UNIX AND NOT APPLE)
         "    message(FATAL_ERROR \"patchelf is required to deploy ClassMngr on Linux. Install patchelf and rerun cmake --install.\")\n"
         "endif()\n"
         "set(__QT_DEPLOY_USE_PATCHELF ON)\n"
-        "set(__QT_DEPLOY_PATCHELF_EXECUTABLE patchelf)\n"
+        [=[set(__QT_DEPLOY_PATCHELF_EXECUTABLE "${CLASSMNGR_PATCHELF_EXECUTABLE}")
+]=]
     )
     string(APPEND CLASSMNGR_QT_DEPLOY_OPTIONS
         "    POST_INCLUDE_REGEXES [[.*/libQt6.*[.]so([.].*)?$]]\n"
