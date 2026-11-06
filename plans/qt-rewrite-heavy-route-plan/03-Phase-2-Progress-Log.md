@@ -188,3 +188,11 @@ Phase 2 remains Complete; unrelated deferred product decisions are unchanged.
 - No user-initiated backup/restore behavior was found. Do not add that workflow
   without baseline behavior; existing profile-replacement rollback and
   initial-setup cancel restoration cover the evidenced recovery cases.
+
+## Dense Speaking Evaluation row policy — 2026-11-05
+
+Preserve the established maximum of 100 rows across domain persistence, Next
+validation, and report batches. This keeps the existing contract and does not
+introduce a new cap. A future increase requires a separate product decision
+backed by a bounded memory and output contract. No production behavior changed
+for this decision.

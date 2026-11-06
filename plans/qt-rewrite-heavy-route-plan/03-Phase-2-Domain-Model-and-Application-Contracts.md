@@ -109,8 +109,10 @@ and Phase 0's 2026-09-18 Complete declaration.
   cap. Preserve F794's integer-representability checks. The 4,096-row limit
   remains scoped to dense roster-output projections; any future Analytics cap
   requires a product-backed resource contract.
-- Dense Speaking Evaluation row-limit change - deferred while its product
-  policy remains unresolved; do not add a new limit before that decision.
+- Dense Speaking Evaluation row policy - decided 2026-11-05: preserve the
+  established maximum of 100 rows across persistence, Next validation, and
+  report batches. Any increase requires a separate product decision backed by
+  a bounded memory and output contract.
 
 ## Objective
 
