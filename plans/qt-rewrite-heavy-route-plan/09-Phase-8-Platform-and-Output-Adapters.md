@@ -37,8 +37,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2, 3, and 7
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
-- Last updated: 2026-11-05
-- Current note: 8.2.7 Schedule, 8.2.8 Roster, 8.2.9 matched-SQL Sub Prep, and 8.2.10 Speaking Evaluation output captures are implemented and pass focused Linux verification. The 8.2.10 Standard and Advanced matched-input adapter-path comparison records identical text, 540 × 780 point pages, and exact same-host 150-DPI rasters; it does not claim independent renderer parity. Its manifest is retained only after a full successful write and flush. Windows x64/macOS universal captures and hosted Linux toolchain confirmation remain pending the active batch push; C53's local QtPdf resolved to 6.14 while Qt Core reported 6.12. Workflow `42146144532` tested prior pushed head `52f1dd98`; Linux Debug failed at stale `calendarView()` test access, now repaired to `calendarViewWidget()` and awaiting a current-head clean all-target/Phase 5 rerun. Windows ARM64 Debug cross-build passed; macOS universal and Windows x64 Debug remain pending. The final Phase 8 gate review must address both v2 adapter behavior and output parity.
+- Last updated: 2026-11-06
+- Current note: The 8.2.7–8.2.10 output captures have focused Linux evidence. The prior-head hosted baseline, package, resource-layout, and Windows C53 runs are incomplete or only partially passed; macOS and the Linux/Windows/macOS clean Debug matrix remain pending. PowerPoint host/process/workspace behavior and Next Speaking Evaluation/Sub Prep default output roots have been moved behind platform-injected boundaries in separate local commits (`6bab27ff`, `10cd6bbd`); independent focused Linux verification passed. The next pushed head must rerun the clean all-target Linux Debug build and Phase 5 CTest, all four output captures on Linux x64/Windows x64/macOS universal, and the package/resource-adapter matrix before the Phase 8 exit gate can be accepted.
 
 ### Slice batches
 
