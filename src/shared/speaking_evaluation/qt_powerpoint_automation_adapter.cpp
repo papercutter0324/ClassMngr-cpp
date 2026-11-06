@@ -3,7 +3,7 @@
 #include "features/speaking_eval/services/speaking_eval_report_asset_resolver.h"
 #include "features/speaking_eval/services/speaking_eval_powerpoint_job_model.h"
 #include "features/speaking_eval/services/speaking_eval_powerpoint_scripts.h"
-#include "features/speaking_eval/services/speaking_eval_powerpoint_workspace.h"
+#include "shared/speaking_evaluation/qt_powerpoint_automation_workspace.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -144,12 +144,12 @@ PowerPointBatchStatus renderPowerPointBatch(
     if (actions.host == QtSpeakingEvalPowerPoint::Host::Windows)
     {
         executable = actions.executable ? actions.executable()
-            : SpeakingEvalPowerPointAutomation::executable();
+            : QtSpeakingEvalPowerPoint::executable();
         if (executable.isEmpty())
         {
             if (errorMessage)
             {
-                *errorMessage = SpeakingEvalPowerPointAutomation::availabilityMessage();
+                *errorMessage = QtSpeakingEvalPowerPoint::availabilityMessage();
             }
             return PowerPointBatchStatus::Failed;
         }
@@ -187,12 +187,12 @@ PowerPointBatchStatus renderPowerPointBatch(
     else if (actions.host == QtSpeakingEvalPowerPoint::Host::MacOS)
     {
         executable = actions.executable ? actions.executable()
-            : SpeakingEvalPowerPointAutomation::executable();
+            : QtSpeakingEvalPowerPoint::executable();
         if (executable.isEmpty())
         {
             if (errorMessage)
             {
-                *errorMessage = SpeakingEvalPowerPointAutomation::availabilityMessage();
+                *errorMessage = QtSpeakingEvalPowerPoint::availabilityMessage();
             }
             return PowerPointBatchStatus::Failed;
         }
@@ -273,12 +273,12 @@ PowerPointBatchStatus renderPowerPointBatch(
         Q_UNUSED(cancelPath);
         if (errorMessage)
         {
-            *errorMessage = SpeakingEvalPowerPointAutomation::availabilityMessage();
+            *errorMessage = QtSpeakingEvalPowerPoint::availabilityMessage();
         }
         return PowerPointBatchStatus::Failed;
     }
 
-    QList<SpeakingEvalPowerPointAutomation::ReportMarker> reports;
+    QList<QtSpeakingEvalPowerPoint::ReportMarker> reports;
     reports.reserve(batch.students.size());
     for (
         const SpeakingEvalPowerPointJobModel::StudentJob& job :
@@ -292,7 +292,7 @@ PowerPointBatchStatus renderPowerPointBatch(
         });
     }
 
-    const SpeakingEvalPowerPointAutomation::Request automationRequest{
+    const QtSpeakingEvalPowerPoint::ProcessRequest automationRequest{
         executable,
         arguments,
         automationDirectory,
@@ -303,14 +303,14 @@ PowerPointBatchStatus renderPowerPointBatch(
     };
     const auto status = actions.run
         ? actions.run(automationRequest, errorMessage)
-        : SpeakingEvalPowerPointAutomation::run(automationRequest, errorMessage);
+        : QtSpeakingEvalPowerPoint::run(automationRequest, errorMessage);
     switch (status)
     {
-    case SpeakingEvalPowerPointAutomation::Status::Completed:
+    case QtSpeakingEvalPowerPoint::Status::Completed:
         return PowerPointBatchStatus::Completed;
-    case SpeakingEvalPowerPointAutomation::Status::Canceled:
+    case QtSpeakingEvalPowerPoint::Status::Canceled:
         return PowerPointBatchStatus::Canceled;
-    case SpeakingEvalPowerPointAutomation::Status::Failed:
+    case QtSpeakingEvalPowerPoint::Status::Failed:
     default:
         return PowerPointBatchStatus::Failed;
     }
@@ -326,9 +326,7 @@ public:
     SpeakingEvalPowerPointAvailability availability() const override
     {
         return m_actions.availability ? m_actions.availability()
-            : SpeakingEvalPowerPointAvailability{
-                SpeakingEvalPowerPointAutomation::isAvailable(),
-                SpeakingEvalPowerPointAutomation::availabilityMessage()};
+            : QtSpeakingEvalPowerPoint::availability();
     }
 
     DocumentOutputResult renderBatch(
@@ -405,17 +403,6 @@ public:
 private:
     QtSpeakingEvalPowerPoint::Actions m_actions;
 };
-}
-
-QtSpeakingEvalPowerPoint::Host QtSpeakingEvalPowerPoint::nativeHost() noexcept
-{
-#ifdef Q_OS_WIN
-    return Host::Windows;
-#elif defined(Q_OS_MACOS)
-    return Host::MacOS;
-#else
-    return Host::Unsupported;
-#endif
 }
 
 std::shared_ptr<SpeakingEvalPowerPointAutomationPort>

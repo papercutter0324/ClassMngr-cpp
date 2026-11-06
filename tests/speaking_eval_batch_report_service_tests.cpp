@@ -1,6 +1,6 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
-#include "features/speaking_eval/services/speaking_eval_powerpoint_automation.h"
+#include "shared/speaking_evaluation/qt_powerpoint_automation_workspace.h"
 #include "features/speaking_eval/services/speaking_eval_ai_batch_response_parser.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
@@ -1524,7 +1524,7 @@ void SpeakingEvalBatchReportServiceTests::qtPowerPointAdapterReleasesWorkspace()
     };
     bool requestPreserved = false;
     const auto selectedHost = actions.host;
-    actions.run = [&](const SpeakingEvalPowerPointAutomation::Request& request, QString* error) {
+    actions.run = [&](const QtSpeakingEvalPowerPoint::ProcessRequest& request, QString* error) {
         ++runnerCalls;
         requestPreserved = request.reports.size() == 2
             && request.timeoutPerReportMs == 5 * 60 * 1000
@@ -1538,25 +1538,25 @@ void SpeakingEvalBatchReportServiceTests::qtPowerPointAdapterReleasesWorkspace()
             && request.reports.at(0).displayName == QStringLiteral("First")
             && request.reports.at(1).displayName == QStringLiteral("Second");
         if (request.progressCallback) request.progressCallback(0, 2, QStringLiteral("First"));
-        if (mode == QStringLiteral("canceled")) return SpeakingEvalPowerPointAutomation::Status::Canceled;
+        if (mode == QStringLiteral("canceled")) return QtSpeakingEvalPowerPoint::Status::Canceled;
         if (mode == QStringLiteral("failed"))
         {
             *error = QStringLiteral("Fixture host launch failed.");
-            return SpeakingEvalPowerPointAutomation::Status::Failed;
+            return QtSpeakingEvalPowerPoint::Status::Failed;
         }
         for (int index = 0; index < request.reports.size(); ++index)
         {
             if (mode == QStringLiteral("missing-pdf") && index == 1) continue;
             QFile pdf(request.reports.at(index).pdfPath);
             if (!pdf.open(QIODevice::WriteOnly))
-                return SpeakingEvalPowerPointAutomation::Status::Failed;
+                return QtSpeakingEvalPowerPoint::Status::Failed;
             if (mode != QStringLiteral("empty-pdf"))
                 pdf.write(QByteArray("%PDF-fixture-") + QByteArray::number(index));
             pdf.close();
             if (request.progressCallback) request.progressCallback(index + 1, 2,
                 index == 0 ? QStringLiteral("Second") : QString{});
         }
-        return SpeakingEvalPowerPointAutomation::Status::Completed;
+        return QtSpeakingEvalPowerPoint::Status::Completed;
     };
     auto port = makeQtSpeakingEvalPowerPointAutomationPort(std::move(actions));
     const auto result = port->renderBatch({reports, documents, targets, staging,
@@ -1597,7 +1597,7 @@ void SpeakingEvalBatchReportServiceTests::powerPointProcessRunnerHandlesFailures
     QFETCH(QString, mode);
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
-    SpeakingEvalPowerPointAutomation::Request request;
+    QtSpeakingEvalPowerPoint::ProcessRequest request;
     request.executable = mode == QStringLiteral("launch-failure")
         ? directory.filePath(QStringLiteral("missing-executable"))
         : QStringLiteral(CLASSMNGR_POWERPOINT_PROCESS_FIXTURE);
@@ -1617,10 +1617,10 @@ void SpeakingEvalBatchReportServiceTests::powerPointProcessRunnerHandlesFailures
         return total == 2 && (mode != QStringLiteral("canceled") || completed < 1);
     };
     QString error;
-    const auto result = SpeakingEvalPowerPointAutomation::run(request, &error);
-    QCOMPARE(result, mode == QStringLiteral("completed") ? SpeakingEvalPowerPointAutomation::Status::Completed
-        : mode == QStringLiteral("canceled") ? SpeakingEvalPowerPointAutomation::Status::Canceled
-        : SpeakingEvalPowerPointAutomation::Status::Failed);
+    const auto result = QtSpeakingEvalPowerPoint::run(request, &error);
+    QCOMPARE(result, mode == QStringLiteral("completed") ? QtSpeakingEvalPowerPoint::Status::Completed
+        : mode == QStringLiteral("canceled") ? QtSpeakingEvalPowerPoint::Status::Canceled
+        : QtSpeakingEvalPowerPoint::Status::Failed);
     if (mode == QStringLiteral("completed")) QCOMPARE(progress, QList<int>({0, 1, 2}));
     if (mode == QStringLiteral("canceled"))
     {

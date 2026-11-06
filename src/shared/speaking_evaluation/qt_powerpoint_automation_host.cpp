@@ -1,4 +1,4 @@
-#include "speaking_eval_powerpoint_automation.h"
+#include "qt_powerpoint_automation_host.h"
 
 #include <QElapsedTimer>
 #include <QFileInfo>
@@ -17,10 +17,40 @@ bool requestCancellation(const QString& path)
     QSaveFile file(path);
     return file.open(QIODevice::WriteOnly) && file.commit();
 }
+
+bool isAvailable()
+{
+#ifdef Q_OS_WIN
+    QSettings registry(
+        QStringLiteral("HKEY_CLASSES_ROOT\\PowerPoint.Application"),
+        QSettings::NativeFormat
+        );
+    return !QtSpeakingEvalPowerPoint::executable().isEmpty()
+        && (!registry.allKeys().isEmpty()
+            || !registry.childGroups().isEmpty());
+#elif defined(Q_OS_MACOS)
+    return QFileInfo::exists(
+        QStringLiteral("/Applications/Microsoft PowerPoint.app")
+        ) && !QtSpeakingEvalPowerPoint::executable().isEmpty();
+#else
+    return false;
+#endif
+}
 }
 
-namespace SpeakingEvalPowerPointAutomation
+namespace QtSpeakingEvalPowerPoint
 {
+Host nativeHost() noexcept
+{
+#ifdef Q_OS_WIN
+    return Host::Windows;
+#elif defined(Q_OS_MACOS)
+    return Host::MacOS;
+#else
+    return Host::Unsupported;
+#endif
+}
+
 QString executable()
 {
 #ifdef Q_OS_WIN
@@ -45,25 +75,6 @@ QString executable()
 #endif
 }
 
-bool isAvailable()
-{
-#ifdef Q_OS_WIN
-    QSettings registry(
-        QStringLiteral("HKEY_CLASSES_ROOT\\PowerPoint.Application"),
-        QSettings::NativeFormat
-        );
-    return !executable().isEmpty()
-        && (!registry.allKeys().isEmpty()
-            || !registry.childGroups().isEmpty());
-#elif defined(Q_OS_MACOS)
-    return QFileInfo::exists(
-        QStringLiteral("/Applications/Microsoft PowerPoint.app")
-        ) && !executable().isEmpty();
-#else
-    return false;
-#endif
-}
-
 QString availabilityMessage()
 {
 #ifdef Q_OS_WIN
@@ -81,8 +92,13 @@ QString availabilityMessage()
 #endif
 }
 
+SpeakingEvalPowerPointAvailability availability()
+{
+    return {isAvailable(), availabilityMessage()};
+}
+
 Status run(
-    const Request& request,
+    const ProcessRequest& request,
     QString* errorMessage
     )
 {

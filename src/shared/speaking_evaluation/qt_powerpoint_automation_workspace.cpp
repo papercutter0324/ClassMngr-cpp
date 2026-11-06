@@ -1,6 +1,6 @@
-#include "speaking_eval_powerpoint_workspace.h"
+#include "shared/speaking_evaluation/qt_powerpoint_automation_workspace.h"
 
-#include "speaking_eval_report_asset_resolver.h"
+#include "features/speaking_eval/services/speaking_eval_report_asset_resolver.h"
 
 #include <QDir>
 #include <QFileInfo>

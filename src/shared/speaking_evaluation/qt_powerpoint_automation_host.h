@@ -1,13 +1,22 @@
 #pragma once
 
+#include "features/speaking_eval/services/speaking_eval_powerpoint_automation_port.h"
+
 #include <QList>
 #include <QString>
 #include <QStringList>
 
 #include <functional>
 
-namespace SpeakingEvalPowerPointAutomation
+namespace QtSpeakingEvalPowerPoint
 {
+enum class Host
+{
+    Windows,
+    MacOS,
+    Unsupported
+};
+
 enum class Status
 {
     Completed,
@@ -22,7 +31,7 @@ struct ReportMarker
     QString completionPath;
 };
 
-struct Request
+struct ProcessRequest
 {
     QString executable;
     QStringList arguments;
@@ -33,11 +42,9 @@ struct Request
     std::function<bool(int, int, const QString&)> progressCallback;
 };
 
+[[nodiscard]] Host nativeHost() noexcept;
 [[nodiscard]] QString executable();
-[[nodiscard]] bool isAvailable();
+[[nodiscard]] SpeakingEvalPowerPointAvailability availability();
 [[nodiscard]] QString availabilityMessage();
-[[nodiscard]] Status run(
-    const Request& request,
-    QString* errorMessage
-    );
+[[nodiscard]] Status run(const ProcessRequest& request, QString* errorMessage);
 }

@@ -1010,10 +1010,10 @@ set(CLASSMNGR_SPEAKING_EVAL_REPORT_ENGINE_SOURCES
 )
 
 set(CLASSMNGR_SPEAKING_EVAL_POWERPOINT_ADAPTER_SOURCES
-    "src/features/speaking_eval/services/speaking_eval_powerpoint_automation.cpp"
-    "src/features/speaking_eval/services/speaking_eval_powerpoint_automation.h"
-    "src/features/speaking_eval/services/speaking_eval_powerpoint_workspace.cpp"
-    "src/features/speaking_eval/services/speaking_eval_powerpoint_workspace.h"
+    "src/shared/speaking_evaluation/qt_powerpoint_automation_host.cpp"
+    "src/shared/speaking_evaluation/qt_powerpoint_automation_host.h"
+    "src/shared/speaking_evaluation/qt_powerpoint_automation_workspace.cpp"
+    "src/shared/speaking_evaluation/qt_powerpoint_automation_workspace.h"
     "src/shared/speaking_evaluation/qt_powerpoint_automation_adapter.cpp"
     "src/shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
 )
