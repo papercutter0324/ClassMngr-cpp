@@ -2,8 +2,8 @@
 
 ## Phase 8 — Active Batch 1 (2 candidates)
 
-1. **8.7.11 Qt Concurrent runtime staging — package requalification:** confirm the Linux package job completes after removing the deferred Phase 0 contract check, and finish the Windows/macOS package evidence on the pushed Phase 7.5 batch. At `79cec8a3ed7344973f1321909a6644b31711ce63`, Windows x64/ARM64 package verification passed, macOS was still running, and Linux package verification passed before its Phase 0-only failure.
-2. **8.7.13 Linux Legacy Debug link closure and Phase 5 rerun:** include shared Sub Prep and Calendar dependencies in the Runtime rescan closure, then repeat the clean Linux Debug build and Phase 5 suite. This also unblocks Phase 10's focused Linux Phase 7 feature verification.
+1. **8.7.11 Qt Concurrent runtime staging — accepted:** Linux package build, verification, and upload passed at `a86e260be63615c075aefa4e460ea96832021fb8`; Windows x64/ARM64 and macOS universal package verification passed at `79cec8a3ed7344973f1321909a6644b31711ce63` with the same staging implementation. The optional Linux Phase 0 route remained uninvoked.
+2. **8.7.13 Linux Legacy Debug link closure and Phase 5 rerun — next:** include shared Sub Prep and Calendar dependencies in the Runtime rescan closure, then repeat the clean Linux Debug build and Phase 5 suite. This also unblocks Phase 10's focused Linux Phase 7 feature verification.
 
 ## Phase 8 — Next Batch (7 candidates discovered)
 

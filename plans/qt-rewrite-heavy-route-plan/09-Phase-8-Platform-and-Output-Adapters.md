@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-05
-- Current note: Windows x64/ARM64 Release package verification now passes at `53aaeed2a4b1f1123a12a4f365696968c2b5cc80`. Phase 8 remains in progress: its exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
+- Current note: 8.7.11 Qt Concurrent package verification passes on Linux at `a86e260be63615c075aefa4e460ea96832021fb8`, Windows x64/ARM64, and macOS universal. The focused Linux Debug `ClassMngr` target now links with the expanded archive rescan closure; the clean all-target build and Phase 5 CTest gate are pending the next push. Phase 8's exit gate still requires all v2 external integrations and generated-output baseline parity on every supported platform.
 
 ### Slice batches
 
@@ -670,7 +670,7 @@ and exact dependency-boundary assertions were updated; static review passed.
 No local build or test was run. Package CI is pending, so Phase 9 remains
 gated.
 
-### 8.7.11 — Qt Concurrent package runtime artifact
+### 8.7.11 — Qt Concurrent package runtime artifact (accepted)
 
 At SHA `5cad12853814d8cd348b6f22ad3c9a788d5c3a2a`, Linux run `41820638403`
 built and linked, but strict package verification failed because the package
@@ -690,10 +690,18 @@ and 22 license/SBOM files, then uploaded `ClassMngr-macos-universal` (DMG,
 checksum, and JSON report). The package step passed and no cleanup failure
 surfaced, though the log does not expose the explicit detach command or result.
 
-At that revision, Linux and Windows still failed strict package verification
-for missing Qt Concurrent. Fresh package CI for the explicit staging rule was
-pending; the macOS run did not verify that rule. The Phase 8 package gate and
-Phase 9 remained gated at that revision.
+Fresh package verification now passes with the explicit staging rule. At
+`79cec8a3ed7344973f1321909a6644b31711ce63`, Windows Release run `42138310757`
+passed installer verification and artifact upload for x64 and ARM64, and
+macOS universal run `42138310884` passed disk-image verification, focused
+package verifier tests, and artifact upload. At the pushed Phase 7.5 batch
+head `a86e260be63615c075aefa4e460ea96832021fb8`, Linux Release run
+`42142955221` passed build/install, architecture/package verification, and
+artifact upload. Its optional Phase 0 route remained uninvoked. The diff from
+the Windows/macOS evidence revision changes only the Linux workflow and plan
+documents; the Qt Concurrent staging implementation is identical across the
+three package results. This accepts 8.7.11; the broader Phase 8 gate remains
+open.
 
 ### 8.7.12 — Windows Release startup verifier and package gate
 
