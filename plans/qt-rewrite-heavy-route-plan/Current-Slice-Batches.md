@@ -3,8 +3,8 @@
 ## Phase 7.5 — Active Batch 1 (4 candidates)
 
 1. **L7.5.1 Supplemental Linux Phase 0 evidence — deferred by user direction:** keep Phase 0 Complete and exclude its runner-contract check from the Linux package gate; do not run the optional route matrix.
-2. **L7.5.2 Phase 5 Linux Debug suite — active:** requalify the full registered suite at the current source revision and classify failures.
-3. **L7.5.3 Linux Phase 7 expectation — open:** set the required Linux feature-verification scope or transfer it to Phase 10.
+2. **L7.5.2 Phase 5 Linux Debug suite — classified; repair owner Phase 8, 8.7.13:** the clean current-source build fails linking Legacy `ClassMngr` before CTest because the Runtime rescan group omits its shared Sub Prep and Calendar archives.
+3. **L7.5.3 Linux Phase 7 expectation — next:** transfer the missing Linux feature-parity verification to Phase 10.
 4. **Dense Speaking Evaluation row policy — open:** record a bounded product decision based on the existing row contract.
 
 ## Phase 8 — Next Batch (1 candidate)
