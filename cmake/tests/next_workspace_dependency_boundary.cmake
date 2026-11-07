@@ -282,11 +282,11 @@ if(NOT _next_workspace_domain_type STREQUAL "STATIC_LIBRARY"
     )
 endif()
 set(_expected_domain_archive_links
-    "ClassMngrBuildSettings|Qt6::Gui|ClassMngrColorValidation"
+    "ClassMngrBuildSettings|Qt6::Gui|ClassMngrColorValidation|ClassMngrFileNameUtils"
 )
 if(NOT _domain_archive_links STREQUAL _expected_domain_archive_links)
     message(FATAL_ERROR
-        "ClassMngrDomainArchive must use the narrow color validator without a Core or Runtime edge: "
+        "ClassMngrDomainArchive must use narrow validators without a Core or Runtime edge: "
         "[${_domain_archive_links}]"
     )
 endif()
@@ -297,9 +297,9 @@ if(NOT _color_validation_links STREQUAL "ClassMngrBuildSettings|Qt6::Gui")
     )
 endif()
 if(NOT _class_transfer_support_links STREQUAL
-   "ClassMngrBuildSettings|Qt6::Widgets|ClassMngrColorValidation")
+   "ClassMngrBuildSettings|Qt6::Widgets|ClassMngrFileNameUtils|ClassMngrColorValidation")
     message(FATAL_ERROR
-        "ClassMngrClassTransferSupport must retain its complete color validation link contract: "
+        "ClassMngrClassTransferSupport must retain its complete utility link contract: "
         "[${_class_transfer_support_links}]"
     )
 endif()

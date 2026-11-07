@@ -31,7 +31,6 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/updater/update_signature_verifier.cpp"
     "src/core/updater/update_signature_verifier.h"
     "src/core/utils/colorutils.h"
-    "src/core/utils/file_name_utils.h"
     "src/core/utils/platform.cpp"
     "src/core/utils/platform.h"
 )
@@ -50,6 +49,13 @@ set(CLASSMNGR_FONT_MANAGER_SOURCES
 set(CLASSMNGR_STUDENT_NAME_SOURCES
     "src/core/utils/student_name_utils.cpp"
     "src/core/utils/student_name_utils.h"
+)
+
+# File name normalization is shared by Domain validation and legacy feature
+# consumers. Keep it as a narrow QtCore dependency outside Core and Features.
+set(CLASSMNGR_FILE_NAME_UTILS_SOURCES
+    "src/core/utils/file_name_utils.cpp"
+    "src/core/utils/file_name_utils.h"
 )
 
 # Canonical color input validation is shared by Domain and Legacy UI users.

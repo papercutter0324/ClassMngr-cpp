@@ -100,6 +100,26 @@ classmngr_add_production_objects(
     LIBRARIES
         Qt6::Core
 )
+add_library(ClassMngrFileNameUtils STATIC
+    ${CLASSMNGR_FILE_NAME_UTILS_SOURCES}
+)
+target_compile_features(ClassMngrFileNameUtils
+    PUBLIC
+        cxx_std_23
+)
+target_include_directories(ClassMngrFileNameUtils
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrFileNameUtils
+    PUBLIC
+        ClassMngrBuildSettings
+)
+set_target_properties(ClassMngrFileNameUtils
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 add_library(ClassMngrColorValidation STATIC
     ${CLASSMNGR_COLOR_VALIDATION_SOURCES}
 )
@@ -395,6 +415,7 @@ target_link_libraries(ClassMngrDomainArchive
         Qt6::Gui
     PRIVATE
         ClassMngrColorValidation
+        ClassMngrFileNameUtils
 )
 target_include_directories(ClassMngrDomainArchive
     PUBLIC
@@ -451,7 +472,6 @@ add_library(ClassMngrClassTransferSupport STATIC
     "${PROJECT_SOURCE_DIR}/src/features/classes/services/class_transfer_json_codec.h"
     "${PROJECT_SOURCE_DIR}/src/features/classes/config/class_info_config.cpp"
     "${PROJECT_SOURCE_DIR}/src/core/utils/colorutils.cpp"
-    "${PROJECT_SOURCE_DIR}/src/core/utils/file_name_utils.cpp"
 )
 target_compile_features(ClassMngrClassTransferSupport
     PUBLIC
@@ -465,6 +485,7 @@ target_link_libraries(ClassMngrClassTransferSupport
     PUBLIC
         ClassMngrBuildSettings
         Qt6::Widgets
+        ClassMngrFileNameUtils
     PRIVATE
         ClassMngrColorValidation
 )

@@ -44,6 +44,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrStudentName
         ${CLASSMNGR_STUDENT_NAME_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrFileNameUtils
+        ${CLASSMNGR_FILE_NAME_UTILS_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrColorValidation
         ${CLASSMNGR_COLOR_VALIDATION_SOURCES}
     )
@@ -100,7 +103,6 @@ function(classmngr_check_source_ownership)
         "src/features/classes/services/class_transfer_json_codec.h"
         "src/features/classes/config/class_info_config.cpp"
         "src/core/utils/colorutils.cpp"
-        "src/core/utils/file_name_utils.cpp"
     )
     _classmngr_record_manifest(ClassMngrSignature ${CLASSMNGR_SIGNATURE_SOURCES})
     _classmngr_record_manifest(ClassMngrAppServices ${CLASSMNGR_APP_SERVICES_SOURCES})
