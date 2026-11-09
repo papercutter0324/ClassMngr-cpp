@@ -961,6 +961,9 @@ void MyWorkspacePage::buildUi(const PageContext& context)
     m_scheduleTable->setAlternatingRowColors(true);
     m_scheduleTable->verticalHeader()->hide();
     m_scheduleTable->horizontalHeader()->setStretchLastSection(true);
+    auto* const scheduleModel = new MyWorkspaceScheduleTableModel(m_scheduleTable);
+    m_scheduleModel = scheduleModel;
+    m_scheduleTable->setModel(scheduleModel);
     m_scheduleTable->horizontalHeader()->setSectionResizeMode(
         0, QHeaderView::ResizeToContents);
     m_scheduleTable->horizontalHeader()->setSectionResizeMode(
@@ -971,9 +974,6 @@ void MyWorkspacePage::buildUi(const PageContext& context)
         3, QHeaderView::ResizeToContents);
     m_scheduleTable->horizontalHeader()->setSectionResizeMode(
         4, QHeaderView::ResizeToContents);
-    auto* const scheduleModel = new MyWorkspaceScheduleTableModel(m_scheduleTable);
-    m_scheduleModel = scheduleModel;
-    m_scheduleTable->setModel(scheduleModel);
     scheduleCardLayout->addWidget(m_scheduleTable, 1);
     auto* const scheduleStatusRow = new QWidget(scheduleCard);
     auto* const scheduleStatusLayout = new QHBoxLayout(scheduleStatusRow);
