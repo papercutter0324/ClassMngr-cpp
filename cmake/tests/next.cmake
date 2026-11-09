@@ -4084,7 +4084,7 @@ classmngr_next_add_mode_combo_arrow_resources(
 add_test(
     NAME ClassMngrNextSubPrepVisualCapture
     COMMAND ClassMngrNextSubPrepVisualCapture
-        "${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44"
+        "${PROJECT_BINARY_DIR}/artifacts/next/sub-prep-c44"
 )
 set_tests_properties(ClassMngrNextSubPrepVisualCapture
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
