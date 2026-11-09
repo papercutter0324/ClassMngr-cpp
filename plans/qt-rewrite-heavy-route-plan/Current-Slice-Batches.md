@@ -12,9 +12,10 @@ run because its target had not been built.
 
 The provenance/capture fix is committed as `0cefbcb6` on an isolated worktree
 based at `origin/Qt-Rewrite`. Its focused Windows x64 C44 capture target passed
-twice and left tracked docs unchanged. The replacement hosted run must use a
-macOS build configuration that can finish the full baseline within the runner
-limit before the OS-agnostic batch can be validated.
+twice and left tracked docs unchanged. A macOS capacity change is committed
+locally as `e11ea4b2`, selecting the 12-core Intel `macos-15-large` runner with
+12-way parallel compilation. Its push is pending approval for billed runner
+use and confirmation that the runner is available to this repository.
 
 Windows-specific fixes and focused evidence remain committed locally on the
 `Qt-Rewrite` branch and unpushed. Keep them out of the OS-agnostic push; publish
