@@ -23,7 +23,13 @@ correction is committed locally as `7a0dd151` and passed its focused target.
 The Schedule PDF text assertion now passes in the standard Windows x64 Debug
 tree after the test target was wired to the embedded application fonts; that
 fix is committed locally as `1e4bf221` and its evidence is recorded in the
-Phase 8a progress log. Sub Prep package parity remains under diagnosis. Do not
-push until the active run completes. Separate Windows C53 matched-output run
-`42664061512` passed. The Phase 8a plan remains the source for the full ordered
-scope and acceptance criteria.
+Phase 8a progress log. Restoring the original SubPrep Schedule spacing also
+passes strict text and Windows raster parity in the package and print/PDF
+targets; its evidence and the Windows QWARN dispositions are recorded in the
+Phase 8a progress log. The unprovisioned Documents resource-pack warning in
+the ClassTransfer test target is handed to Phase 11 test-harness work. Local
+Windows x64 direct-target work is complete. Hold the push until active run
+`42664061605` completes, then push the Windows batch and run the clean hosted
+Windows candidate. Separate Windows C53 matched-output run `42664061512`
+passed. The Phase 8a plan remains the source for the full ordered scope and
+acceptance criteria.
