@@ -8454,6 +8454,7 @@ target_include_directories(ClassMngrNextScheduleOutputAdapterTests
 )
 target_link_libraries(ClassMngrNextScheduleOutputAdapterTests
     PRIVATE
+        ClassMngrFontManager
         ClassMngrNextScheduleOutput
         ClassMngrSchedulePdfRenderer
         Qt6::Pdf

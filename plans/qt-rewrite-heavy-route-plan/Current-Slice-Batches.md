@@ -19,8 +19,11 @@ the SchedulePage/My Workspace header-initialization fix is committed locally
 as `42bcb0c9` and independently passed its focused CTest targets. The
 FileDialog shortcut-fixture correction is committed locally as `11354fbc`;
 its target passed independent verification. The Speaking mixed-template test
-correction passed its focused target and is being committed. Schedule PDF text
-and Sub Prep package parity remain under diagnosis. Do not push until the
-active run completes. Separate Windows C53 matched-output run `42664061512`
-passed. The Phase 8a plan remains the source for the full ordered scope and
-acceptance criteria.
+correction is committed locally as `7a0dd151` and passed its focused target.
+The Schedule PDF text assertion now passes in the standard Windows x64 Debug
+tree after the test target was wired to the embedded application fonts; that
+fix and its evidence are recorded in the Phase 8a progress log. Sub Prep
+package parity remains under diagnosis. Do not push until the active run
+completes. Separate Windows C53 matched-output run `42664061512` passed. The
+Phase 8a plan remains the source for the full ordered scope and acceptance
+criteria.
