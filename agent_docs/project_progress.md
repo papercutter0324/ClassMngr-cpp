@@ -1,22 +1,34 @@
 # Project Progress
 
-## Current Deployment Continuation — Windows Release Verification — 2026-11-05
+## Current Deployment Continuation — Phase 8 exit gate and Phase 8a planning — 2026-11-09
 
-Active plan: Qt Rewrite Phase 7.5 cross-platform follow-ups, with Windows
-Release verifier work supporting Phase 8. Deployment ID remains
-`phase75_windows_elevated_capture`; route: Heavy. Commit
-`53aaeed2a4b1f1123a12a4f365696968c2b5cc80` fixes the x64 startup smoke log
-read race and makes the workflow fail on verifier errors or a missing success
-marker. Windows Release run `42111769908` passed x64 and ARM64; x64 logged all
-ten startup stages in order, and both release artifacts and verification logs
-uploaded. Phase 4 resource layout run `42111769886` also passed on Windows,
-Linux, and macOS. The prior Linux Release run `42104507218` passed package
-verification but failed afterward in the supplemental Phase 0 runner-contract
-test; the macOS Release run `42104507137` passed. These results support
-platform packaging progress but do not close Phase 8's broader adapter and
-baseline-output exit gate. Phase 7.5 remains incomplete and does not block
-Phase 8. Branch `Qt-Rewrite` is synchronized to `origin/Qt-Rewrite` at the
-commit above; the two pre-existing local PDF deletions remain uncommitted.
+Active plan: Qt Rewrite Phase 8 platform/output adapters and its Phase 8a
+cross-platform failure/QWARN follow-up. Deployment ID:
+`phase8-8713-macos-exitgate-20261109`; route: Heavy, with Light for commits and
+pushes. Slice 8.7.13 is Linux-only; no macOS work belongs to that slice.
+
+Hosted Refactoring Baseline run `42580405908` at SHA
+`666df4786ec48a0bf9fe285727ae073036ac4984` failed on macOS (11/620), Windows
+x64 (41/618), and Linux (20/619). All three baseline reports mark the checkout
+dirty at start/end and `source_stable=false`, so the artifacts are diagnostic
+rather than final clean-baseline evidence. Schedule passed on macOS/Linux and
+failed on Windows; all four Roster cases passed on all hosts; Speaking passed
+on macOS, failed on Linux, and was incomplete on Windows. The C53 step was
+skipped everywhere; a separate same-SHA Windows C53 run passed. The full
+warning and failed-target inventories are versioned under
+`docs/qt-rewrite/phase8a/evidence/` and tracked by the Phase 8a plan.
+
+Linux and macOS Release package runs passed, as did Windows ARM64 Release and
+the Phase 4 resource-layout run. Windows x64 Release stopped before configure
+after a vcpkg download HTTP 504 and produced no package artifact. The Phase 8
+exit gate remains open. Phase 8a's first batch addresses baseline provenance,
+C53 capture sequencing, shared failure attribution, and warning dispositions;
+macOS, Windows, and Linux batches follow in order.
+
+The Phase 8a plan/inventory task is committed as
+`7083bb7ea9f4d3eec3fe225742055480d043c474`; the separate Phase 8 history move
+is committed as `2d11d3eb6729cd8e768ac1ef4dead3770245d6cf`. Both task commits
+and the final deployment handoff update are pushed to `origin/Qt-Rewrite`.
 
 ## Current Work Handoff — configurable-roster-rows (implementation complete)
 
@@ -76,8 +88,9 @@ successfully; no tests were run for this follow-up. The original full-suite
 result remains 608/615 passed with seven known failures and zero skipped or
 disabled tests. Exact-SHA Windows Release x64/ARM64, Phase 4 resource checks,
 and C53 passed at the formal exit SHA.
-Phases 0–7 are Complete; Phase 8 has not started. F1514 added descriptor-based
-lazy registration, F1515 added explicit page lifecycle states, and F1516 added
+Phases 0–7 are Complete; Phase 8 is active and its exit gate remains open.
+F1514 added descriptor-based lazy registration, F1515 added explicit page
+lifecycle states, and F1516 added
 guarded placeholder navigation with history. F1517 added the typed CommandBus;
 F1518 made history action state respect target visibility. F1519 added typed
 semantic prompt contracts and a value-only Qt automation boundary. F1520 added

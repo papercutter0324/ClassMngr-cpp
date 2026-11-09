@@ -1,6 +1,7 @@
 # Current Slice Batches
 
-## Phase 8 — Active Batch 4 (2 candidates)
+## Phase 8a — Active Batch 1 (OS-agnostic)
 
-1. **8.7.13 Linux Legacy Debug link closure and Phase 5 rerun — Linux verification complete; suite non-green:** clean Qt 6.12.0/GCC 16.2.1 Debug configure succeeded with `CCACHE_DISABLE=1`; the clean all-target build passed 947/947 and the post-closure incremental build passed 2204/2204. The closure links DomainArchive with Runtime, WorkspaceStore, SubPrepShared, and NextCalendarUi; seven newly closure-linked targets passed independently. Direct Phase 5 CTest completed 619 tests: 602 passed, 14 failed, and 3 timed out (exit 8), including timeouts in `ClassMngrPageManagerTests`, `ClassMngrClassDetailsSavePageTests`, and `ClassMngrSubPrepPageTests`.
-2. **Phase 8 cross-platform exit-gate acceptance — Linux candidate-2 evidence complete; gate pending:** Linux Schedule 1/1, Roster 4/4 with six equal page rasters, Sub Prep/C53 17 pages with the SQL oracle, used-code audit, and zero changed pixels, and Speaking Evaluation Standard/Advanced text/geometry/raster parity all passed; the focused Schedule/Roster/Speaking CTest set passed 3/3. Windows x64, macOS universal, hosted exact-toolchain captures, and the package/resource matrix remain pending, so the Phase 8 exit gate stays open.
+1. **Phase 8a OS-agnostic provenance, capture, failure, and QWARN triage:** repair stable-source baseline provenance and C53 capture orchestration; attribute shared/case-level failures; disposition all warning families without suppression. See [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md) for complete failure and warning evidence and acceptance.
+
+**Next ordered batch:** macOS, after Batch 1. Windows x64 and Linux follow in the order and scope recorded in the Phase 8a plan.

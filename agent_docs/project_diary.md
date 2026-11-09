@@ -2,6 +2,22 @@
 
 ## Decisions and Lessons
 
+### Keep cross-platform baseline evidence source-stable — 2026-11-09
+
+Do not treat a successful upload or unchanged commit SHA as proof that a hosted
+baseline captured a stable checkout. Run `42580405908` reports dirty starts
+and ends and changing fingerprints on macOS, Windows, and Linux. The recorder
+hashes nonignored untracked content as well as tracked files; Qt installed
+under the checkout explains the Linux/macOS dirty state, while Windows still
+needs a path-level explanation. Retain file-level status and source-only
+fingerprints at both boundaries. Keep the C53 output capture independently
+gated on a successful build, not on unrelated full-suite CTest success, and
+preserve separate results for build, CTest, provenance, and capture.
+
+Treat `LastTest.log` as the warning-count source; JUnit repeats or subsets its
+warnings. Keep exact warning bodies and test contexts, and accept a warning
+as expected only when its test assertion confirms that disposition.
+
 ### Keep Windows startup smoke output off shared log files — 2026-11-05
 
 The installed-app smoke check read stdout and stderr files while the Windows

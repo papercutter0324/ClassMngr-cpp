@@ -1,0 +1,2682 @@
+{
+  "task_id": "V8-01",
+  "run_id": 42580405908,
+  "head_sha": "666df4786ec48a0bf9fe285727ae073036ac4984",
+  "method": "Read-only extraction from retained JUnit XML, CTest LastTest.log, LastTestsFailed.log, and baseline JSON. Failed CTest target sets were compared across all four sources per OS. QtTest FAIL!/QFATAL assertions and direct diagnostics are preserved verbatim; targets without retained case/slot evidence are marked target_only.",
+  "failing_ctest_target_observations": 72,
+  "artifacts": [
+    {
+      "os": "macOS",
+      "artifact_id": 13672876373,
+      "artifact_name": "refactoring-baseline-macos-clang-debug",
+      "archive_path": "/private/tmp/v8-01-baseline-macos.zip",
+      "archive_sha256": "a88714e97bc275275e96e8775f02f6a563cdb02537a5942ec53d71424a8c65ec",
+      "head_sha": "666df4786ec48a0bf9fe285727ae073036ac4984",
+      "run_id": 42580405908,
+      "baseline_report_path": "artifacts/baseline/macos-clang-debug.json",
+      "failed_ctest_targets": 11,
+      "junit_testcases": 620,
+      "targets": [
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrSharedPolicyTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Subprocess aborted",
+            "junit_failure_type": null,
+            "termination_messages": [
+              {
+                "exact_message": "Received signal 6 (SIGABRT)",
+                "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                "line_number": 165
+              }
+            ],
+            "failure_kind": "signal_termination",
+            "failure_code": "SIGABRT",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "SharedPolicyTests",
+              "qt_testcase_or_slot": "speakingEvalValidatorNormalizesAndReportsCellIssues()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "fatal_assertion",
+                  "severity": "QFATAL",
+                  "exact_message": "QFATAL : SharedPolicyTests::speakingEvalValidatorNormalizesAndReportsCellIssues() ASSERT: \"!isEmpty()\" in file /Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/Qt/6.12.0/macos/lib/QtCore.framework/Headers/qlist.h, line 732",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 160
+                },
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : SharedPolicyTests::speakingEvalValidatorNormalizesAndReportsCellIssues() Received a fatal error.",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 161
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/Qt/6.12.0/macos/lib/QtCore.framework/Headers/qlist.h(732)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 162
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrSharedPolicyTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSharedPolicyTests",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrSharedPolicyTests",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 1 (3:ClassMngrSharedPolicyTests)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        },
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrTestingClassesPageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "TestingClassesPageTests",
+              "qt_testcase_or_slot": "rosterEditorOmitsRemoveButtonAndKeepsContextAction()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : TestingClassesPageTests::rosterEditorOmitsRemoveButtonAndKeepsContextAction() 'foundRemoveAction' returned FALSE. ()",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2722
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/testing_classes_page_tests.cpp(774)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2723
+                }
+              ]
+            },
+            {
+              "qt_test_class": "TestingClassesPageTests",
+              "qt_testcase_or_slot": "rosterKeyboardTriggerOpensInAppPalette()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : TestingClassesPageTests::rosterKeyboardTriggerOpensInAppPalette() 'keyboard->isVisible()' returned FALSE. ()",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2727
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/testing_classes_page_tests.cpp(848)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2728
+                }
+              ]
+            },
+            {
+              "qt_test_class": "TestingClassesPageTests",
+              "qt_testcase_or_slot": "rosterKeyboardWritesToKoreanNameCell()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : TestingClassesPageTests::rosterKeyboardWritesToKoreanNameCell() 'keyboard->target()' returned FALSE. ()",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2731
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/testing_classes_page_tests.cpp(888)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2732
+                }
+              ]
+            },
+            {
+              "qt_test_class": "TestingClassesPageTests",
+              "qt_testcase_or_slot": "outputAvailabilityFollowsRosterTabAndLoadedClass()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : TestingClassesPageTests::outputAvailabilityFollowsRosterTabAndLoadedClass() 'page.outputCapabilities().printEnabled' returned FALSE. ()",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2734
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/testing_classes_page_tests.cpp(949)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2735
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrTestingClassesPageTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrTestingClassesPageTests",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrTestingClassesPageTests",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 2 (54:ClassMngrTestingClassesPageTests)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        },
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrPageManagerTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrPageManagerTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrPageManagerTests",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrPageManagerTests",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 3 (72:ClassMngrPageManagerTests)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        },
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrClassDetailsSavePageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrClassDetailsSavePageTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrClassDetailsSavePageTests",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrClassDetailsSavePageTests",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 4 (78:ClassMngrClassDetailsSavePageTests)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        },
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrNavigationTeacherReadTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "NavigationTeacherReadTests",
+              "qt_testcase_or_slot": "selectedTeacherProfileReadFailureWarnsWithoutConfirmation()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : NavigationTeacherReadTests::selectedTeacherProfileReadFailureWarnsWithoutConfirmation() Compared values are not the same",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4389
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Actual   (warning.details)            : \"Loading teacher profile failed for teacher id 1: Parameter count mismatch\"",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4390
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Expected (expectedProfileRead.error()): \"Loading teacher failed for teacher id 1: Parameter count mismatch\"",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4391
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/navigation_teacher_read_tests.cpp(1179)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4392
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [
+            {
+              "exact_message": "Actual   (warning.details)            : \"Loading teacher profile failed for teacher id 1: Parameter count mismatch\"",
+              "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+              "line_number": 4390
+            },
+            {
+              "exact_message": "Expected (expectedProfileRead.error()): \"Loading teacher failed for teacher id 1: Parameter count mismatch\"",
+              "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+              "line_number": 4391
+            }
+          ],
+          "target_only": false,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrNavigationTeacherReadTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNavigationTeacherReadTests",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrNavigationTeacherReadTests",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 5 (91:ClassMngrNavigationTeacherReadTests)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        },
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrCampusRouteNavigationParityTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "CampusRouteNavigationParityTests",
+              "qt_testcase_or_slot": "campusRouteLeaveGuardMatrix(cancel-campus-address-page)",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : CampusRouteNavigationParityTests::campusRouteLeaveGuardMatrix(cancel-campus-address-page) Compared lists have different sizes.",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4758
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Actual   (sidebar.selectedKeys()) size: 0",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4759
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Expected (sidebarKeysBefore) size: 2",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4760
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/campus_route_navigation_parity_tests.cpp(550)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4761
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [
+            {
+              "exact_message": "Actual   (sidebar.selectedKeys()) size: 0",
+              "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+              "line_number": 4759
+            },
+            {
+              "exact_message": "Expected (sidebarKeysBefore) size: 2",
+              "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+              "line_number": 4760
+            }
+          ],
+          "target_only": false,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrCampusRouteNavigationParityTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrCampusRouteNavigationParityTests",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrCampusRouteNavigationParityTests",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 6 (99:ClassMngrCampusRouteNavigationParityTests)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        },
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrRosterTransferMenuTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "RosterTransferMenuTests",
+              "qt_testcase_or_slot": "workflowProjectionMatchesRosterModel()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : RosterTransferMenuTests::workflowProjectionMatchesRosterModel() 'std::holds_alternative<RosterRowTransferSuccess>(result)' returned FALSE. ()",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 6404
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/roster_transfer_menu_tests.cpp(1548)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 6405
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrRosterTransferMenuTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrRosterTransferMenuTests",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrRosterTransferMenuTests",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 7 (140:ClassMngrRosterTransferMenuTests)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        },
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrSubPrepPageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrSubPrepPageTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSubPrepPageTests",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrSubPrepPageTests",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 8 (152:ClassMngrSubPrepPageTests)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        },
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrStartupPerformanceTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "StartupPerformanceTests",
+              "qt_testcase_or_slot": "pdfLifecycleOwnerMetricsValidatorIsFailClosed(missing-numeric-field)",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : StartupPerformanceTests::pdfLifecycleOwnerMetricsValidatorIsFailClosed(missing-numeric-field) 'errorMessage.contains(expectedDiagnostic)' returned FALSE. (Current metrics record for owner sub-prep-preview is missing numeric field tableCellWidgetCount.)",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8902
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/startup_performance_tests.cpp(1990)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8903
+                }
+              ]
+            },
+            {
+              "qt_test_class": "StartupPerformanceTests",
+              "qt_testcase_or_slot": "pdfLifecycleOwnerMetricsValidatorIsFailClosed(non-numeric-field)",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : StartupPerformanceTests::pdfLifecycleOwnerMetricsValidatorIsFailClosed(non-numeric-field) 'errorMessage.contains(expectedDiagnostic)' returned FALSE. (Current metrics record for owner standalone-schedule is missing numeric field modelRowCount.)",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8904
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/startup_performance_tests.cpp(1990)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8905
+                }
+              ]
+            },
+            {
+              "qt_test_class": "StartupPerformanceTests",
+              "qt_testcase_or_slot": "capturesMatchedSqlSubPrepForC53()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : StartupPerformanceTests::capturesMatchedSqlSubPrepForC53() '!configuredOutputRoot.isEmpty()' returned FALSE. (CLASSMNGR_C53_SQL_GATE_REFERENCE_DIR was not provided.)",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8944
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/startup_performance_tests.cpp(10765)]",
+                  "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8945
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrStartupPerformanceTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrStartupPerformanceTests",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrStartupPerformanceTests",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 9 (203:ClassMngrStartupPerformanceTests)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        },
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "This plugin does not support propagateSizeHints()",
+              "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+              "line_number": 10834
+            },
+            {
+              "exact_message": "Next navigation font, indentation, or row metrics did not match legacy.",
+              "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+              "line_number": 10835
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrNextTeacherDirectoryVisualCapture\" \"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/korean-teacher-directory-visual-capture-ko\" \"ko_KR\" \"dark\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 10 (241:ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        },
+        {
+          "os": "macOS",
+          "ctest_target": "ClassMngrNextSubPrepVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "This plugin does not support propagateSizeHints()",
+              "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+              "line_number": 12755
+            },
+            {
+              "exact_message": "Successful Sub Prep output did not create one package folder.",
+              "artifact_source": "build/macos-clang-debug/Testing/Temporary/LastTest.log",
+              "line_number": 12770
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/macos-clang-debug/ClassMngrNextSubPrepVisualCapture\" \"/Users/runner/work/ClassMngr-cpp/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44\"",
+          "artifact_sources": {
+            "junit_testcase": "build/macos-clang-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextSubPrepVisualCapture",
+            "last_test_log_section": "build/macos-clang-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextSubPrepVisualCapture",
+            "last_tests_failed_entry": "build/macos-clang-debug/Testing/Temporary/LastTestsFailed.log line 11 (330:ClassMngrNextSubPrepVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/macos-clang-debug.json"
+          }
+        }
+      ]
+    },
+    {
+      "os": "Windows",
+      "artifact_id": 13665349083,
+      "artifact_name": "refactoring-baseline-windows-x64-debug",
+      "archive_path": "/private/tmp/v8-01-baseline-windows.zip",
+      "archive_sha256": "687b8082d6411f42c0e2de2f1bb1a8f59077613bdce199b602b69b2082491d98",
+      "head_sha": "666df4786ec48a0bf9fe285727ae073036ac4984",
+      "run_id": 42580405908,
+      "baseline_report_path": "artifacts/baseline/windows-x64-debug.json",
+      "failed_ctest_targets": 41,
+      "junit_testcases": 618,
+      "targets": [
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrSharedPolicyTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Exit code 0xc0000409 ",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "process_exit_code",
+            "failure_code": "0xc0000409",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrSharedPolicyTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSharedPolicyTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrSharedPolicyTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 1 (3:ClassMngrSharedPolicyTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrTestingClassesPageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrTestingClassesPageTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrTestingClassesPageTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrTestingClassesPageTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 2 (54:ClassMngrTestingClassesPageTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrPageManagerTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrPageManagerTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrPageManagerTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrPageManagerTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 3 (72:ClassMngrPageManagerTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrClassDetailsSavePageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrClassDetailsSavePageTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrClassDetailsSavePageTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrClassDetailsSavePageTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 4 (78:ClassMngrClassDetailsSavePageTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNavigationTeacherReadTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNavigationTeacherReadTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNavigationTeacherReadTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNavigationTeacherReadTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 5 (91:ClassMngrNavigationTeacherReadTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrCampusRouteNavigationParityTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrCampusRouteNavigationParityTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrCampusRouteNavigationParityTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrCampusRouteNavigationParityTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 6 (99:ClassMngrCampusRouteNavigationParityTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrRosterTransferMenuTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrRosterTransferMenuTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrRosterTransferMenuTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrRosterTransferMenuTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 7 (140:ClassMngrRosterTransferMenuTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrSubPrepPageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrSubPrepPageTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSubPrepPageTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrSubPrepPageTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 8 (152:ClassMngrSubPrepPageTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrSubPrepPackageServiceTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrSubPrepPackageServiceTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSubPrepPackageServiceTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrSubPrepPackageServiceTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 9 (165:ClassMngrSubPrepPackageServiceTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrSpeakingEvalBatchReportServiceTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrSpeakingEvalBatchReportServiceTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSpeakingEvalBatchReportServiceTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrSpeakingEvalBatchReportServiceTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 10 (191:ClassMngrSpeakingEvalBatchReportServiceTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrStartupPerformanceTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrStartupPerformanceTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrStartupPerformanceTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrStartupPerformanceTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 11 (202:ClassMngrStartupPerformanceTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextBootstrapTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Exit code 0xc0000409 ",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "process_exit_code",
+            "failure_code": "0xc0000409",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "ClassMngrNext startup stage=core-services-created outcome=failed diagnostic=stage-failed diagnostic_stage=core-services-created",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3250
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextBootstrapTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextBootstrapTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextBootstrapTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 12 (212:ClassMngrNextBootstrapTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Exit code 0xc0000409 ",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "process_exit_code",
+            "failure_code": "0xc0000409",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": null,
+              "qt_testcase_or_slot": "coTeacherSidebarShowsUniqueAssignmentsAndTracksWorkspaceLifecycle",
+              "qt_data_tag": null,
+              "case_identity_source": "QtTest filter argument in LastTest.log Command",
+              "case_outcome": "target failed; assertion not retained",
+              "assertion_or_termination_messages": []
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextBootstrapTests.exe\" \"coTeacherSidebarShowsUniqueAssignmentsAndTracksWorkspaceLifecycle\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 13 (219:ClassMngrNextCoTeacherSidebarAssignmentsAndLifecycle)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextUsefulLinksVisualCapture_english-light",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "SEGFAULT",
+            "junit_failure_type": null,
+            "termination_messages": [
+              {
+                "exact_message": "Exception address: 0x00007FFABA212B15",
+                "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+                "line_number": 3390
+              },
+              {
+                "exact_message": "Exception code   : 0xc0000005",
+                "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+                "line_number": 3391
+              }
+            ],
+            "failure_kind": "access_violation_or_segfault",
+            "failure_code": "0xc0000005",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": null,
+              "qt_testcase_or_slot": "usefulLinksVisualCapture",
+              "qt_data_tag": "english-light",
+              "case_identity_source": "QtTest filter argument in LastTest.log Command",
+              "case_outcome": "target failed; assertion not retained",
+              "assertion_or_termination_messages": []
+            }
+          ],
+          "target_diagnostics": [
+            {
+              "exact_message": "Exception address: 0x00007FFABA212B15",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3390
+            },
+            {
+              "exact_message": "Exception code   : 0xc0000005",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3391
+            },
+            {
+              "exact_message": "#  2: UnhandledExceptionFilter() - 0x00007FFAEAA60650",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3396
+            },
+            {
+              "exact_message": "#  7: KiUserExceptionDispatcher() - 0x00007FFAED4042A0",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3401
+            }
+          ],
+          "target_only": false,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextBootstrapTests.exe\" \"usefulLinksVisualCapture:english-light\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextUsefulLinksVisualCapture_english-light",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextUsefulLinksVisualCapture_english-light",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 14 (221:ClassMngrNextUsefulLinksVisualCapture_english-light)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextUsefulLinksVisualCapture_korean-light",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "SEGFAULT",
+            "junit_failure_type": null,
+            "termination_messages": [
+              {
+                "exact_message": "Exception address: 0x00007FFABA212B15",
+                "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+                "line_number": 3466
+              },
+              {
+                "exact_message": "Exception code   : 0xc0000005",
+                "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+                "line_number": 3467
+              }
+            ],
+            "failure_kind": "access_violation_or_segfault",
+            "failure_code": "0xc0000005",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": null,
+              "qt_testcase_or_slot": "usefulLinksVisualCapture",
+              "qt_data_tag": "korean-light",
+              "case_identity_source": "QtTest filter argument in LastTest.log Command",
+              "case_outcome": "target failed; assertion not retained",
+              "assertion_or_termination_messages": []
+            }
+          ],
+          "target_diagnostics": [
+            {
+              "exact_message": "Exception address: 0x00007FFABA212B15",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3466
+            },
+            {
+              "exact_message": "Exception code   : 0xc0000005",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3467
+            },
+            {
+              "exact_message": "#  2: UnhandledExceptionFilter() - 0x00007FFAEAA60650",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3472
+            },
+            {
+              "exact_message": "#  7: KiUserExceptionDispatcher() - 0x00007FFAED4042A0",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3477
+            }
+          ],
+          "target_only": false,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextBootstrapTests.exe\" \"usefulLinksVisualCapture:korean-light\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextUsefulLinksVisualCapture_korean-light",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextUsefulLinksVisualCapture_korean-light",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 15 (223:ClassMngrNextUsefulLinksVisualCapture_korean-light)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextUsefulLinksVisualCapture_korean-dark",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "SEGFAULT",
+            "junit_failure_type": null,
+            "termination_messages": [
+              {
+                "exact_message": "Exception address: 0x00007FFABA212B15",
+                "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+                "line_number": 3527
+              },
+              {
+                "exact_message": "Exception code   : 0xc0000005",
+                "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+                "line_number": 3528
+              }
+            ],
+            "failure_kind": "access_violation_or_segfault",
+            "failure_code": "0xc0000005",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": null,
+              "qt_testcase_or_slot": "usefulLinksVisualCapture",
+              "qt_data_tag": "korean-dark",
+              "case_identity_source": "QtTest filter argument in LastTest.log Command",
+              "case_outcome": "target failed; assertion not retained",
+              "assertion_or_termination_messages": []
+            }
+          ],
+          "target_diagnostics": [
+            {
+              "exact_message": "Exception address: 0x00007FFABA212B15",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3527
+            },
+            {
+              "exact_message": "Exception code   : 0xc0000005",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3528
+            },
+            {
+              "exact_message": "#  2: UnhandledExceptionFilter() - 0x00007FFAEAA60650",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3533
+            },
+            {
+              "exact_message": "#  7: KiUserExceptionDispatcher() - 0x00007FFAED4042A0",
+              "artifact_source": "build/windows-x64-debug/Testing/Temporary/LastTest.log",
+              "line_number": 3538
+            }
+          ],
+          "target_only": false,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextBootstrapTests.exe\" \"usefulLinksVisualCapture:korean-dark\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextUsefulLinksVisualCapture_korean-dark",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextUsefulLinksVisualCapture_korean-dark",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 16 (224:ClassMngrNextUsefulLinksVisualCapture_korean-dark)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextCoTeacherSidebarVisualCapture_english-light",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Exit code 0xc0000409 ",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "process_exit_code",
+            "failure_code": "0xc0000409",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": null,
+              "qt_testcase_or_slot": "coTeacherSidebarVisualCapture",
+              "qt_data_tag": "english-light",
+              "case_identity_source": "QtTest filter argument in LastTest.log Command",
+              "case_outcome": "target failed; assertion not retained",
+              "assertion_or_termination_messages": []
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextBootstrapTests.exe\" \"coTeacherSidebarVisualCapture:english-light\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextCoTeacherSidebarVisualCapture_english-light",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextCoTeacherSidebarVisualCapture_english-light",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 17 (225:ClassMngrNextCoTeacherSidebarVisualCapture_english-light)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Exit code 0xc0000409 ",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "process_exit_code",
+            "failure_code": "0xc0000409",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": null,
+              "qt_testcase_or_slot": "coTeacherSidebarVisualCapture",
+              "qt_data_tag": "korean-dark",
+              "case_identity_source": "QtTest filter argument in LastTest.log Command",
+              "case_outcome": "target failed; assertion not retained",
+              "assertion_or_termination_messages": []
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextBootstrapTests.exe\" \"coTeacherSidebarVisualCapture:korean-dark\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 18 (226:ClassMngrNextCoTeacherSidebarVisualCapture_korean-dark)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrMyDetailsSignatureVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrMyDetailsSignatureVisualCapture.exe\" \"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/my-details-signature-visual-capture\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrMyDetailsSignatureVisualCapture",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrMyDetailsSignatureVisualCapture",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 19 (228:ClassMngrMyDetailsSignatureVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Exit code 0xc0000409 ",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "process_exit_code",
+            "failure_code": "0xc0000409",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 20 (229:ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextTeacherDirectoryVisualCapture.exe\" \"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/korean-teacher-directory-visual-capture-ko\" \"ko_KR\" \"dark\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 21 (240:ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextTeacherImportVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextTeacherImportVisualCapture.exe\" \"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/teacher-import-visual-captures/en_US_light\" \"en_US\" \"light\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextTeacherImportVisualCapture",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextTeacherImportVisualCapture",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 22 (242:ClassMngrNextTeacherImportVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextTeacherImportVisualCapture_ko_KR_dark",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextTeacherImportVisualCapture.exe\" \"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/teacher-import-visual-captures/ko_KR_dark\" \"ko_KR\" \"dark\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextTeacherImportVisualCapture_ko_KR_dark",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextTeacherImportVisualCapture_ko_KR_dark",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 23 (243:ClassMngrNextTeacherImportVisualCapture_ko_KR_dark)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextFileDialogPresenterTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextFileDialogPresenterTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextFileDialogPresenterTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextFileDialogPresenterTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 24 (254:ClassMngrNextFileDialogPresenterTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextWorkspaceInterruptedRecoveryFlowTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextWorkspaceInterruptedRecoveryFlowTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextWorkspaceInterruptedRecoveryFlowTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextWorkspaceInterruptedRecoveryFlowTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 25 (315:ClassMngrNextWorkspaceInterruptedRecoveryFlowTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextWorkspaceSaveAsFlowTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextWorkspaceSaveAsFlowTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextWorkspaceSaveAsFlowTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextWorkspaceSaveAsFlowTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 26 (316:ClassMngrNextWorkspaceSaveAsFlowTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextWorkspaceExportFlowTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextWorkspaceExportFlowTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextWorkspaceExportFlowTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextWorkspaceExportFlowTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 27 (317:ClassMngrNextWorkspaceExportFlowTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextMyWorkspacePageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Exit code 0xc0000409 ",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "process_exit_code",
+            "failure_code": "0xc0000409",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextMyWorkspacePageTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextMyWorkspacePageTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextMyWorkspacePageTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 28 (323:ClassMngrNextMyWorkspacePageTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextMyWorkspaceVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextMyWorkspaceVisualCapture.exe\" \"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/my-workspace-visual-capture\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextMyWorkspaceVisualCapture",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextMyWorkspaceVisualCapture",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 29 (324:ClassMngrNextMyWorkspaceVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextSubPrepVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextSubPrepVisualCapture.exe\" \"D:/a/ClassMngr-cpp/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextSubPrepVisualCapture",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextSubPrepVisualCapture",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 30 (328:ClassMngrNextSubPrepVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextClassesFullWindowStateVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextClassesFullWindowStateVisualCapture.exe\" \"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/classes-full-window-state-visual-capture\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextClassesFullWindowStateVisualCapture",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextClassesFullWindowStateVisualCapture",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 31 (337:ClassMngrNextClassesFullWindowStateVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextClassesNavigatorVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextClassesNavigatorVisualCapture.exe\" \"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/classes-navigator-visual-capture\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextClassesNavigatorVisualCapture",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextClassesNavigatorVisualCapture",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 32 (338:ClassMngrNextClassesNavigatorVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextClassesNavigatorWorkspaceStoreTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextClassesNavigatorWorkspaceStoreTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextClassesNavigatorWorkspaceStoreTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextClassesNavigatorWorkspaceStoreTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 33 (342:ClassMngrNextClassesNavigatorWorkspaceStoreTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 34 (420:ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 35 (480:ClassMngrNextPlatformSettingsManagerSidebarDisplayPreferencesPortTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrFileControllerWorkspaceLifecycleTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrFileControllerWorkspaceLifecycleTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrFileControllerWorkspaceLifecycleTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrFileControllerWorkspaceLifecycleTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 36 (604:ClassMngrFileControllerWorkspaceLifecycleTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextSchedulePageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Exit code 0xc0000409 ",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "process_exit_code",
+            "failure_code": "0xc0000409",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextSchedulePageTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextSchedulePageTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextSchedulePageTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 37 (607:ClassMngrNextSchedulePageTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextScheduleOutputAdapterTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextScheduleOutputAdapterTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextScheduleOutputAdapterTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextScheduleOutputAdapterTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 38 (608:ClassMngrNextScheduleOutputAdapterTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextNormalScheduleImportIntegrationTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Exit code 0xc0000409 ",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "process_exit_code",
+            "failure_code": "0xc0000409",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextNormalScheduleImportIntegrationTests.exe\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextNormalScheduleImportIntegrationTests",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextNormalScheduleImportIntegrationTests",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 39 (609:ClassMngrNextNormalScheduleImportIntegrationTests)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrNextScheduleVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrNextScheduleVisualCapture.exe\" \"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/schedule-visual-capture\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextScheduleVisualCapture",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextScheduleVisualCapture",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 40 (610:ClassMngrNextScheduleVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        },
+        {
+          "os": "Windows",
+          "ctest_target": "ClassMngrProfileFileWorkflowVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"D:/a/ClassMngr-cpp/ClassMngr-cpp/build/windows-x64-debug/Debug/ClassMngrProfileFileWorkflowVisualCapture.exe\" \"D:/a/ClassMngr-cpp/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/next/phase-7/profile-file-workflows\"",
+          "artifact_sources": {
+            "junit_testcase": "build/windows-x64-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrProfileFileWorkflowVisualCapture",
+            "last_test_log_section": "build/windows-x64-debug/Testing/Temporary/LastTest.log Test: ClassMngrProfileFileWorkflowVisualCapture",
+            "last_tests_failed_entry": "build/windows-x64-debug/Testing/Temporary/LastTestsFailed.log line 41 (618:ClassMngrProfileFileWorkflowVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/windows-x64-debug.json"
+          }
+        }
+      ]
+    },
+    {
+      "os": "Linux",
+      "artifact_id": 13664086456,
+      "artifact_name": "refactoring-baseline-linux-gcc-debug",
+      "archive_path": "/private/tmp/v8-01-baseline-linux.zip",
+      "archive_sha256": "1653f2bb09ecb71d5f4735d12bf351d0999953da802b377cfd96cbb8a2106033",
+      "head_sha": "666df4786ec48a0bf9fe285727ae073036ac4984",
+      "run_id": 42580405908,
+      "baseline_report_path": "artifacts/baseline/linux-gcc-debug.json",
+      "failed_ctest_targets": 20,
+      "junit_testcases": 619,
+      "targets": [
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrSharedPolicyTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Subprocess aborted",
+            "junit_failure_type": null,
+            "termination_messages": [
+              {
+                "exact_message": "Received signal 6 (SIGABRT)",
+                "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                "line_number": 165
+              }
+            ],
+            "failure_kind": "signal_termination",
+            "failure_code": "SIGABRT",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "SharedPolicyTests",
+              "qt_testcase_or_slot": "speakingEvalValidatorNormalizesAndReportsCellIssues()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "fatal_assertion",
+                  "severity": "QFATAL",
+                  "exact_message": "QFATAL : SharedPolicyTests::speakingEvalValidatorNormalizesAndReportsCellIssues() ASSERT: \"!isEmpty()\" in file /home/runner/work/ClassMngr-cpp/ClassMngr-cpp/Qt/6.12.0/gcc_64/include/QtCore/qlist.h, line 732",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 160
+                },
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : SharedPolicyTests::speakingEvalValidatorNormalizesAndReportsCellIssues() Received a fatal error.",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 161
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/Qt/6.12.0/gcc_64/include/QtCore/qlist.h(732)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 162
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrSharedPolicyTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSharedPolicyTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrSharedPolicyTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 1 (3:ClassMngrSharedPolicyTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrTestingClassesPageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "TestingClassesPageTests",
+              "qt_testcase_or_slot": "rosterEditorOmitsRemoveButtonAndKeepsContextAction()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : TestingClassesPageTests::rosterEditorOmitsRemoveButtonAndKeepsContextAction() 'foundRemoveAction' returned FALSE. ()",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2709
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/testing_classes_page_tests.cpp(774)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2710
+                }
+              ]
+            },
+            {
+              "qt_test_class": "TestingClassesPageTests",
+              "qt_testcase_or_slot": "rosterKeyboardTriggerOpensInAppPalette()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : TestingClassesPageTests::rosterKeyboardTriggerOpensInAppPalette() 'keyboard->isVisible()' returned FALSE. ()",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2714
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/testing_classes_page_tests.cpp(848)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2715
+                }
+              ]
+            },
+            {
+              "qt_test_class": "TestingClassesPageTests",
+              "qt_testcase_or_slot": "rosterKeyboardWritesToKoreanNameCell()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : TestingClassesPageTests::rosterKeyboardWritesToKoreanNameCell() 'keyboard->target()' returned FALSE. ()",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2718
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/testing_classes_page_tests.cpp(888)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2719
+                }
+              ]
+            },
+            {
+              "qt_test_class": "TestingClassesPageTests",
+              "qt_testcase_or_slot": "outputAvailabilityFollowsRosterTabAndLoadedClass()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : TestingClassesPageTests::outputAvailabilityFollowsRosterTabAndLoadedClass() 'page.outputCapabilities().printEnabled' returned FALSE. ()",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2721
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/testing_classes_page_tests.cpp(949)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 2722
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrTestingClassesPageTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrTestingClassesPageTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrTestingClassesPageTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 2 (54:ClassMngrTestingClassesPageTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrPageManagerTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrPageManagerTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrPageManagerTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrPageManagerTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 3 (72:ClassMngrPageManagerTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrClassDetailsSavePageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrClassDetailsSavePageTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrClassDetailsSavePageTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrClassDetailsSavePageTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 4 (78:ClassMngrClassDetailsSavePageTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrNavigationTeacherReadTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "NavigationTeacherReadTests",
+              "qt_testcase_or_slot": "selectedTeacherProfileReadFailureWarnsWithoutConfirmation()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : NavigationTeacherReadTests::selectedTeacherProfileReadFailureWarnsWithoutConfirmation() Compared values are not the same",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4344
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Actual   (warning.details)            : \"Loading teacher profile failed for teacher id 1: Parameter count mismatch\"",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4345
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Expected (expectedProfileRead.error()): \"Loading teacher failed for teacher id 1: Parameter count mismatch\"",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4346
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/navigation_teacher_read_tests.cpp(1179)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4347
+                }
+              ]
+            },
+            {
+              "qt_test_class": "NavigationTeacherReadTests",
+              "qt_testcase_or_slot": "refreshTeacherSidebarShowsAssignedAndUnassignedTeachers()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : NavigationTeacherReadTests::refreshTeacherSidebarShowsAssignedAndUnassignedTeachers() Compared lists differ at index 0.",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4351
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Actual   (coTeacherLabels): \"Zulu Display\"",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4352
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Expected (QStringList({ QStringLiteral(\"Alpha Display\"), QStringLiteral(\"Zulu Display\") })): \"Alpha Display\"",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4353
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/navigation_teacher_read_tests.cpp(1420)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4354
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [
+            {
+              "exact_message": "Actual   (warning.details)            : \"Loading teacher profile failed for teacher id 1: Parameter count mismatch\"",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 4345
+            },
+            {
+              "exact_message": "Expected (expectedProfileRead.error()): \"Loading teacher failed for teacher id 1: Parameter count mismatch\"",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 4346
+            },
+            {
+              "exact_message": "Actual   (coTeacherLabels): \"Zulu Display\"",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 4352
+            },
+            {
+              "exact_message": "Expected (QStringList({ QStringLiteral(\"Alpha Display\"), QStringLiteral(\"Zulu Display\") })): \"Alpha Display\"",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 4353
+            }
+          ],
+          "target_only": false,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrNavigationTeacherReadTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNavigationTeacherReadTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrNavigationTeacherReadTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 5 (91:ClassMngrNavigationTeacherReadTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrCampusRouteNavigationParityTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "CampusRouteNavigationParityTests",
+              "qt_testcase_or_slot": "campusRouteLeaveGuardMatrix(cancel-campus-address-page)",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : CampusRouteNavigationParityTests::campusRouteLeaveGuardMatrix(cancel-campus-address-page) Compared lists have different sizes.",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4709
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Actual   (sidebar.selectedKeys()) size: 0",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4710
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Expected (sidebarKeysBefore) size: 2",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4711
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/campus_route_navigation_parity_tests.cpp(550)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 4712
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [
+            {
+              "exact_message": "Actual   (sidebar.selectedKeys()) size: 0",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 4710
+            },
+            {
+              "exact_message": "Expected (sidebarKeysBefore) size: 2",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 4711
+            }
+          ],
+          "target_only": false,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrCampusRouteNavigationParityTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrCampusRouteNavigationParityTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrCampusRouteNavigationParityTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 6 (99:ClassMngrCampusRouteNavigationParityTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrRosterTransferMenuTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "RosterTransferMenuTests",
+              "qt_testcase_or_slot": "workflowProjectionMatchesRosterModel()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : RosterTransferMenuTests::workflowProjectionMatchesRosterModel() 'std::holds_alternative<RosterRowTransferSuccess>(result)' returned FALSE. ()",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 6316
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/roster_transfer_menu_tests.cpp(1548)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 6317
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrRosterTransferMenuTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrRosterTransferMenuTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrRosterTransferMenuTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 7 (140:ClassMngrRosterTransferMenuTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrSubPrepPageTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Timeout",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "timeout",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrSubPrepPageTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSubPrepPageTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrSubPrepPageTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 8 (152:ClassMngrSubPrepPageTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrSubPrepRosterOutputParityTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "SubPrepRosterOutputParityTests",
+              "qt_testcase_or_slot": "dailyUsesIntensiveMeetings()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : SubPrepRosterOutputParityTests::dailyUsesIntensiveMeetings() 'dailyPdfBytes.contains(\"/BaseFont /PretendardVariable-Regular\")' returned FALSE. ()",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 7451
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/sub_prep_roster_output_parity_tests.cpp(330)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 7452
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrSubPrepRosterOutputParityTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSubPrepRosterOutputParityTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrSubPrepRosterOutputParityTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 9 (164:ClassMngrSubPrepRosterOutputParityTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrSubPrepPackageServiceTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "SubPrepPackageServiceTests",
+              "qt_testcase_or_slot": "largePackageGeneratesOutputReferenceWhenConfigured()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : SubPrepPackageServiceTests::largePackageGeneratesOutputReferenceWhenConfigured() 'matchesReference' returned FALSE. (Sub Prep.pdf: Generated PDF page 1 text differs from the reference at character 1193 (generated: ' 04 404 E1  Level 4 Teacher 05 405 E2  Level 1 Teacher 05 405'; reference: ' 04 404 E1  Level 4 Teacher 05 405 E2  Level 1').)",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 7496
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/sub_prep_package_service_tests.cpp(2006)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 7497
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrSubPrepPackageServiceTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSubPrepPackageServiceTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrSubPrepPackageServiceTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 10 (165:ClassMngrSubPrepPackageServiceTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrSpeakingEvalBatchReportServiceTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "SpeakingEvalBatchReportServiceTests",
+              "qt_testcase_or_slot": "legacyAndNextOutputPathsMatchForStandardAndAdvanced()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : SpeakingEvalBatchReportServiceTests::legacyAndNextOutputPathsMatchForStandardAndAdvanced() 'nextText.contains(expected)' returned FALSE. (Missing expected PDF text: 홍길동)",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8417
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/speaking_eval_batch_report_service_tests.cpp(2202)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8418
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrSpeakingEvalBatchReportServiceTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrSpeakingEvalBatchReportServiceTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrSpeakingEvalBatchReportServiceTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 11 (191:ClassMngrSpeakingEvalBatchReportServiceTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrStartupPerformanceTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "qtest_assertion_or_fatal",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [
+            {
+              "qt_test_class": "StartupPerformanceTests",
+              "qt_testcase_or_slot": "pdfLifecycleOwnerMetricsValidatorIsFailClosed(missing-numeric-field)",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : StartupPerformanceTests::pdfLifecycleOwnerMetricsValidatorIsFailClosed(missing-numeric-field) 'errorMessage.contains(expectedDiagnostic)' returned FALSE. (Current metrics record for owner sub-prep-preview is missing numeric field tableCellWidgetCount.)",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8783
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/startup_performance_tests.cpp(1987)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8784
+                }
+              ]
+            },
+            {
+              "qt_test_class": "StartupPerformanceTests",
+              "qt_testcase_or_slot": "pdfLifecycleOwnerMetricsValidatorIsFailClosed(non-numeric-field)",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : StartupPerformanceTests::pdfLifecycleOwnerMetricsValidatorIsFailClosed(non-numeric-field) 'errorMessage.contains(expectedDiagnostic)' returned FALSE. (Current metrics record for owner standalone-schedule is missing numeric field modelRowCount.)",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8785
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/startup_performance_tests.cpp(1987)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8786
+                }
+              ]
+            },
+            {
+              "qt_test_class": "StartupPerformanceTests",
+              "qt_testcase_or_slot": "capturesMatchedSqlSubPrepForC53()",
+              "case_identity_source": "QtTest output in LastTest.log",
+              "case_outcome": "failed",
+              "assertion_or_termination_messages": [
+                {
+                  "kind": "assertion",
+                  "severity": "FAIL!",
+                  "exact_message": "FAIL!  : StartupPerformanceTests::capturesMatchedSqlSubPrepForC53() '!configuredOutputRoot.isEmpty()' returned FALSE. (CLASSMNGR_C53_SQL_GATE_REFERENCE_DIR was not provided.)",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8825
+                },
+                {
+                  "kind": "assertion_detail",
+                  "exact_message": "Loc: [/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/tests/startup_performance_tests.cpp(10762)]",
+                  "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                  "line_number": 8826
+                }
+              ]
+            }
+          ],
+          "target_diagnostics": [],
+          "target_only": false,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrStartupPerformanceTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrStartupPerformanceTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrStartupPerformanceTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 12 (203:ClassMngrStartupPerformanceTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrNextBootstrapTests",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "SEGFAULT",
+            "junit_failure_type": null,
+            "termination_messages": [
+              {
+                "exact_message": "Received signal 11 (SIGSEGV), code SEGV_MAPERR, at instruction address 0x00007f56e3d98cc8, accessing address 0x0000000000000000",
+                "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+                "line_number": 9309
+              }
+            ],
+            "failure_kind": "access_violation_or_segfault",
+            "failure_code": "SIGSEGV",
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "ClassMngrNext startup stage=core-services-created outcome=failed diagnostic=stage-failed diagnostic_stage=core-services-created",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 9177
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrNextBootstrapTests\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextBootstrapTests",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextBootstrapTests",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 13 (213:ClassMngrNextBootstrapTests)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "This plugin does not support propagateSizeHints()",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 10239
+            },
+            {
+              "exact_message": "Next navigation font, indentation, or row metrics did not match legacy.",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 10240
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrNextTeacherDirectoryVisualCapture\" \"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/korean-teacher-directory-visual-capture-ko\" \"ko_KR\" \"dark\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 14 (241:ClassMngrNextTeacherDirectoryVisualCaptureKoreanDark)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrNextTeacherImportVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "This plugin does not support propagateSizeHints()",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 10300
+            },
+            {
+              "exact_message": "Importer dialog geometry/layout parity failed. Expected selection QSize(460, 218) and review QSize(460, 501) but received legacy selection QSize(460, 216) Next selection QSize(460, 218) legacy review QSize(460, 492) Next review QSize(460, 501) legacy path width 330 Next path width 330 legacy horizontal range 0 Next horizontal range 0 legacy content/viewport 414 / 414 Next content/viewport 414 / 414 selection path y 48 / 48 selection browse y 42 / 42 action visible true / true action bottom 197 / 199 selection path x/width 18 / 330 vs 18 / 330 browse width 84 / 84 review path x/y/width 18 / 48 / 330 vs 18 / 48 / 330 valid path layouts true / true / true / true scroll validity true / true",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 10310
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrNextTeacherImportVisualCapture\" \"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/teacher-import-visual-captures/en_US_light\" \"en_US\" \"light\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextTeacherImportVisualCapture",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextTeacherImportVisualCapture",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 15 (243:ClassMngrNextTeacherImportVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrNextTeacherImportVisualCapture_ko_KR_dark",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "This plugin does not support propagateSizeHints()",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 10326
+            },
+            {
+              "exact_message": "Importer dialog geometry/layout parity failed. Expected selection QSize(460, 212) and review QSize(460, 477) but received legacy selection QSize(460, 216) Next selection QSize(460, 212) legacy review QSize(460, 492) Next review QSize(460, 477) legacy path width 345 Next path width 345 legacy horizontal range 0 Next horizontal range 0 legacy content/viewport 414 / 414 Next content/viewport 414 / 414 selection path y 47 / 47 selection browse y 42 / 42 action visible true / true action bottom 197 / 193 selection path x/width 18 / 345 vs 18 / 345 browse width 69 / 69 review path x/y/width 18 / 47 / 345 vs 18 / 47 / 345 valid path layouts true / true / true / true scroll validity true / true",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 10336
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrNextTeacherImportVisualCapture\" \"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/teacher-import-visual-captures/ko_KR_dark\" \"ko_KR\" \"dark\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextTeacherImportVisualCapture_ko_KR_dark",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextTeacherImportVisualCapture_ko_KR_dark",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 16 (244:ClassMngrNextTeacherImportVisualCapture_ko_KR_dark)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrNextMyWorkspaceVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "This plugin does not support propagateSizeHints()",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 12006
+            },
+            {
+              "exact_message": "qt.svg: Cannot open file ':/assets/icons/combo_arrow_light.svg', because: No such file or directory",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 12010
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrNextMyWorkspaceVisualCapture\" \"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/my-workspace-visual-capture\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextMyWorkspaceVisualCapture",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextMyWorkspaceVisualCapture",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 17 (325:ClassMngrNextMyWorkspaceVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrNextSubPrepVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "This plugin does not support propagateSizeHints()",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 12109
+            },
+            {
+              "exact_message": "Successful Sub Prep output did not create one package folder.",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 12124
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrNextSubPrepVisualCapture\" \"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextSubPrepVisualCapture",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextSubPrepVisualCapture",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 18 (329:ClassMngrNextSubPrepVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrNextClassesNavigatorVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "This plugin does not support propagateSizeHints()",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 12706
+            },
+            {
+              "exact_message": "A Classes visual capture could not be saved (image 1083x768, expected 1068x768, path /home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/classes-navigator-visual-capture/classes_en_US_light_small.png).",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 12707
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrNextClassesNavigatorVisualCapture\" \"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/classes-navigator-visual-capture\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrNextClassesNavigatorVisualCapture",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrNextClassesNavigatorVisualCapture",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 19 (339:ClassMngrNextClassesNavigatorVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        },
+        {
+          "os": "Linux",
+          "ctest_target": "ClassMngrProfileFileWorkflowVisualCapture",
+          "outcome": {
+            "ctest_status": "failed",
+            "junit_failure_message": "Failed",
+            "junit_failure_type": null,
+            "termination_messages": [],
+            "failure_kind": "target_failed_without_retained_slot",
+            "failure_code": null,
+            "lasttest_result_line": "Test Failed."
+          },
+          "qt_cases": [],
+          "target_diagnostics": [
+            {
+              "exact_message": "Could not create disposable settings or profile directories",
+              "artifact_source": "build/linux-gcc-debug/Testing/Temporary/LastTest.log",
+              "line_number": 21188
+            }
+          ],
+          "target_only": true,
+          "ctest_command": "\"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/build/linux-gcc-debug/ClassMngrProfileFileWorkflowVisualCapture\" \"/home/runner/work/ClassMngr-cpp/ClassMngr-cpp/docs/qt-rewrite/visual-baseline/next/phase-7/profile-file-workflows\"",
+          "artifact_sources": {
+            "junit_testcase": "build/linux-gcc-debug/Testing/refactoring-baseline.junit.xml testcase name=ClassMngrProfileFileWorkflowVisualCapture",
+            "last_test_log_section": "build/linux-gcc-debug/Testing/Temporary/LastTest.log Test: ClassMngrProfileFileWorkflowVisualCapture",
+            "last_tests_failed_entry": "build/linux-gcc-debug/Testing/Temporary/LastTestsFailed.log line 20 (619:ClassMngrProfileFileWorkflowVisualCapture)",
+            "baseline_report_test_result": "artifacts/baseline/linux-gcc-debug.json"
+          }
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "failed_target_counts_by_os": {
+      "macOS": 11,
+      "Windows": 41,
+      "Linux": 20
+    },
+    "sum_failed_ctest_target_observations": 72,
+    "target_sets_match_baseline_report_junit_and_lasttestsfailed": true,
+    "target_only_count": 51,
+    "observed_qt_slot_filter_only_count": 6,
+    "qt_test_assertion_failure_slot_count": 26
+  }
+}

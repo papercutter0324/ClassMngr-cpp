@@ -1,27 +1,36 @@
 # Latest Session Work
 
-## Current Deployment Handoff — phase75_windows_elevated_capture — 2026-11-05
+## Current Deployment Handoff — phase8-8713-macos-exitgate-20261109 — 2026-11-09
 
-- Heavy-route Windows Release verification continuation. Commit
-  `53aaeed2a4b1f1123a12a4f365696968c2b5cc80` replaces live reads of files held
-  open by the startup process with asynchronous stdout/stderr reads. The
-  workflow now fails on PowerShell error records or if the verifier omits its
-  success sentinel.
-- Windows Release run `42111769908` passed on x64 and ARM64. Its x64 log
-  explicitly confirms the ten startup stages in order and emits
-  `WINDOWS_PACKAGE_VERIFICATION_SUCCESS:x64`; ARM64 emits its matching marker.
-  Final installer verification and release-artifact upload passed for both.
-- Phase 4 resource-layout run `42111769886` passed on Windows x64, Linux x64,
-  and macOS. Linux Release run `42104507218` passed its package-verification
-  step and then failed a supplemental Phase 0 runner-contract test; macOS
-  Release run `42104507137` passed. Phase 8's full exit gate remains open:
-  these package results do not establish all v2 integrations or baseline
-  output parity. Phase 7.5 remains incomplete but is not a Phase 8 blocker.
-- `Qt-Rewrite` and `origin/Qt-Rewrite` both point to
-  `53aaeed2a4b1f1123a12a4f365696968c2b5cc80`. The only remaining local worktree
-  changes are the two pre-existing deleted C44 PDFs; they were preserved.
+- Heavy-route work on branch `Qt-Rewrite`, with Light for commits and push.
+  Slice 8.7.13 is Linux-only; the macOS exit-gate candidate is separate.
+- Hosted Refactoring Baseline run `42580405908` at SHA
+  `666df4786ec48a0bf9fe285727ae073036ac4984` failed full CTest on macOS
+  (11/620), Windows x64 (41/618), and Linux (20/619). Every baseline report
+  says the checkout was dirty at both boundaries and its source fingerprint
+  changed, so retain the outputs as diagnostic evidence only.
+- Schedule passed on macOS and Linux but crashed on Windows with
+  `0xc0000409`; all four Roster cases passed on all three hosts; Speaking
+  passed on macOS, failed on Linux, and was incomplete on Windows. C53 capture
+  was skipped on all hosts because the baseline step failed. Separate Windows
+  C53 run `42580406156` passed at the same SHA.
+- The retained inventories cover all 72 failed CTest target observations and
+  2,333 macOS, 5 Windows, and 2,077 Linux QWARN occurrences. JUnit warning
+  counts are not added because they repeat/subset `LastTest.log`. Exact
+  warning bodies, test contexts, and available failure slots are versioned
+  under `docs/qt-rewrite/phase8a/evidence/`.
+- Same-SHA Linux and macOS Release package runs, Windows ARM64 Release, and
+  Phase 4 resource layout passed. Windows x64 Release failed before configure
+  when vcpkg download returned HTTP 504; no package artifact exists.
+- The Phase 8 exit gate remains open. The Phase 8a plan starts with source
+  provenance and independent C53 capture orchestration, then has separate
+  macOS, Windows, and Linux batches. The Phase 8a plan/inventory commit is
+  `7083bb7ea9f4d3eec3fe225742055480d043c474`; the separate Phase 8 history
+  move is `2d11d3eb6729cd8e768ac1ef4dead3770245d6cf`. Both are pushed to
+  `origin/Qt-Rewrite`, together with the final deployment handoff update. The
+  next implementation work begins with Phase 8a Batch 1.
 
-## Current Deployment Handoff — configurable-roster-rows (implementation complete)
+## Prior Deployment Handoff — configurable-roster-rows (implementation complete)
 
 - Heavy-route feature work on branch `Qt-Rewrite`. The Legacy and Next
   Preferences dialogs now share saved settings for maximum roster rows (default
