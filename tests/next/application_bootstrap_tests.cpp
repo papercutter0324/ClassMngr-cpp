@@ -115,6 +115,7 @@
 #include <QSettings>
 #include <QSignalSpy>
 #include <QStatusBar>
+#include <QSpinBox>
 #include <QTabWidget>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -153,6 +154,7 @@ class ApplicationBootstrapTests final : public QObject
 private slots:
     void initTestCase();
     void cleanupTestCase();
+    void sharedWidgetIconResourcesAreAvailableToTheirConsumers();
     void createsVisibleShellAndReportsOnlyCompletedStartupStage();
     void startupUpdateCheckWaitsForVisibleInitialPageAndLivesUntilShutdown();
     void manualUpdateActionSharesCoordinatorBeforeStartupDispatch();
@@ -2238,6 +2240,40 @@ void ApplicationBootstrapTests::cleanupTestCase()
     }
     SettingsManager::instance().clear();
     SettingsManager::instance().sync();
+}
+
+void ApplicationBootstrapTests::
+sharedWidgetIconResourcesAreAvailableToTheirConsumers()
+{
+    const std::array<QString, 4> resourcePaths{
+        QStringLiteral(":/assets/icons/keyboard_light.svg"),
+        QStringLiteral(":/assets/icons/keyboard_dark.svg"),
+        QStringLiteral(":/assets/icons/spin_up_light.svg"),
+        QStringLiteral(":/assets/icons/spin_up_dark.svg")
+    };
+    for (const QString& resourcePath : resourcePaths)
+    {
+        QFile resource(resourcePath);
+        QVERIFY2(resource.exists(), qPrintable(resourcePath));
+        QVERIFY2(resource.open(QIODevice::ReadOnly), qPrintable(resourcePath));
+        QVERIFY2(!resource.readAll().isEmpty(), qPrintable(resourcePath));
+    }
+
+    QPushButton keyboardTrigger;
+    OnScreenKeyboard keyboard;
+    keyboard.setTriggerButton(&keyboardTrigger);
+    QVERIFY(!keyboardTrigger.icon().isNull());
+    QVERIFY(!keyboardTrigger.icon().pixmap(QSize(24, 24)).isNull());
+
+    QSpinBox numericInput;
+    numericInput.setRange(0, 10);
+    numericInput.setValue(5);
+    numericInput.setStyleSheet(QStringLiteral(
+        "QSpinBox::up-arrow { image: url(:/assets/icons/spin_up_light.svg); }"));
+    numericInput.resize(120, 32);
+    numericInput.show();
+    QCoreApplication::processEvents();
+    QVERIFY(!numericInput.grab().isNull());
 }
 
 void ApplicationBootstrapTests::

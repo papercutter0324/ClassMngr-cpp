@@ -482,6 +482,9 @@ set_target_properties(ClassMngrNextBootstrapTests
 classmngr_next_add_mode_combo_arrow_resources(
     ClassMngrNextBootstrapTests
 )
+classmngr_next_add_shared_widget_icon_resources(
+    ClassMngrNextBootstrapTests
+)
 classmngr_next_add_calendar_qml_resources(ClassMngrNextBootstrapTests)
 set_property(TARGET ClassMngrNextBootstrapTests
     PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
