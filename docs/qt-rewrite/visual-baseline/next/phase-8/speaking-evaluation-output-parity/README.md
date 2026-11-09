@@ -35,3 +35,12 @@ build/linux-gcc-debug/ClassMngrSpeakingEvalBatchReportServiceTests \
 
 The test fails if the requested output directory already contains files. The
 capture uses synthetic fixture values and does not contain student records.
+
+## Linux x64 Debug evidence
+
+The candidate-2 Linux capture passed for Standard and Advanced: extracted text,
+540 × 780-point geometry, and 150-DPI raster pixels were equal between the
+Legacy and Next paths. This uses the valid Qt 6.12 release composition of Qt
+Core 6.12 with QtPdf 6.14. Windows x64, macOS universal, and hosted
+exact-toolchain captures remain pending; the evidence remains same-host
+adapter-path parity because both paths share the renderer.

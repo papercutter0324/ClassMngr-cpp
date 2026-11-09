@@ -865,18 +865,19 @@ set_target_properties(ClassMngrNextCalendarUi
         POSITION_INDEPENDENT_CODE ON
 )
 # These archives have cyclic references through Runtime, WorkspaceStore,
-# Sub Prep, and Calendar. Rescan the complete set together on supporting
-# linkers; keep the established direct dependency order elsewhere.
+# DomainArchive, Sub Prep, and Calendar. Rescan the complete set together on
+# supporting linkers; keep the established direct dependency order elsewhere.
 if(_classmngr_legacy_runtime_rescan_supported)
     target_link_libraries(ClassMngrLegacyRuntimeClosure
         INTERFACE
-            "$<LINK_GROUP:RESCAN,ClassMngrRuntime,ClassMngrWorkspaceStore,ClassMngrSubPrepShared,ClassMngrNextCalendarUi>"
+            "$<LINK_GROUP:RESCAN,ClassMngrRuntime,ClassMngrWorkspaceStore,ClassMngrDomainArchive,ClassMngrSubPrepShared,ClassMngrNextCalendarUi>"
     )
 else()
     target_link_libraries(ClassMngrLegacyRuntimeClosure
         INTERFACE
             ClassMngrRuntime
             ClassMngrWorkspaceStore
+            ClassMngrDomainArchive
             ClassMngrSubPrepShared
             ClassMngrNextCalendarUi
     )

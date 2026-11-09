@@ -41,3 +41,12 @@ that kit's platform plugins and configures the Qt plugin and runtime library
 paths. On Windows, use PowerShell syntax for the environment variable and
 command. The output directory must be new or empty; successful captures are
 written to `artifacts/sub-prep-output/<report>` by default.
+
+## Linux x64 Debug evidence
+
+The candidate-2 Linux capture passed all 17 Sub Prep/C53 pages with zero
+changed pixels. The independent SQL oracle verified 750 unique weekday roster
+names and 30 class headers, and the strict used-code audit passed. This uses
+the valid Qt 6.12 release composition of Qt Core 6.12 with QtPdf 6.14. Windows
+x64, macOS universal, and hosted
+exact-toolchain captures remain pending.

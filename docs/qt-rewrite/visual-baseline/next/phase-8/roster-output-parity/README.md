@@ -20,11 +20,13 @@ the paired PDFs, PNGs, and JSON files in each platform's baseline artifact.
 
 ## Linux x64 Debug evidence
 
-The local incremental build of `ClassMngrNextRosterOutputTests` passed after
+The candidate-2 local incremental build of `ClassMngrNextRosterOutputTests`
+passed after
 its Legacy reference link was routed through `ClassMngrLegacyRuntimeClosure`
 and the test target's existing `ClassMngrClassTransferSupport` / Domain
 archive cycle was rescanned. Focused CTest passed 1/1 in 3.87 seconds on
-Fedora Linux 44 x86_64 with Qt 6.12.0. All four template/orientation cases
-passed. They produced six paired 1000×1000 page rasters with equal text,
-geometry, and image hashes. Windows x64 and macOS universal captures are
-pending publication of the active Phase 8 batch.
+Fedora Linux 44 x86_64 with Qt 6.12.0; the valid release composition uses Qt
+Core 6.12 with QtPdf 6.14. All four template/orientation cases passed. They
+produced six paired 1000×1000 page rasters with equal text, geometry, and
+image hashes. Windows x64, macOS universal, and hosted exact-toolchain
+captures remain pending.

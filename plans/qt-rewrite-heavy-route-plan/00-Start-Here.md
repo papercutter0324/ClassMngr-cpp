@@ -5,20 +5,17 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-11-05
+- Last updated: 2026-11-09
 - Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 is in progress.
-  Slices 8.1.10–8.1.12 are accepted after focused Linux CTest. Slices
-  8.2.7–8.2.10 have local focused Linux evidence and are implementation ready,
-  with Linux hosted toolchain confirmation and Windows x64/macOS universal
-  capture artifacts pending the active batch push. The Speaking Evaluation
-  Standard and Advanced adapter-path capture confirms equal text, page
-  geometry, and same-host raster output; it records that both paths share the
-  renderer. The 8.7.13 Linux Legacy link closure passes a fresh `ClassMngr`
-  target build. Its all-target Debug attempt at `52f1dd98` failed on stale
-  calendar-test accessors; the local `calendarViewWidget()` repair awaits
-  requalification after the active batch push. Windows ARM64 Debug passed;
-  macOS universal and Windows x64 Debug remain pending. Phase 8's all-adapter
-  and generated-output parity gate remains open. See the [Phase 7.5 plan](08.5-Phase-7.5-Cross-Platform-Follow-Ups.md),
+  Slices 8.1.10–8.1.12 are accepted after focused Linux CTest. Linux
+  verification for 8.7.13 and Batch 4 candidate 2 is complete: the clean
+  Qt 6.12.0/GCC 16.2.1 Debug configure succeeded with `CCACHE_DISABLE=1`,
+  the all-target build passed 947/947, and the post-closure incremental build
+  passed 2204/2204. The Phase 5 direct CTest run completed 619 tests: 602
+  passed, 14 failed, and 3 timed out (exit 8), so the suite is not green.
+  Linux Schedule, Roster, Sub Prep/C53, and Speaking Evaluation parity passed;
+  Windows x64, macOS universal, hosted exact-toolchain captures, the
+  package/resource matrix, and Phase 8's exit gate remain pending. See the [Phase 7.5 plan](08.5-Phase-7.5-Cross-Platform-Follow-Ups.md),
   [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), and [current
   batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate

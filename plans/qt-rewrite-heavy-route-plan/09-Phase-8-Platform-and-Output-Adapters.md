@@ -37,8 +37,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2, 3, and 7
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
-- Last updated: 2026-11-06
-- Current note: The 8.2.7–8.2.10 output captures have focused Linux evidence. The prior-head hosted baseline, package, resource-layout, and Windows C53 runs are incomplete or only partially passed; macOS and the Linux/Windows/macOS clean Debug matrix remain pending. PowerPoint host/process/workspace behavior and Next Speaking Evaluation/Sub Prep default output roots have been moved behind platform-injected boundaries in separate local commits (`6bab27ff`, `10cd6bbd`); independent focused Linux verification passed. The next pushed head must rerun the clean all-target Linux Debug build and Phase 5 CTest, all four output captures on Linux x64/Windows x64/macOS universal, and the package/resource-adapter matrix before the Phase 8 exit gate can be accepted.
+- Last updated: 2026-11-09
+- Current note: Batch 4 candidate 1 (8.7.13) has verified Linux completion: clean Qt 6.12.0/GCC 16.2.1 Debug configure with `CCACHE_DISABLE=1`, clean all-target build 947/947, post-closure incremental build 2204/2204, and seven independently passing newly closure-linked targets. Direct Phase 5 CTest completed 619 tests (602 passed, 14 failed, 3 timed out; exit 8), so the suite remains non-green. Candidate 2 has Linux Schedule, Roster, Sub Prep/C53, and Speaking Evaluation parity evidence, including a 3/3 focused Schedule/Roster/Speaking CTest set. Windows x64, macOS universal, hosted exact-toolchain captures, and the package/resource matrix remain pending; the Phase 8 exit gate stays open. PowerPoint host/process/workspace behavior and Next Speaking Evaluation/Sub Prep default output roots remain behind platform-injected boundaries in separate local commits (`6bab27ff`, `10cd6bbd`).
 
 ### Slice batches
 
@@ -507,7 +507,7 @@ universal captures will be collected after the active batch push. See
 [Roster output parity matrix](../../docs/qt-rewrite/visual-baseline/next/phase-8/roster-output-parity/README.md)
 for evidence structure and limitations.
 
-### 8.2.9 — Sub Prep generated-output parity matrix (implementation ready; platform CI pending)
+### 8.2.9 — Sub Prep generated-output parity matrix (Linux evidence complete; platform matrix pending)
 
 The Refactoring baseline workflow now runs the matched-SQL C53 Legacy/Next
 capture, independent SQL oracle, and used-code audits on Linux x64, Windows
@@ -518,17 +518,17 @@ roster pages must match Legacy page counts, dimensions, and pixels on the same
 host. Raster equality is not compared across operating systems.
 
 The required Linux Debug targets built in `build/linux-gcc-debug`, and the
-fresh local capture passed all 17 pages with zero changed pixels. The SQL
+candidate-2 capture passed all 17 pages with zero changed pixels. The SQL
 oracle verified 750 unique weekday roster names and 30 class headers; the
-strict Next used-code audit passed 5 pages and 15 page-font records. The local
-runner reported Qt 6.12 Core while `libQt6Pdf.so.6` resolved to 6.14, so this
-run is a smoke result rather than the platform acceptance result. Windows x64
-and macOS universal captures, plus exact-version hosted results, remain
-pending the active batch push. See [Sub Prep C53 output parity by platform]
+strict Next used-code audit passed 5 pages and 15 page-font records. Qt Core
+6.12 with QtPdf 6.14 is the valid Qt 6.12 release composition for this Linux
+evidence. Windows x64 and
+macOS universal captures, plus hosted exact-toolchain results, remain pending.
+See [Sub Prep C53 output parity by platform]
 (../../docs/qt-rewrite/visual-baseline/next/phase-8/sub-prep-c53-parity/README.md)
 for artifact contents and reproduction.
 
-### 8.2.10 — Speaking Evaluation report-output baseline (implementation ready; platform CI pending)
+### 8.2.10 — Speaking Evaluation report-output baseline (Linux evidence complete; platform matrix pending)
 
 The Refactoring baseline workflow opts the existing Speaking Evaluation
 report-service test into a matched-data capture on Linux x64, Windows x64, and
@@ -545,13 +545,14 @@ cross-host raster identity are not gates.
 
 The Linux Debug `ClassMngrSpeakingEvalBatchReportServiceTests` target built
 successfully. Independent verification passed the focused Standard/Advanced
-capture (3 passed, 0 failed, 0 skipped), confirmed equal extracted text and
-pixel-identical 1125 × 1625 rasters for both templates, and verified that an
-unset capture variable skips without writing a manifest and a nonempty output
-directory fails without replacing its contents. The manifest must be fully
-written and flushed before the test passes. This local host uses Qt Core 6.12
-with QtPdf 6.14; Windows x64, macOS universal, and hosted exact-toolchain
-captures remain pending the active batch push. See [Speaking Evaluation
+capture (3 passed, 0 failed, 0 skipped), confirmed equal extracted text,
+540 × 780-point geometry, and pixel-identical 1125 × 1625 rasters for both
+templates, and verified that an unset capture variable skips without writing a
+manifest and a nonempty output directory fails without replacing its contents.
+The manifest must be fully written and flushed before the test passes. Qt Core
+6.12 with QtPdf 6.14 is the valid Qt 6.12 release composition for this Linux
+evidence. Windows x64, macOS universal, and hosted exact-toolchain captures
+remain pending. See [Speaking Evaluation
 report output by adapter path](../../docs/qt-rewrite/visual-baseline/next/phase-8/speaking-evaluation-output-parity/README.md)
 for capture details and reproduction.
 
@@ -909,12 +910,18 @@ linkers supporting CMake's `RESCAN` group, Runtime, WorkspaceStore,
 The unsupported-linker path retains the direct dependency order.
 
 After clearing the standard `build/linux-gcc-debug` folder, a fresh configure
-with Qt 6.12.0 and GCC 16.2.1 completed. The fresh build of target `ClassMngr`
-and its dependencies passed (400/401 Ninja steps; the target link completed).
-The emitted link command confirms all four static archives are between
-`--start-group` and `--end-group`. The clean all-target build and Phase 5 CTest
-suite remain pending the `refactoring-baseline` workflow triggered by this
-change; no full-suite result is claimed yet.
+with Qt 6.12.0 and GCC 16.2.1 completed with `CCACHE_DISABLE=1`. The clean
+all-target build passed 947/947; the post-closure incremental build passed
+2204/2204. The closure links DomainArchive with Runtime, WorkspaceStore,
+SubPrepShared, and NextCalendarUi; the emitted link command confirms the
+complete archive set is inside `--start-group` and `--end-group`, and seven
+newly closure-linked targets passed independently.
+
+The direct Phase 5 CTest run completed 619 tests: 602 passed, 14 failed, and
+3 timed out (exit 8). The timed-out tests were `ClassMngrPageManagerTests`,
+`ClassMngrClassDetailsSavePageTests`, and `ClassMngrSubPrepPageTests`. The
+suite is therefore not green; Windows x64, macOS universal, hosted
+exact-toolchain captures, and the package/resource matrix remain pending.
 
 ## Objective
 
