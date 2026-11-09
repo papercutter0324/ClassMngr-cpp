@@ -2,19 +2,19 @@
 
 ## Phase 8a - Active Batch 2 (OS-agnostic QWARN fixes)
 
-Batch 1 is committed and pushed at `13eb0f97091c2d02c509053477b92173e1abd4f2`.
-Its Refactoring Baseline run `42655216186` remains in progress after about 52
-minutes; the Windows ARM64 cross-build passed, while native Windows x64, macOS,
-and Linux have not finished. The workflow uses `cancel-in-progress: true` for
-this branch. The Batch 2 push will supersede that run; use the replacement run
-as the provenance/C53 integration gate for the OS-agnostic changes.
+Batch 2 was pushed to `origin/Qt-Rewrite` at `90a8357e38d2b8d59af82fed2daa8cad5f9f4bb3`.
+The four commits after Batch 1 are `6e57a663`, `3f1b298c`, `f839b03a`, and
+`90a8357e`.
 
-Batch 2 currently contains two committed slices:
+The Batch 1 Refactoring Baseline run `42655216186` was superseded by that
+push. Windows ARM64 passed; Linux and macOS were canceled; Windows x64 is
+still finishing its baseline step. Replacement Refactoring Baseline run
+`42664061605` is pending under the branch concurrency group. The Phase 4
+resource-layout run `42664061594` and separate Windows C53 run
+`42664061512` are also in progress.
 
-1. **Next shared widget resources:** commit `6e57a6634f01710543b8c252bfecf09119dbb820`; the Next production and bootstrap-test targets receive the keyboard and spin icons.
-2. **Wide schedule teacher IDs:** commit `3f1b298cead9810e608588a8ca9e244d54728f4b`; ClassInfo schedule reads and the My Workspace adapter preserve signed 64-bit IDs.
-
-Both focused slices passed local verification. After the replacement run
-finishes, review its failure and warning evidence, record OS-agnostic
-triage/dispositions, and then begin Windows-specific changes. The Phase 8a plan
-remains the source for the full ordered scope and acceptance criteria.
+The Next shared-widget resources and signed-64-bit schedule reader fixes
+passed focused local verification. After replacement run `42664061605`
+finishes, review failure/QWARN evidence and record OS-agnostic dispositions
+before starting Windows-specific changes. The Phase 8a plan remains the
+source for the full ordered scope and acceptance criteria.
