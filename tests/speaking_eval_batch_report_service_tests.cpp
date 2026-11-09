@@ -6981,6 +6981,7 @@ void SpeakingEvalBatchReportServiceTests::mixedPowerPointTemplatesAreRejected()
     request.savePdf = true;
     request.keepIndividualPdfFiles = true;
     request.outputDirectory = outputDirectory.path();
+    request.documentsRoot = outputDirectory.path();
 
     const SpeakingEvalBatchReportService::Result result =
         SpeakingEvalBatchReportService::exportReports(request);
@@ -6989,11 +6990,12 @@ void SpeakingEvalBatchReportServiceTests::mixedPowerPointTemplatesAreRejected()
         result.status,
         SpeakingEvalBatchReportService::Status::Failed
         );
-    QVERIFY(
+    QVERIFY2(
         result.message.contains(
             QStringLiteral("same template"),
             Qt::CaseInsensitive
-            )
+            ),
+        qPrintable(result.message)
         );
     QVERIFY(
         QDir(outputDirectory.path()).entryList(
