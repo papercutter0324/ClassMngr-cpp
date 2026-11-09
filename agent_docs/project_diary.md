@@ -9343,3 +9343,21 @@ Keep the Next document catalog as metadata-only navigation: emit a typed
 DocumentId selection from a dedicated tree, keep it out of page history, and
 let the viewer own PDF loading and release. The projection refresh should
 preserve the selected ID when the locale changes.
+
+## 2026-11-09 — Phase 8 Linux link closure and parity evidence
+
+The Phase 8 Linux link issue was broader than Runtime/WorkspaceStore: the
+DomainArchive, SubPrepShared, and CalendarUi archives can participate in the
+same cyclic closure. Keep the existing CMake RESCAN group and unsupported-linker
+direct order explicit, and add that closure only to test targets that expose a
+real link failure. A clean Linux build can also encounter read-only ccache and
+ignored generated resource/output collisions; use `CCACHE_DISABLE=1` and isolate
+generated directories without altering tracked baselines.
+
+Qt Core 6.12 plus QtPdf 6.14 is valid within the Qt 6.12 release composition;
+future Phase 8 evidence must not downgrade those captures to smoke-only on that
+basis. Same-host Linux parity is strong evidence, but it does not close the
+cross-platform gate while Windows/macOS captures and a green/accepted baseline
+classification remain outstanding. CTest failure visibility must remain intact:
+record the 619-test result (602 pass, 14 fail, 3 timeout) instead of weakening
+the suite or hiding failures.

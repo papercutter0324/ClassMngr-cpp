@@ -5549,6 +5549,36 @@ schedule order, or inclusion of both entry kinds. Batch479 remains active
 and unpushed; Windows x64 evidence is unavailable and the Phase 0 and Phase 2
 gates remain open.
 
+## 2026-11-09 — Phase 8 Batch 4 Linux closeout
+
+Deployment `phase8_batch4_linux_closeout_20261109` completed the Linux work
+for Phase 8 slice 8.7.13 and Batch 4 candidate 2. Qt Core 6.12 with QtPdf
+6.14 is a valid Qt 6.12 release composition per the user's clarification and
+is not a version-mismatch blocker.
+
+The clean Linux x64 Debug configure used Qt 6.12.0/GCC 16.2.1; read-only
+ccache required `CCACHE_DISABLE=1`. The Legacy Runtime closure now includes
+DomainArchive in the RESCAN/direct dependency set, and seven concrete Linux
+test link targets use the existing LegacyRuntimeClosure. The clean all-target
+build completed 947/947 generated steps; the subsequent incremental build
+completed 2204/2204. Independent static review found the CMake changes narrow,
+and all seven newly closure-linked targets passed.
+
+The direct Phase 5 CTest rerun completed 619 tests with 602 passed, 14 failed,
+and 3 timed out (exit 8). The timeouts were PageManager, ClassDetailsSavePage,
+and SubPrepPage; the remaining failures are recorded in the baseline JUnit and
+LastTest.log and are not claimed as Phase 8 regressions. The Linux candidate-2
+parity evidence passed independently: Schedule 1/1 with zero changed pixels;
+Roster 4/4 with six equal page rasters; Sub Prep/C53 17 pages, 750 students,
+30 headers, audit pass, zero pixel changes; and Speaking Evaluation Standard
+and Advanced with equal text/geometry and zero pixel changes.
+
+Phase 7.5 remains Complete with its documented deferred/transferred follow-ups.
+Phase 8 remains In progress: the Linux slice and Linux candidate-2 portion are
+complete, but the full Phase 5 baseline is non-green and Windows x64/macOS
+universal/hosted cross-platform captures and the final all-adapter exit gate
+remain open. No commit or push has yet been made for this deployment.
+
 ## Phase 2 update - F1108 complete; Batch479 closed - 2026-10-20
 
 F1108 completed at source/test commit

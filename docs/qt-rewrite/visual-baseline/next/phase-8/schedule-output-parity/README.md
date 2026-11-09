@@ -46,13 +46,16 @@ platform's PDFs, PNGs, and JSON evidence in its baseline artifact.
 
 ## Linux x64 Debug evidence
 
-The local capture passed on Fedora Linux 44 x86_64 with Qt 6.12.0. Legacy and
+The candidate-2 local capture passed on Fedora Linux 44 x86_64 with Qt 6.12.0;
+the valid release composition uses Qt Core 6.12 with QtPdf 6.14. Legacy and
 Next produced one landscape A4 page, both passed all five content checks, and
 their 1754×1240 renders had zero changed pixels and zero mean channel
-difference. Against the archived macOS image, this Linux render had 140,929
+difference. Focused Schedule CTest passed 1/1; the independent focused
+Schedule/Roster/Speaking CTest set passed 3/3. Against the archived macOS image,
+this Linux render had 140,929
 changed pixels and mean channel difference 9.4227; that measurement confirms
 why the archived image is retained as reference data instead of a cross-host
 pixel threshold.
 
-The Windows and macOS workflow captures are pending publication of the active
-Phase 8 batch.
+Windows x64, macOS universal, and hosted exact-toolchain captures remain
+pending.

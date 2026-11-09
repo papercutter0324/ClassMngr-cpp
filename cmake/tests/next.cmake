@@ -1082,9 +1082,9 @@ target_link_libraries(ClassMngrNextTeacherDirectoryVisualCapture
         ClassMngrNextWorkspace
         ClassMngrNextWorkspaceDomain
         ClassMngrSubPrepShared
+        ClassMngrWorkspaceStore
         ClassMngrScheduleImportParser
         ClassMngrScheduleImportRules
-        ClassMngrWorkspaceStore
         Qt6::Gui
         Qt6::Sql
         Qt6::Widgets
@@ -4237,6 +4237,7 @@ target_compile_definitions(ClassMngrNextClassesNavigatorPageTests
 )
 target_link_libraries(ClassMngrNextClassesNavigatorPageTests
     PRIVATE
+        ClassMngrLegacyRuntimeClosure
         ClassMngrRuntime
         ClassMngrNextRosterOutput
         ClassMngrNext::Resources
@@ -4296,6 +4297,7 @@ target_compile_definitions(ClassMngrNextTestingClassesManagerTests
 )
 target_link_libraries(ClassMngrNextTestingClassesManagerTests
     PRIVATE
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNextRosterOutput
         ClassMngrRuntime
         ClassMngrNext::Application
@@ -4425,6 +4427,7 @@ target_compile_definitions(ClassMngrNextClassTransferWorkflowTests
 )
 target_link_libraries(ClassMngrNextClassTransferWorkflowTests
     PRIVATE
+        ClassMngrLegacyRuntimeClosure
         ClassMngrRuntime
         ClassMngrNext::Application
         ClassMngrNext::Resources
@@ -4627,6 +4630,7 @@ target_compile_definitions(ClassMngrNextClassesFullShellVisualCapture
 )
 target_link_libraries(ClassMngrNextClassesFullShellVisualCapture
     PRIVATE
+        ClassMngrLegacyRuntimeClosure
         ClassMngrRuntime
         ClassMngrNext::Application
         ClassMngrNext::DocumentCatalog
@@ -4783,6 +4787,7 @@ target_compile_definitions(ClassMngrNextClassesNavigatorVisualCapture
 )
 target_link_libraries(ClassMngrNextClassesNavigatorVisualCapture
     PRIVATE
+        ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Resources
         ClassMngrRuntime
         ClassMngrNextRosterOutput
@@ -8346,6 +8351,7 @@ target_compile_definitions(ClassMngrNextScheduleWorkspaceStoreActionsTests
 )
 target_link_libraries(ClassMngrNextScheduleWorkspaceStoreActionsTests
     PRIVATE
+        ClassMngrLegacyRuntimeClosure
         ClassMngrRuntime
         ClassMngrNext::Application
         ClassMngrNextWorkspaceDomain
@@ -8406,6 +8412,7 @@ target_compile_definitions(ClassMngrNextSchedulePageTests
 )
 target_link_libraries(ClassMngrNextSchedulePageTests
     PRIVATE
+        ClassMngrLegacyRuntimeClosure
         ClassMngrRuntime
         ClassMngrNext::Application
         ClassMngrNext::Resources
@@ -8691,6 +8698,7 @@ target_include_directories(ClassMngrNextCalendarWorkspaceStoreActionsTests
 )
 target_link_libraries(ClassMngrNextCalendarWorkspaceStoreActionsTests
     PRIVATE
+        ClassMngrLegacyRuntimeClosure
         ClassMngrRuntime
         ClassMngrNextCalendarUi
         ClassMngrNext::Application
