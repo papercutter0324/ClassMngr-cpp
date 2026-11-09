@@ -15,8 +15,11 @@ that run's C53 steps pending. Separate Windows C53 run `42664061512` passed.
 The Next shared-widget resources and signed-64-bit schedule reader fixes
 passed focused local verification. Replacement run `42664061605` remains
 active. While it runs, Windows x64 direct-target diagnostics are complete and
-local fixes are underway for SchedulePage header initialization and the
-FileDialog symlink fixtures; three other failing targets remain under
-diagnosis. Do not push until the active run completes. Separate Windows C53
-matched-output run `42664061512` passed. The Phase 8a plan remains the source
-for the full ordered scope and acceptance criteria.
+the SchedulePage/My Workspace header-initialization fix is committed locally
+as `42bcb0c9` and independently passed its focused CTest targets. The
+FileDialog shortcut-fixture correction is committed locally as `11354fbc`;
+its target passed independent verification. The Speaking mixed-template test
+correction is awaiting a focused rerun; Schedule PDF text and Sub Prep package
+parity remain under diagnosis. Do not push until the active run completes.
+Separate Windows C53 matched-output run `42664061512` passed. The Phase 8a
+plan remains the source for the full ordered scope and acceptance criteria.
