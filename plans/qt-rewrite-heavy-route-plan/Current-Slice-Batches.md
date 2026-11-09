@@ -6,12 +6,11 @@ Batch 2 was pushed to `origin/Qt-Rewrite` at `90a8357e38d2b8d59af82fed2daa8cad5f
 The four commits after Batch 1 are `6e57a663`, `3f1b298c`, `f839b03a`, and
 `90a8357e`.
 
-The Batch 1 Refactoring Baseline run `42655216186` was superseded by that
-push. Windows ARM64 passed; Linux and macOS were canceled; Windows x64 is
-still finishing its baseline step. Replacement Refactoring Baseline run
-`42664061605` is pending under the branch concurrency group. The Phase 4
-resource-layout run `42664061594` and separate Windows C53 run
-`42664061512` are also in progress.
+The superseded baseline run `42655216186` completed canceled after the push;
+Windows ARM64 had passed. Replacement Refactoring Baseline run
+`42664061605` is now active on Windows x64, Windows ARM64, macOS, and Linux.
+Linux has started its baseline step; the other native/cross-build jobs are
+setting up. C53 outcomes are pending.
 
 The Next shared-widget resources and signed-64-bit schedule reader fixes
 passed focused local verification. After replacement run `42664061605`
