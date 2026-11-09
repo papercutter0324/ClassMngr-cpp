@@ -13,8 +13,9 @@
   its artifacts as diagnostic. Phase 8a is triaging provenance, captures,
   failures, and QWARNs in OS-agnostic, macOS, Windows, and Linux batches. See
   the [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md),
-  [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), and [current
-  batch tracker](Current-Slice-Batches.md).
+  [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), [Phase 8
+  progress log](09-Phase-8-Progress-Log.md), and [current batch
+  tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
@@ -39,6 +40,7 @@
 | 7 | 08-Phase-7-Feature-Migration.md | Complete | Heavy | 2–6 |
 | 7.5 | 08.5-Phase-7.5-Cross-Platform-Follow-Ups.md | Complete | Light | 0–7 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | In progress | Heavy | 2, 3, 7 |
+| 8a | 09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md | In progress | Heavy | 8 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |
 | 11 | 12-Phase-11-Test-Restructuring-and-Release-Gates.md | Not started | Heavy | 0–10 |

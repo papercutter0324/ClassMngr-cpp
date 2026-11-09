@@ -24,9 +24,10 @@
   when vcpkg download returned HTTP 504; no package artifact exists.
 - The Phase 8 exit gate remains open. The Phase 8a plan starts with source
   provenance and independent C53 capture orchestration, then has separate
-  macOS, Windows, and Linux batches. After the plan and tracker commit, the
-  next documentation task moves Phase 8 history into its progress log; push
-  follows both task commits.
+  macOS, Windows, and Linux batches. The user-approved documentation sequence
+  is one commit for the plan/inventories, a separate commit moving Phase 8
+  history to its progress log, then a push after both commits. The next
+  implementation work begins with Phase 8a Batch 1.
 
 ## Prior Deployment Handoff — configurable-roster-rows (implementation complete)
 
