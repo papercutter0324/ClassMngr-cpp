@@ -11,7 +11,8 @@
   `42580405908` failed on macOS (11/620), Windows x64 (41/618), and Linux
   (20/619), with dirty and unstable source fingerprints on every host; treat
   its artifacts as diagnostic. Phase 8a is triaging provenance, captures,
-  failures, and QWARNs in OS-agnostic, macOS, Windows, and Linux batches. See
+  failures, and QWARNs in OS-agnostic provenance/capture, OS-agnostic
+  failure/QWARN triage, Windows, macOS, and Linux batches. See
   the [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md),
   [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md),
   [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), [Phase 8
@@ -88,14 +89,15 @@ for the audit results, evidence, and limitations.
   candidates, record `No other slices were found.` for that batch. Do not create
   a separate batch file per phase or keep a historical batch log; replace
   closed batch details as the tracker advances.
-- Use a sibling file named from the phase plan and ending in `-Progress-Log.md`
-  when that phase has one (for example,
-  `03-Phase-2-Progress-Log.md`); otherwise use its `Progress log` section.
-  Use it only for implementation or verification evidence, decisions, and gate
-  findings that remain useful. Routine slice chronology and closed batches do
-  not need to be archived. Keep requirements and current phase status in the
-  phase plan, and live batch lists and discovery reminders only in the shared
-  tracker. No separate batch-history log is needed.
+- For Phases 0–7, use the existing sibling `-Progress-Log.md` when present;
+  otherwise use that phase's `Progress log` section. Keep requirements and
+  current phase status in the phase plan, and live batch lists and discovery
+  reminders only in the shared tracker. No separate batch-history log is
+  needed.
+- For Phase 8 onward, every phase plan has a linked sibling `-Progress-Log.md`.
+  Write all historical progress updates there, not in the phase plan. Keep
+  current status and contracts in the phase plan and live batch lists and
+  discovery reminders only in the shared tracker.
 
 ## Git commits and pushes
 

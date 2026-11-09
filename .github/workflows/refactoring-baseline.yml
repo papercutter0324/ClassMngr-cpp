@@ -12,6 +12,7 @@ on:
       - "cmake/**"
       - "resources/**"
       - "scripts/record_refactoring_baseline.py"
+      - "scripts/test_record_refactoring_baseline.py"
       - "scripts/retry_macos_baseline_if_missing_report.py"
       - "scripts/test_retry_macos_baseline_if_missing_report.py"
       - "scripts/phase8/capture_sub_prep_c53_parity.py"
@@ -27,6 +28,7 @@ on:
       - "cmake/**"
       - "resources/**"
       - "scripts/record_refactoring_baseline.py"
+      - "scripts/test_record_refactoring_baseline.py"
       - "scripts/retry_macos_baseline_if_missing_report.py"
       - "scripts/test_retry_macos_baseline_if_missing_report.py"
       - "scripts/phase8/capture_sub_prep_c53_parity.py"
@@ -95,6 +97,10 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+
+      - name: Test baseline recorder provenance
+        shell: bash
+        run: python scripts/test_record_refactoring_baseline.py
 
       - name: Test macOS baseline retry decision
         if: matrix.name == 'macOS universal Debug'
@@ -203,22 +209,24 @@ jobs:
         if: runner.os == 'Linux'
         shell: bash
         run: |
+          qt_output_dir="${RUNNER_TEMP}/Qt"
           python -m pip install --disable-pip-version-check aqtinstall==3.3.0
           # Qt Declarative and the command-line tools are in the Qt 6.12 base
           # package; Qt Pdf is the only extension required by this build.
           python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
-            --outputdir "${GITHUB_WORKSPACE}/Qt" \
+            --outputdir "${qt_output_dir}" \
             --modules qtpdf
-          echo "QT_LINUX_PREFIX=${GITHUB_WORKSPACE}/Qt/${QT_VERSION}/gcc_64" >> "${GITHUB_ENV}"
+          echo "QT_LINUX_PREFIX=${qt_output_dir}/${QT_VERSION}/gcc_64" >> "${GITHUB_ENV}"
 
       - name: Install Qt on macOS
         if: runner.os == 'macOS'
         shell: bash
         run: |
+          qt_output_dir="${RUNNER_TEMP}/Qt"
           python -m pip install --disable-pip-version-check aqtinstall==3.3.0
           aqt_args=(
             install-qt mac desktop "${QT_VERSION}" clang_64
-            --outputdir "${GITHUB_WORKSPACE}/Qt"
+            --outputdir "${qt_output_dir}"
             --timeout 30
             --modules qtpdf
           )
@@ -233,7 +241,7 @@ jobs:
             echo "Qt installation failed on attempt ${attempt}; retrying in 10 seconds." >&2
             sleep 10
           done
-          echo "QT_MACOS_PREFIX=${GITHUB_WORKSPACE}/Qt/${QT_VERSION}/macos" >> "${GITHUB_ENV}"
+          echo "QT_MACOS_PREFIX=${qt_output_dir}/${QT_VERSION}/macos" >> "${GITHUB_ENV}"
 
       - name: Record clean build and test baseline
         if: matrix.run_baseline
@@ -249,6 +257,7 @@ jobs:
             --build-dir "${{ matrix.build_dir }}"
             --parallel "${{ matrix.parallel }}"
             --test-timeout 120
+            --expected-commit "${GITHUB_SHA}"
             --output "artifacts/baseline/${{ matrix.report }}.json"
           )
           if [[ -n "${{ matrix.configuration }}" ]]; then
