@@ -2,20 +2,13 @@
 
 Read the [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md) for current status, contracts, work packages, and exit gate.
 
-## Progress log
+## Update policy
 
-Use this section only when a decision, acceptance result, verification
-finding, blocker, or exit-gate detail needs a durable record. Routine
-slice chronology and closed batch history do not need to be archived;
-keep current status in this plan and live batches in the shared tracker.
-
-### 2026-11-09 — Hosted Refactoring Baseline and Phase 8a evidence
-
-Hosted Refactoring Baseline run `42580405908` used SHA `666df4786ec48a0bf9fe285727ae073036ac4984` and finished failed: macOS 11/620 CTest targets, Windows x64 41/618, and Linux 20/619. Each host started and ended dirty with `source_stable=false`; checkout-local Qt installations affected Linux/macOS fingerprints, and the Windows dirty cause is unknown. Treat these artifacts as diagnostic, not clean exit-gate evidence.
-
-Schedule capture passed on macOS/Linux and failed on Windows (`0xc0000409`). All four Roster cases passed on all three hosts. Speaking passed on macOS, failed on Linux with missing `홍길동`, and was incomplete/failed on Windows. C53 capture was skipped on all hosts because the recorder failed before the capture step, which lacks `always()` orchestration. A separate same-SHA Windows C53 capture run `42580406156` succeeded.
-
-Same-SHA package/resource results: Linux Release `42580405862` passed; macOS Release `42580405930` passed; Windows ARM64 Release passed; Windows x64 Release `42580406462` failed before configure on a vcpkg HTTP 504 and produced no package artifact; Phase 4 resource layout `42580405913` passed. These partial results do not close the Phase 8 exit gate. See the [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md) for inventories, checksums, scope assignments, and remaining acceptance.
+Append historical Phase 8 implementation and verification results, decisions,
+blockers, acceptance findings, and exit-gate changes to this log. Do not put
+historical progress updates in the [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md).
+Keep current status, objectives, requirements, and contracts in that plan;
+keep live batches in the shared tracker.
 
 ### 8.1.1 — External URL launch boundary (accepted)
 

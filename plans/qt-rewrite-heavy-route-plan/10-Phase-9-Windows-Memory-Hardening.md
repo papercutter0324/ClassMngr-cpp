@@ -46,12 +46,13 @@ Use the shared [current slice-batch tracker](Current-Slice-Batches.md) for live 
 batch and the next batch once discovery starts; completed batches are
 not archived there.
 
-## Progress log
+## Progress log location
 
-Use this section only when a decision, acceptance result, verification
-finding, blocker, or exit-gate detail needs a durable record. Routine
-slice chronology and closed batch history do not need to be archived;
-keep current status in this plan and live batches in the shared tracker.
+Write all historical Phase 9 progress—including implementation and
+verification results, decisions, blockers, acceptance findings, and exit-gate
+changes—to the [Phase 9 progress log](10-Phase-9-Progress-Log.md), not this
+plan. Keep current status, objective, requirements, and contracts here; keep
+live batches in the shared tracker.
 
 ## Objective
 

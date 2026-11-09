@@ -13,6 +13,7 @@
   its artifacts as diagnostic. Phase 8a is triaging provenance, captures,
   failures, and QWARNs in OS-agnostic, macOS, Windows, and Linux batches. See
   the [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md),
+  [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md),
   [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), [Phase 8
   progress log](09-Phase-8-Progress-Log.md), and [current batch
   tracker](Current-Slice-Batches.md).
@@ -64,10 +65,11 @@ for the audit results, evidence, and limitations.
 ## Phase notes, slice batches, and progress logs
 
 - Keep each phase plan's `Current note` limited to the latest information that
-  is relevant to the current or next slice. Remove stale progress details
-  instead of archiving them solely for history; keep durable requirements and
-  decisions in their appropriate plan sections.
-- Keep only the most recent slice commit in the phase plan's
+  is relevant to the current or next slice. For Phases 0–7, remove stale
+  progress details instead of archiving them solely for history. Starting with
+  Phase 8, move historical progress details to that phase's progress log and
+  keep durable requirements and current decisions in the plan.
+- For Phases 0–7, keep only the most recent slice commit in the phase plan's
   `Latest Progress Update` section. Replace it when a newer update is written;
   retain the previous update elsewhere only when it contains evidence or a
   decision that remains useful.
