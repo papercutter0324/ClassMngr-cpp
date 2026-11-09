@@ -252,6 +252,14 @@ def write_report(path: Path, report: dict[str, Any]) -> None:
     print(f"Wrote {path}", flush=True)
 
 
+def publish_build_exit_code(build_code: int) -> None:
+    output_file = os.environ.get("GITHUB_OUTPUT")
+    if not output_file:
+        return
+    with Path(output_file).open("a", encoding="utf-8", newline="\n") as output:
+        output.write(f"build_exit_code={build_code}\n")
+
+
 def test_summary(junit_path: Path) -> dict[str, Any] | None:
     if not junit_path.exists():
         return None
@@ -363,20 +371,22 @@ def main() -> int:
                 build_command.extend(["--config", args.configuration])
             build_code, build_seconds = run(build_command, repository)
 
-        if build_code == 0:
-            test_command = [
-                "ctest",
-                "--test-dir",
-                str(build_dir),
-                "--output-on-failure",
-                "--output-junit",
-                str(junit_path),
-                "--timeout",
-                str(args.test_timeout),
-            ]
-            if args.configuration:
-                test_command.extend(["--build-config", args.configuration])
-            test_code, test_seconds = run(test_command, repository)
+    publish_build_exit_code(build_code)
+
+    if build_code == 0:
+        test_command = [
+            "ctest",
+            "--test-dir",
+            str(build_dir),
+            "--output-on-failure",
+            "--output-junit",
+            str(junit_path),
+            "--timeout",
+            str(args.test_timeout),
+        ]
+        if args.configuration:
+            test_command.extend(["--build-config", args.configuration])
+        test_code, test_seconds = run(test_command, repository)
 
     try:
         end_state = inspect_git_state(repository)

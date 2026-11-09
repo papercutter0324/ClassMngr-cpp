@@ -3,15 +3,18 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from record_refactoring_baseline import (
     GitInspectionError,
     evaluate_provenance,
     inspect_git_state,
+    main,
     resolve_expected_commit,
 )
 
@@ -138,6 +141,118 @@ class RecordRefactoringBaselineProvenanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as non_repository:
             with self.assertRaises(GitInspectionError):
                 inspect_git_state(Path(non_repository))
+
+    def run_recorder(
+        self, configure_code: int, build_code: int, test_code: int
+    ) -> tuple[int, str, dict[str, object], list[str], bool]:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = Path(temporary_directory)
+            scripts = repository / "scripts"
+            scripts.mkdir()
+            module_path = scripts / "record_refactoring_baseline.py"
+            module_path.touch()
+            (repository / "CMakeLists.txt").write_text(
+                "cmake_minimum_required()\n", encoding="utf-8"
+            )
+            output_file = repository / "github-output"
+            report_file = repository / "artifacts" / "baseline.json"
+            build_dir = repository / "build"
+            state = {
+                "head": "a" * 40,
+                "tree": "b" * 40,
+                "status_entries": [],
+                "dirty_paths": [],
+                "fingerprint": "source-fingerprint",
+            }
+            commands: list[str] = []
+            output_was_published_before_tests = False
+
+            def fake_run(command: list[str], cwd: Path) -> tuple[int, float]:
+                nonlocal output_was_published_before_tests
+                executable = command[0]
+                if executable == "ctest":
+                    commands.append("ctest")
+                    output_was_published_before_tests = (
+                        output_file.read_text(encoding="utf-8")
+                        == "build_exit_code=0\n"
+                    )
+                    return test_code, 3.0
+                if "--fresh" in command:
+                    commands.append("configure")
+                    return configure_code, 1.0
+                if "--build" in command:
+                    commands.append("build")
+                    return build_code, 2.0
+                self.fail(f"unexpected recorder command: {command}")
+
+            argv = [
+                "record_refactoring_baseline.py",
+                "--configure-preset",
+                "test-preset",
+                "--build-dir",
+                str(build_dir),
+                "--output",
+                str(report_file),
+            ]
+            with (
+                patch("record_refactoring_baseline.__file__", str(module_path)),
+                patch(
+                    "record_refactoring_baseline.inspect_git_state",
+                    side_effect=[state, state],
+                ),
+                patch(
+                    "record_refactoring_baseline.capture",
+                    return_value="cmake version test",
+                ),
+                patch("record_refactoring_baseline.run", side_effect=fake_run),
+                patch("sys.argv", argv),
+                patch.dict(
+                    "os.environ",
+                    {"GITHUB_OUTPUT": str(output_file), "GITHUB_SHA": ""},
+                ),
+            ):
+                result = main()
+
+            output = output_file.read_text(encoding="utf-8")
+            report = json.loads(report_file.read_text(encoding="utf-8"))
+            return result, output, report, commands, output_was_published_before_tests
+
+    def test_successful_build_publishes_output_before_failed_ctest(self) -> None:
+        result, output, report, commands, published_before_tests = self.run_recorder(
+            configure_code=0, build_code=0, test_code=1
+        )
+
+        self.assertEqual(result, 1)
+        self.assertEqual(output, "build_exit_code=0\n")
+        self.assertEqual(report["results"]["build_exit_code"], 0)
+        self.assertEqual(report["results"]["test_exit_code"], 1)
+        self.assertEqual(commands, ["configure", "build", "ctest"])
+        self.assertTrue(published_before_tests)
+
+    def test_failed_build_publishes_nonzero_output_and_skips_ctest(self) -> None:
+        result, output, report, commands, _ = self.run_recorder(
+            configure_code=0, build_code=2, test_code=0
+        )
+
+        self.assertEqual(result, 1)
+        self.assertEqual(output, "build_exit_code=2\n")
+        self.assertEqual(report["results"]["build_exit_code"], 2)
+        self.assertEqual(report["results"]["test_exit_code"], -1)
+        self.assertEqual(commands, ["configure", "build"])
+
+    def test_failed_configure_publishes_nonzero_output_and_skips_build_and_ctest(
+        self,
+    ) -> None:
+        result, output, report, commands, _ = self.run_recorder(
+            configure_code=1, build_code=0, test_code=0
+        )
+
+        self.assertEqual(result, 1)
+        self.assertEqual(output, "build_exit_code=-1\n")
+        self.assertEqual(report["results"]["configure_exit_code"], 1)
+        self.assertEqual(report["results"]["build_exit_code"], -1)
+        self.assertEqual(report["results"]["test_exit_code"], -1)
+        self.assertEqual(commands, ["configure"])
 
 
 if __name__ == "__main__":

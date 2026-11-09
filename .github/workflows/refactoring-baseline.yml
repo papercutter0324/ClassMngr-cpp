@@ -274,7 +274,8 @@ jobs:
           fi
 
       - name: Capture matched SQL Sub Prep output parity
-        if: matrix.run_baseline
+        if: always() && matrix.run_baseline && steps.record.outputs.build_exit_code == '0'
+        id: capture_c53
         shell: bash
         run: |
           QT_QPA_PLATFORM=offscreen python scripts/phase8/capture_sub_prep_c53_parity.py \
