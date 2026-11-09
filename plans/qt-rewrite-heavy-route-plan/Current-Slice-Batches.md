@@ -21,10 +21,14 @@ built and passed twice; capture files stayed under
 `build/windows-x64-debug/artifacts/next/sub-prep-c44/`, leaving tracked docs
 unchanged.
 
-Windows x64 direct-target fixes remain committed locally but unpushed; their
-focused evidence and QWARN dispositions are in the Phase 8a progress log. The
-hosted `ClassMngrNextScheduleVisualCapture` timeout still needs Windows
-candidate review. Hold pushes until run `42664061605` completes. Then push the
-provenance follow-up as its own batch, review its clean hosted run, and push
-the Windows batch afterward. The Phase 8a plan remains the source for full
-ordered scope and acceptance criteria.
+The Windows Schedule visual-capture mismatch is fixed locally in `21ed5b9b`:
+Next's toolbar now matches Legacy's 34 px height. The full 32-capture target
+passed twice in the standard Windows x64 Debug tree. Windows x64 direct-target
+fixes remain committed locally but unpushed; their focused evidence and QWARN
+dispositions are in the Phase 8a progress log. The hosted run's Schedule
+visual-capture timeout came from the old SHA and still needs candidate review.
+
+Hold pushes until run `42664061605` completes. Then push the provenance
+follow-up as its own batch, review its clean hosted run, and push the Windows
+batch afterward. The Phase 8a plan remains the source for full ordered scope
+and acceptance criteria.
