@@ -24,10 +24,11 @@
   when vcpkg download returned HTTP 504; no package artifact exists.
 - The Phase 8 exit gate remains open. The Phase 8a plan starts with source
   provenance and independent C53 capture orchestration, then has separate
-  macOS, Windows, and Linux batches. The user-approved documentation sequence
-  is one commit for the plan/inventories, a separate commit moving Phase 8
-  history to its progress log, then a push after both commits. The next
-  implementation work begins with Phase 8a Batch 1.
+  macOS, Windows, and Linux batches. The Phase 8a plan/inventory commit is
+  `7083bb7ea9f4d3eec3fe225742055480d043c474`; the separate Phase 8 history
+  move is `2d11d3eb6729cd8e768ac1ef4dead3770245d6cf`. Both are pushed to
+  `origin/Qt-Rewrite`, together with the final deployment handoff update. The
+  next implementation work begins with Phase 8a Batch 1.
 
 ## Prior Deployment Handoff — configurable-roster-rows (implementation complete)
 

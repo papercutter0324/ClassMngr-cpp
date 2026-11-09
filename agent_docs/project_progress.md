@@ -25,6 +25,11 @@ exit gate remains open. Phase 8a's first batch addresses baseline provenance,
 C53 capture sequencing, shared failure attribution, and warning dispositions;
 macOS, Windows, and Linux batches follow in order.
 
+The Phase 8a plan/inventory task is committed as
+`7083bb7ea9f4d3eec3fe225742055480d043c474`; the separate Phase 8 history move
+is committed as `2d11d3eb6729cd8e768ac1ef4dead3770245d6cf`. Both task commits
+and the final deployment handoff update are pushed to `origin/Qt-Rewrite`.
+
 ## Current Work Handoff — configurable-roster-rows (implementation complete)
 
 Implemented configurable roster capacity across the Legacy and Next roster and
