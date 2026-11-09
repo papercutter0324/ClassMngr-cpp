@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-09
-- Current note: Batch 4 candidate 1 (8.7.13) has verified Linux completion: clean Qt 6.12.0/GCC 16.2.1 Debug configure with `CCACHE_DISABLE=1`, clean all-target build 947/947, post-closure incremental build 2204/2204, and seven independently passing newly closure-linked targets. Direct Phase 5 CTest completed 619 tests (602 passed, 14 failed, 3 timed out; exit 8), so the suite remains non-green. Candidate 2 has Linux Schedule, Roster, Sub Prep/C53, and Speaking Evaluation parity evidence, including a 3/3 focused Schedule/Roster/Speaking CTest set. Windows x64, macOS universal, hosted exact-toolchain captures, and the package/resource matrix remain pending; the Phase 8 exit gate stays open. PowerPoint host/process/workspace behavior and Next Speaking Evaluation/Sub Prep default output roots remain behind platform-injected boundaries in separate local commits (`6bab27ff`, `10cd6bbd`).
+- Current note: the Phase 8 exit gate remains open. Hosted Refactoring Baseline run `42580405908` failed on macOS (11/620), Windows x64 (41/618), and Linux (20/619), and reported dirty, unstable source fingerprints on all hosts, so these artifacts are diagnostic. Phase 8a owns the ordered failure, QWARN, provenance, and capture triage described in the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md); macOS exit-gate evidence is a separate candidate from Linux-only slice 8.7.13.
 
 ### Slice batches
 
