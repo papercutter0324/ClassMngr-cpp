@@ -136,6 +136,7 @@ jobs:
       - name: Install Qt on Windows
         if: runner.os == 'Windows'
         shell: pwsh
+        working-directory: ${{ runner.temp }}
         run: |
           $aqtConfigPath = Join-Path $env:RUNNER_TEMP "aqt-settings.ini"
           @"
@@ -173,6 +174,7 @@ jobs:
       - name: Install Qt ARM64 target
         if: matrix.preset == 'windows-arm64-debug'
         shell: pwsh
+        working-directory: ${{ runner.temp }}
         run: |
           $arguments = @(
             "-m", "aqt",
@@ -208,6 +210,7 @@ jobs:
       - name: Install Qt on Linux
         if: runner.os == 'Linux'
         shell: bash
+        working-directory: ${{ runner.temp }}
         run: |
           qt_output_dir="${RUNNER_TEMP}/Qt"
           python -m pip install --disable-pip-version-check aqtinstall==3.3.0
@@ -221,6 +224,7 @@ jobs:
       - name: Install Qt on macOS
         if: runner.os == 'macOS'
         shell: bash
+        working-directory: ${{ runner.temp }}
         run: |
           qt_output_dir="${RUNNER_TEMP}/Qt"
           python -m pip install --disable-pip-version-check aqtinstall==3.3.0
@@ -307,6 +311,7 @@ jobs:
             artifacts/roster-output/${{ matrix.report }}/
             artifacts/sub-prep-output/${{ matrix.report }}/
             artifacts/speaking-evaluation-output-parity/${{ matrix.report }}/
+            ${{ matrix.build_dir }}/artifacts/next/sub-prep-c44/
             ${{ matrix.build_dir }}/Testing/refactoring-baseline.junit.xml
             ${{ matrix.build_dir }}/Testing/Temporary/LastTest.log
             ${{ matrix.build_dir }}/Testing/Temporary/LastTestsFailed.log
