@@ -81,11 +81,11 @@ jobs:
             report: linux-gcc-debug
             run_baseline: true
           - name: macOS universal Debug
-            runner: macos-15-intel
+            runner: macos-15-large
             preset: macos-clang-debug
             build_dir: build/macos-clang-debug
             configuration: ""
-            parallel: 4
+            parallel: 12
             report: macos-clang-debug
             run_baseline: true
 
