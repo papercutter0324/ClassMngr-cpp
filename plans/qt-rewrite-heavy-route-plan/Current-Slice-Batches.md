@@ -1,20 +1,21 @@
 # Current Slice Batches
 
-## Phase 8a - Active Batch 2 (OS-agnostic QWARN fixes)
+## Phase 8a - OS-agnostic provenance follow-up
 
-Batch 1 is committed and pushed at `13eb0f97091c2d02c509053477b92173e1abd4f2`.
-Its Refactoring Baseline run `42655216186` remains in progress after about 52
-minutes; the Windows ARM64 cross-build passed, while native Windows x64, macOS,
-and Linux have not finished. The workflow uses `cancel-in-progress: true` for
-this branch. The Batch 2 push will supersede that run; use the replacement run
-as the provenance/C53 integration gate for the OS-agnostic changes.
+Refactoring Baseline run `42664061605` has finished. Linux and Windows x64
+built and completed their baseline steps, but their reports fail clean
+provenance because Qt installation modified tracked `aqtinstall.log` and C44
+capture output changed tracked Phase 7 visual-baseline files. C53 parity passed
+on both hosts. The macOS job timed out after 300 minutes during its build at
+4,166 of 5,570 Ninja steps; it produced no baseline report, and C53 could not
+run because its target had not been built.
 
-Batch 2 currently contains two committed slices:
+The provenance/capture fix is committed as `0cefbcb6` on an isolated worktree
+based at `origin/Qt-Rewrite`. Its focused Windows x64 C44 capture target passed
+twice and left tracked docs unchanged. The replacement hosted run must use a
+macOS build configuration that can finish the full baseline within the runner
+limit before the OS-agnostic batch can be validated.
 
-1. **Next shared widget resources:** commit `6e57a6634f01710543b8c252bfecf09119dbb820`; the Next production and bootstrap-test targets receive the keyboard and spin icons.
-2. **Wide schedule teacher IDs:** commit `3f1b298cead9810e608588a8ca9e244d54728f4b`; ClassInfo schedule reads and the My Workspace adapter preserve signed 64-bit IDs.
-
-Both focused slices passed local verification. After the replacement run
-finishes, review its failure and warning evidence, record OS-agnostic
-triage/dispositions, and then begin Windows-specific changes. The Phase 8a plan
-remains the source for the full ordered scope and acceptance criteria.
+Windows-specific fixes and focused evidence remain committed locally on the
+`Qt-Rewrite` branch and unpushed. Keep them out of the OS-agnostic push; publish
+the Windows batch after the provenance follow-up is validated.
