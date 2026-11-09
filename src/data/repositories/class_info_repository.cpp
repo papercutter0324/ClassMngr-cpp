@@ -1194,7 +1194,7 @@ namespace
 {
 RepositoryStatus assignExportTeacherId(ClassInfo& info, const QVariant& value)
 {
-    const auto teacherId = persistedTeacherId<int>(value, QObject::tr(
+    const auto teacherId = persistedTeacherId<qint64>(value, QObject::tr(
         "Loading class information failed: invalid assigned teacher identifier."));
     if (!teacherId)
     {
@@ -1295,20 +1295,7 @@ RepositoryResult<Record> loadClassInfoRecord(
                 return repositoryFailure(parsedTeacherId.error());
             }
             *exactTeacherId = *parsedTeacherId;
-            // Only validation uses the int surrogate; persistence binds the
-            // separate exact teacher ID.
-            if (*exactTeacherId > std::numeric_limits<int>::max())
-            {
-                info.teacherId = -1;
-            }
-            else if (*exactTeacherId < std::numeric_limits<int>::min())
-            {
-                info.teacherId = -2; // Preserve invalid negative-ID validation.
-            }
-            else
-            {
-                info.teacherId = static_cast<int>(*exactTeacherId);
-            }
+            info.teacherId = *exactTeacherId;
         }
         else if (const RepositoryStatus assigned = assignExportTeacherId(info, teacherId); !assigned)
         {
@@ -6892,7 +6879,7 @@ RepositoryResult<QList<ClassInfo>> ClassInfoRepository::loadClassInfosForSchedul
             info.classId = *parsedInfoClassId;
             const QVariant teacherId =
                 query.value(QStringLiteral("teacher_id"));
-            const auto parsedTeacherId = persistedTeacherId<int>(
+            const auto parsedTeacherId = persistedTeacherId<qint64>(
                 teacherId, QObject::tr(
                     "Loading scoped Sub Prep class information failed: invalid assigned teacher identifier."));
             if (!parsedTeacherId)
@@ -7640,7 +7627,7 @@ RepositoryResult<QList<ClassInfo>> ClassInfoRepository::loadScheduleClassInfos()
         }
         info.classId = static_cast<int>(storedClassId);
         const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
-        const auto parsedTeacherId = persistedTeacherId<int>(
+        const auto parsedTeacherId = persistedTeacherId<qint64>(
             teacherId, QObject::tr(
                 "Loading schedule class information failed: invalid assigned teacher identifier."));
         if (!parsedTeacherId)
@@ -7855,7 +7842,7 @@ RepositoryStatus ClassInfoRepository::visitScheduleClassInfoRows(
         }
         info.classId = static_cast<int>(storedClassId);
         const QVariant teacherId = query.value(QStringLiteral("teacher_id"));
-        const auto parsedTeacherId = persistedTeacherId<int>(
+        const auto parsedTeacherId = persistedTeacherId<qint64>(
             teacherId, QObject::tr(
                 "Loading schedule class information failed: invalid assigned teacher identifier."));
         if (!parsedTeacherId)

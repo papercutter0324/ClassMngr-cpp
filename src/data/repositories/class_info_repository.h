@@ -30,7 +30,7 @@ struct ClassDetailsSaveReadRecord final
     qint64 teacherId = -1;
 };
 
-// Full export metadata, kept separate from the integer-based edit model.
+// Full export metadata, kept separate from the editable class record.
 struct ClassTransferExportClassInfoReadRecord final
 {
     int classId{-1};

@@ -34,6 +34,7 @@
 #include <QPushButton>
 #include <QPalette>
 #include <QScrollArea>
+#include <QSqlError>
 #include <QTabBar>
 #include <QSqlQuery>
 #include <QScopeGuard>
@@ -485,6 +486,7 @@ private slots:
     void signaturePreviewIsReleasedOnSuspendAndReloadedOnActivation();
     void workspaceIdentityReplacementDiscardsOldDraftWithoutSavingIt();
     void workspaceScheduleAndCalendarContentAreLazyAndReleased();
+    void scheduleReadPreservesWideTeacherIdentity();
     void scheduleWeekdayUsesLegacyCatalogWithoutChangingCanonicalSource();
     void scheduleRefreshUsesTheReplacedActiveStoreAndCloseReleasesRows();
     void scheduleReadErrorsExposeRetryAndEmptyStates();
@@ -985,6 +987,54 @@ workspaceScheduleAndCalendarContentAreLazyAndReleased()
     tabs->setCurrentIndex(0);
     QCOMPARE(fixture.personalDetailsReadCount, 1);
     QVERIFY(page->findChild<QLineEdit*>(QStringLiteral("nextMyWorkspaceName")));
+}
+
+void NextMyWorkspacePageTests::
+scheduleReadPreservesWideTeacherIdentity()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    WorkspaceStore store;
+    QVERIFY(store.open(databasePath(directory, QStringLiteral("wide-teacher-id"))));
+    QVERIFY(applyFixture(store));
+    QVERIFY(addWorkspaceReadFixture(
+        store,
+        QStringLiteral("Grade 4"),
+        QStringLiteral("Wide Teacher Class"),
+        QStringLiteral("Wide Teacher"),
+        QStringLiteral("Room 101"),
+        QStringLiteral("Wide"),
+        0
+        ));
+    QSqlQuery wideTeacher(store.database());
+    wideTeacher.prepare(QStringLiteral(R"(
+        INSERT INTO teachers (
+            id, teacher_kr, teacher_en, preferred_name, room_number
+        ) VALUES (?, ?, ?, ?, ?)
+    )"));
+    wideTeacher.addBindValue(qint64{2147483648});
+    wideTeacher.addBindValue(QStringLiteral("Wide Teacher"));
+    wideTeacher.addBindValue(QStringLiteral("Wide Teacher"));
+    wideTeacher.addBindValue(QStringLiteral("Wide Teacher"));
+    wideTeacher.addBindValue(QStringLiteral("Room 101"));
+    QVERIFY2(wideTeacher.exec(), qPrintable(wideTeacher.lastError().text()));
+
+    QSqlQuery assignment(store.database());
+    assignment.prepare(QStringLiteral(
+        "UPDATE class_info SET teacher_id=? WHERE class_id=101"));
+    assignment.addBindValue(qint64{2147483648});
+    QVERIFY2(assignment.exec(), qPrintable(assignment.lastError().text()));
+
+    const Platform::WorkspaceStoreMyWorkspaceScheduleReadPort port(
+        store);
+    const auto schedule = Application::MyWorkspaceScheduleReadUseCase::execute(port);
+    QVERIFY(schedule);
+    const auto& projection = schedule.value();
+    QCOMPARE(projection.rowCount(), std::size_t{1});
+    QCOMPARE(projection.rows().front().cells.size(), std::size_t{1});
+    const auto& teacherId = projection.rows().front().cells.front().teacherId;
+    QVERIFY(teacherId);
+    QCOMPARE(teacherId->value(), std::string("2147483648"));
 }
 
 void NextMyWorkspacePageTests::
