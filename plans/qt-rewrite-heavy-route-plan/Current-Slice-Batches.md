@@ -13,7 +13,8 @@ Linux has started its baseline step; the other native/cross-build jobs are
 setting up. C53 outcomes are pending.
 
 The Next shared-widget resources and signed-64-bit schedule reader fixes
-passed focused local verification. After replacement run `42664061605`
-finishes, review failure/QWARN evidence and record OS-agnostic dispositions
-before starting Windows-specific changes. The Phase 8a plan remains the
-source for the full ordered scope and acceptance criteria.
+passed focused local verification. While replacement run `42664061605` is
+active, the authorized Windows x64 local diagnostic slice is underway against
+the direct Phase 8a targets. This is local diagnostic work only; do not push
+until the active run completes. The Phase 8a plan remains the source for the
+full ordered scope and acceptance criteria.
