@@ -16,5 +16,6 @@ The Next shared-widget resources and signed-64-bit schedule reader fixes
 passed focused local verification. While replacement run `42664061605` is
 active, the authorized Windows x64 local diagnostic slice is underway against
 the direct Phase 8a targets. This is local diagnostic work only; do not push
-until the active run completes. The Phase 8a plan remains the source for the
-full ordered scope and acceptance criteria.
+until the active run completes. Separate Windows C53 matched-output run
+`42664061512` passed. The Phase 8a plan remains the source for the full ordered
+scope and acceptance criteria.
