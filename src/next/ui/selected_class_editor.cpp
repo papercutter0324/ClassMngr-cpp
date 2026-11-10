@@ -263,8 +263,15 @@ void SelectedClassEditor::ensureUi()
     m_rosterTab->setObjectName(QStringLiteral("selectedClassRosterTab"));
     auto* const rosterLayout = new QVBoxLayout(m_rosterTab);
     rosterLayout->setContentsMargins(0, 0, 0, 0);
-    m_rosterEditor = new RosterEditorWidget(m_actions.rosterEditor, m_rosterTab);
-    rosterLayout->addWidget(m_rosterEditor);
+    auto* const rosterScrollArea = new QScrollArea(m_rosterTab);
+    rosterScrollArea->setObjectName(
+        QStringLiteral("selectedClassRosterScrollArea"));
+    rosterScrollArea->setWidgetResizable(true);
+    rosterScrollArea->setFrameShape(QFrame::NoFrame);
+    rosterScrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustIgnored);
+    m_rosterEditor = new RosterEditorWidget(m_actions.rosterEditor);
+    rosterScrollArea->setWidget(m_rosterEditor);
+    rosterLayout->addWidget(rosterScrollArea);
     m_rosterEditor->setDirtyChangedCallback([this](const bool) {
         updateDirtyState();
     });

@@ -225,12 +225,13 @@ readAccessErrorReturnsTechnicalAndCanRetry()
             unreadableSettingsRoot.path().toUtf8()
             )
         );
-    QVERIFY(
-        QFile::setPermissions(
-            settingsPath,
-            QFileDevice::WriteOwner
-            )
-        );
+    const QString preservedSettingsPath = settingsPath
+        + QStringLiteral(".preserved");
+    QVERIFY(QFile::rename(settingsPath, preservedSettingsPath));
+    // A directory at the INI path makes QSettings report AccessError on
+    // Windows and POSIX alike; file mode bits do not restrict reads reliably
+    // on Windows.
+    QVERIFY(QDir().mkpath(settingsPath));
     const QSettings::Status switchedToTemporaryRoot =
         SettingsManager::instance().writeSidebarDisplayPreferences(
             true,
@@ -255,12 +256,8 @@ readAccessErrorReturnsTechnicalAndCanRetry()
         != std::string::npos
         );
 
-    QVERIFY(
-        QFile::setPermissions(
-            settingsPath,
-            QFileDevice::ReadOwner | QFileDevice::WriteOwner
-            )
-        );
+    QVERIFY(QDir(settingsPath).removeRecursively());
+    QVERIFY(QFile::rename(preservedSettingsPath, settingsPath));
     const auto retry = port.load();
     QVERIFY(retry);
     QVERIFY(!retry.value().sidebarTooltipsEnabled);

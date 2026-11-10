@@ -16,6 +16,13 @@
 #include <utility>
 #include <vector>
 
+#if defined(Q_OS_WIN)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <Windows.h>
+#endif
+
 using namespace ClassMngr::Next;
 
 namespace
@@ -56,6 +63,37 @@ bool writeBytes(const QString& path, const QByteArray& bytes)
     QFile file(path);
     return file.open(QIODevice::WriteOnly | QIODevice::Truncate)
         && file.write(bytes) == bytes.size();
+}
+
+enum class SymlinkFixtureResult
+{
+    Created,
+    Unsupported,
+    Failed
+};
+
+SymlinkFixtureResult createSymlinkFixture(
+    const QString& targetPath,
+    const QString& linkPath
+    )
+{
+#if defined(Q_OS_WIN)
+    if (CreateSymbolicLinkW(
+            reinterpret_cast<LPCWSTR>(linkPath.utf16()),
+            reinterpret_cast<LPCWSTR>(targetPath.utf16()),
+            SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE
+            ))
+    {
+        return SymlinkFixtureResult::Created;
+    }
+    return GetLastError() == ERROR_PRIVILEGE_NOT_HELD
+        ? SymlinkFixtureResult::Unsupported
+        : SymlinkFixtureResult::Failed;
+#else
+    return QFile::link(targetPath, linkPath)
+        ? SymlinkFixtureResult::Created
+        : SymlinkFixtureResult::Failed;
+#endif
 }
 
 QByteArray readBytes(const QString& path)
@@ -646,7 +684,7 @@ private slots:
     void dirtyCancelAndFailedSaveLeaveRecoveryFilesUntouched();
     void pendingSetupBlocksBeforeScanPromptAndDirtyResolution();
     void copyAndOpenFailuresRetainArtifactsAndActiveStateHistory();
-    void scannerUsesStrictPatternIncludesNewlineAndExcludesLookalikes();
+    void scannerUsesStrictPatternIncludesLineSeparatorAndExcludesLookalikes();
     void copyUsesNoReplaceAndRetainsSource();
 };
 
@@ -1017,12 +1055,12 @@ copyAndOpenFailuresRetainArtifactsAndActiveStateHistory()
 }
 
 void NextWorkspaceInterruptedRecoveryFlowTests::
-scannerUsesStrictPatternIncludesNewlineAndExcludesLookalikes()
+scannerUsesStrictPatternIncludesLineSeparatorAndExcludesLookalikes()
 {
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
     Platform::QtWorkspaceInterruptedRecoveryPort port;
-    const QString targetName = QStringLiteral("teacher\nname.tps");
+    const QString targetName = QStringLiteral("teacher\u2028name.tps");
     const QString uuid = QStringLiteral(
         "deadBEEF-1234-0000-abcd-0123456789AB"
         );
@@ -1076,7 +1114,13 @@ scannerUsesStrictPatternIncludesNewlineAndExcludesLookalikes()
     const QString symlinkPath = QDir(directory.path()).filePath(
         QStringLiteral(".symlink.tps.workspace-create-12345678-1234-1234-1234-123456789012.recovery")
         );
-    QVERIFY(QFile::link(validSource, symlinkPath));
+    const SymlinkFixtureResult symlinkFixture = createSymlinkFixture(
+        validSource, symlinkPath);
+    QVERIFY(symlinkFixture != SymlinkFixtureResult::Failed);
+    if (symlinkFixture == SymlinkFixtureResult::Unsupported)
+    {
+        qInfo("SKIP: symlink exclusion assertion requires filesystem symlink privilege.");
+    }
 
     const auto scanned = port.candidatesIn(
         Application::FileDialogPath(utf8(directory.path()))

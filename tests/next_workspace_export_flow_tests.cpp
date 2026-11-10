@@ -454,17 +454,20 @@ copyFailurePreservesActiveSessionAndExistingDestinationBytes()
         [] { return false; }
         );
 
-    const QFile::Permissions originalPermissions = QFileInfo(destinationDirectory)
-        .permissions();
-    QVERIFY(QFile::setPermissions(
-        destinationDirectory,
-        QFile::ReadOwner | QFile::ExeOwner
-        ));
+#if defined(Q_OS_WIN)
+    const QString protectedPath = destinationPath;
+    const QFile::Permissions restrictedPermissions = QFile::ReadOwner;
+#else
+    const QString protectedPath = destinationDirectory;
+    const QFile::Permissions restrictedPermissions =
+        QFile::ReadOwner | QFile::ExeOwner;
+#endif
+    const QFile::Permissions originalPermissions =
+        QFileInfo(protectedPath).permissions();
+    QVERIFY(QFile::setPermissions(protectedPath, restrictedPermissions));
     const auto failed = flow.run();
-    const bool restoredPermissions = QFile::setPermissions(
-        destinationDirectory,
-        originalPermissions
-        );
+    const bool restoredPermissions =
+        QFile::setPermissions(protectedPath, originalPermissions);
 
     QVERIFY(restoredPermissions);
     QCOMPARE(failed.status, Application::WorkspaceExportStatus::Failed);

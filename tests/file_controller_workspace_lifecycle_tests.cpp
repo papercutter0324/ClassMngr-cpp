@@ -638,7 +638,7 @@ private slots:
     void storedDirectoryFallbackIsUsedByFileDialogs();
     void startupPersistsDirectoryThroughTypedPort();
     void normalCreateUsesCoordinatorAndUpdatesRecent();
-    void recoverInterruptedProfileMatchesTargetNamesContainingNewlines();
+    void recoverInterruptedProfileMatchesTargetNamesContainingLineSeparators();
     void recoverInterruptedProfileCopiesToAbsentTargetAndIsIdempotent();
     void recoverInterruptedProfileRequiresExplicitChoiceAndIgnoresLookalikes();
     void recoverInterruptedProfileCancellationAndCopyFailurePreserveFiles();
@@ -850,12 +850,12 @@ void FileControllerWorkspaceLifecycleTests::normalCreateUsesCoordinatorAndUpdate
 }
 
 void FileControllerWorkspaceLifecycleTests::
-recoverInterruptedProfileMatchesTargetNamesContainingNewlines()
+recoverInterruptedProfileMatchesTargetNamesContainingLineSeparators()
 {
     QTemporaryDir workspaceRoot;
     QVERIFY(workspaceRoot.isValid());
 
-    const QString targetName = QStringLiteral("line\nbreak.tps");
+    const QString targetName = QStringLiteral("line\u2028break.tps");
     const QString targetPath = QFileInfo(
         QDir(workspaceRoot.path()).filePath(targetName)
         ).absoluteFilePath();
@@ -1315,7 +1315,7 @@ recoverInterruptedInitialSetupBackupCopiesAndCanBeRediscovered()
     QVERIFY(createSchemaProfile(seedPath));
     QVERIFY(writeProfileMarker(seedPath, QStringLiteral("initial setup")));
 
-    const QString targetName = QStringLiteral("restart\nprofile.tps");
+    const QString targetName = QStringLiteral("restart\u2028profile.tps");
     const QString targetPath = QFileInfo(
         QDir(workspaceRoot.path()).filePath(targetName)
         ).absoluteFilePath();

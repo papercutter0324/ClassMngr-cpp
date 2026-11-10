@@ -4552,18 +4552,8 @@ void ApplicationBootstrapTests::usefulLinksVisualCapture()
     QTreeWidget* const tree = shell->findChild<QTreeWidget*>(
         QStringLiteral("classMngrNextNavigationTree"));
     QVERIFY(tree);
-    QTreeWidgetItem* usefulLinks = nullptr;
-    QTreeWidgetItemIterator iterator(tree);
-    while (*iterator)
-    {
-        if ((*iterator)->data(0, Qt::UserRole + 2).toString()
-            == QStringLiteral("useful_links"))
-        {
-            usefulLinks = *iterator;
-            break;
-        }
-        ++iterator;
-    }
+    QTreeWidgetItem* const usefulLinks = findNavigationItem(
+        tree, QStringLiteral("useful_links"));
     QVERIFY(usefulLinks);
     QCOMPARE(usefulLinks->childCount(), 7);
     usefulLinks->setExpanded(true);
