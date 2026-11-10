@@ -343,6 +343,9 @@ def main() -> int:
     build_seconds = 0.0
     test_code = -1
     test_seconds = 0.0
+    c53_capture_code: int | None = None
+    c53_capture_seconds = 0.0
+    c53_capture_output_dir: Path | None = None
     junit_path = build_dir / "Testing" / "refactoring-baseline.junit.xml"
     if start_state is not None and not inspection_errors:
         junit_path.unlink(missing_ok=True)
@@ -387,6 +390,31 @@ def main() -> int:
         if args.configuration:
             test_command.extend(["--build-config", args.configuration])
         test_code, test_seconds = run(test_command, repository)
+
+        # C53 is an independent artifact gate. A successful build is enough to
+        # produce it; unrelated CTest failures must remain visible without
+        # suppressing the capture result.
+        c53_capture_output_dir = (
+            build_dir
+            / "artifacts"
+            / (
+                "sub-prep-c53-"
+                + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+            )
+        )
+        c53_capture_command = [
+            sys.executable,
+            str(repository / "scripts/phase8/capture_sub_prep_c53_parity.py"),
+            "--build-dir",
+            str(build_dir),
+            "--report",
+            args.configure_preset,
+            "--output-dir",
+            str(c53_capture_output_dir),
+        ]
+        c53_capture_code, c53_capture_seconds = run(
+            c53_capture_command, repository
+        )
 
     try:
         end_state = inspect_git_state(repository)
@@ -468,11 +496,23 @@ def main() -> int:
             "build_exit_code": build_code,
             "test_exit_code": test_code,
             "tests": test_summary(junit_path),
+            "c53_capture_exit_code": c53_capture_code,
+            "c53_capture_status": (
+                "passed"
+                if c53_capture_code == 0
+                else "failed"
+                if c53_capture_code is not None
+                else "not_run"
+            ),
+            "c53_capture_output_dir": (
+                str(c53_capture_output_dir) if c53_capture_output_dir else None
+            ),
         },
         "duration_seconds": {
             "configure": round(configure_seconds, 3),
             "clean_build": round(build_seconds, 3),
             "tests": round(test_seconds, 3),
+            "c53_capture": round(c53_capture_seconds, 3),
         },
         "root_cmake_lines": count_lines(repository / "CMakeLists.txt"),
         "application": {
@@ -495,7 +535,10 @@ def main() -> int:
 
     return (
         0
-        if configure_code == build_code == test_code == 0 and provenance_valid
+        if (
+            configure_code == build_code == test_code == c53_capture_code == 0
+            and provenance_valid
+        )
         else 1
     )
 

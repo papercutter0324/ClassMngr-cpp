@@ -143,7 +143,11 @@ class RecordRefactoringBaselineProvenanceTests(unittest.TestCase):
                 inspect_git_state(Path(non_repository))
 
     def run_recorder(
-        self, configure_code: int, build_code: int, test_code: int
+        self,
+        configure_code: int,
+        build_code: int,
+        test_code: int,
+        c53_code: int = 0,
     ) -> tuple[int, str, dict[str, object], list[str], bool]:
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository = Path(temporary_directory)
@@ -177,6 +181,9 @@ class RecordRefactoringBaselineProvenanceTests(unittest.TestCase):
                         == "build_exit_code=0\n"
                     )
                     return test_code, 3.0
+                if len(command) > 1 and "capture_sub_prep_c53_parity.py" in command[1]:
+                    commands.append("c53")
+                    return c53_code, 4.0
                 if "--fresh" in command:
                     commands.append("configure")
                     return configure_code, 1.0
@@ -226,7 +233,10 @@ class RecordRefactoringBaselineProvenanceTests(unittest.TestCase):
         self.assertEqual(output, "build_exit_code=0\n")
         self.assertEqual(report["results"]["build_exit_code"], 0)
         self.assertEqual(report["results"]["test_exit_code"], 1)
-        self.assertEqual(commands, ["configure", "build", "ctest"])
+        self.assertEqual(report["results"]["c53_capture_exit_code"], 0)
+        self.assertEqual(report["results"]["c53_capture_status"], "passed")
+        self.assertEqual(report["duration_seconds"]["c53_capture"], 4.0)
+        self.assertEqual(commands, ["configure", "build", "ctest", "c53"])
         self.assertTrue(published_before_tests)
 
     def test_failed_build_publishes_nonzero_output_and_skips_ctest(self) -> None:
@@ -238,6 +248,8 @@ class RecordRefactoringBaselineProvenanceTests(unittest.TestCase):
         self.assertEqual(output, "build_exit_code=2\n")
         self.assertEqual(report["results"]["build_exit_code"], 2)
         self.assertEqual(report["results"]["test_exit_code"], -1)
+        self.assertIsNone(report["results"]["c53_capture_exit_code"])
+        self.assertEqual(report["results"]["c53_capture_status"], "not_run")
         self.assertEqual(commands, ["configure", "build"])
 
     def test_failed_configure_publishes_nonzero_output_and_skips_build_and_ctest(
@@ -252,7 +264,20 @@ class RecordRefactoringBaselineProvenanceTests(unittest.TestCase):
         self.assertEqual(report["results"]["configure_exit_code"], 1)
         self.assertEqual(report["results"]["build_exit_code"], -1)
         self.assertEqual(report["results"]["test_exit_code"], -1)
+        self.assertIsNone(report["results"]["c53_capture_exit_code"])
+        self.assertEqual(report["results"]["c53_capture_status"], "not_run")
         self.assertEqual(commands, ["configure"])
+
+    def test_failed_c53_capture_is_recorded_and_fails_the_baseline(self) -> None:
+        result, _, report, commands, _ = self.run_recorder(
+            configure_code=0, build_code=0, test_code=0, c53_code=1
+        )
+
+        self.assertEqual(result, 1)
+        self.assertEqual(report["results"]["test_exit_code"], 0)
+        self.assertEqual(report["results"]["c53_capture_exit_code"], 1)
+        self.assertEqual(report["results"]["c53_capture_status"], "failed")
+        self.assertEqual(commands, ["configure", "build", "ctest", "c53"])
 
 
 if __name__ == "__main__":

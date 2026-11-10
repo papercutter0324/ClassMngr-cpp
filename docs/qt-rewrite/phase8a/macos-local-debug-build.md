@@ -40,8 +40,11 @@ Qt installation is still available.
 
 From the repository root, run the existing baseline recorder. It performs a
 fresh CMake configure with the macOS universal Debug preset, builds all targets,
-runs the full CTest suite with failure output, and writes the baseline JSON and
-JUnit report under the ignored build directory.
+runs the full CTest suite with failure output, and then attempts the matched SQL
+C53 capture whenever the build succeeds. A CTest failure does not suppress the
+capture. The JSON report records build, CTest, provenance, and C53 outcomes
+separately; the C53 files and JUnit report are written under the ignored build
+directory.
 
     mkdir -p build/macos-clang-debug/artifacts
     set -o pipefail
@@ -58,18 +61,9 @@ JUnit report under the ignored build directory.
     )
     python scripts/record_refactoring_baseline.py "${baseline_args[@]}" 2>&1 | tee build/macos-clang-debug/artifacts/refactoring-baseline.log
 
-If the build and CTest suite pass, run the Phase 8a matched SQL Sub Prep
-capture. The timestamp keeps repeated runs in separate output directories.
-
-    C53_OUTPUT_DIR="$PWD/build/macos-clang-debug/artifacts/sub-prep-c53-$(date +%Y%m%d-%H%M%S)"
-    c53_args=(
-      --build-dir build/macos-clang-debug
-      --report macos-clang-debug
-      --output-dir "$C53_OUTPUT_DIR"
-    )
-    QT_QPA_PLATFORM=offscreen python scripts/phase8/capture_sub_prep_c53_parity.py "${c53_args[@]}"
-
-The baseline JSON, full CTest log, and JUnit report are in
-build/macos-clang-debug/artifacts and
-build/macos-clang-debug/Testing. Review the Ninja output or follow the log with
-tail during the build; check in at 30-minute intervals as requested.
+The baseline JSON, full CTest log, JUnit report, and timestamped C53 capture
+directory are in `build/macos-clang-debug/artifacts` and
+`build/macos-clang-debug/Testing`. Review the recorder's JSON even when CTest
+fails so the independent C53 result is retained. Review the Ninja output or
+follow the log with tail during the build; check in at 30-minute intervals as
+requested.
