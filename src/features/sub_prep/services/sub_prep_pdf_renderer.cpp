@@ -1046,6 +1046,92 @@ void applyScheduleTableLayout(
     (*table)->setFormat(format);
 }
 
+bool applyPageBreaksBeforeScheduleEntries(
+    QTextDocument& document,
+    const ScheduleViewModel& schedule,
+    const qreal pageHeight
+    )
+{
+    if (schedule.rows.isEmpty() || schedule.days.isEmpty() || pageHeight <= 0.0)
+    {
+        return false;
+    }
+
+    QList<QTextTable*> tables;
+    collectTables(document.rootFrame(), tables);
+    const int expectedRowCount = schedule.rows.size() + 1;
+    const int expectedColumnCount = schedule.days.size() + 1;
+    const auto table = std::find_if(
+        tables.cbegin(),
+        tables.cend(),
+        [expectedRowCount, expectedColumnCount](const QTextTable* candidate)
+        {
+            return candidate
+                && candidate->rows() == expectedRowCount
+                && candidate->columns() == expectedColumnCount;
+        }
+        );
+    if (table == tables.cend())
+    {
+        return false;
+    }
+
+    bool changed = false;
+    for (int row = 1; row < (*table)->rows(); ++row)
+    {
+        for (int column = 1; column < (*table)->columns(); ++column)
+        {
+            const QTextTableCell cell = (*table)->cellAt(row, column);
+            const int endPosition = cell.lastCursorPosition().position();
+            for (
+                QTextBlock block = cell.firstCursorPosition().block();
+                block.isValid() && block.position() <= endPosition;
+                block = block.next()
+                )
+            {
+                if (block.text().trimmed().isEmpty())
+                {
+                    continue;
+                }
+
+                const QTextBlockFormat originalFormat = block.blockFormat();
+                if (originalFormat.pageBreakPolicy().testFlag(
+                        QTextFormat::PageBreak_AlwaysBefore))
+                {
+                    continue;
+                }
+
+                const QRectF bounds =
+                    document.documentLayout()->blockBoundingRect(block);
+                if (bounds.isEmpty() || bounds.height() >= pageHeight)
+                {
+                    continue;
+                }
+
+                const qreal top = std::max<qreal>(0.0, bounds.top());
+                const qreal bottom = std::max(top, bounds.bottom() - 0.5);
+                if (
+                    std::floor(top / pageHeight)
+                    >= std::floor(bottom / pageHeight)
+                    )
+                {
+                    continue;
+                }
+
+                QTextBlockFormat pageBreakFormat = originalFormat;
+                pageBreakFormat.setPageBreakPolicy(
+                    QTextFormat::PageBreak_AlwaysBefore
+                    );
+                QTextCursor cursor(block);
+                cursor.setBlockFormat(pageBreakFormat);
+                changed = true;
+            }
+        }
+    }
+
+    return changed;
+}
+
 std::optional<QRectF> textBlockBounds(
     QTextDocument& document,
     const QString& text
@@ -1451,7 +1537,10 @@ Result renderPdf(
                 body.height()
                 );
 
-        if (newPageBreaks.isEmpty() && !moveSubNotesToNewPage)
+        if (
+            newPageBreaks.isEmpty()
+            && !moveSubNotesToNewPage
+            )
         {
             break;
         }
@@ -1473,6 +1562,21 @@ Result renderPdf(
         documentModel.schedule,
         scheduleLayout
         );
+    const qsizetype scheduleEntryPageBreakPassLimit =
+        documentModel.schedule.rows.size()
+        * std::max<qsizetype>(1, documentModel.schedule.days.size())
+        + 1;
+    for (qsizetype pass = 0; pass < scheduleEntryPageBreakPassLimit; ++pass)
+    {
+        if (!applyPageBreaksBeforeScheduleEntries(
+                document,
+                documentModel.schedule,
+                body.height()
+                ))
+        {
+            break;
+        }
+    }
     const std::optional<qreal> subNotesLineStart =
         subNotesWritingStart(
             document,

@@ -603,7 +603,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         ClassMngrStartupPerformanceTests
         PROPERTIES
         ENVIRONMENT
-            "CLASSMNGR_TEST_APP_PATH=$<TARGET_FILE:ClassMngr>"
+            "CLASSMNGR_TEST_APP_PATH=$<TARGET_FILE:ClassMngr>;CLASSMNGR_C53_SQL_GATE_REFERENCE_DIR=${PROJECT_BINARY_DIR}/artifacts/c53-sql-gate;CLASSMNGR_C53_SQL_GATE_APPEND_RUN_ID=1;CLASSMNGR_STARTUP_SUB_PREP_OUTPUT_REFERENCE_DATE=2026-09-14"
     )
 
     add_executable(ClassMngrPhase7NextBlankFixtureTests

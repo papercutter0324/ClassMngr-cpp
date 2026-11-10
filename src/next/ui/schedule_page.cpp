@@ -45,7 +45,11 @@ namespace ClassMngr::Next::Ui
 namespace
 {
 
+#if defined(Q_OS_MACOS)
+constexpr int ScheduleToolbarButtonHeight = 40;
+#else
 constexpr int ScheduleToolbarButtonHeight = 34;
+#endif
 
 [[nodiscard]] QString pageText(const char* source)
 {

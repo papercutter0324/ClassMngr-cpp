@@ -71,7 +71,7 @@ qt_add_resources(ClassMngrProfileFileWorkflowVisualCapture
 add_test(
     NAME ClassMngrProfileFileWorkflowVisualCapture
     COMMAND ClassMngrProfileFileWorkflowVisualCapture
-        "${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/next/phase-7/profile-file-workflows"
+        "${PROJECT_BINARY_DIR}/artifacts/next/profile-file-workflows"
 )
 set_tests_properties(ClassMngrProfileFileWorkflowVisualCapture
     PROPERTIES

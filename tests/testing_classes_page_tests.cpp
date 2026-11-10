@@ -3,6 +3,7 @@
 #include "data/data_service.h"
 #include "data/database/database_session.h"
 #include "data/database/workspace_store.h"
+#include "data/repositories/class_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/testing_class_repository.h"
 #include "domain/models/roster.h"
@@ -98,6 +99,36 @@ QString databasePath(QTemporaryDir& directory)
             QUuid::createUuid().toString(QUuid::WithoutBraces)
             )
         );
+}
+
+bool seedRosterEditorClass(
+    ApplicationServices& services,
+    QTemporaryDir& directory,
+    const int classId,
+    const QString& name,
+    const Roster& roster
+    )
+{
+    if (!services.openDatabase(databasePath(directory)))
+    {
+        return false;
+    }
+
+    QSqlQuery insertClass(services.workspaceStore()->database());
+    insertClass.prepare(QStringLiteral(
+        "INSERT INTO classes (id, name) VALUES (?, ?)"
+        ));
+    insertClass.addBindValue(classId);
+    insertClass.addBindValue(name);
+    if (!insertClass.exec())
+    {
+        return false;
+    }
+
+    return services.workspaceStore()->rosterRepository()->saveRoster(
+        classId,
+        roster
+        ).has_value();
 }
 
 ClassMngr::Next::Domain::ClassId typedClassId(const int value)
@@ -680,11 +711,16 @@ void TestingClassesPageTests::cleanup()
 void TestingClassesPageTests
     ::rosterEditorOmitsRemoveButtonAndKeepsContextAction()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
-    QVERIFY(services.dataService()->saveRoster(
+    QVERIFY(seedRosterEditorClass(
+        services,
+        directory,
         42,
+        QStringLiteral("Hercules"),
         rosterWithEvaluation()
-        ).has_value());
+        ));
 
     RosterEditorWidget editor(
         &services,
@@ -817,12 +853,21 @@ void TestingClassesPageTests::rosterTableSupportsMultiCellSelection()
 void TestingClassesPageTests
     ::rosterKeyboardTriggerOpensInAppPalette()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(seedRosterEditorClass(
+        services,
+        directory,
+        42,
+        QStringLiteral("Athena"),
+        Roster{}
+        ));
     RosterEditorWidget editor(&services, true);
     editor.loadClass(
         Classroom(
             QStringLiteral("Athena"),
-            43
+            42
             )
         );
     editor.resize(900, 500);
@@ -852,12 +897,21 @@ void TestingClassesPageTests
 void TestingClassesPageTests
     ::rosterKeyboardWritesToKoreanNameCell()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
+    QVERIFY(seedRosterEditorClass(
+        services,
+        directory,
+        42,
+        QStringLiteral("Athena"),
+        Roster{}
+        ));
     RosterEditorWidget editor(&services, true);
     editor.loadClass(
         Classroom(
             QStringLiteral("Athena"),
-            43
+            42
             )
         );
     editor.resize(900, 500);
@@ -908,12 +962,20 @@ void TestingClassesPageTests
 void TestingClassesPageTests
     ::outputAvailabilityFollowsRosterTabAndLoadedClass()
 {
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
     ApplicationServices services;
-    const Result<int> created =
-        services.dataService()->createTestingClass(
-            testingClass(QStringLiteral("Output Availability"))
-            );
+    const auto created = services.dataService()->createTestingClass(
+        testingClass(QStringLiteral("Output Availability"))
+        );
     QVERIFY(created);
+    QVERIFY(seedRosterEditorClass(
+        services,
+        directory,
+        *created,
+        QStringLiteral("Output Availability"),
+        Roster{}
+        ));
 
     FixedTestingClassChoicesReadPort readPort;
     readPort.result = ClassMngr::Next::Application::

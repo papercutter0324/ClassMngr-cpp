@@ -7,6 +7,11 @@ classmngr_add_qt_test(
         Qt6::Widgets
     OFFSCREEN
 )
+if(APPLE)
+    set_target_properties(ClassMngrTeacherImportUiApplyParityTests
+        PROPERTIES MACOSX_BUNDLE TRUE
+    )
+endif()
 
 qt_add_resources(
     ClassMngrTeacherImportUiApplyParityTests
@@ -79,6 +84,15 @@ classmngr_add_qt_test(
         Qt6::Widgets
     OFFSCREEN
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+)
+
+qt_add_resources(ClassMngrPageManagerTests
+    page_manager_keyboard_resources
+    PREFIX "/"
+    BASE "${PROJECT_SOURCE_DIR}/resources"
+    FILES
+        resources/assets/icons/keyboard_dark.svg
+        resources/assets/icons/keyboard_light.svg
 )
 
 classmngr_add_qt_test(
@@ -177,6 +191,11 @@ classmngr_add_qt_test(
         ClassMngrdocumentsResourcePack
     OFFSCREEN
 )
+if(APPLE)
+    set_target_properties(ClassMngrInitialSetupWizardTeacherCreateParityTests
+        PROPERTIES MACOSX_BUNDLE TRUE
+    )
+endif()
 
 qt_add_resources(
     ClassMngrInitialSetupWizardTeacherCreateParityTests
@@ -839,6 +858,12 @@ classmngr_add_qt_test(
         ClassMngrdocumentsResourcePack
     OFFSCREEN
 )
+if(APPLE)
+    set_target_properties(
+        ClassMngrMainWindowInitialSetupEmptyStateNavigationTests
+        PROPERTIES MACOSX_BUNDLE TRUE
+    )
+endif()
 
 qt_add_resources(
     ClassMngrMainWindowInitialSetupEmptyStateNavigationTests

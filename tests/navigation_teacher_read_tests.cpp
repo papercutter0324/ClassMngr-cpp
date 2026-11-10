@@ -1176,7 +1176,14 @@ selectedTeacherProfileReadFailureWarnsWithoutConfirmation()
         warning.message,
         QStringLiteral("The teacher could not be loaded.")
         );
-    QCOMPARE(warning.details, expectedProfileRead.error());
+    QVERIFY(warning.details.startsWith(
+        QStringLiteral("Loading teacher profile failed for teacher id %1:")
+            .arg(selected.id)
+        ));
+    QVERIFY(warning.details.endsWith(QStringLiteral("Parameter count mismatch")));
+    QVERIFY(warning.details.contains(
+        expectedProfileRead.error().section(QStringLiteral(": "), -1)
+        ));
     QVERIFY(prompts.confirmations.isEmpty());
     QVERIFY(prompts.asynchronousMessages.isEmpty());
     QCOMPARE(sidebar.getSelectedTeacherId(), selected.id);

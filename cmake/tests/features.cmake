@@ -84,6 +84,9 @@ qt_add_executable(ClassMngrClassTransferTests
         NAME ClassMngrClassTransferTests
         COMMAND ClassMngrClassTransferTests
     )
+    set_tests_properties(ClassMngrClassTransferTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
 
     add_test(
         NAME ClassTransferPreviewAdapterRegressionTests
@@ -321,6 +324,9 @@ qt_add_executable(ClassMngrClassTransferTests
     add_test(
         NAME ClassMngrTeacherImportDialogTests
         COMMAND ClassMngrTeacherImportDialogTests
+    )
+    set_tests_properties(ClassMngrTeacherImportDialogTests
+        PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
 
     qt_add_executable(ClassMngrStaffDirectoryPageTests

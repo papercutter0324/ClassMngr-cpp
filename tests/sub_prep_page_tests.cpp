@@ -54,6 +54,7 @@
 
 #include <string>
 #include <memory>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -299,11 +300,21 @@ public:
             classRecord.classroomName = "F507_ROSTER_CLASS";
             classRecord.grade = "E5";
             classRecord.level = "Athena";
-            for (const SubPrepWeekday day : request.selectedDays)
+            const auto schedule = meetingsByClassId.find(
+                classId.value()
+                );
+            if (schedule != meetingsByClassId.end())
             {
-                classRecord.meetings.push_back(
-                    {day, "4:00 PM", "4:50 PM"}
-                    );
+                classRecord.meetings = schedule->second;
+            }
+            else
+            {
+                for (const SubPrepWeekday day : request.selectedDays)
+                {
+                    classRecord.meetings.push_back(
+                        {day, "4:00 PM", "4:50 PM"}
+                        );
+                }
             }
             classRecord.rosterColumns = {"English", "Korean"};
             classRecord.rosterRows = {{"F507_STUDENT", "F507_STUDENT_KR"}};
@@ -317,6 +328,8 @@ public:
 
     int loadCount = 0;
     SubPrepRosterOutputSourceRequest lastRequest;
+    std::unordered_map<std::string,
+        std::vector<SubPrepRosterOutputMeeting>> meetingsByClassId;
 };
 
 class SubPrepTestCalendarIntervalsReadPort final
@@ -1974,6 +1987,16 @@ zoomReadFailurePreservesReadOnlyFieldsAndReportsDiagnostic()
 void SubPrepPageTests
     ::unavailablePreferenceLoadsPreservePageValues()
 {
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
     ScheduleWidgetTestStubs::setDatabaseOpen(false);
     ApplicationServices services;
     SubPrepPageHarness harness(&services);
@@ -2057,6 +2080,7 @@ void SubPrepPageTests
         QStringLiteral("Keep Wi-Fi password")
         );
     QCOMPARE(photocopierCode->text(), QStringLiteral("Keep copier code"));
+    QVERIFY(promptService.messages.isEmpty());
 }
 
 void SubPrepPageTests
@@ -3983,6 +4007,10 @@ pageGenerationKeepsVacationDateAndCheckedWeekdayScopesSeparate()
         .endDate = CalendarEventDate(vacationDateIso.toStdString())
     });
     SubPrepTestRosterOutputSourceReadPort rosterOutputSourceReadPort;
+    rosterOutputSourceReadPort.meetingsByClassId = {
+        {"100", {{SubPrepWeekday::Friday, "4:00 PM", "4:50 PM"}}},
+        {"43", {{SubPrepWeekday::Friday, "5:00 PM", "5:50 PM"}}}
+    };
     SubPrepPageHarness harness(
         &services,
         calendarIntervalsReadPort,
