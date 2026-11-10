@@ -6,8 +6,8 @@ suite directly. No GitHub self-hosted runner or new Actions workflow is needed.
 ## Checkout
 
 Use a clean checkout of the published Qt-Rewrite branch. The current published
-OS-agnostic batch is d034bb56. Windows-specific local commits on the Windows
-workstation are not included in that remote commit.
+candidate is 3dc37340. Windows-specific local commits on the Windows
+workstation are not included in this macOS candidate.
 
     git clone https://github.com/papercutter0324/ClassMngr-cpp.git
     cd ClassMngr-cpp
@@ -67,3 +67,23 @@ directory are in `build/macos-clang-debug/artifacts` and
 fails so the independent C53 result is retained. Review the Ninja output or
 follow the log with tail during the build; check in at 30-minute intervals as
 requested.
+
+Run this command where the tests have normal local-socket access and macOS
+AppKit framework access. A restricted runner sandbox can deny `QTcpServer`
+loopback binds and cause QWizard/AppKit `NSBundle` exceptions; those are
+environment failures for these tests, not evidence of an application defect.
+For repeat runs, prefer a fresh build directory. The resource baker protects
+non-empty unowned `generated/ClassMngrNext/Resources` output from replacement;
+archive that generated directory before reusing an existing build tree.
+
+## Verified local macOS result
+
+The source-stable baseline at commit 3dc37340 completed on macOS 27.2 arm64:
+the clean Debug build passed all 5,572 steps, all 620 CTests passed with no
+failures or timeouts, and C53 passed with 17 pages and zero changed pixels.
+The run report is
+[`refactoring-baseline-unsandboxed-retry-1.json`](../../../build/phase8a-macos-debug-3dc37340/artifacts/refactoring-baseline-unsandboxed-retry-1.json).
+The corresponding full CTest transcript is in
+[`LastTest.log`](../../../build/phase8a-macos-debug-3dc37340/Testing/Temporary/LastTest.log).
+This closes the local macOS slice; Windows and Linux still need their own
+source-stable baseline and capture verification.
