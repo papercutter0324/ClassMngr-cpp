@@ -8,6 +8,7 @@
 #include "domain/models/teacher.h"
 #include "features/roster/ui/roster_editor_widget.h"
 #include "features/roster/ui/roster_model.h"
+#include "next/application/roster_row_display_policy.h"
 #include "features/roster/ui/roster_table_view.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
@@ -1520,7 +1521,9 @@ void RosterTransferMenuTests::workflowProjectionMatchesRosterModel()
     while (stored.rows.size() < 25)
         stored.rows.append({"", "", "", "", "", ""});
     while (stored.rows.size() < 27)
-        stored.rows.append({"tail", "", "", "", "", ""});
+        stored.rows.append({"", "", "", "", "", ""});
+    stored.rows[25] = {"tail note one", "김꼬리", "", "Tail One", "", ""};
+    stored.rows[26] = {"tail note two", "이꼬리", "", "Tail Two", "", ""};
     stored.rows[0][5] = Ui::QtTextAdapter::fromUtf16String(u"\uFEFF\uFEFF keep  BOM ");
     stored.rows[1][5] = Ui::QtTextAdapter::fromUtf16String(u"\uFFFE\u4100");
     ports.stored = snapshot(stored);
@@ -1532,6 +1535,12 @@ void RosterTransferMenuTests::workflowProjectionMatchesRosterModel()
         for (auto& cell : row)
             cell = QString::fromStdU16String(Ui::QtTextAdapter::toUtf16String(cell));
     RosterModel expected;
+    expected.setRowPreferences(
+        static_cast<int>(stored.rows.size()),
+        static_cast<int>(
+            ClassMngr::Next::Application::RosterRowDisplayMode::AllRows
+            )
+        );
     expected.setRoster(decoded);
     const QStringList sourceRow{"Transferred", QString::fromUtf16(u"\uAE40\uBBFC\uC9C0"), "", "", "", "Source fall"};
     QVERIFY(expected.insertTransferredRow(Roster::BaseColumns, sourceRow));
@@ -1545,11 +1554,24 @@ void RosterTransferMenuTests::workflowProjectionMatchesRosterModel()
         ClassMngr::Next::Application::RosterRowTransferSourceIndex{0},
         snapshot(source).columns}, ports, ports, equals,
         &confirmation);
-    QVERIFY(std::holds_alternative<RosterRowTransferSuccess>(result));
+    const auto* success = std::get_if<RosterRowTransferSuccess>(&result);
+    QString failureDiagnostic = QStringLiteral("result variant %1")
+        .arg(result.index());
+    if (const auto* failure = std::get_if<Domain::OperationError>(&result))
+    {
+        failureDiagnostic = QString::fromStdString(failure->message);
+    }
+    else if (const auto* failure =
+                 std::get_if<RosterRowTransferPreparationError>(&result))
+    {
+        failureDiagnostic = QStringLiteral("transfer preparation rejection %1")
+            .arg(static_cast<int>(failure->rejection));
+    }
+    QVERIFY2(success, qPrintable(failureDiagnostic));
     QVERIFY(ports.saved);
     QCOMPARE(ports.saved->targetRoster.columns, expectedRoster.columns);
     QCOMPARE(ports.saved->targetRoster.rows, expectedRoster.rows);
-    QCOMPARE(ports.saved->targetRoster.rows.size(), std::size_t(25));
+    QCOMPARE(ports.saved->targetRoster.rows.size(), std::size_t(27));
     QCOMPARE(ports.saved->targetRoster.columnWidths,
         (std::vector<RosterSnapshotColumnWidth>{
             RosterSnapshotColumnWidth{204}, RosterSnapshotColumnWidth{202},

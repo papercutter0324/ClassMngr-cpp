@@ -1442,18 +1442,35 @@ void SharedPolicyTests::speakingEvalValidatorNormalizesAndReportsCellIssues()
         QString(SpeakingEval::CommentMaxLength + 1, QChar(u'x'));
     invalid[1].append(QStringLiteral("out-of-range cell"));
     invalid.append(QStringList(SpeakingEval::ColumnCount, QString()));
+    while (invalid.size() <= SpeakingEval::MaximumRowCount)
+    {
+        invalid.append(QStringList(SpeakingEval::ColumnCount, QString()));
+    }
 
     const ValidationResult errors = SpeakingEvalValidator::validate(
         1, QStringLiteral("Winter"), invalid);
-    QCOMPARE(errors.forField(QStringLiteral("rows[0].Grammar")).first().code,
+    const auto grammarIssues = errors.forField(
+        QStringLiteral("rows[0].Grammar"));
+    QVERIFY(!grammarIssues.isEmpty());
+    QCOMPARE(grammarIssues.constFirst().code,
              QStringLiteral("validation.enum.invalid_value"));
-    QCOMPARE(errors.forField(QStringLiteral("rows[1].Korean Name")).first().code,
+    const auto koreanNameIssues = errors.forField(
+        QStringLiteral("rows[1].Korean Name"));
+    QVERIFY(!koreanNameIssues.isEmpty());
+    QCOMPARE(koreanNameIssues.constFirst().code,
              QStringLiteral("speaking_evaluation.student_name.required"));
-    QCOMPARE(errors.forField(QStringLiteral("rows[1].Comments")).first().code,
+    const auto commentIssues = errors.forField(
+        QStringLiteral("rows[1].Comments"));
+    QVERIFY(!commentIssues.isEmpty());
+    QCOMPARE(commentIssues.constFirst().code,
              QStringLiteral("validation.length.out_of_bounds"));
-    QCOMPARE(errors.forField(QStringLiteral("rows[1]")).first().code,
+    const auto rowIssues = errors.forField(QStringLiteral("rows[1]"));
+    QVERIFY(!rowIssues.isEmpty());
+    QCOMPARE(rowIssues.constFirst().code,
              QStringLiteral("speaking_evaluation.row.too_many_cells"));
-    QCOMPARE(errors.forField(QStringLiteral("rows")).first().code,
+    const auto collectionIssues = errors.forField(QStringLiteral("rows"));
+    QVERIFY(!collectionIssues.isEmpty());
+    QCOMPARE(collectionIssues.constFirst().code,
              QStringLiteral("speaking_evaluation.rows.too_many"));
 }
 

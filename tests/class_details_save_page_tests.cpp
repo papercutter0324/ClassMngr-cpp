@@ -2,6 +2,7 @@
 #include "core/application_services.h"
 #include "data/database/database_session.h"
 #include "features/classes/ui/class_details_page.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "next/application/class_details_validation_context_query.h"
 #include "next/application/class_details_save_use_case.h"
 #include "next/application/class_details_schedule_conflict_query.h"
@@ -245,8 +246,8 @@ private slots:
     void invalidFieldsBlockTheSavePort();
     void malformedScheduleBlocksConflictQueriesAndFocusesItsField();
     void freshInvalidContextBlocksBeforeConflictAndSave();
-    void contextReadFailureFallsBackAndContinuesSaveOrder_data();
-    void contextReadFailureFallsBackAndContinuesSaveOrder();
+    void contextReadFailureBlocksSaveAndReportsWarning_data();
+    void contextReadFailureBlocksSaveAndReportsWarning();
     void policyAcceptedRawTimeStillFailsConflictConversion_data();
     void policyAcceptedRawTimeStillFailsConflictConversion();
     void regularAndIntensiveConflictsBlockTheSavePort();
@@ -652,16 +653,26 @@ void ClassDetailsSavePageTests::freshInvalidContextBlocksBeforeConflictAndSave()
     QVERIFY(foundTeacherIssue);
 }
 
-void ClassDetailsSavePageTests::contextReadFailureFallsBackAndContinuesSaveOrder_data()
+void ClassDetailsSavePageTests::contextReadFailureBlocksSaveAndReportsWarning_data()
 {
     QTest::addColumn<bool>("mismatchedContext");
     QTest::newRow("context read failure") << false;
     QTest::newRow("context identity mismatch") << true;
 }
 
-void ClassDetailsSavePageTests::contextReadFailureFallsBackAndContinuesSaveOrder()
+void ClassDetailsSavePageTests::contextReadFailureBlocksSaveAndReportsWarning()
 {
     QFETCH(bool, mismatchedContext);
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
     QTemporaryDir directory;
     QVERIFY(directory.isValid());
     ApplicationServices services;
@@ -710,19 +721,24 @@ void ClassDetailsSavePageTests::contextReadFailureFallsBackAndContinuesSaveOrder
     QSignalSpy savedSpy(&page, &ClassDetailsPage::classInfoSaved);
     QVERIFY(savedSpy.isValid());
 
-    QVERIFY(page.saveChanges());
+    QVERIFY(!page.saveChanges());
     QCOMPARE(contextPort.callCount, 1);
-    QCOMPARE(conflictPort.requests.size(), std::size_t(2));
-    QVERIFY(conflictPort.requests[0].candidateTimes.empty());
-    QVERIFY(conflictPort.requests[1].candidateTimes.empty());
-    QCOMPARE(savePort.callCount, 1);
-    QCOMPARE(events.size(), std::size_t(4));
+    QVERIFY(conflictPort.requests.empty());
+    QCOMPARE(savePort.callCount, 0);
+    QCOMPARE(events.size(), std::size_t(1));
     QCOMPARE(events[0], std::string("context"));
-    QCOMPARE(events[1], std::string("regular"));
-    QCOMPARE(events[2], std::string("intensive"));
-    QCOMPARE(events[3], std::string("save"));
-    QCOMPARE(savedSpy.size(), 1);
-    QVERIFY(!page.hasUnsavedChanges());
+    QCOMPARE(savedSpy.size(), 0);
+    QVERIFY(page.hasUnsavedChanges());
+    QCOMPARE(promptService.messages.size(), 1);
+    const PromptRequest& warning = promptService.messages.constFirst();
+    QCOMPARE(warning.severity, PromptSeverity::Warning);
+    QCOMPARE(warning.title, QStringLiteral("Save Class Information"));
+    QCOMPARE(
+        warning.message,
+        mismatchedContext
+            ? QStringLiteral("A class validation context returned a different class identifier.")
+            : QStringLiteral("validation context repository read failed")
+        );
     QVERIFY(!DialogServices::promptTestDriver().activePrompt());
 }
 
@@ -1183,6 +1199,17 @@ void ClassDetailsSavePageTests::policyAcceptedRawTimeStillFailsConflictConversio
     savePort.events = &events;
     conflictPort.events = &events;
     contextPort.events = &events;
+    const Domain::ClassId typedClassId = *Domain::ClassId::fromString(
+        std::to_string(classId)
+        );
+    contextPort.result =
+        Application::ClassDetailsValidationContextPortResult::success({
+            .matchedClassId = typedClassId,
+            .teacherId =
+                Application::ClassDetailsValidationContextTeacherId{-1},
+            .notes = {},
+            .timeFillerActivities = {}
+        });
     ClassDetailsPage page(&services, false, nullptr, &savePort, nullptr,
         &conflictPort, &contextPort);
     page.setSaveMode(SaveMode::Manual);

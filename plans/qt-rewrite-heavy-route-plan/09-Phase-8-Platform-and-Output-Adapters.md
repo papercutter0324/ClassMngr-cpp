@@ -46,9 +46,9 @@ Use the shared [current slice-batch tracker](Current-Slice-Batches.md) for live 
 batch and the next batch once discovery starts; completed batches are
 not archived there.
 
-## Progress log
+## Progress log location
 
-Implementation, verification, decisions, and exit-gate history are in the [Phase 8 progress log](09-Phase-8-Progress-Log.md). Keep current status, objective, and contracts in this plan; keep live batches in the shared tracker.
+Write all historical Phase 8 progress—including implementation and verification results, decisions, blockers, acceptance findings, and exit-gate changes—to the [Phase 8 progress log](09-Phase-8-Progress-Log.md), not this plan. Keep current status, objective, requirements, and contracts here; keep live batches in the shared tracker.
 
 ## Objective
 

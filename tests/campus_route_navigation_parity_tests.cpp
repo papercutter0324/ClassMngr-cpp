@@ -465,6 +465,7 @@ void CampusRouteNavigationParityTests::campusRouteLeaveGuardMatrix()
 
     Sidebar sidebar;
     connectCampusSectionChanges(pages, sidebar);
+    const QStringList sidebarKeysBefore = sidebar.selectedKeys();
     if (!sidebarBeforeSection.isEmpty())
     {
         sidebar.selectCampusSection(sidebarBeforeSection);
@@ -479,8 +480,6 @@ void CampusRouteNavigationParityTests::campusRouteLeaveGuardMatrix()
         // application dispatches its NavigationData to the controller.
         sidebar.selectCampusSection(routeKey);
     }
-    const QStringList sidebarKeysBefore = sidebar.selectedKeys();
-
     ResourcePackManager resources(
         directory.filePath(QStringLiteral("resources")),
         directory.filePath(QStringLiteral("baseline"))

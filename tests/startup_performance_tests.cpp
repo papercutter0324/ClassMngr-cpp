@@ -1955,7 +1955,8 @@ void StartupPerformanceTests
     missingNumericField.replace(2, missingFieldOwner);
     QTest::newRow("missing-numeric-field")
         << missingNumericField << false
-        << QStringLiteral("sub-prep-preview; tableCellWidgetCount");
+        << QStringLiteral(
+            "owner sub-prep-preview is missing numeric field tableCellWidgetCount");
 
     QJsonArray nonNumericField = validMetrics;
     QJsonObject nonNumericFieldOwner = nonNumericField.at(0).toObject();
@@ -1963,7 +1964,8 @@ void StartupPerformanceTests
     nonNumericField.replace(0, nonNumericFieldOwner);
     QTest::newRow("non-numeric-field")
         << nonNumericField << false
-        << QStringLiteral("standalone-schedule; modelRowCount");
+        << QStringLiteral(
+            "owner standalone-schedule is missing numeric field modelRowCount");
 }
 
 void StartupPerformanceTests::pdfLifecycleOwnerMetricsValidatorIsFailClosed()
@@ -10763,7 +10765,14 @@ void StartupPerformanceTests::capturesMatchedSqlSubPrepForC53()
         !configuredOutputRoot.isEmpty(),
         "CLASSMNGR_C53_SQL_GATE_REFERENCE_DIR was not provided."
         );
-    const QString outputRoot = QFileInfo(configuredOutputRoot).absoluteFilePath();
+    QString outputRoot = QFileInfo(configuredOutputRoot).absoluteFilePath();
+    if (qEnvironmentVariableIntValue(
+            "CLASSMNGR_C53_SQL_GATE_APPEND_RUN_ID") != 0)
+    {
+        outputRoot = QDir(outputRoot).filePath(
+            QUuid::createUuid().toString(QUuid::WithoutBraces)
+            );
+    }
     QVERIFY2(
         !QDir(outputRoot).exists()
             || QDir(outputRoot).entryList(

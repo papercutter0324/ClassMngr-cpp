@@ -487,11 +487,23 @@ public:
             preferencesReadPort,
             preferencesPersistPort
             );
+        std::vector<std::u16string> availableFontFamilies;
+        const QStringList registeredFontFamilies = QFontDatabase::families();
+        availableFontFamilies.reserve(
+            static_cast<std::size_t>(registeredFontFamilies.size())
+            );
+        for (const QString& family : registeredFontFamilies)
+        {
+            availableFontFamilies.push_back(family.toStdU16String());
+        }
+        Next::Test::FixedFontFamilyAvailabilityPort fontFamilyAvailability(
+            std::move(availableFontFamilies)
+            );
         Next::Ui::ApplicationShell nextShell(
             resourceLoader,
             preferences,
             Next::Test::makeMemoryWindowGeometryPort(),
-            Next::Test::emptyFontFamilyAvailabilityPort()
+            fontFamilyAvailability
             );
         nextGuard = &nextShell;
         const auto registerPage = [&nextShell](
@@ -698,8 +710,17 @@ public:
         if (!navigationTypographyMatchesLegacy)
         {
             *errorMessage = QStringLiteral(
-                "Next navigation font, indentation, or row metrics did not match legacy."
-                );
+                "Next navigation font, indentation, or row metrics did not match legacy. Legacy font=%1/%2pt indent=%3 teacherRow=%4 topRow=%5; Next font=%6/%7pt indent=%8 teacherRow=%9 topRow=%10.")
+                .arg(legacyTreeFontFamily)
+                .arg(legacyTreeFontPointSize)
+                .arg(legacyTreeIndentationPixels)
+                .arg(legacyTeacherRowHeightPixels)
+                .arg(legacyTopLevelRowHeightPixels)
+                .arg(nextTreeFontFamily)
+                .arg(nextTreeFontPointSize)
+                .arg(nextTreeIndentationPixels)
+                .arg(nextTeacherRowHeightPixels)
+                .arg(nextTopLevelRowHeightPixels);
             return false;
         }
         const QString nextPath = QDir(outputDirectory).filePath(

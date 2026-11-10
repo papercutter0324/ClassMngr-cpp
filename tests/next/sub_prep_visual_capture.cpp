@@ -618,7 +618,6 @@ QJsonObject captureVariant(
 QJsonObject captureSuccessfulOutput(
     QApplication& application,
     Resources::ResourceLoader& resourceLoader,
-    const QString& outputDirectory,
     QString* error
     )
 {
@@ -677,7 +676,7 @@ QJsonObject captureSuccessfulOutput(
             return {};
         }
 
-        const QString outputRoot = QDir(outputDirectory).filePath(
+        const QString outputRoot = temporary.filePath(
             QStringLiteral("generated-package-success"));
         if (!QDir().mkpath(outputRoot))
         {
@@ -731,9 +730,10 @@ QJsonObject captureSuccessfulOutput(
                 "tests/fixtures/workspaces/representative_startup.sql")},
             {QStringLiteral("visibleSummaryCount"),
              page->visualMetrics().visibleSummaryCount},
-            {QStringLiteral("status"), status},
+            {QStringLiteral("status"), QStringLiteral(
+                "The package was created at: <temporary output>")},
             {QStringLiteral("outputFolder"), QStringLiteral(
-                "generated-package-success/%1").arg(folders.front())},
+                "temporary/generated-package-success/%1").arg(folders.front())},
             {QStringLiteral("files"), files}
         };
     }
@@ -812,7 +812,7 @@ int main(int argc, char* argv[])
     }
     QString successfulOutputError;
     const QJsonObject successfulOutput = captureSuccessfulOutput(
-        application, resourceLoader, outputDirectory, &successfulOutputError);
+        application, resourceLoader, &successfulOutputError);
     if (successfulOutput.isEmpty())
     {
         qCritical().noquote() << successfulOutputError;

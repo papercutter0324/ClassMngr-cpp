@@ -2428,10 +2428,8 @@ void TestingClassRepositoryTests::classInfoReadersValidateTeacherIdWidths()
         };
 
         const QStringList malformedIds{
-            QStringLiteral("not-an-id"), QStringLiteral("2147483648"),
-            QStringLiteral("-2147483649"), QStringLiteral("9223372036854775807"),
-            QStringLiteral("-9223372036854775808"),
-            QStringLiteral("9223372036854775808"), QStringLiteral("-9223372036854775809")
+            QStringLiteral("not-an-id"), QStringLiteral("9223372036854775808"),
+            QStringLiteral("-9223372036854775809")
         };
         for (const QString& storedId : malformedIds)
         {
@@ -2470,47 +2468,81 @@ void TestingClassRepositoryTests::classInfoReadersValidateTeacherIdWidths()
             const auto detailedPage = repository.loadClassPageDetailsDetailed(1);
             const auto subPrep = repository.loadSubPrepClassDetailsDetailed(1);
             const auto snapshot = repository.loadScheduleImportStateSnapshotClassInfos();
-            if (storedId == QStringLiteral("2147483648")
-                || storedId == QStringLiteral("-2147483649")
-                || storedId == QStringLiteral("9223372036854775807")
-                || storedId == QStringLiteral("-9223372036854775808"))
-            {
-                QVERIFY(exactAssignments);
-                QCOMPARE(exactAssignments->size(), 1);
-                QCOMPARE(exactAssignments->first().teacherId, storedId.toLongLong());
-                QVERIFY(saveInfo);
-                QCOMPARE(saveInfo->teacherId, storedId.toLongLong());
-                QCOMPARE(saveInfo->info.teacherId,
-                         storedId.startsWith(QLatin1Char('-')) ? -2 : -1);
-                QVERIFY(page);
-                QCOMPARE(page->teacherId, storedId.toLongLong());
-                QVERIFY(detailedPage);
-                QCOMPARE(detailedPage->record.teacherId, storedId.toLongLong());
-                QVERIFY(!detailedPage->parentMissing);
-                QVERIFY(subPrep);
-                QCOMPARE(subPrep->record.teacherId, qint64{-1});
-                QVERIFY(subPrep->record.teacherKr.isEmpty());
-                QVERIFY(!subPrep->parentMissing);
-                QVERIFY(snapshot);
-                QCOMPARE(snapshot->first().teacherId, storedId.toLongLong());
-            }
-            else
-            {
-                QVERIFY(!exactAssignments);
-                QCOMPARE(exactAssignments.error().code, RepositoryErrorCode::Validation);
-                QVERIFY(!saveInfo);
-                QCOMPARE(saveInfo.error().code, RepositoryErrorCode::Validation);
-                QVERIFY(!page);
-                QCOMPARE(page.error().code, RepositoryErrorCode::Validation);
-                QVERIFY(!detailedPage);
-                QCOMPARE(detailedPage.error().code, RepositoryErrorCode::Validation);
-                QVERIFY(!subPrep);
-                QCOMPARE(subPrep.error().code, RepositoryErrorCode::Validation);
-                QVERIFY(!snapshot);
-                QCOMPARE(snapshot.error().code, RepositoryErrorCode::Validation);
-            }
+            QVERIFY(!exactAssignments);
+            QCOMPARE(exactAssignments.error().code, RepositoryErrorCode::Validation);
+            QVERIFY(!saveInfo);
+            QCOMPARE(saveInfo.error().code, RepositoryErrorCode::Validation);
+            QVERIFY(!page);
+            QCOMPARE(page.error().code, RepositoryErrorCode::Validation);
+            QVERIFY(!detailedPage);
+            QCOMPARE(detailedPage.error().code, RepositoryErrorCode::Validation);
+            QVERIFY(!subPrep);
+            QCOMPARE(subPrep.error().code, RepositoryErrorCode::Validation);
+            QVERIFY(!snapshot);
+            QCOMPARE(snapshot.error().code, RepositoryErrorCode::Validation);
         }
         QCOMPARE(repository.scheduleClassInfoReadMetrics().completedClassCount, 0);
+
+        // Schedule ClassInfo keeps valid signed 64-bit teacher identities.
+        const QStringList wideIds{
+            QStringLiteral("2147483648"), QStringLiteral("-2147483649"),
+            QStringLiteral("9223372036854775807"),
+            QStringLiteral("-9223372036854775808")
+        };
+        for (const QString& storedId : wideIds)
+        {
+            const qint64 expectedId = storedId.toLongLong();
+            query.prepare(QStringLiteral(
+                "UPDATE class_info SET teacher_id=? WHERE class_id=1"));
+            query.addBindValue(storedId);
+            QVERIFY(query.exec());
+
+            const auto info = repository.loadClassInfo(1);
+            QVERIFY(info);
+            QCOMPARE(info->teacherId, expectedId);
+
+            const auto schedule = repository.loadScheduleClassInfos();
+            QVERIFY(schedule);
+            QCOMPARE(schedule->first().teacherId, expectedId);
+
+            const auto scoped = repository.loadClassInfosForScheduleScope(
+                {1}, {QStringLiteral("Monday")}, ScheduleType::Regular, 5, 5, true);
+            QVERIFY(scoped);
+            QCOMPARE(scoped->first().teacherId, expectedId);
+
+            int visitedCount = 0;
+            const auto visited = repository.visitScheduleClassInfoRows(
+                [&visitedCount, expectedId](const ClassInfo& record) -> RepositoryStatus
+                {
+                    ++visitedCount;
+                    if (record.teacherId != expectedId)
+                    {
+                        return std::unexpected(RepositoryError{
+                            RepositoryErrorCode::Validation,
+                            QStringLiteral("Wide teacher identifier was changed.")});
+                    }
+                    return {};
+                }, acceptTime);
+            QVERIFY(visited);
+            QCOMPARE(visitedCount, 1);
+
+            const auto exactAssignments = repository.loadClassTeacherAssignmentRecords();
+            QVERIFY(exactAssignments);
+            QCOMPARE(exactAssignments->first().teacherId, expectedId);
+            const auto saveInfo = repository.loadClassDetailsSaveInfo(1);
+            QVERIFY(saveInfo);
+            QCOMPARE(saveInfo->teacherId, expectedId);
+            QCOMPARE(saveInfo->info.teacherId, expectedId);
+            const auto page = repository.loadClassPageDetails(1);
+            QVERIFY(page);
+            QCOMPARE(page->teacherId, expectedId);
+            const auto detailedPage = repository.loadClassPageDetailsDetailed(1);
+            QVERIFY(detailedPage);
+            QCOMPARE(detailedPage->record.teacherId, expectedId);
+            const auto snapshot = repository.loadScheduleImportStateSnapshotClassInfos();
+            QVERIFY(snapshot);
+            QCOMPARE(snapshot->first().teacherId, expectedId);
+        }
 
         // Preserve NULL/empty/unassigned sentinels and valid assignments even
         // when their optional teacher-profile join has no matching row.

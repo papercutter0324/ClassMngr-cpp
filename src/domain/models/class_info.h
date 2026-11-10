@@ -2,6 +2,7 @@
 
 #include <QList>
 #include <QString>
+#include <QtGlobal>
 
 struct ClassTime
 {
@@ -15,7 +16,7 @@ struct ClassInfo
 {
     int classId{-1};
 
-    int teacherId{-1};
+    qint64 teacherId{-1};
 
     QString teacherKr;
     QString teacherEn;

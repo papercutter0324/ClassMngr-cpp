@@ -1238,8 +1238,12 @@ bool capturePair(const QString& databasePath,
         || !headerHeightParity || !visibleGridHeightParity)
     {
         *error = QStringLiteral(
-            "The Next Schedule toolbar/grid crop does not align with Legacy for %1/%2/%3.")
-            .arg(mode, locale, theme);
+            "The Next Schedule toolbar/grid crop does not align with Legacy for %1/%2/%3. Legacy: %4. Next: %5.")
+            .arg(mode, locale, theme)
+            .arg(QString::fromUtf8(QJsonDocument(legacy).toJson(
+                QJsonDocument::Compact)))
+            .arg(QString::fromUtf8(QJsonDocument(next).toJson(
+                QJsonDocument::Compact)));
         return false;
     }
     legacy.insert(QStringLiteral("comparison"), comparison);

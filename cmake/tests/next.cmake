@@ -482,6 +482,9 @@ set_target_properties(ClassMngrNextBootstrapTests
 classmngr_next_add_mode_combo_arrow_resources(
     ClassMngrNextBootstrapTests
 )
+classmngr_next_add_shared_widget_icon_resources(
+    ClassMngrNextBootstrapTests
+)
 classmngr_next_add_calendar_qml_resources(ClassMngrNextBootstrapTests)
 set_property(TARGET ClassMngrNextBootstrapTests
     PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
@@ -4081,7 +4084,7 @@ classmngr_next_add_mode_combo_arrow_resources(
 add_test(
     NAME ClassMngrNextSubPrepVisualCapture
     COMMAND ClassMngrNextSubPrepVisualCapture
-        "${PROJECT_SOURCE_DIR}/docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c44"
+        "${PROJECT_BINARY_DIR}/artifacts/next/sub-prep-c44"
 )
 set_tests_properties(ClassMngrNextSubPrepVisualCapture
     PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
@@ -8451,6 +8454,7 @@ target_include_directories(ClassMngrNextScheduleOutputAdapterTests
 )
 target_link_libraries(ClassMngrNextScheduleOutputAdapterTests
     PRIVATE
+        ClassMngrFontManager
         ClassMngrNextScheduleOutput
         ClassMngrSchedulePdfRenderer
         Qt6::Pdf

@@ -7,6 +7,7 @@
 
 #include <QByteArray>
 #include <QTime>
+#include <QtGlobal>
 
 #include <algorithm>
 #include <exception>
@@ -327,7 +328,7 @@ public:
 private:
     struct ClassMetadata final
     {
-        int teacherId = -1;
+        qint64 teacherId = -1;
         std::string grade;
         std::string level;
         std::string room;

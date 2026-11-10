@@ -372,12 +372,11 @@ QString sectionHtml(
     const QString& heading,
     const QString& contents,
     bool startOnNewPage = false,
-    bool useStandardTopSpacing = false,
-    bool compactHeadingSpacing = false
+    bool useStandardTopSpacing = false
     )
 {
     return QStringLiteral(
-        "<div class=\"major-section%1%2%3\"><h2>%4</h2>%5</div>"
+        "<div class=\"major-section%1%2\"><h2>%3</h2>%4</div>"
         )
         .arg(
             startOnNewPage
@@ -385,9 +384,6 @@ QString sectionHtml(
                 : QString(),
             useStandardTopSpacing
                 ? QStringLiteral(" first-major-section")
-                : QString(),
-            compactHeadingSpacing
-                ? QStringLiteral(" compact-major-section")
                 : QString(),
             boldHtmlText(heading),
             contents
@@ -786,8 +782,7 @@ QString documentHtml(
         translate("Schedule"),
         scheduleHtml(document.schedule),
         false,
-        false,
-        true
+        false
         );
     html += sectionHtml(
         translate("Class Information"),
@@ -824,7 +819,6 @@ QString documentStyleSheet()
         "border-top-width:2px; font-size:14pt; font-weight:800; margin:28px 0 9px 0; padding:7px 9px; text-align:center; "
         "page-break-after:avoid; }"
         ".first-major-section h2 { margin-top:14px; }"
-        ".compact-major-section h2 { margin-top:20px; }"
         ".subsection { margin:0 0 11px 0; width:100%; }"
         ".class-materials-subsection { margin-bottom:27px; }"
         ".subsection-heading { background:#e9f1f5; border-left:4px solid #3f7c96; "
@@ -861,7 +855,7 @@ QString documentStyleSheet()
         "page-break-inside:avoid; table-layout:fixed; }"
         ".schedule th { background:#244b5f; border:1px solid #000000; color:#ffffff; "
         "font-weight:700; padding:7px 4px; text-align:center; }"
-        ".schedule td { border:1px solid #000000; padding:2px 4px; text-align:center; vertical-align:middle; }"
+        ".schedule td { border:1px solid #000000; padding:5px 4px; text-align:center; vertical-align:middle; }"
         ".schedule-time { background:#e9f1f5; color:#000000; font-weight:700; }"
         ".schedule-entry { margin:1px 0; padding:4px 3px; }"
         ".schedule-slot { font-weight:700; padding:6px 3px; }"
@@ -1050,6 +1044,92 @@ void applyScheduleTableLayout(
     format.setRightMargin(0.0);
     format.setAlignment(Qt::AlignHCenter);
     (*table)->setFormat(format);
+}
+
+bool applyPageBreaksBeforeScheduleEntries(
+    QTextDocument& document,
+    const ScheduleViewModel& schedule,
+    const qreal pageHeight
+    )
+{
+    if (schedule.rows.isEmpty() || schedule.days.isEmpty() || pageHeight <= 0.0)
+    {
+        return false;
+    }
+
+    QList<QTextTable*> tables;
+    collectTables(document.rootFrame(), tables);
+    const int expectedRowCount = schedule.rows.size() + 1;
+    const int expectedColumnCount = schedule.days.size() + 1;
+    const auto table = std::find_if(
+        tables.cbegin(),
+        tables.cend(),
+        [expectedRowCount, expectedColumnCount](const QTextTable* candidate)
+        {
+            return candidate
+                && candidate->rows() == expectedRowCount
+                && candidate->columns() == expectedColumnCount;
+        }
+        );
+    if (table == tables.cend())
+    {
+        return false;
+    }
+
+    bool changed = false;
+    for (int row = 1; row < (*table)->rows(); ++row)
+    {
+        for (int column = 1; column < (*table)->columns(); ++column)
+        {
+            const QTextTableCell cell = (*table)->cellAt(row, column);
+            const int endPosition = cell.lastCursorPosition().position();
+            for (
+                QTextBlock block = cell.firstCursorPosition().block();
+                block.isValid() && block.position() <= endPosition;
+                block = block.next()
+                )
+            {
+                if (block.text().trimmed().isEmpty())
+                {
+                    continue;
+                }
+
+                const QTextBlockFormat originalFormat = block.blockFormat();
+                if (originalFormat.pageBreakPolicy().testFlag(
+                        QTextFormat::PageBreak_AlwaysBefore))
+                {
+                    continue;
+                }
+
+                const QRectF bounds =
+                    document.documentLayout()->blockBoundingRect(block);
+                if (bounds.isEmpty() || bounds.height() >= pageHeight)
+                {
+                    continue;
+                }
+
+                const qreal top = std::max<qreal>(0.0, bounds.top());
+                const qreal bottom = std::max(top, bounds.bottom() - 0.5);
+                if (
+                    std::floor(top / pageHeight)
+                    >= std::floor(bottom / pageHeight)
+                    )
+                {
+                    continue;
+                }
+
+                QTextBlockFormat pageBreakFormat = originalFormat;
+                pageBreakFormat.setPageBreakPolicy(
+                    QTextFormat::PageBreak_AlwaysBefore
+                    );
+                QTextCursor cursor(block);
+                cursor.setBlockFormat(pageBreakFormat);
+                changed = true;
+            }
+        }
+    }
+
+    return changed;
 }
 
 std::optional<QRectF> textBlockBounds(
@@ -1457,7 +1537,10 @@ Result renderPdf(
                 body.height()
                 );
 
-        if (newPageBreaks.isEmpty() && !moveSubNotesToNewPage)
+        if (
+            newPageBreaks.isEmpty()
+            && !moveSubNotesToNewPage
+            )
         {
             break;
         }
@@ -1479,6 +1562,21 @@ Result renderPdf(
         documentModel.schedule,
         scheduleLayout
         );
+    const qsizetype scheduleEntryPageBreakPassLimit =
+        documentModel.schedule.rows.size()
+        * std::max<qsizetype>(1, documentModel.schedule.days.size())
+        + 1;
+    for (qsizetype pass = 0; pass < scheduleEntryPageBreakPassLimit; ++pass)
+    {
+        if (!applyPageBreaksBeforeScheduleEntries(
+                document,
+                documentModel.schedule,
+                body.height()
+                ))
+        {
+            break;
+        }
+    }
     const std::optional<qreal> subNotesLineStart =
         subNotesWritingStart(
             document,

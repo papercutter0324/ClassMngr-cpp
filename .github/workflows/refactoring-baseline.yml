@@ -12,6 +12,7 @@ on:
       - "cmake/**"
       - "resources/**"
       - "scripts/record_refactoring_baseline.py"
+      - "scripts/test_record_refactoring_baseline.py"
       - "scripts/retry_macos_baseline_if_missing_report.py"
       - "scripts/test_retry_macos_baseline_if_missing_report.py"
       - "scripts/phase8/capture_sub_prep_c53_parity.py"
@@ -27,6 +28,7 @@ on:
       - "cmake/**"
       - "resources/**"
       - "scripts/record_refactoring_baseline.py"
+      - "scripts/test_record_refactoring_baseline.py"
       - "scripts/retry_macos_baseline_if_missing_report.py"
       - "scripts/test_retry_macos_baseline_if_missing_report.py"
       - "scripts/phase8/capture_sub_prep_c53_parity.py"
@@ -79,11 +81,11 @@ jobs:
             report: linux-gcc-debug
             run_baseline: true
           - name: macOS universal Debug
-            runner: macos-15-intel
+            runner: macos-15-large
             preset: macos-clang-debug
             build_dir: build/macos-clang-debug
             configuration: ""
-            parallel: 4
+            parallel: 12
             report: macos-clang-debug
             run_baseline: true
 
@@ -95,6 +97,10 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+
+      - name: Test baseline recorder provenance
+        shell: bash
+        run: python scripts/test_record_refactoring_baseline.py
 
       - name: Test macOS baseline retry decision
         if: matrix.name == 'macOS universal Debug'
@@ -130,6 +136,7 @@ jobs:
       - name: Install Qt on Windows
         if: runner.os == 'Windows'
         shell: pwsh
+        working-directory: ${{ runner.temp }}
         run: |
           $aqtConfigPath = Join-Path $env:RUNNER_TEMP "aqt-settings.ini"
           @"
@@ -167,6 +174,7 @@ jobs:
       - name: Install Qt ARM64 target
         if: matrix.preset == 'windows-arm64-debug'
         shell: pwsh
+        working-directory: ${{ runner.temp }}
         run: |
           $arguments = @(
             "-m", "aqt",
@@ -202,23 +210,27 @@ jobs:
       - name: Install Qt on Linux
         if: runner.os == 'Linux'
         shell: bash
+        working-directory: ${{ runner.temp }}
         run: |
+          qt_output_dir="${RUNNER_TEMP}/Qt"
           python -m pip install --disable-pip-version-check aqtinstall==3.3.0
           # Qt Declarative and the command-line tools are in the Qt 6.12 base
           # package; Qt Pdf is the only extension required by this build.
           python -m aqt install-qt linux desktop "${QT_VERSION}" linux_gcc_64 \
-            --outputdir "${GITHUB_WORKSPACE}/Qt" \
+            --outputdir "${qt_output_dir}" \
             --modules qtpdf
-          echo "QT_LINUX_PREFIX=${GITHUB_WORKSPACE}/Qt/${QT_VERSION}/gcc_64" >> "${GITHUB_ENV}"
+          echo "QT_LINUX_PREFIX=${qt_output_dir}/${QT_VERSION}/gcc_64" >> "${GITHUB_ENV}"
 
       - name: Install Qt on macOS
         if: runner.os == 'macOS'
         shell: bash
+        working-directory: ${{ runner.temp }}
         run: |
+          qt_output_dir="${RUNNER_TEMP}/Qt"
           python -m pip install --disable-pip-version-check aqtinstall==3.3.0
           aqt_args=(
             install-qt mac desktop "${QT_VERSION}" clang_64
-            --outputdir "${GITHUB_WORKSPACE}/Qt"
+            --outputdir "${qt_output_dir}"
             --timeout 30
             --modules qtpdf
           )
@@ -233,7 +245,7 @@ jobs:
             echo "Qt installation failed on attempt ${attempt}; retrying in 10 seconds." >&2
             sleep 10
           done
-          echo "QT_MACOS_PREFIX=${GITHUB_WORKSPACE}/Qt/${QT_VERSION}/macos" >> "${GITHUB_ENV}"
+          echo "QT_MACOS_PREFIX=${qt_output_dir}/${QT_VERSION}/macos" >> "${GITHUB_ENV}"
 
       - name: Record clean build and test baseline
         if: matrix.run_baseline
@@ -249,6 +261,7 @@ jobs:
             --build-dir "${{ matrix.build_dir }}"
             --parallel "${{ matrix.parallel }}"
             --test-timeout 120
+            --expected-commit "${GITHUB_SHA}"
             --output "artifacts/baseline/${{ matrix.report }}.json"
           )
           if [[ -n "${{ matrix.configuration }}" ]]; then
@@ -265,7 +278,8 @@ jobs:
           fi
 
       - name: Capture matched SQL Sub Prep output parity
-        if: matrix.run_baseline
+        if: always() && matrix.run_baseline && steps.record.outputs.build_exit_code == '0'
+        id: capture_c53
         shell: bash
         run: |
           QT_QPA_PLATFORM=offscreen python scripts/phase8/capture_sub_prep_c53_parity.py \
@@ -297,6 +311,7 @@ jobs:
             artifacts/roster-output/${{ matrix.report }}/
             artifacts/sub-prep-output/${{ matrix.report }}/
             artifacts/speaking-evaluation-output-parity/${{ matrix.report }}/
+            ${{ matrix.build_dir }}/artifacts/next/sub-prep-c44/
             ${{ matrix.build_dir }}/Testing/refactoring-baseline.junit.xml
             ${{ matrix.build_dir }}/Testing/Temporary/LastTest.log
             ${{ matrix.build_dir }}/Testing/Temporary/LastTestsFailed.log

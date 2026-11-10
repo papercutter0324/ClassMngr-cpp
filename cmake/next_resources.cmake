@@ -133,8 +133,21 @@ function(classmngr_next_add_mode_combo_arrow_resources target)
     )
 endfunction()
 
+function(classmngr_next_add_shared_widget_icon_resources target)
+    qt_add_resources("${target}" classmngr_next_shared_widget_icons
+        PREFIX "/"
+        BASE "${PROJECT_SOURCE_DIR}/resources"
+        FILES
+            "${PROJECT_SOURCE_DIR}/resources/assets/icons/keyboard_light.svg"
+            "${PROJECT_SOURCE_DIR}/resources/assets/icons/keyboard_dark.svg"
+            "${PROJECT_SOURCE_DIR}/resources/assets/icons/spin_up_light.svg"
+            "${PROJECT_SOURCE_DIR}/resources/assets/icons/spin_up_dark.svg"
+    )
+endfunction()
+
 classmngr_next_add_calendar_qml_resources(ClassMngrNext)
 classmngr_next_add_mode_combo_arrow_resources(ClassMngrNext)
+classmngr_next_add_shared_widget_icon_resources(ClassMngrNext)
 
 get_target_property(_classmngr_next_resource_link_dependencies
     ClassMngrNext

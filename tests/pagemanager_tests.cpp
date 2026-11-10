@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "fakes/fake_user_prompt_service.h"
 #include "features/classes/ui/classes_page.h"
 #include "features/calendar/ui/calendar_page.h"
 #include "features/my_info/ui/my_workspace_page.h"
@@ -253,6 +254,16 @@ void PageManagerTests::scheduleWidgetsAreCreatedOnlyForOpenedScheduleViews()
 
 void PageManagerTests::registeredPagesAreCreatedOnFirstUse()
 {
+    FakeUserPromptService promptService;
+    struct PromptServiceRestorer final
+    {
+        ~PromptServiceRestorer()
+        {
+            DialogServices::setUserPromptServiceForTesting(nullptr);
+        }
+    } restorePromptService;
+    DialogServices::setUserPromptServiceForTesting(&promptService);
+
     ApplicationServices services;
     PageManager pages;
     pages.initialize(&services, false);
@@ -285,6 +296,7 @@ void PageManagerTests::registeredPagesAreCreatedOnFirstUse()
         pages.instantiatedPageCount(),
         pages.registeredPageCount()
         );
+    QVERIFY(promptService.messages.isEmpty());
 }
 
 void PageManagerTests::preparingCalendarDoesNotActivateItsHiddenTab()

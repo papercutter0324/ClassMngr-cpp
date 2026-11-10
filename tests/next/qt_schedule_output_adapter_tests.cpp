@@ -1,4 +1,5 @@
 #include "next/platform/qt_schedule_output_adapter.h"
+#include "core/fontmanager.h"
 
 #include <QFileInfo>
 #include <QPageSize>
@@ -128,8 +129,8 @@ Ui::ScheduleOutputRequest requestFor(
     request.kind = kind;
     request.style = SchedulePrintStyle::Excel;
     request.currentTheme = Theme::Light;
-    request.englishFont = QFont(QStringLiteral("Arial"), 11);
-    request.koreanFont = QFont(QStringLiteral("Pretendard"), 12);
+    request.englishFont = FontManager::getUiFont();
+    request.koreanFont = FontManager::getKoreanFont();
     request.profileName = QStringLiteral("Alice");
     request.showEnglishNames = true;
     request.orientation = QPageLayout::Landscape;
@@ -164,7 +165,7 @@ printBorrowsReadyTemporaryPdfWithScheduleOptions()
 {
     const auto observation = std::make_shared<PrintObservation>();
     QWidget parent;
-    QFont expectedUiFont(QStringLiteral("Arial"), 11);
+    const QFont expectedUiFont = FontManager::getUiFont();
 
     const Ui::ScheduleOutputResult result =
         Platform::performScheduleOutput(
@@ -220,7 +221,7 @@ void QtScheduleOutputAdapterTests::saveAsPdfDoesNotCreatePrintOperation()
     QCOMPARE(document.status(), QPdfDocument::Status::Ready);
     QCOMPARE(document.pageCount(), 1);
     const QString text = document.getAllText(0).text();
-    QVERIFY(text.contains(QStringLiteral("Alice")));
+    QVERIFY2(text.contains(QStringLiteral("Alice")), qPrintable(text));
     QVERIFY(text.contains(QStringLiteral("Sam")));
     QVERIFY(text.contains(QStringLiteral("Reading")));
     const QSizeF pageSize = document.pagePointSize(0);

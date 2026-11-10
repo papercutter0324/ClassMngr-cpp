@@ -169,6 +169,14 @@ void SubPrepPage::loadPersonalZoomInformation()
         personalZoomPreferencesPort.load();
     if (!storedPreferences)
     {
+        // Closing the workspace makes personal preferences unavailable by
+        // design. Keep the displayed values and stay quiet until a workspace
+        // is open; only report a read failure from an active session.
+        if (!m_services->hasOpenDatabase())
+        {
+            return;
+        }
+
         const auto& error = storedPreferences.error();
         QString diagnostic = QString::fromUtf8(
             error.message.data(),

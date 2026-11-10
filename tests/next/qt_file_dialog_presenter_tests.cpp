@@ -94,6 +94,16 @@ bool createFile(const QString& path)
         && file.write("test") == 4;
 }
 
+bool resolvesToTarget(const QString& candidate, const QString& target)
+{
+    // QFile::link() creates Windows shortcuts as well as Unix symlinks; only
+    // use the candidate as an alias when canonicalization reaches the target.
+    const QString candidateCanonical = QFileInfo(candidate).canonicalFilePath();
+    const QString targetCanonical = QFileInfo(target).canonicalFilePath();
+    return !candidateCanonical.isEmpty()
+        && candidateCanonical == targetCanonical;
+}
+
 std::string utf8(const QString& value)
 {
     const QByteArray bytes = value.toUtf8();
@@ -329,8 +339,11 @@ void QtFileDialogPresenterTests::openOneHonorsFiltersUtf8SelectionAndRememberedD
     QVERIFY(createFile(realFile));
     const QString aliasFile = temporaryDirectory.filePath("alias.txt");
     const bool linkCreated = QFile::link(realFile, aliasFile);
-    const QString selectedFile = linkCreated ? aliasFile : realFile;
     const QString expectedFile = QFileInfo(realFile).canonicalFilePath();
+    const QString selectedFile = linkCreated
+            && resolvesToTarget(aliasFile, realFile)
+        ? aliasFile
+        : realFile;
 
     FakeDirectoryPreferences preferences;
     QtFileDialogPresenter presenter(
@@ -524,6 +537,7 @@ void QtFileDialogPresenterTests::saveAppliesSuggestedNameSuffixOverwriteAndAcces
         outputDirectoryAlias
         );
     const QString selectedOutputDirectory = outputLinkCreated
+            && resolvesToTarget(outputDirectoryAlias, outputDirectory)
         ? outputDirectoryAlias
         : outputDirectory;
     FakeDirectoryPreferences preferences;
@@ -649,7 +663,10 @@ void QtFileDialogPresenterTests::directorySelectionNormalizesAndRemembersAccepte
     QVERIFY(QDir().mkpath(selectedDirectory));
     const QString aliasDirectory = temporaryDirectory.filePath("alias");
     const bool linkCreated = QFile::link(selectedDirectory, aliasDirectory);
-    const QString requested = linkCreated ? aliasDirectory : selectedDirectory;
+    const QString requested = linkCreated
+            && resolvesToTarget(aliasDirectory, selectedDirectory)
+        ? aliasDirectory
+        : selectedDirectory;
     const QString expected = QFileInfo(selectedDirectory).canonicalFilePath();
 
     FakeDirectoryPreferences preferences;

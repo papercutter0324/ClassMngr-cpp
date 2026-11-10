@@ -817,6 +817,8 @@ bool comparePdfToReference(
         return false;
     }
 
+    QString generatedDocumentText;
+    QString referenceDocumentText;
     for (int pageIndex = 0; pageIndex < generated.pageCount(); ++pageIndex)
     {
         if (generated.pagePointSize(pageIndex)
@@ -831,48 +833,54 @@ bool comparePdfToReference(
             return false;
         }
 
-        // PDF text extraction can insert different line breaks and spacing
-        // when a platform uses different font metrics. Preserve the full
-        // character sequence while ignoring that layout-only whitespace.
-        const QString generatedText =
-            generated.getAllText(pageIndex).text().simplified();
-        const QString referenceText =
-            reference.getAllText(pageIndex).text().simplified();
-        if (generatedText != referenceText)
+        // Font metrics can move complete rows across a page boundary on
+        // another platform. Compare all text while keeping the page-count
+        // and page-dimension checks above.
+        if (pageIndex > 0)
         {
-            qsizetype firstDifference = 0;
-            const qsizetype sharedLength =
-                std::min(generatedText.size(), referenceText.size());
-            while (
-                firstDifference < sharedLength
-                && generatedText.at(firstDifference)
-                    == referenceText.at(firstDifference)
-                )
-            {
-                ++firstDifference;
-            }
-            const qsizetype contextStart =
-                std::max<qsizetype>(0, firstDifference - 48);
-            const QString generatedContext = generatedText.mid(
-                contextStart,
-                96
-                );
-            const QString referenceContext = referenceText.mid(
-                contextStart,
-                96
-                );
-            if (errorMessage)
-            {
-                *errorMessage = QStringLiteral(
-                    "Generated PDF page %1 text differs from the reference "
-                    "at character %2 (generated: '%3'; reference: '%4')."
-                    ).arg(pageIndex + 1)
-                    .arg(firstDifference)
-                    .arg(generatedContext)
-                    .arg(referenceContext);
-            }
-            return false;
+            generatedDocumentText.append(QLatin1Char(' '));
+            referenceDocumentText.append(QLatin1Char(' '));
         }
+        generatedDocumentText.append(
+            generated.getAllText(pageIndex).text().simplified());
+        referenceDocumentText.append(
+            reference.getAllText(pageIndex).text().simplified());
+    }
+
+    if (generatedDocumentText != referenceDocumentText)
+    {
+        qsizetype firstDifference = 0;
+        const qsizetype sharedLength = std::min(
+            generatedDocumentText.size(),
+            referenceDocumentText.size());
+        while (
+            firstDifference < sharedLength
+            && generatedDocumentText.at(firstDifference)
+                == referenceDocumentText.at(firstDifference)
+            )
+        {
+            ++firstDifference;
+        }
+        const qsizetype contextStart =
+            std::max<qsizetype>(0, firstDifference - 48);
+        const QString generatedContext = generatedDocumentText.mid(
+            contextStart,
+            96
+            );
+        const QString referenceContext = referenceDocumentText.mid(
+            contextStart,
+            96
+            );
+        if (errorMessage)
+        {
+            *errorMessage = QStringLiteral(
+                "Generated PDF document text differs from the reference "
+                "at character %1 (generated: '%2'; reference: '%3')."
+                ).arg(firstDifference)
+                .arg(generatedContext)
+                .arg(referenceContext);
+        }
+        return false;
     }
 
 #if defined(Q_OS_WIN)
