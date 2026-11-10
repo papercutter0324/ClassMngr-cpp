@@ -47,5 +47,20 @@ and required Schedule/Roster/Speaking artifacts remain open. See the
 [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md) for exact provenance,
 failure classification, timeout findings, and runtime evidence.
 
-The checked-out `Qt-Rewrite` branch and `origin/Qt-Rewrite` tracking ref now
-both point to `3dc37340`.
+The checked-out `Qt-Rewrite` branch and its `origin/Qt-Rewrite` tracking ref
+now both point to `7f82f427`; the documentation update below is uncommitted.
+
+## Local Linux Debug verification — 2026-11-11
+
+The local `linux-gcc-debug` configure and full Debug build completed at commit
+`7f82f427`. The first full CTest run found six failures and no timeouts; the
+failures were classified as one sidebar-ordering product bug, two Schedule
+layout product bugs, two Legacy visual-capture portability contracts, and one
+macOS-only temporary-directory test bug. Those fixes are committed in
+`7f82f427`.
+
+The rebuilt full suite then passed all 619 targets: 619 passed, 0 failed, 0
+timed out, and 0 skipped in 227.58 seconds. This local run is diagnostic and
+does not satisfy the source-stable hosted Linux baseline or Linux
+Schedule/Roster/Speaking/C53 evidence requirements. The Phase 8a exit gate
+therefore remains open.
