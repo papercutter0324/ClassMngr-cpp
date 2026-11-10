@@ -47,8 +47,9 @@ and required Schedule/Roster/Speaking artifacts remain open. See the
 [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md) for exact provenance,
 failure classification, timeout findings, and runtime evidence.
 
-The checked-out `Qt-Rewrite` branch and its `origin/Qt-Rewrite` tracking ref
-now both point to `7f82f427`; the documentation update below is uncommitted.
+The checked-out `Qt-Rewrite` branch contains local documentation-only commits
+above `origin/Qt-Rewrite`; the source candidate recorded below remains
+`7f82f427`.
 
 ## Local Linux Debug verification — 2026-11-11
 
@@ -64,3 +65,16 @@ timed out, and 0 skipped in 227.58 seconds. This local run is diagnostic and
 does not satisfy the source-stable hosted Linux baseline or Linux
 Schedule/Roster/Speaking/C53 evidence requirements. The Phase 8a exit gate
 therefore remains open.
+
+The subsequent local Batch 1 recorder replay used a separate clean clone at
+`7f82f427` and passed its provenance gate: the checkout was clean at both
+boundaries, the commit/tree and source fingerprint were unchanged, and the
+report is valid. Its clean-first build completed all 5,635 Ninja steps; the
+full CTest run passed 619/619 targets with no failures, errors, skips, or
+timeouts; and the independent C53 capture passed 17/17 pages with zero changed
+pixels and matching font provenance. Evidence is retained under
+`build/phase8a-linux-local-7f82f427/repo/build/phase8a-linux-gcc-debug-7f82f427/artifacts/`.
+
+This is local Batch 1 evidence only. Hosted Linux evidence, cross-host QWARN
+disposition, and the remaining hosted Schedule/Roster/Speaking requirements
+remain open.
