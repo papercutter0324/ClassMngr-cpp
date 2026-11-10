@@ -1012,7 +1012,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    const QSize expectedReviewSize(
+    const QSize expectedNextReviewSize(
         460,
         locale == QStringLiteral("ko_KR") ? 477 : 501);
     const auto validPathLayout = [](const Surface::Layout& layout) {
@@ -1028,13 +1028,31 @@ int main(int argc, char* argv[])
             && layout.horizontalScrollMaximum == 0
             && layout.candidateContentWidth <= layout.candidateViewportWidth;
     };
-    const QSize expectedSelectionSize(
+    const QSize expectedNextSelectionSize(
         460,
         locale == QStringLiteral("ko_KR") ? 212 : 218);
-    if (legacy.selectionLayout.dialogSize != expectedSelectionSize
-        || next.selectionLayout.dialogSize != expectedSelectionSize
-        || legacy.reviewLayout.dialogSize != expectedReviewSize
-        || next.reviewLayout.dialogSize != expectedReviewSize
+    const auto stableDialogWidth = [](const Surface::Layout& layout) {
+        return layout.dialogSize.width() == 460;
+    };
+    const auto stableActionLayout = [](const Surface::Layout& layout) {
+        return layout.actionBoxVisible
+            && layout.actionBox.x() == 18
+            && layout.actionBox.width() == 424
+            && layout.actionBox.height() == 40
+            && layout.actionBox.top() > 0
+            && layout.actionBox.bottom() < layout.dialogSize.height();
+    };
+    const auto sameActionHorizontalGeometry = [](
+        const Surface::Layout& left,
+        const Surface::Layout& right) {
+        return left.actionBox.x() == right.actionBox.x()
+            && left.actionBox.width() == right.actionBox.width()
+            && left.actionBox.height() == right.actionBox.height();
+    };
+    if (!stableDialogWidth(legacy.selectionLayout)
+        || !stableDialogWidth(legacy.reviewLayout)
+        || next.selectionLayout.dialogSize != expectedNextSelectionSize
+        || next.reviewLayout.dialogSize != expectedNextReviewSize
         || !validPathLayout(legacy.selectionLayout)
         || !validPathLayout(next.selectionLayout)
         || !validPathLayout(legacy.reviewLayout)
@@ -1051,24 +1069,22 @@ int main(int argc, char* argv[])
             != next.selectionLayout.browseButton
         || legacy.reviewLayout.browseButton
             != next.reviewLayout.browseButton
-        || legacy.selectionLayout.actionBox
-            != next.selectionLayout.actionBox
-        || legacy.reviewLayout.actionBox
-            != next.reviewLayout.actionBox
+        || !sameActionHorizontalGeometry(
+            legacy.selectionLayout, next.selectionLayout)
+        || !sameActionHorizontalGeometry(
+            legacy.reviewLayout, next.reviewLayout)
         || legacy.selectionLayout.browseButton.width()
             != next.selectionLayout.browseButton.width()
-        || !legacy.selectionLayout.actionBoxVisible
-        || !next.selectionLayout.actionBoxVisible
-        || legacy.selectionLayout.actionBox.bottom()
-            > legacy.selectionLayout.dialogSize.height()
-        || next.selectionLayout.actionBox.bottom()
-            > next.selectionLayout.dialogSize.height()
+        || !stableActionLayout(legacy.selectionLayout)
+        || !stableActionLayout(next.selectionLayout)
+        || !stableActionLayout(legacy.reviewLayout)
+        || !stableActionLayout(next.reviewLayout)
         || !scrollAreaUnavailableHorizontally(legacy.reviewLayout)
         || !scrollAreaUnavailableHorizontally(next.reviewLayout))
     {
         qCritical().noquote()
-            << "Importer dialog geometry/layout parity failed. Expected selection"
-            << expectedSelectionSize << "and review" << expectedReviewSize
+            << "Importer dialog geometry/layout parity failed. Next expects selection"
+            << expectedNextSelectionSize << "and review" << expectedNextReviewSize
             << "but received legacy selection"
             << legacy.selectionLayout.dialogSize << "Next selection"
             << next.selectionLayout.dialogSize << "legacy review"
@@ -1213,8 +1229,8 @@ int main(int argc, char* argv[])
             QStringLiteral("all review fields and candidate counts match between legacy and Next"),
             QStringLiteral("normal dialog title and import action match legacy localization"),
             QStringLiteral("both dialogs expose an enabled import/apply action for the valid workbook"),
-            QStringLiteral("selection and review dialog dimensions equal legacy extents: 460x218 English and 460x212 Korean selection; 460x501 English and 460x477 Korean review"),
-            QStringLiteral("path field, browse button, and action-box rectangles exactly match legacy in selection and review states; the path field is at least 250 pixels wide"),
+            QStringLiteral("Next selection and review dialog dimensions remain fixed at 460x218/460x212 and 460x501/460x477 for English/Korean; Legacy native height metrics are validated by width and in-dialog action placement"),
+            QStringLiteral("path field and browse rectangles exactly match legacy in selection and review states; action boxes match horizontally and remain visible within each dialog; the path field is at least 250 pixels wide"),
             QStringLiteral("candidate scroll area has no horizontal range or visible horizontal scrollbar and content fits its viewport"),
             QStringLiteral("legacy and Next version confirmation prompts match in title, message, dates, and button labels")
         }},

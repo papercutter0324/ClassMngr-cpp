@@ -194,6 +194,27 @@ bool SidebarNodeNaming::teacherDisplayLessThan(
     const Teacher& right
     )
 {
+    // Sidebar rows are rendered with preferredDisplayName(), so the sort key
+    // must be the same value users see.  Sorting by teacherEn first can put a
+    // row ahead of another row whose visible preferred name sorts earlier.
+    const QString leftDisplayName = left.preferredDisplayName().trimmed();
+    const QString rightDisplayName = right.preferredDisplayName().trimmed();
+    const bool leftHasDisplayName = !leftDisplayName.isEmpty();
+    const bool rightHasDisplayName = !rightDisplayName.isEmpty();
+
+    if (leftHasDisplayName != rightHasDisplayName)
+    {
+        return leftHasDisplayName;
+    }
+
+    const int displayComparison =
+        QString::localeAwareCompare(leftDisplayName, rightDisplayName);
+
+    if (displayComparison != 0)
+    {
+        return displayComparison < 0;
+    }
+
     const QString leftEnglish =
         left.teacherEn.trimmed();
     const QString rightEnglish =

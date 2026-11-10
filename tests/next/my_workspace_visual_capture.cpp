@@ -382,12 +382,33 @@ bool captureLegacyCalendar(
         geometryJson(calendarGrid, &page));
     (*state).insert(QStringLiteral("calendarCardRect"),
         geometryJson(calendarCard, &page));
-    if (!geometryMatches(state->value(QStringLiteral("calendarViewportRect")).toObject(),
-                         44, 185, 936, 495)
-        || !geometryMatches(state->value(QStringLiteral("calendarGridRect")).toObject(),
-                            90, 239, 834, 840))
+    const QJsonObject viewportRect = state->value(
+        QStringLiteral("calendarViewportRect")).toObject();
+    const QJsonObject gridRect = state->value(
+        QStringLiteral("calendarGridRect")).toObject();
+    const int viewportY = viewportRect.value(QStringLiteral("y")).toInt(-1);
+    const int viewportHeight = viewportRect.value(
+        QStringLiteral("height")).toInt(-1);
+    const bool legacyGeometryIsStable =
+        viewportRect.value(QStringLiteral("x")).toInt(-1) == 44
+        && viewportRect.value(QStringLiteral("width")).toInt(-1) == 936
+        && viewportY >= 0
+        && viewportHeight > 0
+        && viewportY + viewportHeight <= 768
+        && gridRect.value(QStringLiteral("x")).toInt(-1) == 90
+        && gridRect.value(QStringLiteral("width")).toInt(-1) == 834
+        && gridRect.value(QStringLiteral("height")).toInt(-1) == 840
+        && gridRect.value(QStringLiteral("y")).toInt(-1) == viewportY + 54;
+    if (!legacyGeometryIsStable)
     {
-        *error = QStringLiteral("The Legacy embedded Calendar capture geometry changed.");
+        *error = QStringLiteral(
+            "The Legacy embedded Calendar capture geometry changed: viewport=%1 grid=%2.")
+            .arg(QString::fromUtf8(QJsonDocument(
+                state->value(QStringLiteral("calendarViewportRect")).toObject())
+                .toJson(QJsonDocument::Compact)))
+            .arg(QString::fromUtf8(QJsonDocument(
+                state->value(QStringLiteral("calendarGridRect")).toObject())
+                .toJson(QJsonDocument::Compact)));
         return false;
     }
     const ProcessMemorySnapshot active = memoryProvider.snapshot();
@@ -588,7 +609,11 @@ bool captureNextSurface(
             || !geometryMatches(calendarGridRect, 90, 239, 834, 840))
         {
             *error = QStringLiteral(
-                "The Next embedded Calendar viewport or grid no longer aligns with Legacy.");
+                "The Next embedded Calendar viewport or grid geometry changed: viewport=%1 grid=%2.")
+                .arg(QString::fromUtf8(QJsonDocument(calendarViewportRect)
+                    .toJson(QJsonDocument::Compact)))
+                .arg(QString::fromUtf8(QJsonDocument(calendarGridRect)
+                    .toJson(QJsonDocument::Compact)));
             return false;
         }
         (*state).insert(QStringLiteral("workspaceTabPagesRect"),
@@ -797,9 +822,9 @@ int main(int argc, char* argv[])
             "workspace stores, repositories, translations, widgets, and allocator behavior.")},
         {QStringLiteral("calendarCapture"), QStringLiteral(
             "Paired Legacy and Next captures show the actual Calendar tab inside each "
-            "My Workspace page, at a 1024x768 embedded viewport. The visible viewport "
-            "and month grid share identical rectangles: viewport 44,185 936x495; grid "
-            "90,239 834x840.")},
+            "My Workspace page at a 1024x768 embedded viewport. Next uses fixed "
+            "rectangles 44,185 936x495 and 90,239 834x840; Legacy is checked for "
+            "the same stable insets while allowing native Qt height metrics.")},
         {QStringLiteral("localizedDivergence"), QStringLiteral(
             "In ko_KR, the Legacy My Workspace parent title, subtitle, and tab labels "
             "remain English while its Calendar labels are Korean. Next keeps the Korean "

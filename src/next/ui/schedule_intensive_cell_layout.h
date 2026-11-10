@@ -60,14 +60,22 @@ struct ScheduleIntensiveEntryLayout final
     return parts.join(QStringLiteral(" - "));
 }
 
-[[nodiscard]] inline QFont scheduleIntensiveLineFont(
+[[nodiscard]] inline QFont scheduleIntensiveFittedLineFont(
     QFont font,
     const int pixelSize,
-    const QFont::Weight weight
+    const QFont::Weight weight,
+    const int maximumHeight
     )
 {
-    font.setPixelSize(pixelSize);
     font.setWeight(weight);
+    for (int size = pixelSize; size > 0; --size)
+    {
+        font.setPixelSize(size);
+        if (QFontMetrics(font).height() <= maximumHeight)
+        {
+            break;
+        }
+    }
     return font;
 }
 
@@ -131,12 +139,15 @@ layoutScheduleIntensiveEntries(
         const QRect classBounds(entryBounds.left(), roomBounds.bottom() + 1,
                                 entryBounds.width(), classLineHeight);
 
-        const QFont teacherFont = scheduleIntensiveLineFont(
-            baseFont, hasOneEntry ? 13 : 10, QFont::DemiBold);
-        const QFont roomFont = scheduleIntensiveLineFont(
-            baseFont, hasOneEntry ? 13 : 10, QFont::Medium);
-        const QFont classFont = scheduleIntensiveLineFont(
-            baseFont, hasOneEntry ? 12 : 9, QFont::Normal);
+        const QFont teacherFont = scheduleIntensiveFittedLineFont(
+            baseFont, hasOneEntry ? 13 : 10, QFont::DemiBold,
+            teacherLineHeight);
+        const QFont roomFont = scheduleIntensiveFittedLineFont(
+            baseFont, hasOneEntry ? 13 : 10, QFont::Medium,
+            roomLineHeight);
+        const QFont classFont = scheduleIntensiveFittedLineFont(
+            baseFont, hasOneEntry ? 12 : 9, QFont::Normal,
+            classLineHeight);
 
         layouts.push_back({
             .teacher = scheduleIntensiveTextLine(

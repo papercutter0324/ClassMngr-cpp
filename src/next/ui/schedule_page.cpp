@@ -45,11 +45,7 @@ namespace ClassMngr::Next::Ui
 namespace
 {
 
-#if defined(Q_OS_MACOS)
 constexpr int ScheduleToolbarButtonHeight = 40;
-#else
-constexpr int ScheduleToolbarButtonHeight = 34;
-#endif
 
 [[nodiscard]] QString pageText(const char* source)
 {
@@ -599,8 +595,8 @@ void SchedulePage::buildUi()
         button->setObjectName(QString::fromLatin1(modeObjects[index]));
         button->setProperty("translationSource", QString::fromLatin1(modeNames[index]));
         button->setCheckable(true);
-        button->setMinimumSize(96, ScheduleToolbarButtonHeight);
-        button->setMaximumHeight(ScheduleToolbarButtonHeight);
+        button->setMinimumWidth(96);
+        button->setFixedHeight(ScheduleToolbarButtonHeight);
         m_modeButtons[index] = button;
         m_modeGroup->addButton(button, index);
         modes->addWidget(button);
@@ -613,8 +609,8 @@ void SchedulePage::buildUi()
     m_preferencesButton->setObjectName(QStringLiteral("nextSchedulePreferences"));
     m_preferencesButton->setProperty(
         "translationSource", QStringLiteral("Preferences"));
-    m_preferencesButton->setMinimumSize(112, ScheduleToolbarButtonHeight);
-    m_preferencesButton->setMaximumHeight(ScheduleToolbarButtonHeight);
+    m_preferencesButton->setMinimumWidth(112);
+    m_preferencesButton->setFixedHeight(ScheduleToolbarButtonHeight);
     m_preferencesButton->setPopupMode(QToolButton::InstantPopup);
     m_preferencesMenu = new QMenu(m_preferencesButton);
     m_preferencesButton->setMenu(m_preferencesMenu);

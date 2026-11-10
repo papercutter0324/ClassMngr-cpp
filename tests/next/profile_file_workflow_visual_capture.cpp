@@ -1253,7 +1253,8 @@ int main(int argc, char* argv[])
         return 2;
     }
     QTemporaryDir settingsDirectory;
-    QTemporaryDir profileDirectory(QStringLiteral("/private/tmp/cmnf-XXXXXX"));
+    QTemporaryDir profileDirectory(
+        QDir::tempPath() + QStringLiteral("/cmnf-XXXXXX"));
     if (!settingsDirectory.isValid() || !profileDirectory.isValid())
     {
         qCritical("Could not create disposable settings or profile directories");
