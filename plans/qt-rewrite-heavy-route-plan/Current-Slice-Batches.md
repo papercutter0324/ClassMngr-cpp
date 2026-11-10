@@ -1,23 +1,26 @@
 # Current Slice Batches
 
-## Phase 8a - OS-agnostic provenance follow-up
+## Phase 8a - provenance follow-up and local macOS baseline
 
-Refactoring Baseline run `42664061605` is complete. Linux and Windows x64 built
-and completed baseline steps, but their source provenance is invalid: Qt
-installation changed tracked `aqtinstall.log`, and C44 capture changed tracked
-Phase 7 visual-baseline files. C53 parity passed on both hosts. The macOS job
-was cancelled at its 300-minute timeout after 4,166 of 5,570 build steps. It
-produced no baseline report, and C53 could not run because its target had not
-been built.
+OS-agnostic batch d034bb56 is pushed to origin/Qt-Rewrite. Refactoring
+Baseline run 42732863398 ended after the Mac job failed before runner
+assignment. Its check annotation reported failed account payments or a spending
+limit that must be increased. Linux x64 and Windows ARM64 baseline jobs were
+canceled; Windows x64 was force-canceled.
 
-The C44 provenance/capture fix is committed on the isolated OS batch branch as
-`0cefbcb6`; its focused Windows x64 target passed twice locally. A Mac capacity
-change to `macos-15-large` with 12-way compilation is committed there as
-`e11ea4b2`. The OS batch is ready, but its push is waiting for approval to use
-the billed runner and confirmation that the repository has access to it.
+The user requested cancellation of all active GitHub workflows. Windows
+Release run 42732863262, macOS Release run 42732863243, C53 run 42732863482,
+and Phase 4 resource-layout run 42732863211 are canceled. Linux x64 Release
+run 42732863214 had already completed successfully. A follow-up Actions API
+query found no queued or in-progress runs.
 
-Windows-specific fixes remain committed locally on `Qt-Rewrite` and unpushed.
-The hosted Windows baseline review, local target evidence, and QWARN dispositions
-are recorded in the Phase 8a progress log. Keep those implementation commits
-out of the OS-agnostic push; publish the Windows batch after the provenance
-follow-up is validated.
+The simpler Mac mini path uses the existing macOS universal Debug preset and
+baseline recorder from a clean local checkout. The recorder builds all targets
+and runs the full CTest suite; the matched SQL Sub Prep capture can then run as
+a separate step. Commands and evidence paths are in
+[the local macOS build guide](../../docs/qt-rewrite/phase8a/macos-local-debug-build.md).
+The Mac build and C53 evidence are still pending.
+
+Windows-specific fixes and focused evidence remain committed locally on
+Qt-Rewrite and unpushed. Publish the implementation batch after the
+OS-agnostic baseline has been reviewed.
