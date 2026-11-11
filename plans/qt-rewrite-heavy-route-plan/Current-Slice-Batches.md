@@ -16,7 +16,8 @@ local macOS evidence; W04 and W06 are handed to Phase 11 for test-support and
 fixture-schema corrections; W07 is dispositioned to Phase 11 test/startup
 harness work. Windows case-level attribution, historical target-only
 uncertainty, and cross-host runtime for W01–W03 and W05 remain open. W08 is
-next; continue through the ordered 18 candidates:
+complete and dispositioned with local macOS evidence; W09 is next. The Phase 8a
+gate remains open. Continue through the ordered 18 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
@@ -54,7 +55,10 @@ next; continue through the ordered 18 candidates:
     `QTEST_APPLESS_MAIN` test creates `ApplicationServices`. Stable Mac has four
     QWARNs across three contexts; Linux rows are from a source-unstable run only.
     `QTEST_GUILESS_MAIN` is a candidate; no source change or suppression.
-11. **W08** — Settings failures.
+11. **W08** — Complete/dispositioned: 69 settings QWARNs across 14 bodies and
+    15 contexts are asserted fault-path diagnostics. Local macOS CTest passed
+    26/26; QtTest 344/0/1 (the skip is an unconfigured optional capture). No
+    filters or suppression; current Linux/Windows runtime confirmation is absent.
 12. **W09** — Offscreen QPA / dialog warnings.
 13. **W10** — Font fallback warnings.
 14. **W11** — Startup stage, locale, and shutdown warnings.
