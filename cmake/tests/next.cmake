@@ -7510,7 +7510,7 @@ classmngr_add_qt_test(
 classmngr_add_qt_test(
     NAME NextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPort
     SOURCES
-        tests/next_platform_application_services_native_english_teacher_birthday_directory_read_port_tests.cpp
+        tests/next/english_teacher_birthday_directory_read_port_tests.cpp
     LIBRARIES
         ClassMngrNext::Platform
         Qt6::Test

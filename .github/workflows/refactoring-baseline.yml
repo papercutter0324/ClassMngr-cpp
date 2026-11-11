@@ -260,7 +260,6 @@ jobs:
             --configure-preset "${{ matrix.preset }}"
             --build-dir "${{ matrix.build_dir }}"
             --parallel "${{ matrix.parallel }}"
-            --test-timeout 120
             --expected-commit "${GITHUB_SHA}"
             --output "artifacts/baseline/${{ matrix.report }}.json"
           )

@@ -189,4 +189,4 @@ distinguishesUnavailableSessionFromRepositoryFailure()
 QTEST_MAIN(
     NextPlatformApplicationServicesNativeEnglishTeacherBirthdayDirectoryReadPortTests)
 
-#include "next_platform_application_services_native_english_teacher_birthday_directory_read_port_tests.moc"
+#include "english_teacher_birthday_directory_read_port_tests.moc"
