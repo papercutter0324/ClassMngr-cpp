@@ -13,9 +13,10 @@ and [progress log](09.5-Phase-8a-Progress-Log.md) for requirements and evidence.
 
 F01–F03 are reviewed as triage; W01–W05 are implemented or dispositioned with
 local macOS evidence; W04 and W06 are handed to Phase 11 for test-support and
-fixture-schema corrections. Windows case-level attribution, historical
-target-only uncertainty, and cross-host runtime for W01–W03 and W05 remain open.
-W07 is next; continue through the ordered 18 candidates:
+fixture-schema corrections; W07 is dispositioned to Phase 11 test/startup
+harness work. Windows case-level attribution, historical target-only
+uncertainty, and cross-host runtime for W01–W03 and W05 remain open. W08 is
+next; continue through the ordered 18 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
@@ -49,7 +50,10 @@ W07 is next; continue through the ordered 18 candidates:
    `teachers` view omits `birthday`, `phone_number`, and `notes`, causing three
    QWARNs per Mac/Linux baseline (six total) in the asserted malformed-JSON
    case. No Phase 8 source change or warning suppression.
-10. **W07** — `QCoreApplication` / `applicationDirPath` startup warnings.
+10. **W07** — Dispositioned to Phase 11 test/startup-harness correction; the
+    `QTEST_APPLESS_MAIN` test creates `ApplicationServices`. Stable Mac has four
+    QWARNs across three contexts; Linux rows are from a source-unstable run only.
+    `QTEST_GUILESS_MAIN` is a candidate; no source change or suppression.
 11. **W08** — Settings failures.
 12. **W09** — Offscreen QPA / dialog warnings.
 13. **W10** — Font fallback warnings.
