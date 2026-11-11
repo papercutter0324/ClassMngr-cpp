@@ -20,9 +20,11 @@ complete and dispositioned with local macOS evidence; W09 is dispositioned with
 bounded macOS coverage. W10 is dispositioned with bounded local macOS evidence;
 W11 is dispositioned with bounded local evidence and an assertion caveat; W12
 is complete/dispositioned with local macOS verification. W13 is dispositioned
-with bounded local evidence; W14 is next. The Phase 8a gate remains open.
-Continue through the ordered 18
-candidates:
+with bounded local evidence; W14 is dispositioned with source-stable Mac
+evidence and current-target limits; W15 is next. The Phase 8a gate remains
+open. Recorded stable runs use different revisions (Mac `3dc37340`, Linux
+`7f82f427`, Windows `b799c8ab`), so the shared-source/C53 acceptance gate is
+still open. Continue through the ordered 18 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
@@ -68,31 +70,55 @@ candidates:
     warnings were recorded across partial macOS runs, but coverage is incomplete.
     ENOSPC left 40 expanded entries without binaries, an unrelated wizard crash
     stopped the available-entry run with 28 unrun, and no current Linux/Windows
-    runtime confirmation exists. W10–W13 have since been dispositioned; W14 is
+    runtime confirmation exists. W10–W14 have since been dispositioned; W15 is
     next.
 13. **W10** — Dispositioned as Qt font-alias initialization/timing diagnostics;
     24 current local macOS observations across existing runs, without evidence
     of failed font loads or bad glyphs. No new tests due disk exhaustion; no
-    current stable Linux/Windows confirmation. W11–W13 have since been
-    dispositioned; W14 is next.
+    current stable Linux/Windows confirmation. W11–W14 have since been
+    dispositioned; W15 is next.
 14. **W11** — Dispositioned with bounded local macOS evidence: 17 unique startup,
     locale, and injected close-failure events plus one W08 settings-flush
     overlap. Four no-workspace contexts lack direct warning assertions; no
-    current stable Linux/Windows runtime confirmation. W12 and W13 have since
-    been dispositioned; W14 is next.
+    current stable Linux/Windows runtime confirmation. W12–W14 have since been
+    dispositioned; W15 is next.
 15. **W12** — Complete/dispositioned and locally verified on macOS. The initial
     five calendar-read fallback warnings are now one: three unrelated tests
     configure successful empty intervals; the explicit failure/fallback test
     retains its warning. CTest passed 1/1 (QtTest 37/0/0); no current
-    Linux/Windows runtime confirmation. W13 has since been dispositioned;
-    W14 is next.
+    Linux/Windows runtime confirmation. W13 and W14 have since been
+    dispositioned; W15 is next.
 16. **W13** — Dispositioned with bounded local macOS evidence: the historical
     invalid teacher-ID warning was absent in a passing, unrebuilt target
     (CTest 1/1; QtTest 20/0/0). The existing `qint64` fix is present and tested,
     but runtime provenance is limited; no current Linux/Windows confirmation.
     Keep separate six W04 `QSqlQuery::prepare` warnings from a different test.
-17. **W14** — Invalid filename warning.
+    W14 has since been dispositioned; W15 is next.
+17. **W14** — Dispositioned: the source-stable Nov 10 Mac full suite reproduced
+    all six invalid-filename warnings; current local CTest entries are registered
+    but their binaries are missing, so no current run was possible. No code
+    change or suppression; current Linux/Windows evidence is absent. W15 is next.
 18. **W15** — Temporary-file / painter warnings.
 
-When starting **W14** (the second-to-last candidate), search for further
-candidates for the next batch. Add that batch only when its discovery starts.
+### Next sub-batch discovery (pending activation after W15)
+
+W14 discovery is complete. One candidate is proposed for the next sub-batch;
+it remains pending and has not been investigated or executed:
+
+1. **Schedule import injected read failure** — exact body
+   `injected schedule read failure` in `ClassMngrScheduleImportDialogTests`;
+   the source-unstable inventory reports six Mac and six Linux events, and the
+   retained source-stable Mac suite also has six. Contexts are
+   `reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback()`
+   (asserts the detail) and
+   `reviewPrepareRejectsUnknownKindBeforeLoadingSnapshot()` (sets injection,
+   but the invalid-kind precedence test does not directly assert the warning).
+
+Discovery found no additional candidate overflow beyond the 20-slice limit;
+JUnit duplicates are not additive. Exclude
+`qt.qpa.dialogs: Cannot run window modal dialog without parent window` for now:
+it appears twice only in the source-unstable Mac inventory and is absent from
+the retained stable Mac log, so it lacks stable reproduction. Keep the
+shared-source/C53 acceptance gate open; the recorded stable Mac, Linux, and
+Windows runs are on different source revisions. Activate the proposed
+sub-batch only after W15 completes.
