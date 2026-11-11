@@ -11,9 +11,9 @@ explicitly. Remote Actions will not be awaited; prefer local Mac checks where
 applicable. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md)
 and [progress log](09.5-Phase-8a-Progress-Log.md) for requirements and evidence.
 
-F01–F03 are reviewed as triage; W01 is implemented and locally verified on
-macOS only. Windows case-level attribution and historical target-only
-uncertainty remain open; W01 cross-host runtime was not run. W02 is next;
+F01–F03 are reviewed as triage; W01–W02 are implemented and locally verified
+on macOS only. Windows case-level attribution, historical target-only
+uncertainty, and cross-host runtime for W01–W02 remain open. W03 is next;
 continue through the ordered 18 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
@@ -27,7 +27,10 @@ continue through the ordered 18 candidates:
 4. **W01** — Implemented and locally verified on macOS: all 26 warning-bearing
    targets register keyboard light/dark and spin icons. Focused CTest passed
    29/29 with those resource warnings absent. Windows/Linux runtime was not run.
-5. **W02** — `EventCalendar.qml` missing test resource.
+5. **W02** — Implemented and locally verified on macOS: the existing calendar
+   helper registers `EventCalendar.qml` and `MonthGridDelegate.qml` in all five
+   affected test executables. Focused CTest passed 5/5; Windows/Linux runtime
+   was not run.
 6. **W03** — Combo-arrow resources; the fresh local Mac comparison logged two
    missing-resource warnings, and this slice remains pending.
 7. **W04** — `QSqlQuery::prepare` database-not-open warning remains unresolved;

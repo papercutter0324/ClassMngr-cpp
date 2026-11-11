@@ -94,6 +94,7 @@ qt_add_resources(ClassMngrPageManagerTests
         resources/assets/icons/keyboard_dark.svg
         resources/assets/icons/keyboard_light.svg
 )
+classmngr_next_add_calendar_qml_resources(ClassMngrPageManagerTests)
 
 classmngr_add_qt_test(
     NAME MyWorkspacePage
@@ -104,6 +105,7 @@ classmngr_add_qt_test(
         Qt6::Widgets
     OFFSCREEN
 )
+classmngr_next_add_calendar_qml_resources(ClassMngrMyWorkspacePageTests)
 
 classmngr_add_qt_test(
     NAME MyClassesPage
@@ -675,6 +677,9 @@ classmngr_add_qt_test(
         ClassMngrcampusesResourcePack
     OFFSCREEN
 )
+classmngr_next_add_calendar_qml_resources(
+    ClassMngrScheduleTestingLayoutClearParityTests
+)
 
 classmngr_add_qt_test(
     NAME MainWindowDocumentCatalogRetranslationParity
@@ -1082,6 +1087,9 @@ classmngr_add_qt_test(
         "TMPDIR=${CMAKE_CURRENT_BINARY_DIR}/mainwindow-class-visibility-preferences-temp"
     OFFSCREEN
 )
+classmngr_next_add_calendar_qml_resources(
+    ClassMngrMainWindowClassVisibilityPreferencesFailureTests
+)
 
 classmngr_add_qt_test(
     NAME MainWindowFontSizeActionParity
@@ -1352,6 +1360,9 @@ classmngr_add_qt_test(
         ClassMngrcampusesResourcePack
         ClassMngrdocumentsResourcePack
     OFFSCREEN
+)
+classmngr_next_add_calendar_qml_resources(
+    ClassMngrMainWindowSaveAsExportParityTests
 )
 
 classmngr_add_qt_test(
