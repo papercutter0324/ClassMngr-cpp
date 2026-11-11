@@ -11,22 +11,26 @@ explicitly. Remote Actions will not be awaited; prefer local Mac checks where
 applicable. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md)
 and [progress log](09.5-Phase-8a-Progress-Log.md) for requirements and evidence.
 
-Work through these 18 candidates in order; none is marked complete:
+F01–F03 are reviewed as triage; Windows case-level attribution and historical
+target-only uncertainty remain open. W01 is next; continue through the ordered
+18 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
 2. **F02** — Reconciled; historical causes remain open. Mac/Linux snapshots
    did not reproduce the old failures; 51 target-only observations remain
    unresolved, and three Windows targets need native case-level follow-up.
-3. **F03** — Recover test contexts from dirty artifact logs; assign explicit
-   later-phase owners or record remaining uncertainty.
+3. **F03** — Recovered last-output contexts, not terminal timeout failures.
+   Assign only named visual captures to Phase 10; keep timeout and Windows
+   Bootstrap ownership unresolved.
 4. **W01** — Missing keyboard light icons; warning count and target-set
    discrepancy pending. Resource-registration work has not begun; the keyboard
    executor is paused without edits.
 5. **W02** — `EventCalendar.qml` missing test resource.
-6. **W03** — Combo-arrow resources.
-7. **W04** — `QSqlQuery::prepare` database-not-open warning; SQL investigation
-   is in progress.
+6. **W03** — Combo-arrow resources; the fresh local Mac comparison logged two
+   missing-resource warnings, and this slice remains pending.
+7. **W04** — `QSqlQuery::prepare` database-not-open warning remains unresolved;
+   needs a focused debugger/backtrace check.
 8. **W05** — `removeDatabase` connection-still-in-use warning.
 9. **W06** — Unknown teacher fields.
 10. **W07** — `QCoreApplication` / `applicationDirPath` startup warnings.
