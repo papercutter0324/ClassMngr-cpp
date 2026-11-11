@@ -655,21 +655,23 @@ void NextWorkspaceOpenFlowTests::workspaceStoreRollbackDropsPendingTransaction()
 
     WorkspaceStore store;
     QVERIFY(store.open(profilePath));
-    QSqlDatabase database = store.database();
-    QVERIFY(database.isOpen());
-    QVERIFY(database.transaction());
-    QSqlQuery createProbeTable(database);
-    QVERIFY(createProbeTable.exec(
-        QStringLiteral("CREATE TABLE rollback_probe (value TEXT NOT NULL)")
-        ));
+    {
+        QSqlDatabase database = store.database();
+        QVERIFY(database.isOpen());
+        QVERIFY(database.transaction());
+        QSqlQuery createProbeTable(database);
+        QVERIFY(createProbeTable.exec(
+            QStringLiteral("CREATE TABLE rollback_probe (value TEXT NOT NULL)")
+            ));
 
-    QVERIFY(store.rollback());
-    QSqlQuery checkProbeTable(store.database());
-    QVERIFY(checkProbeTable.exec(QStringLiteral(
-        "SELECT name FROM sqlite_master WHERE type = 'table' "
-        "AND name = 'rollback_probe'"
-        )));
-    QVERIFY(!checkProbeTable.next());
+        QVERIFY(store.rollback());
+        QSqlQuery checkProbeTable(store.database());
+        QVERIFY(checkProbeTable.exec(QStringLiteral(
+            "SELECT name FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'rollback_probe'"
+            )));
+        QVERIFY(!checkProbeTable.next());
+    }
     store.close();
 }
 

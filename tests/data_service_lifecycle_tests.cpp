@@ -409,11 +409,13 @@ void DataServiceLifecycleTests::applicationServicesShareCanonicalSessionAcrossLi
     QCOMPARE(addedConnections.size(), 1);
     QCOMPARE(addedConnections.first(), store->database().connectionName());
     QCOMPARE(store->settingsRepository(), session->settingsRepository());
-    QSqlDatabase storeDatabase = store->database();
-    const RepositoryResult<int> schemaVersion =
-        DatabaseSchemaManager::schemaVersion(storeDatabase);
-    QVERIFY(schemaVersion);
-    QCOMPARE(*schemaVersion, DatabaseSchemaManager::LatestSchemaVersion);
+    {
+        QSqlDatabase storeDatabase = store->database();
+        const RepositoryResult<int> schemaVersion =
+            DatabaseSchemaManager::schemaVersion(storeDatabase);
+        QVERIFY(schemaVersion);
+        QCOMPARE(*schemaVersion, DatabaseSchemaManager::LatestSchemaVersion);
+    }
     for (FeatureService* feature : features)
         QVERIFY(feature->isAvailable());
     QVERIFY(services.settingsService()->save(QStringLiteral("canonical/value"), 73));

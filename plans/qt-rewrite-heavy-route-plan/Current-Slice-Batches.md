@@ -11,11 +11,11 @@ explicitly. Remote Actions will not be awaited; prefer local Mac checks where
 applicable. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md)
 and [progress log](09.5-Phase-8a-Progress-Log.md) for requirements and evidence.
 
-F01–F03 are reviewed as triage; W01–W03 are implemented and locally verified
-on macOS only; W04 is dispositioned to Phase 11 for test-fixture/support
+F01–F03 are reviewed as triage; W01–W05 are implemented or dispositioned with
+local macOS evidence, while W04 is handed to Phase 11 for test-fixture/support
 correction. Windows case-level attribution, historical target-only uncertainty,
-and cross-host runtime for W01–W03 remain open. W05 is next; continue through
-the ordered 18 candidates:
+and cross-host runtime for W01–W03 and W05 remain open. W06 is next; continue
+through the ordered 18 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
@@ -40,7 +40,10 @@ the ordered 18 candidates:
    representative stack traces the named warning to a static default database
    handle; 123 occurrences span 44 contexts across three shared-support targets,
    not individually traced. Keep the warning visible and unsuppressed.
-8. **W05** — `removeDatabase` connection-still-in-use warning.
+8. **W05** — Implemented and locally verified on macOS: both focused CTest
+   targets passed (51/51 and 11/11); the fresh log has no connection-in-use
+   warning. The three remaining unknown-field warnings map to W06; one settings
+   warning maps to W08. Windows/Linux runtime was not run.
 9. **W06** — Unknown teacher fields.
 10. **W07** — `QCoreApplication` / `applicationDirPath` startup warnings.
 11. **W08** — Settings failures.
