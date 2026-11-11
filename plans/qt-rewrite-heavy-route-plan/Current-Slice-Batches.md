@@ -12,10 +12,10 @@ applicable. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md
 and [progress log](09.5-Phase-8a-Progress-Log.md) for requirements and evidence.
 
 F01–F03 are reviewed as triage; W01–W05 are implemented or dispositioned with
-local macOS evidence, while W04 is handed to Phase 11 for test-fixture/support
-correction. Windows case-level attribution, historical target-only uncertainty,
-and cross-host runtime for W01–W03 and W05 remain open. W06 is next; continue
-through the ordered 18 candidates:
+local macOS evidence; W04 and W06 are handed to Phase 11 for test-support and
+fixture-schema corrections. Windows case-level attribution, historical
+target-only uncertainty, and cross-host runtime for W01–W03 and W05 remain open.
+W07 is next; continue through the ordered 18 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
@@ -44,7 +44,10 @@ through the ordered 18 candidates:
    targets passed (51/51 and 11/11); the fresh log has no connection-in-use
    warning. The three remaining unknown-field warnings map to W06; one settings
    warning maps to W08. Windows/Linux runtime was not run.
-9. **W06** — Unknown teacher fields.
+9. **W06** — Dispositioned to Phase 11 fixture-schema correction: the test-only
+   `teachers` view omits `birthday`, `phone_number`, and `notes`, causing three
+   QWARNs per Mac/Linux baseline (six total) in the asserted malformed-JSON
+   case. No Phase 8 source change or warning suppression.
 10. **W07** — `QCoreApplication` / `applicationDirPath` startup warnings.
 11. **W08** — Settings failures.
 12. **W09** — Offscreen QPA / dialog warnings.
