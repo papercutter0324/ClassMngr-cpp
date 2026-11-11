@@ -17,8 +17,9 @@ fixture-schema corrections; W07 is dispositioned to Phase 11 test/startup
 harness work. Windows case-level attribution, historical target-only
 uncertainty, and cross-host runtime for W01–W03 and W05 remain open. W08 is
 complete and dispositioned with local macOS evidence; W09 is dispositioned with
-bounded macOS coverage. W10 is next. The Phase 8a gate remains open. Continue
-through the ordered 18 candidates:
+bounded macOS coverage. W10 is dispositioned with bounded local macOS evidence;
+W11 is next. The Phase 8a gate remains open. Continue through the ordered 18
+candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
@@ -64,8 +65,11 @@ through the ordered 18 candidates:
     warnings were recorded across partial macOS runs, but coverage is incomplete.
     ENOSPC left 40 expanded entries without binaries, an unrelated wizard crash
     stopped the available-entry run with 28 unrun, and no current Linux/Windows
-    runtime confirmation exists. W10 is next.
-13. **W10** — Font fallback warnings.
+    runtime confirmation exists. W10 has since been dispositioned; W11 is next.
+13. **W10** — Dispositioned as Qt font-alias initialization/timing diagnostics;
+    24 current local macOS observations across existing runs, without evidence
+    of failed font loads or bad glyphs. No new tests due disk exhaustion; no
+    current stable Linux/Windows confirmation. W11 is next.
 14. **W11** — Startup stage, locale, and shutdown warnings.
 15. **W12** — Injected schedule warning.
 16. **W13** — Wide teacher ID warning; verify the existing fix is absent from
