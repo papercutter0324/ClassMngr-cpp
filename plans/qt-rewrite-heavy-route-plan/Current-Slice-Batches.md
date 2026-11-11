@@ -19,8 +19,9 @@ uncertainty, and cross-host runtime for W01–W03 and W05 remain open. W08 is
 complete and dispositioned with local macOS evidence; W09 is dispositioned with
 bounded macOS coverage. W10 is dispositioned with bounded local macOS evidence;
 W11 is dispositioned with bounded local evidence and an assertion caveat; W12
-is complete/dispositioned with local macOS verification. W13 is next. The
-Phase 8a gate remains open. Continue through the ordered 18
+is complete/dispositioned with local macOS verification. W13 is dispositioned
+with bounded local evidence; W14 is next. The Phase 8a gate remains open.
+Continue through the ordered 18
 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
@@ -67,25 +68,29 @@ candidates:
     warnings were recorded across partial macOS runs, but coverage is incomplete.
     ENOSPC left 40 expanded entries without binaries, an unrelated wizard crash
     stopped the available-entry run with 28 unrun, and no current Linux/Windows
-    runtime confirmation exists. W10–W12 have since been dispositioned; W13 is
+    runtime confirmation exists. W10–W13 have since been dispositioned; W14 is
     next.
 13. **W10** — Dispositioned as Qt font-alias initialization/timing diagnostics;
     24 current local macOS observations across existing runs, without evidence
     of failed font loads or bad glyphs. No new tests due disk exhaustion; no
-    current stable Linux/Windows confirmation. W11 and W12 have since been
-    dispositioned; W13 is next.
+    current stable Linux/Windows confirmation. W11–W13 have since been
+    dispositioned; W14 is next.
 14. **W11** — Dispositioned with bounded local macOS evidence: 17 unique startup,
     locale, and injected close-failure events plus one W08 settings-flush
     overlap. Four no-workspace contexts lack direct warning assertions; no
-    current stable Linux/Windows runtime confirmation. W12 has since been
-    dispositioned; W13 is next.
+    current stable Linux/Windows runtime confirmation. W12 and W13 have since
+    been dispositioned; W14 is next.
 15. **W12** — Complete/dispositioned and locally verified on macOS. The initial
     five calendar-read fallback warnings are now one: three unrelated tests
     configure successful empty intervals; the explicit failure/fallback test
     retains its warning. CTest passed 1/1 (QtTest 37/0/0); no current
-    Linux/Windows runtime confirmation. W13 is next.
-16. **W13** — Wide teacher ID warning; verify the existing fix is absent from
-    current evidence.
+    Linux/Windows runtime confirmation. W13 has since been dispositioned;
+    W14 is next.
+16. **W13** — Dispositioned with bounded local macOS evidence: the historical
+    invalid teacher-ID warning was absent in a passing, unrebuilt target
+    (CTest 1/1; QtTest 20/0/0). The existing `qint64` fix is present and tested,
+    but runtime provenance is limited; no current Linux/Windows confirmation.
+    Keep separate six W04 `QSqlQuery::prepare` warnings from a different test.
 17. **W14** — Invalid filename warning.
 18. **W15** — Temporary-file / painter warnings.
 
