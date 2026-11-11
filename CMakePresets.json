@@ -82,6 +82,20 @@
       }
     },
     {
+      "name": "windows-x64-ninja-debug",
+      "displayName": "Windows x64 Debug (Ninja)",
+      "inherits": [
+        "windows-msvc-base",
+        "qt-windows-x64"
+      ],
+      "generator": "Ninja",
+      "cacheVariables": {
+        "BUILD_TESTING": "ON",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CLASSMNGR_PREFER_QT_ZLIB_FALLBACK": "ON"
+      }
+    },
+    {
       "name": "windows-x64-release",
       "displayName": "Windows x64 Release",
       "inherits": "windows-x64-base",
@@ -188,6 +202,11 @@
       "name": "windows-x64-debug",
       "configurePreset": "windows-x64-debug",
       "configuration": "Debug",
+      "jobs": 4
+    },
+    {
+      "name": "windows-x64-ninja-debug",
+      "configurePreset": "windows-x64-ninja-debug",
       "jobs": 4
     },
     {

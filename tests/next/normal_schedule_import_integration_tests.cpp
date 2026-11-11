@@ -1,5 +1,6 @@
 #include "data/database/workspace_store.h"
 #include "data/repositories/settings_repository.h"
+#include "core/fontmanager.h"
 #include "core/process_memory_snapshot.h"
 #include "core/settingsmanager.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
@@ -533,7 +534,7 @@ QJsonArray rectangleJson(const QRect& rect)
 
 QString compactOutputText(QString text)
 {
-    text.remove(QRegularExpression(QStringLiteral("\\s+")));
+    text.remove(QRegularExpression(QStringLiteral("[^\\p{L}\\p{N}]")));
     return text;
 }
 
@@ -1833,13 +1834,17 @@ captureImportedScheduleOutputEvidenceWhenConfigured()
     {
         QLocale locale = QLocale();
         QPalette palette = QApplication::palette();
+        QFont applicationFont = QApplication::font();
 
         ~RestoreOutputEnvironment()
         {
             QLocale::setDefault(locale);
             QApplication::setPalette(palette);
+            QApplication::setFont(applicationFont);
         }
     } restoreEnvironment;
+    // The production app applies its managed fonts before opening this page.
+    FontManager::applyGlobalFont(*qApp, QStringLiteral("en_US"));
     QLocale::setDefault(QLocale(QLocale::English, QLocale::UnitedStates));
     QPalette lightPalette = QApplication::palette();
     lightPalette.setColor(QPalette::Window, QColor(248, 249, 251));

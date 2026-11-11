@@ -1,4 +1,5 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
+#include "core/fontmanager.h"
 #include "shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
 #include "shared/speaking_evaluation/qt_powerpoint_automation_workspace.h"
 #include "features/speaking_eval/services/speaking_eval_ai_batch_response_parser.h"
@@ -626,6 +627,7 @@ private:
 
 void SpeakingEvalBatchReportServiceTests::initTestCase()
 {
+    FontManager::applyGlobalFont(*qApp, QStringLiteral("en_US"));
     QVERIFY(m_settingsRoot.isValid());
     qputenv(
         "CLASSMNGR_SETTINGS_ROOT",
@@ -2127,6 +2129,11 @@ void SpeakingEvalBatchReportServiceTests::
                 loader, reportTemplate);
         QVERIFY2(resolvedAssets.has_value(),
             resolvedAssets.has_value() ? "" : qPrintable(resolvedAssets.error()));
+        SpeakingEvalReportAssetEnvironment reportEnvironment = *resolvedAssets;
+        reportEnvironment.latinFamily = FontManager::getUiFont().family();
+        reportEnvironment.koreanFamily = FontManager::getKoreanFont().family();
+        SpeakingEvalReportAssetSession assetSession(reportEnvironment);
+        QVERIFY(assetSession.isValid());
 
         SpeakingEvalReportData report = goldenReportData(reportTemplate);
         report.englishName = advanced
@@ -2162,8 +2169,6 @@ void SpeakingEvalBatchReportServiceTests::
         nextRequest.outputDirectory = nextDirectory;
         QJsonObject templateEvidence;
         {
-            SpeakingEvalReportAssetSession assetSession(*resolvedAssets);
-            QVERIFY(assetSession.isValid());
             const auto nextResult =
                 ClassMngr::Next::Output::runSpeakingEvaluationReports(nextRequest);
             QVERIFY2(nextResult.output.status == DocumentOutputStatus::Completed,

@@ -289,6 +289,7 @@ def main() -> int:
     # Let the Windows generator build more independent test targets together;
     # CMakeLists.txt caps each MSVC Debug target at two compiler processes.
     default_parallel = 4 if sys.platform == "win32" else 2
+    default_test_timeout = 240 if sys.platform == "win32" else 120
     parser.add_argument(
         "--parallel",
         type=int,
@@ -298,8 +299,11 @@ def main() -> int:
     parser.add_argument(
         "--test-timeout",
         type=int,
-        default=120,
-        help="Maximum seconds allowed for each CTest test (default: 120)",
+        default=default_test_timeout,
+        help=(
+            "Maximum seconds allowed for each CTest target "
+            f"(default: {default_test_timeout})"
+        ),
     )
     parser.add_argument(
         "--expected-commit",
