@@ -11,9 +11,10 @@ explicitly. Remote Actions will not be awaited; prefer local Mac checks where
 applicable. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md)
 and [progress log](09.5-Phase-8a-Progress-Log.md) for requirements and evidence.
 
-F01–F03 are reviewed as triage; Windows case-level attribution and historical
-target-only uncertainty remain open. W01 is next; continue through the ordered
-18 candidates:
+F01–F03 are reviewed as triage; W01 is implemented and locally verified on
+macOS only. Windows case-level attribution and historical target-only
+uncertainty remain open; W01 cross-host runtime was not run. W02 is next;
+continue through the ordered 18 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
@@ -23,9 +24,9 @@ target-only uncertainty remain open. W01 is next; continue through the ordered
 3. **F03** — Recovered last-output contexts, not terminal timeout failures.
    Assign only named visual captures to Phase 10; keep timeout and Windows
    Bootstrap ownership unresolved.
-4. **W01** — Missing keyboard light icons; warning count and target-set
-   discrepancy pending. Resource-registration work has not begun; the keyboard
-   executor is paused without edits.
+4. **W01** — Implemented and locally verified on macOS: all 26 warning-bearing
+   targets register keyboard light/dark and spin icons. Focused CTest passed
+   29/29 with those resource warnings absent. Windows/Linux runtime was not run.
 5. **W02** — `EventCalendar.qml` missing test resource.
 6. **W03** — Combo-arrow resources; the fresh local Mac comparison logged two
    missing-resource warnings, and this slice remains pending.

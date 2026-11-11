@@ -269,6 +269,43 @@ if(BUILD_TESTING)
     include(cmake/tests/next.cmake)
     include(cmake/tests/phase7_profile_file_workflow.cmake)
 
+    # These standalone test executables instantiate shared widgets without
+    # inheriting the production application's embedded resource collection.
+    # Register their widget icons explicitly so OnScreenKeyboard can render
+    # the same assets in tests and paired visual captures.
+    foreach(_classmngr_test_target IN ITEMS
+            ClassMngrSidebarClassTransferApplyParityTests
+            ClassMngrTestingClassesPageDeleteParityTests
+            ClassMngrTestingClassesPagePersistenceParityTests
+            ClassMngrTestingClassesPageCancelFailureParityTests
+            ClassMngrTeacherInfoPagePersistenceParityTests
+            ClassMngrNavigationTeacherReadTests
+            ClassMngrNavigationTeacherReadParityTests
+            ClassMngrStaffDirectoryClosedSessionNavigationParityTests
+            ClassMngrSidebarClassDeleteParityTests
+            ClassMngrSidebarTeacherDeleteParityTests
+            ClassMngrMainWindowClassVisibilityPreferencesFailureTests
+            ClassMngrStaffDirectoryNativeEnglishReadTests
+            ClassMngrStaffDirectoryNativeEnglishReadParityTests
+            ClassMngrStaffDirectoryNativeEnglishSaveParityTests
+            ClassMngrStaffDirectoryGsTeamReadTests
+            ClassMngrStaffDirectoryGsTeamReadParityTests
+            ClassMngrStaffDirectoryGsTeamSaveTests
+            ClassMngrStaffDirectoryGsTeamSaveParityTests
+            ClassMngrRosterEditorWidgetSaveTests
+            ClassMngrRosterTransferMenuTests
+            ClassMngrSpeakingEvalPageSaveTests
+            ClassMngrSpeakingEvalPageSaveParityTests
+            ClassMngrRosterEditorWidgetImportTests
+            ClassMngrNextClassesDetailsCoTeacherVisualCapture
+            ClassMngrNextClassesNotesVisualCapture
+            ClassMngrNextClassesAnalyticsVisualCapture
+    )
+        classmngr_next_add_shared_widget_icon_resources(
+            "${_classmngr_test_target}"
+        )
+    endforeach()
+
     classmngr_finalize_test_targets()
 endif()
 
