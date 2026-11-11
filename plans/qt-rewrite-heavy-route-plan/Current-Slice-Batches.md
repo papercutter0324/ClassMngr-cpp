@@ -15,8 +15,9 @@ Work through these 18 candidates in order; none is marked complete:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
-2. **F02** — Reconcile the historical 72 failures with later local stable
-   full-suite passes and the current Windows run.
+2. **F02** — Reconciled; historical causes remain open. Mac/Linux snapshots
+   did not reproduce the old failures; 51 target-only observations remain
+   unresolved, and three Windows targets need native case-level follow-up.
 3. **F03** — Recover test contexts from dirty artifact logs; assign explicit
    later-phase owners or record remaining uncertainty.
 4. **W01** — Missing keyboard light icons; warning count and target-set
