@@ -37,9 +37,10 @@ W07 is next; continue through the ordered 18 candidates:
    missing-resource Qt SVG warnings. Focused CTest passed 4/4. Windows/Linux
    runtime was not run.
 7. **W04** — Dispositioned to Phase 11 test-fixture/support correction. A
-   representative stack traces the named warning to a static default database
-   handle; 123 occurrences span 44 contexts across three shared-support targets,
-   not individually traced. Keep the warning visible and unsuppressed.
+   representative stack traces the named prepare warning to a static default
+   database handle; its 123 occurrences span 44 contexts. A separate `exec`
+   warning occurs once per Mac/Linux baseline with only a static path and no
+   runtime stack. Keep counts distinct and both warnings visible.
 8. **W05** — Implemented and locally verified on macOS: both focused CTest
    targets passed (51/51 and 11/11); the fresh log has no connection-in-use
    warning. The three remaining unknown-field warnings map to W06; one settings
