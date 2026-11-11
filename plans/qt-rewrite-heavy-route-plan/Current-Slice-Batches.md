@@ -16,8 +16,9 @@ local macOS evidence; W04 and W06 are handed to Phase 11 for test-support and
 fixture-schema corrections; W07 is dispositioned to Phase 11 test/startup
 harness work. Windows case-level attribution, historical target-only
 uncertainty, and cross-host runtime for W01–W03 and W05 remain open. W08 is
-complete and dispositioned with local macOS evidence; W09 is next. The Phase 8a
-gate remains open. Continue through the ordered 18 candidates:
+complete and dispositioned with local macOS evidence; W09 is dispositioned with
+bounded macOS coverage. W10 is next. The Phase 8a gate remains open. Continue
+through the ordered 18 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
@@ -59,7 +60,11 @@ gate remains open. Continue through the ordered 18 candidates:
     15 contexts are asserted fault-path diagnostics. Local macOS CTest passed
     26/26; QtTest 344/0/1 (the skip is an unconfigured optional capture). No
     filters or suppression; current Linux/Windows runtime confirmation is absent.
-12. **W09** — Offscreen QPA / dialog warnings.
+12. **W09** — Dispositioned as visible offscreen-plugin diagnostics; 326
+    warnings were recorded across partial macOS runs, but coverage is incomplete.
+    ENOSPC left 40 expanded entries without binaries, an unrelated wizard crash
+    stopped the available-entry run with 28 unrun, and no current Linux/Windows
+    runtime confirmation exists. W10 is next.
 13. **W10** — Font fallback warnings.
 14. **W11** — Startup stage, locale, and shutdown warnings.
 15. **W12** — Injected schedule warning.
