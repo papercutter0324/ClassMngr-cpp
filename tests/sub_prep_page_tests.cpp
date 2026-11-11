@@ -3303,6 +3303,7 @@ generateSubPrepCancelButtonSkipsGenerationAndDestroysDialog()
 {
     ApplicationServices services;
     SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
+    calendarIntervalsReadPort.shouldFail = false;
     SubPrepPageHarness harness(&services, calendarIntervalsReadPort);
     QTemporaryDir outputRoot;
     QVERIFY(outputRoot.isValid());
@@ -3545,6 +3546,7 @@ pageGenerationReportsFolderOpenFailureAndWritesInformationPdf()
     const auto unselectedTeacherId = typedTeacherId(702);
 
     SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
+    calendarIntervalsReadPort.shouldFail = false;
     int folderOpenCalls = 0;
     QUrl requestedFolderUrl;
     SubPrepPageHarness harness(
@@ -4702,6 +4704,7 @@ void SubPrepPageTests
     ApplicationServices services;
     QVERIFY(services.openDatabase(databasePath));
     SubPrepTestCalendarIntervalsReadPort calendarIntervalsReadPort;
+    calendarIntervalsReadPort.shouldFail = false;
     SubPrepPageHarness harness(&services, calendarIntervalsReadPort);
     harness.printSourceReadPort.failAfterCapture = true;
     activatePage(harness.page);
