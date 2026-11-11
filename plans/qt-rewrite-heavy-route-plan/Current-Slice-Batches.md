@@ -12,9 +12,10 @@ applicable. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md
 and [progress log](09.5-Phase-8a-Progress-Log.md) for requirements and evidence.
 
 F01–F03 are reviewed as triage; W01–W03 are implemented and locally verified
-on macOS only. Windows case-level attribution, historical target-only
-uncertainty, and cross-host runtime for W01–W03 remain open. W04 is next;
-continue through the ordered 18 candidates:
+on macOS only; W04 is dispositioned to Phase 11 for test-fixture/support
+correction. Windows case-level attribution, historical target-only uncertainty,
+and cross-host runtime for W01–W03 remain open. W05 is next; continue through
+the ordered 18 candidates:
 
 1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
    attribution remains unresolved for the later native Windows slice.
@@ -35,8 +36,10 @@ continue through the ordered 18 candidates:
    both combo-arrow SVGs; the fresh log has zero light/dark references and zero
    missing-resource Qt SVG warnings. Focused CTest passed 4/4. Windows/Linux
    runtime was not run.
-7. **W04** — `QSqlQuery::prepare` database-not-open warning remains unresolved;
-   needs a focused debugger/backtrace check.
+7. **W04** — Dispositioned to Phase 11 test-fixture/support correction. A
+   representative stack traces the named warning to a static default database
+   handle; 123 occurrences span 44 contexts across three shared-support targets,
+   not individually traced. Keep the warning visible and unsuppressed.
 8. **W05** — `removeDatabase` connection-still-in-use warning.
 9. **W06** — Unknown teacher fields.
 10. **W07** — `QCoreApplication` / `applicationDirPath` startup warnings.
