@@ -762,6 +762,9 @@ set_target_properties(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationT
 set_property(TARGET ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
     PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
 )
+classmngr_next_add_mode_combo_arrow_resources(
+    ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
+)
 add_dependencies(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests
     ClassMngrNextResourcePackage
 )
@@ -3847,6 +3850,9 @@ add_dependencies(ClassMngrNextMyWorkspaceVisualCapture
     ClassMngrNextResourcePackage
 )
 classmngr_next_add_calendar_qml_resources(ClassMngrNextMyWorkspaceVisualCapture)
+classmngr_next_add_mode_combo_arrow_resources(
+    ClassMngrNextMyWorkspaceVisualCapture
+)
 add_test(
     NAME ClassMngrNextMyWorkspaceVisualCapture
     COMMAND ClassMngrNextMyWorkspaceVisualCapture
@@ -8530,6 +8536,9 @@ set_target_properties(ClassMngrNextNormalScheduleImportIntegrationTests
 )
 set_property(TARGET ClassMngrNextNormalScheduleImportIntegrationTests
     PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+classmngr_next_add_mode_combo_arrow_resources(
+    ClassMngrNextNormalScheduleImportIntegrationTests
 )
 add_test(
     NAME ClassMngrNextNormalScheduleImportIntegrationTests

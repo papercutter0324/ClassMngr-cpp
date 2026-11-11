@@ -61,6 +61,9 @@ qt_add_resources(ClassMngrInitialSetupWizardTests initial_setup_keyboard_test_re
         resources/assets/icons/keyboard_dark.svg
         resources/assets/icons/keyboard_light.svg
 )
+classmngr_next_add_mode_combo_arrow_resources(
+    ClassMngrInitialSetupWizardTests
+)
 
 classmngr_add_qt_test(
         NAME OnScreenKeyboard
