@@ -773,10 +773,6 @@ void ScheduleImportReviewDialog::buildUi()
     m_previewWidget->setObjectName(
         QStringLiteral("scheduleImportPreview")
         );
-    m_previewWidget->setCompactPreview(true);
-    m_previewWidget->setMaximumVisibleRows(
-        MaximumPreviewVisibleRows
-        );
     m_previewWidget->setSizePolicy(
         QSizePolicy::Expanding,
         QSizePolicy::Expanding
@@ -1003,6 +999,12 @@ bool ScheduleImportReviewDialog::prepare()
         m_request.user,
         m_request.kind,
         *matchingProjection
+        );
+    // These setters refresh the widget and read its schedule source, so wait
+    // until the import kind and current-state snapshot have been validated.
+    m_previewWidget->setCompactPreview(true);
+    m_previewWidget->setMaximumVisibleRows(
+        MaximumPreviewVisibleRows
         );
     m_intensiveModeSection->setVisible(
         m_request.kind == ScheduleImportKind::Intensive

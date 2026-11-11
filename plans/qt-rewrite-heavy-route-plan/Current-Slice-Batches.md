@@ -1,123 +1,15 @@
 # Current Slice Batches
 
-## Phase 8a — Batch 2, sub-batch 1 (complete; push pending)
+## Phase 8a — Batch 2 complete
 
-Failure attribution precedes QWARN triage. Use exact
-warning bodies and test contexts; target-only observations do not establish a
-case or cause. Do not suppress warnings, and assign later-phase ownership
-explicitly. Remote Actions will not be awaited; prefer local Mac checks where
-applicable. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md)
-and [progress log](09.5-Phase-8a-Progress-Log.md) for requirements and evidence.
+Batch 2’s 18-slice sub-batch and final one-candidate W16 sub-batch are
+complete. The first sub-batch was pushed at `cbb0939c`. W16’s production/test
+change has local macOS verification; see the progress log for evidence.
 
-F01–F03 are reviewed as triage; W01–W05 are implemented or dispositioned with
-local macOS evidence; W04 and W06 are handed to Phase 11 for test-support and
-fixture-schema corrections; W07 is dispositioned to Phase 11 test/startup
-harness work. Windows case-level attribution, historical target-only
-uncertainty, and cross-host runtime for W01–W03 and W05 remain open. W08 is
-complete and dispositioned with local macOS evidence; W09 is dispositioned with
-bounded macOS coverage. W10 is dispositioned with bounded local macOS evidence;
-W11 is dispositioned with bounded local evidence and an assertion caveat; W12
-is complete/dispositioned with local macOS verification. W13 is dispositioned
-with bounded local evidence; W14 is dispositioned with source-stable Mac
-evidence and current-target limits; W15 is dispositioned with bounded Mac
-evidence. The 18-slice sub-batch is complete and ready to push after the W15
-commit; W16 is pending activation after that push. The Phase 8a gate remains
-open. Recorded stable runs use different revisions (Mac `3dc37340`, Linux
-`7f82f427`, Windows `b799c8ab`), so the shared-source/C53 acceptance gate is
-still open. Continue through the ordered 18 candidates:
+No other slices were found.
 
-1. **F01** — Local Mac comparison passed 3/3 targets; Windows case-level
-   attribution remains unresolved for the later native Windows slice.
-2. **F02** — Reconciled; historical causes remain open. Mac/Linux snapshots
-   did not reproduce the old failures; 51 target-only observations remain
-   unresolved, and three Windows targets need native case-level follow-up.
-3. **F03** — Recovered last-output contexts, not terminal timeout failures.
-   Assign only named visual captures to Phase 10; keep timeout and Windows
-   Bootstrap ownership unresolved.
-4. **W01** — Implemented and locally verified on macOS: all 26 warning-bearing
-   targets register keyboard light/dark and spin icons. Focused CTest passed
-   29/29 with those resource warnings absent. Windows/Linux runtime was not run.
-5. **W02** — Implemented and locally verified on macOS: the existing calendar
-   helper registers `EventCalendar.qml` and `MonthGridDelegate.qml` in all five
-   affected test executables. Focused CTest passed 5/5; Windows/Linux runtime
-   was not run.
-6. **W03** — Implemented and locally verified on macOS: four targets register
-   both combo-arrow SVGs; the fresh log has zero light/dark references and zero
-   missing-resource Qt SVG warnings. Focused CTest passed 4/4. Windows/Linux
-   runtime was not run.
-7. **W04** — Dispositioned to Phase 11 test-fixture/support correction. A
-   representative stack traces the named prepare warning to a static default
-   database handle; its 123 occurrences span 44 contexts. A separate `exec`
-   warning occurs once per Mac/Linux baseline with only a static path and no
-   runtime stack. Keep counts distinct and both warnings visible.
-8. **W05** — Implemented and locally verified on macOS: both focused CTest
-   targets passed (51/51 and 11/11); the fresh log has no connection-in-use
-   warning. The three remaining unknown-field warnings map to W06; one settings
-   warning maps to W08. Windows/Linux runtime was not run.
-9. **W06** — Dispositioned to Phase 11 fixture-schema correction: the test-only
-   `teachers` view omits `birthday`, `phone_number`, and `notes`, causing three
-   QWARNs per Mac/Linux baseline (six total) in the asserted malformed-JSON
-   case. No Phase 8 source change or warning suppression.
-10. **W07** — Dispositioned to Phase 11 test/startup-harness correction; the
-    `QTEST_APPLESS_MAIN` test creates `ApplicationServices`. Stable Mac has four
-    QWARNs across three contexts; Linux rows are from a source-unstable run only.
-    `QTEST_GUILESS_MAIN` is a candidate; no source change or suppression.
-11. **W08** — Complete/dispositioned: 69 settings QWARNs across 14 bodies and
-    15 contexts are asserted fault-path diagnostics. Local macOS CTest passed
-    26/26; QtTest 344/0/1 (the skip is an unconfigured optional capture). No
-    filters or suppression; current Linux/Windows runtime confirmation is absent.
-12. **W09** — Dispositioned as visible offscreen-plugin diagnostics; 326
-    warnings were recorded across partial macOS runs, but coverage is incomplete.
-    ENOSPC left 40 expanded entries without binaries, an unrelated wizard crash
-    stopped the available-entry run with 28 unrun, and no current Linux/Windows
-    runtime confirmation exists.
-13. **W10** — Dispositioned as Qt font-alias initialization/timing diagnostics;
-    24 current local macOS observations across existing runs, without evidence
-    of failed font loads or bad glyphs. No new tests due disk exhaustion; no
-    current stable Linux/Windows confirmation.
-14. **W11** — Dispositioned with bounded local macOS evidence: 17 unique startup,
-    locale, and injected close-failure events plus one W08 settings-flush
-    overlap. Four no-workspace contexts lack direct warning assertions; no
-    current stable Linux/Windows runtime confirmation.
-15. **W12** — Complete/dispositioned and locally verified on macOS. The initial
-    five calendar-read fallback warnings are now one: three unrelated tests
-    configure successful empty intervals; the explicit failure/fallback test
-    retains its warning. CTest passed 1/1 (QtTest 37/0/0); no current
-    Linux/Windows runtime confirmation.
-16. **W13** — Dispositioned with bounded local macOS evidence: the historical
-    invalid teacher-ID warning was absent in a passing, unrebuilt target
-    (CTest 1/1; QtTest 20/0/0). The existing `qint64` fix is present and tested,
-    but runtime provenance is limited; no current Linux/Windows confirmation.
-    Keep separate six W04 `QSqlQuery::prepare` warnings from a different test.
-17. **W14** — Dispositioned: the source-stable Nov 10 Mac full suite reproduced
-    all six invalid-filename warnings; current local CTest entries are registered
-    but their binaries are missing, so no current run was possible. No code
-    change or suppression; current Linux/Windows evidence is absent.
-18. **W15** — Dispositioned with bounded evidence: two warning bodies each
-    appear once in the source-stable Mac full-suite log, followed by passing
-    tests. Current local logs omit both targets; no current rerun or complete
-    current warning-target coverage is claimed.
-
-### Next sub-batch (W16; pending activation after push)
-
-W14 discovery is complete. The next sub-batch has one proposed candidate; it
-remains pending and has not been investigated or executed:
-
-1. **W16 — Schedule import injected read failure** — exact body
-   `injected schedule read failure` in `ClassMngrScheduleImportDialogTests`;
-   the source-unstable inventory reports six Mac and six Linux events, and the
-   retained source-stable Mac suite also has six. Contexts are
-   `reviewPrepareSnapshotFailureDoesNotBuildControlsOrFallback()`
-   (asserts the detail) and
-   `reviewPrepareRejectsUnknownKindBeforeLoadingSnapshot()` (sets injection,
-   but the invalid-kind precedence test does not directly assert the warning).
-
-Discovery found no additional candidate overflow beyond the 20-slice limit;
-JUnit duplicates are not additive. Exclude
-`qt.qpa.dialogs: Cannot run window modal dialog without parent window` for now:
-it appears twice only in the source-unstable Mac inventory and is absent from
-the retained stable Mac log, so it lacks stable reproduction. Keep the
-shared-source/C53 acceptance gate open; the recorded stable Mac, Linux, and
-Windows runs are on different source revisions. Activate W16 only after the
-W15 commit is pushed. Start the next candidate discovery when W16 work begins,
-following the one-candidate rule.
+Phase 8a remains open because shared-source/C53 and platform gates are
+unresolved. The recorded stable runs use different revisions (Mac `3dc37340`,
+Linux `7f82f427`, Windows `b799c8ab`); there is no current Linux or Windows
+W16 runtime confirmation. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md)
+and [progress log](09.5-Phase-8a-Progress-Log.md).

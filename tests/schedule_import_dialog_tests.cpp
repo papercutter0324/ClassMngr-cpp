@@ -4,6 +4,10 @@
 #include "app/services/feature_services.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
+#include "data/database/workspace_store.h"
+#include "data/repositories/class_info_repository.h"
+#include "data/repositories/class_repository.h"
+#include "data/repositories/teacher_repository.h"
 #include "domain/models/teacher.h"
 #include "features/schedule/ui/schedule_import_dialog.h"
 #include "features/schedule/ui/schedule_import_review_presentation.h"
@@ -99,6 +103,8 @@ void setDatabaseSessionOpen(bool open);
 void setScheduleClassInfoReadFailure(bool fail);
 bool seedScheduleImportWorkspace(WorkspaceStore& store);
 extern int legacyClassInfoReadCount;
+extern int repositoryClassListReadCount;
+extern int scheduleClassInfoReadCount;
 extern int scheduleImportPreviewCallCount;
 }
 
@@ -4164,9 +4170,31 @@ classResolutionTargetsConvertRawIdsAtUiBoundary()
 void ScheduleImportDialogTests::
 reviewPrepareRejectsUnknownKindBeforeLoadingSnapshot()
 {
-    // The kind failure must take precedence over a snapshot read failure.
+    // The kind failure must take precedence before snapshot or schedule reads.
     ScheduleWidgetTestStubs::setScheduleClassInfoReadFailure(true);
     ApplicationServices services;
+    const auto profile = openScheduleImportReviewProfile(services);
+    QVERIFY(profile);
+    WorkspaceStore* const store = services.workspaceStore();
+    QVERIFY(store);
+    ClassRepository* const classRepository = store->classRepository();
+    TeacherRepository* const teacherRepository = store->teacherRepository();
+    ClassInfoRepository* const classInfoRepository =
+        store->classInfoRepository();
+    QVERIFY(classRepository);
+    QVERIFY(teacherRepository);
+    QVERIFY(classInfoRepository);
+
+    const int classListReadsBefore =
+        ScheduleWidgetTestStubs::repositoryClassListReadCount;
+    const int teacherSnapshotReadsBefore =
+        teacherRepository->scheduleImportTeacherReadMetrics().callCount;
+    const int classInfoSnapshotReadsBefore =
+        classInfoRepository
+            ->scheduleImportStateSnapshotClassInfoReadMetrics().callCount;
+    const int scheduleSourceReadsBefore =
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount;
+
     FakeUserPromptService prompts;
     DialogServices::setUserPromptServiceForTesting(&prompts);
     for (const int kind : {-1, 255})
@@ -4190,6 +4218,23 @@ reviewPrepareRejectsUnknownKindBeforeLoadingSnapshot()
             0
             );
     }
+    QCOMPARE(
+        ScheduleWidgetTestStubs::repositoryClassListReadCount,
+        classListReadsBefore
+        );
+    QCOMPARE(
+        teacherRepository->scheduleImportTeacherReadMetrics().callCount,
+        teacherSnapshotReadsBefore
+        );
+    QCOMPARE(
+        classInfoRepository
+            ->scheduleImportStateSnapshotClassInfoReadMetrics().callCount,
+        classInfoSnapshotReadsBefore
+        );
+    QCOMPARE(
+        ScheduleWidgetTestStubs::scheduleClassInfoReadCount,
+        scheduleSourceReadsBefore
+        );
     QCOMPARE(ScheduleWidgetTestStubs::scheduleImportPreviewCallCount, 0);
     QCOMPARE(prompts.messages.size(), 2);
     for (const PromptRequest& message : prompts.messages)
