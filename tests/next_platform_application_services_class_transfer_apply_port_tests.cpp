@@ -174,6 +174,10 @@ bool seedVisibleClasses(
     {
         return false;
     }
+    if (!database.transaction())
+    {
+        return false;
+    }
     for (int index = 0; index < classCount; ++index)
     {
         const QString name = index == specialClassIndex
@@ -182,6 +186,7 @@ bool seedVisibleClasses(
         insert.bindValue(0, name);
         if (!insert.exec())
         {
+            database.rollback();
             return false;
         }
         if (index == specialClassIndex && specialClassId)
@@ -190,10 +195,16 @@ bool seedVisibleClasses(
             const qint64 id = insert.lastInsertId().toLongLong(&idValid);
             if (!idValid || id <= 0 || id > std::numeric_limits<int>::max())
             {
+                database.rollback();
                 return false;
             }
             *specialClassId = static_cast<int>(id);
         }
+    }
+    if (!database.commit())
+    {
+        database.rollback();
+        return false;
     }
     return true;
 }

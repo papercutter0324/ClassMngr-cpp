@@ -9417,3 +9417,17 @@ when CMake reports target collisions; keep the normal strategy and remove only
 the redundant workflow timeout override so the recorder supplies its Windows
 240-second default. The clean candidate then passed all 618 CTests and required
 Windows output captures without suppressing warnings or weakening assertions.
+
+### Phase 8 Windows test fixture transactions and system-font checks — 2026-11-12
+
+File-backed SQLite tests that seed thousands of rows individually can spend
+minutes in autocommit overhead on Windows. Batch fixture inserts in explicit
+transactions while retaining the same rows, assertions, and production path;
+profile the setup before changing timeouts. Target-only hosted timeout logs do
+not identify the in-flight test slot, so use focused QtTest traces for local
+cause attribution and report the hosted limitation separately.
+
+Windows system-font availability checks require Qt's native Windows platform
+backend. The offscreen backend did not enumerate Segoe UI on the local Windows
+host; keep other platforms on their existing offscreen test environment.
+Family availability and configured font chains do not establish PDF rendering.

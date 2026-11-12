@@ -1,6 +1,30 @@
 # Project Progress
 
-## Current Deployment Continuation — Phase 8 Windows x64 Release package — 2026-11-12
+## Current Deployment Continuation — Phase 8 Windows timeouts and Segoe UI — 2026-11-12
+
+Active plan: Qt Rewrite Phase 8 platform/output adapters and Phase 8a
+cross-platform failure/QWARN follow-up. Deployment ID:
+`phase8-windows-timeouts-segoe-20261112`; route: Heavy. The hosted
+source-equivalent run `43156278117` timed out CTest targets #342 and #420 at
+240.05 seconds; its retained log does not identify an in-flight QtTest slot.
+Focused current-source Windows runs traced the cost to file-backed SQLite
+fixture seeding: thousands of individual inserts ran without transactions.
+The test fixtures now batch the same rows in explicit transactions, retaining
+all assertions and production calls. The targets moved from 132.50 to 8.60
+seconds and 173.90 to 11.35 seconds; an independent rerun passed in 8.48 and
+10.11 seconds. No timeout was changed.
+
+The Windows Schedule fallback test now uses Qt's native Windows platform so
+`QFontDatabase` can enumerate installed system fonts. Focused CTest passed the
+target; all 11 QtTest slots passed, including Segoe UI availability and both
+English and Korean font chains. This verifies family availability and the
+configured chains, not PDF font rendering.
+
+Phase 8 and Phase 8a remain In Progress with their exit gates open. No hosted
+rerun followed the local fix; the exact original in-flight slot remains
+unknown, and the Linux PDF font assertion and cross-host review remain open.
+
+## Phase 8 Windows x64 Release package — 2026-11-12
 
 Active plan: Qt Rewrite Phase 8 platform/output adapters and its Phase 8a
 cross-platform failure/QWARN follow-up. Deployment ID:

@@ -6,13 +6,14 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-12
-- Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 remains in
-  progress with its exit gate open. The clean Windows x64 Phase 8a Batch 3
-  candidate passed at `bb37cf9aaa4562b4fdf9c9b592df2012928bf5c6`, including
-  618/618 CTest targets and required output captures. The earlier hosted
-  Refactoring Baseline run `42580405908` remains diagnostic because all hosts
-  reported dirty, unstable source fingerprints. Phase 8a still needs shared
-  provenance/capture work and clean macOS/Linux candidates. See
+- Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 and 8a remain in
+  progress with their exit gates open. Clean Windows x64, Fedora Linux, and
+  macOS candidates are recorded. The later source-equivalent hosted run
+  `43156278117` exposed two Windows test timeouts and a Linux Pretendard PDF
+  assertion. Local Windows fixture transaction batching reduced both timeout
+  targets to under 12 seconds, and the Segoe UI fallback was verified on
+  native Windows; no hosted rerun has been performed. The Linux assertion and
+  final cross-host review remain open. See
   the [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md),
   [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md),
   [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), [Phase 8

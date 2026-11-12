@@ -931,6 +931,13 @@ GitHub workflow was dispatched or rerun for this work. The optional native
 Cocoa file/print dialog interaction was not exercised because this session
 lacks macOS event-posting and screen-capture permissions; no profile was
 opened and no print job was submitted. Existing dialog and print adapter tests
-remain the automated coverage. The later source-equivalent Windows/Linux
-Debug run has two unresolved Windows target timeouts and one Linux PDF-font
-assertion failure, so the overall Phase 8 exit gate remains open.
+remain the automated coverage. At this point, the source-equivalent Windows/
+Linux Debug run had two Windows target timeouts and one Linux PDF-font
+assertion failure. The Windows fixture delays are addressed below; the Linux
+assertion and final cross-host review keep the overall Phase 8 exit gate open.
+
+### 8.7.16 — Windows timeout fix and Segoe UI verification (2026-11-12)
+
+Hosted Refactoring Baseline run [43156278117](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43156278117) timed out after 240.05 seconds on Windows CTest targets #342 (`ClassMngrNextClassesNavigatorWorkspaceStoreTests`) and #420 (`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`). Retained hosted output identifies only the targets, not the active QtTest slots. Current-source local traces attributed the cost to test-fixture setup: workspace cases seeded 4,000–4,096 classes (one also seeded 2,048 teachers) with individual SQLite commits; five transfer cases seeded 4,095–4,096 visible classes the same way. Fixture-only transaction batching preserved rows, assertions, and production paths. Target #342 fell from 132.50s to 8.60s, and #420 from 173.90s to 11.35s; independent reruns passed in 8.48s and 10.11s. A larger timeout might have allowed the original run to finish, but hosted evidence cannot establish that. No timeout was widened or hosted rerun performed.
+
+The standard Visual Studio build was blocked by MSBuild FileTracker `UnauthorizedAccessException` / `E_ACCESSDENIED`; the standard `windows-x64-ninja-debug` preset built the focused targets. Native Windows `ClassMngrNextSchedulePageTests` passed all 11 slots, and focused CTest #607 passed 1/1 in 35.30s. The test confirmed `QFontDatabase` contains Segoe UI and both English and Korean Schedule output font chains include it. Windows uses `QT_QPA_PLATFORM=windows` for this check because the offscreen backend did not enumerate installed system fonts; this verifies family availability and configuration, not actual PDF rendering. The Linux Pretendard PDF assertion and final cross-host review remain open. Detailed timeout traces and font-check scope are in the [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md#2026-11-12---windows-timeout-and-segoe-ui-follow-up).

@@ -8517,8 +8517,13 @@ add_test(
     NAME ClassMngrNextSchedulePageTests
     COMMAND ClassMngrNextSchedulePageTests
 )
+if(WIN32)
+    set(_classmngr_next_schedule_page_qpa_platform windows)
+else()
+    set(_classmngr_next_schedule_page_qpa_platform offscreen)
+endif()
 set_tests_properties(ClassMngrNextSchedulePageTests
-    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+    PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=${_classmngr_next_schedule_page_qpa_platform};QT_SCALE_FACTOR=1"
 )
 
 add_executable(ClassMngrNextScheduleOutputAdapterTests

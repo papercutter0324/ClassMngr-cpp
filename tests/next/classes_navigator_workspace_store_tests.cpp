@@ -740,7 +740,9 @@ classCoTeacherReadsEnforceRowAndTextBounds()
     {
         WorkspaceStore store;
         QVERIFY2(store.open(path), "temporary workspace should be created");
-        QSqlQuery insert(store.database());
+        QSqlDatabase database = store.database();
+        QVERIFY(database.transaction());
+        QSqlQuery insert(database);
         QVERIFY(insert.prepare(QStringLiteral(
             "INSERT INTO teachers(teacher_kr, teacher_en) VALUES('교사', ?)")));
         for (int index = 0; index < 4096; ++index)
@@ -748,6 +750,7 @@ classCoTeacherReadsEnforceRowAndTextBounds()
             insert.bindValue(0, QStringLiteral("Teacher %1").arg(index));
             QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
         }
+        QVERIFY(database.commit());
     }
     const auto exactRows = Platform::readClassCoTeacherChoicesAtPath(path);
     QVERIFY(exactRows);
@@ -831,9 +834,11 @@ classCoTeacherReadsEnforceRowAndTextBounds()
     {
         WorkspaceStore store;
         QVERIFY(store.openExisting(path));
-        QSqlQuery clear(store.database());
+        QSqlDatabase database = store.database();
+        QVERIFY(database.transaction());
+        QSqlQuery clear(database);
         QVERIFY(clear.exec(QStringLiteral("DELETE FROM teachers")));
-        QSqlQuery insert(store.database());
+        QSqlQuery insert(database);
         QVERIFY(insert.prepare(QStringLiteral(
             "INSERT INTO teachers(teacher_kr, teacher_en) VALUES('', ?)")));
         const QString exactAggregateName(2048, QLatin1Char('A'));
@@ -842,6 +847,7 @@ classCoTeacherReadsEnforceRowAndTextBounds()
             insert.bindValue(0, exactAggregateName);
             QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
         }
+        QVERIFY(database.commit());
     }
     const auto exactAggregate = Platform::readClassCoTeacherChoicesAtPath(path);
     QVERIFY(exactAggregate);
@@ -1261,7 +1267,9 @@ rejectsMoreThanFourThousandNinetySixClasses()
     {
         WorkspaceStore store;
         QVERIFY(store.openExisting(path));
-        QSqlQuery insert(store.database());
+        QSqlDatabase database = store.database();
+        QVERIFY(database.transaction());
+        QSqlQuery insert(database);
         QVERIFY(insert.prepare(QStringLiteral(
             "INSERT INTO classes(name) VALUES(?)")));
         for (std::size_t index = 0;
@@ -1271,6 +1279,7 @@ rejectsMoreThanFourThousandNinetySixClasses()
                 .arg(static_cast<qulonglong>(index)));
             QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
         }
+        QVERIFY(database.commit());
     }
 
     const auto overLimit = Platform::readClassesNavigatorListAtPath(path);
@@ -1489,13 +1498,16 @@ repositoryClassListAcceptsExactCountBoundAndRejectsOneOver()
     QVERIFY(initial);
     QCOMPARE(initial->size(), qsizetype(96));
 
-    QSqlQuery insert(store.database());
+    QSqlDatabase database = store.database();
+    QVERIFY(database.transaction());
+    QSqlQuery insert(database);
     QVERIFY(insert.prepare(QStringLiteral("INSERT INTO classes(name) VALUES(?)")));
     for (int index = 0; index < 4000; ++index)
     {
         insert.bindValue(0, QStringLiteral("Repository bound %1").arg(index));
         QVERIFY2(insert.exec(), qPrintable(insert.lastError().text()));
     }
+    QVERIFY(database.commit());
     const auto exact = repository->getBoundedClassesForNavigation(4096, 4096);
     QVERIFY(exact);
     QCOMPARE(exact->size(), qsizetype(4096));
