@@ -224,12 +224,12 @@ function(classmngr_check_source_ownership)
             )
         endif()
 
-        # This test target is declared only on Linux. Keep its source in the
-        # ownership inventory there, while excluding it on platforms that do
-        # not compile the Linux-only target.
+        # These test targets are declared only on Linux. Keep their sources
+        # in the ownership inventory there, while excluding them on platforms
+        # that do not compile the Linux-only targets.
         if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
             list(FILTER test_inventory EXCLUDE REGEX
-                "[/\\\\]process_memory_snapshot_tests[.]cpp$"
+                "[/\\\\](process_memory_snapshot|next_platform_linux_pdf_print_operation_adapter|next_platform_linux_update_package_action_port)_tests[.]cpp$"
             )
         endif()
         list(APPEND handwritten_sources ${test_inventory})
