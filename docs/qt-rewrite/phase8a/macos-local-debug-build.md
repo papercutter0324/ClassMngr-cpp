@@ -1,89 +1,98 @@
 # Phase 8a macOS local Debug build and tests
 
-The Mac mini can run the existing universal Debug preset and the full CTest
-suite directly. No GitHub self-hosted runner or new Actions workflow is needed.
+The clean universal macOS Debug candidate runs on the local Mac mini. The
+GitHub Debug matrix no longer requests the billed `macos-15-large` runner or
+retries it automatically. The separate macOS Release workflow uses a standard
+GitHub-hosted runner, which is free for this public repository.
 
-## Checkout
+## Tools and Qt
 
-Use a clean checkout of the published Qt-Rewrite branch. The current published
-candidate is 3dc37340. Windows-specific local commits on the Windows
-workstation are not included in this macOS candidate.
+Use Xcode command-line tools, CMake, Ninja, Python 3, and Qt 6.12.0 with Qt
+PDF. Set `QT_MACOS_PREFIX` to the Qt `macos` installation directory. The
+verified machine used:
 
-    git clone https://github.com/papercutter0324/ClassMngr-cpp.git
-    cd ClassMngr-cpp
-    git switch Qt-Rewrite
-    git pull --ff-only origin Qt-Rewrite
-    git status --short
+- macOS 27.2 arm64
+- Xcode 27.2, CMake 4.3.3, Ninja 1.13.2
+- Qt 6.12.0 universal (`arm64` and `x86_64`)
 
-## One-time tools and Qt setup
+## Fresh full candidate
 
-Install Xcode command-line tools, CMake, and Ninja:
+Run the baseline recorder from a clean, source-stable checkout. It configures
+the universal Debug preset, clean-builds all targets, runs the full CTest
+suite, and attempts the matched SQL C53 capture after a successful build even
+if unrelated tests fail. CTest needs normal local-socket and AppKit access;
+restricted execution can deny loopback listeners and cause Cocoa `NSBundle`
+errors.
 
-    xcode-select --install
-    brew install cmake ninja
+```bash
+export QT_MACOS_PREFIX="$HOME/Qt/6.12.0/macos"
+mkdir -p build/macos-clang-debug/artifacts
+set -o pipefail
+export CLASSMNGR_C51_SCHEDULE_OUTPUT_DIR="$PWD/build/macos-clang-debug/artifacts/schedule-output"
+export CLASSMNGR_ROSTER_OUTPUT_PARITY_DIR="$PWD/build/macos-clang-debug/artifacts/roster-output"
+export CLASSMNGR_SPEAKING_EVALUATION_OUTPUT_PARITY_DIR="$PWD/build/macos-clang-debug/artifacts/speaking-evaluation-output-parity"
+baseline_args=(
+  --configure-preset macos-clang-debug
+  --build-dir build/macos-clang-debug
+  --parallel 6
+  --test-timeout 120
+  --expected-commit "$(git rev-parse HEAD)"
+  --output build/macos-clang-debug/artifacts/refactoring-baseline.json
+)
+python3 scripts/record_refactoring_baseline.py "${baseline_args[@]}" 2>&1 \
+  | tee build/macos-clang-debug/artifacts/refactoring-baseline.log
+```
 
-Create a Python virtual environment and install the pinned Qt installer:
+The recorder performs a clean build. On the verified Mac mini, configure took
+28 seconds and the 5,607-step universal Debug build took 34m55s with six
+workers. Reserve this full run for clean phase candidates. For everyday work,
+reuse the configured tree and build only the affected targets, then run their
+focused CTest selectors; for example:
 
-    mkdir -p "$HOME/.venvs"
-    python3 -m venv "$HOME/.venvs/classmngr-qt"
-    source "$HOME/.venvs/classmngr-qt/bin/activate"
-    python -m pip install aqtinstall==3.3.0
+```bash
+cmake --build build/macos-clang-debug \
+  --target ClassMngrNext ClassMngrNextBootstrapTests --parallel 6
+ctest --test-dir build/macos-clang-debug --output-on-failure \
+  -R '^(ClassMngrNextBootstrapTests)$'
+```
 
-Install Qt 6.12.0 with Qt PDF. This can be skipped on later runs if the same
-Qt installation is still available.
+Keep full-suite results distinct from focused reruns. The full recorder report,
+CTest transcript/JUnit, C53 files, Schedule, Roster, and Speaking output are
+under `build/macos-clang-debug`. Preserve the first failure logs if rerunning
+under a different execution context. Do not reuse a generated Resources
+directory that is non-empty and unowned by the build.
 
-    mkdir -p "$HOME/Qt"
-    python -m aqt install-qt mac desktop 6.12.0 clang_64 --outputdir "$HOME/Qt" --modules qtpdf
-    export QT_MACOS_PREFIX="$HOME/Qt/6.12.0/macos"
+## Verified local candidate at current source-equivalent HEAD
 
-## Build and run every test
+At commit `e651b0164913478394945d8a1bc5936758bc852b`, the clean universal
+Debug build passed all 5,607 steps. The initial CTest execution was sandboxed
+and reported six access-related failures. A normal-access CTest rerun against
+the same built targets passed **620/620**, with no failures, skips, or
+timeouts, in 354.98 seconds; it required no rebuild or reconfigure. Its
+[`normal-access-rerun.log`](../../../build/macos-clang-debug/artifacts/normal-access-rerun/normal-access-rerun.log),
+[JUnit report](../../../build/macos-clang-debug/artifacts/normal-access-rerun/normal-access-rerun.junit.xml),
+[provenance](../../../build/macos-clang-debug/artifacts/normal-access-rerun/provenance.json),
+and [QWARN comparison](../../../build/macos-clang-debug/artifacts/normal-access-rerun/qwarn-delta.json)
+are retained alongside the original sandbox failure logs.
 
-From the repository root, run the existing baseline recorder. It performs a
-fresh CMake configure with the macOS universal Debug preset, builds all targets,
-runs the full CTest suite with failure output, and then attempts the matched SQL
-C53 capture whenever the build succeeds. A CTest failure does not suppress the
-capture. The JSON report records build, CTest, provenance, and C53 outcomes
-separately; the C53 files and JUnit report are written under the ignored build
-directory.
+Schedule Legacy and Next matched with zero changed pixels. All four Roster
+layouts passed; Speaking Standard and Advanced passed expected-text checks
+with zero changed pixels. C53 produced 17 pages (12 Sub Prep and 5 Rosters)
+with zero changed pixels. The frozen Schedule reference differs by 5.68% on
+this host because its Sans Serif fallback is unavailable; the same-host
+Legacy/Next comparison is exact.
 
-    mkdir -p build/macos-clang-debug/artifacts
-    set -o pipefail
-    export CLASSMNGR_C51_SCHEDULE_OUTPUT_DIR="$PWD/build/macos-clang-debug/artifacts/schedule-output"
-    export CLASSMNGR_ROSTER_OUTPUT_PARITY_DIR="$PWD/build/macos-clang-debug/artifacts/roster-output"
-    export CLASSMNGR_SPEAKING_EVALUATION_OUTPUT_PARITY_DIR="$PWD/build/macos-clang-debug/artifacts/speaking-evaluation-output-parity"
-    baseline_args=(
-      --configure-preset macos-clang-debug
-      --build-dir build/macos-clang-debug
-      --parallel 6
-      --test-timeout 120
-      --expected-commit "$(git rev-parse HEAD)"
-      --output build/macos-clang-debug/artifacts/refactoring-baseline.json
-    )
-    python scripts/record_refactoring_baseline.py "${baseline_args[@]}" 2>&1 | tee build/macos-clang-debug/artifacts/refactoring-baseline.log
+The interactive Cocoa file and print dialog smoke was not performed because
+the current session lacks macOS event-posting and screen-capture permissions.
+The app was not launched, no profile was accessed, and no print job was
+submitted. Presenter and print-adapter tests remain the automated evidence.
 
-The baseline JSON, full CTest log, JUnit report, and timestamped C53 capture
-directory are in `build/macos-clang-debug/artifacts` and
-`build/macos-clang-debug/Testing`. Review the recorder's JSON even when CTest
-fails so the independent C53 result is retained. Review the Ninja output or
-follow the log with tail during the build; check in at 30-minute intervals as
-requested.
+## Current universal Release package
 
-Run this command where the tests have normal local-socket access and macOS
-AppKit framework access. A restricted runner sandbox can deny `QTcpServer`
-loopback binds and cause QWizard/AppKit `NSBundle` exceptions; those are
-environment failures for these tests, not evidence of an application defect.
-For repeat runs, prefer a fresh build directory. The resource baker protects
-non-empty unowned `generated/ClassMngrNext/Resources` output from replacement;
-archive that generated directory before reusing an existing build tree.
-
-## Verified local macOS result
-
-The source-stable baseline at commit 3dc37340 completed on macOS 27.2 arm64:
-the clean Debug build passed all 5,572 steps, all 620 CTests passed with no
-failures or timeouts, and C53 passed with 17 pages and zero changed pixels.
-The run report is
-[`refactoring-baseline-unsandboxed-retry-1.json`](../../../build/phase8a-macos-debug-3dc37340/artifacts/refactoring-baseline-unsandboxed-retry-1.json).
-The corresponding full CTest transcript is in
-[`LastTest.log`](../../../build/phase8a-macos-debug-3dc37340/Testing/Temporary/LastTest.log).
-This closes the local macOS slice; Windows and Linux still need their own
-source-stable baseline and capture verification.
+The local Release package build, disk-image verification, sidecar checksum,
+and all 13 package-verifier tests passed at the same source revision. The DMG
+and reports are under `build/macos-next-release-package`; see the [package
+report](../../../build/macos-next-release-package/reports/macos-next-package.json),
+[audit](../../../build/macos-next-release-package/artifacts/package-audit.json),
+[provenance](../../../build/macos-next-release-package/artifacts/source-provenance.json),
+and [verifier log](../../../build/macos-next-release-package/artifacts/test-verify-next-package.log).

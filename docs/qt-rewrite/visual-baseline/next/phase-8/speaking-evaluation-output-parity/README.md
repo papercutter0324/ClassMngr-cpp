@@ -3,7 +3,8 @@
 The refactoring baseline runs matched synthetic `StudentReport` inputs through
 the Legacy `SpeakingEvalBatchReportService::exportReports()` entry point and
 the Next `Output::runSpeakingEvaluationReports()` entry point. It captures both
-Standard and Advanced reports on Linux x64, Windows x64, and macOS universal.
+Standard and Advanced reports on Linux x64 and Windows x64 in hosted CI; the
+macOS universal Debug candidate captures both templates on the local Mac mini.
 
 This is matched-data adapter-path output evidence. Both paths reach the same
 `exportResolvedReports()` implementation, `SpeakingEvalInternalPdfRenderer`,
@@ -15,9 +16,9 @@ For each template, the test requires one PDF page per path, matching extracted
 text, the expected report text, 540 × 780 point geometry, and exact pixel
 equality after Qt PDF rendering at 150 DPI. The evidence includes both PDFs,
 both raster PNGs, and `manifest.json` with host and Qt metadata, page metrics,
-text, and the scope limitation. CI uploads each host's directory inside its
-`refactoring-baseline-<report>` artifact at
-`artifacts/speaking-evaluation-output-parity/<report>`.
+text, and the scope limitation. CI uploads Windows and Linux directories in
+their `refactoring-baseline-<report>` artifacts; macOS retains its output under
+`build/macos-clang-debug/artifacts/normal-access-rerun/speaking-evaluation-output-parity/`.
 
 ## Reproduce locally
 
@@ -41,6 +42,13 @@ capture uses synthetic fixture values and does not contain student records.
 The candidate-2 Linux capture passed for Standard and Advanced: extracted text,
 540 × 780-point geometry, and 150-DPI raster pixels were equal between the
 Legacy and Next paths. This uses the valid Qt 6.12 release composition of Qt
-Core 6.12 with QtPdf 6.14. Windows x64, macOS universal, and hosted
-exact-toolchain captures remain pending; the evidence remains same-host
-adapter-path parity because both paths share the renderer.
+Core 6.12 with QtPdf 6.14.
+
+## Current-source Debug evidence
+
+The Windows x64 candidate passed all 36 Speaking targets. At source-equivalent
+HEAD `e651b016`, the local macOS capture passed Standard and Advanced
+expected-text checks with zero changed pixels. Evidence is under
+`build/macos-clang-debug/artifacts/normal-access-rerun/speaking-evaluation-output-parity/`.
+This remains same-host adapter-path parity because both paths share the
+renderer.

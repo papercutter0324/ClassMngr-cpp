@@ -13,8 +13,6 @@ on:
       - "resources/**"
       - "scripts/record_refactoring_baseline.py"
       - "scripts/test_record_refactoring_baseline.py"
-      - "scripts/retry_macos_baseline_if_missing_report.py"
-      - "scripts/test_retry_macos_baseline_if_missing_report.py"
       - "scripts/phase8/capture_sub_prep_c53_parity.py"
       - "scripts/phase7/c53_sub_prep_sql_oracle.py"
       - "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/writer-probe/check_used_codes.py"
@@ -29,8 +27,6 @@ on:
       - "resources/**"
       - "scripts/record_refactoring_baseline.py"
       - "scripts/test_record_refactoring_baseline.py"
-      - "scripts/retry_macos_baseline_if_missing_report.py"
-      - "scripts/test_retry_macos_baseline_if_missing_report.py"
       - "scripts/phase8/capture_sub_prep_c53_parity.py"
       - "scripts/phase7/c53_sub_prep_sql_oracle.py"
       - "docs/qt-rewrite/visual-baseline/next/phase-7/sub-prep-c53/writer-probe/check_used_codes.py"
@@ -80,14 +76,10 @@ jobs:
             parallel: 2
             report: linux-gcc-debug
             run_baseline: true
-          - name: macOS universal Debug
-            runner: macos-15-large
-            preset: macos-clang-debug
-            build_dir: build/macos-clang-debug
-            configuration: ""
-            parallel: 12
-            report: macos-clang-debug
-            run_baseline: true
+          # Run the clean macOS Debug baseline on the local Mac mini. This
+          # avoids the billed larger runner and keeps the long universal build
+          # out of routine GitHub-hosted CI. The separate Release workflow
+          # uses a standard macOS runner for public-repository free minutes.
 
     steps:
       - name: Check out repository
@@ -101,11 +93,6 @@ jobs:
       - name: Test baseline recorder provenance
         shell: bash
         run: python scripts/test_record_refactoring_baseline.py
-
-      - name: Test macOS baseline retry decision
-        if: matrix.name == 'macOS universal Debug'
-        shell: bash
-        run: python3 scripts/test_retry_macos_baseline_if_missing_report.py
 
       - name: Install Linux build dependencies
         if: runner.os == 'Linux'
@@ -221,32 +208,6 @@ jobs:
             --modules qtpdf
           echo "QT_LINUX_PREFIX=${qt_output_dir}/${QT_VERSION}/gcc_64" >> "${GITHUB_ENV}"
 
-      - name: Install Qt on macOS
-        if: runner.os == 'macOS'
-        shell: bash
-        working-directory: ${{ runner.temp }}
-        run: |
-          qt_output_dir="${RUNNER_TEMP}/Qt"
-          python -m pip install --disable-pip-version-check aqtinstall==3.3.0
-          aqt_args=(
-            install-qt mac desktop "${QT_VERSION}" clang_64
-            --outputdir "${qt_output_dir}"
-            --timeout 30
-            --modules qtpdf
-          )
-          for attempt in 1 2 3; do
-            if python -m aqt "${aqt_args[@]}"; then
-              break
-            fi
-            if [[ "${attempt}" -eq 3 ]]; then
-              echo "Qt installation failed after ${attempt} attempts." >&2
-              exit 1
-            fi
-            echo "Qt installation failed on attempt ${attempt}; retrying in 10 seconds." >&2
-            sleep 10
-          done
-          echo "QT_MACOS_PREFIX=${qt_output_dir}/${QT_VERSION}/macos" >> "${GITHUB_ENV}"
-
       - name: Record clean build and test baseline
         if: matrix.run_baseline
         id: record
@@ -315,29 +276,3 @@ jobs:
             ${{ matrix.build_dir }}/Testing/Temporary/LastTest.log
             ${{ matrix.build_dir }}/Testing/Temporary/LastTestsFailed.log
           if-no-files-found: warn
-
-  retry-macos-baseline-without-evidence:
-    name: Retry macOS baseline once when no result artifact was published
-    needs: [baseline]
-    if: ${{ always() && needs.baseline.result == 'failure' && github.run_attempt == 1 }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    permissions:
-      actions: write
-      contents: read
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-        with:
-          persist-credentials: false
-
-      - name: Retry macOS baseline only when its result artifact is missing
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPOSITORY: ${{ github.repository }}
-          GH_RUN_ID: ${{ github.run_id }}
-          GH_RUN_ATTEMPT: ${{ github.run_attempt }}
-          GH_API_URL: ${{ github.api_url }}
-        run: python3 scripts/retry_macos_baseline_if_missing_report.py

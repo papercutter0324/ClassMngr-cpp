@@ -41,8 +41,10 @@ QT_QPA_PLATFORM=offscreen QT_SCALE_FACTOR=1 \
 ```
 
 The Refactoring baseline workflow enables this capture in its full CTest run
-on Linux x64, Windows x64, and macOS universal Debug runners, then uploads each
-platform's PDFs, PNGs, and JSON evidence in its baseline artifact.
+on Linux x64 and Windows x64 and uploads those platforms' evidence in their
+baseline artifacts. The clean macOS universal Debug candidate runs on the
+local Mac mini and retains the same PDFs, PNGs, and JSON under
+`build/macos-clang-debug/artifacts/normal-access-rerun/schedule-output/`.
 
 ## Linux x64 Debug evidence
 
@@ -57,5 +59,10 @@ changed pixels and mean channel difference 9.4227; that measurement confirms
 why the archived image is retained as reference data instead of a cross-host
 pixel threshold.
 
-Windows x64, macOS universal, and hosted exact-toolchain captures remain
-pending.
+## macOS universal Debug local evidence
+
+At current source-equivalent HEAD `e651b016`, the macOS Legacy and Next
+captures passed the same-host checks with zero changed pixels. The frozen
+Schedule reference differs by 5.68% on this Mac because its Sans Serif fallback
+is unavailable. Evidence is in the local build tree; this Mac run is not a
+GitHub Actions artifact.

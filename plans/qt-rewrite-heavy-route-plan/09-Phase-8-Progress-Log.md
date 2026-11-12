@@ -894,4 +894,43 @@ capture work and macOS/Linux candidates.
 
 Official Windows Release Build run [43156278197](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43156278197), a push on `Qt-Rewrite` at exact HEAD `1d4cb7d1d0b4c762715ef887ced6e81f97a9d3d1`, passed x64 job `130976853399`. Installer build, architecture/checksum checks, staged-package verification, final payload extraction, silent install, installed-tree verification, and startup gate all passed. The verifier reported 394 paths, 327 SHA hashes, 187 direct-resource hashes, and 22 license/SBOM files. The VS 2022 v143 redistributable `14.44.35211.0` had a valid Authenticode signature from Microsoft Corporation and SHA-256 `CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B`. All ten startup stages passed through `startup-ready`; the x64 success sentinel was present. Independent Tester accepted the run.
 
-The [ClassMngr-windows-x64 artifact](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43156278197/artifacts/13916749851) (ID `13916749851`, 108294767 bytes) has archive SHA-256 `fbcbdd24a53dbaf99efb2b11955ed2c58aa6f8bae07af79e581e26f21484e7d0`; the [final verifier log artifact](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43156278197/artifacts/13917627426) (ID `13917627426`, 5320 bytes) has SHA-256 `bfa392fbeb246f0782b9a185cdd0b074ea37146fadeb901f56e6ba139ec69630`. Both were unexpired at retrieval and expire 2027-02-10. This resolves the Windows x64 Release package gap at this HEAD. The separate local retry is incomplete and is not package evidence: it used VS18/v145 intermediates and did not run the final verifier. The earlier hosted HTTP 504 attempt remains a historical failure without an artifact. Phase 8/8a remain open for native macOS work and final cross-host review.
+The [ClassMngr-windows-x64 artifact](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43156278197/artifacts/13916749851) (ID `13916749851`, 108294767 bytes) has archive SHA-256 `fbcbdd24a53dbaf99efb2b11955ed2c58aa6f8bae07af79e581e26f21484e7d0`; the [final verifier log artifact](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43156278197/artifacts/13917627426) (ID `13917627426`, 5320 bytes) has SHA-256 `bfa392fbeb246f0782b9a185cdd0b074ea37146fadeb901f56e6ba139ec69630`. Both were unexpired at retrieval and expire 2027-02-10. This resolves the Windows x64 Release package gap at this HEAD. The separate local retry is incomplete and is not package evidence: it used VS18/v145 intermediates and did not run the final verifier. The earlier hosted HTTP 504 attempt remains a historical failure without an artifact. Phase 8/8a remain open for final cross-host review.
+
+### 8.7.15 — macOS local baseline and universal Release package (2026-11-12)
+
+At HEAD `e651b0164913478394945d8a1bc5936758bc852b`, the local Mac mini
+completed a clean universal Debug build (5,607/5,607 Ninja steps in 34m55s)
+and the required Schedule, Roster, Speaking, and C53 output checks. The first
+full CTest pass was launched under restricted execution and had six local
+socket/AppKit environment failures. A normal-access rerun against the same
+built targets passed all 620/620 CTest targets in 354.98s; stable source
+provenance, the QWARN delta, and output evidence are recorded in the [Phase
+8a progress log](09.5-Phase-8a-Progress-Log.md). Schedule Legacy/Next raster
+comparison was exact, all four Roster layouts passed, Speaking Standard and
+Advanced matched expected text with zero changed pixels, and C53 matched all
+17 pages with zero changed pixels. The frozen Schedule reference differs by
+5.68% on this host because its Sans Serif fallback font is unavailable.
+
+The local current-HEAD Release package build and disk-image verification
+passed without a hosted or paid service. Its universal `0.19.0` DMG passed
+`hdiutil verify` and sidecar checksum validation (SHA-256
+`fb9a8e7e4f14eabea94aa4596b5ccb012f1ef7eeca33d3dc05d9e49008ad8538`). The
+package verifier checked 914 entries, 493 file hashes, 187 resource hashes,
+22 license/SBOM files, and 92 universal Mach-O binaries; all 13 verifier tests
+passed. The macOS package result at `e651b016` is source/package-input
+equivalent to the Windows x64 release result at `1d4cb7d1` (the intervening
+commit changes only documentation); Linux release evidence is recorded at
+that same source-equivalent revision.
+
+To keep the long Debug baseline within the user's free-service constraint,
+`.github/workflows/refactoring-baseline.yml` no longer selects the billed
+`macos-15-large` runner or invokes its automatic retry job. The clean macOS
+baseline is run on the local Mac mini. The separate macOS Release workflow
+continues on a standard runner, which is free for this public repository. No
+GitHub workflow was dispatched or rerun for this work. The optional native
+Cocoa file/print dialog interaction was not exercised because this session
+lacks macOS event-posting and screen-capture permissions; no profile was
+opened and no print job was submitted. Existing dialog and print adapter tests
+remain the automated coverage. The later source-equivalent Windows/Linux
+Debug run has two unresolved Windows target timeouts and one Linux PDF-font
+assertion failure, so the overall Phase 8 exit gate remains open.
