@@ -1,5 +1,27 @@
 # Latest Session Work
 
+## Current Deployment Handoff — phase8-linux-closeout-20261112 — 2026-11-12
+
+- Linux Phase 8a candidate at `e44f400c826250e7f4645e0e5a2c7f8df8163e54`
+  passed clean/source-stable provenance, 619/619 CTest, Schedule, all four
+  Roster outputs, Speaking Standard/Advanced with `홍길동`, and C53 (12 Sub
+  Prep + 5 Roster pages, zero changed pixels). Direct Linux targets passed:
+  Sub Prep Roster 6/6, package 17/17, Speaking 110/110 with five optional
+  PowerPoint skips.
+- Focused Linux probes exercised the real PDF/print adapter (safe dialog
+  cancellation and `Canceled` status) and Linux updater port (missing-file
+  rejection plus captured `file:` reveal URL). Existing viewer, coordinator,
+  and updater suites also passed. No production/test source change was needed.
+- Repeatable Linux-only QtTest coverage was then added for both adapters:
+  PDF print 3/3 and update actions 4/4; CMake source ownership validation
+  passed for 2,020 handwritten sources.
+- Linux evidence is retained under `build/phase8a-linux-gcc-debug-e44f400/`
+  and the Phase 8a progress log. The remaining tracked change is
+  documentation.
+- macOS Phase 8a is explicitly deferred by the user to a later local session
+  on another device. Do not claim the overall Phase 8/8a gate closed until
+  that native candidate and cross-host review are complete.
+
 ## Current Deployment Handoff — phase8-8713-macos-exitgate-20261109 — 2026-11-09
 
 - Heavy-route work on branch `Qt-Rewrite`, with Light for commits and push.

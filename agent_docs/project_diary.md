@@ -1,5 +1,18 @@
 # Project Diary
 
+### Linux Phase 8a closeout evidence — 2026-11-12
+
+The current Linux candidate is clean and source-stable: 619/619 CTest targets,
+Schedule, four Roster layouts, Speaking with Korean `홍길동`, and 17-page C53
+all pass. The direct Linux Phase 8a targets pass without source changes. The
+real PDF/print and updater adapters were exercised with safe offscreen probes;
+their status and URL-routing behavior passed. Keep the 19 offscreen
+`propagateSizeHints()` warnings as asserted diagnostics; do not suppress them.
+Dedicated Linux-only QtTest coverage now passes for both adapters (3/3 print,
+4/4 update), with the print warning retained and no suppression.
+macOS is explicitly deferred by the user and remains the only platform gate
+not exercised in this deployment.
+
 ## Decisions and Lessons
 
 ### Keep cross-platform baseline evidence source-stable — 2026-11-09

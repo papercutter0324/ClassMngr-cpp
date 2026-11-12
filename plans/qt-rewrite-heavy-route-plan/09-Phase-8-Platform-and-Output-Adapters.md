@@ -38,7 +38,7 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
 - Last updated: 2026-11-12
-- Current note: Phase 8 remains In progress and its exit gate is open. The clean Windows x64 Batch 3 candidate passed at `bb37cf9aaa4562b4fdf9c9b592df2012928bf5c6`: full Debug build, 618/618 CTest targets, Schedule, Speaking, all four Roster layouts, and C53. The earlier hosted Refactoring Baseline run `42580405908` remains diagnostic because every host reported dirty, unstable source fingerprints. Phase 8a still owns the shared provenance/capture work and clean macOS/Linux exit-gate candidates; macOS evidence remains separate from Linux-only slice 8.7.13. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md) and [progress log](09.5-Phase-8a-Progress-Log.md).
+- Current note: Phase 8 remains In progress and its exit gate is open. The clean Windows x64 candidate passed at `bb37cf9aaa4562b4fdf9c9b592df2012928bf5c6`; the clean local Linux candidate passed at `e44f400c826250e7f4645e0e5a2c7f8df8163e54` with 619/619 CTest targets, required output evidence, and C53. The earlier hosted Refactoring Baseline run `42580405908` remains diagnostic because every host reported dirty, unstable source fingerprints. The user deferred native macOS verification to a later local session/device; hosted Ubuntu evidence and the final cross-host review remain outstanding. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md) and [progress log](09.5-Phase-8a-Progress-Log.md).
 
 ### Slice batches
 

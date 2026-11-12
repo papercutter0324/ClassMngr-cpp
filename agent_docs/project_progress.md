@@ -1,11 +1,19 @@
 # Project Progress
 
-## Current Deployment Continuation — Phase 8 exit gate and Phase 8a planning — 2026-11-09
+## Current Deployment Continuation — Phase 8 Linux closeout — 2026-11-12
 
 Active plan: Qt Rewrite Phase 8 platform/output adapters and its Phase 8a
 cross-platform failure/QWARN follow-up. Deployment ID:
-`phase8-8713-macos-exitgate-20261109`; route: Heavy, with Light for commits and
-pushes. Slice 8.7.13 is Linux-only; no macOS work belongs to that slice.
+`phase8-linux-closeout-20261112`; route: Heavy. Slice 8.7.13 is Linux-only;
+macOS Phase 8a work is explicitly deferred by the user to a later local
+session/device.
+
+The current Linux candidate at HEAD `e44f400c` is source-stable and clean:
+619/619 CTest targets passed, Schedule, all four Roster outputs, Speaking
+(including `홍길동`), and the 17-page C53 capture all passed. The three Linux
+direct targets also passed. Focused runtime probes covered the Linux PDF/print
+adapter cancellation/status path and updater folder-reveal/result path. No
+Linux source fix was required.
 
 Hosted Refactoring Baseline run `42580405908` at SHA
 `666df4786ec48a0bf9fe285727ae073036ac4984` failed on macOS (11/620), Windows
@@ -21,9 +29,9 @@ warning and failed-target inventories are versioned under
 Linux and macOS Release package runs passed, as did Windows ARM64 Release and
 the Phase 4 resource-layout run. Windows x64 Release stopped before configure
 after a vcpkg download HTTP 504 and produced no package artifact. The Phase 8
-exit gate remains open. Phase 8a's first batch addresses baseline provenance,
-C53 capture sequencing, shared failure attribution, and warning dispositions;
-macOS, Windows, and Linux batches follow in order.
+exit gate remains open. The Linux portion of Phase 8a is complete for this
+deployment; the overall Phase 8/8a gates remain open for the user-deferred
+native macOS candidate and final cross-host review.
 
 The Phase 8a plan/inventory task is committed as
 `7083bb7ea9f4d3eec3fe225742055480d043c474`; the separate Phase 8 history move

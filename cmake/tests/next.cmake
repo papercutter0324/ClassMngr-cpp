@@ -8324,6 +8324,78 @@ classmngr_add_qt_test(
         Qt6::Test
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_executable(ClassMngrNextPlatformLinuxPdfPrintOperationAdapterTests
+        tests/next_platform_linux_pdf_print_operation_adapter_tests.cpp
+        src/next/platform/qt_pdf_print_operation_adapter.cpp
+    )
+    target_compile_features(ClassMngrNextPlatformLinuxPdfPrintOperationAdapterTests
+        PRIVATE
+            cxx_std_23
+    )
+    target_include_directories(ClassMngrNextPlatformLinuxPdfPrintOperationAdapterTests
+        PRIVATE
+            "${PROJECT_SOURCE_DIR}/src"
+    )
+    target_link_libraries(ClassMngrNextPlatformLinuxPdfPrintOperationAdapterTests
+        PRIVATE
+            ClassMngrQtPdfPrint
+            Qt6::Pdf
+            Qt6::PrintSupport
+            Qt6::Test
+            Qt6::Widgets
+    )
+    set_target_properties(ClassMngrNextPlatformLinuxPdfPrintOperationAdapterTests
+        PROPERTIES
+            AUTOMOC ON
+            AUTOUIC OFF
+            AUTORCC OFF
+            CLASSMNGR_STANDALONE_CPP_TEST TRUE
+    )
+    add_test(
+        NAME ClassMngrNextPlatformLinuxPdfPrintOperationAdapterTests
+        COMMAND ClassMngrNextPlatformLinuxPdfPrintOperationAdapterTests
+    )
+    set_tests_properties(ClassMngrNextPlatformLinuxPdfPrintOperationAdapterTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+            TIMEOUT 20
+    )
+
+    add_executable(ClassMngrNextPlatformLinuxUpdatePackageActionPortTests
+        tests/next_platform_linux_update_package_action_port_tests.cpp
+    )
+    target_compile_features(ClassMngrNextPlatformLinuxUpdatePackageActionPortTests
+        PRIVATE
+            cxx_std_23
+    )
+    target_include_directories(ClassMngrNextPlatformLinuxUpdatePackageActionPortTests
+        PRIVATE
+            "${PROJECT_SOURCE_DIR}/src"
+    )
+    target_link_libraries(ClassMngrNextPlatformLinuxUpdatePackageActionPortTests
+        PRIVATE
+            ClassMngrNextUpdateAdapters
+            Qt6::Test
+            Qt6::Widgets
+    )
+    set_target_properties(ClassMngrNextPlatformLinuxUpdatePackageActionPortTests
+        PROPERTIES
+            AUTOMOC ON
+            AUTOUIC OFF
+            AUTORCC OFF
+            CLASSMNGR_STANDALONE_CPP_TEST TRUE
+    )
+    add_test(
+        NAME ClassMngrNextPlatformLinuxUpdatePackageActionPortTests
+        COMMAND ClassMngrNextPlatformLinuxUpdatePackageActionPortTests
+    )
+    set_tests_properties(ClassMngrNextPlatformLinuxUpdatePackageActionPortTests
+        PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
+endif()
+
 classmngr_add_qt_test(
     NAME FileControllerWorkspaceLifecycle
     SOURCES
