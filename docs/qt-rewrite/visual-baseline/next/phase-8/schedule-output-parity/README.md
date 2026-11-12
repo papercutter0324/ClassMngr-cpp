@@ -61,8 +61,19 @@ pixel threshold.
 
 ## macOS universal Debug local evidence
 
-At current source-equivalent HEAD `e651b016`, the macOS Legacy and Next
-captures passed the same-host checks with zero changed pixels. The frozen
-Schedule reference differs by 5.68% on this Mac because its Sans Serif fallback
-is unavailable. Evidence is in the local build tree; this Mac run is not a
-GitHub Actions artifact.
+At source-equivalent HEAD `e651b016`, the macOS Legacy and Next captures passed
+the same-host checks with zero changed pixels. The frozen Phase 7 reference
+differs by 5.68% on this Mac; that capture requested the unavailable Sans Serif
+family.
+
+On 2026-11-12, Schedule output's final platform families were changed to
+Helvetica Neue on macOS and Segoe UI on Windows. The macOS output still uses
+bundled Inter and Pretendard when available, before reaching the fallback.
+Focused macOS CTest passed 2/2, including a font-database assertion and another
+same-host Legacy/Next comparison with zero changed pixels. The frozen image
+still differs by 5.68%; the new capture records Inter and Pretendard as
+available, so its raster does not exercise the terminal fallback. Evidence is
+in the local build tree at
+[`schedule-fallback-font-20261112`](../../../../../../build/macos-clang-debug/artifacts/schedule-fallback-font-20261112/);
+this is not a GitHub Actions artifact. The Windows branch was not run on this
+Mac.

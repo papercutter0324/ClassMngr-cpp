@@ -27,6 +27,7 @@
 #include <QDir>
 #include <QEvent>
 #include <QFile>
+#include <QFontDatabase>
 #include <QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
@@ -1289,6 +1290,23 @@ void SchedulePageTests::scheduleOutputDialogUsesCurrentProjectionAndReleasesOper
     const Theme expectedTheme = QApplication::palette()
         .color(QPalette::Window).lightness() < 128 ? Theme::Dark : Theme::Light;
     QCOMPARE(output.currentTheme, expectedTheme);
+    QString systemFallbackFamily;
+#ifdef Q_OS_MACOS
+    systemFallbackFamily = QStringLiteral("Helvetica Neue");
+#elif defined(Q_OS_WIN)
+    systemFallbackFamily = QStringLiteral("Segoe UI");
+#else
+    systemFallbackFamily = QFontDatabase::systemFont(
+        QFontDatabase::GeneralFont).family();
+#endif
+    QVERIFY(!systemFallbackFamily.trimmed().isEmpty());
+    const QStringList installedFamilies = QFontDatabase::families();
+    QVERIFY(installedFamilies.contains(
+        systemFallbackFamily, Qt::CaseInsensitive));
+    QVERIFY(output.englishFont.families().contains(
+        systemFallbackFamily, Qt::CaseInsensitive));
+    QVERIFY(output.koreanFont.families().contains(
+        systemFallbackFamily, Qt::CaseInsensitive));
     QVERIFY(output.document.days.contains(QStringLiteral("Monday")));
     const auto outputRow = std::find_if(output.document.rows.begin(),
         output.document.rows.end(), [](const auto& row) {

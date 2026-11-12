@@ -18,6 +18,7 @@
 #include <QEvent>
 #include <QFrame>
 #include <QFont>
+#include <QFontDatabase>
 #include <QStringList>
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -55,6 +56,17 @@ constexpr int ScheduleToolbarButtonHeight = 40;
 [[nodiscard]] QString scheduleText(const char* source)
 {
     return QCoreApplication::translate("ScheduleWidget", source);
+}
+
+[[nodiscard]] QString scheduleOutputFallbackFamily()
+{
+#ifdef Q_OS_MACOS
+    return QStringLiteral("Helvetica Neue");
+#elif defined(Q_OS_WIN)
+    return QStringLiteral("Segoe UI");
+#else
+    return QFontDatabase::systemFont(QFontDatabase::GeneralFont).family();
+#endif
 }
 
 [[nodiscard]] QColor validColor(const QString& value, const QColor& fallback)
@@ -1198,9 +1210,9 @@ void SchedulePage::startScheduleOutput()
             ? Theme::Dark : Theme::Light;
     QFont englishFont = QApplication::font();
     const QStringList registeredFamilies = englishFont.families();
-    const QString fallbackFamily = englishFont.family();
-    const auto familyContaining = [&registeredFamilies, &fallbackFamily](
-        const QString& fragment) {
+    const QString systemFallbackFamily = scheduleOutputFallbackFamily();
+    const auto familyContaining = [&registeredFamilies](
+        const QString& fragment) -> QString {
         for (const QString& family : registeredFamilies)
         {
             if (family.contains(fragment, Qt::CaseInsensitive))
@@ -1208,14 +1220,14 @@ void SchedulePage::startScheduleOutput()
                 return family;
             }
         }
-        return registeredFamilies.isEmpty()
-            ? fallbackFamily
-            : registeredFamilies.first();
+        return {};
     };
     QStringList englishFamilies{
         familyContaining(QStringLiteral("Inter")),
-        familyContaining(QStringLiteral("Pretendard"))
+        familyContaining(QStringLiteral("Pretendard")),
+        systemFallbackFamily
     };
+    englishFamilies.removeAll(QString{});
     englishFamilies.removeDuplicates();
     englishFont.setFamilies(englishFamilies);
     const bool koreanGlobalFont = !registeredFamilies.isEmpty()
@@ -1233,8 +1245,10 @@ void SchedulePage::startScheduleOutput()
     QFont koreanFont = englishFont;
     QStringList koreanFamilies{
         familyContaining(QStringLiteral("Pretendard")),
-        familyContaining(QStringLiteral("Inter"))
+        familyContaining(QStringLiteral("Inter")),
+        systemFallbackFamily
     };
+    koreanFamilies.removeAll(QString{});
     koreanFamilies.removeDuplicates();
     koreanFont.setFamilies(koreanFamilies);
     koreanFont.setPointSize(englishFont.pointSize() + 1);

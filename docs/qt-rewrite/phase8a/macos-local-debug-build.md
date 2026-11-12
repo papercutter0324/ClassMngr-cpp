@@ -87,6 +87,25 @@ the current session lacks macOS event-posting and screen-capture permissions.
 The app was not launched, no profile was accessed, and no print job was
 submitted. Presenter and print-adapter tests remain the automated evidence.
 
+## Schedule font fallback follow-up (2026-11-12)
+
+Schedule output keeps the bundled Inter and Pretendard families first. If one
+is unavailable, its final family is now Helvetica Neue on macOS and Segoe UI
+on Windows; other platforms use Qt's GeneralFont system family. The focused
+Schedule page test checks that the platform family is registered in
+`QFontDatabase` and appears in both output font chains.
+
+After the change, the macOS Debug targets built and both
+`ClassMngrNextSchedulePageTests` and
+`ClassMngrNextNormalScheduleImportIntegrationTests` passed (2/2). The output
+capture is in
+[`schedule-fallback-font-20261112`](../../../build/macos-clang-debug/artifacts/schedule-fallback-font-20261112/);
+Legacy and Next remain pixel-identical on this host. The capture still reports
+a 5.68% difference from the frozen Phase 7 image and records Inter/Pretendard
+as available, so this run does not exercise the new final fallback during
+rasterization. The Windows family assertion is included in the Windows test
+build but was not run on this Mac.
+
 ## Current universal Release package
 
 The local Release package build, disk-image verification, sidecar checksum,

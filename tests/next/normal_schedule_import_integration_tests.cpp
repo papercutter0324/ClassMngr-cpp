@@ -2326,8 +2326,10 @@ captureImportedScheduleOutputEvidenceWhenConfigured()
                     : QJsonValue(QJsonValue::Null)},
             {QStringLiteral("host"), QSysInfo::prettyProductName()},
             {QStringLiteral("fontLimit"), QStringLiteral(
-                "committed baseline requested unavailable Sans Serif and used "
-                "the host Qt fallback")}
+                "when Inter and Pretendard are unavailable, schedule output "
+                "uses Helvetica Neue on macOS, Segoe UI on Windows, and "
+                "QFontDatabase::systemFont(GeneralFont) elsewhere as its "
+                "final font-family fallback")}
         }},
         {QStringLiteral("physicalPrintPerformed"), false}
     };
