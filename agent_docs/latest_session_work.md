@@ -7,7 +7,9 @@
   Roster outputs, Speaking Standard/Advanced with `홍길동`, and C53 (12 Sub
   Prep + 5 Roster pages, zero changed pixels). Direct Linux targets passed:
   Sub Prep Roster 6/6, package 17/17, Speaking 110/110 with five optional
-  PowerPoint skips.
+  PowerPoint skips. The full-suite JUnit contains 167 QWARN occurrences;
+  the separate focused Speaking run contains 19 and is not additive. Fedora
+  44 is accepted; Ubuntu is not required.
 - Focused Linux probes exercised the real PDF/print adapter (safe dialog
   cancellation and `Canceled` status) and Linux updater port (missing-file
   rejection plus captured `file:` reveal URL). Existing viewer, coordinator,
@@ -21,6 +23,9 @@
 - macOS Phase 8a is explicitly deferred by the user to a later local session
   on another device. Do not claim the overall Phase 8/8a gate closed until
   that native candidate and cross-host review are complete.
+- Cross-platform package passes may be combined across different HEADs when
+  source and packaged inputs and the package workflow/verifier are unchanged;
+  documentation-only commits are acceptable. See the Phase 8 plan.
 
 ## Current Deployment Handoff — phase8-8713-macos-exitgate-20261109 — 2026-11-09
 

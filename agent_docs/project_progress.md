@@ -12,8 +12,11 @@ The current Linux candidate at HEAD `e44f400c` is source-stable and clean:
 619/619 CTest targets passed, Schedule, all four Roster outputs, Speaking
 (including `홍길동`), and the 17-page C53 capture all passed. The three Linux
 direct targets also passed. Focused runtime probes covered the Linux PDF/print
-adapter cancellation/status path and updater folder-reveal/result path. No
-Linux source fix was required.
+adapter cancellation/status path and updater folder-reveal/result path. Its
+full-suite JUnit reports 167 QWARN occurrences across 619 targets; the
+separate direct-target rerun contains 19 focused warnings and is not additive.
+Fedora 44 is accepted for Linux evidence; Ubuntu is not required. No Linux
+source fix was required.
 
 Hosted Refactoring Baseline run `42580405908` at SHA
 `666df4786ec48a0bf9fe285727ae073036ac4984` failed on macOS (11/620), Windows
@@ -31,7 +34,10 @@ the Phase 4 resource-layout run. Windows x64 Release stopped before configure
 after a vcpkg download HTTP 504 and produced no package artifact. The Phase 8
 exit gate remains open. The Linux portion of Phase 8a is complete for this
 deployment; the overall Phase 8/8a gates remain open for the user-deferred
-native macOS candidate and final cross-host review.
+native macOS candidate and final cross-host review. Package verification
+passes at differing HEADs count as one valid platform matrix when source and
+packaged inputs are unchanged and the workflow/verifier contract is unchanged;
+documentation-only commits are acceptable. See the Phase 8 plan for the rule.
 
 The Phase 8a plan/inventory task is committed as
 `7083bb7ea9f4d3eec3fe225742055480d043c474`; the separate Phase 8 history move
