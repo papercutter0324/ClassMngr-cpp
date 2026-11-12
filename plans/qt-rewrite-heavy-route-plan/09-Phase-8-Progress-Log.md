@@ -879,3 +879,13 @@ The direct Phase 5 CTest run completed 619 tests: 602 passed, 14 failed, and
 `ClassMngrClassDetailsSavePageTests`, and `ClassMngrSubPrepPageTests`. The
 suite is therefore not green; Windows x64, macOS universal, hosted
 exact-toolchain captures, and the package/resource matrix remain pending.
+
+### Phase 8a — Windows x64 Batch 3 clean candidate
+
+On 2026-11-12, the clean Windows x64 Debug candidate passed at
+`bb37cf9aaa4562b4fdf9c9b592df2012928bf5c6`: full build, 618/618 CTest targets,
+Schedule, Speaking, all four Roster layouts, and C53 (12 Sub Prep and 5 Roster
+pages, zero changed pixels). Evidence, hashes, QWARN dispositions, and remaining
+limits are in the [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md#2026-11-12---batch-3-windows-x64-clean-candidate).
+This closes Windows Batch 3 only; Phase 8 remains open for shared provenance/
+capture work and macOS/Linux candidates.

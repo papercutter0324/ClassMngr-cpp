@@ -37,8 +37,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2, 3, and 7
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
-- Last updated: 2026-11-09
-- Current note: the Phase 8 exit gate remains open. Hosted Refactoring Baseline run `42580405908` failed on macOS (11/620), Windows x64 (41/618), and Linux (20/619), and reported dirty, unstable source fingerprints on all hosts, so these artifacts are diagnostic. Phase 8a owns the ordered failure, QWARN, provenance, and capture triage described in the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md); macOS exit-gate evidence is a separate candidate from Linux-only slice 8.7.13.
+- Last updated: 2026-11-12
+- Current note: Phase 8 remains In progress and its exit gate is open. The clean Windows x64 Batch 3 candidate passed at `bb37cf9aaa4562b4fdf9c9b592df2012928bf5c6`: full Debug build, 618/618 CTest targets, Schedule, Speaking, all four Roster layouts, and C53. The earlier hosted Refactoring Baseline run `42580405908` remains diagnostic because every host reported dirty, unstable source fingerprints. Phase 8a still owns the shared provenance/capture work and clean macOS/Linux exit-gate candidates; macOS evidence remains separate from Linux-only slice 8.7.13. See the [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md) and [progress log](09.5-Phase-8a-Progress-Log.md).
 
 ### Slice batches
 

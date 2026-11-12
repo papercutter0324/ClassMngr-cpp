@@ -5,14 +5,14 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-11-09
-- Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 is in progress
-  and its exit gate remains open. Hosted Refactoring Baseline run
-  `42580405908` failed on macOS (11/620), Windows x64 (41/618), and Linux
-  (20/619), with dirty and unstable source fingerprints on every host; treat
-  its artifacts as diagnostic. Phase 8a is triaging provenance, captures,
-  failures, and QWARNs in OS-agnostic provenance/capture, OS-agnostic
-  failure/QWARN triage, Windows, macOS, and Linux batches. See
+- Last updated: 2026-11-12
+- Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 remains in
+  progress with its exit gate open. The clean Windows x64 Phase 8a Batch 3
+  candidate passed at `bb37cf9aaa4562b4fdf9c9b592df2012928bf5c6`, including
+  618/618 CTest targets and required output captures. The earlier hosted
+  Refactoring Baseline run `42580405908` remains diagnostic because all hosts
+  reported dirty, unstable source fingerprints. Phase 8a still needs shared
+  provenance/capture work and clean macOS/Linux candidates. See
   the [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md),
   [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md),
   [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), [Phase 8

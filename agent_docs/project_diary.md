@@ -9377,3 +9377,14 @@ cross-platform gate while Windows/macOS captures and a green/accepted baseline
 classification remain outstanding. CTest failure visibility must remain intact:
 record the 619-test result (602 pass, 14 fail, 3 timeout) instead of weakening
 the suite or hiding failures.
+
+## 2026-11-12 — Windows clean-candidate path and timeout
+
+MSVC C1083 can report an invalid compiler-generated file when the computed
+object path exceeds the toolchain's path limit. Shortening a long test source
+filename reduced that path while preserving the target, CTest identity, and
+test body. Do not force CMake's shared `SHORT` intermediate directory strategy
+when CMake reports target collisions; keep the normal strategy and remove only
+the redundant workflow timeout override so the recorder supplies its Windows
+240-second default. The clean candidate then passed all 618 CTests and required
+Windows output captures without suppressing warnings or weakening assertions.

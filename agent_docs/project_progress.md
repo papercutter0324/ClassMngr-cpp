@@ -6983,3 +6983,21 @@ preview order, issue order, and adapter/UI parity. Build `ClassMngr`,
 verification have not started. Batch491 remains unpushed with F1182 next and
 F1183–F1185 discovered. Batch490 is pushed at `69be43a7`; F629 and both phase
 gates remain open.
+
+## Phase 8 Windows Batch 3 closeout - 2026-11-12
+
+Deployment `phase8_windows_exitgate_20261112` completed the clean Windows x64
+candidate at local commit `bb37cf9aaa4562b4fdf9c9b592df2012928bf5c6`. The
+`windows-x64-ninja-debug` preset configured and built successfully, and
+CTest passed 618/618 with the Windows 240-second per-test timeout. Schedule,
+Speaking, all four Roster layouts, and C53 output evidence passed; C53 covered
+12 Sub Prep and 5 Roster pages with zero changed pixels. The source fingerprint
+and Git tree were stable. Evidence is under
+`build/windows-x64-ninja-debug/artifacts/phase8a-windows-x64-bb37cf9-candidate-20261111T192520307Z/`.
+The test-source rename removes the MSVC generated-object path overflow, and the
+baseline workflow now uses its platform-specific timeout defaults. No warning
+suppression or assertion reduction was made. Windows Batch 3 is closed; Phase 8
+and Phase 8a remain open for the shared provenance/capture gate and macOS/Linux
+candidates. The commit is local and was not pushed. Six old Debug build trees
+were removed; `build/windows-x64-debug` remains because ACL-protected generated
+paths prevented safe removal.
