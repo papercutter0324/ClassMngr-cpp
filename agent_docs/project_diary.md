@@ -1,5 +1,16 @@
 # Project Diary
 
+### Windows x64 Release package result — 2026-11-12
+
+The local VS 18 attempt could only produce an intermediate installer with a
+v145 redistributable and did not have the pinned innoextract verifier; that
+installer was not valid release evidence. The official Windows Release
+workflow at commit `1d4cb7d1` supplied the signed VS 2022 v143 runtime and
+passed staged-package checks, installer extraction, silent install, and the
+installed app's `startup-ready` gate. Reusable lesson: use the complete
+installer verifier and the required toolset runtime; a successful build or
+staged package check alone does not validate the final installer.
+
 ### Linux Phase 8a closeout evidence — 2026-11-12
 
 The current Linux candidate is clean and source-stable: 619/619 CTest targets,

@@ -1,48 +1,38 @@
 # Project Progress
 
-## Current Deployment Continuation — Phase 8 Linux closeout — 2026-11-12
+## Current Deployment Continuation — Phase 8 Windows x64 Release package — 2026-11-12
 
 Active plan: Qt Rewrite Phase 8 platform/output adapters and its Phase 8a
 cross-platform failure/QWARN follow-up. Deployment ID:
-`phase8-linux-closeout-20261112`; route: Heavy. Slice 8.7.13 is Linux-only;
-macOS Phase 8a work is explicitly deferred by the user to a later local
-session/device.
+`phase8-windows-x64-release-20261112`; route: Heavy. The previously missing
+Windows x64 Release package result is now supplied by the successful official
+Windows Release Build run `43156278197` at pushed commit
+`1d4cb7d1d0b4c762715ef887ced6e81f97a9d3d1` on `Qt-Rewrite`. The x64 job passed
+installer build, architecture/checksum checks, staged-package verification,
+installer extraction, silent installation, installed-package verification,
+and the installed app startup gate.
 
-The current Linux candidate at HEAD `e44f400c` is source-stable and clean:
-619/619 CTest targets passed, Schedule, all four Roster outputs, Speaking
-(including `홍길동`), and the 17-page C53 capture all passed. The three Linux
-direct targets also passed. Focused runtime probes covered the Linux PDF/print
-adapter cancellation/status path and updater folder-reveal/result path. Its
-full-suite JUnit reports 167 QWARN occurrences across 619 targets; the
-separate direct-target rerun contains 19 focused warnings and is not additive.
-Fedora 44 is accepted for Linux evidence; Ubuntu is not required. No Linux
-source fix was required.
+The staged VS 2022 v143 redistributable was version `14.44.35211.0`, Authenticode
+valid and signed by Microsoft; SHA-256
+`CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B`. The
+package verifier reported 394 paths, 327 file hashes, 187 direct resource
+hashes, and 22 license/SBOM files. The final verifier confirmed all ten startup
+stages through `startup-ready` and emitted
+`WINDOWS_PACKAGE_VERIFICATION_SUCCESS:x64`. Artifact IDs, archive digests, and
+the run link are recorded in the Phase 8 progress log.
 
-Hosted Refactoring Baseline run `42580405908` at SHA
-`666df4786ec48a0bf9fe285727ae073036ac4984` failed on macOS (11/620), Windows
-x64 (41/618), and Linux (20/619). All three baseline reports mark the checkout
-dirty at start/end and `source_stable=false`, so the artifacts are diagnostic
-rather than final clean-baseline evidence. Schedule passed on macOS/Linux and
-failed on Windows; all four Roster cases passed on all hosts; Speaking passed
-on macOS, failed on Linux, and was incomplete on Windows. The C53 step was
-skipped everywhere; a separate same-SHA Windows C53 run passed. The full
-warning and failed-target inventories are versioned under
-`docs/qt-rewrite/phase8a/evidence/` and tracked by the Phase 8a plan.
+The separate local Release attempt on the VS 18 host was incomplete: its
+intermediate installer used v145 and it lacked the pinned innoextract tool, so
+it is not package evidence. No tracked source change was needed; the hosted
+workflow supplied the required VS 2022/v143 environment. The earlier hosted
+failure `42580406462` remains a historical attempt with no artifact.
 
-Linux and macOS Release package runs passed, as did Windows ARM64 Release and
-the Phase 4 resource-layout run. Windows x64 Release stopped before configure
-after a vcpkg download HTTP 504 and produced no package artifact. The Phase 8
-exit gate remains open. The Linux portion of Phase 8a is complete for this
-deployment; the overall Phase 8/8a gates remain open for the user-deferred
-native macOS candidate and final cross-host review. Package verification
-passes at differing HEADs count as one valid platform matrix when source and
-packaged inputs are unchanged and the workflow/verifier contract is unchanged;
-documentation-only commits are acceptable. See the Phase 8 plan for the rule.
-
-The Phase 8a plan/inventory task is committed as
-`7083bb7ea9f4d3eec3fe225742055480d043c474`; the separate Phase 8 history move
-is committed as `2d11d3eb6729cd8e768ac1ef4dead3770245d6cf`. Both task commits
-and the final deployment handoff update are pushed to `origin/Qt-Rewrite`.
+The clean Windows Debug candidate at `bb37cf9`, clean Fedora Linux candidate at
+`e44f400c`, and current Windows x64 Release package result are recorded. Phase
+8 remains In Progress; macOS Phase 8a work is explicitly deferred by the user,
+and the final cross-host review remains open. Package results at different
+HEADs may be combined only after confirming source/package-input and workflow
+equivalence; see the Phase 8 plan.
 
 ## Current Work Handoff — configurable-roster-rows (implementation complete)
 

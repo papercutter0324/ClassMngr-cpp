@@ -1,31 +1,35 @@
 # Latest Session Work
 
-## Current Deployment Handoff — phase8-linux-closeout-20261112 — 2026-11-12
+## Current Deployment Handoff — phase8-windows-x64-release-20261112 — 2026-11-12
 
-- Linux Phase 8a candidate at `e44f400c826250e7f4645e0e5a2c7f8df8163e54`
-  passed clean/source-stable provenance, 619/619 CTest, Schedule, all four
-  Roster outputs, Speaking Standard/Advanced with `홍길동`, and C53 (12 Sub
-  Prep + 5 Roster pages, zero changed pixels). Direct Linux targets passed:
-  Sub Prep Roster 6/6, package 17/17, Speaking 110/110 with five optional
-  PowerPoint skips. The full-suite JUnit contains 167 QWARN occurrences;
-  the separate focused Speaking run contains 19 and is not additive. Fedora
-  44 is accepted; Ubuntu is not required.
-- Focused Linux probes exercised the real PDF/print adapter (safe dialog
-  cancellation and `Canceled` status) and Linux updater port (missing-file
-  rejection plus captured `file:` reveal URL). Existing viewer, coordinator,
-  and updater suites also passed. No production/test source change was needed.
-- Repeatable Linux-only QtTest coverage was then added for both adapters:
-  PDF print 3/3 and update actions 4/4; CMake source ownership validation
-  passed for 2,020 handwritten sources.
-- Linux evidence is retained under `build/phase8a-linux-gcc-debug-e44f400/`
-  and the Phase 8a progress log. The remaining tracked change is
-  documentation.
-- macOS Phase 8a is explicitly deferred by the user to a later local session
-  on another device. Do not claim the overall Phase 8/8a gate closed until
-  that native candidate and cross-host review are complete.
-- Cross-platform package passes may be combined across different HEADs when
-  source and packaged inputs and the package workflow/verifier are unchanged;
-  documentation-only commits are acceptable. See the Phase 8 plan.
+- The official [Windows Release Build run 43156278197](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43156278197)
+  passed at commit `1d4cb7d1d0b4c762715ef887ced6e81f97a9d3d1` on `Qt-Rewrite`.
+  Windows x64 job `130976853399` passed installer build, architecture and
+  checksum verification, staged package verification, final payload
+  extraction, silent install, installed package verification, and installed
+  app startup through all ten stages ending in `startup-ready`.
+- The Microsoft-signed VS 2022 v143 `vc_redist.x64.exe` was version
+  `14.44.35211.0`, Authenticode `Valid`, SHA-256
+  `CC0FF0EB1DC3F5188AE6300FAEF32BF5BEEBA4BDD6E8E445A9184072096B713B`.
+  The final package verifier reported 394 paths, 327 SHA-256 hashes, 187
+  direct resource hashes, and 22 license/SBOM files, then emitted
+  `WINDOWS_PACKAGE_VERIFICATION_SUCCESS:x64`.
+- Release artifact `ClassMngr-windows-x64`, ID `13916749851`, is 108,294,767
+  bytes with archive digest
+  `fbcbdd24a53dbaf99efb2b11955ed2c58aa6f8bae07af79e581e26f21484e7d0`.
+  Final verifier log artifact `13917627426` has digest
+  `bfa392fbeb246f0782b9a185cdd0b074ea37146fadeb901f56e6ba139ec69630`.
+  Both were unexpired when checked; listed expiry is 2027-02-10. The archived
+  run includes `ClassMngr-0.19.0-win-x64.exe`, its checksum, and package
+  reports.
+- A separate local Release attempt was incomplete: it produced an intermediate
+  VS 18/v145 installer but could not run the pinned innoextract final verifier.
+  It is not acceptance evidence. The official run completed the required
+  stages; no source changes were necessary. No tracked changes from that local
+  attempt were kept.
+- The clean Windows Debug candidate at `bb37cf9` and Fedora Linux candidate
+  at `e44f400c` remain recorded in the Phase 8a log. Native macOS work is still
+  user-deferred; Phase 8 and the final cross-host review remain open.
 
 ## Current Deployment Handoff — phase8-8713-macos-exitgate-20261109 — 2026-11-09
 
