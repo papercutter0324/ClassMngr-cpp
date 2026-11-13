@@ -9431,3 +9431,17 @@ Windows system-font availability checks require Qt's native Windows platform
 backend. The offscreen backend did not enumerate Segoe UI on the local Windows
 host; keep other platforms on their existing offscreen test environment.
 Family availability and configured font chains do not establish PDF rendering.
+
+
+## 2026-11-13 — GitHub workflow follow-up
+
+Qt PDF output may name the regular Pretendard variable-font face as
+PretendardVariable and the 700-weight face as PretendardVariable700wght,
+without explicit Regular/Bold suffixes. Test the normalized names the PDF
+writer emits while retaining separate regular and bold face checks.
+
+The Windows baseline failure timed out one aggregate CTest executable after
+240 seconds. That test target includes child-process guards up to 180 seconds;
+its outer limit must leave room for those guards and preceding slots to report
+specific failures. The hosted log did not identify the current in-flight slot,
+so the target-specific timeout adjustment is not evidence of a Windows pass.

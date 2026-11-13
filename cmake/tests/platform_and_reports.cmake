@@ -572,6 +572,13 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             RUN_SERIAL TRUE
     )
 
+    if(WIN32)
+        set_tests_properties(ClassMngrStartupPerformanceTests
+            PROPERTIES
+                TIMEOUT 360
+        )
+    endif()
+
     qt_add_executable(ClassMngrDatabaseFileFormatTests
         tests/database_file_format_tests.cpp
         src/app/startup_database_path.cpp

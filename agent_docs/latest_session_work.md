@@ -6481,3 +6481,36 @@ macOS completion, commit the two CMake changes and documentation, and push
 `Qt-Rewrite`. Phase 7.5 remains Complete. Phase 8 remains In progress because
 the full baseline is non-green and cross-platform/hosted exit-gate evidence is
 still pending. Preserve untracked `AGENTS.md`.
+
+
+## 2026-11-13 — Latest GitHub workflow errors
+
+Deployment github_workflow_repair_20261113 addresses only the newest Actions
+run per workflow started today in Asia/Seoul. The latest baseline run was
+[43380350555](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43380350555)
+on Qt-Rewrite, SHA 93e67df91b5c35addeb8d87aa85dcb57e5880803. It failed in two
+jobs: Linux ClassMngrSubPrepRosterOutputParityTests::dailyUsesIntensiveMeetings()
+and Windows ClassMngrStartupPerformanceTests. Latest Phase 4 layout,
+Linux/Windows/macOS release, and C53 runs succeeded. The previous same-day
+baseline attempt was cancelled and excluded from repair scope.
+
+The Linux log showed generated PDF BaseFont names
+pretendardvariable and pretendardvariable700wght, while the test required
+pretendardvariableregular and pretendardvariablebold. Updated
+tests/sub_prep_roster_output_parity_tests.cpp to accept each emitted name as
+an alias for its distinct regular or bold face and preserve all other PDF
+checks.
+
+The Windows log showed CTest terminating the whole target at 240.01 seconds.
+Representative startup checkpoints were under 6.3 seconds; no QtTest failure or
+in-flight slot was logged. The same target passed on Linux in 60.59 seconds.
+The current target contains a C53 child-process guard capped at 180 seconds,
+plus preceding slots. Added a Windows-only TIMEOUT 360 for this target in
+cmake/tests/platform_and_reports.cmake, leaving other targets and platform
+defaults unchanged. This gives the child guard room to report; it does not
+establish the stalled slot or guarantee the target will pass.
+
+Independent static acceptance passed and git diff --check passed. The
+focused Linux runtime test and full project configure could not run because Qt
+6.12+ is unavailable. No hosted rerun, commit, or push occurred. Continue with a
+fresh hosted baseline result before claiming runtime acceptance.

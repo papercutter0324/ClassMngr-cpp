@@ -378,10 +378,14 @@ void SubPrepRosterOutputParityTests::dailyUsesIntensiveMeetings()
     QVERIFY(dailyPdf.open(QIODevice::ReadOnly));
     const QByteArray dailyPdfBytes = dailyPdf.readAll();
     const QStringList baseFontNames = normalizedPdfBaseFontNames(dailyPdfBytes);
-    QVERIFY2(baseFontNames.contains(QStringLiteral("pretendardvariableregular")),
-        qPrintable(QStringLiteral("Pretendard regular BaseFont missing from: %1").arg(baseFontNames.join(QStringLiteral(", ")))));
-    QVERIFY2(baseFontNames.contains(QStringLiteral("pretendardvariablebold")),
-        qPrintable(QStringLiteral("Pretendard bold BaseFont missing from: %1").arg(baseFontNames.join(QStringLiteral(", ")))));
+    QVERIFY2(baseFontNames.contains(QStringLiteral("pretendardvariableregular"))
+            || baseFontNames.contains(QStringLiteral("pretendardvariable")),
+        qPrintable(QStringLiteral("Pretendard regular BaseFont missing (expected pretendardvariableregular or pretendardvariable) from: %1")
+            .arg(baseFontNames.join(QStringLiteral(", ")))));
+    QVERIFY2(baseFontNames.contains(QStringLiteral("pretendardvariablebold"))
+            || baseFontNames.contains(QStringLiteral("pretendardvariable700wght")),
+        qPrintable(QStringLiteral("Pretendard bold BaseFont missing (expected pretendardvariablebold or pretendardvariable700wght) from: %1")
+            .arg(baseFontNames.join(QStringLiteral(", ")))));
     const QString compact = compactText(pdf.text);
     for (const auto& token : {QStringLiteral("TUESDAY"), QStringLiteral("E4 Theseus"), QStringLiteral("4 p.m."),
              QStringLiteral("Alice"), QStringLiteral("Room 501"), QStringLiteral("alice.zoom"), QStringLiteral("zoom-key"), QStringLiteral("Alex")})

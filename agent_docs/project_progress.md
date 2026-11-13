@@ -7029,3 +7029,30 @@ and Phase 8a remain open for the shared provenance/capture gate and macOS/Linux
 candidates. The commit is local and was not pushed. Six old Debug build trees
 were removed; `build/windows-x64-debug` remains because ACL-protected generated
 paths prevented safe removal.
+
+
+## Current Workflow Repair — 2026-11-13
+
+Deployment ID: github_workflow_repair_20261113; route: Heavy. Scope is the
+newest GitHub Actions run per workflow from November 13 (Asia/Seoul), per user
+clarification. The latest refactoring-baseline run was
+[43380350555](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43380350555)
+on SHA 93e67df91b5c35addeb8d87aa85dcb57e5880803; its Linux and Windows jobs
+failed. The latest Phase 4 layout and Linux, Windows, macOS release and C53
+runs passed.
+
+Linux failed because the roster PDF test expected explicit Regular/Bold
+BaseFont suffixes while the generated variable-font PDF exposed
+pretendardvariable and pretendardvariable700wght. The assertions now accept
+those names alongside the prior explicit aliases while still requiring both
+faces. Windows CTest killed the aggregate ClassMngrStartupPerformanceTests
+target at its 240-second limit; the same run's Linux target passed in 60.59
+seconds. Hosted logs did not identify the in-flight Windows slot. The target
+now has a Windows-only 360-second CTest timeout so its existing 180-second
+child-process guard can report before the outer limit. This does not identify
+or prove resolution of the hosted stall.
+
+Static review and git diff --check passed. Project test configuration could
+not complete because Qt 6.12+ is unavailable in this environment. No runtime
+test or hosted rerun used these local edits; no commit or push was performed.
+The two-file worktree change remains pending fresh hosted Windows evidence.
