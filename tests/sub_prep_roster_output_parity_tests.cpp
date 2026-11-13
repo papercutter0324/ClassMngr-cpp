@@ -181,6 +181,56 @@ QStringList folders(const SubPrepPackageService::Result& result)
     return QDir(result.outputDirectory).entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
 }
 
+QStringList normalizedPdfBaseFontNames(const QByteArray& pdfBytes)
+{
+    const QRegularExpression baseFontExpression(
+        QStringLiteral("/BaseFont\\s*/([^\\s<>()\\[\\]{}%/]+)"));
+    auto matches = baseFontExpression.globalMatch(QString::fromLatin1(pdfBytes));
+    QStringList names;
+    const auto hexDigitValue = [](const char value)
+    {
+        if (value >= '0' && value <= '9')
+            return value - '0';
+        if (value >= 'A' && value <= 'F')
+            return value - 'A' + 10;
+        if (value >= 'a' && value <= 'f')
+            return value - 'a' + 10;
+        return -1;
+    };
+    while (matches.hasNext())
+    {
+        const QByteArray encodedName = matches.next().captured(1).toLatin1();
+        QByteArray decodedName;
+        for (qsizetype index = 0; index < encodedName.size();)
+        {
+            if (encodedName.at(index) == '#' && index + 2 < encodedName.size())
+            {
+                const int highDigit = hexDigitValue(encodedName.at(index + 1));
+                const int lowDigit = hexDigitValue(encodedName.at(index + 2));
+                if (highDigit >= 0 && lowDigit >= 0)
+                {
+                    decodedName.append(static_cast<char>((highDigit << 4) | lowDigit));
+                    index += 3;
+                    continue;
+                }
+            }
+            decodedName.append(encodedName.at(index));
+            ++index;
+        }
+
+        bool hasSubsetPrefix = decodedName.size() > 7 && decodedName.at(6) == '+';
+        for (qsizetype index = 0; hasSubsetPrefix && index < 6; ++index)
+            hasSubsetPrefix = decodedName.at(index) >= 'A' && decodedName.at(index) <= 'Z';
+        if (hasSubsetPrefix)
+            decodedName.remove(0, 7);
+
+        names.append(QString::fromLatin1(decodedName)
+            .toCaseFolded()
+            .remove(QRegularExpression(QStringLiteral("[^a-z0-9]"))));
+    }
+    return names;
+}
+
 QJsonObject transcript(const QString& name, const SubPrepPackageService::Result& result)
 {
     QJsonArray documents;
@@ -327,8 +377,11 @@ void SubPrepRosterOutputParityTests::dailyUsesIntensiveMeetings()
     QFile dailyPdf(result.documentPaths.at(1));
     QVERIFY(dailyPdf.open(QIODevice::ReadOnly));
     const QByteArray dailyPdfBytes = dailyPdf.readAll();
-    QVERIFY(dailyPdfBytes.contains("/BaseFont /PretendardVariable-Regular"));
-    QVERIFY(dailyPdfBytes.contains("/BaseFont /PretendardVariable-Bold"));
+    const QStringList baseFontNames = normalizedPdfBaseFontNames(dailyPdfBytes);
+    QVERIFY2(baseFontNames.contains(QStringLiteral("pretendardvariableregular")),
+        qPrintable(QStringLiteral("Pretendard regular BaseFont missing from: %1").arg(baseFontNames.join(QStringLiteral(", ")))));
+    QVERIFY2(baseFontNames.contains(QStringLiteral("pretendardvariablebold")),
+        qPrintable(QStringLiteral("Pretendard bold BaseFont missing from: %1").arg(baseFontNames.join(QStringLiteral(", ")))));
     const QString compact = compactText(pdf.text);
     for (const auto& token : {QStringLiteral("TUESDAY"), QStringLiteral("E4 Theseus"), QStringLiteral("4 p.m."),
              QStringLiteral("Alice"), QStringLiteral("Room 501"), QStringLiteral("alice.zoom"), QStringLiteral("zoom-key"), QStringLiteral("Alex")})
