@@ -7,7 +7,7 @@
 #include <expected>
 #include <memory>
 
-class QPdfWriter;
+class PdfGenerationSession;
 
 // Internal, operation-scoped support for the Qt-generated Sub Prep PDF path.
 // This is deliberately not a general PDF repair API.
@@ -21,7 +21,7 @@ struct SourceJournal {
 // Captures actual QTextItem source strings rather than extracting PDF text.
 class CaptureDevice final : public QPaintDevice {
 public:
-    CaptureDevice(QPdfWriter& writer, SourceJournal& journal);
+    CaptureDevice(PdfGenerationSession& writer, SourceJournal& journal);
     ~CaptureDevice() override;
     QPaintEngine* paintEngine() const override;
     bool newPage();

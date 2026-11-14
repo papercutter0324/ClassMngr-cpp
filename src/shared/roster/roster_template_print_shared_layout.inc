@@ -67,53 +67,12 @@ QPageLayout rosterPdfPageLayout(
         );
 }
 
-bool configureRosterPdfWriter(
-    QPdfWriter& writer,
-    TemplateId templateId,
-    QPageLayout::Orientation orientation
-    )
-{
-    writer.setCreator(
-        QStringLiteral("ClassMngr")
-        );
-    writer.setTitle(
-        QStringLiteral("Rosters")
-        );
-    writer.setResolution(
-        300
-        );
-
-    return writer.setPageLayout(
-        rosterPdfPageLayout(
-            templateId,
-            orientation
-            )
-        );
-}
-
-bool configureRosterPdfWriter(
-    QPdfWriter& writer,
-    TemplateId templateId
-    )
-{
-    return configureRosterPdfWriter(
-        writer,
-        templateId,
-        templateOrientation(templateId)
-        );
-}
-
 QRectF rosterPdfPageRect(
-    const QPdfWriter& writer
+    PdfGenerationSession& writer
     )
 {
     const QRect pageRect =
-        writer.pageLayout().fullRectPixels(
-            std::max(
-                1,
-                writer.resolution()
-                )
-            );
+        writer.pageRectPixels();
 
     if (
         pageRect.width() > 0
@@ -126,8 +85,8 @@ QRectF rosterPdfPageRect(
     return QRectF(
         0.0,
         0.0,
-        writer.width(),
-        writer.height()
+        writer.paintDevice().width(),
+        writer.paintDevice().height()
         );
 }
 

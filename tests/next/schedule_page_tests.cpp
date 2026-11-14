@@ -5,6 +5,7 @@
 #include "next/application/class_details_save_workflow.h"
 #include "next/application/schedule_slot_state_save.h"
 #include "next/application/schedule_testing_assignment_save.h"
+#include "next/platform/qt_font_family_availability_adapter.h"
 #include "next/platform/workspace_store_class_editor_actions.h"
 #include "next/platform/workspace_store_schedule_actions.h"
 #include "next/platform/workspace_store_testing_classes_actions.h"
@@ -14,8 +15,11 @@
 #include "next/ui/schedule_page.h"
 #include "next/ui/schedule_import_workflow_dialog.h"
 #include "next/ui/schedule_output_dialog.h"
+#include "next/ui/schedule_output_font_policy.h"
+#include "next/ui/sub_prep_output_font_policy.h"
 #include "next/ui/schedule_testing_assignment_dialog.h"
 #include "next/ui/testing_classes_manager_page.h"
+#include "font_family_availability_test_support.h"
 #include "preferences_test_ports.h"
 #include "splitter_state_test_port.h"
 #include "sql_script_runner.h"
@@ -219,6 +223,8 @@ private:
 struct PageFixture final
 {
     Test::MemoryPreferences preferences;
+    Test::FixedFontFamilyAvailabilityPort scheduleFontFamilyPort{
+        {}, u"Fixture Host Output Font"};
     std::unique_ptr<Resources::ResourceCatalog> catalog;
     std::unique_ptr<Resources::ResourceLoader> loader;
     std::unique_ptr<Ui::PageHost> host;
@@ -408,7 +414,7 @@ struct PageFixture final
                     static_cast<void>(host->activatePage(QStringLiteral("classes")));
                 };
                 auto page = std::make_unique<Ui::SchedulePage>(
-                    context, std::move(actions));
+                    context, scheduleFontFamilyPort, std::move(actions));
                 schedule = page.get();
                 return std::unique_ptr<Ui::Page>(std::move(page));
             }
@@ -605,6 +611,9 @@ private slots:
     void classSelectionRoutesToClassDetailsAndSaveRefreshesSchedule();
     void testingAssignmentCancelHandoffFailureRetryAndReload();
     void scheduleOutputDialogUsesCurrentProjectionAndReleasesOperations();
+    void scheduleOutputFontPolicyPreservesLocalePriorityAndHostFallback();
+    void subPrepRosterOutputFontsPreserveFamiliesSizeAndStyle();
+    void qtFontFamilyAdapterComposesScheduleFallbackByPlatform();
     void scheduleImportWorkbookChooserUsesSelectionAndPreservesCancellation();
     void retryReplacementSuspendReentryAndCloseReleaseRows();
     void languageChangeRetranslatesScheduleControls();
@@ -1290,23 +1299,26 @@ void SchedulePageTests::scheduleOutputDialogUsesCurrentProjectionAndReleasesOper
     const Theme expectedTheme = QApplication::palette()
         .color(QPalette::Window).lightness() < 128 ? Theme::Dark : Theme::Light;
     QCOMPARE(output.currentTheme, expectedTheme);
-    QString systemFallbackFamily;
-#ifdef Q_OS_MACOS
-    systemFallbackFamily = QStringLiteral("Helvetica Neue");
-#elif defined(Q_OS_WIN)
-    systemFallbackFamily = QStringLiteral("Segoe UI");
-#else
-    systemFallbackFamily = QFontDatabase::systemFont(
-        QFontDatabase::GeneralFont).family();
-#endif
-    QVERIFY(!systemFallbackFamily.trimmed().isEmpty());
-    const QStringList installedFamilies = QFontDatabase::families();
-    QVERIFY(installedFamilies.contains(
-        systemFallbackFamily, Qt::CaseInsensitive));
-    QVERIFY(output.englishFont.families().contains(
-        systemFallbackFamily, Qt::CaseInsensitive));
-    QVERIFY(output.koreanFont.families().contains(
-        systemFallbackFamily, Qt::CaseInsensitive));
+    const QStringList registeredFamilies = QApplication::font().families();
+    const bool koreanGlobalFont = !registeredFamilies.isEmpty()
+        && registeredFamilies.first().contains(
+            QStringLiteral("Pretendard"), Qt::CaseInsensitive);
+    const int expectedEnglishPointSize =
+        Ui::resolveScheduleOutputEnglishPointSize(
+            QApplication::font().pointSize(),
+            koreanGlobalFont,
+            fixture.scheduleFontFamilyPort.outputFallbackEnglishPointSize());
+    QCOMPARE(output.englishFont.pointSize(), expectedEnglishPointSize);
+    QCOMPARE(output.koreanFont.pointSize(), expectedEnglishPointSize + 1);
+    QCOMPARE(output.englishFont.weight(), QApplication::font().weight());
+    QCOMPARE(output.koreanFont.weight(), QApplication::font().weight());
+    QCOMPARE(output.englishFont.italic(), QApplication::font().italic());
+    QCOMPARE(output.koreanFont.italic(), QApplication::font().italic());
+    const QString injectedFallbackFamily = QString::fromStdU16String(
+        fixture.scheduleFontFamilyPort.outputFallbackFontFamily());
+    QCOMPARE(injectedFallbackFamily, QStringLiteral("Fixture Host Output Font"));
+    QCOMPARE(output.englishFont.families().last(), injectedFallbackFamily);
+    QCOMPARE(output.koreanFont.families().last(), injectedFallbackFamily);
     QVERIFY(output.document.days.contains(QStringLiteral("Monday")));
     const auto outputRow = std::find_if(output.document.rows.begin(),
         output.document.rows.end(), [](const auto& row) {
@@ -1357,6 +1369,124 @@ void SchedulePageTests::scheduleOutputDialogUsesCurrentProjectionAndReleasesOper
     QCOMPARE(page->visualMetrics().model.rowCount, 0);
     QCOMPARE(page->visualMetrics().model.cellCount, 0);
     QCOMPARE(page->visualMetrics().model.entryCount, 0);
+}
+
+void SchedulePageTests::
+scheduleOutputFontPolicyPreservesLocalePriorityAndHostFallback()
+{
+    const QString hostFallback = QStringLiteral("Host General Output");
+    const Ui::OutputFontFamilies families =
+        Ui::makeOutputFontFamilies(
+            {
+                QStringLiteral("Pretendard Variable"),
+                QStringLiteral("Inter UI"),
+                QStringLiteral("Inter Display")
+            },
+            hostFallback);
+
+    QCOMPARE(families.english, QStringList({
+        QStringLiteral("Inter UI"),
+        QStringLiteral("Pretendard Variable"),
+        hostFallback
+    }));
+    QCOMPARE(families.korean, QStringList({
+        QStringLiteral("Pretendard Variable"),
+        QStringLiteral("Inter UI"),
+        hostFallback
+    }));
+
+    const Ui::OutputFontFamilies fallbackOnly =
+        Ui::makeOutputFontFamilies({}, hostFallback);
+    QCOMPARE(fallbackOnly.english, QStringList({hostFallback}));
+    QCOMPARE(fallbackOnly.korean, QStringList({hostFallback}));
+
+    QCOMPARE(Ui::resolveScheduleOutputEnglishPointSize(0, false, 15), 15);
+    QCOMPARE(Ui::resolveScheduleOutputEnglishPointSize(0, false, 14), 14);
+    QCOMPARE(Ui::resolveScheduleOutputEnglishPointSize(12, true, 15), 11);
+    QCOMPARE(Ui::resolveScheduleOutputEnglishPointSize(12, false, 14), 12);
+}
+
+void SchedulePageTests::
+subPrepRosterOutputFontsPreserveFamiliesSizeAndStyle()
+{
+    const auto macFonts = Ui::makeSubPrepRosterOutputFonts(
+        {
+            QStringLiteral("Pretendard Variable"),
+            QStringLiteral("Inter UI")
+        },
+        QStringLiteral("Helvetica Neue"),
+        15);
+    QCOMPARE(macFonts.ui.families(), QStringList({
+        QStringLiteral("Inter UI"),
+        QStringLiteral("Pretendard Variable"),
+        QStringLiteral("Helvetica Neue")
+    }));
+    QCOMPARE(macFonts.korean.families(), QStringList({
+        QStringLiteral("Pretendard Variable"),
+        QStringLiteral("Inter UI"),
+        QStringLiteral("Helvetica Neue")
+    }));
+    QCOMPARE(macFonts.ui.pointSize(), 15);
+    QCOMPARE(macFonts.korean.pointSize(), 16);
+    QCOMPARE(macFonts.ui.weight(), QFont::Normal);
+    QCOMPARE(macFonts.korean.weight(), QFont::Normal);
+    QVERIFY(!macFonts.ui.italic());
+    QVERIFY(!macFonts.korean.italic());
+    QCOMPARE(macFonts.korean.styleName(), QStringLiteral("Regular"));
+    QCOMPARE(macFonts.ui.hintingPreference(), QFont::PreferFullHinting);
+    QCOMPARE(macFonts.korean.hintingPreference(), QFont::PreferFullHinting);
+    QCOMPARE(macFonts.ui.styleStrategy(), QFont::PreferAntialias);
+    QCOMPARE(macFonts.korean.styleStrategy(), QFont::PreferAntialias);
+
+    const auto otherFonts = Ui::makeSubPrepRosterOutputFonts(
+        {}, QStringLiteral("Host General Output"), 14);
+    QCOMPARE(otherFonts.ui.families(), QStringList({
+        QStringLiteral("Host General Output")
+    }));
+    QCOMPARE(otherFonts.korean.families(), QStringList({
+        QStringLiteral("Host General Output")
+    }));
+    QCOMPARE(otherFonts.ui.pointSize(), 14);
+    QCOMPARE(otherFonts.korean.pointSize(), 15);
+}
+
+void SchedulePageTests::
+qtFontFamilyAdapterComposesScheduleFallbackByPlatform()
+{
+    Platform::QtFontFamilyAvailabilityAdapter fontFamilies;
+    std::u16string expectedFamily;
+    int expectedEnglishFallbackPointSize = 14;
+    int expectedApplicationBasePointSize = 14;
+    int expectedTeacherKoreanPointSize = 15;
+#ifdef Q_OS_MACOS
+    expectedFamily = u"Helvetica Neue";
+    expectedEnglishFallbackPointSize = 15;
+    expectedApplicationBasePointSize = 15;
+    expectedTeacherKoreanPointSize = 16;
+#elif defined(Q_OS_WIN)
+    expectedFamily = u"Segoe UI";
+#else
+    expectedFamily = QFontDatabase::systemFont(QFontDatabase::GeneralFont)
+        .family().toStdU16String();
+#endif
+    QCOMPARE(fontFamilies.outputFallbackFontFamily(), expectedFamily);
+    QCOMPARE(fontFamilies.outputFallbackEnglishPointSize(),
+             expectedEnglishFallbackPointSize);
+    QCOMPARE(fontFamilies.applicationBaseFontPointSize(),
+             expectedApplicationBasePointSize);
+    QCOMPARE(fontFamilies.teacherProfileKoreanFontPointSize(),
+             expectedTeacherKoreanPointSize);
+    QVERIFY(!expectedFamily.empty());
+
+    const QString expectedName = QString::fromStdU16String(expectedFamily);
+    const std::vector<std::u16string> availableFamilies =
+        fontFamilies.availableFontFamilies();
+    QVERIFY(std::any_of(
+        availableFamilies.begin(), availableFamilies.end(),
+        [&expectedName](const std::u16string& family) {
+            return QString::fromStdU16String(family).compare(
+                expectedName, Qt::CaseInsensitive) == 0;
+        }));
 }
 
 void SchedulePageTests::

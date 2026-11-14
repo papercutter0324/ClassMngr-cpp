@@ -25,6 +25,9 @@
 #include "next/domain/teacher_display_name.h"
 #include "core/appsettings.h"
 #include "core/settingsmanager.h"
+#include "core/zip_archive_read_adapter.h"
+#include "features/schedule/import/schedule_workbook_parser.h"
+#include "features/teacher/import/teacher_import_file_validator.h"
 #include "next/platform/settings_manager_recent_workspace_history_port.h"
 #include "next/platform/settings_manager_window_geometry_port.h"
 #include "next/platform/settings_manager_splitter_state_port.h"
@@ -55,12 +58,15 @@
 #include "next/platform/campus_directory_repository_adapter.h"
 #include "next/platform/qt_clipboard_write_adapter.h"
 #include "next/platform/qt_font_family_availability_adapter.h"
+#include "next/platform/qt_speaking_evaluation_powerpoint_presentation_adapter.h"
 #include "next/platform/qt_external_url_launch_adapter.h"
 #include "next/platform/qt_default_output_directories_adapter.h"
 #include "next/platform/settings_manager_last_selected_campus_port.h"
 #include "next/platform/qt_schedule_output_adapter.h"
 #include "next/platform/pdf_print_operation.h"
 #include "shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
+#include "core/zip_archive_write_adapter.h"
+#include "core/qt_pdf_generation_adapter.h"
 #include "next/platform/workspace_store_creation_lifecycle_adapter.h"
 #include "next/platform/workspace_profile_path_policy.h"
 #include "next/platform/workspace_interrupted_recovery_port.h"
@@ -78,6 +84,7 @@
 #include "next/ui/placeholder_page.h"
 #include "next/ui/my_workspace_page.h"
 #include "next/ui/schedule_page.h"
+#include "next/ui/sub_prep_output_font_policy.h"
 #include "next/ui/calendar_page.h"
 #include "next/ui/schedule_output_request.h"
 #include "next/ui/my_classes_page.h"
@@ -490,6 +497,7 @@ loadWorkspaceCampusChoices(
 }
 
 [[nodiscard]] Ui::PageDescriptor schedulePageDescriptor(
+    Application::FontFamilyAvailabilityPort& fontFamilyAvailabilityPort,
     std::function<Ui::SchedulePageActions()> actionsFactory
     )
 {
@@ -499,12 +507,16 @@ loadWorkspaceCampusChoices(
         .labelTranslationSource = QStringLiteral("Schedule"),
         .iconResourceId = std::nullopt,
         .requiredPermissions = {},
-        .factory = [actionsFactory = std::move(actionsFactory)](
+        .factory = [actionsFactory = std::move(actionsFactory),
+                    fontFamilyAvailabilityPort = &fontFamilyAvailabilityPort](
                        const Ui::PageContext& context
                        ) mutable
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             std::unique_ptr<Ui::Page> page =
-                std::make_unique<Ui::SchedulePage>(context, actionsFactory());
+                std::make_unique<Ui::SchedulePage>(
+                    context,
+                    *fontFamilyAvailabilityPort,
+                    actionsFactory());
             return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
                 std::move(page)
             };
@@ -821,6 +833,9 @@ struct ApplicationBootstrap::CoreServices final
         , clipboardWritePort(
               std::make_shared<Platform::QtClipboardWriteAdapter>()
               )
+        , archiveReadPort(
+              std::shared_ptr<ArchiveReadPort>(makeZipArchiveReadPort())
+              )
         , externalUrlLaunchPort(
               std::make_shared<Platform::QtExternalUrlLaunchAdapter>()
               )
@@ -844,6 +859,7 @@ struct ApplicationBootstrap::CoreServices final
     Platform::QtFontFamilyAvailabilityAdapter fontFamilyAvailabilityPort;
     Resources::ResourceScope startupResourceScope;
     std::shared_ptr<Application::ClipboardWritePort> clipboardWritePort;
+    std::shared_ptr<ArchiveReadPort> archiveReadPort;
     std::shared_ptr<Application::ExternalUrlLaunchPort> externalUrlLaunchPort;
     std::shared_ptr<Platform::CampusDirectoryRepositoryAdapter>
         campusDirectoryRepository;
@@ -864,6 +880,15 @@ struct ApplicationBootstrap::CoreServices final
 Ui::SubPrepPageActions ApplicationBootstrap::subPrepPageActions()
 {
     Ui::SubPrepPageActions actions;
+    actions.pdfGeneration = makeQtPdfGenerationPort();
+    if (m_coreServices)
+    {
+        const auto& fonts = m_coreServices->fontFamilyAvailabilityPort;
+        actions.rosterOutputFonts = Ui::makeSubPrepRosterOutputFonts(
+            QApplication::font().families(),
+            QString::fromStdU16String(fonts.outputFallbackFontFamily()),
+            fonts.applicationBaseFontPointSize());
+    }
     actions.defaultOutputDirectoriesPort = defaultOutputDirectoriesPort();
     const auto gateway = [this] {
         return dynamic_cast<Platform::WorkspaceStoreGateway*>(
@@ -1540,7 +1565,9 @@ Application::StartupResult ApplicationBootstrap::start()
                         }
                     }
                 },
-                m_shell.get()
+                m_shell.get(),
+                Platform::QtSpeakingEvaluationPowerPointPresentationAdapter::
+                    capabilities()
                 );
             dialog.exec();
         });
@@ -1920,6 +1947,8 @@ Application::StartupResult ApplicationBootstrap::start()
                     };
                     actions.rosterEditor.output.printOperationFactory =
                         Platform::makeQtPdfPrintOperation;
+                    actions.rosterEditor.output.pdfPreviewSessionFactory =
+                        Platform::makeQtRosterPdfPreviewSession;
                     actions.rosterEditor.output.fonts = {
                         QFont(m_coreServices->interFont ? m_coreServices->interFont->get().familyNames().value(0) : QStringLiteral("Inter")),
                         QFont(m_coreServices->pretendardFont ? m_coreServices->pretendardFont->get().familyNames().value(0) : QStringLiteral("Pretendard"))};
@@ -2094,6 +2123,11 @@ Application::StartupResult ApplicationBootstrap::start()
                             Platform::makeQtPdfPrintOperation;
                         actions.reports.run.powerPointAutomation =
                             makeQtSpeakingEvalPowerPointAutomationPort();
+                        actions.reports.powerPointPresentationCapabilities =
+                            Platform::QtSpeakingEvaluationPowerPointPresentationAdapter::
+                                capabilities();
+                        actions.reports.run.archiveWriter = makeZipArchiveWritePort();
+                        actions.reports.run.pdfGeneration = makeQtPdfGenerationPort();
                         actions.reports.saveFileDialog = [this](
                             QWidget* parent,
                             const Application::SaveFileDialogRequest& request) {
@@ -2227,6 +2261,8 @@ Application::StartupResult ApplicationBootstrap::start()
                         };
                         actions.rosterEditor.output.printOperationFactory =
                             Platform::makeQtPdfPrintOperation;
+                        actions.rosterEditor.output.pdfPreviewSessionFactory =
+                            Platform::makeQtRosterPdfPreviewSession;
                         actions.rosterEditor.output.fonts = {
                             QFont(m_coreServices->interFont ? m_coreServices->interFont->get().familyNames().value(0) : QStringLiteral("Inter")),
                             QFont(m_coreServices->pretendardFont ? m_coreServices->pretendardFont->get().familyNames().value(0) : QStringLiteral("Pretendard"))};
@@ -2507,6 +2543,8 @@ Application::StartupResult ApplicationBootstrap::start()
         const auto calendarActionsFactory = [this](
             const Ui::PageContext& context) {
             Ui::CalendarPageActions actions;
+            actions.calendarArchiveReadPort =
+                m_coreServices->archiveReadPort;
             actions.activeWorkspacePath = [this] {
                 if (!m_applicationRuntime)
                 {
@@ -2689,7 +2727,9 @@ Application::StartupResult ApplicationBootstrap::start()
         if (initialPageFailure.isEmpty())
         {
             const Ui::PageHostResult<void> registration =
-                m_shell->pageHost().registerPage(schedulePageDescriptor([this] {
+                m_shell->pageHost().registerPage(schedulePageDescriptor(
+                    m_coreServices->fontFamilyAvailabilityPort,
+                    [this] {
                     Ui::SchedulePageActions actions;
                     const auto resolveScheduleImportGatewayForPath = [this](
                         const QString& expectedPath
@@ -2862,6 +2902,13 @@ Application::StartupResult ApplicationBootstrap::start()
                         {
                             page->openNewClassForPendingSlot(slot);
                         }
+                    };
+                    actions.parseScheduleImportWorkbook = [archiveReader =
+                        m_coreServices->archiveReadPort] (
+                        QIODevice& device,
+                        const ScheduleImportKind kind) {
+                        return parseScheduleImportWorkbook(
+                            device, *archiveReader, kind);
                     };
                     actions.scheduleImportTimeoutMilliseconds = [] {
                         const Platform::SettingsManagerExcelImportTimeoutPort
@@ -3299,6 +3346,13 @@ Application::StartupResult ApplicationBootstrap::start()
                             .chooseWorkbook = [this] {
                                 return chooseInitialSetupScheduleImportWorkbook();
                             },
+                            .parseWorkbook = [archiveReader =
+                                m_coreServices->archiveReadPort] (
+                                const QByteArray& data,
+                                const ScheduleImportKind kind) {
+                                return parseScheduleImportWorkbook(
+                                    data, *archiveReader, kind);
+                            },
                             .readState = [
                                 resolveInitialSetupScheduleImportGateway
                                 ] {
@@ -3338,8 +3392,11 @@ Application::StartupResult ApplicationBootstrap::start()
                             .chooseWorkbook = [this] {
                                 return chooseInitialSetupTeacherImportWorkbook();
                             },
-                            .validateWorkbook = [](const QString& path) {
-                                return validateTeacherImportFile(path);
+                            .validateWorkbook = [archiveReader =
+                                m_coreServices->archiveReadPort] (
+                                const QString& path) {
+                                return validateTeacherImportFile(
+                                    path, *archiveReader);
                             },
                             .validationTimeoutMilliseconds = [] {
                                 const Platform::SettingsManagerExcelImportTimeoutPort
@@ -3368,6 +3425,8 @@ Application::StartupResult ApplicationBootstrap::start()
         if (initialPageFailure.isEmpty())
         {
             Ui::DocumentViewerPageActions documentViewerActions;
+            documentViewerActions.defaultOutputDirectoriesPort =
+                defaultOutputDirectoriesPort();
             documentViewerActions.saveFileDialog = [this](
                 QWidget* parent,
                 const Application::SaveFileDialogRequest& request) {
@@ -5165,8 +5224,9 @@ void ApplicationBootstrap::importTeachersFromWorkspace()
         return Domain::Result<std::optional<QString>>::success(
             QString::fromUtf8(path.data(), static_cast<qsizetype>(path.size())));
     };
-    actions.validateWorkbook = [](const QString& path) {
-        return validateTeacherImportFile(path);
+    actions.validateWorkbook = [archiveReader =
+        m_coreServices->archiveReadPort](const QString& path) {
+        return validateTeacherImportFile(path, *archiveReader);
     };
     actions.validationTimeoutMilliseconds = [] {
         const Platform::SettingsManagerExcelImportTimeoutPort timeoutPreferences;
@@ -6699,7 +6759,10 @@ bool ApplicationBootstrap::createCoreServices()
         m_coreServices->startupResourceScope,
         m_coreServices->preferences
         );
-    m_coreServices->fontSizePresenter = std::make_unique<Ui::FontSizePresenter>(m_application);
+    m_coreServices->fontSizePresenter = std::make_unique<Ui::FontSizePresenter>(
+        m_application,
+        m_coreServices->fontFamilyAvailabilityPort
+        );
     return true;
 }
 

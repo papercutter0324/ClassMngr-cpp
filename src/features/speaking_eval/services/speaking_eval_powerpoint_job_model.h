@@ -3,7 +3,6 @@
 #include "features/speaking_eval/ui/speaking_eval_report_template.h"
 
 #include <QByteArray>
-#include <QJsonObject>
 #include <QList>
 #include <QRectF>
 #include <QString>
@@ -18,8 +17,6 @@ struct StudentReport;
 
 namespace SpeakingEvalPowerPointJobModel
 {
-inline constexpr auto CommentFontName = "Segoe UI Semibold";
-
 struct TemplateProfile
 {
     SpeakingEvalReportTemplate reportTemplate =
@@ -72,13 +69,6 @@ struct BatchJob
     const QStringList& pdfPaths,
     const QString& workingDirectory,
     const QString& documentsRoot
-    );
-
-[[nodiscard]] QJsonObject toJson(
-    const BatchJob& batch,
-    const QString& pptxPath,
-    const QString& signaturePath,
-    const QString& cancelPath
     );
 
 [[nodiscard]] bool usesSingleTemplate(

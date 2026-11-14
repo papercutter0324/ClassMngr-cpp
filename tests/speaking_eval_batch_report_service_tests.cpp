@@ -1,8 +1,10 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
+#include "core/qt_pdf_generation_adapter.h"
 #include "core/fontmanager.h"
 #include "shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
 #include "shared/speaking_evaluation/qt_powerpoint_automation_workspace.h"
 #include "features/speaking_eval/services/speaking_eval_ai_batch_response_parser.h"
+#include "features/speaking_eval/services/speaking_eval_report_data_assembler.h"
 #include "features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_batch_export_dialog.h"
 #include "features/speaking_eval/ui/speaking_eval_delegate.h"
@@ -15,6 +17,7 @@
 #include "domain/models/class_info.h"
 #include "core/settingsmanager.h"
 #include "core/zip_archive_writer.h"
+#include "core/zip_archive_write_adapter.h"
 #include "fakes/fake_user_prompt_service.h"
 #include "next/platform/settings_manager_ai_comment_custom_website_port.h"
 #include "next/platform/settings_manager_ai_comment_provider_preferences_port.h"
@@ -66,6 +69,14 @@
 #include <memory>
 #include <utility>
 #include <string>
+
+class CallbackArchiveWritePort final : public ArchiveWritePort
+{
+public:
+    std::function<bool(const QString&, const QList<Entry>&, QString*)> write;
+    bool writeArchive(const QString& path, const QList<Entry>& entries,
+        QString* error) override { return write(path, entries, error); }
+};
 
 class SpeakingEvalPromptPreviewCapturedUrlHandler final : public QObject
 {
@@ -538,6 +549,8 @@ private slots:
     void defaultOutputDirectoryNormalizesClassScheduleTime();
     void batchArchivePathUsesOutputFolderName();
     void zipWriterRejectsMissingAndDuplicateEntries();
+    void nextArchiveOutputUsesInjectedWriter_data();
+    void nextArchiveOutputUsesInjectedWriter();
     void reportDateUsesShortMonthsForStandardTemplate();
     void internalRendererCreatesReadablePdf();
     void batchCanKeepIndividualPdfFiles();
@@ -852,6 +865,154 @@ void SpeakingEvalBatchReportServiceTests::
         );
     QVERIFY(!errorMessage.isEmpty());
     QVERIFY(!QFileInfo::exists(archivePath));
+}
+
+void SpeakingEvalBatchReportServiceTests::nextArchiveOutputUsesInjectedWriter_data()
+{
+    QTest::addColumn<QString>("mode");
+    QTest::addColumn<bool>("keepIndividual");
+    for (const char* mode : {"completed", "failed", "missing", "canceled"})
+        for (const bool keep : {false, true})
+            QTest::newRow(qPrintable(QString::fromLatin1(mode)
+                + (keep ? QStringLiteral("-individual") : QStringLiteral("-archive-only"))))
+                << QString::fromLatin1(mode) << keep;
+}
+
+void SpeakingEvalBatchReportServiceTests::nextArchiveOutputUsesInjectedWriter()
+{
+    QFETCH(QString, mode);
+    QFETCH(bool, keepIndividual);
+    namespace Service = SpeakingEvalBatchReportService;
+    using ClassMngr::Next::Application::ReportJobPhase;
+    QTemporaryDir output;
+    QVERIFY(output.isValid());
+    Service::Request request;
+    SpeakingEvalReportData first;
+    first.englishName = QStringLiteral("Zulu / First");
+    first.koreanName = QStringLiteral("첫학생");
+    SpeakingEvalReportData second;
+    second.englishName = QStringLiteral("Alpha Second");
+    request.reports = {{first.englishName, first}, {second.englishName, second}};
+    request.savePdf = true;
+    request.keepIndividualPdfFiles = keepIndividual;
+    request.overwriteExisting = true;
+    request.outputDirectory = output.path();
+    request.printReports = mode != QStringLiteral("completed");
+    QString staging;
+    request.stagingDirectoryCreated = [&](const QString& path) { staging = path; };
+    QStringList renderedPaths;
+    QList<QByteArray> renderedBytes;
+    request.internalRenderer = [&](const SpeakingEvalReportData& report,
+        const QString& path, QString*) {
+        const QByteArray bytes = QByteArrayLiteral("%PDF-fixture-") + report.englishName.toUtf8();
+        QFile pdf(path);
+        if (!pdf.open(QIODevice::WriteOnly) || pdf.write(bytes) != bytes.size()) return false;
+        renderedPaths.append(path);
+        renderedBytes.append(bytes);
+        return true;
+    };
+    request.progressCallback = [&](int completed, int total, const QString&) {
+        return mode != QStringLiteral("canceled") || completed != total;
+    };
+    const QString targetArchive = Service::batchArchivePath(output.path());
+    const QByteArray originalArchive = QByteArrayLiteral("Existing archive remains until commit.");
+    QFile existing(targetArchive);
+    QVERIFY(existing.open(QIODevice::WriteOnly));
+    QCOMPARE(existing.write(originalArchive), originalArchive.size());
+    existing.close();
+
+    int writerCalls = 0;
+    QString receivedArchivePath;
+    QList<ArchiveWritePort::Entry> receivedEntries;
+    QList<QByteArray> receivedBytes;
+    const auto writer = std::make_shared<CallbackArchiveWritePort>();
+    const auto zipWriter = makeZipArchiveWritePort();
+    const QString archiveError = QStringLiteral("Synthetic ZIP write failure.");
+    bool partialArchiveWritten = false;
+    writer->write = [&](const QString& path, const QList<ArchiveWritePort::Entry>& entries,
+        QString* error) {
+        ++writerCalls;
+        receivedArchivePath = path;
+        receivedEntries = entries;
+        for (const auto& entry : entries)
+        {
+            QFile source(entry.sourcePath);
+            receivedBytes.append(source.open(QIODevice::ReadOnly) ? source.readAll() : QByteArray{});
+        }
+        if (mode == QStringLiteral("failed"))
+        {
+            // Partial adapter output must never reach the final destination.
+            QFile partial(path);
+            partialArchiveWritten = partial.open(QIODevice::WriteOnly)
+                && partial.write("partial ZIP") == 11;
+            if (error) *error = archiveError;
+            return false;
+        }
+        return zipWriter->writeArchive(path, entries, error);
+    };
+    ClassMngr::Next::Output::SpeakingEvaluationReportRunActions actions;
+    if (mode != QStringLiteral("missing")) actions.archiveWriter = writer;
+    int printCalls = 0;
+    actions.printOperationFactory = [&]() -> std::unique_ptr<ClassMngr::Next::Platform::PdfPrintOperation> {
+        ++printCalls;
+        return {};
+    };
+    const auto result = ClassMngr::Next::Output::runSpeakingEvaluationReports(request, actions);
+    QCOMPARE(result.attempts, 1);
+    QCOMPARE(printCalls, 0);
+    if (mode == QStringLiteral("failed")) QVERIFY(partialArchiveWritten);
+    QCOMPARE(renderedPaths.size(), 2);
+    QCOMPARE(writerCalls, mode == QStringLiteral("completed") || mode == QStringLiteral("failed") ? 1 : 0);
+    if (writerCalls)
+    {
+        QCOMPARE(receivedArchivePath, QDir(staging).filePath(QStringLiteral("reports.zip")));
+        QCOMPARE(receivedEntries.size(), 2);
+        QCOMPARE(receivedBytes, renderedBytes);
+        for (int index = 0; index < receivedEntries.size(); ++index)
+        {
+            QCOMPARE(receivedEntries.at(index).sourcePath, renderedPaths.at(index));
+            QCOMPARE(receivedEntries.at(index).archiveName, Service::safeFileName(
+                request.reports.at(index).report.englishName, request.reports.at(index).report.koreanName));
+        }
+    }
+    QVERIFY(!staging.isEmpty());
+    QVERIFY(!QFileInfo::exists(staging));
+    QVERIFY(existing.open(QIODevice::ReadOnly));
+    if (mode == QStringLiteral("completed"))
+    {
+        QCOMPARE(result.output.status, DocumentOutputStatus::Completed);
+        QCOMPARE(result.job.phase(), ReportJobPhase::Completed);
+        QCOMPARE(result.output.savedArchivePath, targetArchive);
+        QCOMPARE(result.output.savedPdfPaths.size(), keepIndividual ? 2 : 0);
+        const auto entries = storedZipEntries(targetArchive);
+        QCOMPARE(entries.size(), 2);
+        for (int index = 0; index < receivedEntries.size(); ++index)
+            QCOMPARE(entries.value(receivedEntries.at(index).archiveName), renderedBytes.at(index));
+        for (int index = 0; index < result.output.savedPdfPaths.size(); ++index)
+        {
+            QFile pdf(result.output.savedPdfPaths.at(index));
+            QVERIFY(pdf.open(QIODevice::ReadOnly));
+            QCOMPARE(pdf.readAll(), renderedBytes.at(index));
+        }
+    }
+    else
+    {
+        const bool canceled = mode == QStringLiteral("canceled");
+        QCOMPARE(result.output.status, canceled ? DocumentOutputStatus::Canceled : DocumentOutputStatus::Failed);
+        QCOMPARE(result.job.phase(), canceled ? ReportJobPhase::Canceled : ReportJobPhase::Failed);
+        QCOMPARE(result.output.message, canceled ? QStringLiteral("Report export was canceled.")
+            : mode == QStringLiteral("missing") ? QStringLiteral("The ZIP archive operation is unavailable.") : archiveError);
+        if (!canceled)
+        {
+            QVERIFY(result.job.error().has_value());
+            QCOMPARE(QString::fromStdString(result.job.error()->message), result.output.message);
+        }
+        QVERIFY(result.output.savedArchivePath.isEmpty());
+        QVERIFY(result.output.savedPdfPaths.isEmpty());
+        QCOMPARE(existing.readAll(), originalArchive);
+    }
+    QCOMPARE(QDir(output.path()).entryList(QDir::Files).size(),
+        mode == QStringLiteral("completed") && keepIndividual ? 3 : 1);
 }
 
 void SpeakingEvalBatchReportServiceTests::
@@ -1501,9 +1662,23 @@ void SpeakingEvalBatchReportServiceTests::qtPowerPointAdapterReleasesWorkspace()
     templateFile.close();
     const QString staging = QDir(root.path()).filePath(QStringLiteral("staging"));
     QVERIFY(QDir().mkpath(staging));
+    SpeakingEvalReportData firstReport;
+    firstReport.englishName = QStringLiteral("Zoë North");
+    firstReport.koreanName = QString::fromUtf8("길동");
+    firstReport.classLabel = QString::fromUtf8("영어 5");
+    firstReport.nativeTeacher = QStringLiteral("Mina O’Neil");
+    firstReport.koreanTeacher = QString::fromUtf8("박서준");
+    firstReport.date = QStringLiteral("May 14, 2026");
+    firstReport.comments = QString::fromUtf8("Said \"hello\"; 잘했어.\nSecond line.");
+    firstReport.scores = {
+        QStringLiteral("A+"), QStringLiteral("A"), QStringLiteral("B+"),
+        QStringLiteral("B"), QStringLiteral("C"), QStringLiteral("A+")
+    };
+    const QString firstDisplayName = QString::fromUtf8("길동 (Zoë)");
+    const QString secondDisplayName = QStringLiteral("Second");
     QList<SpeakingEvalBatchReportService::StudentReport> reports{
-        {QStringLiteral("First"), SpeakingEvalReportData{}},
-        {QStringLiteral("Second"), SpeakingEvalReportData{}}
+        {firstDisplayName, firstReport},
+        {secondDisplayName, SpeakingEvalReportData{}}
     };
     const QStringList targets{
         QDir(staging).filePath(QStringLiteral("first.pdf")),
@@ -1525,6 +1700,8 @@ void SpeakingEvalBatchReportServiceTests::qtPowerPointAdapterReleasesWorkspace()
         workspacePaths = {automation, presentation};
     };
     bool requestPreserved = false;
+    bool hostPayloadPreserved = false;
+    QString hostPayloadError;
     const auto selectedHost = actions.host;
     actions.run = [&](const QtSpeakingEvalPowerPoint::ProcessRequest& request, QString* error) {
         ++runnerCalls;
@@ -1537,8 +1714,147 @@ void SpeakingEvalBatchReportServiceTests::qtPowerPointAdapterReleasesWorkspace()
             ? request.arguments.value(5) : request.arguments.value(0);
         requestPreserved = requestPreserved && QFileInfo(scriptPath).isFile()
             && request.executable == QStringLiteral("fixture-host-executable")
-            && request.reports.at(0).displayName == QStringLiteral("First")
-            && request.reports.at(1).displayName == QStringLiteral("Second");
+            && request.reports.value(0).displayName == QString::fromUtf8("길동 (Zoë)")
+            && request.reports.value(1).displayName == secondDisplayName;
+
+        const auto recordPayloadCheck = [&](const bool passed, const QString& message) {
+            if (!passed && hostPayloadError.isEmpty()) hostPayloadError = message;
+            hostPayloadPreserved = hostPayloadPreserved && passed;
+        };
+        hostPayloadPreserved = true;
+        const auto readFile = [](const QString& path) {
+            QFile file(path);
+            return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray{};
+        };
+        const QString script = QString::fromUtf8(readFile(scriptPath));
+        const QString expectedPptxPath =
+            QDir(workspacePaths.value(1)).filePath(QStringLiteral("report-template.pptx"));
+        if (selectedHost == QtSpeakingEvalPowerPoint::Host::Windows)
+        {
+            const bool scriptHasContract =
+                script.contains(QStringLiteral("Get-Content -LiteralPath $args[0] -Raw | ConvertFrom-Json"))
+                && script.contains(QStringLiteral("$ppt.Presentations.Open("))
+                && script.contains(QStringLiteral("$presentation.SaveAs($pdfPath, [int]32)"));
+            recordPayloadCheck(scriptHasContract, QStringLiteral("Windows PowerShell script contract was incomplete."));
+            const bool argumentContract = request.arguments.size() == 7
+                && request.arguments.value(0) == QStringLiteral("-NoProfile")
+                && request.arguments.value(1) == QStringLiteral("-NonInteractive")
+                && request.arguments.value(2) == QStringLiteral("-ExecutionPolicy")
+                && request.arguments.value(3) == QStringLiteral("Bypass")
+                && request.arguments.value(4) == QStringLiteral("-File")
+                && request.arguments.value(5) == scriptPath;
+            recordPayloadCheck(argumentContract, QStringLiteral("Windows PowerShell arguments changed."));
+            const auto windowsPath = [](QString path) {
+                path.replace(QLatin1Char('/'), QLatin1Char('\\'));
+                return path;
+            };
+            const QByteArray jobBytes = readFile(request.arguments.value(6));
+            const bool hasUtf8Bom = jobBytes.startsWith(QByteArray::fromHex("efbbbf"));
+            recordPayloadCheck(hasUtf8Bom, QStringLiteral("Windows job JSON no longer has its UTF-8 BOM."));
+            QJsonParseError parseError;
+            const QJsonDocument jobDocument = hasUtf8Bom
+                ? QJsonDocument::fromJson(jobBytes.mid(3), &parseError) : QJsonDocument{};
+            const QJsonObject job = jobDocument.object();
+            const QJsonArray students = job.value(QStringLiteral("students")).toArray();
+            const bool rootFieldsMatch = jobDocument.isObject()
+                && parseError.error == QJsonParseError::NoError
+                && job.value(QStringLiteral("pptxPath")).toString() == windowsPath(expectedPptxPath)
+                && job.value(QStringLiteral("cancelPath")).toString() == windowsPath(request.cancelPath)
+                && job.value(QStringLiteral("signaturePath")).toString().isEmpty()
+                && job.value(QStringLiteral("scoreTableOnMaster")).toBool()
+                && job.value(QStringLiteral("scoreTableName")).toString() == QStringLiteral("Grades & Scores")
+                && job.value(QStringLiteral("minimumTableRows")).toInt() == 12
+                && job.value(QStringLiteral("minimumTableColumns")).toInt() == 6
+                && job.value(QStringLiteral("firstGradeColumn")).toInt() == 2
+                && job.value(QStringLiteral("neutralFill")).toInt() == 217 + (217 << 8) + (217 << 16)
+                && job.value(QStringLiteral("signatureLeft")).toDouble() == 374.0
+                && job.value(QStringLiteral("signatureTop")).toDouble() == 731.0
+                && job.value(QStringLiteral("signatureWidth")).toDouble() == 131.0
+                && job.value(QStringLiteral("signatureHeight")).toDouble() == 26.0
+                && job.value(QStringLiteral("signatureAlignsBottomLeft")).toBool()
+                && students.size() == 2;
+            recordPayloadCheck(rootFieldsMatch, QStringLiteral("Windows job JSON profile fields were missing or incorrect."));
+            if (students.size() == 2)
+            {
+                const QJsonObject student = students.at(0).toObject();
+                const QJsonArray scores = student.value(QStringLiteral("scores")).toArray();
+                const bool studentFieldsMatch =
+                    student.value(QStringLiteral("displayName")).toString() == QString::fromUtf8("길동 (Zoë)")
+                    && student.value(QStringLiteral("pdfPath")).toString() == windowsPath(request.reports.value(0).pdfPath)
+                    && student.value(QStringLiteral("completionPath")).toString() == windowsPath(request.reports.value(0).completionPath)
+                    && student.value(QStringLiteral("englishName")).toString() == firstReport.englishName
+                    && student.value(QStringLiteral("koreanName")).toString() == QString::fromUtf8("길동")
+                    && student.value(QStringLiteral("classLabel")).toString() == QString::fromUtf8("영어 5")
+                    && student.value(QStringLiteral("nativeTeacher")).toString() == firstReport.nativeTeacher
+                    && student.value(QStringLiteral("koreanTeacher")).toString() == QString::fromUtf8("박서준")
+                    && student.value(QStringLiteral("date")).toString() == firstReport.date
+                    && student.value(QStringLiteral("comments")).toString() == QString::fromUtf8("Said \"hello\"; 잘했어.\nSecond line.")
+                    && student.value(QStringLiteral("commentsFontName")).toString() == QStringLiteral("Segoe UI Semibold")
+                    && student.value(QStringLiteral("commentsFontSizePoints")).toDouble() > 0.0
+                    && student.value(QStringLiteral("overallGrade")).toString()
+                        == SpeakingEvalReportDataAssembler::overallGrade(firstReport.scores)
+                    && scores.size() == 6;
+                recordPayloadCheck(studentFieldsMatch, QStringLiteral("Windows report JSON fields were missing or incorrect."));
+                if (scores.size() == 6)
+                {
+                    bool scoresMatch = true;
+                    for (int scoreIndex = 0; scoreIndex < 6; ++scoreIndex)
+                        scoresMatch = scoresMatch && scores.at(scoreIndex).toString() == firstReport.scores.at(static_cast<std::size_t>(scoreIndex));
+                    recordPayloadCheck(scoresMatch, QStringLiteral("Windows JSON score ordering changed."));
+                }
+            }
+        }
+        else
+        {
+            const bool scriptHasContract =
+                script.contains(QStringLiteral("on run argv"))
+                && script.contains(QStringLiteral("on decodedText(encodedText)"))
+                && script.contains(QStringLiteral("/usr/bin/base64 -D"))
+                && script.contains(QStringLiteral("save reportPresentation in (POSIX file pdfPath) as save as PDF"));
+            recordPayloadCheck(scriptHasContract, QStringLiteral("macOS AppleScript contract was incomplete."));
+            const QStringList& args = request.arguments;
+            const bool argumentContract = args.size() == 18 + 2 * 19
+                && args.value(0) == scriptPath
+                && args.value(1) == expectedPptxPath
+                && args.value(2) == QStringLiteral("true")
+                && args.value(3) == QStringLiteral("Grades & Scores")
+                && args.value(4) == QStringLiteral("12")
+                && args.value(5) == QStringLiteral("6")
+                && args.value(6) == QStringLiteral("2")
+                && args.value(7) == QStringLiteral("217")
+                && args.value(8) == QStringLiteral("217")
+                && args.value(9) == QStringLiteral("217")
+                && args.value(10).isEmpty()
+                && args.value(16) == request.cancelPath
+                && args.value(17) == QStringLiteral("2")
+                && args.value(1).contains(QLatin1Char('/'))
+                && args.value(16).contains(QLatin1Char('/'))
+                && args.value(19) == request.reports.value(0).pdfPath
+                && args.value(20) == request.reports.value(0).completionPath
+                && args.value(37) == QString::fromLatin1(secondDisplayName.toUtf8().toBase64());
+            recordPayloadCheck(argumentContract, QStringLiteral("macOS AppleScript raw paths or profile arguments changed."));
+            const auto encodedTextMatches = [&](const int index, const QString& expected) {
+                const QString normalized = expected.normalized(QString::NormalizationForm_C);
+                return args.value(index) == QString::fromLatin1(normalized.toUtf8().toBase64())
+                    && QString::fromUtf8(QByteArray::fromBase64(args.value(index).toLatin1())) == normalized;
+            };
+            const bool textFieldsMatch = encodedTextMatches(18, firstDisplayName)
+                && encodedTextMatches(21, firstReport.englishName)
+                && encodedTextMatches(22, firstReport.koreanName)
+                && encodedTextMatches(23, firstReport.classLabel)
+                && encodedTextMatches(24, firstReport.nativeTeacher)
+                && encodedTextMatches(25, firstReport.koreanTeacher)
+                && encodedTextMatches(26, firstReport.date)
+                && encodedTextMatches(27, firstReport.comments)
+                && encodedTextMatches(28, QStringLiteral("Segoe UI Semibold"))
+                && args.value(29).toDouble() > 0.0
+                && encodedTextMatches(30, SpeakingEvalReportDataAssembler::overallGrade(firstReport.scores));
+            recordPayloadCheck(textFieldsMatch, QStringLiteral("macOS report text did not survive NFC/Base64 serialization."));
+            bool scoresMatch = true;
+            for (int scoreIndex = 0; scoreIndex < 6; ++scoreIndex)
+                scoresMatch = scoresMatch && args.value(31 + scoreIndex) == firstReport.scores.at(static_cast<std::size_t>(scoreIndex));
+            recordPayloadCheck(scoresMatch, QStringLiteral("macOS raw score arguments changed."));
+        }
         if (request.progressCallback) request.progressCallback(0, 2, QStringLiteral("First"));
         if (mode == QStringLiteral("canceled")) return QtSpeakingEvalPowerPoint::Status::Canceled;
         if (mode == QStringLiteral("failed"))
@@ -1565,6 +1881,7 @@ void SpeakingEvalBatchReportServiceTests::qtPowerPointAdapterReleasesWorkspace()
         [&](int completed, int, const QString&) { progress.append(completed); return true; }});
     QCOMPARE(runnerCalls, 1);
     QVERIFY(requestPreserved);
+    QVERIFY2(hostPayloadPreserved, qPrintable(hostPayloadError));
     QCOMPARE(workspacePaths.size(), 2);
     for (const QString& path : workspacePaths) QVERIFY(!QFileInfo::exists(path));
     QCOMPARE(result.status, mode == QStringLiteral("completed") ? DocumentOutputStatus::Completed
@@ -2167,10 +2484,13 @@ void SpeakingEvalBatchReportServiceTests::
 
         SpeakingEvalBatchReportService::Request nextRequest = legacyRequest;
         nextRequest.outputDirectory = nextDirectory;
+        ClassMngr::Next::Output::SpeakingEvaluationReportRunActions nextActions;
+        nextActions.pdfGeneration = makeQtPdfGenerationPort();
         QJsonObject templateEvidence;
         {
             const auto nextResult =
-                ClassMngr::Next::Output::runSpeakingEvaluationReports(nextRequest);
+                ClassMngr::Next::Output::runSpeakingEvaluationReports(
+                    nextRequest, nextActions);
             QVERIFY2(nextResult.output.status == DocumentOutputStatus::Completed,
                 qPrintable(nextResult.output.message));
             QCOMPARE(nextResult.output.savedPdfPaths.size(), 1);

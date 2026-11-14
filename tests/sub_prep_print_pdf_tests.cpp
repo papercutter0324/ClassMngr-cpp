@@ -16,19 +16,6 @@
 #include <algorithm>
 #include <cmath>
 
-namespace PdfPrintService
-{
-Result printPdfDocument(
-    const Request&
-    )
-{
-    return {
-        Status::Canceled,
-        QString()
-    };
-}
-}
-
 namespace
 {
 constexpr int RenderDpi = 300;

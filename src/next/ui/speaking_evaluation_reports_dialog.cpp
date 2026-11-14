@@ -72,12 +72,12 @@ Output::SpeakingEvaluationReportRunResult run(QWidget* parent, Service::Request 
             QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel) == QMessageBox::Yes;
     };
     if (!callbacks.confirmPowerPointDataAccess) callbacks.confirmPowerPointDataAccess = [parent, &actions] {
-#ifdef Q_OS_MACOS
-        if (actions.showPowerPointDataAccessNotice)
+        if (actions.powerPointPresentationCapabilities
+                .shouldShowProtectedDataAccessNotice(
+                    actions.showPowerPointDataAccessNotice))
             return QMessageBox::question(parent, batchText("PowerPoint Data Access"),
                 batchText("To generate these reports, ClassMngr temporarily copies the PowerPoint template and signature into Microsoft PowerPoint's protected data folder. macOS may ask ClassMngr to access data from other apps.\n\nChoose Allow in the macOS prompt. Temporary files are deleted when the batch finishes."),
                 QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel) == QMessageBox::Ok;
-#endif
         return true;
     };
     SpeakingEvalReportAssetSession session(actions.assets);
@@ -254,9 +254,8 @@ SpeakingEvaluationReportBatchDialog::SpeakingEvaluationReportBatchDialog(const Q
     form->addRow(batchText("Students:"), m_scope);
     m_renderer = new QComboBox(this); m_renderer->setObjectName(QStringLiteral("nextReportRenderer"));
     m_renderer->addItem(Service::rendererDisplayName(Service::Renderer::Internal));
-#if defined(Q_OS_MACOS) || defined(Q_OS_WIN)
-    m_renderer->addItem(Service::rendererDisplayName(Service::Renderer::PowerPoint));
-#endif
+    if (m_actions.powerPointPresentationCapabilities.rendererOptionSupported)
+        m_renderer->addItem(Service::rendererDisplayName(Service::Renderer::PowerPoint));
     form->addRow(batchText("Renderer:"), m_renderer);
     m_note = new QLabel(this); m_note->setWordWrap(true); form->addRow(QString(), m_note);
     m_keep = new QCheckBox(batchText("Keep individual PDFs after zipping"), this);
@@ -331,13 +330,16 @@ void SpeakingEvaluationReportBatchDialog::updateControls()
     m_keep->setVisible(m_mode == Mode::SaveAs && m_scope->currentIndex() == 1 && m_reports.size() > 1);
     m_export->setEnabled(!selectedReports().isEmpty()
         && m_reports.size() <= Application::SpeakingEvaluationMaximumRowCount);
-    m_note->setText(m_renderer->currentIndex() == 0
-        ? batchText("This is the recommended method for creating reports.")
-#ifdef Q_OS_MACOS
-        : batchText("Only use if the internal method doesn't work. This may take longer to complete, and you will likely be presented with multiple file and folder permission requests. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost."));
-#else
-        : batchText("Only use if the internal method doesn't work. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost."));
-#endif
+    QString rendererNote =
+        batchText("This is the recommended method for creating reports.");
+    if (m_renderer->currentIndex() != 0)
+    {
+        rendererNote = m_actions.powerPointPresentationCapabilities
+                .protectedDataAccessNoticeSupported
+            ? batchText("Only use if the internal method doesn't work. This may take longer to complete, and you will likely be presented with multiple file and folder permission requests. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.")
+            : batchText("Only use if the internal method doesn't work. Save any work you are presently doing in PowerPoint as there is a risk of your progress being lost.");
+    }
+    m_note->setText(rendererNote);
     if (layout() && height() < layout()->sizeHint().height())
         resize(width(), layout()->sizeHint().height());
 }

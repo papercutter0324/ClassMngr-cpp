@@ -8,11 +8,9 @@
 #include <QImage>
 #include <QLabel>
 #include <QListWidget>
-#include <QPdfDocument>
 #include <QPixmap>
 #include <QPushButton>
 #include <QSaveFile>
-#include <QTemporaryDir>
 #include <QVBoxLayout>
 #include <algorithm>
 #include <exception>
@@ -165,50 +163,23 @@ DocumentOutputResult copyPdf(const QString& source, const QString& target)
     return {DocumentOutputStatus::Sent, text("Roster PDF created.")};
 }
 
-class TemporaryRosterPdfSession final
+std::unique_ptr<Platform::RosterPdfPreviewSession> createRosterPdfPreviewSession(
+    const RosterOutputActions& actions
+    )
 {
-public:
-    TemporaryRosterPdfSession() = default;
-    TemporaryRosterPdfSession(const TemporaryRosterPdfSession&) = delete;
-    TemporaryRosterPdfSession& operator=(const TemporaryRosterPdfSession&) = delete;
-
-    ~TemporaryRosterPdfSession()
+    if (!actions.pdfPreviewSessionFactory)
     {
-        m_document.close();
+        return {};
     }
-
-    [[nodiscard]] bool isValid() const noexcept
+    try
     {
-        return m_temporary.isValid();
+        return actions.pdfPreviewSessionFactory();
     }
-
-    [[nodiscard]] QString path() const
+    catch (...)
     {
-        return m_temporary.filePath(QStringLiteral("Rosters.pdf"));
+        return {};
     }
-
-    [[nodiscard]] QPdfDocument& document() noexcept
-    {
-        return m_document;
-    }
-
-    [[nodiscard]] bool openDocument()
-    {
-        const QPdfDocument::Error error = m_document.load(path());
-        if (error != QPdfDocument::Error::None
-            || m_document.status() != QPdfDocument::Status::Ready
-            || m_document.pageCount() <= 0)
-        {
-            m_document.close();
-            return false;
-        }
-        return true;
-    }
-
-private:
-    QTemporaryDir m_temporary;
-    QPdfDocument m_document;
-};
+}
 
 DocumentOutputResult failed(const QString& message)
 {
@@ -218,8 +189,7 @@ DocumentOutputResult failed(const QString& message)
 DocumentOutputResult printSession(
     const RosterOutputActions& actions,
     QWidget* parent,
-    QPdfDocument& document,
-    const QString& path,
+    Platform::RosterPdfPreviewSession& session,
     QPageLayout::Orientation orientation,
     const DialogGeometryPreferencesCallbacks& geometryPreferences
     )
@@ -238,22 +208,21 @@ DocumentOutputResult printSession(
             return failed(text("Unable to create the roster print operation."));
         }
 
-        const Platform::PdfPrintResult result = operation->printReadyDocument({
-            .parent = parent,
-            .document = &document,
-            .documentPath = path,
-            .currentPageIndex = 0,
-            .dialogTitle = text("Print Rosters"),
-            .pageOrientation = orientation,
-            .fitToPageByDefault = false,
-            .preferredPageSize = QPageSize::A4,
-            .lockPreferredPageSize = true,
-            .uiFont = actions.fonts.ui,
-            .dialogGeometryPreferences = {
-                geometryPreferences.read,
-                geometryPreferences.write
-            }
-        });
+        const Platform::PdfPrintResult result = session.printReadyDocument(
+            *operation,
+            {
+                .parent = parent,
+                .dialogTitle = text("Print Rosters"),
+                .pageOrientation = orientation,
+                .fitToPageByDefault = false,
+                .preferredPageSize = QPageSize::A4,
+                .lockPreferredPageSize = true,
+                .uiFont = actions.fonts.ui,
+                .dialogGeometryPreferences = {
+                    geometryPreferences.read,
+                    geometryPreferences.write
+                }
+            });
         switch (result.status)
         {
         case Platform::PdfPrintStatus::Sent:
@@ -275,16 +244,13 @@ DocumentOutputResult printSession(
     }
 }
 
-bool renderPreviewPage(QPdfDocument& document, int page, QLabel* image)
+bool renderPreviewPage(
+    Platform::RosterPdfPreviewSession& session,
+    int page,
+    QLabel* image
+    )
 {
-    const QSize target = document.pagePointSize(page)
-        .toSize()
-        .scaled(QSize(820, 630), Qt::KeepAspectRatio);
-    if (target.width() <= 0 || target.height() <= 0)
-    {
-        return false;
-    }
-    const QImage rendered = document.render(page, target);
+    const QImage rendered = session.renderPage(page, QSize(820, 630));
     if (rendered.isNull())
     {
         return false;
@@ -575,8 +541,9 @@ void RosterPrintDialog::save()
 
 void RosterPrintDialog::print()
 {
-    TemporaryRosterPdfSession session;
-    if (!session.isValid())
+    std::unique_ptr<Platform::RosterPdfPreviewSession> session =
+        createRosterPdfPreviewSession(m_actions);
+    if (!session || !session->isValid())
     {
         showResult(failed(text("Unable to create a temporary roster PDF.")));
         return;
@@ -587,13 +554,13 @@ void RosterPrintDialog::print()
     {
         return;
     }
-    const DocumentOutputResult generated = generate(selected, session.path());
+    const DocumentOutputResult generated = generate(selected, session->path());
     if (generated.status != DocumentOutputStatus::Sent)
     {
         showResult(generated);
         return;
     }
-    if (!session.openDocument())
+    if (!session->loadGeneratedPdf())
     {
         showResult(failed(text("Unable to load the generated roster PDF.")));
         return;
@@ -607,18 +574,18 @@ void RosterPrintDialog::print()
     const DocumentOutputResult result = printSession(
         m_actions,
         this,
-        session.document(),
-        session.path(),
+        *session,
         orientation,
         m_geometryPreferences);
-    session.document().close();
+    session->release();
     showResult(result);
 }
 
 void RosterPrintDialog::preview()
 {
-    TemporaryRosterPdfSession session;
-    if (!session.isValid())
+    std::unique_ptr<Platform::RosterPdfPreviewSession> session =
+        createRosterPdfPreviewSession(m_actions);
+    if (!session || !session->isValid())
     {
         showResult(failed(text("Unable to create a temporary roster PDF.")));
         return;
@@ -629,13 +596,13 @@ void RosterPrintDialog::preview()
     {
         return;
     }
-    const DocumentOutputResult generated = generate(selected, session.path());
+    const DocumentOutputResult generated = generate(selected, session->path());
     if (generated.status != DocumentOutputStatus::Sent)
     {
         showResult(generated);
         return;
     }
-    if (!session.openDocument())
+    if (!session->loadGeneratedPdf())
     {
         showResult(failed(text("Unable to load the generated roster PDF.")));
         return;
@@ -663,7 +630,7 @@ void RosterPrintDialog::preview()
     auto* next = button("Next", "nextRosterNextPage", navigation, &dialog);
     navigation->addStretch();
     const auto refresh = [&] {
-        if (!renderPreviewPage(session.document(), page, image))
+        if (!renderPreviewPage(*session, page, image))
         {
             status->setText(text("Unable to render the roster preview page."));
         }
@@ -672,19 +639,19 @@ void RosterPrintDialog::preview()
             status->clear();
         }
         count->setText(
-            text("Page %1 of %2").arg(page + 1).arg(session.document().pageCount()));
+            text("Page %1 of %2").arg(page + 1).arg(session->pageCount()));
         previous->setEnabled(page > 0);
-        next->setEnabled(page + 1 < session.document().pageCount());
+        next->setEnabled(page + 1 < session->pageCount());
     };
-    if (!renderPreviewPage(session.document(), page, image))
+    if (!renderPreviewPage(*session, page, image))
     {
         showResult(failed(text("Unable to render the roster preview page.")));
         return;
     }
     count->setText(
-        text("Page %1 of %2").arg(page + 1).arg(session.document().pageCount()));
+        text("Page %1 of %2").arg(page + 1).arg(session->pageCount()));
     previous->setEnabled(false);
-    next->setEnabled(session.document().pageCount() > 1);
+    next->setEnabled(session->pageCount() > 1);
     connect(previous, &QPushButton::clicked, &dialog, [&] {
         --page;
         refresh();
@@ -706,7 +673,7 @@ void RosterPrintDialog::preview()
             {
                 return;
             }
-            const auto result = copyPdf(session.path(), *target);
+            const auto result = copyPdf(session->path(), *target);
             if (result.status != DocumentOutputStatus::Canceled)
             {
                 status->setText(result.message);
@@ -722,8 +689,7 @@ void RosterPrintDialog::preview()
             const auto result = printSession(
                 m_actions,
                 &dialog,
-                session.document(),
-                session.path(),
+                *session,
                 orientation,
                 m_geometryPreferences);
             if (result.status != DocumentOutputStatus::Canceled)

@@ -1,4 +1,5 @@
 #include "speaking_eval_page_p.h"
+#include "core/application_services.h"
 #include "core/settingsmanager.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
@@ -402,7 +403,8 @@ void SpeakingEvalPage::showReports()
         reports,
         currentReportIndex,
         this,
-        true
+        true,
+        m_services ? m_services->fontRegistrationPort() : nullptr
         );
 
     connect(
@@ -565,7 +567,8 @@ void SpeakingEvalPage::outputReports(
         print
             ? SpeakingEvalBatchExportDialog::Mode::Print
             : SpeakingEvalBatchExportDialog::Mode::SaveAs,
-        this
+        this,
+        m_services ? m_services->fontRegistrationPort() : nullptr
         );
     dialog.exec();
 }

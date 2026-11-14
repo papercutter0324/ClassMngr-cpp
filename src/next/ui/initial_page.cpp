@@ -247,6 +247,8 @@ InitialPage::InitialPage(
     : Page(context, parent),
       m_actions(std::move(actions))
 {
+    m_signatureFontSet = TypedSignatureFontSet::load(
+        context.fontRegistrationPort());
     setObjectName(QStringLiteral("classMngrNextInitialSetupPage"));
 
     auto* title = new QLabel(initialPageText("Initial Setup"), this);
@@ -2347,7 +2349,8 @@ void InitialPage::syncPersonalDetailsFromForm()
             == Application::PersonalSignatureMode::Type
         ? TypedSignature::renderForEmbedding(
               m_typedSignatureEdit->text(),
-              rendererFont(m_personalDetails.typedSignatureFont)
+              rendererFont(m_personalDetails.typedSignatureFont),
+              &m_signatureFontSet
               )
         : m_imageSignature;
     m_personalDetails.signatureImage = Domain::PersonalSignatureImageSaveBytes(
@@ -2388,7 +2391,8 @@ void InitialPage::updateSignaturePreview()
             font,
             m_signaturePreviewLabel->contentsRect()
                 .adjusted(16, 12, -16, -12)
-                .size()
+                .size(),
+            &m_signatureFontSet
             );
         m_signaturePreviewLabel->setText(QString());
         m_signaturePreviewLabel->setPixmap(QPixmap::fromImage(preview));

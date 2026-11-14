@@ -5,6 +5,7 @@
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 #include "ui/shared/dialogs/dialog_shell.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
+#include "core/font_registration_port.h"
 #include <memory>
 
 class QComboBox;
@@ -38,21 +39,24 @@ public:
     explicit SpeakingEvalReportDialog(
         const SpeakingEvalRows& rows,
         const ClassInfo& classInfo,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        ClassMngr::Core::FontRegistrationPort* fontRegistrationPort = nullptr
         );
 
     explicit SpeakingEvalReportDialog(
         const SpeakingEvalRows& rows,
         const ClassInfo& classInfo,
         const QByteArray& signatureImage,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        ClassMngr::Core::FontRegistrationPort* fontRegistrationPort = nullptr
         );
 
     explicit SpeakingEvalReportDialog(
         const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
         int currentStudentIndex,
         QWidget* parent = nullptr,
-        bool interactive = false
+        bool interactive = false,
+        ClassMngr::Core::FontRegistrationPort* fontRegistrationPort = nullptr
         );
 
 signals:

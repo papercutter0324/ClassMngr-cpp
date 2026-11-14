@@ -1,6 +1,7 @@
 #include "sub_prep_pdf_renderer.h"
 
-#include "core/fontmanager.h"
+#include "core/pdf_generation_port.h"
+
 #include "core/startup_profiler.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -12,12 +13,12 @@
 #include <QColor>
 #include <QCoreApplication>
 #include <QFileInfo>
+#include <QFont>
 #include <QMarginsF>
 #include <QObject>
 #include <QPageLayout>
 #include <QPageSize>
 #include <QPainter>
-#include <QPdfWriter>
 #include <QRectF>
 #include <QSet>
 #include <QTextBlock>
@@ -802,10 +803,9 @@ QString documentHtml(
     return html;
 }
 
-QString documentStyleSheet()
+QString documentStyleSheet(const QFont& outputFont)
 {
-    const QString family =
-        FontManager::getUiFont(10).family().toHtmlEscaped();
+    const QString family = outputFont.family().toHtmlEscaped();
 
     return QStringLiteral(
         "html, body { margin:0; padding:0; width:100%; }"
@@ -1238,13 +1238,11 @@ QPageLayout pageLayout()
 }
 
 QRectF pageRect(
-    const QPdfWriter& writer
+    PdfGenerationSession& writer
     )
 {
     const QRect rect =
-        writer.pageLayout().fullRectPixels(
-            std::max(1, writer.resolution())
-            );
+        writer.pageRectPixels();
 
     if (rect.width() > 0 && rect.height() > 0)
     {
@@ -1254,8 +1252,8 @@ QRectF pageRect(
     return QRectF(
         0.0,
         0.0,
-        writer.width(),
-        writer.height()
+        writer.paintDevice().width(),
+        writer.paintDevice().height()
         );
 }
 
@@ -1403,8 +1401,10 @@ void drawSubNotesWritingLines(
 }
 
 Result renderPdf(
+    PdfGenerationPort& pdfGeneration,
     const SubPrepDocumentModel::Document& documentModel,
-    const QString& documentPath
+    const QString& documentPath,
+    const QFont& outputFont
     )
 {
     const bool profiling = StartupProfiler::isActive();
@@ -1446,22 +1446,22 @@ Result renderPdf(
             );
     }
 
-    QPdfWriter writer(documentPath);
-    writer.setCreator(QStringLiteral("ClassMngr"));
-    writer.setTitle(translate("Sub Prep"));
-    writer.setResolution(
-        PdfPrintService::GeneratedPdfResolutionDpi
-        );
-
-    if (!writer.setPageLayout(pageLayout()))
+    auto session = pdfGeneration.create(documentPath, {
+        .creator = QStringLiteral("ClassMngr"),
+        .title = translate("Sub Prep"),
+        .resolutionDpi = PdfPrintService::GeneratedPdfResolutionDpi,
+        .pageLayout = pageLayout()
+    });
+    if (!session)
     {
         return failed(
             QObject::tr("Unable to configure the sub prep print file.")
             );
     }
 
+    auto& writer = *session;
     QPainter painter;
-    if (!painter.begin(&writer))
+    if (!painter.begin(&writer.paintDevice()))
     {
         return failed(
             QObject::tr("Unable to create the sub prep print file.")
@@ -1486,11 +1486,11 @@ Result renderPdf(
     }
 
     QTextDocument document;
-    document.documentLayout()->setPaintDevice(&writer);
-    QFont documentFont = FontManager::getUiFont(10);
+    document.documentLayout()->setPaintDevice(&writer.paintDevice());
+    QFont documentFont = outputFont;
     documentFont.setPointSizeF(10.5);
     document.setDefaultFont(documentFont);
-    document.setDefaultStyleSheet(documentStyleSheet());
+    document.setDefaultStyleSheet(documentStyleSheet(outputFont));
     document.setDocumentMargin(0.0);
     document.setPageSize(body.size());
     const ScheduleTableLayout scheduleLayout =
@@ -1596,11 +1596,11 @@ Result renderPdf(
     if (appendFallbackSubNotesPage)
     {
         fallbackSubNotesDocument.documentLayout()->setPaintDevice(
-            &writer
+            &writer.paintDevice()
             );
         fallbackSubNotesDocument.setDefaultFont(documentFont);
         fallbackSubNotesDocument.setDefaultStyleSheet(
-            documentStyleSheet()
+            documentStyleSheet(outputFont)
             );
         fallbackSubNotesDocument.setDocumentMargin(0.0);
         fallbackSubNotesDocument.setPageSize(body.size());
@@ -1697,11 +1697,11 @@ Result renderPdf(
         operation.insert(QStringLiteral("pageCount"), pageCount);
         operation.insert(
             QStringLiteral("writerWidthPixels"),
-            writer.width()
+            writer.paintDevice().width()
             );
         operation.insert(
             QStringLiteral("writerHeightPixels"),
-            writer.height()
+            writer.paintDevice().height()
             );
         operation.insert(
             QStringLiteral("layoutWidth"),
@@ -1825,11 +1825,11 @@ Result renderPdf(
         operation.insert(QStringLiteral("pageCount"), pageCount);
         operation.insert(
             QStringLiteral("writerWidthPixels"),
-            writer.width()
+            writer.paintDevice().width()
             );
         operation.insert(
             QStringLiteral("writerHeightPixels"),
-            writer.height()
+            writer.paintDevice().height()
             );
         operation.insert(
             QStringLiteral("pdfBytes"),

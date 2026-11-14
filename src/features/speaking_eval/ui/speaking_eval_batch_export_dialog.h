@@ -147,7 +147,8 @@ public:
         int currentStudentIndex,
         const QString& defaultOutputDirectory,
         Mode mode,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        ClassMngr::Core::FontRegistrationPort* fontRegistrationPort = nullptr
         );
 
 private:
@@ -168,6 +169,7 @@ private:
 
 private:
     std::unique_ptr<SpeakingEvalReportAssetSession> m_assetSession;
+    ClassMngr::Core::FontRegistrationPort* m_fontRegistrationPort = nullptr;
     QList<SpeakingEvalBatchReportService::StudentReport> m_reports;
     int m_currentStudentIndex = -1;
     Mode m_mode = Mode::SaveAs;

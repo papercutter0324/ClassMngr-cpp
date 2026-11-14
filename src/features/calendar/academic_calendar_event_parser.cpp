@@ -1014,6 +1014,7 @@ ParsedCalendarImport parseCalendarEventsFromWorksheet(
 template<typename Archive>
 static ParsedCalendarImport parseCalendarEventsFromWorkbookSource(
     Archive& data,
+    ArchiveReadPort& archiveReader,
     const QStringList& campusCodes,
     QString* errorMessage,
     CalendarWorkbookReadCounts* readCounts
@@ -1039,6 +1040,7 @@ static ParsedCalendarImport parseCalendarEventsFromWorkbookSource(
 
     const bool succeeded = forEachWorksheetRows(
         data,
+        archiveReader,
         [&](
             const WorkbookMetadata& metadata,
             const Worksheet& worksheet,
@@ -1608,6 +1610,7 @@ static ParsedCalendarImport parseCalendarEventsFromWorkbookSource(
 
 ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
     const QByteArray& data,
+    ArchiveReadPort& archiveReader,
     const QStringList& campusCodes,
     QString* errorMessage,
     CalendarWorkbookReadCounts* readCounts
@@ -1615,6 +1618,7 @@ ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
 {
     return parseCalendarEventsFromWorkbookSource(
         data,
+        archiveReader,
         campusCodes,
         errorMessage,
         readCounts
@@ -1623,6 +1627,7 @@ ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
 
 ParsedCalendarImport parseCalendarEventsFromWorkbookDevice(
     QIODevice& device,
+    ArchiveReadPort& archiveReader,
     const QStringList& campusCodes,
     QString* errorMessage,
     CalendarWorkbookReadCounts* readCounts
@@ -1630,6 +1635,7 @@ ParsedCalendarImport parseCalendarEventsFromWorkbookDevice(
 {
     return parseCalendarEventsFromWorkbookSource(
         device,
+        archiveReader,
         campusCodes,
         errorMessage,
         readCounts

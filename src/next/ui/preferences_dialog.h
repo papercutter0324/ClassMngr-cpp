@@ -7,6 +7,7 @@
 #include "next/application/document_viewer_background_preferences.h"
 #include "next/application/preferences_model.h"
 #include "next/application/save_mode_preferences.h"
+#include "next/application/speaking_evaluation_powerpoint_presentation_capabilities.h"
 
 #include <QDialog>
 
@@ -52,7 +53,9 @@ public:
         Application::PreferencesModel& preferences,
         PreferencesDialogPorts ports,
         PreferencesDialogActions actions = {},
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        Application::SpeakingEvaluationPowerPointPresentationCapabilities
+            powerPointPresentationCapabilities = {}
         );
 
     [[nodiscard]] bool applicationPreferencesLoaded() const noexcept;
@@ -84,6 +87,8 @@ private:
     Application::PreferencesModel& m_preferences;
     PreferencesDialogPorts m_ports;
     PreferencesDialogActions m_actions;
+    Application::SpeakingEvaluationPowerPointPresentationCapabilities
+        m_powerPointPresentationCapabilities;
     bool m_applicationPreferencesLoaded = false;
     bool m_typedPreferencesLoaded = false;
     bool m_populating = false;

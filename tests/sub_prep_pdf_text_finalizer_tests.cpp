@@ -1,5 +1,6 @@
 #include "shared/roster/sub_prep_pdf_text_finalizer.h"
 #include "shared/roster/roster_template_renderer.h"
+#include "core/qt_pdf_generation_adapter.h"
 #include <QtTest>
 #include <QBuffer>
 #include <QAbstractTextDocumentLayout>
@@ -7,7 +8,6 @@
 #include <QFontDatabase>
 #include <QPainter>
 #include <QPdfDocument>
-#include <QPdfWriter>
 #include <QCryptographicHash>
 #include <QDir>
 #include <QJsonArray>
@@ -25,13 +25,19 @@ Generated generate(const QStringList& lines, bool capture, bool document = false
     Generated generated;
     QBuffer output(&generated.bytes); output.open(QIODevice::WriteOnly);
     {
-        QPdfWriter writer(&output); writer.setResolution(300); writer.setCreator("ClassMngr");
+        const auto pdfGeneration = makeQtPdfGenerationPort();
+        auto session = pdfGeneration->create(output, {
+            .creator = QStringLiteral("ClassMngr"),
+            .resolutionDpi = 300
+        });
+        if (!session) return {};
+        auto& writer = *session;
         std::unique_ptr<SubPrepPdfText::CaptureDevice> recording;
         if (capture) recording = std::make_unique<SubPrepPdfText::CaptureDevice>(writer, generated.source);
-        QPainter painter(recording ? static_cast<QPaintDevice*>(recording.get()) : static_cast<QPaintDevice*>(&writer));
+        QPainter painter(recording ? static_cast<QPaintDevice*>(recording.get()) : &writer.paintDevice());
         painter.setFont(font);
         if (document) {
-            QTextDocument text; text.documentLayout()->setPaintDevice(&writer); text.setDefaultFont(font);
+            QTextDocument text; text.documentLayout()->setPaintDevice(&writer.paintDevice()); text.setDefaultFont(font);
             text.setHtml(QStringLiteral("<h2>Class Information</h2><table border='1'><tr><td>Student 1-1</td><td>Zoom: a • PW zoom-1</td></tr></table><p>한국어 학생</p>"));
             text.setPageSize(QSizeF(1800, 2500)); text.drawContents(&painter);
         } else {

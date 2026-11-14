@@ -941,3 +941,136 @@ assertion and final cross-host review keep the overall Phase 8 exit gate open.
 Hosted Refactoring Baseline run [43156278117](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43156278117) timed out after 240.05 seconds on Windows CTest targets #342 (`ClassMngrNextClassesNavigatorWorkspaceStoreTests`) and #420 (`ClassMngrNextPlatformApplicationServicesClassTransferApplyPortTests`). Retained hosted output identifies only the targets, not the active QtTest slots. Current-source local traces attributed the cost to test-fixture setup: workspace cases seeded 4,000–4,096 classes (one also seeded 2,048 teachers) with individual SQLite commits; five transfer cases seeded 4,095–4,096 visible classes the same way. Fixture-only transaction batching preserved rows, assertions, and production paths. Target #342 fell from 132.50s to 8.60s, and #420 from 173.90s to 11.35s; independent reruns passed in 8.48s and 10.11s. A larger timeout might have allowed the original run to finish, but hosted evidence cannot establish that. No timeout was widened or hosted rerun performed.
 
 The standard Visual Studio build was blocked by MSBuild FileTracker `UnauthorizedAccessException` / `E_ACCESSDENIED`; the standard `windows-x64-ninja-debug` preset built the focused targets. Native Windows `ClassMngrNextSchedulePageTests` passed all 11 slots, and focused CTest #607 passed 1/1 in 35.30s. The test confirmed `QFontDatabase` contains Segoe UI and both English and Korean Schedule output font chains include it. Windows uses `QT_QPA_PLATFORM=windows` for this check because the offscreen backend did not enumerate installed system fonts; this verifies family availability and configuration, not actual PDF rendering. The Linux Pretendard PDF assertion and final cross-host review remain open. Detailed timeout traces and font-check scope are in the [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md#2026-11-12---windows-timeout-and-segoe-ui-follow-up).
+
+### 8.7.17 — Current-HEAD macOS Debug and Release verification (2026-11-14)
+
+At committed HEAD `d8f31c7aaf29bdc07f12f7f6f229bc8ea596889e` (tree
+`1fba05a235a2d856ac0451494ac13af26f41ba53`), the local standard
+`build/macos-clang-debug` candidate used a fresh configure and clean-first
+universal build. The source fingerprint was stable at start and end:
+`11903aac7966510fe0e76c20731f8f7d25c3cb9912750f3bfce0f8e871440670`.
+The build completed with exit code 0 and CTest passed 620/620 targets, with no
+failures, errors, skips, or timeouts. A clean first attempt stopped before
+CTest/C53 because a preexisting generated Resources directory had no ownership
+manifest; that directory was preserved in its attempt artifacts and the
+standard build folder was regenerated before the successful retry.
+
+Required output evidence passed on that same candidate: Schedule Legacy/Next
+had zero changed pixels and expected text; all four Roster layouts passed page
+text and raster equality; Speaking Standard/Advanced passed expected text and
+had zero changed pixels; and C53 passed all 17 pages (12 Sub Prep and 5 Roster)
+with zero changed pixels. Independent artifact review verified all 34 C53
+raster hashes against decoded RGBA pixel bytes, all 17 Legacy/Next raster pairs
+as byte-identical, and the PDF/database file hashes. The recorded raster SHA
+fields cover decoded pixels rather than PNG container bytes. The frozen Phase
+7 Schedule comparison remains 5.6844% different on this host.
+
+CTest recorded 2,088 QWARN occurrences across 180 targets, 756 Qt contexts,
+and 36 normalized bodies. After normalizing duration/path text, the warning
+inventory matched the accepted `e651b016` candidate without new or removed
+bodies, contexts, or counts. The build also recorded 50 duplicate-library
+linker warnings; these match the prior local build log.
+
+The current-source local universal Release package also passed at
+`d8f31c7a`. The `0.19.0` macOS 14.4 package verifier checked 914 entries, 493
+file hashes, 187 resource hashes, 22 license/SBOM files, and 92 universal
+Mach-O binaries; all 13 verifier tests passed. `hdiutil verify` and the
+checksum sidecar passed; DMG SHA-256 is
+`aa61ed11fdf69118391154e4d4addc543c25ab968f41e406c8dc8a8bba04abb7`. Logs,
+provenance, capture manifests, and package reports are under
+`build/macos-clang-debug/artifacts/macos-current-head-d8f31c7-attempt-2-20261114T042234Z/`,
+`build/macos-clang-debug/artifacts/sub-prep-c53-20261114T051250279741Z/`,
+and `build/macos-clang-release/artifacts/macos-current-head-d8f31c7-20261114T041150Z/`.
+
+This closes the local macOS candidate at `d8f31c7a` only. The later local ZIP
+writer-port changes are not covered by these runs. Linux/Windows current-head
+Debug evidence and Release package equivalence remain unavailable because no
+Actions workflow could be dispatched in this session; Phase 8 and 8a remain
+open.
+
+### 2026-11-14 — Adapter-boundary follow-up slices
+
+The shared speaking-report engine now receives an explicit archive-write port.
+The Qt adapter delegates to the existing `ZipArchiveWriter`; Next Bootstrap
+composes it and Legacy retains its source-compatible composition. Archive
+entry order/content, staging, overwrite handling, commit behavior,
+cancellation, cleanup, and failure reporting remain unchanged. The affected
+macOS build passed; focused report tests passed 34 cases, Next UI batch tests
+passed 9 cases, and the dependency-boundary test passed 1 case. An independent
+review reran the three CTest registrations (3/3) and accepted the port,
+composition, ordered entries, and failure paths. Logs are in
+`/private/tmp/phase8-zip-build.log`, `phase8-zip-report-tests.log`,
+`phase8-zip-next-tests.log`, and `phase8-zip-boundary-tests.log`.
+
+Document Viewer Save Copy now receives the existing
+`DefaultOutputDirectoriesPort`; it uses Documents, falls back to Home, and
+leaves the initial path empty when neither location is available. The feature
+page no longer calls `QStandardPaths` or `QDir::homePath`. Normal Bootstrap
+composition and chooser/copy behavior remain intact. The affected build passed;
+independent CTest passed 1/1 (18 QtTest cases). A Qt font-alias warning remains
+visible. No copy, chooser, or warning behavior was weakened.
+
+Roster preview now uses a `Platform::RosterPdfPreviewSession` adapter that owns
+the temporary directory and `QPdfDocument`, loads/checks the PDF, renders pages,
+and closes/releases the document. `RosterPrintDialog` no longer references
+`QPdfDocument` or `QPdfView`; printing still uses the synchronous borrowed
+document contract. The affected build and CTest target passed (19 QtTest
+cases), and independent review accepted output size, load/render errors, print
+handoff, and cleanup. A forced render failure after a successful load is not
+separately injected. The independent fresh rebuild stopped at a preexisting
+unowned generated Resources directory, which was left untouched; its targeted
+clean removed cached build outputs, so the standard build folder is partial.
+
+Schedule's host fallback lookup and OS macros have been moved from feature UI
+to the existing `FontFamilyAvailabilityPort`/Qt adapter. The current chains
+remain Inter → Pretendard → Helvetica Neue on macOS, Inter → Pretendard →
+Segoe UI on Windows, and the Qt GeneralFont family on other systems; Korean
+uses Pretendard → Inter → host fallback. Point sizes are unchanged. The
+macOS build and five focused registrations passed (90 Bootstrap, 19
+Navigation, 15 Schedule page, 18 Schedule Integration, plus visual capture);
+independent review is pending. Windows/Linux runs remain required for the
+relocated platform branches. These local changes are uncommitted and have not
+been checked by the full cross-host suite or a current-source package matrix.
+
+Speaking-report and Preferences UI now consume an injected
+`SpeakingEvaluationPowerPointPresentationCapabilities` value instead of
+`Q_OS_*` guards. The Qt adapter preserves the current capability map:
+macOS exposes renderer and notice preference, Windows exposes the renderer,
+and Linux exposes neither. Office installation availability remains checked
+at operation time. Independent review accepted the macOS mapping, preference
+visibility/persistence, unavailable-Office behavior, and six report-operation
+outcomes. Focused macOS QtTest totals were 41 Speaking Evaluation, 14 Document
+Catalog Navigation, and 90 Bootstrap cases, all passing. Windows/Linux native
+adapter builds remain pending; no full suite or package build was run after
+these local source edits.
+
+### 2026-11-14 — Candidate f6b258f: macOS gate attempt
+
+Candidate `f6b258f1bbb010ec0b7847f81827fd0409832888` has tree
+`65239452d50f917b5817e8e34682e2da731224d5` and was clean at
+`/private/tmp/classmngr-phase8-8a-candidate-20261114`. Its five fixes were
+applied byte-for-byte to the shared worktree: the Sub Prep capture target links
+its PDF generation/print libraries, the startup boundary expectation includes
+the ZIP archive-read adapter, Sub Prep capture injects its PDF port, teacher
+import capture supplies the workbook validator, and the macOS release script
+uses `python3`.
+
+The unfiltered macOS CTest run before those fixes was 613/620. Focused reruns
+confirm the four fixture/dependency failures (#243, #244, #259, #330) now pass.
+The exact final-candidate rerun passes 4/7; #326
+`ClassMngrNextMyWorkspaceVisualCapture`, #339
+`ClassMngrNextClassesFullWindowStateVisualCapture`, and #620
+`ClassMngrProfileFileWorkflowVisualCapture` remain reproducible SEGFAULTs. The
+crash reports show `EXC_BAD_ACCESS` in Qt stylesheet/StyleChange paths; this is
+an observation, not an established root cause. The final focused JUnit report
+is `/private/tmp/phase8-8a-macos-ctest-final-rerun.junit.xml`.
+
+C53 passed at `/private/tmp/phase8-8a-macos-c53-final`: all 17 pages are
+pixel-identical (`changedPixelTotal: 0`) with the same font resource
+provenance. The final universal 0.19.0 Release DMG passed package verification,
+ad-hoc codesign checks, arm64 and x86_64 checks, minimum OS 14.4, mounted-DMG
+verification, `hdiutil` integrity, and checksum verification. Its manifest
+records 914 paths, 493 hashes, 187 direct resource hashes, and 22 license/SBOM
+records. `scripts/test_verify_next_package.py` passed 13/13. These results do
+not close Phase 8: the three captures still fail and remaining source-boundary
+review is open. See the Phase 8a log for the hosted-workflow blocker.

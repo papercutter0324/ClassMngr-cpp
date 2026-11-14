@@ -1,5 +1,6 @@
 #include "personal_details_page.h"
 
+#include "core/application_services.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 #include "ui/shared/styles/roles.h"
 #include "ui/shared/pages/autosave_coordinator.h"
@@ -24,6 +25,11 @@ PersonalDetailsPage::PersonalDetailsPage(
     , m_services(services)
     , m_autosave(new AutosaveCoordinator(this))
 {
+    if (m_services && m_services->fontRegistrationPort())
+    {
+        m_signatureFontSet = TypedSignatureFontSet::load(
+            *m_services->fontRegistrationPort());
+    }
     setProperty("role", UiRoles::MyInfo);
     buildUi();
 

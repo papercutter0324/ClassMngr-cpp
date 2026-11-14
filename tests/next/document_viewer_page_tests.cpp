@@ -117,6 +117,20 @@ QTreeWidgetItem* findCatalogFolder(QTreeWidget* tree)
     return nullptr;
 }
 
+class FixedDefaultOutputDirectoriesPort final
+    : public Application::DefaultOutputDirectoriesPort
+{
+public:
+    Application::DefaultOutputDirectories directories;
+    mutable int readCount = 0;
+
+    [[nodiscard]] Application::DefaultOutputDirectories read() const override
+    {
+        ++readCount;
+        return directories;
+    }
+};
+
 class EmptyTestPage final : public Page
 {
 public:
@@ -361,6 +375,7 @@ private slots:
     void unknownAndCorruptSelectionsShowErrorsWithoutRetainingContent();
     void pdfAndOfficeExportsAreAtomicFileBackedCopies();
     void copyCancellationAndCorruptSourcePreserveTheDestination();
+    void saveCopyUsesDocumentsHomeAndEmptyDefaultDirectories();
     void selectedDocumentPrintUsesInjectedBorrowedOperation();
     void batchPrintPreservesOrderRangeAndOneDocumentLifetime();
     void batchPrintValidatesBeforeDialogAndReleasesOnCancellation();
@@ -819,6 +834,65 @@ void DocumentViewerPageTests::copyCancellationAndCorruptSourcePreserveTheDestina
 }
 
 void DocumentViewerPageTests::
+saveCopyUsesDocumentsHomeAndEmptyDefaultDirectories()
+{
+    auto directories =
+        std::make_shared<FixedDefaultOutputDirectoriesPort>();
+    std::vector<Application::SaveFileDialogRequest> requests;
+    DocumentViewerPageActions viewerActions;
+    viewerActions.defaultOutputDirectoriesPort = directories;
+    viewerActions.saveFileDialog = [&requests](
+        QWidget*, const Application::SaveFileDialogRequest& request) {
+        requests.push_back(request);
+        return Domain::Result<
+            DocumentViewerPageActions::SaveFileDialogResponse>::success({});
+    };
+
+    ViewerHarness harness(
+        *m_loader,
+        m_projection,
+        Platform::makeQtPdfPrintOperation,
+        std::move(viewerActions)
+        );
+    harness.select(id("document_guides_lesson_planning"));
+    auto* const viewer = harness.viewer();
+    QVERIFY(viewer);
+    QTRY_VERIFY_WITH_TIMEOUT(viewer->hasLoadedDocument(), 10000);
+    auto* const exportButton = viewer->findChild<QPushButton*>(
+        QStringLiteral("documentViewerExport")
+        );
+    QVERIFY(exportButton);
+
+    directories->directories = {
+        .documents = "/teacher/documents",
+        .home = "/teacher/home"
+    };
+    exportButton->click();
+    QCOMPARE(requests.size(), std::size_t(1));
+    QCOMPARE(
+        requests.back().initialDirectory,
+        Application::FileDialogPath("/teacher/documents")
+        );
+
+    directories->directories = {
+        .documents = {},
+        .home = "/teacher/home"
+    };
+    exportButton->click();
+    QCOMPARE(requests.size(), std::size_t(2));
+    QCOMPARE(
+        requests.back().initialDirectory,
+        Application::FileDialogPath("/teacher/home")
+        );
+
+    directories->directories = {};
+    exportButton->click();
+    QCOMPARE(requests.size(), std::size_t(3));
+    QVERIFY(requests.back().initialDirectory.empty());
+    QCOMPARE(directories->readCount, 3);
+}
+
+void DocumentViewerPageTests::
 selectedDocumentPrintUsesInjectedBorrowedOperation()
 {
     const auto printCalls = std::make_shared<PrintOperationCalls>();
@@ -834,6 +908,13 @@ selectedDocumentPrintUsesInjectedBorrowedOperation()
     QUrl openedUrl;
     std::optional<Application::SaveFileDialogRequest> saveRequest;
     DocumentViewerPageActions viewerActions;
+    auto defaultOutputDirectories =
+        std::make_shared<FixedDefaultOutputDirectoriesPort>();
+    defaultOutputDirectories->directories = {
+        .documents = "/teacher/documents",
+        .home = "/teacher/home"
+    };
+    viewerActions.defaultOutputDirectoriesPort = defaultOutputDirectories;
     viewerActions.saveFileDialog = [&](
         QWidget*, const Application::SaveFileDialogRequest& request) {
         saveRequest = request;
@@ -902,7 +983,10 @@ selectedDocumentPrintUsesInjectedBorrowedOperation()
     QVERIFY(saveRequest.has_value());
     QCOMPARE(saveRequest->purpose, Application::FileDialogPurpose::General);
     QCOMPARE(saveRequest->title, std::string("Export File"));
-    QVERIFY(!saveRequest->initialDirectory.empty());
+    QCOMPARE(
+        saveRequest->initialDirectory,
+        Application::FileDialogPath("/teacher/documents")
+        );
     QCOMPARE(saveRequest->suggestedFileName,
              std::string("DYB Lesson Planning Guide.pdf"));
     QCOMPARE(saveRequest->nameFilters,

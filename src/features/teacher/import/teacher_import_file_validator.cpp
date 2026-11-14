@@ -22,13 +22,14 @@ TeacherImportPreviewCounts previewCounts(const TeacherImportPreview& preview)
 
 TeacherImportFileValidation validateTeacherImportData(
     const QByteArray& data,
+    ArchiveReadPort& archiveReader,
     const TeacherImportTemplateRegistry& registry
     )
 {
     TeacherImportFileValidation validation;
     QString workbookError;
     const CalendarImport::Workbook workbook =
-        CalendarImport::parseWorkbook(data, &workbookError);
+        CalendarImport::parseWorkbook(data, archiveReader, &workbookError);
     if (workbook.worksheets.isEmpty())
     {
         validation.status = TeacherImportFileStatus::Unreadable;
@@ -93,7 +94,10 @@ TeacherImportFileValidation validateTeacherImportData(
     return validation;
 }
 
-TeacherImportFileValidation validateTeacherImportFile(const QString& filePath)
+TeacherImportFileValidation validateTeacherImportFile(
+    const QString& filePath,
+    ArchiveReadPort& archiveReader
+    )
 {
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly))
@@ -108,5 +112,5 @@ TeacherImportFileValidation validateTeacherImportFile(const QString& filePath)
 
     const TeacherImportTemplateRegistry registry =
         createDefaultTeacherImportTemplateRegistry();
-    return validateTeacherImportData(file.readAll(), registry);
+    return validateTeacherImportData(file.readAll(), archiveReader, registry);
 }

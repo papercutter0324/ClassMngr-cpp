@@ -1,4 +1,5 @@
 #include "features/schedule/import/schedule_workbook_parser.h"
+#include "core/zip_archive_read_adapter.h"
 #include "next/ui/initial_setup_schedule_import_dialog.h"
 #include "next/ui/schedule_import_request_mapper.h"
 
@@ -51,6 +52,26 @@ Application::ScheduleImportStateSnapshot emptySnapshot()
     return {};
 }
 
+std::expected<ScheduleImportWorkbook, QString> parseScheduleWithQtZip(
+    const QByteArray& bytes,
+    const ScheduleImportKind kind
+    )
+{
+    const std::unique_ptr<ArchiveReadPort> archiveReader =
+        makeZipArchiveReadPort();
+    return parseScheduleImportWorkbook(bytes, *archiveReader, kind);
+}
+
+std::expected<ScheduleImportWorkbook, QString> parseScheduleWithQtZip(
+    QIODevice& device,
+    const ScheduleImportKind kind
+    )
+{
+    const std::unique_ptr<ArchiveReadPort> archiveReader =
+        makeZipArchiveReadPort();
+    return parseScheduleImportWorkbook(device, *archiveReader, kind);
+}
+
 Application::ScheduleImportApplySummary successSummary()
 {
     return {
@@ -90,7 +111,7 @@ void ScheduleImportWorkflowTests::fixtureMapsIntoTypedRequest()
 {
     QFile file(scheduleFixturePath());
     QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.errorString()));
-    const auto workbook = parseScheduleImportWorkbook(
+    const auto workbook = parseScheduleWithQtZip(
         file,
         ScheduleImportKind::Normal
         );
@@ -150,7 +171,7 @@ void ScheduleImportWorkflowTests::reviewControlsMapSelectedDecisionsToExactApply
 {
     QFile file(scheduleFixturePath());
     QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(file.errorString()));
-    const auto workbook = parseScheduleImportWorkbook(
+    const auto workbook = parseScheduleWithQtZip(
         file,
         ScheduleImportKind::Normal
         );
@@ -197,6 +218,11 @@ void ScheduleImportWorkflowTests::reviewControlsMapSelectedDecisionsToExactApply
     Ui::InitialSetupScheduleImportActions actions;
     actions.chooseWorkbook = [path] {
         return Domain::Result<std::optional<QString>>::success(path);
+    };
+    actions.parseWorkbook = [](
+        const QByteArray& data,
+        const ScheduleImportKind kind) {
+        return parseScheduleWithQtZip(data, kind);
     };
     actions.readState = [snapshot] {
         return Application::ScheduleImportStateSnapshotOutcome{snapshot};
@@ -311,6 +337,11 @@ void ScheduleImportWorkflowTests::dialogAppliesAndKeepsSetupPending()
     actions.chooseWorkbook = [path] {
         return Domain::Result<std::optional<QString>>::success(path);
     };
+    actions.parseWorkbook = [](
+        const QByteArray& data,
+        const ScheduleImportKind kind) {
+        return parseScheduleWithQtZip(data, kind);
+    };
     actions.readState = [] {
         return Application::ScheduleImportStateSnapshotOutcome{emptySnapshot()};
     };
@@ -407,6 +438,11 @@ void ScheduleImportWorkflowTests::applyFailureKeepsReviewAndReviewCancelReturnsT
     Ui::InitialSetupScheduleImportActions actions;
     actions.chooseWorkbook = [path] {
         return Domain::Result<std::optional<QString>>::success(path);
+    };
+    actions.parseWorkbook = [](
+        const QByteArray& data,
+        const ScheduleImportKind kind) {
+        return parseScheduleWithQtZip(data, kind);
     };
     actions.readState = [] {
         return Application::ScheduleImportStateSnapshotOutcome{emptySnapshot()};
@@ -529,7 +565,7 @@ void ScheduleImportWorkflowTests::timeoutRetrySuppressesLateParseResult()
         {
             QThread::msleep(300);
         }
-        return parseScheduleImportWorkbook(bytes, kind);
+        return parseScheduleWithQtZip(bytes, kind);
     };
     actions.apply = [](const Application::ScheduleImportApplyRequest&) {
         return Application::ScheduleImportApplyResult{successSummary()};
@@ -578,6 +614,11 @@ void ScheduleImportWorkflowTests::profileNameMismatchRequiresExplicitConfirmatio
         Ui::InitialSetupScheduleImportActions actions;
         actions.chooseWorkbook = [path] {
             return Domain::Result<std::optional<QString>>::success(path);
+        };
+        actions.parseWorkbook = [](
+            const QByteArray& data,
+            const ScheduleImportKind kind) {
+            return parseScheduleWithQtZip(data, kind);
         };
         actions.readState = [] {
             return Application::ScheduleImportStateSnapshotOutcome{emptySnapshot()};
@@ -737,7 +778,7 @@ void ScheduleImportWorkflowTests::unsupportedExtensionIsRejectedBeforeParsing()
         const ScheduleImportKind kind
         ) -> std::expected<ScheduleImportWorkbook, QString> {
         ++parseCalls;
-        return parseScheduleImportWorkbook(bytes, kind);
+        return parseScheduleWithQtZip(bytes, kind);
     };
     actions.cancelSetup = [&] { ++cancelCalls; };
 
@@ -767,7 +808,7 @@ void ScheduleImportWorkflowTests::workbookDiagnosticsRequireAcknowledgement()
     actions.validationTimeoutMilliseconds = [] { return 5000; };
     actions.parseWorkbook = [](const QByteArray& bytes, const ScheduleImportKind kind)
         -> std::expected<ScheduleImportWorkbook, QString> {
-        auto parsed = parseScheduleImportWorkbook(bytes, kind);
+        auto parsed = parseScheduleWithQtZip(bytes, kind);
         if (parsed && !parsed->sheets.isEmpty()
             && !parsed->sheets.front().users.isEmpty())
         {
@@ -867,7 +908,7 @@ void ScheduleImportWorkflowTests::changedWorkbookAndModeRequireReload()
         const QByteArray& bytes,
         const ScheduleImportKind kind
         ) -> std::expected<ScheduleImportWorkbook, QString> {
-        auto parsed = parseScheduleImportWorkbook(bytes, kind);
+        auto parsed = parseScheduleWithQtZip(bytes, kind);
         if (++parseCalls == 1)
         {
             QFile changed(path);

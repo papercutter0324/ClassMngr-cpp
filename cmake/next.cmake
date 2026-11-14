@@ -319,6 +319,7 @@ set(CLASSMNGR_NEXT_APPLICATION_SOURCES
     src/next/application/ai_comment_provider_preferences.h
     src/next/application/ai_comment_voice_preferences.h
     src/next/application/font_size_preferences.h
+    src/next/application/font_presentation_port.h
     src/next/application/font_family_availability_port.h
     src/next/application/document_viewer_background_preferences.h
     src/next/application/document_page_spacing_preferences.h
@@ -773,7 +774,7 @@ set_target_properties(ClassMngrNextSpeakingEvaluationOutput PROPERTIES AUTOMOC O
 add_library(ClassMngrNextRosterOutput STATIC ${CLASSMNGR_NEXT_ROSTER_OUTPUT_SOURCES})
 target_compile_features(ClassMngrNextRosterOutput PUBLIC cxx_std_23)
 target_include_directories(ClassMngrNextRosterOutput PUBLIC "${PROJECT_SOURCE_DIR}/src")
-target_link_libraries(ClassMngrNextRosterOutput PUBLIC ClassMngrRosterTemplateRenderer Qt6::Widgets PRIVATE ClassMngrWorkspaceStore ClassMngrQtPdfPrint Qt6::Sql Qt6::Pdf)
+target_link_libraries(ClassMngrNextRosterOutput PUBLIC ClassMngrRosterTemplateRenderer Qt6::Widgets PRIVATE ClassMngrWorkspaceStore ClassMngrQtPdfGeneration ClassMngrQtPdfPrint Qt6::Sql Qt6::Pdf)
 set_target_properties(ClassMngrNextRosterOutput PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
 
 # Keep Schedule's preview/output closure available to Next without linking the
@@ -794,6 +795,7 @@ target_link_libraries(ClassMngrNextScheduleOutput
         ClassMngrBuildSettings
         ClassMngrNext::Application
         ClassMngrSchedulePdfRenderer
+        ClassMngrQtPdfGeneration
         Qt6::Widgets
         Qt6::Pdf
 )
@@ -1033,6 +1035,7 @@ classmngr_next_assert_dependencies(ClassMngrNextScheduleOutput
     "$<LINK_ONLY:ClassMngrBuildSettings>"
     "$<LINK_ONLY:ClassMngrNext::Application>"
     "$<LINK_ONLY:ClassMngrSchedulePdfRenderer>"
+    "$<LINK_ONLY:ClassMngrQtPdfGeneration>"
     "$<LINK_ONLY:Qt6::Widgets>"
     "$<LINK_ONLY:Qt6::Pdf>"
 )

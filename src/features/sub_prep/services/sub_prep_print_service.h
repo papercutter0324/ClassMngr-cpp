@@ -5,9 +5,11 @@
 #include "features/sub_prep/ui/sub_prep_class_information_model.h"
 
 #include <QList>
+#include <QFont>
 #include <QString>
 
 class QWidget;
+class PdfGenerationPort;
 
 namespace SubPrepPrintService
 {
@@ -44,6 +46,18 @@ struct Request
 [[nodiscard]] Result saveSubPrepPdf(
     const Request& request,
     const QString& documentPath
+    );
+
+[[nodiscard]] Result saveSubPrepPdf(
+    PdfGenerationPort& pdfGeneration,
+    const Request& request,
+    const QString& documentPath,
+    const QFont& outputFont);
+
+[[nodiscard]] Result printSubPrep(
+    PdfGenerationPort& pdfGeneration,
+    const Request& request,
+    const QFont& outputFont
     );
 
 [[nodiscard]] Result printSubPrep(

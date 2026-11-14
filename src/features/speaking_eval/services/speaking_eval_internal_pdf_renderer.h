@@ -4,9 +4,16 @@
 
 #include <QString>
 
+class PdfGenerationPort;
+
 class SpeakingEvalInternalPdfRenderer final
 {
 public:
+    [[nodiscard]] static bool render(
+        PdfGenerationPort& pdfGeneration,
+        const SpeakingEvalReportData& data,
+        const QString& documentPath,
+        QString* errorMessage);
     [[nodiscard]] static bool render(
         const SpeakingEvalReportData& data,
         const QString& documentPath,

@@ -2,8 +2,10 @@
 
 #include <QString>
 
-namespace SpeakingEvalPowerPointScripts
+namespace QtSpeakingEvalPowerPointScripts
 {
+inline constexpr auto CommentFontName = "Segoe UI Semibold";
+
 [[nodiscard]] QString macTextArgument(
     const QString& value
     );

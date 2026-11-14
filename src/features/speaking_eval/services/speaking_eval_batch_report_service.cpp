@@ -1,31 +1,4 @@
 #include "speaking_eval_batch_report_service.h"
-#include "core/resource_paths.h"
-#include "shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
 
-namespace SpeakingEvalBatchReportService
-{
-bool isPowerPointRendererAvailable()
-{
-    return makeQtSpeakingEvalPowerPointAutomationPort()->availability().available;
-}
-
-QString powerPointRendererAvailabilityMessage()
-{
-    return makeQtSpeakingEvalPowerPointAutomationPort()->availability().message;
-}
-
-Result exportReports(const Request& input)
-{
-    Request request = input;
-    if (!request.powerPointAutomation)
-        request.powerPointAutomation = makeQtSpeakingEvalPowerPointAutomationPort();
-    if (request.renderer != Renderer::PowerPoint
-        || !request.documentsRoot.isEmpty())
-        return exportResolvedReports(request);
-    auto lease = ResourcePaths::Documents::acquire();
-    if (!lease) return {Status::Failed, lease.error()};
-    Request resolved = request;
-    resolved.documentsRoot = ResourcePaths::Documents::directory(*lease);
-    return exportResolvedReports(resolved);
-}
-}
+// Legacy composition definitions live in
+// shared/speaking_evaluation/report_batch_legacy_composition.cpp.

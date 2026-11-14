@@ -6514,3 +6514,22 @@ Independent static acceptance passed and git diff --check passed. The
 focused Linux runtime test and full project configure could not run because Qt
 6.12+ is unavailable. No hosted rerun, commit, or push occurred. Continue with a
 fresh hosted baseline result before claiming runtime acceptance.
+
+
+## 2026-11-14 — Phase 8/8a gate attempt
+
+macOS candidate `f6b258f1bbb010ec0b7847f81827fd0409832888` is clean at
+`/private/tmp/classmngr-phase8-8a-candidate-20261114`; its five fixes match the
+shared worktree. The earlier unfiltered CTest was 613/620. Four fixed cases
+(#243, #244, #259, #330) pass focused reruns; the final focused run is 4/7,
+with #326, #339, and #620 still SEGFAULT. Crash reports show `EXC_BAD_ACCESS`
+in Qt stylesheet/StyleChange paths; cause is unconfirmed. C53 passed all 17
+pages with zero changed pixels. The final universal Release DMG passed package
+and integrity checks, and the package verifier passed 13/13.
+
+Linux and Windows workflow work remains unrun. GitHub auto-review rejected
+`github_create_blob` because public source upload was not authorized. No
+branch, draft PR, workflow run, or remote ref changed. Next: obtain explicit
+authorization to upload `f6b258f` to public
+`papercutter0324/ClassMngr-cpp` and open a draft PR against `Qt-Rewrite`; then
+run and review Linux/Windows workflow results. Keep both phase gates open.

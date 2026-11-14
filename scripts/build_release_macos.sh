@@ -63,7 +63,7 @@ if [[ ! -f "${APP_EXECUTABLE}" ]]; then
     exit 1
 fi
 
-python "${PROJECT_ROOT}/scripts/verify_next_package.py" verify \
+python3 "${PROJECT_ROOT}/scripts/verify_next_package.py" verify \
     --package-root "${BUILD_DIR}/installer-stage" \
     --platform macos \
     --architecture universal \
@@ -244,7 +244,7 @@ if [[ ! -L "${DMG_MOUNT_DIR}/Applications" \
     echo "The disk image is missing its /Applications shortcut." >&2
     exit 1
 fi
-python "${PROJECT_ROOT}/scripts/verify_next_package.py" verify \
+python3 "${PROJECT_ROOT}/scripts/verify_next_package.py" verify \
     --package-root "${DMG_MOUNT_DIR}" \
     --platform macos \
     --architecture universal \

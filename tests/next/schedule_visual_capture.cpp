@@ -5,6 +5,7 @@
 #include "features/schedule/ui/schedule_widget.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
+#include "next/platform/qt_font_family_availability_adapter.h"
 #include "next/platform/workspace_store_schedule_actions.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
@@ -755,12 +756,14 @@ bool captureNext(const QString& databasePath,
 {
     PlatformProcessMemorySnapshotProvider memoryProvider;
     const ProcessMemorySnapshot before = memoryProvider.snapshot();
+    Platform::QtFontFamilyAvailabilityAdapter fontFamilyAvailabilityPort;
     Ui::PageHost host(loader, preferences);
     Ui::SchedulePage* schedule = nullptr;
     Ui::PageDescriptor scheduleDescriptor{
         .id = *Ui::PageId::fromString(QStringLiteral("schedule")),
         .label = QStringLiteral("Schedule"),
-        .factory = [&databasePath, &schedule](const Ui::PageContext& context)
+        .factory = [&databasePath, &schedule, &fontFamilyAvailabilityPort](
+                       const Ui::PageContext& context)
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             Ui::SchedulePageActions actions;
             actions.activeWorkspacePath = [&databasePath] { return databasePath; };
@@ -785,7 +788,8 @@ bool captureNext(const QString& databasePath,
                 const Application::ScheduleSlotStateSaveRequest& request) {
                 return Platform::saveScheduleSlotStateAtPath(path, request);
             };
-            auto page = std::make_unique<Ui::SchedulePage>(context, std::move(actions));
+            auto page = std::make_unique<Ui::SchedulePage>(
+                context, fontFamilyAvailabilityPort, std::move(actions));
             schedule = page.get();
             return std::unique_ptr<Ui::Page>(std::move(page));
         }

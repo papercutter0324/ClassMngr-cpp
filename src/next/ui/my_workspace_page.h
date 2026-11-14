@@ -4,6 +4,7 @@
 #include "next/application/my_info_campus_directory_query_port.h"
 #include "next/application/my_workspace_schedule_read.h"
 #include "next/application/save_mode_preferences.h"
+#include "features/my_info/data/typed_signature_renderer.h"
 #include "next/ui/calendar_page.h"
 #include "next/ui/page.h"
 
@@ -105,6 +106,7 @@ private:
     void reportWarning(const QString& title, const QString& message);
 
     MyWorkspacePageActions m_actions;
+    TypedSignatureFontSet m_signatureFontSet;
     Application::PersonalDetailsSaveRequest m_details;
     QString m_workspaceIdentity;
     Application::SaveMode m_saveMode = Application::SaveMode::Automatic;

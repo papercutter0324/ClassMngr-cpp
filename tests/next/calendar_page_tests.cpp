@@ -1,4 +1,6 @@
 #include "core/process_memory_snapshot.h"
+#include "core/zip_archive_read_adapter.h"
+#include "core/archive_read_port.h"
 #include "data/database/workspace_store.h"
 #include "features/calendar/academic_calendar_schedule.h"
 #include "features/calendar/ui/academic_calendar_provider.h"
@@ -66,6 +68,39 @@ using namespace ClassMngr::Next;
 
 namespace
 {
+
+class RecordingArchiveReadPort final : public ArchiveReadPort
+{
+public:
+    explicit RecordingArchiveReadPort(
+        std::unique_ptr<ArchiveReadPort> delegate
+        )
+        : m_delegate(std::move(delegate))
+    {
+    }
+
+    [[nodiscard]] std::unique_ptr<ArchiveReadSession> open(
+        const QByteArray& data
+        ) const override
+    {
+        ++byteOpenCount;
+        return m_delegate->open(data);
+    }
+
+    [[nodiscard]] std::unique_ptr<ArchiveReadSession> open(
+        QIODevice& device
+        ) const override
+    {
+        ++deviceOpenCount;
+        return m_delegate->open(device);
+    }
+
+    mutable int byteOpenCount = 0;
+    mutable int deviceOpenCount = 0;
+
+private:
+    std::unique_ptr<ArchiveReadPort> m_delegate;
+};
 
 class OtherPage final : public Ui::Page
 {
@@ -364,6 +399,9 @@ public:
     QString calendarImportTemporaryFileTemplate;
     std::function<QNetworkAccessManager*(QObject*)>
         calendarImportNetworkAccessManagerFactory;
+    std::shared_ptr<ArchiveReadPort> calendarArchiveReadPort{
+        makeZipArchiveReadPort()
+        };
     Ui::CalendarViewFactory calendarViewFactory;
     std::string holidayColorOverride;
     Ui::CalendarPage* page = nullptr;
@@ -481,6 +519,7 @@ public:
             calendarImportTemporaryFileTemplate;
         actions.calendarImportNetworkAccessManagerFactory =
             calendarImportNetworkAccessManagerFactory;
+        actions.calendarArchiveReadPort = calendarArchiveReadPort;
         actions.calendarViewFactory = calendarViewFactory;
         actions.readEvent = [this](
             const QString&,
@@ -1800,6 +1839,9 @@ void CalendarPageTests::calendarImportUsesStreamingTypedPathApplyAndRefreshesOnl
     QVERIFY(stagedFiles.isValid());
 
     CalendarPageFixture fixture;
+    const auto archiveReader =
+        std::make_shared<RecordingArchiveReadPort>(makeZipArchiveReadPort());
+    fixture.calendarArchiveReadPort = archiveReader;
     fixture.calendarImportSourceUrl = server.url();
     fixture.calendarImportTemporaryFileTemplate = stagedFiles.filePath(
         QStringLiteral("calendar-import-XXXXXX.xlsx"));
@@ -1853,6 +1895,8 @@ void CalendarPageTests::calendarImportUsesStreamingTypedPathApplyAndRefreshesOnl
     QCOMPARE(failedSpy.size(), 0);
     QCOMPARE(importedSpy.first().at(0).toInt(), 3);
     QCOMPARE(importedSpy.first().at(1).toInt(), 2);
+    QCOMPARE(archiveReader->byteOpenCount, 0);
+    QVERIFY(archiveReader->deviceOpenCount >= 1);
     QCOMPARE(importStatus->text(),
         QStringLiteral("Imported 3 event(s). Skipped 2 existing or ignored item(s)."));
     QCOMPARE(importButton->isEnabled(), true);
@@ -2160,6 +2204,7 @@ void CalendarPageTests::calendarImportServiceDestructionCleansStagingWithoutWrit
     auto* const service = new Ui::NextCalendarEventImportService(
         [databasePath] { return databasePath; },
         [] { return QStringList{}; },
+        std::shared_ptr<ArchiveReadPort>(makeZipArchiveReadPort()),
         server.url(),
         stagedFiles.filePath(QStringLiteral("calendar-import-XXXXXX.xlsx")),
         server.networkAccessManagerFactory());

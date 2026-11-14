@@ -334,6 +334,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
         src/features/speaking_eval/services/speaking_eval_ai_batch_response_parser.cpp
         src/features/speaking_eval/services/speaking_eval_ai_batch_response_parser.h
         src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp
+        src/shared/speaking_evaluation/report_batch_legacy_composition.cpp
         src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp
         src/features/speaking_eval/ui/speaking_eval_delegate.cpp
         src/features/speaking_eval/ui/speaking_eval_model.cpp
@@ -374,6 +375,7 @@ qt_add_executable(ClassMngrAcademicCalendarTests
             ClassMngrNextSpeakingEvaluationOutput
             ClassMngrNext::Resources
             ClassMngrSpeakingEvalPowerPointAdapter
+            ClassMngrQtPdfGeneration
             Qt6::Core
             Qt6::Gui
             Qt6::Pdf

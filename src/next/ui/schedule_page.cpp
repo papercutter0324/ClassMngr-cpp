@@ -2,6 +2,7 @@
 #include "next/ui/schedule_intensive_cell_layout.h"
 #include "next/ui/schedule_import_workflow_dialog.h"
 #include "next/ui/schedule_output_dialog.h"
+#include "next/ui/schedule_output_font_policy.h"
 #include "next/ui/schedule_print_projection.h"
 #include "next/ui/schedule_testing_assignment_dialog.h"
 
@@ -18,7 +19,6 @@
 #include <QEvent>
 #include <QFrame>
 #include <QFont>
-#include <QFontDatabase>
 #include <QStringList>
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -56,17 +56,6 @@ constexpr int ScheduleToolbarButtonHeight = 40;
 [[nodiscard]] QString scheduleText(const char* source)
 {
     return QCoreApplication::translate("ScheduleWidget", source);
-}
-
-[[nodiscard]] QString scheduleOutputFallbackFamily()
-{
-#ifdef Q_OS_MACOS
-    return QStringLiteral("Helvetica Neue");
-#elif defined(Q_OS_WIN)
-    return QStringLiteral("Segoe UI");
-#else
-    return QFontDatabase::systemFont(QFontDatabase::GeneralFont).family();
-#endif
 }
 
 [[nodiscard]] QColor validColor(const QString& value, const QColor& fallback)
@@ -380,11 +369,13 @@ private:
 
 SchedulePage::SchedulePage(
     const PageContext& context,
+    Application::FontFamilyAvailabilityPort& fontFamilyAvailabilityPort,
     SchedulePageActions actions,
     QWidget* parent
     )
     : Page(context, parent)
     , m_actions(std::move(actions))
+    , m_fontFamilyAvailabilityPort(fontFamilyAvailabilityPort)
 {
     setObjectName(QStringLiteral("nextSchedulePage"));
     buildUi();
@@ -1210,47 +1201,21 @@ void SchedulePage::startScheduleOutput()
             ? Theme::Dark : Theme::Light;
     QFont englishFont = QApplication::font();
     const QStringList registeredFamilies = englishFont.families();
-    const QString systemFallbackFamily = scheduleOutputFallbackFamily();
-    const auto familyContaining = [&registeredFamilies](
-        const QString& fragment) -> QString {
-        for (const QString& family : registeredFamilies)
-        {
-            if (family.contains(fragment, Qt::CaseInsensitive))
-            {
-                return family;
-            }
-        }
-        return {};
-    };
-    QStringList englishFamilies{
-        familyContaining(QStringLiteral("Inter")),
-        familyContaining(QStringLiteral("Pretendard")),
-        systemFallbackFamily
-    };
-    englishFamilies.removeAll(QString{});
-    englishFamilies.removeDuplicates();
-    englishFont.setFamilies(englishFamilies);
+    const QString outputFallbackFamily = QString::fromStdU16String(
+        m_fontFamilyAvailabilityPort.outputFallbackFontFamily());
+    const OutputFontFamilies outputFamilies =
+        makeOutputFontFamilies(registeredFamilies, outputFallbackFamily);
+    englishFont.setFamilies(outputFamilies.english);
     const bool koreanGlobalFont = !registeredFamilies.isEmpty()
         && registeredFamilies.first().contains(
             QStringLiteral("Pretendard"), Qt::CaseInsensitive);
-#ifdef Q_OS_MACOS
-    constexpr int StandardEnglishPointSize = 15;
-#else
-    constexpr int StandardEnglishPointSize = 14;
-#endif
-    const int englishPointSize = QApplication::font().pointSize()
-        - (koreanGlobalFont ? 1 : 0);
-    englishFont.setPointSize(englishPointSize > 0
-        ? englishPointSize : StandardEnglishPointSize);
+    const int englishPointSize = resolveScheduleOutputEnglishPointSize(
+        QApplication::font().pointSize(),
+        koreanGlobalFont,
+        m_fontFamilyAvailabilityPort.outputFallbackEnglishPointSize());
+    englishFont.setPointSize(englishPointSize);
     QFont koreanFont = englishFont;
-    QStringList koreanFamilies{
-        familyContaining(QStringLiteral("Pretendard")),
-        familyContaining(QStringLiteral("Inter")),
-        systemFallbackFamily
-    };
-    koreanFamilies.removeAll(QString{});
-    koreanFamilies.removeDuplicates();
-    koreanFont.setFamilies(koreanFamilies);
+    koreanFont.setFamilies(outputFamilies.korean);
     koreanFont.setPointSize(englishFont.pointSize() + 1);
     ScheduleOutputRequest request{
         .document = schedulePrintDocument(*m_model),

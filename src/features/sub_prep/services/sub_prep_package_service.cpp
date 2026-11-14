@@ -1,6 +1,5 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
-#include "core/fontmanager.h"
 #include "core/startup_profiler.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/class_info.h"
@@ -8,13 +7,13 @@
 #include "next/application/sub_prep_package_request_validation.h"
 #include "next/application/sub_prep_selected_class_ids.h"
 #include "shared/roster/roster_template_renderer.h"
+#include "core/pdf_generation_port.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <QByteArray>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
-#include <QFont>
 #include <QHash>
 #include <QPageSize>
 #include <QRegularExpression>
@@ -61,20 +60,9 @@ struct TextProjectionCounts
     qint64 destinationQStringUnits = 0;
 };
 
-RosterTemplateRenderer::Fonts subPrepRosterFonts()
-{
-    QFont ui = FontManager::getUiFont(-1);
-    QFont korean = FontManager::getKoreanFont(-1);
-    korean.setStyleName(QStringLiteral("Regular"));
-    const auto weightAxis = QFont::Tag::fromString(QStringLiteral("wght"));
-    if (weightAxis)
-    {
-        korean.setVariableAxis(*weightAxis, static_cast<float>(QFont::Normal));
-    }
-    return {std::move(ui), std::move(korean)};
-}
-
 RosterTemplateRenderer::Result saveRosterPdf(
+    PdfGenerationPort& pdfGeneration,
+    const RosterTemplateRenderer::Fonts& outputFonts,
     const QList<RosterTemplateRenderer::RosterClassData>& classes,
     const QString& documentPath,
     const RosterTemplateRenderer::TemplateId templateId,
@@ -120,10 +108,12 @@ RosterTemplateRenderer::Result saveRosterPdf(
     if (finalizeText)
     {
         return RosterTemplateRenderer::saveCellValuesPdfForNextSubPrep(
-            documentPath, templateId, orientation, values, subPrepRosterFonts());
+            pdfGeneration,
+            documentPath, templateId, orientation, values, outputFonts);
     }
     return RosterTemplateRenderer::saveCellValuesPdf(
-        documentPath, templateId, orientation, values, subPrepRosterFonts());
+        pdfGeneration,
+        documentPath, templateId, orientation, values, outputFonts);
 }
 
 class TypedSourceReleaseGuard
@@ -746,6 +736,8 @@ QList<PackageClass> loadPackageClasses(
 }
 
 GeneratedPackage generateAt(
+    PdfGenerationPort& pdfGeneration,
+    const RosterTemplateRenderer::Fonts& outputFonts,
     Request& request,
     const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
     const QString& packageDirectory,
@@ -766,8 +758,10 @@ GeneratedPackage generateAt(
         QDir(packageDirectory).filePath(subPrepRelative);
     const SubPrepPrintService::Result subPrepResult =
         SubPrepPrintService::saveSubPrepPdf(
+            pdfGeneration,
             request.subPrep,
-            subPrepPath
+            subPrepPath,
+            outputFonts.ui
             );
 
     if (subPrepResult.status != SubPrepPrintService::Status::Sent)
@@ -843,6 +837,8 @@ GeneratedPackage generateAt(
                     QStringLiteral("Roster.pdf")
                     );
             const auto rosterResult = saveRosterPdf(
+                    pdfGeneration,
+                    outputFonts,
                     {packageClass.rosterData},
                     QDir(packageDirectory).filePath(relativePath),
                     request.rosterTemplate,
@@ -864,6 +860,8 @@ GeneratedPackage generateAt(
         const QString relativePath = QStringLiteral("Rosters - %1.pdf")
             .arg(RosterTemplateRenderer::templateDisplayName(request.rosterTemplate));
         const auto rosterResult = saveRosterPdf(
+                pdfGeneration,
+                outputFonts,
                 rosterClasses,
                 QDir(packageDirectory).filePath(relativePath),
                 request.rosterTemplate,
@@ -1187,13 +1185,17 @@ QList<int> classIdsForDays(
 }
 
 static Result generateWithPlan(
+    PdfGenerationPort& pdfGeneration,
     Request request,
     const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
+    const RosterTemplateRenderer::Fonts& outputFonts,
     const bool finalizeRosterText
     );
 
 Result generate(
-    Request request
+    PdfGenerationPort& pdfGeneration,
+    Request request,
+    RosterTemplateRenderer::Fonts outputFonts
     )
 {
     const auto planned = ClassMngr::Next::Application::
@@ -1203,10 +1205,15 @@ Result generate(
         return failed(preflightFailureMessage(planned.reason));
     }
 
-    return generateWithPlan(std::move(request), *planned.plan, false);
+    return generateWithPlan(
+        pdfGeneration, std::move(request), *planned.plan, outputFonts, false);
 }
 
-Result generateForNext(Request request)
+Result generateForNext(
+    PdfGenerationPort& pdfGeneration,
+    Request request,
+    RosterTemplateRenderer::Fonts outputFonts
+    )
 {
     const auto planned = ClassMngr::Next::Application::
         planSubPrepGeneration(generationPlanRequest(request));
@@ -1231,12 +1238,15 @@ Result generateForNext(Request request)
             );
     }
 
-    return generateWithPlan(std::move(request), *planned.plan, true);
+    return generateWithPlan(
+        pdfGeneration, std::move(request), *planned.plan, outputFonts, true);
 }
 
 static Result generateWithPlan(
+    PdfGenerationPort& pdfGeneration,
     Request request,
     const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
+    const RosterTemplateRenderer::Fonts& outputFonts,
     const bool finalizeRosterText
     )
 {
@@ -1308,7 +1318,9 @@ static Result generateWithPlan(
         }
 
         const GeneratedPackage generated =
-            generateAt(request, plan, stagingDirectory.path(), finalizeRosterText);
+            generateAt(
+                pdfGeneration, outputFonts, request, plan,
+                stagingDirectory.path(), finalizeRosterText);
         if (!generated.success)
         {
             return failed(generated.message);
@@ -1373,7 +1385,9 @@ static Result generateWithPlan(
         }
 
         const GeneratedPackage generated =
-            generateAt(request, plan, printOnlyDirectory->path(), finalizeRosterText);
+            generateAt(
+                pdfGeneration, outputFonts, request, plan,
+                printOnlyDirectory->path(), finalizeRosterText);
         if (!generated.success)
         {
             return failed(generated.message);
@@ -1538,10 +1552,13 @@ static Result generateWithPlan(
 }
 
 Result generate(
+    PdfGenerationPort& pdfGeneration,
     Request request,
-    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan
+    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
+    RosterTemplateRenderer::Fonts outputFonts
     )
 {
-    return generateWithPlan(std::move(request), plan, false);
+    return generateWithPlan(
+        pdfGeneration, std::move(request), plan, outputFonts, false);
 }
 }

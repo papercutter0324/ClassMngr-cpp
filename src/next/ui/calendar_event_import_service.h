@@ -11,6 +11,7 @@
 class QNetworkAccessManager;
 class QNetworkReply;
 class QTemporaryFile;
+class ArchiveReadPort;
 
 namespace ClassMngr::Next::Ui
 {
@@ -46,6 +47,7 @@ public:
     explicit NextCalendarEventImportService(
         ActiveWorkspacePath activeWorkspacePath,
         CampusCodeProvider campusCodeProvider,
+        std::shared_ptr<ArchiveReadPort> archiveReadPort,
         QString sourceUrlOverride = {},
         QString temporaryFileTemplate = {},
         NetworkAccessManagerFactory networkAccessManagerFactory = {},
@@ -79,6 +81,7 @@ private:
 
     ActiveWorkspacePath m_activeWorkspacePath;
     CampusCodeProvider m_campusCodeProvider;
+    std::shared_ptr<ArchiveReadPort> m_archiveReadPort;
     QString m_sourceUrlOverride;
     QString m_temporaryFileTemplate;
     QNetworkAccessManager* m_network = nullptr;

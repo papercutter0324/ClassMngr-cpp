@@ -1539,7 +1539,8 @@ void PersonalDetailsPage::updateTypedSignatureImage()
     m_signatureImageData =
         TypedSignature::renderForEmbedding(
             m_typedSignatureEdit->text(),
-            m_typedSignatureFont
+            m_typedSignatureFont,
+            &m_signatureFontSet
             );
     updateTypedSignatureFontOptions();
     updateSignaturePreview();
@@ -1624,7 +1625,8 @@ void PersonalDetailsPage::updateTypedSignatureFontOptions()
                 TypedSignature::render(
                     previewText,
                     option,
-                    QSize(240, 64)
+                    QSize(240, 64),
+                    &m_signatureFontSet
                     )
                 )
             );
@@ -1656,7 +1658,8 @@ void PersonalDetailsPage::updateSignaturePreview()
             TypedSignature::render(
                 typedSignature,
                 m_typedSignatureFont,
-                previewSize
+                previewSize,
+                &m_signatureFontSet
                 );
 
         m_signaturePreviewLabel->setText(QString());

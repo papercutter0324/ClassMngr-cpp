@@ -3,6 +3,7 @@
 #include "core/fontmanager.h"
 #include "core/process_memory_snapshot.h"
 #include "core/settingsmanager.h"
+#include "core/zip_archive_read_adapter.h"
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/ui/schedule_builder.h"
@@ -15,6 +16,7 @@
 #include "next/platform/workspace_store_schedule_actions.h"
 #include "next/platform/workspace_store_schedule_import_actions.h"
 #include "next/platform/qt_schedule_output_adapter.h"
+#include "next/platform/qt_font_family_availability_adapter.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_root_resolver.h"
@@ -86,6 +88,26 @@ using namespace ClassMngr::Next;
 namespace
 {
 
+std::expected<ScheduleImportWorkbook, QString> parseScheduleWithQtZip(
+    const QByteArray& data,
+    const ScheduleImportKind kind
+    )
+{
+    const std::unique_ptr<ArchiveReadPort> archiveReader =
+        makeZipArchiveReadPort();
+    return parseScheduleImportWorkbook(data, *archiveReader, kind);
+}
+
+std::expected<ScheduleImportWorkbook, QString> parseScheduleWithQtZip(
+    QIODevice& device,
+    const ScheduleImportKind kind
+    )
+{
+    const std::unique_ptr<ArchiveReadPort> archiveReader =
+        makeZipArchiveReadPort();
+    return parseScheduleImportWorkbook(device, *archiveReader, kind);
+}
+
 QString scheduleFixturePath()
 {
     return QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR)).filePath(
@@ -152,7 +174,7 @@ std::optional<ScheduleImportUserBlock> firstVisibleUser(
     {
         return std::nullopt;
     }
-    auto parsed = parseScheduleImportWorkbook(workbookFile, kind);
+    auto parsed = parseScheduleWithQtZip(workbookFile, kind);
     if (!parsed)
     {
         return std::nullopt;
@@ -254,7 +276,7 @@ std::optional<std::vector<VisibleScheduleBlock>> visibleScheduleBlocks(
     {
         return std::nullopt;
     }
-    auto parsed = parseScheduleImportWorkbook(
+    auto parsed = parseScheduleWithQtZip(
         workbookFile, ScheduleImportKind::Normal);
     if (!parsed)
     {
@@ -553,6 +575,7 @@ class ScheduleImportPageFixture final
 {
 public:
     Test::MemoryPreferences preferences;
+    Platform::QtFontFamilyAvailabilityAdapter fontFamilyAvailabilityPort;
     std::unique_ptr<Resources::ResourceCatalog> catalog;
     std::unique_ptr<Resources::ResourceLoader> loader;
     std::unique_ptr<Ui::PageHost> host;
@@ -642,6 +665,14 @@ public:
                     return workbookPath;
                 };
                 actions.parseScheduleImportWorkbook = parseWorkbook;
+                if (!actions.parseScheduleImportWorkbook)
+                {
+                    actions.parseScheduleImportWorkbook = [](
+                        QIODevice& device,
+                        const ScheduleImportKind kind) {
+                        return parseScheduleWithQtZip(device, kind);
+                    };
+                }
                 actions.scheduleImportTimeoutMilliseconds = [this] {
                     return timeoutMilliseconds;
                 };
@@ -657,7 +688,7 @@ public:
                         databasePath, request);
                 };
                 auto created = std::make_unique<Ui::SchedulePage>(
-                    context, std::move(actions));
+                    context, fontFamilyAvailabilityPort, std::move(actions));
                 page = created.get();
                 return Ui::PageOperationResult<std::unique_ptr<Ui::Page>>{
                     std::move(created)};
@@ -1149,7 +1180,7 @@ nonDefaultSheetAndBlockApplyOnlyAfterDiagnosticsAcknowledgement()
     const QString workbookPath = nondefaultSelectionFixturePath();
     QFile workbookFile(workbookPath);
     QVERIFY(workbookFile.open(QIODevice::ReadOnly));
-    auto parsed = parseScheduleImportWorkbook(
+    auto parsed = parseScheduleWithQtZip(
         workbookFile, ScheduleImportKind::Normal);
     QVERIFY(parsed.has_value());
     QCOMPARE(parsed->sheets.size(), 2);
@@ -1504,7 +1535,7 @@ largeWorkbookReviewUsesBoundedWidgetsAndReleasesDataOnCancel()
     QCOMPARE(importedUser->classes.size(), 20);
     QFile workbookFile(workbookPath);
     QVERIFY(workbookFile.open(QIODevice::ReadOnly));
-    const auto parsedWorkbook = parseScheduleImportWorkbook(
+    const auto parsedWorkbook = parseScheduleWithQtZip(
         workbookFile, ScheduleImportKind::Normal);
     QVERIFY(parsedWorkbook.has_value());
     int parserCandidateCount = 0;
@@ -2402,7 +2433,7 @@ timeoutAndCanceledLateParseResultsAreDiscarded()
     timeoutFixture.parseWorkbook = [=](QIODevice& device,
                                        const ScheduleImportKind kind) {
         const int call = timeoutCalls->fetch_add(1, std::memory_order_relaxed);
-        auto result = parseScheduleImportWorkbook(device, kind);
+        auto result = parseScheduleWithQtZip(device, kind);
         if (call == 0)
         {
             timeoutParsed->store(result.has_value(), std::memory_order_relaxed);
@@ -2441,7 +2472,7 @@ timeoutAndCanceledLateParseResultsAreDiscarded()
     auto cancelReturned = std::make_shared<std::atomic_bool>(false);
     cancelFixture.parseWorkbook = [=](QIODevice& device,
                                       const ScheduleImportKind kind) {
-        auto result = parseScheduleImportWorkbook(device, kind);
+        auto result = parseScheduleWithQtZip(device, kind);
         cancelParsed->store(result.has_value(), std::memory_order_relaxed);
         cancelStarted->store(true, std::memory_order_release);
         QThread::msleep(180);
@@ -2487,7 +2518,7 @@ suspendingDuringAsyncParseCancelsAndIgnoresLateResult()
     auto parseReturned = std::make_shared<std::atomic_bool>(false);
     fixture.parseWorkbook = [=](QIODevice& device,
                                 const ScheduleImportKind kind) {
-        auto result = parseScheduleImportWorkbook(device, kind);
+        auto result = parseScheduleWithQtZip(device, kind);
         parseSucceeded->store(result.has_value(), std::memory_order_relaxed);
         parseStarted->store(true, std::memory_order_release);
         QThread::msleep(220);

@@ -9,6 +9,8 @@
 #include <QFont>
 #include <QString>
 
+class PdfGenerationPort;
+
 namespace SchedulePdfRenderer
 {
 using Status = DocumentOutputStatus;
@@ -29,6 +31,12 @@ struct Request final
 // Renders one schedule page to the requested PDF path without opening a
 // printer dialog or depending on Legacy UI and services.
 [[nodiscard]] Result renderSchedulePdf(
+    const Request& request,
+    const QString& documentPath
+    );
+
+[[nodiscard]] Result renderSchedulePdf(
+    PdfGenerationPort& pdfGeneration,
     const Request& request,
     const QString& documentPath
     );

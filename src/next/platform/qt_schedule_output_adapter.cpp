@@ -1,4 +1,5 @@
 #include "next/platform/qt_schedule_output_adapter.h"
+#include "core/qt_pdf_generation_adapter.h"
 
 #include "features/schedule/services/schedule_pdf_renderer.h"
 
@@ -81,6 +82,7 @@ Ui::ScheduleOutputResult performScheduleOutput(
 {
     try
     {
+        const auto pdf = makeQtPdfGenerationPort();
         const SchedulePdfRenderer::Request pdfRequest =
             rendererRequest(request);
 
@@ -88,6 +90,7 @@ Ui::ScheduleOutputResult performScheduleOutput(
         {
             const SchedulePdfRenderer::Result saveResult =
                 SchedulePdfRenderer::renderSchedulePdf(
+                    *pdf,
                     pdfRequest,
                     request.documentPath
                     );
@@ -107,6 +110,7 @@ Ui::ScheduleOutputResult performScheduleOutput(
             );
         const SchedulePdfRenderer::Result renderResult =
             SchedulePdfRenderer::renderSchedulePdf(
+                *pdf,
                 pdfRequest,
                 documentPath
                 );

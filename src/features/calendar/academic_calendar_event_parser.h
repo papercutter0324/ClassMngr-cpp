@@ -9,6 +9,8 @@
 #include <QList>
 #include <QStringList>
 
+class ArchiveReadPort;
+
 namespace CalendarImport
 {
 struct Workbook;
@@ -43,8 +45,24 @@ ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
     CalendarWorkbookReadCounts* readCounts = nullptr
     );
 
+ParsedCalendarImport parseCalendarEventsFromWorkbookBytes(
+    const QByteArray& data,
+    ArchiveReadPort& archiveReader,
+    const QStringList& campusCodes,
+    QString* errorMessage,
+    CalendarWorkbookReadCounts* readCounts = nullptr
+    );
+
 ParsedCalendarImport parseCalendarEventsFromWorkbookDevice(
     QIODevice& device,
+    const QStringList& campusCodes,
+    QString* errorMessage,
+    CalendarWorkbookReadCounts* readCounts = nullptr
+    );
+
+ParsedCalendarImport parseCalendarEventsFromWorkbookDevice(
+    QIODevice& device,
+    ArchiveReadPort& archiveReader,
     const QStringList& campusCodes,
     QString* errorMessage,
     CalendarWorkbookReadCounts* readCounts = nullptr

@@ -56,8 +56,10 @@ QString translate(
 }
 
 Result saveSubPrepPdf(
+    PdfGenerationPort& pdfGeneration,
     const Request& request,
-    const QString& documentPath
+    const QString& documentPath,
+    const QFont& outputFont
     )
 {
     if (documentPath.trimmed().isEmpty())
@@ -70,13 +72,17 @@ Result saveSubPrepPdf(
     const SubPrepDocumentModel::Document document =
         SubPrepDocumentModel::build(request);
     return SubPrepPdfRenderer::renderPdf(
+        pdfGeneration,
         document,
-        documentPath
+        documentPath,
+        outputFont
         );
 }
 
 Result printSubPrep(
-    const Request& request
+    PdfGenerationPort& pdfGeneration,
+    const Request& request,
+    const QFont& outputFont
     )
 {
     QTemporaryDir temporaryDirectory;
@@ -93,7 +99,7 @@ Result printSubPrep(
             QStringLiteral("Sub Prep.pdf")
             );
     const Result saveResult =
-        saveSubPrepPdf(request, documentPath);
+        saveSubPrepPdf(pdfGeneration, request, documentPath, outputFont);
 
     if (saveResult.status != Status::Sent)
     {

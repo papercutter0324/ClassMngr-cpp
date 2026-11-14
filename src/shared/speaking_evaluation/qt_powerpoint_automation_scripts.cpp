@@ -1,8 +1,8 @@
-#include "speaking_eval_powerpoint_scripts.h"
+#include "qt_powerpoint_automation_scripts.h"
 
-#include "speaking_eval_powerpoint_job_model.h"
+#include "features/speaking_eval/services/speaking_eval_powerpoint_job_model.h"
 
-namespace SpeakingEvalPowerPointScripts
+namespace QtSpeakingEvalPowerPointScripts
 {
 QString macTextArgument(
     const QString& value

@@ -54,11 +54,6 @@ constexpr int TeacherPreferredNameFieldWidth = 180;
 constexpr int TeacherRoomNumberFieldWidth = 115;
 constexpr int TeacherPhoneNumberFieldWidth = 160;
 constexpr int BirthdayReferenceYear = 2000;
-#if defined(Q_OS_MACOS)
-constexpr int TeacherKoreanFontPointSize = 16;
-#else
-constexpr int TeacherKoreanFontPointSize = 15;
-#endif
 
 [[nodiscard]] QFont fontWithFamilyFragment(
     QFont font,
@@ -862,7 +857,8 @@ void TeacherProfilePage::addLineField(
             QStringLiteral("Pretendard"),
             m_fontFamilyAvailabilityPort
             );
-        koreanFont.setPointSize(TeacherKoreanFontPointSize);
+        koreanFont.setPointSize(
+            m_fontFamilyAvailabilityPort.teacherProfileKoreanFontPointSize());
         input->setFont(koreanFont);
     }
 

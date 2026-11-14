@@ -2,6 +2,7 @@
 #include "next/application/file_dialog_port.h"
 #include "next/output/roster_output.h"
 #include "next/platform/pdf_print_operation.h"
+#include "next/platform/roster_pdf_preview_session.h"
 #include "shared/roster/roster_template_print_truncation.h"
 #include <QPageLayout>
 #include <functional>
@@ -20,6 +21,7 @@ struct RosterOutputActions final
     std::function<Domain::Result<SaveFileDialogResponse>(
         QWidget*, const Application::SaveFileDialogRequest&)> saveFileDialog;
     Platform::PdfPrintOperationFactory printOperationFactory;
+    Platform::RosterPdfPreviewSessionFactory pdfPreviewSessionFactory;
     RosterTemplateRenderer::Fonts fonts;
 };
 }

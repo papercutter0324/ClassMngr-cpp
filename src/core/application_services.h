@@ -2,6 +2,7 @@
 #define APPLICATIONSERVICES_H
 
 #include "core/result.h"
+#include "core/font_registration_port.h"
 #include "features/documents/document_catalog.h"
 #include "data/repositories/repository_error.h"
 #include "data/database/workspace_store_fwd.h"
@@ -25,7 +26,9 @@ public:
     ApplicationServices();
 
     explicit ApplicationServices(
-        std::unique_ptr<ThemeService> themeService
+        std::unique_ptr<ThemeService> themeService,
+        std::shared_ptr<ClassMngr::Core::FontRegistrationPort>
+            fontRegistrationPort = {}
         );
 
     ~ApplicationServices();
@@ -70,6 +73,8 @@ public:
     [[nodiscard]] SpeakingEvaluationService* speakingEvaluationService() const;
     [[nodiscard]] ThemeService* themeService() const;
     [[nodiscard]] const DocumentCatalog* documentCatalog() const;
+    [[nodiscard]] ClassMngr::Core::FontRegistrationPort*
+    fontRegistrationPort() const noexcept;
 
 private:
     // Declared first so workspace persistence outlives all service facades.
@@ -84,6 +89,8 @@ private:
     mutable std::unique_ptr<SpeakingEvaluationService> m_speakingEvaluationService;
     std::unique_ptr<ThemeService> m_themeService;
     std::unique_ptr<DocumentCatalog> m_documentCatalog;
+    std::shared_ptr<ClassMngr::Core::FontRegistrationPort>
+        m_fontRegistrationPort;
 };
 
 #endif // APPLICATIONSERVICES_H

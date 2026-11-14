@@ -1,5 +1,7 @@
 #include "speaking_eval_internal_pdf_renderer.h"
 
+#include "core/pdf_generation_port.h"
+
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "features/speaking_eval/ui/speaking_eval_report_painter.h"
 #include "ui/shared/printing/pdf_print_service.h"
@@ -9,7 +11,6 @@
 #include <QPageLayout>
 #include <QPageSize>
 #include <QPainter>
-#include <QPdfWriter>
 
 #include <algorithm>
 
@@ -29,18 +30,17 @@ QPageLayout reportPageLayout()
         );
 }
 
-QRectF reportPageRect(const QPdfWriter& writer)
+QRectF reportPageRect(PdfGenerationSession& writer)
 {
-    const QRect pageRect = writer.pageLayout().fullRectPixels(
-        std::max(1, writer.resolution())
-        );
+    const QRect pageRect = writer.pageRectPixels();
     return !pageRect.isEmpty()
         ? QRectF(pageRect)
-        : QRectF(0.0, 0.0, writer.width(), writer.height());
+        : QRectF(0.0, 0.0, writer.paintDevice().width(), writer.paintDevice().height());
 }
 }
 
 bool SpeakingEvalInternalPdfRenderer::render(
+    PdfGenerationPort& pdfGeneration,
     const SpeakingEvalReportData& data,
     const QString& documentPath,
     QString* errorMessage
@@ -59,11 +59,13 @@ bool SpeakingEvalInternalPdfRenderer::render(
         return false;
     }
 
-    QPdfWriter writer(documentPath);
-    writer.setCreator(QStringLiteral("ClassMngr"));
-    writer.setTitle(QObject::tr("Speaking Evaluation"));
-    writer.setResolution(PdfPrintService::GeneratedPdfResolutionDpi);
-    if (!writer.setPageLayout(reportPageLayout()))
+    auto session = pdfGeneration.create(documentPath, {
+        .creator = QStringLiteral("ClassMngr"),
+        .title = QObject::tr("Speaking Evaluation"),
+        .resolutionDpi = PdfPrintService::GeneratedPdfResolutionDpi,
+        .pageLayout = reportPageLayout()
+    });
+    if (!session)
     {
         if (errorMessage)
         {
@@ -72,8 +74,9 @@ bool SpeakingEvalInternalPdfRenderer::render(
         return false;
     }
 
+    auto& writer = *session;
     QPainter painter;
-    if (!painter.begin(&writer))
+    if (!painter.begin(&writer.paintDevice()))
     {
         if (errorMessage)
         {

@@ -2,7 +2,6 @@
 
 #include <QFile>
 #include <QDir>
-#include <QFontDatabase>
 #include <QGuiApplication>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -583,46 +582,7 @@ struct TemplateFontFamilies
     QString inter;
     QString pretendard;
     QString handwritten;
-    QList<int> registeredFontIds;
 };
-
-QString loadApplicationFont(
-    const QString& path,
-    const QString& familyFragment,
-    QList<int>* registeredFontIds
-    )
-{
-    if (!QFile::exists(path))
-    {
-        return {};
-    }
-
-    const int id =
-        QFontDatabase::addApplicationFont(path);
-    if (id < 0)
-    {
-        return {};
-    }
-
-    if (registeredFontIds)
-    {
-        registeredFontIds->append(id);
-    }
-
-    const QStringList families =
-        QFontDatabase::applicationFontFamilies(id);
-    for (const QString& family : families)
-    {
-        if (family.contains(
-                familyFragment,
-                Qt::CaseInsensitive
-                ))
-        {
-            return family;
-        }
-    }
-    return families.value(0);
-}
 
 TemplateFontFamilies loadTemplateFonts()
 {
@@ -634,17 +594,11 @@ TemplateFontFamilies loadTemplateFonts()
         return fonts;
     }
 
-    // Inter and Pretendard are registered for the application's global UI.
-    // Reuse those registrations so releasing this template cache cannot
-    // remove a font that the rest of the application still owns.
+    // Inter and Pretendard are owned by the application's startup resource
+    // session. The report session owns the handwritten registration lease.
     fonts.inter = currentEnvironment.latinFamily;
     fonts.pretendard = currentEnvironment.koreanFamily;
-    fonts.handwritten =
-        loadApplicationFont(
-            currentEnvironment.handwrittenFontPath,
-            QStringLiteral("Just Another Hand"),
-            &fonts.registeredFontIds
-            );
+    fonts.handwritten = currentEnvironment.handwrittenFamily;
 
     QStringList missing;
     if (fonts.inter.isEmpty())
@@ -1210,15 +1164,7 @@ void releaseSpeakingEvalTemplateAssets()
     TemplateAssetCache& cache = templateAssetCache();
     cache.standard.reset();
     cache.advanced.reset();
-
-    if (cache.fonts)
-    {
-        for (const int fontId : cache.fonts->registeredFontIds)
-        {
-            QFontDatabase::removeApplicationFont(fontId);
-        }
-        cache.fonts.reset();
-    }
+    cache.fonts.reset();
 }
 
 SpeakingEvalReportAssetSession::SpeakingEvalReportAssetSession(

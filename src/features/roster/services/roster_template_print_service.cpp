@@ -25,7 +25,6 @@
 #include <QPageSize>
 #include <QPainter>
 #include <QPdfDocument>
-#include <QPdfWriter>
 #include <QPen>
 #include <QRect>
 #include <QRectF>

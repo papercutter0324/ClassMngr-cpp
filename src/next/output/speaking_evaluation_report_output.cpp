@@ -1,5 +1,6 @@
 #include "next/output/speaking_evaluation_report_output.h"
 #include "next/application/report_job_coordinator.h"
+#include "next/platform/resource_loader_font_registration_adapter.h"
 #include <QDir>
 #include <QFileInfo>
 
@@ -48,11 +49,16 @@ resolveSpeakingEvaluationReportAssets(Resources::ResourceLoader& loader,
             root = QFileInfo(*path).absolutePath();
     }
     if (root.isEmpty()) return std::unexpected(QStringLiteral("The report template is unavailable."));
-    auto handwritten = resolve(loader, QStringLiteral("resource:assets/fonts/JustAnotherHand-Regular.ttf"));
+    Platform::ResourceLoaderFontRegistrationAdapter fontRegistration(
+        loader, Resources::ResourceScopeKind::Operation,
+        QStringLiteral("speaking-evaluation-report"));
+    auto handwritten = fontRegistration.loadFont(
+        ClassMngr::Core::FontResource::JustAnotherHand);
     if (!handwritten) return std::unexpected(handwritten.error());
     SpeakingEvalReportAssetEnvironment environment;
     environment.templateRoot = root;
-    environment.handwrittenFontPath = *handwritten;
+    environment.handwrittenFamily = (*handwritten)->familyName();
+    environment.handwrittenFontRegistration = std::move(*handwritten);
     return environment;
 }
 std::expected<QString, QString> resolveSpeakingEvaluationPowerPointRoot(
@@ -169,7 +175,8 @@ SpeakingEvaluationReportRunResult runSpeakingEvaluationReports(
                 else output = {DocumentOutputStatus::Failed, root.error()};
             }
         }
-        if (output.message.isEmpty()) output = Service::exportResolvedReports(request);
+        if (output.message.isEmpty())
+            output = Service::exportResolvedReports(request, actions.archiveWriter.get(), actions.pdfGeneration.get());
         if (output.status == DocumentOutputStatus::Completed)
         {
             static_cast<void>(worker.m_sink->post(Application::ReportJobEvent::progress(jobGeneration, request.reports.size())));

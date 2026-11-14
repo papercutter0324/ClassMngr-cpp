@@ -13,6 +13,8 @@
 #include <memory>
 
 class QWidget;
+class ArchiveWritePort;
+class PdfGenerationPort;
 
 namespace SpeakingEvalBatchReportService
 {
@@ -90,8 +92,15 @@ struct Request
     const Request& request
     );
 
-// Qt-only engine entry. All resource paths are explicitly supplied; this path
-// has no DataService, resource-pack lease, or legacy page dependency.
+// Source-compatible Legacy composition using the ZIP archive adapter.
 [[nodiscard]] Result exportResolvedReports(const Request& request);
+
+// Qt-only engine entry. Resource paths and archive output are explicitly
+// supplied. A null archive writer fails closed when a batch archive is needed.
+[[nodiscard]] Result exportResolvedReports(
+    const Request& request, ArchiveWritePort* archiveWriter);
+
+[[nodiscard]] Result exportResolvedReports(
+    const Request& request, ArchiveWritePort* archiveWriter, PdfGenerationPort* pdfGeneration);
 
 } // namespace SpeakingEvalBatchReportService

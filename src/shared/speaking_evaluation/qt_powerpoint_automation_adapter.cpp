@@ -2,12 +2,14 @@
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "features/speaking_eval/services/speaking_eval_report_asset_resolver.h"
 #include "features/speaking_eval/services/speaking_eval_powerpoint_job_model.h"
-#include "features/speaking_eval/services/speaking_eval_powerpoint_scripts.h"
 #include "shared/speaking_evaluation/qt_powerpoint_automation_workspace.h"
+#include "shared/speaking_evaluation/qt_powerpoint_automation_scripts.h"
 
 #include <QDir>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QObject>
 #include <QSaveFile>
 #include <exception>
@@ -42,6 +44,108 @@ bool writeUtf8File(
     }
 
     return true;
+}
+
+QString windowsPath(QString path)
+{
+    path.replace(QLatin1Char('/'), QLatin1Char('\\'));
+    return path;
+}
+
+QJsonObject windowsJobObject(
+    const SpeakingEvalPowerPointJobModel::BatchJob& batch,
+    const QString& pptxPath,
+    const QString& signaturePath,
+    const QString& cancelPath
+    )
+{
+    QJsonArray students;
+    for (const SpeakingEvalPowerPointJobModel::StudentJob& job : batch.students)
+    {
+        QJsonArray scores;
+        for (const QString& score : job.scores)
+        {
+            scores.append(score);
+        }
+
+        students.append(
+            QJsonObject{
+                { QStringLiteral("displayName"), job.displayName },
+                { QStringLiteral("pdfPath"), windowsPath(job.pdfPath) },
+                {
+                    QStringLiteral("completionPath"),
+                    windowsPath(job.completionPath)
+                },
+                { QStringLiteral("englishName"), job.englishName },
+                { QStringLiteral("koreanName"), job.koreanName },
+                { QStringLiteral("classLabel"), job.classLabel },
+                { QStringLiteral("nativeTeacher"), job.nativeTeacher },
+                { QStringLiteral("koreanTeacher"), job.koreanTeacher },
+                { QStringLiteral("date"), job.date },
+                { QStringLiteral("comments"), job.comments },
+                {
+                    QStringLiteral("commentsFontName"),
+                    QString::fromLatin1(
+                        QtSpeakingEvalPowerPointScripts::CommentFontName
+                        )
+                },
+                {
+                    QStringLiteral("commentsFontSizePoints"),
+                    job.commentsFontSizePoints
+                },
+                { QStringLiteral("overallGrade"), job.overallGrade },
+                { QStringLiteral("scores"), scores }
+            }
+            );
+    }
+
+    const SpeakingEvalPowerPointJobModel::TemplateProfile& profile =
+        batch.templateProfile;
+    return {
+        { QStringLiteral("pptxPath"), windowsPath(pptxPath) },
+        { QStringLiteral("cancelPath"), windowsPath(cancelPath) },
+        { QStringLiteral("scoreTableOnMaster"), profile.scoreTableOnMaster },
+        { QStringLiteral("scoreTableName"), profile.scoreTableName },
+        { QStringLiteral("minimumTableRows"), profile.minimumTableRows },
+        {
+            QStringLiteral("minimumTableColumns"),
+            profile.minimumTableColumns
+        },
+        { QStringLiteral("firstGradeColumn"), profile.firstGradeColumn },
+        {
+            QStringLiteral("neutralFill"),
+            profile.neutralFillRed
+                + (profile.neutralFillGreen << 8)
+                + (profile.neutralFillBlue << 16)
+        },
+        {
+            QStringLiteral("signaturePath"),
+            windowsPath(signaturePath)
+        },
+        { QStringLiteral("signatureLeft"), profile.signatureBounds.left() },
+        { QStringLiteral("signatureTop"), profile.signatureBounds.top() },
+        { QStringLiteral("signatureWidth"), profile.signatureBounds.width() },
+        { QStringLiteral("signatureHeight"), profile.signatureBounds.height() },
+        {
+            QStringLiteral("signatureAlignsBottomLeft"),
+            profile.signatureAlignsBottomLeft
+        },
+        { QStringLiteral("students"), students }
+    };
+}
+
+QByteArray windowsJobFile(
+    const SpeakingEvalPowerPointJobModel::BatchJob& batch,
+    const QString& pptxPath,
+    const QString& signaturePath,
+    const QString& cancelPath
+    )
+{
+    return QByteArrayLiteral("\xEF\xBB\xBF")
+        + QJsonDocument(
+              windowsJobObject(batch, pptxPath, signaturePath, cancelPath)
+              )
+              .toJson(QJsonDocument::Compact);
 }
 
 
@@ -154,20 +258,16 @@ PowerPointBatchStatus renderPowerPointBatch(
             return PowerPointBatchStatus::Failed;
         }
 
-        const QByteArray jobJson =
-            QByteArrayLiteral("\xEF\xBB\xBF")
-            + QJsonDocument(
-                SpeakingEvalPowerPointJobModel::toJson(
-                    batch,
-                    pptxPath,
-                    signaturePath,
-                    cancelPath
-                    )
-                ).toJson(QJsonDocument::Compact);
+        const QByteArray jobJson = windowsJobFile(
+            batch,
+            pptxPath,
+            signaturePath,
+            cancelPath
+            );
         if (!writeUtf8File(jobPath, jobJson, errorMessage)
             || !writeUtf8File(
                 scriptPath,
-                SpeakingEvalPowerPointScripts::windowsScript().toUtf8(),
+                QtSpeakingEvalPowerPointScripts::windowsScript().toUtf8(),
                 errorMessage
                 ))
         {
@@ -199,7 +299,7 @@ PowerPointBatchStatus renderPowerPointBatch(
 
         if (!writeUtf8File(
                 scriptPath,
-                SpeakingEvalPowerPointScripts::macScript().toUtf8(),
+                QtSpeakingEvalPowerPointScripts::macScript().toUtf8(),
                 errorMessage
                 ))
         {
@@ -239,23 +339,23 @@ PowerPointBatchStatus renderPowerPointBatch(
         {
             arguments.append(
                 QStringList{
-                    SpeakingEvalPowerPointScripts::macTextArgument(job.displayName),
+                    QtSpeakingEvalPowerPointScripts::macTextArgument(job.displayName),
                     job.pdfPath,
                     job.completionPath,
-                    SpeakingEvalPowerPointScripts::macTextArgument(job.englishName),
-                    SpeakingEvalPowerPointScripts::macTextArgument(job.koreanName),
-                    SpeakingEvalPowerPointScripts::macTextArgument(job.classLabel),
-                    SpeakingEvalPowerPointScripts::macTextArgument(job.nativeTeacher),
-                    SpeakingEvalPowerPointScripts::macTextArgument(job.koreanTeacher),
-                    SpeakingEvalPowerPointScripts::macTextArgument(job.date),
-                    SpeakingEvalPowerPointScripts::macTextArgument(job.comments),
-                    SpeakingEvalPowerPointScripts::macTextArgument(
+                    QtSpeakingEvalPowerPointScripts::macTextArgument(job.englishName),
+                    QtSpeakingEvalPowerPointScripts::macTextArgument(job.koreanName),
+                    QtSpeakingEvalPowerPointScripts::macTextArgument(job.classLabel),
+                    QtSpeakingEvalPowerPointScripts::macTextArgument(job.nativeTeacher),
+                    QtSpeakingEvalPowerPointScripts::macTextArgument(job.koreanTeacher),
+                    QtSpeakingEvalPowerPointScripts::macTextArgument(job.date),
+                    QtSpeakingEvalPowerPointScripts::macTextArgument(job.comments),
+                    QtSpeakingEvalPowerPointScripts::macTextArgument(
                         QString::fromLatin1(
-                            SpeakingEvalPowerPointJobModel::CommentFontName
+                            QtSpeakingEvalPowerPointScripts::CommentFontName
                             )
                         ),
                     QString::number(job.commentsFontSizePoints),
-                    SpeakingEvalPowerPointScripts::macTextArgument(job.overallGrade),
+                    QtSpeakingEvalPowerPointScripts::macTextArgument(job.overallGrade),
                     job.scores[0],
                     job.scores[1],
                     job.scores[2],

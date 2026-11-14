@@ -7,6 +7,7 @@
 #include <QStringList>
 
 class TeacherImportTemplateRegistry;
+class ArchiveReadPort;
 
 enum class TeacherImportFileStatus
 {
@@ -51,6 +52,17 @@ struct TeacherImportFileValidation
     const TeacherImportTemplateRegistry& registry
     );
 
+[[nodiscard]] TeacherImportFileValidation validateTeacherImportData(
+    const QByteArray& data,
+    ArchiveReadPort& archiveReader,
+    const TeacherImportTemplateRegistry& registry
+    );
+
 [[nodiscard]] TeacherImportFileValidation validateTeacherImportFile(
     const QString& filePath
+    );
+
+[[nodiscard]] TeacherImportFileValidation validateTeacherImportFile(
+    const QString& filePath,
+    ArchiveReadPort& archiveReader
     );

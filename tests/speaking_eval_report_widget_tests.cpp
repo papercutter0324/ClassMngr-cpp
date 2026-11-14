@@ -14,6 +14,7 @@
 #include <QRegion>
 
 #include <memory>
+#include <utility>
 
 namespace
 {
@@ -21,6 +22,30 @@ constexpr int RasterScale = 2;
 const QSize RasterSize(1080, 1560);
 const QSize StandardAuthoredBackgroundSize(3603, 5202);
 const QSize AdvancedAuthoredBackgroundSize(2882, 4162);
+
+class TrackedReportFontLease final
+    : public ClassMngr::Core::FontRegistrationLease
+{
+public:
+    explicit TrackedReportFontLease(std::shared_ptr<int> releaseCount)
+        : m_releaseCount(std::move(releaseCount))
+    {
+    }
+
+    ~TrackedReportFontLease() override
+    {
+        ++*m_releaseCount;
+    }
+
+    [[nodiscard]] const QString& familyName() const noexcept override
+    {
+        return m_familyName;
+    }
+
+private:
+    std::shared_ptr<int> m_releaseCount;
+    QString m_familyName = QStringLiteral("Just Another Hand");
+};
 
 SpeakingEvalReportData representativeData(
     SpeakingEvalReportTemplate reportTemplate
@@ -305,9 +330,12 @@ private slots:
     void interactiveTemplateEditsScoresAndComments();
     void signaturesKeepAspectRatioWithinManifestBounds_data();
     void signaturesKeepAspectRatioWithinManifestBounds();
+    void reportAssetSessionOwnsTheHandwrittenFontLease();
 
 private:
     std::unique_ptr<SpeakingEvalReportAssetSession> m_assets;
+    std::shared_ptr<int> m_fontLeaseReleaseCount = std::make_shared<int>(0);
+    std::weak_ptr<const ClassMngr::Core::FontRegistrationLease> m_fontLease;
 };
 
 void SpeakingEvalReportWidgetTests::initTestCase()
@@ -315,19 +343,35 @@ void SpeakingEvalReportWidgetTests::initTestCase()
     SpeakingEvalReportAssetEnvironment environment;
     environment.latinFamily = FontManager::getUiFont().family();
     environment.koreanFamily = FontManager::getKoreanFont().family();
+    auto fontLease = std::make_shared<TrackedReportFontLease>(
+        m_fontLeaseReleaseCount);
+    m_fontLease = fontLease;
+    environment.handwrittenFontRegistration = fontLease;
     m_assets = std::make_unique<SpeakingEvalReportAssetSession>(
         std::move(environment));
+    fontLease.reset();
     QVERIFY(m_assets->isValid());
 }
 
 void SpeakingEvalReportWidgetTests::cleanupTestCase()
 {
+    QVERIFY(!m_fontLease.expired());
+    QCOMPARE(*m_fontLeaseReleaseCount, 0);
     m_assets.reset();
+    QCOMPARE(*m_fontLeaseReleaseCount, 1);
+    QVERIFY(m_fontLease.expired());
     const SpeakingEvalReportAssetResidency residency =
         speakingEvalReportAssetResidency();
     QCOMPARE(residency.sessions, 0);
     QCOMPARE(residency.templates, 0);
     QCOMPARE(residency.decodedImageBytes, 0);
+}
+
+void SpeakingEvalReportWidgetTests::
+reportAssetSessionOwnsTheHandwrittenFontLease()
+{
+    QVERIFY(!m_fontLease.expired());
+    QCOMPARE(*m_fontLeaseReleaseCount, 0);
 }
 
 void SpeakingEvalReportWidgetTests::sharedPainterMatchesWidget_data()

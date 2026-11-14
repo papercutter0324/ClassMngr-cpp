@@ -9,13 +9,16 @@
 #include <QDebug>
 
 ApplicationServices::ApplicationServices()
-    : ApplicationServices(nullptr)
+    : ApplicationServices(nullptr, {})
 {
 }
 
 ApplicationServices::ApplicationServices(
-    std::unique_ptr<ThemeService> themeService
+    std::unique_ptr<ThemeService> themeService,
+    std::shared_ptr<ClassMngr::Core::FontRegistrationPort>
+        fontRegistrationPort
     )
+    : m_fontRegistrationPort(std::move(fontRegistrationPort))
 {
     m_workspaceStore = std::make_unique<WorkspaceStore>();
     m_dataService = std::make_unique<DataService>(*m_workspaceStore);
@@ -243,4 +246,10 @@ ThemeService* ApplicationServices::themeService() const
 const DocumentCatalog* ApplicationServices::documentCatalog() const
 {
     return m_documentCatalog.get();
+}
+
+ClassMngr::Core::FontRegistrationPort*
+ApplicationServices::fontRegistrationPort() const noexcept
+{
+    return m_fontRegistrationPort.get();
 }

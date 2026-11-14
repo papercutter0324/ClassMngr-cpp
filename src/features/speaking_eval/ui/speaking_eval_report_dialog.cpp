@@ -1,5 +1,5 @@
 #include "core/fontmanager.h"
-#include "core/resource_paths.h"
+#include "core/resource_packs/resource_pack_manager.h"
 #include "speaking_eval_report_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
@@ -257,13 +257,15 @@ std::u16string toApplicationString(const QString& value)
 SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     const SpeakingEvalRows& rows,
     const ClassInfo& classInfo,
-    QWidget* parent
+    QWidget* parent,
+    ClassMngr::Core::FontRegistrationPort* fontRegistrationPort
     )
     : SpeakingEvalReportDialog(
         buildSpeakingEvalStudentReports(rows, classInfo),
         0,
         parent,
-        true
+        true,
+        fontRegistrationPort
         )
 {
 }
@@ -272,7 +274,8 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     const SpeakingEvalRows& rows,
     const ClassInfo& classInfo,
     const QByteArray& signatureImage,
-    QWidget* parent
+    QWidget* parent,
+    ClassMngr::Core::FontRegistrationPort* fontRegistrationPort
     )
     : SpeakingEvalReportDialog(
         buildSpeakingEvalStudentReports(
@@ -282,7 +285,8 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
             ),
         0,
         parent,
-        true
+        true,
+        fontRegistrationPort
         )
 {
 }
@@ -291,7 +295,8 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     const QList<SpeakingEvalBatchReportService::StudentReport>& reports,
     int currentStudentIndex,
     QWidget* parent,
-    bool interactive
+    bool interactive,
+    ClassMngr::Core::FontRegistrationPort* fontRegistrationPort
     )
     : DialogShell(QStringLiteral("speakingEvalReport"), parent)
     , m_reports(reports)
@@ -302,7 +307,17 @@ SpeakingEvalReportDialog::SpeakingEvalReportDialog(
     if (!templates.isEmpty()) environment.templateRoot = QDir(templates).filePath(QStringLiteral("speaking-eval"));
     environment.latinFamily = FontManager::getUiFont().family();
     environment.koreanFamily = FontManager::getKoreanFont().family();
-    environment.handwrittenFontPath = ResourcePaths::Fonts::justAnotherHand();
+    if (fontRegistrationPort)
+    {
+        environment.handwrittenFamily.clear();
+        const auto handwritten = fontRegistrationPort->loadFont(
+            ClassMngr::Core::FontResource::JustAnotherHand);
+        if (handwritten)
+        {
+            environment.handwrittenFamily = (*handwritten)->familyName();
+            environment.handwrittenFontRegistration = *handwritten;
+        }
+    }
     m_assetSession = std::make_unique<SpeakingEvalReportAssetSession>(environment);
     setWindowTitle(tr("Speaking Evaluation Reports"));
     resize(940, 900);

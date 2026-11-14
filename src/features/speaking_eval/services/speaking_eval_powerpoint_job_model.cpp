@@ -7,8 +7,6 @@
 #include "next/application/speaking_evaluation_report_template_policy.h"
 
 #include <QDir>
-#include <QJsonArray>
-
 #include <cstddef>
 #include <vector>
 
@@ -131,94 +129,6 @@ BatchJob build(
     }
 
     return batch;
-}
-
-QJsonObject toJson(
-    const BatchJob& batch,
-    const QString& pptxPath,
-    const QString& signaturePath,
-    const QString& cancelPath
-    )
-{
-    QJsonArray students;
-    for (const StudentJob& job : batch.students)
-    {
-        QJsonArray scores;
-        for (const QString& score : job.scores)
-        {
-            scores.append(score);
-        }
-
-        students.append(
-            QJsonObject{
-                { QStringLiteral("displayName"), job.displayName },
-                {
-                    QStringLiteral("pdfPath"),
-                    QDir::toNativeSeparators(job.pdfPath)
-                },
-                {
-                    QStringLiteral("completionPath"),
-                    QDir::toNativeSeparators(job.completionPath)
-                },
-                { QStringLiteral("englishName"), job.englishName },
-                { QStringLiteral("koreanName"), job.koreanName },
-                { QStringLiteral("classLabel"), job.classLabel },
-                { QStringLiteral("nativeTeacher"), job.nativeTeacher },
-                { QStringLiteral("koreanTeacher"), job.koreanTeacher },
-                { QStringLiteral("date"), job.date },
-                { QStringLiteral("comments"), job.comments },
-                {
-                    QStringLiteral("commentsFontName"),
-                    QString::fromLatin1(CommentFontName)
-                },
-                {
-                    QStringLiteral("commentsFontSizePoints"),
-                    job.commentsFontSizePoints
-                },
-                { QStringLiteral("overallGrade"), job.overallGrade },
-                { QStringLiteral("scores"), scores }
-            }
-            );
-    }
-
-    const TemplateProfile& profile = batch.templateProfile;
-    return {
-        {
-            QStringLiteral("pptxPath"),
-            QDir::toNativeSeparators(pptxPath)
-        },
-        {
-            QStringLiteral("cancelPath"),
-            QDir::toNativeSeparators(cancelPath)
-        },
-        { QStringLiteral("scoreTableOnMaster"), profile.scoreTableOnMaster },
-        { QStringLiteral("scoreTableName"), profile.scoreTableName },
-        { QStringLiteral("minimumTableRows"), profile.minimumTableRows },
-        {
-            QStringLiteral("minimumTableColumns"),
-            profile.minimumTableColumns
-        },
-        { QStringLiteral("firstGradeColumn"), profile.firstGradeColumn },
-        {
-            QStringLiteral("neutralFill"),
-            profile.neutralFillRed
-                + (profile.neutralFillGreen << 8)
-                + (profile.neutralFillBlue << 16)
-        },
-        {
-            QStringLiteral("signaturePath"),
-            QDir::toNativeSeparators(signaturePath)
-        },
-        { QStringLiteral("signatureLeft"), profile.signatureBounds.left() },
-        { QStringLiteral("signatureTop"), profile.signatureBounds.top() },
-        { QStringLiteral("signatureWidth"), profile.signatureBounds.width() },
-        { QStringLiteral("signatureHeight"), profile.signatureBounds.height() },
-        {
-            QStringLiteral("signatureAlignsBottomLeft"),
-            profile.signatureAlignsBottomLeft
-        },
-        { QStringLiteral("students"), students }
-    };
 }
 
 bool usesSingleTemplate(

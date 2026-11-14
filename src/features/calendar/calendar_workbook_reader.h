@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/archive_read_port.h"
+
 #include <QByteArray>
 #include <QHashFunctions>
 #include <QIODevice>
@@ -150,10 +152,22 @@ Workbook parseWorkbook(
     QString* errorMessage
     );
 
+Workbook parseWorkbook(
+    const QByteArray& data,
+    ArchiveReadPort& archiveReader,
+    QString* errorMessage
+    );
+
 // Device overloads require an open, readable, non-sequential device and use
 // seek-based exact reads. The device remains caller-owned for the full call.
 Workbook parseWorkbook(
     QIODevice& device,
+    QString* errorMessage
+    );
+
+Workbook parseWorkbook(
+    QIODevice& device,
+    ArchiveReadPort& archiveReader,
     QString* errorMessage
     );
 
@@ -169,7 +183,21 @@ bool forEachWorksheet(
     );
 
 bool forEachWorksheet(
+    const QByteArray& data,
+    ArchiveReadPort& archiveReader,
+    const WorksheetConsumer& consumer,
+    QString* errorMessage
+    );
+
+bool forEachWorksheet(
     QIODevice& device,
+    const WorksheetConsumer& consumer,
+    QString* errorMessage
+    );
+
+bool forEachWorksheet(
+    QIODevice& device,
+    ArchiveReadPort& archiveReader,
     const WorksheetConsumer& consumer,
     QString* errorMessage
     );
@@ -187,7 +215,21 @@ bool forEachWorksheetRows(
     );
 
 bool forEachWorksheetRows(
+    const QByteArray& data,
+    ArchiveReadPort& archiveReader,
+    const WorksheetStreamConsumer& consumer,
+    QString* errorMessage
+    );
+
+bool forEachWorksheetRows(
     QIODevice& device,
+    const WorksheetStreamConsumer& consumer,
+    QString* errorMessage
+    );
+
+bool forEachWorksheetRows(
+    QIODevice& device,
+    ArchiveReadPort& archiveReader,
     const WorksheetStreamConsumer& consumer,
     QString* errorMessage
     );

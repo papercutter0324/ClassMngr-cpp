@@ -1,12 +1,11 @@
 #include "shared/roster/sub_prep_pdf_text_finalizer.h"
+#include "core/pdf_generation_port.h"
 
-#include <QBuffer>
 #include <QHash>
 #include <QMap>
 #include <QPaintEngine>
 #include <QPainter>
 #include <QPainterPath>
-#include <QPdfWriter>
 #include <QPixmap>
 #include <QRegularExpression>
 #include <QTextLayout>
@@ -57,29 +56,10 @@ bool supportedSource(const QTextItem& item, QPaintDevice* device) {
     return true;
 }
 
-QPaintEngine::PaintEngineFeatures writerFeatures(QPdfWriter& writer) {
-    QPaintEngine::PaintEngineFeatures result;
-    Q_UNUSED(writer);
-    QByteArray probeBytes;
-    QBuffer probeBuffer(&probeBytes);
-    if (!probeBuffer.open(QIODevice::WriteOnly)) return result;
-    QPdfWriter probeWriter(&probeBuffer);
-    QPainter probe(&probeWriter);
-    if (!probe.isActive()) return result;
-    const QPaintEngine* engine = probe.paintEngine();
-    if (!engine) return result;
-    for (unsigned bit = 0; bit < 32; ++bit) {
-        const auto feature = QPaintEngine::PaintEngineFeatures::fromInt(1U << bit);
-        if (engine->hasFeature(feature)) result |= feature;
-    }
-    probe.end();
-    return result;
-}
-
 class ForwardEngine final : public QPaintEngine {
 public:
-    ForwardEngine(QPdfWriter& writer, SourceJournal& source)
-        : QPaintEngine(writerFeatures(writer)), target(&writer), journal(source) {}
+    ForwardEngine(PdfGenerationSession& writer, SourceJournal& source)
+        : QPaintEngine(writer.paintEngineFeatures()), target(&writer.paintDevice()), journal(source) {}
     Type type() const override { return Pdf; }
     bool begin(QPaintDevice*) override { return target.isActive(); }
     bool end() override { return true; }
@@ -128,11 +108,11 @@ public:
 }
 
 struct CaptureDevice::Impl {
-    Impl(QPdfWriter& writer, SourceJournal& source) : writer(writer), engine(writer, source) {}
-    QPdfWriter& writer;
+    Impl(PdfGenerationSession& writer, SourceJournal& source) : writer(writer), engine(writer, source) {}
+    PdfGenerationSession& writer;
     ForwardEngine engine;
 };
-CaptureDevice::CaptureDevice(QPdfWriter& writer, SourceJournal& source) : m_impl(std::make_unique<Impl>(writer, source)) {}
+CaptureDevice::CaptureDevice(PdfGenerationSession& writer, SourceJournal& source) : m_impl(std::make_unique<Impl>(writer, source)) {}
 CaptureDevice::~CaptureDevice() = default;
 QPaintEngine* CaptureDevice::paintEngine() const { return &m_impl->engine; }
 bool CaptureDevice::finish() { return m_impl->engine.target.end(); }
@@ -142,7 +122,7 @@ bool CaptureDevice::newPage() {
     return true;
 }
 int CaptureDevice::metric(PaintDeviceMetric which) const {
-    const auto& writer = m_impl->writer;
+    const auto& writer = m_impl->writer.paintDevice();
     switch (which) {
     case PdmWidth: return writer.width(); case PdmHeight: return writer.height();
     case PdmWidthMM: return writer.widthMM(); case PdmHeightMM: return writer.heightMM();

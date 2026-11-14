@@ -156,7 +156,6 @@ qt_add_executable(ClassMngrBasePageTests
 
     qt_add_executable(ClassMngrSubPrepPrintPdfTests
         tests/sub_prep_print_pdf_tests.cpp
-        src/core/fontmanager.cpp
         src/domain/models/classroom.cpp
         src/domain/rules/schedule_value_parser.cpp
         src/features/classes/config/class_info_config.cpp
@@ -165,6 +164,7 @@ qt_add_executable(ClassMngrBasePageTests
         src/features/sub_prep/services/sub_prep_document_model.cpp
         src/features/sub_prep/services/sub_prep_pdf_renderer.cpp
         src/features/sub_prep/services/sub_prep_print_service.cpp
+        src/features/sub_prep/services/qt_sub_prep_print_composition.cpp
         src/features/sub_prep/ui/sub_prep_class_information_model.cpp
     )
 
@@ -185,6 +185,9 @@ qt_add_executable(ClassMngrBasePageTests
             Qt6::Pdf
             Qt6::Test
             Qt6::Widgets
+            ClassMngrFontManager
+            ClassMngrQtPdfGeneration
+            ClassMngrQtPdfPrint
     )
 
     add_test(
@@ -212,7 +215,6 @@ qt_add_executable(ClassMngrBasePageTests
 
     qt_add_executable(ClassMngrSubPrepPackageServiceTests
         tests/sub_prep_package_service_tests.cpp
-        src/core/fontmanager.cpp
         src/core/utils/sidebar_node_naming.cpp
         src/domain/models/classroom.cpp
         src/domain/models/roster.cpp
@@ -223,6 +225,7 @@ qt_add_executable(ClassMngrBasePageTests
         src/features/sub_prep/services/sub_prep_pdf_renderer.cpp
         src/features/sub_prep/services/sub_prep_package_service.cpp
         src/features/sub_prep/services/sub_prep_print_service.cpp
+        src/features/sub_prep/services/qt_sub_prep_pdf_composition.cpp
     )
 
     target_compile_features(ClassMngrSubPrepPackageServiceTests
@@ -246,6 +249,9 @@ qt_add_executable(ClassMngrBasePageTests
             Qt6::Widgets
             ClassMngrNext::Application
             ClassMngrRosterTemplateRenderer
+            ClassMngrFontManager
+            ClassMngrQtPdfGeneration
+            ClassMngrQtPdfPrint
     )
 
     add_test(

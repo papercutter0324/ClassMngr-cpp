@@ -10,7 +10,78 @@
 #include <QPalette>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QVector>
 #include <QtTest>
+
+#include <memory>
+#include <utility>
+
+namespace
+{
+struct InjectedFontRegistrationState final
+{
+    int releasedCount = 0;
+    QVector<ClassMngr::Core::FontResource> requests;
+    QVector<std::weak_ptr<const ClassMngr::Core::FontRegistrationLease>> leases;
+};
+
+class InjectedFontRegistrationLease final
+    : public ClassMngr::Core::FontRegistrationLease
+{
+public:
+    InjectedFontRegistrationLease(
+        std::shared_ptr<InjectedFontRegistrationState> state,
+        QString familyName)
+        : m_state(std::move(state))
+        , m_familyName(std::move(familyName))
+    {
+    }
+
+    ~InjectedFontRegistrationLease() override
+    {
+        ++m_state->releasedCount;
+    }
+
+    [[nodiscard]] const QString& familyName() const noexcept override
+    {
+        return m_familyName;
+    }
+
+private:
+    std::shared_ptr<InjectedFontRegistrationState> m_state;
+    QString m_familyName;
+};
+
+class InjectedFontRegistrationPort final
+    : public ClassMngr::Core::FontRegistrationPort
+{
+public:
+    explicit InjectedFontRegistrationPort(
+        std::shared_ptr<InjectedFontRegistrationState> state)
+        : m_state(std::move(state))
+    {
+    }
+
+    [[nodiscard]] std::expected<
+        std::shared_ptr<const ClassMngr::Core::FontRegistrationLease>, QString>
+    loadFont(ClassMngr::Core::FontResource resource) override
+    {
+        m_state->requests.append(resource);
+        const QString familyName = resource == ClassMngr::Core::FontResource::Inter
+            ? QStringLiteral("Inter")
+            : QStringLiteral("Pretendard");
+        auto lease = std::make_shared<InjectedFontRegistrationLease>(
+            m_state,
+            familyName);
+        m_state->leases.append(lease);
+        return std::shared_ptr<const ClassMngr::Core::FontRegistrationLease>(
+            std::move(lease));
+    }
+
+private:
+    std::shared_ptr<InjectedFontRegistrationState> m_state;
+};
+}
 
 class FontManagerTests : public QObject
 {
@@ -86,6 +157,46 @@ private slots:
             QStringLiteral("Inter"),
             Qt::CaseInsensitive
             ));
+    }
+
+    void injectedRegistrationPortLeasesFontsUntilCacheClear()
+    {
+        FontManager::clearCache();
+        auto state = std::make_shared<InjectedFontRegistrationState>();
+
+        {
+            InjectedFontRegistrationPort port(state);
+            FontManager::loadFonts(port);
+
+            QCOMPARE(state->requests.size(), 2);
+            QCOMPARE(state->requests.at(0), ClassMngr::Core::FontResource::Inter);
+            QCOMPARE(
+                state->requests.at(1),
+                ClassMngr::Core::FontResource::Pretendard);
+            QCOMPARE(state->releasedCount, 0);
+            QCOMPARE(FontManager::getUiFont().family(), QStringLiteral("Inter"));
+            QCOMPARE(
+                FontManager::getKoreanFont().family(),
+                QStringLiteral("Pretendard"));
+            QVERIFY(FontManager::s_fontRegistrations.at(0));
+            QVERIFY(FontManager::s_fontRegistrations.at(1));
+
+            // Loading is idempotent while the global cache owns these leases.
+            FontManager::loadFonts(port);
+            QCOMPARE(state->requests.size(), 2);
+            QCOMPARE(state->releasedCount, 0);
+        }
+
+        QCOMPARE(state->releasedCount, 0);
+        QCOMPARE(state->leases.size(), 2);
+        QVERIFY(!state->leases.at(0).expired());
+        QVERIFY(!state->leases.at(1).expired());
+
+        FontManager::clearCache();
+
+        QCOMPARE(state->releasedCount, 2);
+        QVERIFY(state->leases.at(0).expired());
+        QVERIFY(state->leases.at(1).expired());
     }
 
     void koreanFontFollowsUiFontSizeRule()

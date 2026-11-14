@@ -2,6 +2,7 @@
 #include "next/application/preferences_model.h"
 #include "next/application/teacher_profile_edit_use_case.h"
 #include "next/domain/teacher_profile.h"
+#include "next/platform/qt_font_family_availability_adapter.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_descriptor.h"
@@ -154,19 +155,11 @@ public:
     Next::Resources::ResourceLoader& resourceLoader,
     Next::Application::PreferencesModel& preferences,
     const Next::Domain::TeacherProfileFields& fields,
-    const QString& path
+    Next::Application::FontFamilyAvailabilityPort& fontFamilies,
+    const QString& path,
+    const bool captureImage
     )
 {
-    std::vector<std::u16string> availableFamilies;
-    const QStringList registeredFamilies = QFontDatabase::families();
-    availableFamilies.reserve(static_cast<std::size_t>(registeredFamilies.size()));
-    for (const QString& family : registeredFamilies)
-    {
-        availableFamilies.push_back(family.toStdU16String());
-    }
-    Next::Test::FixedFontFamilyAvailabilityPort fontFamilies(
-        std::move(availableFamilies)
-        );
     Next::Ui::PageHost host(resourceLoader, preferences);
     const Next::Ui::PageId pageId = *Next::Ui::PageId::fromString(
         QStringLiteral("teacher_profile")
@@ -217,9 +210,16 @@ public:
         || title->font().family() != *inter
         || subtitle->font().family() != *inter
         || sectionTitle->font().family() != *inter
-        || koreanName->font().family() != *pretendard)
+        || koreanName->font().family() != *pretendard
+        || koreanName->font().pointSize()
+            != fontFamilies.teacherProfileKoreanFontPointSize())
     {
         return false;
+    }
+
+    if (!captureImage)
+    {
+        return true;
     }
 
     host.resize(Viewport);
@@ -264,6 +264,7 @@ int main(int argc, char* argv[])
         return 1;
     }
     Next::Resources::ResourceLoader resourceLoader(std::move(*catalog));
+    Next::Platform::QtFontFamilyAvailabilityAdapter platformFontPresentation;
     EmptyPreferencesReadPort preferencesReadPort;
     EmptyPreferencesPersistPort preferencesPersistPort;
     Next::Application::PreferencesModel preferences(
@@ -333,7 +334,8 @@ int main(int argc, char* argv[])
                 QStringLiteral("%1_%2.png").arg(page, pair));
             const bool saved = page == QStringLiteral("legacy")
                 ? captureLegacy(fields, path)
-                : captureNext(resourceLoader, preferences, fields, path);
+                : captureNext(resourceLoader, preferences, fields,
+                              platformFontPresentation, path, true);
             if (!saved)
             {
                 qCritical().noquote() << "Could not capture page:" << path;
@@ -351,6 +353,21 @@ int main(int argc, char* argv[])
         if (translator)
         {
             application.removeTranslator(translator.get());
+        }
+    }
+
+    const std::vector<std::u16string> availableFamilies =
+        platformFontPresentation.availableFontFamilies();
+    for (const int pointSize : {15, 16})
+    {
+        Next::Test::FixedFontFamilyAvailabilityPort injectedFontPresentation(
+            availableFamilies, {}, 14, 14, pointSize);
+        if (!captureNext(resourceLoader, preferences, fields,
+                         injectedFontPresentation, {}, false))
+        {
+            qCritical() << "Teacher Profile did not apply injected Korean font point size:"
+                        << pointSize;
+            return 1;
         }
     }
 

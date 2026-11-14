@@ -10,6 +10,8 @@
 #include "app/controllers/theme_controller.h"
 #include "app/controllers/update_controller.h"
 #include "core/application_services.h"
+#include "core/fontmanager.h"
+#include "core/qt_font_registration_adapter.h"
 #include "core/appsettings.h"
 #include "core/language_service.h"
 #include "core/resource_packs/resource_pack_manager.h"
@@ -225,9 +227,13 @@ void MainWindow::attachUpdateController(
 
 void MainWindow::initializeServices()
 {
+    auto fontRegistrationPort =
+        std::make_shared<ClassMngr::Core::QtFontRegistrationAdapter>();
+    FontManager::loadFonts(*fontRegistrationPort);
     m_services =
         std::make_unique<ApplicationServices>(
-            std::move(m_startupOptions.startupThemeService)
+            std::move(m_startupOptions.startupThemeService),
+            std::move(fontRegistrationPort)
             );
 }
 

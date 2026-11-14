@@ -1158,7 +1158,8 @@ void InitialSetupScheduleImportDialog::parseSelectedWorkbook()
             }
             result.workbook = parser
                 ? parser(file.readAll(), kind)
-                : parseScheduleImportWorkbook(file, kind);
+                : std::unexpected(QStringLiteral(
+                    "The schedule workbook reader is unavailable."));
             const QFileInfo after(filePath);
             result.finalSize = after.size();
             result.finalModified = after.lastModified().toMSecsSinceEpoch();

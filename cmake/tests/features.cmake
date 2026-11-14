@@ -204,6 +204,7 @@ qt_add_executable(ClassMngrClassTransferTests
             Qt6::Core
             Qt6::Test
             ClassMngrCalendarImportParser
+            ClassMngrLegacyCalendarArchiveComposition
     )
 
     add_test(
@@ -221,7 +222,6 @@ qt_add_executable(ClassMngrClassTransferTests
         src/data/repositories/teacher_repository.cpp
         src/domain/models/classroom.cpp
         src/domain/rules/schedule_value_parser.cpp
-        src/features/calendar/calendar_workbook_reader.cpp
         src/features/classes/config/class_info_config.cpp
         src/features/schedule/import/schedule_workbook_parser.cpp
     )
@@ -247,7 +247,7 @@ qt_add_executable(ClassMngrClassTransferTests
             Qt6::Sql
             Qt6::Test
             ClassMngrNext::Application
-            ZLIB::ZLIB
+            ClassMngrLegacyCalendarArchiveComposition
     )
 
     add_test(
@@ -262,7 +262,6 @@ qt_add_executable(ClassMngrClassTransferTests
         src/data/repositories/gs_team_repository.cpp
         src/data/repositories/teacher_import_repository.cpp
         src/data/repositories/teacher_import_sql_persistence_adapter.cpp
-        src/features/calendar/calendar_workbook_reader.cpp
         src/features/teacher/import/sectioned_contact_list_template.cpp
         src/features/teacher/import/teacher_import_file_validator.cpp
         src/features/teacher/import/teacher_import_template_registry.cpp
@@ -283,6 +282,7 @@ qt_add_executable(ClassMngrClassTransferTests
             Qt6::Core
             Qt6::Sql
             Qt6::Test
+            ClassMngrLegacyCalendarArchiveComposition
             ZLIB::ZLIB
     )
 
@@ -294,7 +294,6 @@ qt_add_executable(ClassMngrClassTransferTests
     qt_add_executable(ClassMngrTeacherImportDialogTests
         tests/teacher_import_dialog_tests.cpp
         src/core/settingsmanager.cpp
-        src/features/calendar/calendar_workbook_reader.cpp
         src/features/teacher/import/sectioned_contact_list_template.cpp
         src/features/teacher/import/teacher_import_file_validator.cpp
         src/features/teacher/import/teacher_import_template_registry.cpp
@@ -318,7 +317,7 @@ qt_add_executable(ClassMngrClassTransferTests
             Qt6::Gui
             Qt6::Test
             Qt6::Widgets
-            ZLIB::ZLIB
+            ClassMngrLegacyCalendarArchiveComposition
     )
 
     add_test(

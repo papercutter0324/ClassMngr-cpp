@@ -295,6 +295,8 @@ MyWorkspacePage::MyWorkspacePage(
     , m_saveMode(m_actions.saveMode)
     , m_autosaveTimer(new QTimer(this))
 {
+    m_signatureFontSet = TypedSignatureFontSet::load(
+        context.fontRegistrationPort());
     m_autosaveTimer->setSingleShot(true);
     m_autosaveTimer->setInterval(AutosaveDebounceMilliseconds);
     connect(m_autosaveTimer, &QTimer::timeout, this, [this] {
@@ -880,7 +882,9 @@ void MyWorkspacePage::buildUi(const PageContext& context)
         preview->setObjectName(QStringLiteral("nextMyWorkspaceFontPreview%1").arg(index));
         preview->setAlignment(Qt::AlignCenter);
         preview->setMinimumHeight(48);
-        preview->setFont(TypedSignature::fontFor(fonts.at(static_cast<std::size_t>(index)), 30));
+        preview->setFont(TypedSignature::fontFor(
+            fonts.at(static_cast<std::size_t>(index)), 30,
+            &m_signatureFontSet));
         auto* const button = new QPushButton(text("Use this font"), option);
         button->setObjectName(QStringLiteral("nextMyWorkspaceFontButton%1").arg(index));
         button->setCheckable(true);
@@ -1313,7 +1317,8 @@ PageOperationResult<void> MyWorkspacePage::saveDetails(const bool interactive)
         request.signatureImage = Domain::PersonalSignatureImageSaveBytes(
             bytes(TypedSignature::renderForEmbedding(
                 fromUtf8(request.typedSignatureText),
-                typedSignatureFont(request.typedSignatureFont)
+                typedSignatureFont(request.typedSignatureFont),
+                &m_signatureFontSet
                 )));
     }
 
@@ -1423,7 +1428,8 @@ void MyWorkspacePage::updateSignaturePreview()
         const QImage preview = TypedSignature::render(
             signature,
             typedSignatureFont(m_details.typedSignatureFont),
-            previewSize
+            previewSize,
+            &m_signatureFontSet
             );
         m_signaturePreviewLabel->setText(QString{});
         m_signaturePreviewLabel->setPixmap(QPixmap::fromImage(preview));
@@ -1459,7 +1465,8 @@ void MyWorkspacePage::updateTypedSignatureImage()
     m_details.signatureImage = Domain::PersonalSignatureImageSaveBytes(
         bytes(TypedSignature::renderForEmbedding(
             m_typedSignatureEdit->text(),
-            typedSignatureFont(m_details.typedSignatureFont)
+            typedSignatureFont(m_details.typedSignatureFont),
+            &m_signatureFontSet
             )));
     updateSignatureControls();
     updateSignaturePreview();

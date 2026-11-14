@@ -1,4 +1,5 @@
 #include "core/process_memory_snapshot.h"
+#include "core/qt_pdf_generation_adapter.h"
 #include "data/database/workspace_store.h"
 #include "features/sub_prep/ui/sub_prep_class_information_list_model.h"
 #include "next/platform/workspace_store_gateway.h"
@@ -147,6 +148,7 @@ ClassMngr::Next::Ui::SubPrepPageActions actionsFor(
         const Application::SubPrepPrintSourceRequest& request) {
         return gateway.readSubPrepPrintSource(request);
     };
+    actions.pdfGeneration = makeQtPdfGenerationPort();
     actions.createRosterOutputSourceReadPort = [&gateway] {
         return gateway.createSubPrepRosterOutputSourceReadPort();
     };

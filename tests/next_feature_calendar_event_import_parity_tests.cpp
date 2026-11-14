@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "core/zip_archive_read_adapter.h"
 #include "app/services/feature_services.h"
 #include "domain/models/calendar_event.h"
 #include "features/calendar/academic_calendar_event_parser.h"
@@ -93,6 +94,8 @@ private slots:
 void NextFeatureCalendarEventImportParityTests::
 boundedCalendarParserMatchesGoldenFixture()
 {
+    const std::unique_ptr<ArchiveReadPort> archiveReader =
+        makeZipArchiveReadPort();
     QFile fixtureFile(workbookFixturePath());
     QVERIFY2(
         fixtureFile.open(QIODevice::ReadOnly),
@@ -104,7 +107,10 @@ boundedCalendarParserMatchesGoldenFixture()
 
     QString workbookError;
     const CalendarImport::Workbook workbook =
-        CalendarImport::parseWorkbook(workbookBytes, &workbookError);
+        CalendarImport::parseWorkbook(
+            workbookBytes,
+            *archiveReader,
+            &workbookError);
     QVERIFY2(workbookError.isEmpty(), qPrintable(workbookError));
 
     const CalendarImport::ParsedCalendarImport buffered =
@@ -117,6 +123,7 @@ boundedCalendarParserMatchesGoldenFixture()
     const CalendarImport::ParsedCalendarImport streamed =
         CalendarImport::parseCalendarEventsFromWorkbookBytes(
             workbookBytes,
+            *archiveReader,
             {},
             &streamingError,
             &readCounts
@@ -156,6 +163,7 @@ boundedCalendarParserMatchesGoldenFixture()
     const CalendarImport::ParsedCalendarImport deviceParsed =
         CalendarImport::parseCalendarEventsFromWorkbookDevice(
             device,
+            *archiveReader,
             {},
             &deviceError,
             &deviceReadCounts
@@ -183,6 +191,8 @@ boundedCalendarParserMatchesGoldenFixture()
 void NextFeatureCalendarEventImportParityTests::
 productionImportPathMatchesLegacyGoldenFixture()
 {
+    const std::unique_ptr<ArchiveReadPort> archiveReader =
+        makeZipArchiveReadPort();
     // This small golden workbook keeps the parser contract explicit: legacy
     // identity is simplified title, normalized type, ISO date range, all-day
     // bit, and normalized time status. July 2 has two distinct legend matches
@@ -198,7 +208,10 @@ productionImportPathMatchesLegacyGoldenFixture()
 
     QString workbookError;
     const CalendarImport::Workbook workbook =
-        CalendarImport::parseWorkbook(workbookBytes, &workbookError);
+        CalendarImport::parseWorkbook(
+            workbookBytes,
+            *archiveReader,
+            &workbookError);
     QVERIFY2(workbookError.isEmpty(), qPrintable(workbookError));
     QCOMPARE(workbook.worksheets.size(), 1);
 
@@ -224,6 +237,7 @@ productionImportPathMatchesLegacyGoldenFixture()
     const CalendarImport::ParsedCalendarImport boundedParse =
         CalendarImport::parseCalendarEventsFromWorkbookBytes(
             workbookBytes,
+            *archiveReader,
             {},
             &boundedReaderError
             );
@@ -247,6 +261,7 @@ productionImportPathMatchesLegacyGoldenFixture()
     QVERIFY2(
         CalendarImport::forEachWorksheet(
             workbookBytes,
+            *archiveReader,
             [&streamedParse, &firstWorksheet](
                 const CalendarImport::WorkbookMetadata& metadata,
                 const CalendarImport::Worksheet& worksheet
@@ -300,7 +315,8 @@ productionImportPathMatchesLegacyGoldenFixture()
     QVERIFY(preexistingId);
 
     QTcpServer server;
-    QVERIFY(server.listen(QHostAddress::LocalHost, 0));
+    QVERIFY2(server.listen(QHostAddress::LocalHost, 0),
+        qPrintable(server.errorString()));
     QByteArray receivedRequest;
     bool responseSent = false;
     connect(
@@ -424,7 +440,8 @@ failedDownloadCleansStagedWorkbook()
     QVERIFY(services.openDatabase(databasePath(directory)));
 
     QTcpServer server;
-    QVERIFY(server.listen(QHostAddress::LocalHost, 0));
+    QVERIFY2(server.listen(QHostAddress::LocalHost, 0),
+        qPrintable(server.errorString()));
     bool responseSent = false;
     QByteArray requestBytes;
     connect(
@@ -485,7 +502,8 @@ failedStagingWriteAbortsAndCleansStagedWorkbook()
     QVERIFY(services.openDatabase(databasePath(directory)));
 
     QTcpServer server;
-    QVERIFY(server.listen(QHostAddress::LocalHost, 0));
+    QVERIFY2(server.listen(QHostAddress::LocalHost, 0),
+        qPrintable(server.errorString()));
     QByteArray body(128, 'x');
     bool initialChunkSent = false;
     QByteArray requestBytes;
@@ -562,7 +580,8 @@ serviceDestructionCleansInProgressStagedWorkbook()
     QVERIFY(services.openDatabase(databasePath(directory)));
 
     QTcpServer server;
-    QVERIFY(server.listen(QHostAddress::LocalHost, 0));
+    QVERIFY2(server.listen(QHostAddress::LocalHost, 0),
+        qPrintable(server.errorString()));
     bool partialResponseSent = false;
     QByteArray requestBytes;
     connect(

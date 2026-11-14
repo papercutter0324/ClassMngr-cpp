@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/font_size_preferences.h"
+#include "next/application/font_presentation_port.h"
 #include "next/application/preferences_model.h"
 
 #include <QApplication>
@@ -20,8 +21,15 @@ namespace ClassMngr::Next::Ui
 class FontSizePresenter final
 {
 public:
-    explicit FontSizePresenter(QApplication& application)
-        : m_application(application), m_previousFont(application.font()) {}
+    explicit FontSizePresenter(
+        QApplication& application,
+        const Application::FontPresentationPort& fontPresentationPort
+        )
+        : m_application(application)
+        , m_fontPresentationPort(fontPresentationPort)
+        , m_previousFont(application.font())
+    {
+    }
     ~FontSizePresenter() { restore(); }
     FontSizePresenter(const FontSizePresenter&) = delete;
     FontSizePresenter& operator=(const FontSizePresenter&) = delete;
@@ -91,7 +99,7 @@ public:
     }
 
 private:
-    [[nodiscard]] static QFont fontFor(
+    [[nodiscard]] QFont fontFor(
         const Application::FontSize size,
         const QString& locale,
         const QString& inter,
@@ -106,10 +114,7 @@ private:
         case Application::FontSize::Large: offset = 2; break;
         case Application::FontSize::ExtraLarge: offset = 4; break;
         }
-        int points = 14;
-#ifdef Q_OS_MACOS
-        ++points;
-#endif
+        const int points = m_fontPresentationPort.applicationBaseFontPointSize();
         const bool korean = locale.startsWith(QStringLiteral("ko"), Qt::CaseInsensitive);
         QFont font;
         QStringList families;
@@ -135,6 +140,7 @@ private:
     }
 
     QApplication& m_application;
+    const Application::FontPresentationPort& m_fontPresentationPort;
     QFont m_previousFont;
     QString m_locale;
     QString m_interFamily;

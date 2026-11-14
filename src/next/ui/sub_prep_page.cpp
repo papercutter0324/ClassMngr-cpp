@@ -1325,8 +1325,15 @@ void SubPrepPage::generateSubPrep()
                 operationError(savedName.error()));
         }
     }
+    if (!m_actions.pdfGeneration)
+    {
+        setStatus(pageText("The PDF generation operation is unavailable."), true);
+        return;
+    }
     const SubPrepPackageService::Result generated = SubPrepPackageService::generateForNext(
-        std::move(packageRequest));
+        *m_actions.pdfGeneration,
+        std::move(packageRequest),
+        m_actions.rosterOutputFonts);
     if (generated.status == SubPrepPackageService::Status::Completed)
     {
         setStatus(pageText("The package was created at:\n%1").arg(generated.outputDirectory));

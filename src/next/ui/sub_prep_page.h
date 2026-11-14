@@ -78,6 +78,8 @@ struct SubPrepPageActions final
         Application::SubPrepRosterOutputSourceReadPort>()>
         createRosterOutputSourceReadPort;
     SubPrepPackageService::PrintLocalDocuments printLocalDocuments;
+    std::shared_ptr<PdfGenerationPort> pdfGeneration;
+    RosterTemplateRenderer::Fonts rosterOutputFonts;
     std::function<bool(const QUrl&)> openExternalUrl;
 };
 

@@ -1,5 +1,7 @@
 #include "next/ui/page_host.h"
 
+#include "next/platform/resource_loader_font_registration_adapter.h"
+
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
@@ -215,7 +217,11 @@ PageHostResult<void> PageHost::activatePage(const QString& pageKey)
             m_resourceLoader,
             m_preferences,
             std::move(*pageScope),
-            *normalizedKey
+            *normalizedKey,
+            std::make_shared<Platform::ResourceLoaderFontRegistrationAdapter>(
+                m_resourceLoader,
+                Resources::ResourceScopeKind::Page,
+                *normalizedKey)
             );
         PageOperationResult<std::unique_ptr<Page>> factoryResult =
             std::unexpected(PageOperationError{

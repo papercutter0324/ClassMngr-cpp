@@ -9,6 +9,7 @@
 #include <functional>
 #include <expected>
 #include <optional>
+class PdfGenerationPort;
 namespace RosterTemplateRenderer {
 using Status = DocumentOutputStatus;
 using Result = DocumentOutputResult;
@@ -118,5 +119,13 @@ Result saveCellValuesPdf(const QString&, TemplateId, QPageLayout::Orientation,
 // Source-aware post-write text-map repair is reserved for the Next Sub Prep
 // package route. Legacy output continues to use saveCellValuesPdf().
 Result saveCellValuesPdfForNextSubPrep(const QString&, TemplateId,
+    QPageLayout::Orientation, const QList<RosterCellValue>&, const Fonts& = {});
+Result savePagesPdf(PdfGenerationPort&, const QString&, TemplateId, QPageLayout::Orientation,
+    const PageProducer&, const Fonts& = {}, const PageReleased& = {});
+Result saveCellValuesPdf(PdfGenerationPort&, const QString&, TemplateId, QPageLayout::Orientation,
+    const QList<RosterCellValue>&, const Fonts& = {});
+// Source-aware post-write text-map repair is reserved for the Next Sub Prep
+// package route. Legacy output continues to use saveCellValuesPdf().
+Result saveCellValuesPdfForNextSubPrep(PdfGenerationPort&, const QString&, TemplateId,
     QPageLayout::Orientation, const QList<RosterCellValue>&, const Fonts& = {});
 }

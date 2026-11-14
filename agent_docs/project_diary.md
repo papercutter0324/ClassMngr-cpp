@@ -9445,3 +9445,22 @@ The Windows baseline failure timed out one aggregate CTest executable after
 its outer limit must leave room for those guards and preceding slots to report
 specific failures. The hosted log did not identify the current in-flight slot,
 so the target-specific timeout adjustment is not evidence of a Windows pass.
+
+
+## 2026-11-14 — Phase 8/8a gate attempt
+
+The final clean candidate was `f6b258f1bbb010ec0b7847f81827fd0409832888`
+(tree `65239452d50f917b5817e8e34682e2da731224d5`). The full macOS run before
+the five fixes was 613/620. Focused reruns confirm #243, #244, #259, and #330
+now pass; #326, #339, and #620 remain reproducible capture-test SEGFAULTs.
+Crash reports locate `EXC_BAD_ACCESS` in Qt stylesheet/StyleChange paths, but
+do not establish cause. Keep those failures visible and diagnose from the
+focused report at `/private/tmp/phase8-8a-macos-ctest-final-rerun.junit.xml`.
+
+C53 is pixel-identical across 17 pages with unchanged font resource
+provenance. The universal Release DMG and package verification passed, as did
+the 13 package-verifier tests. Linux/Windows could not run because auto-review
+rejected uploading the source to the public repository without explicit
+authorization. No remote branch, PR, workflow, or ref changed. The next step
+requires authorization for candidate `f6b258f` to be uploaded to
+`papercutter0324/ClassMngr-cpp` on a draft PR against `Qt-Rewrite`.

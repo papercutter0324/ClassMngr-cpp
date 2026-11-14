@@ -1276,6 +1276,7 @@ bool validHeader(
 template<typename Archive>
 static Result<ScheduleImportWorkbook> parseScheduleImportWorkbookFromArchive(
     Archive& data,
+    ArchiveReadPort& archiveReader,
     ScheduleImportKind kind
     )
 {
@@ -1284,6 +1285,7 @@ static Result<ScheduleImportWorkbook> parseScheduleImportWorkbookFromArchive(
     const bool readSucceeded =
         CalendarImport::forEachWorksheetRows(
             data,
+            archiveReader,
             [&result, kind](
                 const CalendarImport::WorkbookMetadata& metadata,
                 const CalendarImport::Worksheet& worksheet,
@@ -1475,18 +1477,20 @@ static Result<ScheduleImportWorkbook> parseScheduleImportWorkbookFromArchive(
 
 Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
     const QByteArray& data,
+    ArchiveReadPort& archiveReader,
     ScheduleImportKind kind
     )
 {
-    return parseScheduleImportWorkbookFromArchive(data, kind);
+    return parseScheduleImportWorkbookFromArchive(data, archiveReader, kind);
 }
 
 Result<ScheduleImportWorkbook> parseScheduleImportWorkbook(
     QIODevice& device,
+    ArchiveReadPort& archiveReader,
     ScheduleImportKind kind
     )
 {
-    return parseScheduleImportWorkbookFromArchive(device, kind);
+    return parseScheduleImportWorkbookFromArchive(device, archiveReader, kind);
 }
 
 QString normalizedScheduleImportUserName(

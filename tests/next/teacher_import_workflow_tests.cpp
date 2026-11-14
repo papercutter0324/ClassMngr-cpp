@@ -1,3 +1,4 @@
+#include "core/zip_archive_read_adapter.h"
 #include "features/teacher/import/teacher_import_file_validator.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
@@ -29,6 +30,14 @@ using namespace ClassMngr::Next;
 
 namespace
 {
+TeacherImportFileValidation validateTeacherFileWithQtZip(
+    const QString& path
+    )
+{
+    const std::unique_ptr<ArchiveReadPort> archiveReader =
+        makeZipArchiveReadPort();
+    return validateTeacherImportFile(path, *archiveReader);
+}
 
 QString fixturePath()
 {
@@ -169,7 +178,7 @@ private slots:
 void TeacherImportWorkflowTests::fixtureBuildsTypedRequestWithReviewChoices()
 {
     const TeacherImportFileValidation validation =
-        validateTeacherImportFile(fixturePath());
+        validateTeacherFileWithQtZip(fixturePath());
     QVERIFY2(validation.isValid(),
              qPrintable(validation.diagnostics.join(QLatin1Char('\n'))));
     QCOMPARE(validation.templateId, QStringLiteral("sectioned-contact-list-v1"));
@@ -229,6 +238,7 @@ normalReviewReturnsRequestWithoutApplyingOrSetupCancellation()
     actions.chooseWorkbook = [path] {
         return Domain::Result<std::optional<QString>>::success(path);
     };
+    actions.validateWorkbook = validateTeacherFileWithQtZip;
     actions.validationTimeoutMilliseconds = [] { return 2000; };
     actions.apply = [&applyCalls](
         const Application::TeacherImportUseCaseRequest&
@@ -323,6 +333,7 @@ void TeacherImportWorkflowTests::dialogKeepsReviewOnApplyFailureAndRetries()
     actions.chooseWorkbook = [path] {
         return Domain::Result<std::optional<QString>>::success(path);
     };
+    actions.validateWorkbook = validateTeacherFileWithQtZip;
     actions.validationTimeoutMilliseconds = [] { return 2000; };
     actions.apply = [&] (const Application::TeacherImportUseCaseRequest& request)
         -> Ui::TeacherImportApplyResult {
@@ -363,7 +374,7 @@ void TeacherImportWorkflowTests::dialogKeepsReviewOnApplyFailureAndRetries()
     QTRY_VERIFY_WITH_TIMEOUT(importStatus(dialog).contains(QStringLiteral("invalid")),
                              3000);
     const TeacherImportFileValidation invalidValidation =
-        validateTeacherImportFile(invalidPath);
+        validateTeacherFileWithQtZip(invalidPath);
     QVERIFY(!invalidValidation.diagnostics.isEmpty());
     QVERIFY(importStatus(dialog).contains(
         invalidValidation.diagnostics.join(QLatin1Char('\n'))));
@@ -442,7 +453,7 @@ void TeacherImportWorkflowTests::timeoutRetryAndStaleValidationResultAreSafe()
         {
             QThread::msleep(90);
         }
-        return validateTeacherImportFile(requestedPath);
+        return validateTeacherFileWithQtZip(requestedPath);
     };
     actions.apply = [](const Application::TeacherImportUseCaseRequest&) {
         return Ui::TeacherImportApplyResult{
@@ -478,7 +489,7 @@ void TeacherImportWorkflowTests::timeoutRetryAndStaleValidationResultAreSafe()
             stale.diagnostics.append(QStringLiteral("stale validation result"));
             return stale;
         }
-        return validateTeacherImportFile(path);
+        return validateTeacherFileWithQtZip(path);
     };
     staleActions.apply = actions.apply;
     Ui::InitialSetupTeacherImportDialog staleDialog(staleActions);

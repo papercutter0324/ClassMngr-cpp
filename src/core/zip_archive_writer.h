@@ -1,16 +1,11 @@
 #pragma once
 
-#include <QList>
-#include <QString>
+#include "core/archive_write_port.h"
 
 namespace ZipArchiveWriter
 {
 
-struct Entry
-{
-    QString sourcePath;
-    QString archiveName;
-};
+using Entry = ArchiveWritePort::Entry;
 
 [[nodiscard]] bool writeArchive(
     const QString& archivePath,

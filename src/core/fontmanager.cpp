@@ -1,11 +1,9 @@
 #include "fontmanager.h"
 
-#include "core/resource_paths.h"
+#include "core/qt_font_registration_adapter.h"
 
 #include <QDebug>
 #include <QEvent>
-#include <QFile>
-#include <QFontDatabase>
 #include <QGuiApplication>
 #include <QLabel>
 #include <QLayout>
@@ -42,6 +40,9 @@ QString FontManager::s_pretendardFamily;
 QStringList FontManager::s_loadedFamilies;
 
 QStringList FontManager::s_fontPaths;
+
+std::array<std::shared_ptr<const ClassMngr::Core::FontRegistrationLease>, 2>
+    FontManager::s_fontRegistrations;
 
 int FontManager::s_sizeOffset = 0;
 
@@ -301,106 +302,80 @@ void FontManager::loadFonts()
         return;
     }
 
+    ClassMngr::Core::QtFontRegistrationAdapter port;
+    loadFonts(port);
+}
+
+void FontManager::loadFonts(ClassMngr::Core::FontRegistrationPort& port)
+{
+    if (s_loaded)
+    {
+        return;
+    }
+
     if (!QGuiApplication::instance())
     {
-        qFatal(
-            "QApplication must exist before loading fonts"
-            );
+        qFatal("QApplication must exist before loading fonts");
     }
 
 #ifdef CLASSMNGR_HAS_EMBEDDED_SUB_PREP_FONTS
     initializeSubPrepFontResources();
 #endif
 
-    qDebug() << "Checking font existence:";
-
-    s_fontPaths =
-        {
-            ResourcePaths::Fonts::inter(),
-            ResourcePaths::Fonts::pretendard()
-        };
-
-    const QStringList& fontPaths =
-        s_fontPaths;
-
-    for (const QString& path : fontPaths)
-    {
-        qDebug()
-        << path
-        << QFile::exists(path);
-    }
-
-
-
-    // =====================================================
-    // Load Fonts
-    // =====================================================
-
+    s_fontRegistrations = {};
     s_loadedFamilies.clear();
+    s_fontPaths = {QStringLiteral("Inter"), QStringLiteral("Pretendard")};
+    const std::array resources{
+        ClassMngr::Core::FontResource::Inter,
+        ClassMngr::Core::FontResource::Pretendard
+    };
 
-    for (const QString& path : fontPaths)
+    for (std::size_t index = 0; index < resources.size(); ++index)
     {
-        int fontId = -1;
-
-        if (QFile::exists(path))
+        const auto registration = port.loadFont(resources.at(index));
+        if (!registration)
         {
-            fontId =
-                QFontDatabase::addApplicationFont(
-                    path
-                    );
-        }
-
-        if (fontId == -1)
-        {
-            qWarning()
-            << "[FontManager] Failed to load:"
-            << path;
-
+            qWarning().noquote() << "[FontManager] Failed to load bundled font:"
+                                 << s_fontPaths.at(static_cast<qsizetype>(index))
+                                 << registration.error();
             continue;
         }
 
-        const QStringList families =
-            QFontDatabase::applicationFontFamilies(
-                fontId
-                );
-
-        s_loadedFamilies.append(
-            families
-            );
-
-        qDebug()
-            << "[FontManager] Loaded:"
-            << path
-            << "->"
-            << families;
+        s_fontRegistrations.at(index) = *registration;
+        s_loadedFamilies.append((*registration)->familyName());
+        qDebug().noquote() << "[FontManager] Loaded:"
+                           << s_fontPaths.at(static_cast<qsizetype>(index))
+                           << "->" << (*registration)->familyName();
     }
-
-
-
-    // =====================================================
-    // Resolve Families
-    // =====================================================
 
     resolveCoreFamilies();
-
-
-
-    // =====================================================
-    // Validation
-    // =====================================================
-
     if (s_interFamily.isEmpty())
     {
-        qWarning()
-        << "[FontManager] Inter not found";
+        qWarning() << "[FontManager] Inter not found";
     }
-
     if (s_pretendardFamily.isEmpty())
     {
-        qWarning()
-        << "[FontManager] Pretendard not found";
+        qWarning() << "[FontManager] Pretendard not found";
     }
+    s_loaded = true;
+}
 
+void FontManager::useRegisteredFontFamilies(
+    const QString& interFamily,
+    const QString& pretendardFamily)
+{
+    s_fontRegistrations = {};
+    s_fontPaths = {QStringLiteral("Inter"), QStringLiteral("Pretendard")};
+    s_loadedFamilies.clear();
+    if (!interFamily.isEmpty())
+    {
+        s_loadedFamilies.append(interFamily);
+    }
+    if (!pretendardFamily.isEmpty())
+    {
+        s_loadedFamilies.append(pretendardFamily);
+    }
+    resolveCoreFamilies();
     s_loaded = true;
 }
 
@@ -954,7 +929,12 @@ QString FontManager::adjustRichTextPointSizes(
 
 void FontManager::clearCache()
 {
-    // Placeholder
+    s_fontRegistrations = {};
+    s_fontPaths.clear();
+    s_loadedFamilies.clear();
+    s_interFamily.clear();
+    s_pretendardFamily.clear();
+    s_loaded = false;
 }
 
 

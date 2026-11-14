@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/font_registration_port.h"
 #include "next/resources/resource_loader.h"
 #include "next/application/preferences_model.h"
 #include "next/application/save_mode_preferences.h"
@@ -47,6 +48,12 @@ public:
         return m_pageKey;
     }
 
+    [[nodiscard]] ClassMngr::Core::FontRegistrationPort&
+    fontRegistrationPort() const noexcept
+    {
+        return *m_fontRegistrationPort;
+    }
+
 private:
     friend class PageHost;
 
@@ -54,12 +61,15 @@ private:
         Resources::ResourceLoader& resourceLoader,
         Application::PreferencesModel& preferences,
         Resources::ResourceScope pageScope,
-        QString pageKey
+        QString pageKey,
+        std::shared_ptr<ClassMngr::Core::FontRegistrationPort>
+            fontRegistrationPort
         )
         : m_resourceLoader(&resourceLoader)
         , m_preferences(&preferences)
         , m_pageScope(std::move(pageScope))
         , m_pageKey(std::move(pageKey))
+        , m_fontRegistrationPort(std::move(fontRegistrationPort))
     {
     }
 
@@ -67,6 +77,8 @@ private:
     Application::PreferencesModel* m_preferences;
     Resources::ResourceScope m_pageScope;
     QString m_pageKey;
+    std::shared_ptr<ClassMngr::Core::FontRegistrationPort>
+        m_fontRegistrationPort;
 };
 
 class Page : public QWidget

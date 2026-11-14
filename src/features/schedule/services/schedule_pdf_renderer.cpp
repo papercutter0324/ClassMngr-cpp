@@ -1,5 +1,7 @@
 #include "features/schedule/services/schedule_pdf_renderer.h"
 
+#include "core/pdf_generation_port.h"
+
 #include "domain/rules/schedule_value_parser.h"
 
 #include <algorithm>
@@ -11,7 +13,6 @@
 #include <QPageLayout>
 #include <QPageSize>
 #include <QPen>
-#include <QPdfWriter>
 #include <QRectF>
 
 namespace SchedulePdfRenderer
@@ -318,37 +319,12 @@ QPageLayout schedulePdfPageLayout(
         );
 }
 
-bool configureSchedulePdfWriter(
-    QPdfWriter& writer,
-    QPageLayout::Orientation orientation
-    )
-{
-    writer.setCreator(
-        QStringLiteral("ClassMngr")
-        );
-    writer.setTitle(
-        QStringLiteral("Schedule")
-        );
-    writer.setResolution(
-        SchedulePdfResolutionDpi
-        );
-
-    return writer.setPageLayout(
-        schedulePdfPageLayout(orientation)
-        );
-}
-
 QRectF schedulePdfPageRect(
-    const QPdfWriter& writer
+    PdfGenerationSession& writer
     )
 {
     const QRect pageRect =
-        writer.pageLayout().fullRectPixels(
-            std::max(
-                1,
-                writer.resolution()
-                )
-            );
+        writer.pageRectPixels();
 
     if (
         pageRect.width() > 0
@@ -361,8 +337,8 @@ QRectF schedulePdfPageRect(
     return QRectF(
         0.0,
         0.0,
-        writer.width(),
-        writer.height()
+        writer.paintDevice().width(),
+        writer.paintDevice().height()
         );
 }
 
@@ -1132,6 +1108,7 @@ void paintSchedule(
 }
 
 Result renderSchedulePdf(
+    PdfGenerationPort& pdfGeneration,
     const Request& request,
     const QString& documentPath
     )
@@ -1143,19 +1120,22 @@ Result renderSchedulePdf(
             );
     }
 
-    QPdfWriter writer(documentPath);
-    if (!configureSchedulePdfWriter(
-            writer,
-            request.pageOrientation
-            ))
+    auto session = pdfGeneration.create(documentPath, {
+        .creator = QStringLiteral("ClassMngr"),
+        .title = QStringLiteral("Schedule"),
+        .resolutionDpi = SchedulePdfResolutionDpi,
+        .pageLayout = schedulePdfPageLayout(request.pageOrientation)
+    });
+    if (!session)
     {
         return failed(
             QObject::tr("Unable to configure the schedule print file.")
             );
     }
 
+    auto& writer = *session;
     QPainter painter;
-    if (!painter.begin(&writer))
+    if (!painter.begin(&writer.paintDevice()))
     {
         return failed(
             QObject::tr("Unable to create the schedule print file.")

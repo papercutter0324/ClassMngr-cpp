@@ -81,7 +81,7 @@ foreach(_line IN LISTS _report_lines)
 endforeach()
 
 set(_expected_next_links
-    "Qt6::Core|$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>|$<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextSubPrepOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNextCalendarUi|ClassMngrNextDocumentCatalog|ClassMngrQtPdfPrint|Qt6::PdfWidgets|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
+    "Qt6::Core|$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>|$<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextSubPrepOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNextCalendarUi|ClassMngrQtZipArchiveReadAdapter|ClassMngrNextDocumentCatalog|ClassMngrQtPdfPrint|ClassMngrQtPdfGeneration|Qt6::PdfWidgets|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
 )
 if(NOT _next_links STREQUAL _expected_next_links)
     message(FATAL_ERROR
@@ -100,7 +100,7 @@ if(NOT _next_speaking_evaluation_output_links STREQUAL
     )
 endif()
 
-if(NOT _next_roster_output_links STREQUAL "ClassMngrRosterTemplateRenderer|Qt6::Widgets|ClassMngrWorkspaceStore|ClassMngrQtPdfPrint|Qt6::Sql|Qt6::Pdf")
+if(NOT _next_roster_output_links STREQUAL "ClassMngrRosterTemplateRenderer|Qt6::Widgets|ClassMngrWorkspaceStore|ClassMngrQtPdfGeneration|ClassMngrQtPdfPrint|Qt6::Sql|Qt6::Pdf")
     message(FATAL_ERROR "Unexpected Next Roster output closure: [${_next_roster_output_links}]")
 endif()
 if(NOT _roster_renderer_links STREQUAL "Qt6::Gui")
@@ -108,7 +108,7 @@ if(NOT _roster_renderer_links STREQUAL "Qt6::Gui")
 endif()
 
 set(_expected_next_schedule_output_links
-    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrSchedulePdfRenderer|Qt6::Widgets|Qt6::Pdf"
+    "ClassMngrBuildSettings|ClassMngrNext::Application|ClassMngrSchedulePdfRenderer|ClassMngrQtPdfGeneration|Qt6::Widgets|Qt6::Pdf"
 )
 if(NOT _next_schedule_output_links STREQUAL _expected_next_schedule_output_links)
     message(FATAL_ERROR
@@ -240,7 +240,7 @@ if(_bootstrap_update_adapter_index EQUAL -1)
 endif()
 
 set(_expected_bootstrap_test_links
-    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrSubPrepShared|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrQtPdfPrint|ClassMngrNextStartupUpdates|ClassMngrNextUpdateAdapters|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::PdfWidgets|Qt6::Widgets"
+    "ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrQtZipArchiveReadAdapter|ClassMngrSubPrepShared|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrQtPdfPrint|ClassMngrNextStartupUpdates|ClassMngrNextUpdateAdapters|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::PdfWidgets|Qt6::Widgets"
 )
 if(NOT _bootstrap_test_links STREQUAL _expected_bootstrap_test_links)
     message(FATAL_ERROR

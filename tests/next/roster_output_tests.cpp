@@ -167,6 +167,7 @@ Ui::RosterOutputActions actions()
             QStringLiteral("Fixture print was not expected")
         };
     });
+    result.pdfPreviewSessionFactory = Platform::makeQtRosterPdfPreviewSession;
     result.fonts = {FontManager::getUiFont(-1), FontManager::getKoreanFont(-1)};
     return result;
 }
@@ -294,6 +295,7 @@ private slots:
     void dialogCancelFailureAndPreview();
     void saveFileDialogReceivesRosterPdfRequestAndHandlesFailure();
     void outputWarnsBeforeGeneratingWhenStudentsOverflowTemplate();
+    void rosterPreviewSessionOwnsAndRendersGeneratedPdf();
     void printPortReceivesGeneratedPdfAndReportsCancelAndFailure();
     void captures();
 
@@ -1214,6 +1216,57 @@ void RosterOutputTests::printPortReceivesGeneratedPdfAndReportsCancelAndFailure(
     QVERIFY(!invalidPdf.findChild<QDialog*>(
         QStringLiteral("nextRosterPreviewDialog")));
     QCOMPARE(invalidPdfPrintCalls, 0);
+}
+
+void RosterOutputTests::rosterPreviewSessionOwnsAndRendersGeneratedPdf()
+{
+    QTemporaryDir dir;
+    const QString databasePath = dir.filePath(QStringLiteral("preview-session.tps"));
+    QVERIFY(seed(databasePath, QStringLiteral("PREVIEW"), 2));
+
+    auto source = actions();
+    Output::RosterOutputRequest request{id(1)};
+    request.templateId = R::TemplateId::PerClassWithExtraInfo;
+    request.scope = Output::RosterOutputScope::AllClasses;
+
+    auto session = source.pdfPreviewSessionFactory();
+    QVERIFY(session);
+    QVERIFY(session->isValid());
+    const QString generatedPath = session->path();
+    const QString temporaryDirectory = QFileInfo(generatedPath).absolutePath();
+    QVERIFY(QFileInfo::exists(temporaryDirectory));
+    QCOMPARE(source.savePdf(databasePath, request, generatedPath, source.fonts).status,
+        DocumentOutputStatus::Sent);
+    QVERIFY(QFileInfo::exists(generatedPath));
+    QVERIFY(session->loadGeneratedPdf());
+    QCOMPARE(session->pageCount(), 2);
+    for (int page = 0; page < session->pageCount(); ++page)
+    {
+        const QImage image = session->renderPage(page, QSize(820, 630));
+        QVERIFY(!image.isNull());
+        QVERIFY(image.width() <= 820);
+        QVERIFY(image.height() <= 630);
+        QVERIFY(nonWhitePixelCount(image) > 0);
+    }
+
+    session->release();
+    QCOMPARE(session->pageCount(), 0);
+    QVERIFY(QFileInfo::exists(generatedPath));
+    session.reset();
+    QVERIFY(!QFileInfo::exists(temporaryDirectory));
+
+    auto malformed = source.pdfPreviewSessionFactory();
+    QVERIFY(malformed);
+    const QString malformedPath = malformed->path();
+    QFile invalidPdf(malformedPath);
+    QVERIFY(invalidPdf.open(QIODevice::WriteOnly));
+    QCOMPARE(invalidPdf.write("not a PDF"), qint64(9));
+    invalidPdf.close();
+    QVERIFY(!malformed->loadGeneratedPdf());
+    QCOMPARE(malformed->pageCount(), 0);
+    const QString malformedDirectory = QFileInfo(malformedPath).absolutePath();
+    malformed.reset();
+    QVERIFY(!QFileInfo::exists(malformedDirectory));
 }
 
 void RosterOutputTests::captures()

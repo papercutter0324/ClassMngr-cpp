@@ -256,6 +256,13 @@ classmngr_add_production_objects(
         Qt6::Widgets
         Qt6::Network
 )
+# The concrete PDF writer is isolated from shared painting/document code.
+add_library(ClassMngrQtPdfGeneration STATIC ${CLASSMNGR_QT_PDF_GENERATION_SOURCES})
+target_compile_features(ClassMngrQtPdfGeneration PUBLIC cxx_std_23)
+target_include_directories(ClassMngrQtPdfGeneration PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(ClassMngrQtPdfGeneration PUBLIC Qt6::Gui)
+set_target_properties(ClassMngrQtPdfGeneration PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
+
 add_library(ClassMngrRosterTemplateRenderer STATIC ${CLASSMNGR_ROSTER_TEMPLATE_RENDERER_SOURCES})
 target_compile_features(ClassMngrRosterTemplateRenderer PUBLIC cxx_std_23)
 target_include_directories(ClassMngrRosterTemplateRenderer PUBLIC "${PROJECT_SOURCE_DIR}/src")
@@ -276,6 +283,28 @@ set_target_properties(ClassMngrWorkspaceStore
         CXX_EXTENSIONS OFF
         POSITION_INDEPENDENT_CODE ON
 )
+add_library(ClassMngrQtZipArchiveReadAdapter STATIC
+    ${CLASSMNGR_QT_ZIP_ARCHIVE_READ_ADAPTER_SOURCES}
+)
+target_compile_features(ClassMngrQtZipArchiveReadAdapter
+    PUBLIC
+        cxx_std_23
+)
+target_include_directories(ClassMngrQtZipArchiveReadAdapter
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrQtZipArchiveReadAdapter
+    PUBLIC
+        Qt6::Core
+    PRIVATE
+        ZLIB::ZLIB
+)
+set_target_properties(ClassMngrQtZipArchiveReadAdapter
+    PROPERTIES
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 add_library(ClassMngrWorkbookReader STATIC
     ${CLASSMNGR_WORKBOOK_READER_SOURCES}
 )
@@ -283,7 +312,6 @@ target_link_libraries(ClassMngrWorkbookReader
     PUBLIC
         ClassMngrBuildSettings
         Qt6::Core
-        ZLIB::ZLIB
 )
 set_target_properties(ClassMngrWorkbookReader
     PROPERTIES
@@ -529,6 +557,7 @@ set_target_properties(ClassMngrSignature
 # Keep the complete legacy runtime module set available to the application and
 # focused tests, including QuickControls2 dependencies discovered from QML.
 set(_classmngr_legacy_runtime_dependencies
+    ClassMngrFontManager
     Qt6::Concurrent
     Qt6::Gui
     Qt6::Network
@@ -573,7 +602,6 @@ target_link_libraries(ClassMngrSubPrepShared
     PRIVATE
         ClassMngrBuildSettings
         ClassMngrClassTransferSupport
-        ClassMngrFontManager
         ClassMngrQtPdfPrint
         ClassMngrScheduleImportRules
         ClassMngrWorkspaceStore
@@ -589,7 +617,55 @@ set_target_properties(ClassMngrSubPrepShared
         POSITION_INDEPENDENT_CODE ON
 )
 
+# Legacy owns default PDF and PowerPoint composition. Embed these objects in
+# its runtime and test runtime; shared features and Next never link this owner.
+classmngr_add_production_objects(
+    TARGET ClassMngrLegacyPdfComposition
+    SOURCES ${CLASSMNGR_LEGACY_PDF_COMPOSITION_SOURCES}
+    LIBRARIES
+        ClassMngrQtPdfGeneration
+        ClassMngrFontManager
+        ClassMngrSchedulePdfRenderer
+        ClassMngrRosterTemplateRenderer
+        ClassMngrSubPrepShared
+        ClassMngrSpeakingEvalReportEngine
+        ClassMngrSpeakingEvalPowerPointAdapter
+)
+set_target_properties(ClassMngrLegacyPdfComposition
+    PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF
+)
+add_library(ClassMngrLegacyCalendarArchiveComposition STATIC
+    ${CLASSMNGR_LEGACY_CALENDAR_ARCHIVE_COMPOSITION_SOURCES}
+)
+target_compile_features(ClassMngrLegacyCalendarArchiveComposition
+    PUBLIC
+        cxx_std_23
+)
+target_include_directories(ClassMngrLegacyCalendarArchiveComposition
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrLegacyCalendarArchiveComposition
+    PUBLIC
+        ClassMngrCalendarImportParser
+        ClassMngrScheduleImportParser
+        ClassMngrTeacherImportParser
+        ClassMngrQtZipArchiveReadAdapter
+)
+set_target_properties(ClassMngrLegacyCalendarArchiveComposition
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
+set_target_properties(ClassMngrLegacyCalendarArchiveComposition
+    PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF
+)
+
 add_library(ClassMngrRuntime STATIC
+    $<TARGET_OBJECTS:ClassMngrLegacyPdfComposition>
     $<TARGET_OBJECTS:ClassMngrStudentName>
     $<TARGET_OBJECTS:ClassMngrCore>
     $<TARGET_OBJECTS:ClassMngrUpdater>
@@ -605,6 +681,7 @@ target_link_libraries(ClassMngrRuntime
     PUBLIC
         ClassMngrBuildSettings
         ClassMngrSignature
+        ClassMngrLegacyCalendarArchiveComposition
         ClassMngrCalendarImportParser
         ClassMngrClassTransferSupport
         ClassMngrTeacherImportParser
@@ -616,6 +693,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrSpeakingEvalPowerPointAdapter
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
+        ClassMngrQtPdfGeneration
         ClassMngrDomainArchive
         ClassMngrSQLiteSnapshot
 )
@@ -637,6 +715,7 @@ endif()
 # interpose those definitions at load time.
 if(APPLE AND BUILD_TESTING)
     add_library(ClassMngrTestRuntime SHARED
+        $<TARGET_OBJECTS:ClassMngrLegacyPdfComposition>
         $<TARGET_OBJECTS:ClassMngrStudentName>
         $<TARGET_OBJECTS:ClassMngrCore>
         $<TARGET_OBJECTS:ClassMngrUpdater>
@@ -653,6 +732,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrBuildSettings
             ClassMngrSignature
             ClassMngrWorkspaceStore
+            ClassMngrLegacyCalendarArchiveComposition
             ClassMngrCalendarImportParser
             ClassMngrClassTransferSupport
             ClassMngrTeacherImportParser
@@ -665,6 +745,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrSpeakingEvalPowerPointAdapter
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE
+            ClassMngrQtPdfGeneration
             ClassMngrDomainArchive
             ClassMngrSQLiteSnapshot
     )

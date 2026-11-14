@@ -10,6 +10,10 @@ class QtFontFamilyAvailabilityAdapter final
 {
 public:
     [[nodiscard]] std::vector<std::u16string> availableFontFamilies() const override;
+    [[nodiscard]] std::u16string outputFallbackFontFamily() const override;
+    [[nodiscard]] int outputFallbackEnglishPointSize() const override;
+    [[nodiscard]] int applicationBaseFontPointSize() const override;
+    [[nodiscard]] int teacherProfileKoreanFontPointSize() const override;
 };
 
 }  // namespace ClassMngr::Next::Platform

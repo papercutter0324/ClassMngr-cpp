@@ -7056,3 +7056,27 @@ Static review and git diff --check passed. Project test configuration could
 not complete because Qt 6.12+ is unavailable in this environment. No runtime
 test or hosted rerun used these local edits; no commit or push was performed.
 The two-file worktree change remains pending fresh hosted Windows evidence.
+
+
+## Phase 8/8a macOS gate attempt — 2026-11-14
+
+Candidate `f6b258f1bbb010ec0b7847f81827fd0409832888` (tree
+`65239452d50f917b5817e8e34682e2da731224d5`) was clean at
+`/private/tmp/classmngr-phase8-8a-candidate-20261114`; its five fixes match the
+shared worktree. The preceding unfiltered macOS CTest run was 613/620. Four
+failures (#243, #244, #259, #330) pass focused reruns after fixes, but the final
+focused rerun is 4/7: visual captures #326, #339, and #620 still SEGFAULT. The
+crash reports show `EXC_BAD_ACCESS` in Qt stylesheet/StyleChange paths without
+proving a cause. Final focused JUnit:
+`/private/tmp/phase8-8a-macos-ctest-final-rerun.junit.xml`.
+
+C53 passed 17 pages with zero changed pixels and unchanged font resource
+provenance. The final universal 0.19.0 DMG passed package, signature, arch,
+minimum OS, mounted-image, integrity, and checksum checks; its manifest has 914
+paths, 493 hashes, 187 direct resource hashes, and 22 license/SBOM records.
+Package verifier tests passed 13/13. Linux and Windows workflow jobs did not
+run: GitHub auto-review rejected the public source upload, and no branch, PR,
+workflow run, or remote ref changed. Phase 8 and 8a remain open pending the
+remaining local failures and authorized hosted runs. Next step: obtain explicit
+authorization to upload candidate `f6b258f` to public
+`papercutter0324/ClassMngr-cpp` and open a draft PR against `Qt-Rewrite`.

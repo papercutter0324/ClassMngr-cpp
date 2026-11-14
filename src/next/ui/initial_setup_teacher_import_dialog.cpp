@@ -336,7 +336,11 @@ void InitialSetupTeacherImportDialog::validateSelectedFile()
         {
             return validate(filePath);
         }
-        return validateTeacherImportFile(filePath);
+        TeacherImportFileValidation validation;
+        validation.status = TeacherImportFileStatus::Unreadable;
+        validation.diagnostics.append(QObject::tr(
+            "The teacher import reader is unavailable."));
+        return validation;
     }));
     timeout->start(timeoutMilliseconds);
 }

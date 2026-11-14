@@ -1,4 +1,5 @@
 #include "core/process_memory_snapshot.h"
+#include "core/zip_archive_read_adapter.h"
 #include "data/database/workspace_store.h"
 #include "features/teacher/import/teacher_import_file_validator.h"
 #include "features/teacher/ui/teacher_import_dialog.h"
@@ -822,7 +823,10 @@ int main(int argc, char* argv[])
     memory.beforeParse = memoryProvider.snapshot();
     const QString workbookPath = QDir(QStringLiteral(CLASSMNGR_SOURCE_DIR))
         .filePath(QString::fromLatin1(FixturePath));
-    TeacherImportFileValidation parsed = validateTeacherImportFile(workbookPath);
+    const std::unique_ptr<ArchiveReadPort> archiveReader =
+        makeZipArchiveReadPort();
+    TeacherImportFileValidation parsed = validateTeacherImportFile(
+        workbookPath, *archiveReader);
     if (!parsed.isValid())
     {
         qCritical().noquote() << "Capture workbook did not validate:"
@@ -874,6 +878,9 @@ int main(int argc, char* argv[])
     const QString nextReviewPath = QDir(outputDirectory).filePath(
         QStringLiteral("next_review.png"));
     Next::Ui::InitialSetupTeacherImportActions actions;
+    actions.validateWorkbook = [&archiveReader](const QString& path) {
+        return validateTeacherImportFile(path, *archiveReader);
+    };
     actions.returnReviewRequestOnly = true;
     actions.validationTimeoutMilliseconds = [] { return 30000; };
     {

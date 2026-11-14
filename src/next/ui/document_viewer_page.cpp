@@ -19,7 +19,6 @@
 #include <QSaveFile>
 #include <QSignalBlocker>
 #include <QSizePolicy>
-#include <QStandardPaths>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -910,12 +909,14 @@ void DocumentViewerPage::saveSelectedCopy()
         m_selectedDocument->exportReference->value().data(),
         static_cast<qsizetype>(m_selectedDocument->exportReference->value().size())
         )).fileName();
-    QString initialDirectory = QStandardPaths::writableLocation(
-        QStandardPaths::DocumentsLocation
-        );
+    const Application::DefaultOutputDirectories defaultDirectories =
+        m_actions.defaultOutputDirectoriesPort
+        ? m_actions.defaultOutputDirectoriesPort->read()
+        : Application::DefaultOutputDirectories{};
+    QString initialDirectory = utf8Text(defaultDirectories.documents);
     if (initialDirectory.isEmpty())
     {
-        initialDirectory = QDir::homePath();
+        initialDirectory = utf8Text(defaultDirectories.home);
     }
 
     if (!m_actions.saveFileDialog)

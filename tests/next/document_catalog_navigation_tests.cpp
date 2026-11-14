@@ -422,6 +422,7 @@ private slots:
     void resourceCatalogConstructionLoadsMetadataWithoutBodyDiagnostics();
     void preferencesMenuIsDiscoverableAndDoesNotDuplicatePageSettings();
     void preferencesDialogLoadsEditsAndPersistsEveryMigratedSetting();
+    void preferencesDialogPowerPointNoticeFollowsPresentationCapabilities();
     void preferencesDialogCancellationDoesNotWrite();
     void preferencesDialogShowsLoadAndSaveFailuresAndRollsBackControls();
     void preferencesDialogRejectsInvalidBoundariesAndRestoresAiUrl();
@@ -682,7 +683,12 @@ preferencesDialogLoadsEditsAndPersistsEveryMigratedSetting()
         fixture.ports(),
         {.saveModeChanged = [&liveSaveMode](const Application::SaveMode mode) {
             liveSaveMode = mode;
-        }});
+        }},
+        nullptr,
+        {
+            .rendererOptionSupported = true,
+            .protectedDataAccessNoticeSupported = true
+        });
     QVERIFY(dialog.applicationPreferencesLoaded());
     QCOMPARE(fixture.preferences.readCalls, 1);
     QCOMPARE(fixture.saveMode.reads, 1);
@@ -724,13 +730,12 @@ preferencesDialogLoadsEditsAndPersistsEveryMigratedSetting()
     QCOMPARE(fixture.preferences.model.snapshot().sidebarTooltipsEnabled(), false);
     QCOMPARE(fixture.preferences.model.snapshot().sidebarMarqueeEnabled(), false);
     QCOMPARE(fixture.preferences.model.snapshot().excelImportTimeoutSeconds(), 300);
-#ifdef Q_OS_MACOS
     auto* const powerPointNotice = dialog.findChild<QCheckBox*>(
         QStringLiteral("preferencesPowerPointNotice"));
     QVERIFY(powerPointNotice);
+    QVERIFY(powerPointNotice->isChecked());
     powerPointNotice->setChecked(false);
     QCOMPARE(fixture.preferences.model.snapshot().showPowerPointDataAccessNotice(), false);
-#endif
 
     saveMode->setCurrentIndex(saveMode->findData(static_cast<int>(Application::SaveMode::Manual)));
     QCOMPARE(fixture.saveMode.value, Application::SaveMode::Manual);
@@ -769,6 +774,7 @@ preferencesDialogLoadsEditsAndPersistsEveryMigratedSetting()
     Application::PreferencesModel reloaded(fixture.preferences, fixture.preferences);
     QVERIFY(reloaded.load());
     Ui::PreferencesDialog secondDialog(reloaded, fixture.ports());
+    QCOMPARE(reloaded.snapshot().showPowerPointDataAccessNotice(), false);
     QCOMPARE(reloaded.snapshot().themePreference(), Application::ThemePreference::Dark);
     QCOMPARE(reloaded.snapshot().languagePreference(), Application::LanguagePreference::Korean);
     QCOMPARE(reloaded.snapshot().fontSize(), Application::FontSize::ExtraLarge);
@@ -782,6 +788,52 @@ preferencesDialogLoadsEditsAndPersistsEveryMigratedSetting()
     QCOMPARE(fixture.aiProvider.value, Application::AiCommentProvider::CustomWebsite);
     QCOMPARE(fixture.aiVoice.value, Application::AiCommentVoice::ThirdPerson);
     QCOMPARE(fixture.customWebsite.value, std::string("https://school.example/ai"));
+}
+
+void DocumentCatalogNavigationTests::
+preferencesDialogPowerPointNoticeFollowsPresentationCapabilities()
+{
+    struct Scenario final
+    {
+        Application::SpeakingEvaluationPowerPointPresentationCapabilities
+            capabilities;
+        bool noticeVisible;
+    };
+    const Scenario scenarios[] = {
+        {
+            {.rendererOptionSupported = true,
+             .protectedDataAccessNoticeSupported = true},
+            true
+        },
+        {
+            {.rendererOptionSupported = true,
+             .protectedDataAccessNoticeSupported = false},
+            false
+        },
+        {
+            {.rendererOptionSupported = false,
+             .protectedDataAccessNoticeSupported = false},
+            false
+        }
+    };
+
+    for (const Scenario& scenario : scenarios)
+    {
+        DialogFixture fixture;
+        Ui::PreferencesDialog dialog(
+            fixture.preferences.model,
+            fixture.ports(),
+            {},
+            nullptr,
+            scenario.capabilities);
+        const auto* const notice = dialog.findChild<QCheckBox*>(
+            QStringLiteral("preferencesPowerPointNotice"));
+        QCOMPARE(notice != nullptr, scenario.noticeVisible);
+        QCOMPARE(
+            scenario.capabilities.shouldShowProtectedDataAccessNotice(true),
+            scenario.noticeVisible);
+        QVERIFY(!scenario.capabilities.shouldShowProtectedDataAccessNotice(false));
+    }
 }
 
 void DocumentCatalogNavigationTests::preferencesDialogCancellationDoesNotWrite()

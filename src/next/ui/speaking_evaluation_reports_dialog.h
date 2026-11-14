@@ -1,5 +1,6 @@
 #pragma once
 #include "next/application/file_dialog_port.h"
+#include "next/application/speaking_evaluation_powerpoint_presentation_capabilities.h"
 #include "next/output/speaking_evaluation_report_output.h"
 #include <QDialog>
 #include <functional>
@@ -34,6 +35,8 @@ struct SpeakingEvaluationReportActions
     std::function<void(int, int, const QString&)> valueEdited;
     std::function<void(int)> previewAiPrompt;
     std::function<void(int)> copyAndOpenAiPrompt;
+    Application::SpeakingEvaluationPowerPointPresentationCapabilities
+        powerPointPresentationCapabilities;
     bool showPowerPointDataAccessNotice = true;
 };
 

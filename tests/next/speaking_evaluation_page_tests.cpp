@@ -1,5 +1,7 @@
 #include "data/database/workspace_store.h"
 #include "core/settingsmanager.h"
+#include "core/qt_pdf_generation_adapter.h"
+#include "core/zip_archive_write_adapter.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/class_info_repository.h"
 #include "data/repositories/settings_repository.h"
@@ -8,11 +10,14 @@
 #include "next/platform/workspace_store_speaking_evaluation_ports.h"
 #include "next/platform/workspace_store_speaking_evaluation_report_port.h"
 #include "next/platform/pdf_print_operation.h"
+#include "next/platform/qt_speaking_evaluation_powerpoint_presentation_adapter.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
 #include "next/ui/speaking_evaluation_ai_dialogs.h"
 #include "next/ui/speaking_evaluation_page.h"
+#include "next/ui/speaking_evaluation_reports_dialog.h"
+#include "next/output/speaking_evaluation_report_output.h"
 #include "features/speaking_eval/ui/speaking_eval_report_widget.h"
 #include "preferences_test_ports.h"
 #include "splitter_state_test_port.h"
@@ -718,6 +723,7 @@ private slots:
     void nextPowerPointUsesInjectedAutomationAndApplicationActions_data();
     void nextPowerPointUsesInjectedAutomationAndApplicationActions();
     void nextPowerPointRequestFailsWhenAutomationPortIsMissing();
+    void reportBatchRendererVisibilityFollowsPresentationCapabilities();
     void reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs();
     void reportsRespectConfiguredMaximumForStoredTailRows();
     void batchCheckIndicatorMouseAndKeyboardEventsToggleSelection();
@@ -1815,6 +1821,7 @@ currentReportSaveAsPdfAndPrintActionsUseOutputEngine()
 
     PageHarness harness;
     auto& reportActions = harness.reportActions();
+    reportActions.run.pdfGeneration = makeQtPdfGenerationPort();
     reportActions.engineOverrides.progressCallback = [&progressNames](
         int, int, const QString& name) {
         if (!name.isEmpty()) progressNames.append(name);
@@ -2158,6 +2165,7 @@ void SpeakingEvaluationPageTests::nextPowerPointUsesInjectedAutomationAndApplica
     int retryCalls = 0;
     Output::SpeakingEvaluationReportRunActions actions;
     actions.powerPointAutomation = automation;
+    actions.archiveWriter = makeZipArchiveWritePort();
     actions.confirmPowerPointDataAccess = [&] { ++consentCalls; return mode != QStringLiteral("consent-canceled"); };
     actions.resolvePowerPointRoot = [&](SpeakingEvalReportTemplate) -> std::expected<QString, QString> {
         ++rootCalls; return QStringLiteral("fixture-resolved-template-root");
@@ -2200,6 +2208,63 @@ void SpeakingEvaluationPageTests::nextPowerPointRequestFailsWhenAutomationPortIs
     QCOMPARE(result.output.status, DocumentOutputStatus::Failed);
     QCOMPARE(result.output.message, QStringLiteral("The PowerPoint automation operation is unavailable."));
     QVERIFY(QDir(output.path()).entryList(QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+}
+
+void SpeakingEvaluationPageTests::
+reportBatchRendererVisibilityFollowsPresentationCapabilities()
+{
+    struct Scenario final
+    {
+        Application::SpeakingEvaluationPowerPointPresentationCapabilities
+            capabilities;
+        int expectedRendererCount;
+        bool expectedNotice;
+    };
+    const Scenario scenarios[] = {
+        {
+            {.rendererOptionSupported = true,
+             .protectedDataAccessNoticeSupported = true},
+            2,
+            true
+        },
+        {
+            {.rendererOptionSupported = true,
+             .protectedDataAccessNoticeSupported = false},
+            2,
+            false
+        },
+        {
+            {.rendererOptionSupported = false,
+             .protectedDataAccessNoticeSupported = false},
+            1,
+            false
+        }
+    };
+
+    auto unavailableOffice = std::make_shared<CallbackPowerPointPort>();
+    unavailableOffice->state = {
+        false,
+        QStringLiteral("Fixture PowerPoint installation is unavailable.")
+    };
+
+    for (const Scenario& scenario : scenarios)
+    {
+        Ui::SpeakingEvaluationReportActions actions;
+        actions.powerPointPresentationCapabilities = scenario.capabilities;
+        actions.run.powerPointAutomation = unavailableOffice;
+        Ui::SpeakingEvaluationReportBatchDialog dialog(
+            {},
+            0,
+            {},
+            Ui::SpeakingEvaluationReportBatchDialog::Mode::SaveAs,
+            std::move(actions));
+        QCOMPARE(dialog.rendererSelector()->count(),
+            scenario.expectedRendererCount);
+        QCOMPARE(
+            scenario.capabilities.shouldShowProtectedDataAccessNotice(true),
+            scenario.expectedNotice);
+        QVERIFY(!scenario.capabilities.shouldShowProtectedDataAccessNotice(false));
+    }
 }
 
 void SpeakingEvaluationPageTests::
@@ -2250,6 +2315,7 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
         .home = "/injected/speaking-home"
     };
     auto& reportActions = harness.reportActions();
+    reportActions.run.archiveWriter = makeZipArchiveWritePort();
     reportActions.engineOverrides.internalRenderer = [&renderedNames](
         const SpeakingEvalReportData& report, const QString& path,
         QString* error)
@@ -3288,6 +3354,9 @@ capturesSpeakingEvaluationReportsForEnglishKoreanLightAndDark()
 
             Ui::SpeakingEvaluationReportActions actions;
             actions.assets = assets;
+            actions.powerPointPresentationCapabilities =
+                Platform::QtSpeakingEvaluationPowerPointPresentationAdapter::
+                    capabilities();
             {
                 Ui::SpeakingEvaluationReportsDialog preview(reports, 1, actions);
                 preview.resize(940, 900);
@@ -3413,10 +3482,11 @@ capturesSpeakingEvaluationReportsForEnglishKoreanLightAndDark()
     {
         SpeakingEvalReportAssetSession assetSession(assets);
         QVERIFY(assetSession.isValid());
-        const auto result =
-            SpeakingEvalBatchReportService::exportResolvedReports(request);
-        QCOMPARE(result.status, SpeakingEvalBatchReportService::Status::Completed);
-        QCOMPARE(result.savedPdfPaths, QStringList{pdfPath});
+        Output::SpeakingEvaluationReportRunActions actions;
+        actions.pdfGeneration = makeQtPdfGenerationPort();
+        const auto result = Output::runSpeakingEvaluationReports(request, actions);
+        QCOMPARE(result.output.status, SpeakingEvalBatchReportService::Status::Completed);
+        QCOMPARE(result.output.savedPdfPaths, QStringList{pdfPath});
     }
     QPdfDocument pdf;
     QCOMPARE(pdf.load(pdfPath), QPdfDocument::Error::None);

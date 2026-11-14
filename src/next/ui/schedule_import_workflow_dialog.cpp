@@ -894,7 +894,8 @@ void ScheduleImportWorkflowDialog::beginParse()
             }
             Result<ScheduleImportWorkbook> parsed = parser
                 ? parser(device, kind)
-                : parseScheduleImportWorkbook(device, kind);
+                : std::unexpected(workflowText(
+                    "The schedule workbook reader is unavailable."));
             currentMetadata = ScheduleImportWorkflowDialog::fileMetadata(path);
             result->canceled = canceled->load(std::memory_order_relaxed);
             if (result->canceled)

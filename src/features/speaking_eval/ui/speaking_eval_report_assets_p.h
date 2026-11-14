@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/font_registration_port.h"
 #include "features/speaking_eval/ui/speaking_eval_report_template.h"
 
 #include <QFont>
@@ -13,16 +14,28 @@
 #include <QString>
 #include <QVector>
 
+#include <memory>
+
 // The caller resolves resources and owns the report session. The shared engine
-// never consults a resource pack or guesses application/source directories.
+// never consults a resource pack or registers application fonts itself.
 struct SpeakingEvalReportAssetEnvironment
 {
     QString templateRoot = QStringLiteral(":/assets/templates/speaking-eval");
     QString latinFamily = QStringLiteral("Inter");
     QString koreanFamily = QStringLiteral("Pretendard");
-    QString handwrittenFontPath = QStringLiteral(":/assets/fonts/JustAnotherHand-Regular.ttf");
-    friend bool operator==(const SpeakingEvalReportAssetEnvironment&,
-        const SpeakingEvalReportAssetEnvironment&) = default;
+    QString handwrittenFamily = QStringLiteral("Just Another Hand");
+    std::shared_ptr<const ClassMngr::Core::FontRegistrationLease>
+        handwrittenFontRegistration;
+
+    friend bool operator==(
+        const SpeakingEvalReportAssetEnvironment& left,
+        const SpeakingEvalReportAssetEnvironment& right)
+    {
+        return left.templateRoot == right.templateRoot
+            && left.latinFamily == right.latinFamily
+            && left.koreanFamily == right.koreanFamily
+            && left.handwrittenFamily == right.handwrittenFamily;
+    }
 };
 
 class SpeakingEvalReportAssetSession final
@@ -129,6 +142,6 @@ speakingEvalFieldAsset(
     qreal stepPoints = 1.0
     );
 
-// Clears decoded report images and the application-font registrations made
-// exclusively for the templates pack. Call only after report widgets close.
+// Clears decoded report images. Call only after report widgets close; the
+// active asset session owns the handwritten-font registration lease.
 void releaseSpeakingEvalTemplateAssets();

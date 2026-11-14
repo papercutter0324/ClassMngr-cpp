@@ -1,21 +1,19 @@
 #include "typed_signature_renderer.h"
 
-#include "core/resource_paths.h"
 #include "features/my_info/data/signature_image_processor.h"
 
-#include <QFontDatabase>
 #include <QFontMetricsF>
-#include <QGuiApplication>
 #include <QPainter>
 
 #include <array>
+#include <utility>
 
 namespace
 {
 struct SignatureFontDefinition
 {
     TypedSignatureFont font;
-    QString (*resourcePath)();
+    ClassMngr::Core::FontResource resource;
     QString fallbackFamily;
 };
 
@@ -24,22 +22,22 @@ const std::array<SignatureFontDefinition, 4>& fontDefinitions()
     static const std::array definitions = {
         SignatureFontDefinition{
             TypedSignatureFont::JustAnotherHand,
-            ResourcePaths::Fonts::justAnotherHand,
+            ClassMngr::Core::FontResource::JustAnotherHand,
             QStringLiteral("cursive")
         },
         SignatureFontDefinition{
             TypedSignatureFont::DancingScript,
-            ResourcePaths::Fonts::dancingScript,
+            ClassMngr::Core::FontResource::DancingScript,
             QStringLiteral("cursive")
         },
         SignatureFontDefinition{
             TypedSignatureFont::GreatVibes,
-            ResourcePaths::Fonts::greatVibes,
+            ClassMngr::Core::FontResource::GreatVibes,
             QStringLiteral("cursive")
         },
         SignatureFontDefinition{
             TypedSignatureFont::Caveat,
-            ResourcePaths::Fonts::caveat,
+            ClassMngr::Core::FontResource::Caveat,
             QStringLiteral("cursive")
         }
     };
@@ -57,59 +55,30 @@ const SignatureFontDefinition& definitionFor(TypedSignatureFont font)
     return fontDefinitions().at(indexFor(font));
 }
 
-std::array<QString, 4>& loadedFamilies()
-{
-    static std::array<QString, 4> families;
-    return families;
 }
 
-void ensureFontsLoaded()
+TypedSignatureFontSet TypedSignatureFontSet::load(
+    ClassMngr::Core::FontRegistrationPort& port)
 {
-    static bool loaded = false;
-
-    if (loaded || !QGuiApplication::instance())
+    TypedSignatureFontSet result;
+    for (const auto& definition : fontDefinitions())
     {
-        return;
-    }
-
-    const auto& definitions = fontDefinitions();
-    auto& families = loadedFamilies();
-
-    for (int index = 0;
-         index < static_cast<int>(definitions.size());
-         ++index)
-    {
-        const int fontId = QFontDatabase::addApplicationFont(
-            definitions.at(index).resourcePath()
-            );
-
-        if (fontId < 0)
+        auto registration = port.loadFont(definition.resource);
+        if (registration)
         {
-            continue;
-        }
-
-        const QStringList fontFamilies =
-            QFontDatabase::applicationFontFamilies(fontId);
-
-        if (!fontFamilies.isEmpty())
-        {
-            families.at(index) = fontFamilies.first();
+            result.m_registrations.at(indexFor(definition.font)) =
+                std::move(*registration);
         }
     }
-
-    loaded = true;
+    return result;
 }
 
-QString familyFor(TypedSignatureFont font)
+QString TypedSignatureFontSet::familyFor(const TypedSignatureFont font) const
 {
-    ensureFontsLoaded();
-
-    const QString& family = loadedFamilies().at(indexFor(font));
-
-    return family.isEmpty()
-        ? definitionFor(font).fallbackFamily
-        : family;
-}
+    const auto& registration = m_registrations.at(indexFor(font));
+    return registration && !registration->familyName().isEmpty()
+        ? registration->familyName()
+        : definitionFor(font).fallbackFamily;
 }
 
 namespace TypedSignature
@@ -141,10 +110,13 @@ QString displayName(TypedSignatureFont font)
 
 QFont fontFor(
     TypedSignatureFont font,
-    int pixelSize
+    int pixelSize,
+    const TypedSignatureFontSet* fontSet
     )
 {
-    QFont result(familyFor(font));
+    QFont result(fontSet
+        ? fontSet->familyFor(font)
+        : definitionFor(font).fallbackFamily);
     result.setPixelSize(qMax(1, pixelSize));
     result.setStyleStrategy(QFont::PreferAntialias);
     result.setHintingPreference(QFont::PreferFullHinting);
@@ -155,7 +127,8 @@ QFont fontFor(
 QImage render(
     const QString& text,
     TypedSignatureFont font,
-    const QSize& size
+    const QSize& size,
+    const TypedSignatureFontSet* fontSet
     )
 {
     if (text.trimmed().isEmpty() || size.isEmpty())
@@ -175,7 +148,7 @@ QImage render(
         );
 
     int pixelSize = qMax(18, contentSize.height() * 2 / 3);
-    QFont signatureFont = fontFor(font, pixelSize);
+    QFont signatureFont = fontFor(font, pixelSize, fontSet);
     QFontMetricsF metrics(signatureFont);
     const qreal advance = metrics.horizontalAdvance(signatureText);
 
@@ -187,7 +160,7 @@ QImage render(
                 (pixelSize * contentSize.width()) / advance
                 )
             );
-        signatureFont = fontFor(font, pixelSize);
+        signatureFont = fontFor(font, pixelSize, fontSet);
         metrics = QFontMetricsF(signatureFont);
     }
 
@@ -212,7 +185,8 @@ QImage render(
 
 QByteArray renderForEmbedding(
     const QString& text,
-    TypedSignatureFont font
+    TypedSignatureFont font,
+    const TypedSignatureFontSet* fontSet
     )
 {
     if (text.trimmed().isEmpty())
@@ -221,7 +195,7 @@ QByteArray renderForEmbedding(
     }
 
     return SignatureImage::prepareForEmbedding(
-        render(text, font, QSize(1600, 500))
+        render(text, font, QSize(1600, 500), fontSet)
         );
 }
 }

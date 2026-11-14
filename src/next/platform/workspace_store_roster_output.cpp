@@ -1,4 +1,5 @@
 #include "next/platform/workspace_store_roster_output.h"
+#include "core/qt_pdf_generation_adapter.h"
 
 #include "core/settingsmanager.h"
 #include "data/database/workspace_store.h"
@@ -323,7 +324,8 @@ DocumentOutputResult saveRosterOutputPdfAtPath(
                 }
             }
             qsizetype pageIndex = 0;
-            rendered = savePagesPdf(stagedPath, request.templateId,
+            const auto pdf = makeQtPdfGenerationPort();
+            rendered = savePagesPdf(*pdf, stagedPath, request.templateId,
                 request.templateId == TemplateId::PerClassWithExtraInfo ? request.orientation : templateOrientation(request.templateId),
                 [&]() -> PageResult {
                     if (pageIndex >= plans.size()) return std::optional<Page>{};

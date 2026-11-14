@@ -1,6 +1,7 @@
 #include "features/sub_prep/services/sub_prep_package_service.h"
 
 #include "core/fontmanager.h"
+#include "core/qt_pdf_generation_adapter.h"
 #include "domain/models/roster.h"
 #include "domain/models/teacher.h"
 #include "features/roster/services/roster_template_print_service.h"
@@ -2101,8 +2102,9 @@ void SubPrepPackageServiceTests
         qPrintable(beforeResult.message));
 
     const QString packageRoot = QDir(temporaryRoot.path()).filePath(QStringLiteral("next-package"));
+    const auto pdfGeneration = makeQtPdfGenerationPort();
     const auto generated = SubPrepPackageService::generateForNext(
-        heavyPackageRequest(packageRoot));
+        *pdfGeneration, heavyPackageRequest(packageRoot), fonts);
     QVERIFY2(generated.status == SubPrepPackageService::Status::Completed,
         qPrintable(generated.message));
     QCOMPARE(generated.documentPaths.size(), 2);

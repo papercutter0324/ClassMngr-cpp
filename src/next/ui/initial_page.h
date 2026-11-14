@@ -1,6 +1,7 @@
 #pragma once
 
 #include "next/application/personal_details_save.h"
+#include "features/my_info/data/typed_signature_renderer.h"
 #include "next/application/initial_setup_teacher_choices_read_snapshot.h"
 #include "next/application/initial_setup_class_details_draft.h"
 #include "next/application/initial_setup_class_times_requirement.h"
@@ -120,6 +121,7 @@ private:
     void setPersonalDetailsStatus(const QString& message);
 
     InitialSetupPageActions m_actions;
+    TypedSignatureFontSet m_signatureFontSet;
     QLabel* m_statusLabel = nullptr;
     QLabel* m_profileLabel = nullptr;
     QLabel* m_recoveryLabel = nullptr;

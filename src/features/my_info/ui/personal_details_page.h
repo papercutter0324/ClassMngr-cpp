@@ -120,6 +120,7 @@ private:
     QPushButton* m_chooseSignatureButton = nullptr;
     QPushButton* m_removeSignatureButton = nullptr;
     QByteArray m_signatureImageData;
+    TypedSignatureFontSet m_signatureFontSet;
     SignatureMode m_signatureMode = SignatureMode::Image;
     TypedSignatureFont m_typedSignatureFont =
         TypedSignatureFont::JustAnotherHand;

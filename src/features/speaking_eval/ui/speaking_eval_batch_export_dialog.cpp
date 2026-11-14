@@ -1,5 +1,5 @@
 #include "core/fontmanager.h"
-#include "core/resource_paths.h"
+#include "core/resource_packs/resource_pack_manager.h"
 #include "speaking_eval_batch_export_dialog.h"
 #include "ui/shared/dialogs/user_prompt_service.h"
 
@@ -41,9 +41,11 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     int currentStudentIndex,
     const QString& defaultOutputDirectory,
     Mode mode,
-    QWidget* parent
+    QWidget* parent,
+    ClassMngr::Core::FontRegistrationPort* fontRegistrationPort
     )
     : DialogShell(QStringLiteral("speakingEvalBatchExport"), parent)
+    , m_fontRegistrationPort(fontRegistrationPort)
     , m_reports(reports)
     , m_currentStudentIndex(currentStudentIndex)
     , m_mode(mode)
@@ -54,7 +56,17 @@ SpeakingEvalBatchExportDialog::SpeakingEvalBatchExportDialog(
     if (!templates.isEmpty()) environment.templateRoot = QDir(templates).filePath(QStringLiteral("speaking-eval"));
     environment.latinFamily = FontManager::getUiFont().family();
     environment.koreanFamily = FontManager::getKoreanFont().family();
-    environment.handwrittenFontPath = ResourcePaths::Fonts::justAnotherHand();
+    if (m_fontRegistrationPort)
+    {
+        environment.handwrittenFamily.clear();
+        const auto handwritten = m_fontRegistrationPort->loadFont(
+            ClassMngr::Core::FontResource::JustAnotherHand);
+        if (handwritten)
+        {
+            environment.handwrittenFamily = (*handwritten)->familyName();
+            environment.handwrittenFontRegistration = *handwritten;
+        }
+    }
     m_assetSession = std::make_unique<SpeakingEvalReportAssetSession>(environment);
     setWindowTitle(
         saving
@@ -336,7 +348,9 @@ void SpeakingEvalBatchExportDialog::previewReports()
     SpeakingEvalReportDialog dialog(
         reports,
         previewingAll ? m_currentStudentIndex : 0,
-        this
+        this,
+        false,
+        m_fontRegistrationPort
         );
     dialog.exec();
 }

@@ -1,12 +1,17 @@
 #ifndef FONTMANAGER_H
 #define FONTMANAGER_H
 
+#include "core/font_registration_port.h"
+
 #include <QApplication>
 #include <QColor>
 #include <QFont>
 #include <QFontMetrics>
 #include <QString>
 #include <QStringList>
+
+#include <array>
+#include <memory>
 
 class FontManagerTests;
 class QLabel;
@@ -41,6 +46,14 @@ public:
     // =====================================================
 
     static void loadFonts();
+    static void loadFonts(ClassMngr::Core::FontRegistrationPort& port);
+    // Next bootstrap already owns these registrations in ResourceLoader. This
+    // configures Sub Prep's legacy font facade to reuse them without loading
+    // Inter or Pretendard a second time.
+    static void useRegisteredFontFamilies(
+        const QString& interFamily,
+        const QString& pretendardFamily
+        );
 
     static void applyGlobalFont(
         QApplication& app,
@@ -157,6 +170,10 @@ private:
     static QStringList s_loadedFamilies;
 
     static QStringList s_fontPaths;
+
+    static std::array<
+        std::shared_ptr<const ClassMngr::Core::FontRegistrationLease>, 2>
+        s_fontRegistrations;
 
     static int s_sizeOffset;
 

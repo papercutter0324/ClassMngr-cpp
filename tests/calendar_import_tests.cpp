@@ -1,6 +1,7 @@
 #include "features/calendar/calendar_event_campus_filter.h"
 #include "features/calendar/academic_calendar_event_parser.h"
 #include "features/calendar/calendar_workbook_reader.h"
+#include "core/zip_archive_read_adapter.h"
 #include "next/application/calendar_event_start_of_term_policy.h"
 
 #include <QtTest>
@@ -377,6 +378,32 @@ public:
         return false;
     }
 };
+
+class CountingArchiveReadPort final : public ArchiveReadPort
+{
+public:
+    [[nodiscard]] std::unique_ptr<ArchiveReadSession> open(
+        const QByteArray& data
+        ) const override
+    {
+        ++byteOpenCount;
+        return m_zipPort->open(data);
+    }
+
+    [[nodiscard]] std::unique_ptr<ArchiveReadSession> open(
+        QIODevice& device
+        ) const override
+    {
+        ++deviceOpenCount;
+        return m_zipPort->open(device);
+    }
+
+    mutable int byteOpenCount = 0;
+    mutable int deviceOpenCount = 0;
+
+private:
+    std::unique_ptr<ArchiveReadPort> m_zipPort = makeZipArchiveReadPort();
+};
 }
 
 class CalendarImportTests : public QObject
@@ -394,6 +421,7 @@ private slots:
     void readerRejectsMalformedLaterWorksheetAndAllEmptyWorkbook();
     void readerPreservesStoredAndDeflatedWorkbookValuesAfterInputLifetime();
     void readerUsesSeekableDevicesAndRejectsUnsupportedSources();
+    void readerUsesInjectedArchivePortForByteAndDeviceStreaming();
     void readerStreamsStoredAndDeflatedWorksheetRows();
     void readerStreamingPreservesCancellationAndLaterSheetFailure();
     void calendarByteParserUsesFirstWorksheetAndReportsReadCounts();
@@ -739,6 +767,140 @@ void CalendarImportTests
         &partialDeviceError
         ));
     QCOMPARE(partialDeviceError, partialBytesError);
+}
+
+void CalendarImportTests
+    ::readerUsesInjectedArchivePortForByteAndDeviceStreaming()
+{
+    const QByteArray archive = calendarWorkbookArchive(1, true, false);
+    CountingArchiveReadPort archivePort;
+
+    struct StreamCapture
+    {
+        QString error;
+        QString worksheetName;
+        QVector<QStringList> discoveryRows;
+        QVector<QStringList> extractionRows;
+        bool succeeded = false;
+    };
+
+    const auto makeConsumer = [](StreamCapture* capture)
+    {
+        return CalendarImport::WorksheetStreamConsumer(
+            [capture](
+                const CalendarImport::WorkbookMetadata&,
+                const CalendarImport::Worksheet& worksheet,
+                const CalendarImport::WorksheetRowPass& discoveryPass,
+                const CalendarImport::WorksheetRowPass& extractionPass
+                )
+            {
+                capture->worksheetName = worksheet.name;
+                const auto collectRows = [](
+                    const CalendarImport::WorksheetRowPass& pass,
+                    QVector<QStringList>* rows
+                    )
+                {
+                    return pass([rows](const QVector<CalendarImport::Cell>& row)
+                    {
+                        QStringList cells;
+                        for (const CalendarImport::Cell& cell : row)
+                        {
+                            cells.append(
+                                QStringLiteral("%1,%2:%3")
+                                    .arg(cell.position.row)
+                                    .arg(cell.position.column)
+                                    .arg(cell.value)
+                                );
+                        }
+                        rows->append(std::move(cells));
+                        return true;
+                    });
+                };
+
+                return collectRows(discoveryPass, &capture->discoveryRows)
+                    && collectRows(extractionPass, &capture->extractionRows);
+            }
+            );
+    };
+
+    const auto readBytes = [&](ArchiveReadPort* port)
+    {
+        StreamCapture capture;
+        const auto consumer = makeConsumer(&capture);
+        capture.succeeded = port
+            ? CalendarImport::forEachWorksheetRows(
+                  archive,
+                  *port,
+                  consumer,
+                  &capture.error
+                  )
+            : CalendarImport::forEachWorksheetRows(
+                  archive,
+                  consumer,
+                  &capture.error
+                  );
+        return capture;
+    };
+
+    const auto readDevice = [&](ArchiveReadPort* port)
+    {
+        StreamCapture capture;
+        QBuffer device;
+        device.setData(archive);
+        if (!device.open(QIODevice::ReadOnly))
+        {
+            capture.error = QStringLiteral("Could not open test workbook.");
+            return capture;
+        }
+
+        const auto consumer = makeConsumer(&capture);
+        capture.succeeded = port
+            ? CalendarImport::forEachWorksheetRows(
+                  device,
+                  *port,
+                  consumer,
+                  &capture.error
+                  )
+            : CalendarImport::forEachWorksheetRows(
+                  device,
+                  consumer,
+                  &capture.error
+                  );
+        return capture;
+    };
+
+    const StreamCapture defaultBytes = readBytes(nullptr);
+    QVERIFY2(defaultBytes.succeeded, qPrintable(defaultBytes.error));
+    const StreamCapture injectedBytes = readBytes(&archivePort);
+    QVERIFY2(injectedBytes.succeeded, qPrintable(injectedBytes.error));
+    const StreamCapture defaultDevice = readDevice(nullptr);
+    QVERIFY2(defaultDevice.succeeded, qPrintable(defaultDevice.error));
+    const StreamCapture injectedDevice = readDevice(&archivePort);
+    QVERIFY2(injectedDevice.succeeded, qPrintable(injectedDevice.error));
+
+    QCOMPARE(archivePort.byteOpenCount, 1);
+    QCOMPARE(archivePort.deviceOpenCount, 1);
+    QCOMPARE(injectedBytes.worksheetName, defaultBytes.worksheetName);
+    QCOMPARE(injectedBytes.discoveryRows, defaultBytes.discoveryRows);
+    QCOMPARE(injectedBytes.extractionRows, defaultBytes.extractionRows);
+    QCOMPARE(injectedDevice.worksheetName, defaultDevice.worksheetName);
+    QCOMPARE(injectedDevice.discoveryRows, defaultDevice.discoveryRows);
+    QCOMPARE(injectedDevice.extractionRows, defaultDevice.extractionRows);
+    QCOMPARE(defaultBytes.worksheetName, QStringLiteral("First"));
+    QCOMPARE(defaultBytes.discoveryRows, defaultBytes.extractionRows);
+    QCOMPARE(defaultBytes.extractionRows.size(), 3);
+    QCOMPARE(
+        defaultBytes.extractionRows.at(0),
+        (QStringList{QStringLiteral("1,1:JULY"), QStringLiteral("1,2:2026")})
+        );
+    QCOMPARE(
+        defaultBytes.extractionRows.at(1),
+        QStringList{QStringLiteral("4,1:6")}
+        );
+    QCOMPARE(
+        defaultBytes.extractionRows.at(2),
+        QStringList{QStringLiteral("20,26:New Semester")}
+        );
 }
 
 void CalendarImportTests::readerStreamsStoredAndDeflatedWorksheetRows()

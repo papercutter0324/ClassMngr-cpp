@@ -5,6 +5,9 @@
 
 #include <QString>
 
+class PdfGenerationPort;
+class QFont;
+
 namespace SubPrepPdfRenderer
 {
 using Status = DocumentOutputStatus;
@@ -13,5 +16,12 @@ using Result = DocumentOutputResult;
 [[nodiscard]] Result renderPdf(
     const SubPrepDocumentModel::Document& document,
     const QString& documentPath
+    );
+
+[[nodiscard]] Result renderPdf(
+    PdfGenerationPort& pdfGeneration,
+    const SubPrepDocumentModel::Document& document,
+    const QString& documentPath,
+    const QFont& outputFont
     );
 }

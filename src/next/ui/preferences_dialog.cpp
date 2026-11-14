@@ -86,12 +86,16 @@ PreferencesDialog::PreferencesDialog(
     Application::PreferencesModel& preferences,
     PreferencesDialogPorts ports,
     PreferencesDialogActions actions,
-    QWidget* parent
+    QWidget* parent,
+    Application::SpeakingEvaluationPowerPointPresentationCapabilities
+        powerPointPresentationCapabilities
     )
     : QDialog(parent)
     , m_preferences(preferences)
     , m_ports(ports)
     , m_actions(std::move(actions))
+    , m_powerPointPresentationCapabilities(
+        powerPointPresentationCapabilities)
 {
     setObjectName(QStringLiteral("nextPreferencesDialog"));
     resize(700, 570);
@@ -218,11 +222,14 @@ void PreferencesDialog::buildUi()
     generalLayout->addWidget(
         new ::Ui::RosterRowPreferencesGroup(generalPage));
 
-#ifdef Q_OS_MACOS
-    m_powerPointNotice = new QCheckBox(generalPage);
-    m_powerPointNotice->setObjectName(QStringLiteral("preferencesPowerPointNotice"));
-    generalLayout->addWidget(m_powerPointNotice);
-#endif
+    if (m_powerPointPresentationCapabilities
+            .protectedDataAccessNoticeSupported)
+    {
+        m_powerPointNotice = new QCheckBox(generalPage);
+        m_powerPointNotice->setObjectName(
+            QStringLiteral("preferencesPowerPointNotice"));
+        generalLayout->addWidget(m_powerPointNotice);
+    }
     generalLayout->addStretch(1);
     m_tabs->addTab(generalPage, QString{});
 
@@ -350,14 +357,17 @@ void PreferencesDialog::buildUi()
                 return state.setExcelImportTimeoutSeconds(seconds);
             }));
     });
-#ifdef Q_OS_MACOS
-    connect(m_powerPointNotice, &QCheckBox::toggled, this, [this](const bool enabled) {
-        static_cast<void>(saveApplicationPreference("PowerPoint Notice",
-            [enabled](Application::UserPreferencesState& state) {
-                return state.setShowPowerPointDataAccessNotice(enabled);
-            }));
-    });
-#endif
+    if (m_powerPointNotice)
+    {
+        connect(m_powerPointNotice, &QCheckBox::toggled, this,
+            [this](const bool enabled) {
+                static_cast<void>(saveApplicationPreference(
+                    "PowerPoint Notice",
+                    [enabled](Application::UserPreferencesState& state) {
+                        return state.setShowPowerPointDataAccessNotice(enabled);
+                    }));
+            });
+    }
     connect(m_documentSpacing, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, &PreferencesDialog::changeDocumentSpacing);
     connect(m_documentBackground, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -394,9 +404,9 @@ void PreferencesDialog::populateValues()
     m_sidebarTooltips->setChecked(snapshot.sidebarTooltipsEnabled());
     m_sidebarAnimation->setChecked(snapshot.sidebarMarqueeEnabled());
     m_excelTimeout->setCurrentIndex(findData(m_excelTimeout, snapshot.excelImportTimeoutSeconds()));
-#ifdef Q_OS_MACOS
-    m_powerPointNotice->setChecked(snapshot.showPowerPointDataAccessNotice());
-#endif
+    if (m_powerPointNotice)
+        m_powerPointNotice->setChecked(
+            snapshot.showPowerPointDataAccessNotice());
 
     m_savedSaveMode = m_ports.saveMode.read();
     m_saveMode->setCurrentIndex(findData(m_saveMode, static_cast<int>(m_savedSaveMode)));
@@ -456,11 +466,13 @@ void PreferencesDialog::retranslateUi()
     {
         m_excelTimeout->setItemText(i, text(timeoutLabels[i]));
     }
-#ifdef Q_OS_MACOS
-    m_powerPointNotice->setText(optionText("Show Data Access Notice Before Export"));
-    m_powerPointNotice->setToolTip(optionText(
-        "Show a notice before PowerPoint accesses its protected workspace"));
-#endif
+    if (m_powerPointNotice)
+    {
+        m_powerPointNotice->setText(optionText(
+            "Show Data Access Notice Before Export"));
+        m_powerPointNotice->setToolTip(optionText(
+            "Show a notice before PowerPoint accesses its protected workspace"));
+    }
     m_theme->setItemText(0, optionText("System Default"));
     m_theme->setItemText(1, optionText("Light Theme"));
     m_theme->setItemText(2, optionText("Dark Theme"));
@@ -944,9 +956,7 @@ void PreferencesDialog::updateControlAvailability()
         if (widget) widget->setEnabled(m_typedPreferencesLoaded);
     }
     m_customWebsite->setEnabled(m_typedPreferencesLoaded);
-#ifdef Q_OS_MACOS
     if (m_powerPointNotice) m_powerPointNotice->setEnabled(m_applicationPreferencesLoaded);
-#endif
 }
 
 }  // namespace ClassMngr::Next::Ui

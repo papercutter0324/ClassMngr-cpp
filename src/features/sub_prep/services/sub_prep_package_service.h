@@ -113,4 +113,23 @@ struct Result
     Request request,
     const ClassMngr::Next::Application::SubPrepGenerationPlan& plan
     );
+// Takes ownership of this operation snapshot and releases its Sub Prep
+// information-sheet input immediately after that PDF is rendered.
+[[nodiscard]] Result generate(
+    PdfGenerationPort& pdfGeneration,
+    Request request,
+    RosterTemplateRenderer::Fonts outputFonts
+    );
+// Next owns the source-aware roster text-map finalization path.
+[[nodiscard]] Result generateForNext(
+    PdfGenerationPort& pdfGeneration,
+    Request request,
+    RosterTemplateRenderer::Fonts outputFonts
+    );
+[[nodiscard]] Result generate(
+    PdfGenerationPort& pdfGeneration,
+    Request request,
+    const ClassMngr::Next::Application::SubPrepGenerationPlan& plan,
+    RosterTemplateRenderer::Fonts outputFonts
+    );
 }

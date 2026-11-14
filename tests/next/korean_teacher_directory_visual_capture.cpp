@@ -4,6 +4,7 @@
 #include "domain/models/teacher.h"
 #include "next/application/preferences_model.h"
 #include "next/application/teacher_directory_read_port.h"
+#include "next/platform/qt_font_family_availability_adapter.h"
 #include "next/domain/teacher_display_name.h"
 #include "next/platform/workspace_store_gateway.h"
 #include "next/resources/resource_catalog.h"
@@ -907,7 +908,8 @@ int main(int argc, char* argv[])
             pretendardFamily = families.front();
         }
     }
-    Next::Ui::FontSizePresenter fontSizePresenter(application);
+    Next::Platform::QtFontFamilyAvailabilityAdapter fontPresentation;
+    Next::Ui::FontSizePresenter fontSizePresenter(application, fontPresentation);
     fontSizePresenter.applyStartupPreference(
         Next::Application::FontSize::Normal,
         locale,

@@ -39,8 +39,11 @@ set(CLASSMNGR_CORE_SOURCES
 # path. Keep this implementation and its embedded required fonts out of the
 # broad Core object library so Sub Prep can use the canonical font policy.
 set(CLASSMNGR_FONT_MANAGER_SOURCES
+    "src/core/font_registration_port.h"
     "src/core/fontmanager.cpp"
     "src/core/fontmanager.h"
+    "src/core/qt_font_registration_adapter.cpp"
+    "src/core/qt_font_registration_adapter.h"
 )
 
 # Shared name normalization and validation used by Core and Domain features.
@@ -156,8 +159,14 @@ set(CLASSMNGR_WORKSPACE_STORE_SOURCES
 
 # The common XLSX reader is kept independent from importer-specific parsers.
 set(CLASSMNGR_WORKBOOK_READER_SOURCES
+    "src/core/archive_read_port.h"
     "src/features/calendar/calendar_workbook_reader.cpp"
     "src/features/calendar/calendar_workbook_reader.h"
+)
+
+set(CLASSMNGR_QT_ZIP_ARCHIVE_READ_ADAPTER_SOURCES
+    "src/core/zip_archive_read_adapter.cpp"
+    "src/core/zip_archive_read_adapter.h"
 )
 
 # The Calendar import rules are shared by Legacy and Next. Keep their owner
@@ -166,6 +175,12 @@ set(CLASSMNGR_WORKBOOK_READER_SOURCES
 set(CLASSMNGR_CALENDAR_IMPORT_PARSER_SOURCES
     "src/features/calendar/academic_calendar_event_parser.cpp"
     "src/features/calendar/academic_calendar_event_parser.h"
+)
+
+# Legacy keeps convenience overloads that select the ZIP implementation.
+# Next Calendar composition injects ArchiveReadPort directly.
+set(CLASSMNGR_LEGACY_CALENDAR_ARCHIVE_COMPOSITION_SOURCES
+    "src/features/calendar/legacy_calendar_archive_composition.cpp"
 )
 
 # Legacy teacher import and the Next setup workflow share this parser target.
@@ -563,7 +578,6 @@ set(CLASSMNGR_FEATURES_SOURCES
     "src/features/setup/ui/initial_setup_wizard.h"
     "src/features/speaking_eval/services/speaking_eval_ai_batch_response_parser.cpp"
     "src/features/speaking_eval/services/speaking_eval_ai_batch_response_parser.h"
-    "src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp"
     "src/features/speaking_eval/services/speaking_eval_batch_report_service.h"
     "src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.cpp"
     "src/features/speaking_eval/ui/speaking_eval_ai_batch_dialog.h"
@@ -664,6 +678,23 @@ set(CLASSMNGR_APP_SERVICES_SOURCES
 # Legacy owns only request loading; page projection/drawing belongs to the narrow renderer.
 list(APPEND CLASSMNGR_FEATURES_SOURCES
     "src/features/roster/services/roster_template_print_private_service.inc")
+# Default renderer overloads are Legacy composition only. Next injects ports.
+set(CLASSMNGR_LEGACY_PDF_COMPOSITION_SOURCES
+    "src/features/schedule/services/qt_schedule_pdf_composition.cpp"
+    "src/shared/roster/qt_roster_pdf_composition.cpp"
+    "src/features/sub_prep/services/qt_sub_prep_pdf_composition.cpp"
+    "src/features/sub_prep/services/qt_sub_prep_print_composition.cpp"
+    "src/features/speaking_eval/services/qt_speaking_eval_pdf_composition.cpp"
+    "src/features/speaking_eval/services/speaking_eval_batch_report_service.cpp"
+    "src/shared/speaking_evaluation/report_batch_legacy_composition.cpp"
+)
+
+set(CLASSMNGR_QT_PDF_GENERATION_SOURCES
+    "src/core/pdf_generation_port.h"
+    "src/core/qt_pdf_generation_adapter.h"
+    "src/core/qt_pdf_generation_adapter.cpp"
+)
+
 set(CLASSMNGR_ROSTER_TEMPLATE_RENDERER_SOURCES
     "src/shared/roster/sub_prep_pdf_text_finalizer.cpp"
     "src/shared/roster/sub_prep_pdf_text_finalizer.h"
@@ -681,6 +712,8 @@ set(CLASSMNGR_NEXT_ROSTER_OUTPUT_SOURCES
     "src/next/output/roster_output.h"
     "src/next/platform/workspace_store_roster_output.cpp"
     "src/next/platform/workspace_store_roster_output.h"
+    "src/next/platform/roster_pdf_preview_session.h"
+    "src/next/platform/qt_roster_pdf_preview_session_adapter.cpp"
     "src/next/ui/roster_output_actions.h"
     "src/next/ui/roster_print_dialog.cpp"
     "src/next/ui/roster_print_dialog.h"
@@ -797,12 +830,14 @@ set(CLASSMNGR_NEXT_MAIN_SOURCE "src/next/main.cpp")
 set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/bootstrap/application_bootstrap.cpp"
     "src/next/platform/qt_font_family_availability_adapter.cpp"
+    "src/next/platform/qt_speaking_evaluation_powerpoint_presentation_adapter.h"
     "src/next/platform/qt_default_output_directories_adapter.cpp"
     "src/next/platform/qt_clipboard_write_adapter.cpp"
     "src/next/platform/qt_external_url_launch_adapter.cpp"
     "src/next/bootstrap/application_bootstrap.h"
     "src/next/application/assigned_teacher_directory_projection.h"
     "src/next/application/roster_row_display_policy.h"
+    "src/next/application/speaking_evaluation_powerpoint_presentation_capabilities.h"
     "src/next/bootstrap/campus_edit_operation_actions.h"
     "src/next/bootstrap/campus_edit_capability_arguments.h"
     "src/next/bootstrap/startup_diagnostics_sink.h"
@@ -836,8 +871,11 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/ui/campus_directory_route_factories.h"
     "src/next/ui/schedule_page.cpp"
     "src/next/ui/schedule_page.h"
+    "src/next/ui/output_font_family_policy.h"
+    "src/next/ui/schedule_output_font_policy.h"
     "src/next/ui/sub_prep_page.cpp"
     "src/next/ui/sub_prep_page.h"
+    "src/next/ui/sub_prep_output_font_policy.h"
     "src/next/ui/schedule_print_projection.cpp"
     "src/next/ui/schedule_print_projection.h"
     "src/next/ui/schedule_output_dialog.cpp"
@@ -952,6 +990,7 @@ set(CLASSMNGR_NEXT_DOCUMENT_CATALOG_SOURCES
 )
 
 set(CLASSMNGR_NEXT_RESOURCES_SOURCES
+    "src/next/platform/resource_loader_font_registration_adapter.h"
     "src/next/resources/resource_catalog.cpp"
     "src/next/resources/resource_catalog.h"
     "src/next/resources/resource_cache.cpp"
@@ -980,6 +1019,9 @@ set(CLASSMNGR_CALENDAR_QML_FILES
 )
 
 set(CLASSMNGR_SPEAKING_EVAL_REPORT_ENGINE_SOURCES
+    "src/core/archive_write_port.h"
+    "src/core/zip_archive_write_adapter.cpp"
+    "src/core/zip_archive_write_adapter.h"
     "src/features/speaking_eval/services/speaking_eval_powerpoint_automation_port.h"
     "src/features/speaking_eval/services/speaking_eval_report_batch_types.h"
     "src/features/speaking_eval/ui/speaking_eval_private_notes_editor.cpp"
@@ -990,8 +1032,6 @@ set(CLASSMNGR_SPEAKING_EVAL_REPORT_ENGINE_SOURCES
     "src/features/speaking_eval/services/speaking_eval_internal_pdf_renderer.h"
     "src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.cpp"
     "src/features/speaking_eval/services/speaking_eval_powerpoint_job_model.h"
-    "src/features/speaking_eval/services/speaking_eval_powerpoint_scripts.cpp"
-    "src/features/speaking_eval/services/speaking_eval_powerpoint_scripts.h"
     "src/features/speaking_eval/services/speaking_eval_report_asset_resolver.cpp"
     "src/features/speaking_eval/services/speaking_eval_report_asset_resolver.h"
     "src/features/speaking_eval/services/speaking_eval_report_data.h"
@@ -1021,6 +1061,8 @@ set(CLASSMNGR_SPEAKING_EVAL_POWERPOINT_ADAPTER_SOURCES
     "src/shared/speaking_evaluation/qt_powerpoint_automation_host.h"
     "src/shared/speaking_evaluation/qt_powerpoint_automation_workspace.cpp"
     "src/shared/speaking_evaluation/qt_powerpoint_automation_workspace.h"
+    "src/shared/speaking_evaluation/qt_powerpoint_automation_scripts.cpp"
+    "src/shared/speaking_evaluation/qt_powerpoint_automation_scripts.h"
     "src/shared/speaking_evaluation/qt_powerpoint_automation_adapter.cpp"
     "src/shared/speaking_evaluation/qt_powerpoint_automation_adapter.h"
 )

@@ -164,6 +164,7 @@ CalendarPage::CalendarPage(
     m_calendarImportService = new NextCalendarEventImportService(
         [this] { return activeWorkspacePath(); },
         [this] { return calendarImportCampusCodes(); },
+        m_actions.calendarArchiveReadPort,
         m_actions.calendarImportSourceUrl,
         m_actions.calendarImportTemporaryFileTemplate,
         m_actions.calendarImportNetworkAccessManagerFactory,

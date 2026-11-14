@@ -40,6 +40,7 @@ class QShowEvent;
 class CalendarEventModel;
 class AcademicCalendarProvider;
 class WorkspaceStore;
+class ArchiveReadPort;
 
 namespace ClassMngr::Next::Ui
 {
@@ -88,6 +89,7 @@ struct CalendarPageActions final
     QString calendarImportTemporaryFileTemplate;
     std::function<QNetworkAccessManager*(QObject*)>
         calendarImportNetworkAccessManagerFactory;
+    std::shared_ptr<ArchiveReadPort> calendarArchiveReadPort;
     CalendarViewFactory calendarViewFactory;
 };
 

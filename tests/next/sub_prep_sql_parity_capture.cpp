@@ -1,18 +1,21 @@
-#include "core/fontmanager.h"
+#include "core/qt_pdf_generation_adapter.h"
 #include "features/schedule/ui/schedule_builder.h"
 #include "features/schedule/ui/schedule_view_model.h"
 #include "features/sub_prep/services/sub_prep_package_service.h"
 #include "features/sub_prep/services/sub_prep_print_service.h"
 #include "features/sub_prep/ui/sub_prep_print_source_mapper.h"
 #include "next/application/sub_prep_weekday.h"
+#include "next/platform/qt_font_family_availability_adapter.h"
 #include "next/platform/sub_prep_campus_directory_query_adapter.h"
 #include "next/platform/workspace_store_gateway.h"
+#include "next/ui/sub_prep_output_font_policy.h"
 
 #include <QApplication>
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFontDatabase>
 #include <QImage>
 #include <QLocale>
 #include <QPdfDocument>
@@ -631,8 +634,34 @@ bool makeNextPackage(
         return false;
     }
 
+    // This standalone capture has no ApplicationBootstrap, so register the
+    // same bundled font files through Qt before composing Next output fonts.
+    const QString interFontPath = QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral("/resources/assets/fonts/Inter.ttc");
+    const QString pretendardFontPath = QStringLiteral(CLASSMNGR_SOURCE_DIR)
+        + QStringLiteral("/resources/assets/fonts/PretendardVariable.ttf");
+    const int interFontRegistration =
+        QFontDatabase::addApplicationFont(interFontPath);
+    const int pretendardFontRegistration =
+        QFontDatabase::addApplicationFont(pretendardFontPath);
+    if (interFontRegistration < 0 || pretendardFontRegistration < 0)
+    {
+        *error = QStringLiteral("Could not register the bundled Sub Prep fonts.");
+        static_cast<void>(gateway.closeWorkspace({.session = opened.value()}));
+        return false;
+    }
+    const QStringList registeredFamilies =
+        QFontDatabase::applicationFontFamilies(interFontRegistration)
+        + QFontDatabase::applicationFontFamilies(pretendardFontRegistration);
+    Platform::QtFontFamilyAvailabilityAdapter fontPresentation;
+    const auto outputFonts = Ui::makeSubPrepRosterOutputFonts(
+        registeredFamilies,
+        QString::fromStdU16String(
+            fontPresentation.outputFallbackFontFamily()),
+        fontPresentation.applicationBaseFontPointSize());
+    const auto pdfGeneration = makeQtPdfGenerationPort();
     const auto generated = SubPrepPackageService::generateForNext(
-        std::move(request));
+        *pdfGeneration, std::move(request), outputFonts);
     if (generated.status != SubPrepPackageService::Status::Completed
         || generated.documentPaths.size() != 2)
     {
@@ -665,8 +694,8 @@ bool makeNextPackage(
         return false;
     }
 
-    const QFont uiFont = FontManager::getUiFont();
-    const QFont koreanFont = FontManager::getKoreanFont();
+    const QFont& uiFont = outputFonts.ui;
+    const QFont& koreanFont = outputFonts.korean;
     *output = QJsonObject{
         {QStringLiteral("status"), QStringLiteral("generated")},
         {QStringLiteral("entryPoint"), QStringLiteral(
@@ -705,7 +734,7 @@ bool makeNextPackage(
             {QStringLiteral("koreanFontSha256"), sha256File(
                 QStringLiteral(CLASSMNGR_SOURCE_DIR "/resources/assets/fonts/PretendardVariable.ttf"))},
             {QStringLiteral("loading"), QStringLiteral(
-                "ClassMngrSubPrepShared embedded font qrc via FontManager")}
+                "Next explicit output font policy with registered resource families")}
         }}
     };
     return true;

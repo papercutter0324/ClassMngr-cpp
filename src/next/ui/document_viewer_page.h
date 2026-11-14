@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/default_output_directories_port.h"
 #include "next/application/file_dialog_port.h"
 #include "next/application/document_catalog_projection.h"
 #include "next/application/document_content_session.h"
@@ -13,6 +14,7 @@
 #include <QString>
 
 #include <functional>
+#include <memory>
 #include <optional>
 
 class QLabel;
@@ -38,6 +40,8 @@ struct DocumentViewerPageActions final
 
     std::function<Domain::Result<SaveFileDialogResponse>(
         QWidget*, const Application::SaveFileDialogRequest&)> saveFileDialog;
+    std::shared_ptr<Application::DefaultOutputDirectoriesPort>
+        defaultOutputDirectoriesPort;
     OpenSavedCopyHandler openSavedCopy;
 };
 

@@ -79,6 +79,7 @@ QString sourceUrlFromEnvironment()
 NextCalendarEventImportService::NextCalendarEventImportService(
     ActiveWorkspacePath activeWorkspacePath,
     CampusCodeProvider campusCodeProvider,
+    std::shared_ptr<ArchiveReadPort> archiveReadPort,
     QString sourceUrlOverride,
     QString temporaryFileTemplate,
     NetworkAccessManagerFactory networkAccessManagerFactory,
@@ -87,6 +88,7 @@ NextCalendarEventImportService::NextCalendarEventImportService(
     : QObject(parent),
       m_activeWorkspacePath(std::move(activeWorkspacePath)),
       m_campusCodeProvider(std::move(campusCodeProvider)),
+      m_archiveReadPort(std::move(archiveReadPort)),
       m_sourceUrlOverride(std::move(sourceUrlOverride)),
       m_temporaryFileTemplate(std::move(temporaryFileTemplate)),
       m_network(nullptr)
@@ -332,12 +334,21 @@ void NextCalendarEventImportService::handleFinished(QNetworkReply* reply)
     QString parseError;
     CalendarImport::CalendarWorkbookReadCounts readCounts;
     m_metrics.usedDeviceParser = true;
-    CalendarImport::ParsedCalendarImport parsed =
-        CalendarImport::parseCalendarEventsFromWorkbookDevice(
+    CalendarImport::ParsedCalendarImport parsed;
+    if (m_archiveReadPort)
+    {
+        parsed = CalendarImport::parseCalendarEventsFromWorkbookDevice(
             *m_stagedWorkbook,
+            *m_archiveReadPort,
             m_campusCodeProvider ? m_campusCodeProvider() : QStringList{},
             &parseError,
             &readCounts);
+    }
+    else
+    {
+        parseError = importText(
+            "The Calendar workbook reader is unavailable.");
+    }
     m_metrics.streamedWorksheetCellCount = readCounts.cellCount;
     m_metrics.materializedWorksheetCellCount =
         readCounts.materializedWorksheetCellCount;

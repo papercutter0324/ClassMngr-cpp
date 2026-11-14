@@ -1,4 +1,5 @@
 #pragma once
+#include "core/archive_write_port.h"
 #include "features/speaking_eval/services/speaking_eval_batch_report_service.h"
 #include "features/speaking_eval/ui/speaking_eval_report_assets_p.h"
 #include "next/application/report_job_state.h"
@@ -21,6 +22,9 @@ struct SpeakingEvaluationReportRunActions
     std::function<bool()> confirmPowerPointDataAccess;
     std::function<std::expected<QString, QString>(SpeakingEvalReportTemplate)> resolvePowerPointRoot;
     Platform::PdfPrintOperationFactory printOperationFactory;
+    // Composed by bootstrap; batch saves fail closed when unavailable.
+    std::shared_ptr<ArchiveWritePort> archiveWriter;
+    std::shared_ptr<PdfGenerationPort> pdfGeneration;
 };
 struct SpeakingEvaluationReportRunResult
 {

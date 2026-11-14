@@ -455,6 +455,7 @@ target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
         ClassMngrClassTransferSupport
         ClassMngrNextCalendarUi
+        ClassMngrQtZipArchiveReadAdapter
         ClassMngrSubPrepShared
         ClassMngrNextScheduleOutput
         ClassMngrNextRosterOutput
@@ -600,6 +601,7 @@ add_executable(ClassMngrTeacherProfileVisualCapture
     tests/next/teacher_profile_visual_capture.cpp
     src/next/ui/page_host.cpp
     src/next/ui/teacher_profile_page.cpp
+    src/next/platform/qt_font_family_availability_adapter.cpp
 )
 target_compile_features(ClassMngrTeacherProfileVisualCapture PRIVATE cxx_std_23)
 target_include_directories(ClassMngrTeacherProfileVisualCapture
@@ -736,6 +738,7 @@ target_link_libraries(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationT
     PRIVATE
         ClassMngrClassTransferSupport
         ClassMngrNextCalendarUi
+        ClassMngrQtZipArchiveReadAdapter
         ClassMngrSubPrepShared
         ClassMngrNextScheduleOutput
         ClassMngrNextRosterOutput
@@ -1054,7 +1057,9 @@ add_executable(ClassMngrNextTeacherDirectoryVisualCapture
     src/next/ui/page_host.cpp
     src/next/ui/placeholder_page.cpp
     src/next/ui/qt_notification_presenter.cpp
+    src/next/platform/qt_font_family_availability_adapter.cpp
     src/core/fontmanager.cpp
+    src/core/qt_font_registration_adapter.cpp
     src/core/process_memory_snapshot.cpp
     src/core/utils/sidebar_node_naming.cpp
     src/ui/shared/widgets/sidebar/sidebar.cpp
@@ -1151,6 +1156,7 @@ target_link_libraries(ClassMngrNextTeacherImportWorkflowTests
     PRIVATE
         ClassMngrNext::Resources
         ClassMngrTeacherImportParser
+        ClassMngrQtZipArchiveReadAdapter
         Qt6::Concurrent
         Qt6::Test
         Qt6::Widgets
@@ -1273,6 +1279,7 @@ target_compile_definitions(ClassMngrNextScheduleImportWorkflowTests
 target_link_libraries(ClassMngrNextScheduleImportWorkflowTests
     PRIVATE
         ClassMngrScheduleImportParser
+        ClassMngrQtZipArchiveReadAdapter
         Qt6::Concurrent
         Qt6::Test
         Qt6::Widgets
@@ -4067,8 +4074,8 @@ target_link_libraries(ClassMngrNextSubPrepVisualCapture
         ClassMngrNextWorkspaceDomain
         ClassMngrSubPrepShared
         ClassMngrWorkspaceStore
-        Qt6::Pdf
-        Qt6::PrintSupport
+        ClassMngrQtPdfGeneration
+        ClassMngrQtPdfPrint
         Qt6::Sql
         Qt6::Widgets
 )
@@ -4101,6 +4108,7 @@ set_tests_properties(ClassMngrNextSubPrepVisualCapture
 # prepared snapshot, Legacy package, and independent SQL oracle.
 add_executable(ClassMngrNextSubPrepSqlParityCapture
     tests/next/sub_prep_sql_parity_capture.cpp
+    src/next/platform/qt_font_family_availability_adapter.cpp
     $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
     $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
 )
@@ -4121,6 +4129,7 @@ target_link_libraries(ClassMngrNextSubPrepSqlParityCapture
         ClassMngrNext::Resources
         ClassMngrNextWorkspace
         ClassMngrNextWorkspaceDomain
+        ClassMngrQtPdfGeneration
         ClassMngrSubPrepShared
         ClassMngrWorkspaceStore
         Qt6::Pdf
@@ -4176,6 +4185,7 @@ target_link_libraries(ClassMngrNextSpeakingEvaluationPageTests
     PRIVATE
         ClassMngrNext::Application
         ClassMngrNextSpeakingEvaluationOutput
+        ClassMngrQtPdfGeneration
         ClassMngrNext::Resources
         ClassMngrScheduleImportRules
         ClassMngrWorkspaceStore
@@ -6879,6 +6889,7 @@ classmngr_add_qt_test(
         CLASSMNGR_SOURCE_DIR="${PROJECT_SOURCE_DIR}"
     LIBRARIES
         ClassMngrNext::Platform
+        ClassMngrQtZipArchiveReadAdapter
         Qt6::Network
         Qt6::Test
 )
@@ -8456,6 +8467,7 @@ add_test(
 add_executable(ClassMngrNextSchedulePageTests
     tests/next/schedule_page_tests.cpp
     tests/next/sql_script_runner.h
+    src/next/platform/qt_font_family_availability_adapter.cpp
     src/next/platform/workspace_store_schedule_actions.cpp
     src/next/platform/workspace_store_testing_classes_actions.cpp
     src/next/platform/workspace_store_class_editor_actions.cpp
@@ -8634,6 +8646,7 @@ set_tests_properties(ClassMngrNextNormalScheduleImportIntegrationTests
 add_executable(ClassMngrNextScheduleVisualCapture
     tests/next/schedule_visual_capture.cpp
     src/core/process_memory_snapshot.cpp
+    src/next/platform/qt_font_family_availability_adapter.cpp
     src/next/platform/workspace_store_schedule_actions.cpp
     src/next/ui/schedule_page.cpp
     src/next/ui/schedule_print_projection.cpp
@@ -8742,6 +8755,7 @@ target_link_libraries(ClassMngrNextCalendarPageTests
     PRIVATE
         ClassMngrClassTransferSupport
         ClassMngrNextCalendarUi
+        ClassMngrQtZipArchiveReadAdapter
         ClassMngrNext::Application
         ClassMngrNext::Resources
         ClassMngrSubPrepShared

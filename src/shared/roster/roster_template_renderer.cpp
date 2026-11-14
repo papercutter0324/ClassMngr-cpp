@@ -1,4 +1,6 @@
 #include "shared/roster/roster_template_renderer.h"
+
+#include "core/pdf_generation_port.h"
 #include "shared/roster/sub_prep_pdf_text_finalizer.h"
 #include <QBuffer>
 #include <QColor>
@@ -13,7 +15,6 @@
 #include <QPageSize>
 #include <QPainter>
 #include <QSaveFile>
-#include <QPdfWriter>
 #include <QPen>
 #include <QRect>
 #include <QRectF>
@@ -797,7 +798,7 @@ QImage previewPage(TemplateId id, const Page& page, const QSize& size,
     return renderPreviewImage(id, size, page.key, valuesForDay(page.values, page.key), orientation);
 }
 namespace {
-Result savePagesPdfImpl(const QString& path, TemplateId id,
+Result savePagesPdfImpl(PdfGenerationPort& pdfGeneration, const QString& path, TemplateId id,
     QPageLayout::Orientation orientation, const PageProducer& produce,
     const Fonts& fonts, const PageReleased& released, bool finalizeText)
 {
@@ -820,8 +821,14 @@ Result savePagesPdfImpl(const QString& path, TemplateId id,
     }
     SubPrepPdfText::SourceJournal source;
     {
-        QPdfWriter writer(writerOutput);
-        if (!configureRosterPdfWriter(writer, id, orientation)) return failed(QObject::tr("Unable to configure the roster print file."));
+        auto session = pdfGeneration.create(*writerOutput, {
+            .creator = QStringLiteral("ClassMngr"),
+            .title = QStringLiteral("Rosters"),
+            .resolutionDpi = 300,
+            .pageLayout = rosterPdfPageLayout(id, orientation)
+        });
+        if (!session) return failed(QObject::tr("Unable to configure the roster print file."));
+        auto& writer = *session;
         std::unique_ptr<SubPrepPdfText::CaptureDevice> capture;
         QPainter painter;
         qsizetype pages = 0;
@@ -835,7 +842,7 @@ Result savePagesPdfImpl(const QString& path, TemplateId id,
                 const auto& page = **next;
                 if (pages == 0)
                 {
-                    QPaintDevice* paintDevice = &writer;
+                    QPaintDevice* paintDevice = &writer.paintDevice();
                     if (finalizeText)
                     {
                         capture = std::make_unique<SubPrepPdfText::CaptureDevice>(writer, source);
@@ -872,30 +879,30 @@ Result savePagesPdfImpl(const QString& path, TemplateId id,
     return {Status::Sent, QObject::tr("Roster PDF created.")};
 }
 }
-Result savePagesPdf(const QString& path, TemplateId id, QPageLayout::Orientation orientation,
+Result savePagesPdf(PdfGenerationPort& pdfGeneration, const QString& path, TemplateId id, QPageLayout::Orientation orientation,
     const PageProducer& produce, const Fonts& fonts, const PageReleased& released)
 {
-    return savePagesPdfImpl(path, id, orientation, produce, fonts, released, false);
+    return savePagesPdfImpl(pdfGeneration, path, id, orientation, produce, fonts, released, false);
 }
-Result saveCellValuesPdf(const QString& path, TemplateId id, QPageLayout::Orientation orientation,
+Result saveCellValuesPdf(PdfGenerationPort& pdfGeneration, const QString& path, TemplateId id, QPageLayout::Orientation orientation,
     const QList<RosterCellValue>& values, const Fonts& fonts)
 {
     const auto days = daysWithValues(id, values);
     qsizetype index = 0;
-    return savePagesPdf(path, id, orientation, [&]() -> PageResult {
+    return savePagesPdf(pdfGeneration, path, id, orientation, [&]() -> PageResult {
         if (index >= days.size()) return std::optional<Page>{};
         Page page{days.at(index++), {}};
         for (const auto& value : values) if (value.day == page.key) page.values.append(value);
         return std::optional<Page>(std::move(page));
     }, fonts);
 }
-Result saveCellValuesPdfForNextSubPrep(const QString& path, TemplateId id,
+Result saveCellValuesPdfForNextSubPrep(PdfGenerationPort& pdfGeneration, const QString& path, TemplateId id,
     QPageLayout::Orientation orientation, const QList<RosterCellValue>& values,
     const Fonts& fonts)
 {
     const auto days = daysWithValues(id, values);
     qsizetype index = 0;
-    return savePagesPdfImpl(path, id, orientation, [&]() -> PageResult {
+    return savePagesPdfImpl(pdfGeneration, path, id, orientation, [&]() -> PageResult {
         if (index >= days.size()) return std::optional<Page>{};
         Page page{days.at(index++), {}};
         for (const auto& value : values)

@@ -64,6 +64,12 @@ function(classmngr_check_source_ownership)
         ${CLASSMNGR_UPDATE_PRESENTATION_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrSettings ${CLASSMNGR_SETTINGS_SOURCES})
+    _classmngr_record_manifest(ClassMngrLegacyPdfComposition
+        ${CLASSMNGR_LEGACY_PDF_COMPOSITION_SOURCES}
+    )
+    _classmngr_record_manifest(ClassMngrQtPdfGeneration
+        ${CLASSMNGR_QT_PDF_GENERATION_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrQtPdfPrint
         ${CLASSMNGR_QT_PDF_PRINT_SOURCES}
     )
@@ -73,8 +79,15 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrWorkbookReader
         ${CLASSMNGR_WORKBOOK_READER_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrQtZipArchiveReadAdapter
+        ${CLASSMNGR_QT_ZIP_ARCHIVE_READ_ADAPTER_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrCalendarImportParser
         ${CLASSMNGR_CALENDAR_IMPORT_PARSER_SOURCES}
+    )
+    _classmngr_record_manifest(
+        ClassMngrLegacyCalendarArchiveComposition
+        ${CLASSMNGR_LEGACY_CALENDAR_ARCHIVE_COMPOSITION_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrTeacherImportParser
         ${CLASSMNGR_TEACHER_IMPORT_PARSER_SOURCES}

@@ -10,6 +10,7 @@
 #include "next/application/schedule_testing_class_choices_query.h"
 #include "next/application/testing_class_create.h"
 #include "next/application/personal_display_name_preferences.h"
+#include "next/application/font_family_availability_port.h"
 #include "next/ui/schedule_output_request.h"
 #include "next/ui/page.h"
 #include "next/ui/schedule_page_model.h"
@@ -90,6 +91,7 @@ class SchedulePage final : public Page
 public:
     explicit SchedulePage(
         const PageContext& context,
+        Application::FontFamilyAvailabilityPort& fontFamilyAvailabilityPort,
         SchedulePageActions actions = {},
         QWidget* parent = nullptr
         );
@@ -140,6 +142,7 @@ private:
         );
 
     SchedulePageActions m_actions;
+    Application::FontFamilyAvailabilityPort& m_fontFamilyAvailabilityPort;
     SchedulePageModel* m_model = nullptr;
     QTableView* m_table = nullptr;
     QWidget* m_statusContainer = nullptr;

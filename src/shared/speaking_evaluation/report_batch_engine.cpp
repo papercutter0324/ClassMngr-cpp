@@ -5,7 +5,7 @@
 #include "features/speaking_eval/services/speaking_eval_powerpoint_job_model.h"
 
 #include "core/utils/file_name_utils.h"
-#include "core/zip_archive_writer.h"
+#include "core/archive_write_port.h"
 #include "domain/models/speaking_evaluation.h"
 #include "ui/shared/printing/pdf_print_service.h"
 
@@ -129,7 +129,9 @@ QString safeFileName(
 }
 
 Result exportResolvedReports(
-    const Request& request
+    const Request& request,
+    ArchiveWritePort* archiveWriter,
+    PdfGenerationPort* pdfGeneration
     )
 {
     if (static_cast<std::size_t>(request.reports.size())
@@ -268,7 +270,9 @@ Result exportResolvedReports(
             const bool rendered =
                 request.internalRenderer
                     ? request.internalRenderer(student.report, stagedPath, &errorMessage)
-                    : SpeakingEvalInternalPdfRenderer::render(student.report, stagedPath, &errorMessage);
+                    : pdfGeneration
+                        ? SpeakingEvalInternalPdfRenderer::render(*pdfGeneration, student.report, stagedPath, &errorMessage)
+                        : (errorMessage = QObject::tr("The PDF generation operation is unavailable."), false);
 
             if (!rendered)
             {
@@ -300,7 +304,7 @@ Result exportResolvedReports(
             QDir(stagingDirectory.path()).filePath(
                 QStringLiteral("reports.zip")
                 );
-        QList<ZipArchiveWriter::Entry> archiveEntries;
+        QList<ArchiveWritePort::Entry> archiveEntries;
         archiveEntries.reserve(stagedPdfPaths.size());
         for (int index = 0; index < stagedPdfPaths.size(); ++index)
         {
@@ -310,7 +314,10 @@ Result exportResolvedReports(
             });
         }
 
-        if (!ZipArchiveWriter::writeArchive(
+        if (!archiveWriter)
+            return failed(QObject::tr("The ZIP archive operation is unavailable."));
+
+        if (!archiveWriter->writeArchive(
                 stagedArchivePath,
                 archiveEntries,
                 &errorMessage
