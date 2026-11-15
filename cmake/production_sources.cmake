@@ -678,9 +678,9 @@ set(CLASSMNGR_APP_SERVICES_SOURCES
 # Legacy owns only request loading; page projection/drawing belongs to the narrow renderer.
 list(APPEND CLASSMNGR_FEATURES_SOURCES
     "src/features/roster/services/roster_template_print_private_service.inc")
-# Default renderer overloads are Legacy composition only. Next injects ports.
+# Next output adapters inject ports; the legacy schedule wrapper stays with
+# SchedulePrint so its static archive dependency does not cycle through Runtime.
 set(CLASSMNGR_LEGACY_PDF_COMPOSITION_SOURCES
-    "src/features/schedule/services/qt_schedule_pdf_composition.cpp"
     "src/shared/roster/qt_roster_pdf_composition.cpp"
     "src/features/sub_prep/services/qt_sub_prep_pdf_composition.cpp"
     "src/features/sub_prep/services/qt_sub_prep_print_composition.cpp"
@@ -745,6 +745,7 @@ set(CLASSMNGR_SCHEDULE_PRINT_SOURCES
     "src/features/schedule/services/schedule_print_service.cpp"
     "src/features/schedule/services/schedule_print_service.h"
     "src/features/schedule/services/schedule_print_document.h"
+    "src/features/schedule/services/qt_schedule_pdf_composition.cpp"
     "src/features/schedule/ui/schedule_print_style.h"
 )
 
