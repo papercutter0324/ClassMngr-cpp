@@ -1,5 +1,42 @@
 # Latest Session Work
 
+## Current Deployment Handoff — phase8-local-debug-ctest-20261115 — 2026-11-15
+
+- Deployment `phase8-local-debug-ctest-20261115` ran entirely on the local
+  Windows x64 Debug host; no GitHub Actions workflow was triggered. The work
+  was verified atop base HEAD `aa0bac8078d65bdf75e1c716958a8cf5b1371650`,
+  which matched `origin/Qt-Rewrite` before this commit. The local commit records
+  the two test-file changes below; no push was made.
+- The first Debug build stopped because the existing generated
+  `build/windows-x64-debug/generated/ClassMngrNext/Resources` folder had 189
+  files but no `resource-manifest.json`, so the resource baker correctly
+  refused to overwrite output without verified ownership. It was preserved as
+  `Resources.unowned-preserved-20261115`; its 187 direct resource hashes
+  matched the inventory. The full `windows-x64-debug` preset build then passed
+  after regenerating the catalog. A sandboxed MSBuild retry hit FileTracker
+  `0x80070005`; the same full build succeeded outside the sandbox.
+- The standalone `ClassMngrNextSubPrepVisualCapture` target had bypassed
+  startup's bundled-font registration, causing PDF text-mapping validation to
+  fail on Windows. Its test harness now keeps the verified bundled Inter and
+  Pretendard resources registered during capture and routes Qt diagnostics to
+  stderr; existing PDF and visual assertions remain. Two fixed one-second
+  sleeps in the Bootstrap test now wait for bounded completion predicates,
+  retaining the save/failure assertions and diagnostics. The focused Bootstrap
+  case improved from 3.196s to 2.680s.
+- After those edits, the full local Debug build passed and serial, unfiltered
+  CTest passed **618/618** in 1,047.99s, with no skips. Full build and test
+  logs are under `build/windows-x64-debug/phase8-final-build-elevated.log` and
+  `phase8-final-ctest.log`. The prior elevated suite was 617/618 with only the
+  Sub Prep capture failing; its repaired rerun passed at 11.57s.
+- Nineteen tests exceeded 10s in the final run. The 183.60s startup/performance
+  target and PDF, integration, large-fixture, and visual-capture workloads were
+  judged proportionate; the Bootstrap waits were the only clear small
+  coverage-preserving optimization. Detailed names, durations, and decisions
+  are in the Phase 8 progress log. A source-level review found no material
+  cross-platform issue in the test-only changes, but Linux/macOS runtime
+  behavior was not exercised here. Phase 8 and 8a remain open pending their
+  cross-platform evidence and remaining exit-gate work.
+
 ## Current Deployment Handoff — phase8-windows-x64-release-20261112 — 2026-11-12
 
 - The official [Windows Release Build run 43156278197](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43156278197)

@@ -747,6 +747,8 @@ QJsonObject captureSuccessfulOutput(
 
 int main(int argc, char* argv[])
 {
+    // Keep Qt diagnostics visible to CTest on Windows as well as Unix hosts.
+    qputenv("QT_FORCE_STDERR_LOGGING", "1");
     QApplication application(argc, argv);
     QApplication::setStyle(QStringLiteral("Fusion"));
     if (!QFile::exists(QStringLiteral(":/assets/icons/combo_arrow_light.svg"))
@@ -776,6 +778,34 @@ int main(int argc, char* argv[])
         return 1;
     }
     Resources::ResourceLoader resourceLoader(std::move(*loadedCatalog));
+    // This standalone capture bypasses ApplicationBootstrap::loadRequiredFonts.
+    // Retain the same bundled fonts while capturing and validating PDF output;
+    // an offscreen host need not have any usable system fonts installed.
+    std::vector<Resources::ScopedResource<Resources::RegisteredFont>> fonts;
+    for (const QString& fontId : {
+             QStringLiteral("resource:assets/fonts/Inter.ttc"),
+             QStringLiteral("resource:assets/fonts/PretendardVariable.ttf")
+         })
+    {
+        const auto request = Resources::ResourceRequest::create(
+            *Resources::ResourceId::fromString(fontId),
+            Resources::ResourceScopeKind::Startup,
+            QStringLiteral("Sub Prep visual capture"));
+        if (!request)
+        {
+            qCritical().noquote() << "Could not request capture font:"
+                                  << request.error().message;
+            return 1;
+        }
+        auto font = resourceLoader.loadFont(*request);
+        if (!font)
+        {
+            qCritical().noquote() << "Could not register capture font:"
+                                  << font.error().message;
+            return 1;
+        }
+        fonts.push_back(std::move(*font));
+    }
     const QString legacyRoot = QStringLiteral(
         CLASSMNGR_SOURCE_DIR "/docs/qt-rewrite/visual-baseline/release/large-sub-prep-visual-states");
     const std::array<QString, 2> locales{

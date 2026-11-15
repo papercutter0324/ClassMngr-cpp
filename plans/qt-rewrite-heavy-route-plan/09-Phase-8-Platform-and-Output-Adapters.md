@@ -37,8 +37,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2, 3, and 7
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
-- Last updated: 2026-11-12
-- Current note: Phase 8 remains In progress and its exit gate is open. The two Windows targets that timed out at 240 seconds in hosted run `43156278117` were traced locally to unbatched SQLite fixture seeding; test-only transaction batching brought both focused targets below 12 seconds, with independent passing reruns. No hosted rerun was performed, and retained hosted output does not identify the in-flight QtTest slots. Native Windows verification confirmed Segoe UI is available and configured in both English and Korean Schedule output font chains; this does not verify PDF rendering. Clean macOS, Windows x64, and Fedora Linux candidates and Windows Release package evidence remain recorded below. The Linux Pretendard PDF assertion and final cross-host review keep the gate open. See the [Phase 8 progress log](09-Phase-8-Progress-Log.md), [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md), and [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md).
+- Last updated: 2026-11-15
+- Current note: The local Windows x64 Debug build with the recorded test-harness updates passes serial, unfiltered CTest 618/618. The original build failure was an existing generated Resources folder without its ownership manifest; it was preserved and the catalog regenerated. No production code changed, and Linux/macOS runtime was not run. Phase 8 and 8a remain In progress with cross-host evidence and review open. See the [Phase 8 progress log](09-Phase-8-Progress-Log.md), [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md), and [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md).
 
 ### Slice batches
 

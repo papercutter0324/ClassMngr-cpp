@@ -13064,7 +13064,8 @@ void ApplicationBootstrapTests::teacherProfileUsesTypedOpenAndStaticPageHistory(
         QStringLiteral("birthdayEdit")
         );
     QVERIFY(birthday);
-    QTest::qWait(1000);
+    const bool automaticallySaved = QTest::qWaitFor(
+        [page] { return !page->hasUnsavedChanges(); }, 1000);
     QString validationMessages;
     for (QLabel* const label : page->findChildren<QLabel*>())
     {
@@ -13077,7 +13078,7 @@ void ApplicationBootstrapTests::teacherProfileUsesTypedOpenAndStaticPageHistory(
     auto* const saveStatus = page->findChild<QLabel*>(
         QStringLiteral("teacherProfileSaveStatus")
         );
-    QVERIFY2(!page->hasUnsavedChanges(),
+    QVERIFY2(automaticallySaved && !page->hasUnsavedChanges(),
         qPrintable((saveStatus ? saveStatus->text() : QString{})
             + QStringLiteral(" | ") + validationMessages));
     QCOMPARE(englishName->text(), QStringLiteral("Dana Kim Auto Saved"));
@@ -13089,7 +13090,13 @@ void ApplicationBootstrapTests::teacherProfileUsesTypedOpenAndStaticPageHistory(
     // An automatic persistence failure keeps the live draft and reports the
     // failure without blocking the UI thread on a dialog.
     englishName->setText(QStringLiteral("Update Failure"));
-    QTest::qWait(1000);
+    const bool failureReported = QTest::qWaitFor([saveStatus] {
+        return saveStatus
+            && saveStatus->text().contains(QStringLiteral("draft is still here"));
+    }, 1000);
+    QVERIFY2(failureReported,
+        qPrintable(saveStatus ? saveStatus->text()
+                              : QStringLiteral("The profile save status is missing.")));
     QVERIFY(page->hasUnsavedChanges());
     QCOMPARE(englishName->text(), QStringLiteral("Update Failure"));
     QVERIFY(saveStatus->text().contains(QStringLiteral("draft is still here")));

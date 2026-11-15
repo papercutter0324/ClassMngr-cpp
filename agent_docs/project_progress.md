@@ -7058,6 +7058,32 @@ test or hosted rerun used these local edits; no commit or push was performed.
 The two-file worktree change remains pending fresh hosted Windows evidence.
 
 
+## Phase 8 local Windows Debug and full CTest — 2026-11-15
+
+Deployment `phase8-local-debug-ctest-20261115` resolved the local Debug build
+failure without product-source changes. The existing generated resource
+directory lacked its ownership manifest; it was preserved in the standard
+build tree, then the full `windows-x64-debug` build regenerated and validated
+the catalog. The successful build required normal local access because
+sandboxed MSBuild FileTracker initialization failed with `0x80070005`.
+
+The standalone Next Sub Prep visual capture now registers and retains the same
+bundled Inter/Pretendard fonts as application startup, restoring PDF text
+mapping while keeping all assertions. Two Bootstrap test sleeps were replaced
+with bounded completion waits and retained failure checks (focused case:
+3.196s to 2.680s). The full Debug build passed and serial unfiltered CTest
+passed **618/618** in 1,047.99s. Nineteen targets exceeded 10s; the startup
+performance, broad integration, PDF, and rendering workloads were judged
+proportionate, with no other safe optimization identified. See the Phase 8
+progress log for the complete timing review and raw logs.
+
+The local commit contains only the two test-harness changes beyond base HEAD
+`aa0bac8078d65bdf75e1c716958a8cf5b1371650`; no production source changed and
+no push occurred. Linux/macOS portability received source review only; neither
+platform ran locally. Phase 8/8a remain open for the other platform evidence
+and outstanding cross-host exit-gate review.
+
+
 ## Phase 8/8a macOS gate attempt — 2026-11-14
 
 Candidate `f6b258f1bbb010ec0b7847f81827fd0409832888` (tree

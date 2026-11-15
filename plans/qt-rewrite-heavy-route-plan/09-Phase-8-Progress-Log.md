@@ -1074,3 +1074,87 @@ records 914 paths, 493 hashes, 187 direct resource hashes, and 22 license/SBOM
 records. `scripts/test_verify_next_package.py` passed 13/13. These results do
 not close Phase 8: the three captures still fail and remaining source-boundary
 review is open. See the Phase 8a log for the hosted-workflow blocker.
+
+
+### 2026-11-15: Local Windows x64 Debug build and full CTest
+
+The standard local `windows-x64-debug` build initially stopped in the resource
+catalog step. Its existing `generated/ClassMngrNext/Resources` directory held
+189 files (62,877,941 bytes) but no `resource-manifest.json`; the baker
+correctly refused to replace output without an ownership manifest. The full
+directory was preserved as
+`build/windows-x64-debug/generated/ClassMngrNext/Resources.unowned-preserved-20261115`.
+All 187 direct resource assets matched their inventory hashes; two extra
+compiled translation files were retained. Catalog regeneration produced 187
+direct resources plus seven generated inputs and validated 194 records. The
+full preset build then succeeded. A sandboxed retry failed at MSBuild
+FileTracker with `UnauthorizedAccessException` / `0x80070005`; rerunning the
+same command with normal local access passed.
+
+The focused resource-baker Python checks passed 14/14 in 0.407 seconds with
+one Windows symlink-privilege skip. Focused `ClassMngrNextResourceLoaderTests`
+and `ClassMngrNextResourceDocumentCatalogTests` CTests also passed in 0.48 and
+0.06 seconds.
+
+Commands and final evidence:
+
+- Full Debug build: `cmake --build --preset windows-x64-debug`, using the
+  existing `build/windows-x64-debug` directory and Visual Studio 18 2026.
+- Full suite: `ctest --test-dir build/windows-x64-debug -C Debug
+  --output-on-failure --no-tests=error`; serial, unfiltered, **618/618 passed**,
+  exit 0, in 1,047.99 seconds with no skips.
+- Final logs: `build/windows-x64-debug/phase8-final-build-elevated.log` and
+  `phase8-final-ctest.log`. Earlier reproduction and attempts are in
+  `phase8-debug-reproduction.log`, `phase8-debug-rebuild.log`,
+  `phase8-full-ctest.log`, and `phase8-full-ctest-elevated.log` in the same
+  directory.
+
+The remaining reproducible test failure was `ClassMngrNextSubPrepVisualCapture`.
+The standalone capture omitted the bundled-font registration performed during
+application startup, so the generated PDFs lacked source text and the existing
+text-mapping validation failed. The capture now retains Inter and Pretendard
+registrations from the resource catalog through PDF generation; the existing
+text and pixel checks are unchanged. Qt diagnostics are directed to stderr so
+CTest retains the failure details. Focused verification passed in 11.55 seconds;
+the final full run passed the target in 11.57 seconds. The four locale/theme
+captures, 96-class fixtures, ten PNG outputs, conflict check, and package
+validation make this duration proportionate.
+
+Two fixed `QTest::qWait(1000)` calls in the Bootstrap test were replaced by
+completion predicates with the same one-second bounds and explicit save-state
+and failure-status assertions. The focused case improved from 3.196 to 2.680
+seconds; the full target took 60.43 seconds. No assertion or failure visibility
+was removed. The full suite ran serially to keep visual captures isolated.
+
+Every test over 10 seconds in the final run was reviewed. The startup,
+large-fixture, integration, PDF, and rendering workloads below were judged
+proportionate; only the two Bootstrap waits had a small coverage-preserving
+improvement. No other safe optimization was identified.
+
+| Test | Time | Runtime assessment |
+|---|---:|---|
+| `ClassMngrCalendarPageEventMutationParityTests` | 30.92s | Broad calendar event, repeat-series, import, and UI integration; proportionate. |
+| `ClassMngrSubPrepPdfTextFinalizerTests` | 11.65s | PDF text finalization and pixel-preservation checks; proportionate. |
+| `ClassMngrSubPrepPackageServiceTests` | 35.62s | Large package and PDF output workload; proportionate. |
+| `ClassMngrSpeakingEvalBatchReportServiceTests` | 22.71s | Batch report, PDF, and output scenarios; proportionate. |
+| `ClassMngrStartupPerformanceTests` | 183.60s | Large-workspace startup and performance workflows; long but consistent with scope; retains `RUN_SERIAL` and 360-second timeout. |
+| `ClassMngrNextCampusDirectoryVisualCapture` | 18.63s | Campus page rendering and capture; proportionate. |
+| `ClassMngrNextBootstrapTests` | 60.43s | Broad startup, preferences, and workspace lifecycle scenarios; high but consistent with coverage. |
+| `ClassMngrNextMyWorkspaceVisualCapture` | 10.36s | Page visual capture; proportionate. |
+| `ClassMngrNextSubPrepVisualCapture` | 11.57s | Four 96-class locale/theme fixtures, ten PNGs, and package validation; proportionate. |
+| `ClassMngrNextSpeakingEvaluationPageTests` | 10.03s | Broad page and report behavior; proportionate. |
+| `ClassMngrNextClassesFullWindowStateVisualCapture` | 42.86s | Full-window rendering and capture; proportionate to visual scope. |
+| `ClassMngrNextClassesDetailsCoTeacherVisualCapture` | 39.30s | Page-state visual capture; proportionate to visual scope. |
+| `ClassMngrNextClassesNotesVisualCapture` | 19.06s | Page visual capture; proportionate. |
+| `ClassMngrNextClassesAnalyticsVisualCapture` | 20.59s | Page visual capture; proportionate. |
+| `ClassMngrNextMyClassesVisualCapture` | 19.98s | Page visual capture; proportionate. |
+| `ClassMngrNextSchedulePageTests` | 10.66s | Schedule page integration behavior; proportionate. |
+| `ClassMngrNextScheduleVisualCapture` | 18.55s | Schedule page rendering and capture; proportionate. |
+| `ClassMngrNextCalendarPageTests` | 13.95s | Calendar UI, import, and recovery scenarios; proportionate. |
+| `ClassMngrNextRosterOutputTests` | 10.16s | Roster output and rendering checks; proportionate. |
+
+The test-only changes use the existing resource loader and Qt completion APIs;
+source review found no material Linux/macOS portability issue. This was a
+Windows x64 Debug run only; Linux/macOS runtime verification remains outstanding.
+No production source changed, and no commit or push occurred. Phase 8 remains
+open pending the remaining adapter-boundary and cross-platform exit-gate work.

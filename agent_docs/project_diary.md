@@ -9464,3 +9464,19 @@ rejected uploading the source to the public repository without explicit
 authorization. No remote branch, PR, workflow, or ref changed. The next step
 requires authorization for candidate `f6b258f` to be uploaded to
 `papercutter0324/ClassMngr-cpp` on a draft PR against `Qt-Rewrite`.
+
+
+## 2026-11-15 — Local Windows Debug build and full CTest
+
+The Debug build failure came from an existing generated resource directory
+whose manifest was missing; the folder was preserved, and the resource catalog
+was regenerated in the standard build tree. The later full local Debug build
+passed. The standalone Sub Prep capture's missing PDF text was traced to its
+omitting the app's bundled-font registration; the test harness now retains
+those registrations and preserves the existing PDF checks. Two one-second
+Bootstrap test sleeps now wait on the same save/failure outcomes with the same
+one-second bounds. The full serial CTest suite passed 618/618 in 1,047.99s.
+All 19 tests over 10s were reviewed; the long startup, PDF, integration, and
+visual-capture jobs are proportionate, and only the fixed Bootstrap delays
+showed a small safe reduction. Linux/macOS runtime tests were not available on
+this Windows host; Phase 8/8a remain open.
