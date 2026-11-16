@@ -1,6 +1,6 @@
 # Project Progress
 
-## Current Deployment Continuation — Phase 8 Windows baseline — 2026-11-17
+## Local Windows diagnostic — Phase 8 baseline — 2026-11-17
 
 Active deployment: `windows_phase8_exit_gates`; route: Heavy. Current source
 candidate is `286468ea779a212bd43cd40a3866f38a2282d8dc` (tree
@@ -25,14 +25,42 @@ offscreen `propagateSizeHints()` notices; target-level only, assigned to
 Phase 10 visual capture). Repeated QProcess warnings belong to separate
 startup diagnostics and remain evidence for the open failure.
 
-Phase 8 and 8a remain in progress. The source-equivalent Windows Release
-package is outstanding because prior Windows package evidence at `1d4cb7d1`
-does not cover the later source/build inputs. Linux current-source evidence and
-cross-host review also remain open. The current local evidence bundle is
+This section records the local diagnostic run only. Its 617/618 result and
+unresolved subprocess hang were not reproduced on the clean hosted Windows
+candidate recorded below. Local evidence remains under
 `build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/`.
-Next: trigger the clean hosted refactoring baseline on the current source,
-resolve or explicitly disposition the Windows startup failure, then complete
-the Windows Release package check and cross-host gate review.
+
+## Current Deployment Continuation — Phase 8/8a hosted gates — 2026-11-17
+
+Hosted current-source evidence is complete at docs-only commit
+`6aa3715acbd837eff71a0ebef3e58aab09fa0cbd`, tree
+`32b60a8dd0bf787ddc7042444cf44e30cc319750`. Refactoring-baseline run
+`43908745977` passed Windows x64 configure/build, 618/618 CTests with no skips,
+required Schedule/Roster/Speaking outputs, and C53 (17 pages, zero changed
+pixels). All 41 historical Windows failed-target names were registered and
+passed. Windows x64 Release run `43908562397` passed package, installed-tree,
+checksum, and startup verification at the same source/package inputs; Windows
+ARM64 Debug cross-build passed.
+
+The hosted Windows warning set is five tagged ClassAnalytics QWARNs already
+dispositioned and 11 raw stderr warning lines from SubPrep visual capture
+(one optional Qt font-directory warning and ten offscreen
+`propagateSizeHints()` notices; target-level only, assigned to Phase 10 visual
+capture). No warnings were suppressed. Current-source hosted Linux also passes
+621/621 with required outputs and C53. Current-source Linux x86_64 Release
+package run `43939557328` passed the verifier, manifest/hash/resource checks,
+plugin checks, and archive checksum; the cross-platform Release package matrix
+is covered by the macOS, Windows, and Linux candidates.
+
+The local `286468ea` Windows run was 617/618, but its selector-unset
+`ClassMngr.exe` hang was not reproduced on the clean hosted runner. Its local
+cause remains unknown, and the historical target-only observation remains
+unattributed. Phase 8 and 8a remain in progress pending final cross-host
+source/output and adapter-boundary review, disposition or explicit later-phase
+ownership for historical target-only macOS/Linux failures and final
+source/output/adapter-boundary review. Hosted artifacts are IDs `14260381124`
+(Windows Debug), `14249636477` (Windows Release), `14255478849` (Linux Debug),
+and `14261653802` (Linux Release).
 
 ## Current Deployment Continuation — Phase 8 Windows timeouts and Segoe UI — 2026-11-12
 

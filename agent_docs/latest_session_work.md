@@ -1,6 +1,6 @@
 # Latest Session Work
 
-## Current Deployment Handoff — windows_phase8_exit_gates — 2026-11-17
+## Local Windows diagnostic — windows_phase8_exit_gates — 2026-11-17
 
 - Current Windows source candidate `286468ea779a212bd43cd40a3866f38a2282d8dc`
   has clean stable provenance, configure/build pass, and full CTest 617/618.
@@ -19,10 +19,38 @@
   stderr lines from SubPrep Visual Capture (font directory and offscreen size
   hints) are separately recorded and assigned to Phase 10. Three QProcess
   warnings come from separate diagnostics and are not full-suite occurrences.
-- Phase 8/8a remain open pending hosted current-source rerun, startup-failure
-  disposition, current-source Windows Release package verification,
-  current-source Linux evidence, and final cross-host/source-boundary review.
-  Evidence is under `build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/`.
+- This is a local diagnostic record only; it is superseded for candidate
+  acceptance by the hosted results below. Evidence is under
+  `build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/`.
+
+## Current Deployment Handoff — windows_phase8_exit_gates — 2026-11-17
+
+- Hosted current-source baseline run `43908745977` at docs-only commit
+  `6aa3715acbd837eff71a0ebef3e58aab09fa0cbd` passed Windows x64 configure,
+  clean Debug build, and 618/618 unfiltered CTests with no failures/errors/
+  skips. All 41 historical Windows failure targets were registered and passed.
+  Schedule, all Roster layouts, Speaking Standard/Advanced, and C53 passed;
+  C53 covered 17 pages with zero changed pixels and verified font provenance,
+  SQL text, and code mapping. Windows ARM64 Debug cross-build also passed.
+- Current-source Windows x64 Release run `43908562397` passed installer,
+  staged/installed package, checksum, and startup gates. The verifier checked
+  394 manifest entries, 327 file hashes, 187 resource hashes, 22 license/SBOM
+  files, and ten startup stages through `startup-ready`. Current-source hosted
+  Linux passed 621/621 plus required outputs/C53. Current-source Linux Release
+  package run `43939557328` passed final verification, with 521 manifest
+  entries, 401 hashes, 187 resource hashes, 22 license/SBOM files, and a
+  checksum-matched tarball. Together with the macOS universal Release result at
+  `25190b33` (same source/package inputs; later changes were docs-only), this
+  completes the current cross-platform Release package matrix.
+- The local `286468ea` startup hang was not reproduced by hosted Windows; its
+  local cause remains unknown. Preserve both records without claiming a fix.
+  Windows warnings remain 5 tagged, previously dispositioned ClassAnalytics
+  QWARNs plus 11 separate raw SubPrep visual-capture stderr lines assigned to
+  Phase 10. Hosted bundles are under
+  `build/hosted-run-43908745977-{windows,linux}/`.
+- Phase 8/8a remain open for historical macOS/Linux target-only dispositions
+  and final cross-host/source/adapter-boundary review. See the Phase 8 and
+  Phase 8a progress logs.
 
 ## Current Deployment Handoff — phase8-macos-windows-candidates-20261116 — 2026-11-16
 

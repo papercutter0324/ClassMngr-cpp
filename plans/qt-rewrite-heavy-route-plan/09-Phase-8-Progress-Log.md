@@ -1392,3 +1392,51 @@ open. Evidence is retained under
 including the [baseline report](../../build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/windows-x64-debug-baseline-final.json),
 [C53 capture transcript](../../build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/sub-prep-c53-capture.log),
 and [isolated failure diagnostics](../../build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/startup-failure-isolated-qt-test.txt).
+
+### 2026-11-17 — Hosted current-source baseline and Windows Release verification
+
+Hosted clean baseline workflow [43908745977](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43908745977)
+ran on pushed docs-only commit `6aa3715acbd837eff71a0ebef3e58aab09fa0cbd`;
+its production source inputs match local candidate `286468ea`. Both reports show
+clean, stable provenance. Windows passed configure/build, 618/618 unfiltered
+CTest, and required Schedule, Roster, Speaking, and C53 output checks. Linux
+passed configure/build, 621/621, and the same required output checks. The local
+Windows 617/618 startup-case failure did not reproduce hosted; its cause is
+unknown and no fix is claimed. An independent tester accepted both baseline
+results.
+
+Windows Release workflow [43908562397](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43908562397)
+passed the x64 package verifier and Windows ARM64 cross-build. The x64 report
+verified 394 manifest paths, 327 file hashes, 187 resource hashes, 22 license/
+SBOM files, and 10 startup stages. Installer SHA-256:
+`0b8563119c613273dec124e5a141545a9fbf2487a9ce8a0349520a99996de88f`.
+The independent tester accepted this result as well.
+
+At this point, Linux Release evidence was still the earlier `25004d36` run;
+the current-source package follow-up and matrix status are recorded below.
+Phase 8 remains In progress for final cross-host/source and adapter-boundary
+review. Evidence: [Windows baseline report](../../build/hosted-run-43908745977-windows/artifacts/baseline/windows-x64-debug.json),
+[Linux baseline report](../../build/hosted-run-43908745977-linux/artifacts/baseline/linux-gcc-debug.json),
+[Windows package report](../../build/phase8-windows-release-43908562397/package/build/windows-x64-release/reports/windows-x64-final-package.json),
+[checksum file](../../build/phase8-windows-release-43908562397/package/dist/checksums-windows-x64.txt),
+[Windows baseline artifact 14260381124](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43908745977/artifacts/14260381124),
+[Linux baseline artifact 14255478849](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43908745977/artifacts/14255478849),
+and [Windows package artifact 14249636477](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43908562397/artifacts/14249636477).
+
+### 2026-11-17 — Current-source Linux Release verification and package matrix
+
+Hosted Linux Release workflow
+[43939557328](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43939557328)
+passed on docs-only commit `6aa3715acbd837eff71a0ebef3e58aab09fa0cbd` and
+was independently accepted. Its verifier checked 521 manifest entries, 401
+file hashes, 187 resource hashes, 22 license/SBOM files, and required plugins.
+The package checksum, independently matched against the archive contents, is
+`7b1f33613a58fb71aa658d01def454110f306af78faf5f5dfeb995ecb114da93`.
+
+The macOS Release package at `25190b33` and Windows/Linux Release packages at
+`6aa3715a` share source/package inputs; intervening changes were documentation-
+only. The current cross-platform Release package matrix is therefore covered.
+Phase 8 remains In progress for final cross-host/source and adapter-boundary
+review. See the [Linux Release artifact 14261653802](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43939557328/artifacts/14261653802),
+the [Windows package record](#2026-11-17--hosted-current-source-baseline-and-windows-release-verification),
+and [macOS package record](#8718--macos-debug-output-and-release-verification-at-25190b33-2026-11-16).

@@ -7,13 +7,15 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-17
 - Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 and 8a remain in
-  progress with their exit gates open. The clean current-tree Windows run at
-  `286468ea` passed configure/build but CTest was 617/618 because one
-  startup-performance case remains unresolved. Schedule, all four Roster
-  layouts, Speaking Standard/Advanced, and supplemental C53 passed; the
-  recorder-integrated C53 command omitted `QT_MSVC_X64_PREFIX`. Current-source Linux,
-  Windows Release package equivalence, and final cross-host/source review
-  remain open. See the
+  progress with their exit gates open. The hosted clean current-source baseline
+  on docs-only commit `6aa3715a` passed Windows 618/618 and Linux 621/621, with
+  required output and C53 evidence. The local Windows `286468ea` startup-case
+  failure did not reproduce hosted; its cause remains unknown and no fix is
+  claimed. Windows x64 and ARM64 Release checks passed, and Linux Release
+  verification completed; the Windows/Linux packages at `6aa3715a` match the
+  macOS `25190b33` source/package inputs, so the Release matrix is covered.
+  Final cross-host/source-boundary review and historical macOS/Linux
+  target-only dispositions remain open. See the
   [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md),
   [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md),
   [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), [Phase 8

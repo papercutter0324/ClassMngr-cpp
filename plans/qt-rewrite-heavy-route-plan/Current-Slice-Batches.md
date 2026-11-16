@@ -6,12 +6,13 @@ The user asked to attempt closing the Phase 8 and 8a gates. The committed
 macOS candidate at `d8f31c7aaf29bdc07f12f7f6f229bc8ea596889e` passed local
 Debug, output-capture, and universal Release-package checks on 2026-11-14.
 The local worktree has an in-progress ZIP writer-port implementation, so that
-committed-head result remains historical evidence for the new files. An
-earlier plan called for PR-triggered current-source Windows/Linux workflow
-evidence after source review. Since then, current-source Windows was run
-locally at `286468ea`; its results are recorded below and Windows hosted
-workflow evidence is not listed as a current blocker. Current-source Linux
-verification remains open. No current-source hosted run has started.
+committed-head result remains historical evidence for the new files. The
+hosted clean current-source baseline has since passed on docs-only commit
+`6aa3715a`: Windows 618/618 and Linux 621/621, with required output and C53
+checks. Windows Release package verification and ARM64 cross-build also passed.
+Hosted results are linked in the Phase 8 and 8a progress logs; only final
+cross-host/source review, remaining adapter-boundary review, and historical
+macOS/Linux target-only dispositions remain open.
 
 Ordered source-boundary candidates:
 
@@ -33,9 +34,10 @@ Ordered source-boundary candidates:
    it was left untouched. A forced render-failure injection remains uncovered.
 4. Schedule output font defaults — source boundary implemented and accepted.
    The font port supplies the host family and English fallback size; Schedule
-   UI has no `Q_OS_*` or `QFontDatabase` calls. Focused macOS tests pass.
-   Windows/Linux branches remain unverified. A separate UI capture review
-   matched both Korean screenshots byte-for-byte with the retained baseline;
+   UI has no `Q_OS_*` or `QFontDatabase` calls. Focused macOS tests pass, and
+   hosted Windows/Linux Schedule Legacy/Next captures passed with identical
+   same-host rasters. A separate UI capture review matched both Korean
+   screenshots byte-for-byte with the retained baseline;
    the differing `pageHeightBeforeCrop` value is capture geometry, not output.
 5. Speaking-report PowerPoint UI — implemented; independent review is
    accepted. An injected platform capability now maps macOS to
@@ -51,7 +53,8 @@ additional candidate groups:
 1. Route macOS-specific typography sizing in Teacher Profile and the font-size
    presenter through host presentation policy — implemented and independently
    accepted. Focused native macOS verification passed 7/7 CTest registrations;
-   native Windows/Linux branches remain for the hosted run.
+   hosted current-source Windows/Linux baselines also passed (see the cross-host
+   record below).
 2. Move direct feature font registration for typed signatures and Speaking
    reports behind a scoped registration port and existing resource ownership —
    implementation active. Preserve Legacy composition and page/report-session
@@ -97,27 +100,26 @@ rasters, and PDF/database file hashes. Later ZIP changes make `d8f31c7a`
 historical evidence for the current dirty worktree; affected checks must be
 rerun after the adapter batch.
 
-Linux local verification at ancestor candidate `25004d3671087497220bda59f1ee87e4dea2e71f`
-passed the clean 5,702-action Debug build, 621/621 unfiltered CTests,
-Schedule/Roster/Speaking/C53 output parity, and the Linux Release package
-verifier on Fedora 44. Its full QWARN inventory and historical target
-comparison are retained under
-`build/phase8-linux-current-25004d36-20261116/`. The current-tree Windows run
-at `286468ea779a212bd43cd40a3866f38a2282d8dc` had clean stable provenance and
-passed configure plus clean Debug build; unfiltered CTest was 617/618 due to
-one unresolved startup-performance case. Required Schedule/Roster/Speaking
-checks and a separately configured 17-page C53 passed. The recorder-integrated
-C53 invocation missed `QT_MSVC_X64_PREFIX`; do not conflate that command error
-with the successful supplemental capture. The one CTest failure, historical
-target comparison, and QWARN review are in the Phase 8a progress log. Current
-Windows Release package verification remains open; the older Release pass at
-`1d4cb7d1` is not established as source/package-input equivalent. The
-subsequent macOS source change at `25190b33` means the Linux evidence is
-historical; Linux must be rerun against the current merged source before the
-cross-platform gate can close.
-
-Current-source Windows evidence has been recorded locally at `286468ea` (see
-above). The hosted baseline has not yet been dispatched.
+Hosted clean current-source baseline workflow
+[43908745977](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43908745977)
+ran at pushed docs-only commit `6aa3715a`, with production source inputs
+matching local candidate `286468ea`. Windows passed 618/618 and Linux 621/621;
+Schedule, all four Roster layouts, Speaking Standard/Advanced, and C53 passed
+on both hosts. All 41 historical Windows and 20 historical Linux target names
+passed, though their old target-only cases remain unknown. The local Windows
+startup-case failure did not reproduce hosted; its cause is unknown and no fix
+is claimed. Windows Release package verification and ARM64 cross-build passed
+in workflow [43908562397](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43908562397).
+Current-source Linux Release workflow
+[43939557328](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43939557328)
+also passed and was independently accepted. Its result and checksum are in the
+Phase 8 progress log. Windows/Linux at `6aa3715a` and macOS at `25190b33` share
+source/package inputs because intervening changes were documentation-only;
+the Release matrix is covered. Phase 8/8a remain open for final cross-host/source
+and adapter-boundary review and historical macOS/Linux target-only dispositions.
+See the [Phase 8 hosted record](09-Phase-8-Progress-Log.md#2026-11-17--hosted-current-source-baseline-and-windows-release-verification),
+[Linux Release record](09-Phase-8-Progress-Log.md#2026-11-17--current-source-linux-release-verification-and-package-matrix),
+and [Phase 8a hosted record](09.5-Phase-8a-Progress-Log.md#2026-11-17--hosted-windows-and-linux-current-source-gate-results).
 
 ## 2026-11-14 gate attempt — candidate f6b258f
 

@@ -9,6 +9,15 @@ warnings; 11 raw stderr lines from the SubPrep visual-capture target were a
 separate target-level set. Count repeated QProcess timeout diagnostics outside
 the full-suite warning total.
 
+### Phase 8 hosted Windows confirmation — 2026-11-17
+
+The local current-tree Windows startup subprocess timeout did not recur in the
+clean Windows 2022 hosted baseline at the same source/package inputs. Record
+both outcomes, and do not describe the discrepancy as a fixed product defect
+without a root cause. The hosted full suite and package verifier provide the
+candidate acceptance evidence; keep the local failure as an environment
+diagnostic.
+
 ### Windows x64 Release package result — 2026-11-12
 
 The local VS 18 attempt could only produce an intermediate installer with a
