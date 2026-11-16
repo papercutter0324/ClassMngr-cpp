@@ -1,5 +1,27 @@
 # Latest Session Work
 
+## Current Deployment Handoff — phase8-windows-current-head-20261116 — 2026-11-16
+
+- A clean Windows 11 x64 `windows-x64-debug` run at current HEAD
+  `3a6087780519002f2a77c4d95fd3482f8d63bb59` recorded clean/stable start/end
+  provenance and passed configure, clean Debug build, and serial unfiltered
+  CTest **618/618** (zero failures, errors, or skips).
+- Schedule, all four Roster layouts, Speaking Standard/Advanced, and C53 passed
+  their same-host output checks. C53 covered 12 Sub Prep and 5 Roster pages with
+  zero changed pixels and matching font provenance. Five ClassAnalytics
+  QWARNs were the already-dispositioned one Qt optional-font-folder notice and
+  four offscreen `propagateSizeHints()` notices; none were suppressed.
+- Primary evidence is under
+  [`phase8-windows-current-head-3a608778-20261116`](../build/windows-x64-debug/artifacts/phase8-windows-current-head-3a608778-20261116/)
+  (46 files, 14,081,883 bytes); C53 evidence is under
+  [`sub-prep-c53-20261115T203613426126Z`](../build/windows-x64-debug/artifacts/sub-prep-c53-20261115T203613426126Z/).
+  Full details are in the [Phase 8 log](../plans/qt-rewrite-heavy-route-plan/09-Phase-8-Progress-Log.md#2026-11-16--windows-x64-current-head-debug-and-output-evidence)
+  and [Phase 8a log](../plans/qt-rewrite-heavy-route-plan/09.5-Phase-8a-Progress-Log.md#2026-11-16--windows-x64-current-head-exit-gate-evidence).
+- This closes the current-HEAD Windows Debug/output/C53 and warning-disposition
+  portions only. The full Phase 8/8a gates remain open for final cross-host
+  provenance/output and shared triage; this run is not Windows Release package
+  evidence. No source changes, hosted workflow, or push occurred.
+
 ## Current Deployment Handoff — phase8-local-debug-ctest-20261115 — 2026-11-15
 
 - Deployment `phase8-local-debug-ctest-20261115` ran entirely on the local

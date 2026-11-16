@@ -37,8 +37,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2, 3, and 7
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
-- Last updated: 2026-11-15
-- Current note: The local Windows x64 Debug build with the recorded test-harness updates passes serial, unfiltered CTest 618/618. The original build failure was an existing generated Resources folder without its ownership manifest; it was preserved and the catalog regenerated. No production code changed, and Linux/macOS runtime was not run. Phase 8 and 8a remain In progress with cross-host evidence and review open. See the [Phase 8 progress log](09-Phase-8-Progress-Log.md), [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md), and [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md).
+- Last updated: 2026-11-16
+- Current note: Current-HEAD Windows x64 Debug evidence at 3a6087780519002f2a77c4d95fd3482f8d63bb59 has clean stable provenance, successful configure/build, 618/618 unfiltered CTests, and passing Schedule, four Roster layouts, Speaking Standard/Advanced, and 17-page C53 output checks. Details and warning dispositions are recorded in the [Phase 8 progress log](09-Phase-8-Progress-Log.md#2026-11-16--windows-x64-current-head-debug-and-output-evidence) and [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md#2026-11-16--windows-x64-current-head-exit-gate-evidence). The Windows Debug/output portion is complete; the overall Phase 8 gate remains In progress pending final cross-host source/output review, remaining adapter-boundary review, and any required current-source package matrix.
 
 ### Slice batches
 
