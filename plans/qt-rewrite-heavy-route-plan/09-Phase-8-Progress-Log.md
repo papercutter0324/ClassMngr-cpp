@@ -1158,3 +1158,53 @@ source review found no material Linux/macOS portability issue. This was a
 Windows x64 Debug run only; Linux/macOS runtime verification remains outstanding.
 No production source changed, and no commit or push occurred. Phase 8 remains
 open pending the remaining adapter-boundary and cross-platform exit-gate work.
+
+### 8.7.18 — Current-source macOS Debug, output, and Release verification (2026-11-16)
+
+At committed HEAD `25190b3305dcd9bf92c31f3bf07078ddd4c78eca` (tree
+`aee7746080019c343d6562cb37581806cf79ac34`), the Mac mini completed a fresh
+universal Debug configure and clean build with stable source fingerprint
+`471cc4dc009c6e0ed3b5877f48f3af02c12ce6cef305ab5109606cf436456966`. Configure
+passed in 51.134 seconds; the clean build passed all 5,629 Ninja steps in
+2,104.681 seconds at six-way parallelism, recompiling 2,746 production source
+entries. Unfiltered serial CTest passed 620/620 targets in 863.371 seconds,
+with zero failures, errors, skips, or timeouts. Recorder provenance is valid
+with a clean start/end at the same commit, tree, and source fingerprint. The
+report and full logs are in
+[`macos-phase8a-gate-25190b33`](../../build/macos-clang-debug/artifacts/macos-phase8a-gate-25190b33/).
+
+Required output checks passed on the same build: Schedule Legacy/Next had
+zero changed pixels and all expected text; all four Roster layouts had equal
+page count, text, and raster output (1, 1, 2, and 2 pages); Speaking Standard
+and Advanced had expected text and zero changed pixels; and C53 passed all 17
+pages (12 Sub Prep and 5 Roster) with zero changed pixels and matching font
+resource provenance. The current artifacts include each output evidence JSON,
+the full CTest transcript/JUnit, and
+[`platform-capture.json`](../../build/macos-clang-debug/artifacts/sub-prep-c53-20261116T034609448941Z/platform-capture.json).
+
+The QWARN comparison against the previous accepted current-host macOS
+candidate (`d8f31c7a`, also macOS 27.2.1 with Qt 6.12.0) found 2,179
+occurrences across 186 CTest targets, compared with 2,088 across 180 targets.
+After normalizing elapsed time and temporary-file paths, the 91 additional
+occurrences are Qt font-family alias initialization diagnostics: 46 for the
+missing generic `Cursive` family and 45 additional `Sans Serif` diagnostics.
+Qt reports that it substitutes an available family. All affected tests
+passed; the warnings remain visible and unsuppressed. No other normalized
+warning-body frequency changed. The transcript and comparison are in
+`ctest/LastTest.log` and
+[`qwarn-summary.json`](../../build/macos-clang-debug/artifacts/macos-phase8a-gate-25190b33/qwarn-summary.json).
+
+The fresh universal Release build also passed. The package verifier checked
+914 entries, 493 file hashes, 187 direct-resource hashes, and 22 license/SBOM
+files; all 92 bundled Mach-O binaries are universal and target macOS 14.4.
+The 13 package-verifier unit tests passed. Code-signature checks, mounted-DMG
+content verification, `hdiutil verify`, and the checksum sidecar all passed.
+DMG SHA-256:
+`5c2dc672dc8dc6361e7fbde5b397faa48f8e245abe5d0556850fd2651fc570b4`.
+Package logs and the report are in
+[`macos-clang-release-next-package-25190b33`](../../build/macos-clang-release-next-package-25190b33/).
+
+This closes the current-source local macOS candidate. It does not close the
+Phase 8 cross-platform exit gate: current-source Linux and hosted Windows/Linux
+workflow evidence, remaining source-review dispositions, and cross-host
+QWARN review are still required.
