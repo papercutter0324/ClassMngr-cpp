@@ -129,9 +129,11 @@ void ThemeService::applyTheme(
         buildPalette(theme)
         );
 
-    app->setStyleSheet(
-        loadStylesheet(theme)
-        );
+    const QString stylesheet = loadStylesheet(theme);
+    if (app->styleSheet() != stylesheet)
+    {
+        app->setStyleSheet(stylesheet);
+    }
 
     refreshThemeProperties(
         themeKey(theme)

@@ -335,6 +335,7 @@ bool captureLegacySchedule(
 
 bool captureLegacyCalendar(
     const QString& databasePath,
+    const QString& stylesheet,
     const QString& outputPath,
     QJsonObject* state,
     QString* error
@@ -350,6 +351,7 @@ bool captureLegacyCalendar(
         return false;
     }
     MyWorkspacePage page(&services);
+    page.setStyleSheet(stylesheet);
     page.setDatabaseOpen(true);
     page.openTab(WorkspaceTab::Calendar);
     QApplication::processEvents();
@@ -436,6 +438,7 @@ bool captureNextSurface(
     Resources::ResourceLoader& loader,
     Application::PreferencesModel& preferences,
     const QString& locale,
+    const QString& stylesheet,
     const int tabIndex,
     const QString& outputPath,
     QJsonObject* state,
@@ -453,6 +456,7 @@ bool captureNextSurface(
     PlatformProcessMemorySnapshotProvider memoryProvider;
     const ProcessMemorySnapshot before = memoryProvider.snapshot();
     Ui::PageHost host(loader, preferences);
+    host.setStyleSheet(stylesheet);
     Ui::MyWorkspacePage* nextPage = nullptr;
     int detailsReadCount = 0;
     Ui::PageDescriptor workspace{
@@ -701,8 +705,8 @@ int main(int argc, char* argv[])
         {
             QLocale::setDefault(QLocale(locale));
             application.setPalette(themePalette(theme));
-            application.setStyleSheet(readText(
-                QDir(styles).filePath(theme + QStringLiteral(".qss"))));
+            const QString stylesheet = readText(
+                QDir(styles).filePath(theme + QStringLiteral(".qss")));
             std::unique_ptr<QTranslator> translator;
             if (locale == QStringLiteral("ko_KR"))
             {
@@ -729,6 +733,7 @@ int main(int argc, char* argv[])
                         loader,
                         preferences.model,
                         locale,
+                        stylesheet,
                         tabIndex,
                         QDir(outputDirectory).filePath(name),
                         &nextState,
@@ -756,6 +761,7 @@ int main(int argc, char* argv[])
                     QJsonObject legacyState;
                     if (!captureLegacyCalendar(
                             legacyDatabase,
+                            stylesheet,
                             QDir(outputDirectory).filePath(legacyName),
                             &legacyState,
                             &error))
@@ -777,8 +783,8 @@ int main(int argc, char* argv[])
 
     QLocale::setDefault(QLocale(QStringLiteral("en_US")));
     application.setPalette(themePalette(QStringLiteral("light")));
-    application.setStyleSheet(readText(
-        QDir(styles).filePath(QStringLiteral("light.qss"))));
+    const QString lightStylesheet = readText(
+        QDir(styles).filePath(QStringLiteral("light.qss")));
     const QString largeDatabase = temporaryDirectory.filePath(
         QStringLiteral("workspace-96-classes.tps"));
     if (!createWorkspaceFixture(largeDatabase, &error, 96))
@@ -792,6 +798,7 @@ int main(int argc, char* argv[])
             loader,
             preferences.model,
             QStringLiteral("en_US"),
+            lightStylesheet,
             1,
             QDir(outputDirectory).filePath(
                 QStringLiteral("next_schedule_96_classes_en_US_light.png")),

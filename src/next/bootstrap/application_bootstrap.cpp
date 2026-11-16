@@ -1190,6 +1190,13 @@ ApplicationBootstrap::~ApplicationBootstrap()
         m_startupUpdateDispatcher->cancel();
         m_startupUpdateDispatcher.reset();
     }
+    // Restore the app-wide stylesheet while the shell widgets it styled are
+    // still alive. Qt's stylesheet wrapper can otherwise touch stale widget
+    // state when the application-wide sheet is changed after shell teardown.
+    if (m_coreServices)
+    {
+        m_coreServices->themePresenter.reset();
+    }
     m_shell.reset();
     static_cast<void>(releaseWorkspace());
     m_coreServices.reset();
@@ -6919,6 +6926,11 @@ void ApplicationBootstrap::finalizeShutdown()
     // CloseEvent must return before its shell can be destroyed. The accepted
     // close path queues this finalizer for the next event-loop turn; direct
     // shutdown can release it synchronously.
+    // Restore the app-wide stylesheet before destroying the shell it styled.
+    if (m_coreServices)
+    {
+        m_coreServices->themePresenter.reset();
+    }
     m_shell.reset();
     static_cast<void>(releaseWorkspace());
     m_coreServices.reset();

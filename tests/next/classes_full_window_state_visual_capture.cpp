@@ -56,6 +56,8 @@
 #include <QWidget>
 #include <QtTest>
 
+#include <vector>
+
 #include <memory>
 #include <optional>
 #include <string>
@@ -1011,6 +1013,7 @@ bool captureNext(
     const QString& locale,
     const QString& theme,
     const QString& path,
+    std::vector<std::unique_ptr<Bootstrap::ApplicationBootstrap>>* retainedBootstraps,
     ModalImage* modalImage,
     QString* error
     )
@@ -1063,6 +1066,7 @@ bool captureNext(
         *modalImage = {};
         modalImage->title = QStringLiteral("inline-status");
         modalImage->message = status;
+        retainedBootstraps->push_back(std::move(bootstrap));
         return true;
     }
 
@@ -1092,7 +1096,12 @@ bool captureNext(
                     .arg(modalImage->title, modalImage->message);
             return false;
         }
-        return saveImage(path, modalImage->image, error);
+        if (!saveImage(path, modalImage->image, error))
+        {
+            return false;
+        }
+        retainedBootstraps->push_back(std::move(bootstrap));
+        return true;
     }
 
     auto* const label = page->findChild<QLabel*>(QStringLiteral("classesNavigatorStatus"));
@@ -1101,7 +1110,12 @@ bool captureNext(
         if (error) *error = QStringLiteral("Next did not reach the empty Classes state.");
         return false;
     }
-    return saveWindowImage(shell, path, error);
+    if (!saveWindowImage(shell, path, error))
+    {
+        return false;
+    }
+    retainedBootstraps->push_back(std::move(bootstrap));
+    return true;
 }
 
 QJsonObject modalMetadata(const ModalImage& modal)
@@ -1226,6 +1240,7 @@ int main(int argc, char* argv[])
     };
 
     QJsonArray captures;
+    std::vector<std::unique_ptr<Bootstrap::ApplicationBootstrap>> retainedBootstraps;
     for (const auto& [locale, theme] : matchedLocalesAndThemes)
     {
         QLocale::setDefault(QLocale(locale));
@@ -1280,7 +1295,7 @@ int main(int argc, char* argv[])
 
             ModalImage nextModal;
             if (!captureNext(application, fixture, state, locale, theme,
-                    nextPath, &nextModal, &error))
+                    nextPath, &retainedBootstraps, &nextModal, &error))
             {
                 qCritical().noquote() << "Next" << state << "capture failed:" << error;
                 return 1;

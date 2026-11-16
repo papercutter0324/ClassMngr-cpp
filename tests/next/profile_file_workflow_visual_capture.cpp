@@ -56,6 +56,7 @@
 #include <QWidget>
 
 #include <memory>
+#include <vector>
 #include <algorithm>
 #include <optional>
 #include <string>
@@ -969,6 +970,7 @@ resourceResolver()
     const QString& outputDirectory,
     QVector<CapturePair>* pairs,
     QVector<SupplementalCapture>* supplementalCaptures,
+    std::vector<std::unique_ptr<Bootstrap::ApplicationBootstrap>>* retainedBootstraps,
     QString* error
     )
 {
@@ -1143,8 +1145,7 @@ resourceResolver()
             .size = image.size()
         };
     }
-    static_cast<void>(bootstrap->shutdown());
-    bootstrap.reset();
+    retainedBootstraps->push_back(std::move(bootstrap));
     return true;
 }
 
@@ -1272,6 +1273,7 @@ int main(int argc, char* argv[])
 
     QVector<CapturePair> pairs;
     QVector<SupplementalCapture> supplementalCaptures;
+    std::vector<std::unique_ptr<Bootstrap::ApplicationBootstrap>> retainedBootstraps;
     for (const auto& appearance : {
              std::pair{QStringLiteral("en_US"), QStringLiteral("light")},
              std::pair{QStringLiteral("ko_KR"), QStringLiteral("dark")}})
@@ -1285,7 +1287,8 @@ int main(int argc, char* argv[])
             return 1;
         }
         if (!captureNextPair(application, fixture, locale, theme,
-                outputDirectory, &pairs, &supplementalCaptures, &error))
+                outputDirectory, &pairs, &supplementalCaptures,
+                &retainedBootstraps, &error))
         {
             qCritical().noquote() << error;
             return 1;

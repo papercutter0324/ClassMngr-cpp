@@ -99,18 +99,24 @@ Domain::Result<void> ThemePresenter::apply(
     }
 
     const QString previousStylesheet = m_application.styleSheet();
+    const bool stylesheetChanged =
+        previousStylesheet != candidateStylesheet.value().get();
     // The old scoped handle stays alive while Qt stages the candidate and
     // while synchronous model observers inspect the newly committed state.
-    m_application.setStyleSheet(candidateStylesheet.value().get());
+    if (stylesheetChanged)
+    {
+        m_application.setStyleSheet(candidateStylesheet.value().get());
+    }
     const auto retainStylesheet = [&] {
-        if (!m_applicationStylesheetInstalled)
+        if (stylesheetChanged && !m_applicationStylesheetInstalled)
         {
             m_previousApplicationStylesheet = previousStylesheet;
         }
         m_activeStylesheet.emplace(std::move(candidateStylesheet.value()));
         m_activePreference = preference;
         m_activeAppearance = candidateAppearance;
-        m_applicationStylesheetInstalled = true;
+        m_applicationStylesheetInstalled =
+            m_applicationStylesheetInstalled || stylesheetChanged;
     };
     if (persist)
     {
@@ -118,7 +124,10 @@ Domain::Result<void> ThemePresenter::apply(
         const auto validated = candidate.setThemePreference(preference);
         if (!validated)
         {
-            m_application.setStyleSheet(previousStylesheet);
+            if (stylesheetChanged)
+            {
+                m_application.setStyleSheet(previousStylesheet);
+            }
             return validated;
         }
         try
@@ -126,7 +135,10 @@ Domain::Result<void> ThemePresenter::apply(
             const auto persisted = m_preferences.applyAndPersist(candidate);
             if (!persisted)
             {
-                m_application.setStyleSheet(previousStylesheet);
+                if (stylesheetChanged)
+                {
+                    m_application.setStyleSheet(previousStylesheet);
+                }
                 return Domain::Result<void>::failure(persisted.error());
             }
         }
@@ -140,7 +152,10 @@ Domain::Result<void> ThemePresenter::apply(
             }
             else
             {
-                m_application.setStyleSheet(previousStylesheet);
+                if (stylesheetChanged)
+                {
+                    m_application.setStyleSheet(previousStylesheet);
+                }
             }
             throw;
         }
