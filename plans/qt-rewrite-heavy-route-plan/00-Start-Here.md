@@ -5,16 +5,16 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-11-12
+- Last updated: 2026-11-17
 - Current milestone: Phases 0–7 and 7.5 are Complete; Phase 8 and 8a remain in
-  progress with their exit gates open. Clean Windows x64, Fedora Linux, and
-  macOS candidates are recorded. The later source-equivalent hosted run
-  `43156278117` exposed two Windows test timeouts and a Linux Pretendard PDF
-  assertion. Local Windows fixture transaction batching reduced both timeout
-  targets to under 12 seconds, and the Segoe UI fallback was verified on
-  native Windows; no hosted rerun has been performed. The Linux assertion and
-  final cross-host review remain open. See
-  the [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md),
+  progress with their exit gates open. The clean current-tree Windows run at
+  `286468ea` passed configure/build but CTest was 617/618 because one
+  startup-performance case remains unresolved. Schedule, all four Roster
+  layouts, Speaking Standard/Advanced, and supplemental C53 passed; the
+  recorder-integrated C53 command omitted `QT_MSVC_X64_PREFIX`. Current-source Linux,
+  Windows Release package equivalence, and final cross-host/source review
+  remain open. See the
+  [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md),
   [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md),
   [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), [Phase 8
   progress log](09-Phase-8-Progress-Log.md), and [current batch

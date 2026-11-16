@@ -1,5 +1,39 @@
 # Project Progress
 
+## Current Deployment Continuation — Phase 8 Windows baseline — 2026-11-17
+
+Active deployment: `windows_phase8_exit_gates`; route: Heavy. Current source
+candidate is `286468ea779a212bd43cd40a3866f38a2282d8dc` (tree
+`5400387252e8f706b22c99cbf53ea5e386f84d7d`) with clean, stable Windows
+provenance and fingerprint `a1572fa0…`. Clean configure/build passed. Full
+unfiltered CTest passed 617/618; the reproducible failure is
+`StartupPerformanceTests::pdfLifecycleViewportPaintDiagnosticMatchesNormalAndSuppressedModes`,
+where the selector-unset `ClassMngr.exe` subprocess remains CPU-active but
+produces no output JSON within the test's 60-second wait. The cause is not
+established; restoring the one changed legacy theme source file in an isolated
+checkout did not resolve it. Do not widen timeouts or infer the historical
+target-only failure was the same case.
+
+Schedule, all four Roster layouts, Speaking Standard/Advanced, and the
+supplemental C53 17-page capture pass; recorder tests pass 10/10. C53's
+recorder-integrated attempt lacked `QT_MSVC_X64_PREFIX`, but the separate
+capture with the verified Qt prefix passed with zero changed pixels. Full-run
+QWARN inventory is 16 total lines under the workflow's accounting: 5 tagged
+QtTest warnings already dispositioned for Windows and 11 raw stderr warnings
+from SubPrep visual capture (one optional Qt font-directory warning and ten
+offscreen `propagateSizeHints()` notices; target-level only, assigned to
+Phase 10 visual capture). Repeated QProcess warnings belong to separate
+startup diagnostics and remain evidence for the open failure.
+
+Phase 8 and 8a remain in progress. The source-equivalent Windows Release
+package is outstanding because prior Windows package evidence at `1d4cb7d1`
+does not cover the later source/build inputs. Linux current-source evidence and
+cross-host review also remain open. The current local evidence bundle is
+`build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/`.
+Next: trigger the clean hosted refactoring baseline on the current source,
+resolve or explicitly disposition the Windows startup failure, then complete
+the Windows Release package check and cross-host gate review.
+
 ## Current Deployment Continuation — Phase 8 Windows timeouts and Segoe UI — 2026-11-12
 
 Active plan: Qt Rewrite Phase 8 platform/output adapters and Phase 8a

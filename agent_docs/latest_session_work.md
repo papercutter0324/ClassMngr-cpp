@@ -1,5 +1,29 @@
 # Latest Session Work
 
+## Current Deployment Handoff — windows_phase8_exit_gates — 2026-11-17
+
+- Current Windows source candidate `286468ea779a212bd43cd40a3866f38a2282d8dc`
+  has clean stable provenance, configure/build pass, and full CTest 617/618.
+  The single failure is the selector-unset subprocess timeout in
+  `pdfLifecycleViewportPaintDiagnosticMatchesNormalAndSuppressedModes()`;
+  it reproduces in an isolated rerun and its application-level cause remains
+  unknown. The subprocess stays CPU-active, writes no output JSON, and emits
+  empty stdout/stderr. A controlled restoration of the changed
+  `src/core/theme_service.cpp` source did not resolve it.
+- Schedule, Roster, Speaking, and supplemental C53 all pass. C53 covers 17
+  pages with zero changed pixels; recorder tests pass 10/10. The recorder's
+  own C53 call lacked `QT_MSVC_X64_PREFIX`, so only the supplemental run is a
+  passing capture. Historical comparator: 41 target names registered, 40
+  pass, startup target fails; prior target-only case remains unknown.
+- QWARN set: 5 tagged QtTest events match prior Windows dispositions; 11 raw
+  stderr lines from SubPrep Visual Capture (font directory and offscreen size
+  hints) are separately recorded and assigned to Phase 10. Three QProcess
+  warnings come from separate diagnostics and are not full-suite occurrences.
+- Phase 8/8a remain open pending hosted current-source rerun, startup-failure
+  disposition, current-source Windows Release package verification,
+  current-source Linux evidence, and final cross-host/source-boundary review.
+  Evidence is under `build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/`.
+
 ## Current Deployment Handoff — phase8-macos-windows-candidates-20261116 — 2026-11-16
 
 - A clean Windows 11 x64 `windows-x64-debug` run at source candidate HEAD

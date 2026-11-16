@@ -1209,9 +1209,9 @@ Windows evidence below is from its earlier ancestor candidate `3a608778`; the
 macOS run covers that source plus later build/source changes. The merge adds
 the upstream Windows evidence and gate documentation without changing the
 `25190b33` source/build tree, so this macOS verification applies to the merged
-branch. The Phase 8 gate still needs current-source Windows and Linux
-verification, remaining source-review dispositions, and cross-host QWARN
-review.
+branch. At that point, current-source Windows and Linux verification, remaining
+source-review dispositions, and cross-host QWARN review were still open; the
+later Windows rerun is recorded at the end of this log.
 
 ### 2026-11-16 — Windows x64 Debug and output evidence at 3a608778
 
@@ -1365,3 +1365,30 @@ and [historical-target comparison](../../build/phase8-linux-current-25004d36-202
 are available. The [1,046-entry SHA-256 manifest](../../build/phase8-linux-current-25004d36-20261116/SHA256SUMS.current-head.txt)
 passed with no mismatches. Earlier ENOSPC and stale-resource-marker attempts
 are retained as diagnostics and were not counted as product failures.
+
+### 2026-11-17 — Windows x64 current-tree Debug and output evidence at 286468ea
+
+The clean Windows 11 x64 run used commit
+`286468ea779a212bd43cd40a3866f38a2282d8dc`, tree
+`5400387252e8f706b22c99cbf53ea5e386f84d7d`, and stable source fingerprint
+`a1572fa08b582ab2ca8e2790d13390b40f96136beaa9ee15c8042c791de9d6cb`.
+Configure and clean Debug build passed. Serial unfiltered CTest passed 617/618;
+the single failure and its diagnostics are recorded in the [Phase 8a current
+Windows entry](09.5-Phase-8a-Progress-Log.md#2026-11-17--windows-x64-current-tree-exit-gate-evidence).
+
+Schedule, all four Roster layouts, and Speaking Standard/Advanced output checks
+passed. A separately configured C53 capture passed all 17 pages with zero
+changed pixels and matching font resources. The recorder-integrated C53
+invocation failed because the local command omitted `QT_MSVC_X64_PREFIX`; do
+not treat that invocation as a failed capture comparison. The recorder unit
+suite passed 10/10.
+
+The older Windows Release package pass at `1d4cb7d1` is not established as
+source/package-input equivalent to this candidate; current Windows Release
+package verification remains outstanding. Current-source Linux verification,
+final cross-host/source-boundary review, and the Phase 8 exit gate also remain
+open. Evidence is retained under
+[`phase8-windows-current-tree-286468ea-20261116`](../../build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/),
+including the [baseline report](../../build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/windows-x64-debug-baseline-final.json),
+[C53 capture transcript](../../build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/sub-prep-c53-capture.log),
+and [isolated failure diagnostics](../../build/windows-x64-debug/artifacts/phase8-windows-current-tree-286468ea-20261116/startup-failure-isolated-qt-test.txt).

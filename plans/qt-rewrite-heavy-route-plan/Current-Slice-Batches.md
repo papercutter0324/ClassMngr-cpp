@@ -5,12 +5,13 @@
 The user asked to attempt closing the Phase 8 and 8a gates. The committed
 macOS candidate at `d8f31c7aaf29bdc07f12f7f6f229bc8ea596889e` passed local
 Debug, output-capture, and universal Release-package checks on 2026-11-14.
-The local worktree now has an in-progress ZIP writer-port implementation, so
-the committed-head result remains historical evidence and does not verify the
-new files. Direct Actions dispatch is unavailable, but the connected GitHub
-account can create a dedicated branch and draft PR; use the PR triggers for
-current-source Linux and Windows workflow evidence after the source batch is
-reviewed. No current-source hosted run has started yet.
+The local worktree has an in-progress ZIP writer-port implementation, so that
+committed-head result remains historical evidence for the new files. An
+earlier plan called for PR-triggered current-source Windows/Linux workflow
+evidence after source review. Since then, current-source Windows was run
+locally at `286468ea`; its results are recorded below and Windows hosted
+workflow evidence is not listed as a current blocker. Current-source Linux
+verification remains open. No current-source hosted run has started.
 
 Ordered source-boundary candidates:
 
@@ -101,21 +102,28 @@ passed the clean 5,702-action Debug build, 621/621 unfiltered CTests,
 Schedule/Roster/Speaking/C53 output parity, and the Linux Release package
 verifier on Fedora 44. Its full QWARN inventory and historical target
 comparison are retained under
-`build/phase8-linux-current-25004d36-20261116/`. The Windows gate evidence is
-still at `3a608778`, so current-source Windows Debug/CTest/output/QWARN and
-Release package evidence remain required before the source-equivalent
-cross-platform gate can close. The subsequent macOS stylesheet-lifecycle source
-change at `25190b33` means this Linux evidence is historical; Linux must be
-rerun against the current merged source before the cross-platform gate closes.
+`build/phase8-linux-current-25004d36-20261116/`. The current-tree Windows run
+at `286468ea779a212bd43cd40a3866f38a2282d8dc` had clean stable provenance and
+passed configure plus clean Debug build; unfiltered CTest was 617/618 due to
+one unresolved startup-performance case. Required Schedule/Roster/Speaking
+checks and a separately configured 17-page C53 passed. The recorder-integrated
+C53 invocation missed `QT_MSVC_X64_PREFIX`; do not conflate that command error
+with the successful supplemental capture. The one CTest failure, historical
+target comparison, and QWARN review are in the Phase 8a progress log. Current
+Windows Release package verification remains open; the older Release pass at
+`1d4cb7d1` is not established as source/package-input equivalent. The
+subsequent macOS source change at `25190b33` means the Linux evidence is
+historical; Linux must be rerun against the current merged source before the
+cross-platform gate can close.
 
-No GitHub Actions workflow was dispatched because the available GitHub
-connector cannot dispatch, the browser session is unavailable, `gh` is not
-installed, and local Git has no credential.
+Current-source Windows evidence has been recorded locally at `286468ea` (see
+above). The hosted baseline has not yet been dispatched.
 
 ## 2026-11-14 gate attempt — candidate f6b258f
 
-This later attempt supersedes the dispatch diagnosis above. The final clean
-candidate is `f6b258f1bbb010ec0b7847f81827fd0409832888` (tree
+This historical gate attempt is separate from the current hosted-baseline
+status above. Its final clean candidate was
+`f6b258f1bbb010ec0b7847f81827fd0409832888` (tree
 `65239452d50f917b5817e8e34682e2da731224d5`) at
 `/private/tmp/classmngr-phase8-8a-candidate-20261114`; its fixes are present
 byte-for-byte in the shared worktree. The prior unfiltered macOS run was

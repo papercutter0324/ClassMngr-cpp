@@ -1,5 +1,14 @@
 # Project Diary
 
+### Phase 8 baseline warning accounting — 2026-11-17
+
+Keep QtTest-tagged `QWARN` events distinct from raw stderr warning bodies and
+from warnings emitted by repeated focused diagnostics. In this Windows run,
+JUnit truncation required focused rechecks to reconstruct five tagged Analytics
+warnings; 11 raw stderr lines from the SubPrep visual-capture target were a
+separate target-level set. Count repeated QProcess timeout diagnostics outside
+the full-suite warning total.
+
 ### Windows x64 Release package result — 2026-11-12
 
 The local VS 18 attempt could only produce an intermediate installer with a
