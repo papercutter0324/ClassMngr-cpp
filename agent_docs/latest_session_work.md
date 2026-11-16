@@ -43,14 +43,16 @@
   `25190b33` (same source/package inputs; later changes were docs-only), this
   completes the current cross-platform Release package matrix.
 - The local `286468ea` startup hang was not reproduced by hosted Windows; its
-  local cause remains unknown. Preserve both records without claiming a fix.
+  local cause remains unknown and is handed to Phase 11 if it recurs. Preserve
+  both records without claiming a fix.
   Windows warnings remain 5 tagged, previously dispositioned ClassAnalytics
   QWARNs plus 11 separate raw SubPrep visual-capture stderr lines assigned to
   Phase 10. Hosted bundles are under
   `build/hosted-run-43908745977-{windows,linux}/`.
-- Phase 8/8a remain open for historical macOS/Linux target-only dispositions
-  and final cross-host/source/adapter-boundary review. See the Phase 8 and
-  Phase 8a progress logs.
+- Phase 8a is Complete for `6aa3715a` with Phase 10/11 handoffs for retained
+  historical diagnostics. Phase 8 remains in progress for active
+  adapter-boundary implementation and review. See the Phase 8 and Phase 8a
+  progress logs.
 
 ## Current Deployment Handoff — phase8-macos-windows-candidates-20261116 — 2026-11-16
 

@@ -10,9 +10,11 @@ committed-head result remains historical evidence for the new files. The
 hosted clean current-source baseline has since passed on docs-only commit
 `6aa3715a`: Windows 618/618 and Linux 621/621, with required output and C53
 checks. Windows Release package verification and ARM64 cross-build also passed.
-Hosted results are linked in the Phase 8 and 8a progress logs; only final
-cross-host/source review, remaining adapter-boundary review, and historical
-macOS/Linux target-only dispositions remain open.
+Hosted results are linked in the Phase 8 and 8a progress logs. Phase 8a is
+Complete for `6aa3715a`; historical visual-capture/font diagnostics are handed
+to Phase 10 and dirty-run timeout/Bootstrap plus W11 assertion gaps to Phase 11,
+without inferred causes. Phase 8 remains In progress for active adapter-boundary
+implementation and review.
 
 Ordered source-boundary candidates:
 
@@ -90,7 +92,7 @@ found no confirmed gate blocker: the session owns, loads, closes, and releases
 the active document, while the plan permits retaining Qt PDF. Reopen only if a
 toolkit-neutral viewer interface becomes an explicit requirement.
 
-## Phase 8a — Cross-host verification open
+## Phase 8a — Current candidate accepted; historical diagnostics handed off
 
 The 2026-11-14 macOS run at `d8f31c7aaf29bdc07f12f7f6f229bc8ea596889e`
 passed 5,607 Debug build steps, 620/620 CTest targets, Schedule/Roster/
@@ -115,8 +117,13 @@ Current-source Linux Release workflow
 also passed and was independently accepted. Its result and checksum are in the
 Phase 8 progress log. Windows/Linux at `6aa3715a` and macOS at `25190b33` share
 source/package inputs because intervening changes were documentation-only;
-the Release matrix is covered. Phase 8/8a remain open for final cross-host/source
-and adapter-boundary review and historical macOS/Linux target-only dispositions.
+the Release matrix is covered. Phase 8a is Complete: Phase 10 owns visual-capture
+geometry/font diagnostics, Windows raw Sub Prep capture warnings, and the 91
+macOS font-alias warning contexts; Phase 11 owns reconstruction/reproduction of
+unidentified historical target-only slots, including dirty-run timeout targets,
+the Linux Bootstrap post-PASS shutdown SIGSEGV, and Linux W11's four-context
+assertion gap. No historical cause is inferred. Phase 8 remains In progress for
+its active adapter-boundary implementation and review.
 See the [Phase 8 hosted record](09-Phase-8-Progress-Log.md#2026-11-17--hosted-current-source-baseline-and-windows-release-verification),
 [Linux Release record](09-Phase-8-Progress-Log.md#2026-11-17--current-source-linux-release-verification-and-package-matrix),
 and [Phase 8a hosted record](09.5-Phase-8a-Progress-Log.md#2026-11-17--hosted-windows-and-linux-current-source-gate-results).

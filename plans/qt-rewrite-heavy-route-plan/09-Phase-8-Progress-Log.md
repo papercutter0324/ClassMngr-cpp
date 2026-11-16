@@ -1436,7 +1436,10 @@ The package checksum, independently matched against the archive contents, is
 The macOS Release package at `25190b33` and Windows/Linux Release packages at
 `6aa3715a` share source/package inputs; intervening changes were documentation-
 only. The current cross-platform Release package matrix is therefore covered.
-Phase 8 remains In progress for final cross-host/source and adapter-boundary
-review. See the [Linux Release artifact 14261653802](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43939557328/artifacts/14261653802),
+Phase 8a is Complete for `6aa3715a` with residual diagnostics handed to
+Phases 10 and 11; no historical cause or fix is claimed. Phase 8 remains In
+progress for active adapter-boundary implementation and review. See the
+[Phase 8a closure record](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
+[Linux Release artifact 14261653802](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43939557328/artifacts/14261653802),
 the [Windows package record](#2026-11-17--hosted-current-source-baseline-and-windows-release-verification),
 and [macOS package record](#8718--macos-debug-output-and-release-verification-at-25190b33-2026-11-16).

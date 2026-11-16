@@ -54,13 +54,13 @@ is covered by the macOS, Windows, and Linux candidates.
 
 The local `286468ea` Windows run was 617/618, but its selector-unset
 `ClassMngr.exe` hang was not reproduced on the clean hosted runner. Its local
-cause remains unknown, and the historical target-only observation remains
-unattributed. Phase 8 and 8a remain in progress pending final cross-host
-source/output and adapter-boundary review, disposition or explicit later-phase
-ownership for historical target-only macOS/Linux failures and final
-source/output/adapter-boundary review. Hosted artifacts are IDs `14260381124`
-(Windows Debug), `14249636477` (Windows Release), `14255478849` (Linux Debug),
-and `14261653802` (Linux Release).
+cause remains unknown and is handed to Phase 11 if it recurs; the historical
+target-only observation remains unattributed. Phase 8a is Complete for
+`6aa3715a` with explicit Phase 10/11 handoffs for historical diagnostics.
+Phase 8 remains In progress for active adapter-boundary implementation and
+review. Hosted artifacts are IDs `14260381124` (Windows Debug), `14249636477`
+(Windows Release), `14255478849` (Linux Debug), and `14261653802` (Linux
+Release).
 
 ## Current Deployment Continuation — Phase 8 Windows timeouts and Segoe UI — 2026-11-12
 
