@@ -391,6 +391,8 @@ target_link_libraries(ClassMngrSchedulePrint
         Qt6::Gui
         Qt6::Pdf
         Qt6::Widgets
+    PRIVATE
+        ClassMngrQtPdfGeneration
 )
 set_target_properties(ClassMngrSchedulePrint
     PROPERTIES
@@ -625,7 +627,6 @@ classmngr_add_production_objects(
     LIBRARIES
         ClassMngrQtPdfGeneration
         ClassMngrFontManager
-        ClassMngrSchedulePdfRenderer
         ClassMngrRosterTemplateRenderer
         ClassMngrSubPrepShared
         ClassMngrSpeakingEvalReportEngine
