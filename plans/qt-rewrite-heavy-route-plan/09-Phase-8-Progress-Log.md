@@ -1159,7 +1159,7 @@ Windows x64 Debug run only; Linux/macOS runtime verification remains outstanding
 No production source changed, and no commit or push occurred. Phase 8 remains
 open pending the remaining adapter-boundary and cross-platform exit-gate work.
 
-### 8.7.18 — Current-source macOS Debug, output, and Release verification (2026-11-16)
+### 8.7.18 — macOS Debug, output, and Release verification at 25190b33 (2026-11-16)
 
 At committed HEAD `25190b3305dcd9bf92c31f3bf07078ddd4c78eca` (tree
 `aee7746080019c343d6562cb37581806cf79ac34`), the Mac mini completed a fresh
@@ -1204,7 +1204,56 @@ DMG SHA-256:
 Package logs and the report are in
 [`macos-clang-release-next-package-25190b33`](../../build/macos-clang-release-next-package-25190b33/).
 
-This closes the current-source local macOS candidate. It does not close the
-Phase 8 cross-platform exit gate: current-source Linux and hosted Windows/Linux
-workflow evidence, remaining source-review dispositions, and cross-host
-QWARN review are still required.
+This closes the current-source macOS local candidate at `25190b33`. The
+Windows evidence below is from its earlier ancestor candidate `3a608778`; the
+macOS run covers that source plus later build/source changes. The merge adds
+the upstream Windows evidence and gate documentation without changing the
+`25190b33` source/build tree, so this macOS verification applies to the merged
+branch. The Phase 8 gate still needs current-source Windows and Linux
+verification, remaining source-review dispositions, and cross-host QWARN
+review.
+
+### 2026-11-16 — Windows x64 Debug and output evidence at 3a608778
+
+The Windows 11 x64 `windows-x64-debug` run recorded at `2026-11-15T20:37:29Z`
+used candidate HEAD `3a6087780519002f2a77c4d95fd3482f8d63bb59` (tree
+`3f536a1184dbb7dc75e72aec6d2aec9dce36954e`). The worktree was clean at both
+boundaries, the source fingerprint was stable at
+`bd79992b3629f1ecd15cc54b377faca303e16c18c3301bd8272ff30fd97e66c2`, and the
+recorder marked provenance valid. Configure and clean Debug build passed;
+serial, unfiltered CTest passed 618/618 with zero failures, errors, or skips.
+
+The enabled output captures passed on this host. Schedule Legacy/Next PDFs
+matched at 150 DPI with zero changed pixels, expected text, and one landscape
+A4 page; the frozen macOS raster comparison measured 5.6629% changed pixels
+and remains diagnostic rather than a cross-platform pixel gate. All four
+Roster layouts passed text, page-count, geometry, and raster parity across six
+pages. Speaking Evaluation Standard and Advanced each passed expected-text,
+page-geometry, and Legacy/Next raster checks with zero changed pixels. C53
+matched 12 Sub Prep and 5 Roster pages with zero changed pixels and matching
+font-resource provenance; the independent SQL oracle and strict Next used-code
+audit passed.
+
+The runtime transcript contains five QWARN occurrences in
+`ClassAnalyticsPageReadParityTests`: one optional Qt font-directory notice
+(the test loaded embedded Inter and Pretendard) and four offscreen
+`propagateSizeHints()` notices. This is the already-dispositioned Windows
+warning family documented in Phase 8a; warnings and assertions were not
+suppressed or changed. The run also emitted non-fatal MSVC duplicate-stub and
+`/FORCE` linker diagnostics on test targets; the full registered suite ran and
+passed.
+
+The primary evidence bundle is
+[`phase8-windows-current-head-3a608778-20261116`](../../build/windows-x64-debug/artifacts/phase8-windows-current-head-3a608778-20261116/)
+(46 files, 14,081,883 bytes), including the recorder report/log, output
+manifests, PDFs, and rasters. Direct links: [baseline report](../../build/windows-x64-debug/artifacts/phase8-windows-current-head-3a608778-20261116/refactoring-baseline.json)
+and [full transcript](../../build/windows-x64-debug/artifacts/phase8-windows-current-head-3a608778-20261116/refactoring-baseline.log).
+C53 evidence is under
+[`sub-prep-c53-20261115T203613426126Z`](../../build/windows-x64-debug/artifacts/sub-prep-c53-20261115T203613426126Z/).
+The separately retained unowned generated Resources directory was preserved
+under `build/windows-x64-debug/generated/ClassMngrNext/Resources.unowned-preserved-20261116-phase8`
+before catalog regeneration; it was not deleted. No production source changed
+during this Windows run. This closes the Windows Debug/output evidence slice
+for candidate `3a608778`. It predates the later source/build updates verified
+on macOS at `25190b33`, so current-source Windows verification and any required
+Windows Release package check remain open.

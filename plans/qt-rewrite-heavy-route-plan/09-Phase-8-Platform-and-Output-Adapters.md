@@ -37,8 +37,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 2, 3, and 7
 - Blocks: Cross-platform parity and final release
 - Owner: Unassigned
-- Last updated: 2026-11-15
-- Current note: The local Windows x64 Debug build with the recorded test-harness updates passes serial, unfiltered CTest 618/618. The original build failure was an existing generated Resources folder without its ownership manifest; it was preserved and the catalog regenerated. No production code changed, and Linux/macOS runtime was not run. Phase 8 and 8a remain In progress with cross-host evidence and review open. See the [Phase 8 progress log](09-Phase-8-Progress-Log.md), [Phase 8a plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md), and [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md).
+- Last updated: 2026-11-16
+- Current note: Windows candidate `3a608778` passed clean stable Debug configure/build, 618/618 unfiltered CTests, and Schedule/Roster/Speaking/C53 output checks. That commit is an ancestor of macOS candidate `25190b33`, whose clean universal Debug baseline, 620/620 CTests, output checks, and universal Release DMG verification cover the merged source/build inputs. The merge adds gate documentation without changing that source/build tree. Windows verification predates the later `25190b33` changes and must be rerun on the merged tree; current-source Linux evidence is also outstanding. See the [Windows record](09-Phase-8-Progress-Log.md#2026-11-16--windows-x64-debug-and-output-evidence-at-3a608778), [macOS record](09-Phase-8-Progress-Log.md#8718--macos-debug-output-and-release-verification-at-25190b33-2026-11-16), and [Phase 8a log](09.5-Phase-8a-Progress-Log.md). The overall Phase 8 gate remains In progress pending same-source cross-host verification, final source/output review, remaining adapter-boundary review, and any required package matrix.
 
 ### Slice batches
 
