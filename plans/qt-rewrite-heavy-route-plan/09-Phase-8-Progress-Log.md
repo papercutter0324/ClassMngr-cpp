@@ -1257,3 +1257,111 @@ during this Windows run. This closes the Windows Debug/output evidence slice
 for candidate `3a608778`. It predates the later source/build updates verified
 on macOS at `25190b33`, so current-source Windows verification and any required
 Windows Release package check remain open.
+
+### 2026-11-16 — Linux x64 gate at Windows candidate 3a608778
+
+Per the requested same-head comparison, Linux verification used the exact
+Windows source candidate `3a6087780519002f2a77c4d95fd3482f8d63bb59` (tree
+`3f536a1184dbb7dc75e72aec6d2aec9dce36954e`) in a detached, clean Fedora Linux
+44 x86_64 checkout. The host used Python 3.14.10, CMake 4.3.0, GCC 16.2.1,
+Ninja 1.13.2, and Qt 6.12.0. The Debug recorder used the standard
+`linux-gcc-debug` preset/build folder, eight build jobs, a 240-second CTest
+timeout, and `QT_QPA_PLATFORM=offscreen`. Its start/end commit, tree, clean
+state, and source fingerprint matched; provenance was valid.
+
+Debug configure passed. The clean all-target build failed at Ninja action
+651/5702 while linking Legacy `ClassMngr`: `SchedulePdfRenderer::renderSchedulePdf`
+was undefined from `schedule_print_service.cpp:68`. The same reference blocked
+focused links of Schedule integration and Speaking report-service test
+targets. The Phase 8 Linux Debug build gate therefore fails at this candidate.
+The current branch has later Linux preset and Schedule static-link changes;
+this result intentionally measures the earlier Windows candidate and does not
+verify those later inputs.
+
+The focused `ClassMngrNextRosterOutputTests` target built and passed 19/19 with
+zero failures or skips. By Day landscape (1 page), Daily portrait (1 page),
+Per Class landscape (2 pages), and Per Class portrait (2 pages) all matched
+Legacy/Next page text and raster pixels across six pages. Its 23 visible
+offscreen `propagateSizeHints()` QWARNs were in `editorSaveGate()` (6),
+`dialogCancelFailureAndPreview()` (1), and `captures()` (16); these retain the
+existing W09 offscreen-plugin disposition and were not suppressed.
+
+The Linux Release package gate passed at this exact candidate. The workflow
+built and installed `ClassMngrNextResourcePackage`, passed 13/13 package
+verifier unit tests, verified the staged package and extracted tarball, checked
+the x86_64 ELF, and passed the tarball checksum. The verifier accepted 534
+manifest paths, 411 file hashes, 187 direct-resource hashes, and 22 license/
+SBOM files. The 112,361,365-byte tarball SHA-256 is
+`decfcb307111e169671d6367e8b58e0405de42287a7c6c6992a06ecb56e5d843`. Prior
+Linux Release evidence at `44e89448` was not source/package-input equivalent
+(157 changed package/build paths), so this run supplies the candidate-specific
+package evidence.
+
+`python scripts/test_record_refactoring_baseline.py` passed 10/10, including
+the build/CTest/C53 orchestration cases. The full Debug build failure prevented
+the recorder from running unfiltered CTest or C53; CTest listed 621 registered
+tests, but none ran. Schedule and Speaking output parity, C53 output parity,
+and the full-suite QWARN inventory remain unverified. The 20 historical Linux
+failed-target observations are also unassessed at this candidate. The Linux
+Phase 8 gate remains open because the Debug build and required Schedule,
+Speaking, and C53 evidence did not pass, despite the Release package and Roster
+sub-gates passing.
+
+Evidence is retained under
+[`phase8-linux-gate-3a608778-20261116`](../../build/phase8-linux-gate-3a608778-20261116/)
+and [`phase8-linux-release-3a608778-20261116`](../../build/phase8-linux-release-3a608778-20261116/).
+The [recorder report](../../build/phase8-linux-gate-3a608778-20261116/artifacts/refactoring-baseline.json),
+[full Debug transcript](../../build/phase8-linux-gate-3a608778-20261116/refactoring-baseline.log),
+[Roster CTest transcript](../../build/phase8-linux-gate-3a608778-20261116/roster-output-ctest.log),
+[Release verifier report](../../build/phase8-linux-release-3a608778-20261116/reports/linux-x86_64-final-package.json),
+and [Release workflow transcript](../../build/phase8-linux-release-3a608778-20261116/release-workflow.log)
+are available for review. Both retained artifact checksum manifests passed.
+
+### 2026-11-16 — Linux x64 full-suite and package verification at 25004d36
+
+Following the `3a608778` link failure, Linux verification was rerun against
+candidate `25004d3671087497220bda59f1ee87e4dea2e71f` (tree
+`75e738a0145a819e08f2d5518a82e3ada8055ee9`) in a fresh detached Fedora Linux
+44 x86_64 clone. This source includes the later Schedule static-link fix
+`dec87be6`. The Debug recorder reported clean start/end boundaries, stable
+source fingerprint
+`48eb80fe93ee395b4a78b451736f32e4edf4c30eb473f2db6bec12258e504dbb`, and valid
+provenance. Configure passed; all 5,702 clean Debug build actions completed.
+
+Serial unfiltered CTest passed 621/621 with zero failures, errors, or skips.
+The recorder then ran C53, which passed all 17 pages (12 Sub Prep and 5 By Day
+Roster), with zero changed pixels and matching font-resource provenance.
+Schedule same-host Legacy/Next output matched at 150 DPI with zero changed
+pixels and the required single-page text/geometry; the frozen cross-platform
+raster delta was 5.66% and remains informational per its font/QtPdf tolerance.
+All four Roster layouts passed text and raster comparison across six pages.
+Speaking Standard and Advanced passed expected-text and geometry checks with
+identical Legacy/Next rasters.
+
+Linux Release package verification also passed at this exact HEAD: the Next
+package target built and installed, verifier unit tests passed 13/13, staged
+and extracted packages passed verification, the x86_64 ELF check passed, and
+the tarball checksum passed. The verifier accepted 534 manifest entries, 411
+file hashes, 187 direct-resource hashes, and 22 license/SBOM files. The
+112,353,499-byte tarball SHA-256 is
+`b510ea083e168d2399667b93eadc3493e9d247cffe9432c9100c32af35767695`.
+`python scripts/test_record_refactoring_baseline.py` passed 10/10.
+
+The exact-candidate run confirms the undefined Schedule renderer reference from
+the older `3a608778` Linux result no longer reproduces after the later link
+change. This Linux result predates the macOS stylesheet-lifecycle source change
+at `25190b33`, so it is historical evidence for candidate `25004d36`; current-
+source Linux verification remains outstanding. Windows evidence also remains
+at the earlier `3a608778` candidate. The overall Phase 8 cross-host gate remains
+open until Windows and Linux source-equivalent verification is available.
+
+Evidence is retained under
+[`phase8-linux-current-25004d36-20261116`](../../build/phase8-linux-current-25004d36-20261116/).
+The [verification summary](../../build/phase8-linux-current-25004d36-20261116/linux-current-head-verification-summary.json),
+[baseline transcript](../../build/phase8-linux-current-25004d36-20261116/fresh-source-retry-20261116-baseline.log),
+[Release transcript](../../build/phase8-linux-current-25004d36-20261116/linux-release-current-25004d36.log),
+[QWARN inventory](../../build/phase8-linux-current-25004d36-20261116/fresh-source-retry-20261116-qwarn-inventory.json),
+and [historical-target comparison](../../build/phase8-linux-current-25004d36-20261116/fresh-source-retry-20261116-historical-linux-failure-target-comparison.json)
+are available. The [1,046-entry SHA-256 manifest](../../build/phase8-linux-current-25004d36-20261116/SHA256SUMS.current-head.txt)
+passed with no mismatches. Earlier ENOSPC and stale-resource-marker attempts
+are retained as diagnostics and were not counted as product failures.

@@ -96,11 +96,21 @@ rasters, and PDF/database file hashes. Later ZIP changes make `d8f31c7a`
 historical evidence for the current dirty worktree; affected checks must be
 rerun after the adapter batch.
 
-No Linux or Windows workflow was dispatched because the available GitHub
+Linux local verification at ancestor candidate `25004d3671087497220bda59f1ee87e4dea2e71f`
+passed the clean 5,702-action Debug build, 621/621 unfiltered CTests,
+Schedule/Roster/Speaking/C53 output parity, and the Linux Release package
+verifier on Fedora 44. Its full QWARN inventory and historical target
+comparison are retained under
+`build/phase8-linux-current-25004d36-20261116/`. The Windows gate evidence is
+still at `3a608778`, so current-source Windows Debug/CTest/output/QWARN and
+Release package evidence remain required before the source-equivalent
+cross-platform gate can close. The subsequent macOS stylesheet-lifecycle source
+change at `25190b33` means this Linux evidence is historical; Linux must be
+rerun against the current merged source before the cross-platform gate closes.
+
+No GitHub Actions workflow was dispatched because the available GitHub
 connector cannot dispatch, the browser session is unavailable, `gh` is not
-installed, and local Git has no credential. Current-source Linux/Windows
-Debug and Release workflow results remain required before the cross-platform
-gate can close.
+installed, and local Git has no credential.
 
 ## 2026-11-14 gate attempt — candidate f6b258f
 
