@@ -22,6 +22,7 @@
 #include <QComboBox>
 #include <QCryptographicHash>
 #include <QDir>
+#include <QEvent>
 #include <QFile>
 #include <QFileInfo>
 #include <QImage>
@@ -264,6 +265,120 @@ struct RejectPreviewOnExit final
     ~RejectPreviewOnExit() { dialog.reject(); }
 };
 
+struct RenderFailurePreviewState final
+{
+    QString generatedPath;
+    QString temporaryDirectory;
+    int loadCalls = 0;
+    int renderCalls = 0;
+    int releaseCalls = 0;
+    int destructorCalls = 0;
+    bool pdfExistedAtLoad = false;
+    bool pdfLoaded = false;
+    bool renderReturnedNull = false;
+};
+
+class NullRenderRosterPdfPreviewSession final
+    : public Platform::RosterPdfPreviewSession
+{
+public:
+    explicit NullRenderRosterPdfPreviewSession(
+        std::shared_ptr<RenderFailurePreviewState> state)
+        : m_state(std::move(state))
+    {
+        m_state->temporaryDirectory = m_directory.path();
+        m_state->generatedPath = m_directory.filePath(
+            QStringLiteral("generated-preview.pdf"));
+    }
+
+    ~NullRenderRosterPdfPreviewSession() override
+    {
+        release();
+        ++m_state->destructorCalls;
+    }
+
+    [[nodiscard]] bool isValid() const noexcept override
+    {
+        return m_directory.isValid();
+    }
+
+    [[nodiscard]] QString path() const override
+    {
+        return m_state->generatedPath;
+    }
+
+    [[nodiscard]] bool loadGeneratedPdf() override
+    {
+        ++m_state->loadCalls;
+        m_state->pdfExistedAtLoad = QFileInfo(m_state->generatedPath).isFile();
+        QPdfDocument document;
+        m_state->pdfLoaded = m_state->pdfExistedAtLoad
+            && document.load(m_state->generatedPath) == QPdfDocument::Error::None
+            && document.pageCount() > 0;
+        return m_state->pdfLoaded;
+    }
+
+    void release() noexcept override
+    {
+        if (!m_released)
+        {
+            m_released = true;
+            ++m_state->releaseCalls;
+        }
+    }
+
+    [[nodiscard]] int pageCount() const noexcept override
+    {
+        return m_state->pdfLoaded ? 1 : 0;
+    }
+
+    [[nodiscard]] QImage renderPage(int, const QSize&) override
+    {
+        ++m_state->renderCalls;
+        const QImage image;
+        m_state->renderReturnedNull = image.isNull();
+        return image;
+    }
+
+    [[nodiscard]] Platform::PdfPrintResult printReadyDocument(
+        Platform::PdfPrintOperation&,
+        const Platform::RosterPdfPrintRequest&) override
+    {
+        return {
+            Platform::PdfPrintStatus::Failed,
+            QStringLiteral("Unexpected print from preview failure fixture")
+        };
+    }
+
+private:
+    std::shared_ptr<RenderFailurePreviewState> m_state;
+    QTemporaryDir m_directory;
+    bool m_released = false;
+};
+
+class PreviewDialogShowProbe final : public QObject
+{
+public:
+    [[nodiscard]] bool previewWasShown() const noexcept
+    {
+        return m_previewWasShown;
+    }
+
+protected:
+    bool eventFilter(QObject* watched, QEvent* event) override
+    {
+        if (event->type() == QEvent::Show
+            && watched->objectName() == QStringLiteral("nextRosterPreviewDialog"))
+        {
+            m_previewWasShown = true;
+        }
+        return QObject::eventFilter(watched, event);
+    }
+
+private:
+    bool m_previewWasShown = false;
+};
+
 }
 class RosterOutputTests final : public QObject
 {
@@ -293,6 +408,7 @@ private slots:
     void editorSaveGate();
     void rosterDialogRequiresCompleteGeometryCallbacks();
     void dialogCancelFailureAndPreview();
+    void previewRenderFailureCleansUpGeneratedSession();
     void saveFileDialogReceivesRosterPdfRequestAndHandlesFailure();
     void outputWarnsBeforeGeneratingWhenStudentsOverflowTemplate();
     void rosterPreviewSessionOwnsAndRendersGeneratedPdf();
@@ -861,6 +977,69 @@ void RosterOutputTests::dialogCancelFailureAndPreview()
         noOpGeometryPreferencesCallbacks());
     QCOMPARE(testing.findChild<QComboBox*>(QStringLiteral("nextRosterTemplate"))->count(), 1);
     QCOMPARE(testing.request().templateId, R::TemplateId::PerClassWithExtraInfo); QCOMPARE(testing.request().scope, Output::RosterOutputScope::CurrentClass);
+}
+
+void RosterOutputTests::previewRenderFailureCleansUpGeneratedSession()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const QString databasePath = dir.filePath(QStringLiteral("render-failure.tps"));
+    QVERIFY(seed(databasePath));
+
+    auto source = actions();
+    const auto generate = source.savePdf;
+    int generationCalls = 0;
+    QString generatedPath;
+    std::optional<DocumentOutputResult> generationResult;
+    source.savePdf = [&](const QString& path,
+                         const Output::RosterOutputRequest& request,
+                         const QString& outputPath,
+                         const R::Fonts& fonts) {
+        ++generationCalls;
+        generatedPath = outputPath;
+        generationResult = generate(path, request, outputPath, fonts);
+        return *generationResult;
+    };
+
+    auto sessionState = std::make_shared<RenderFailurePreviewState>();
+    source.pdfPreviewSessionFactory = [sessionState] {
+        return std::make_unique<NullRenderRosterPdfPreviewSession>(sessionState);
+    };
+    const auto choices = source.readChoices(databasePath, id(1), false);
+    QVERIFY(choices);
+
+    Ui::RosterPrintDialog dialog(databasePath, id(1), false, *choices, source,
+        noOpGeometryPreferencesCallbacks());
+    PreviewDialogShowProbe showProbe;
+    qApp->installEventFilter(&showProbe);
+    findButton(dialog, "nextRosterPreview")->click();
+    qApp->removeEventFilter(&showProbe);
+
+    QCOMPARE(generationCalls, 1);
+    QVERIFY(generationResult.has_value());
+    QCOMPARE(generationResult->status, DocumentOutputStatus::Sent);
+    QVERIFY(!generatedPath.isEmpty());
+    QCOMPARE(generatedPath, sessionState->generatedPath);
+    QCOMPARE(sessionState->loadCalls, 1);
+    QVERIFY(sessionState->pdfExistedAtLoad);
+    QVERIFY(sessionState->pdfLoaded);
+    QCOMPARE(sessionState->renderCalls, 1);
+    QVERIFY(sessionState->renderReturnedNull);
+
+    auto* const outputStatus = dialog.findChild<QLabel*>(
+        QStringLiteral("nextRosterOutputStatus"));
+    QVERIFY(outputStatus);
+    QCOMPARE(outputStatus->text(),
+        QStringLiteral("Unable to render the roster preview page."));
+    QVERIFY(!showProbe.previewWasShown());
+    QVERIFY(!dialog.findChild<QDialog*>(
+        QStringLiteral("nextRosterPreviewDialog")));
+    QVERIFY(QApplication::activeModalWidget() == nullptr);
+
+    QCOMPARE(sessionState->releaseCalls, 1);
+    QCOMPARE(sessionState->destructorCalls, 1);
+    QVERIFY(!QFileInfo::exists(generatedPath));
+    QVERIFY(!QFileInfo::exists(sessionState->temporaryDirectory));
 }
 
 void RosterOutputTests::saveFileDialogReceivesRosterPdfRequestAndHandlesFailure()
