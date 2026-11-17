@@ -32,13 +32,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: In progress
+- Status: Complete
 - Default route: Heavy
 - Depends on: Phases 2, 3, and 7
-- Blocks: Cross-platform parity and final release
+- Blocks: None; the exit gate passed
 - Owner: Unassigned
 - Last updated: 2026-11-17
-- Current note: Phase 8a is Complete for current candidate `6aa3715a`; its retained historical gaps have explicit Phase 10/11 handoffs, with no causes or fixes claimed. Phase 8 remains In progress for active adapter-boundary implementation and review. Hosted clean current-source baselines passed Windows 618/618 and Linux 621/621 with required output/C53 evidence. The workstation-only Windows startup case did not reproduce hosted; its cause remains unknown and no product fix is claimed. Phase 11 owns test/release-gate investigation only if this diagnostic recurs; see the [retained local evidence](09.5-Phase-8a-Progress-Log.md#2026-11-17--windows-x64-current-tree-exit-gate-evidence). The Windows x64 Release verifier and ARM64 cross-build passed; current-source Linux x64 Release was independently accepted. Windows/Linux packages at `6aa3715a` and macOS at `25190b33` have equivalent source/package inputs because intervening changes were documentation-only, so the Release matrix is covered. See the [hosted baseline and package record](09-Phase-8-Progress-Log.md#2026-11-17--current-source-linux-release-verification-and-package-matrix), [Phase 8a closure record](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure), [macOS record](09-Phase-8-Progress-Log.md#8718--macos-debug-output-and-release-verification-at-25190b33-2026-11-16), and [Linux Release run](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43939557328).
+- Current note: Phase 8 and Phase 8a are Complete at candidate `744e7ef1`.
+  Hosted run [44001123251](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44001123251) passed Windows x64 618/618 and Linux x64 621/621, required outputs, and 17-page C53 comparisons with zero changed pixels and matching font provenance. Windows ARM64 Debug cross-build and three-host resource layout passed in [run 44001123277](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44001123277). The test-only change preserves the accepted Release package matrix. Historical visual/font warnings remain assigned Phase 10; the unexplained workstation-only Windows startup timeout remains a Phase 11 handoff if it recurs. See the [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1) and [Phase 8a closure record](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure).
 
 ### Slice batches
 

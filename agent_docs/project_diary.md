@@ -1,5 +1,25 @@
 # Project Diary
 
+### Phase 8/8a exit-gate closeout — 2026-11-17
+
+The source-boundary review found the font-registration, Calendar archive-read,
+and PDF-generation ports already implemented; those open tracker entries were
+stale. Roster preview render failure was the remaining untested adapter path,
+so a fake session now returns no rendered page after a successful PDF load.
+The focused Windows Ninja build completed 580 steps, CTest passed 1/1, and the
+direct case confirmed the visible error, no modal preview, and temporary-file
+cleanup. Linux's full hosted run passed the same test target.
+
+Hosted current-candidate workflow `44001123251` passed Windows 618/618 and
+Linux 621/621, required output captures, and 17-page C53 pixel parity on both
+hosts. The Windows ARM64 Debug cross-build and three-host resource-layout
+workflow `44001123277` passed. Existing macOS, Windows, and Linux Release
+package evidence remains valid because `744e7ef1` changes only a test file.
+Phase 8 and 8a are Complete. The local Windows startup timeout remains
+unexplained and is a Phase 11 handoff if it recurs; no fix is claimed. No
+warnings were suppressed, and retained visual/font warning ownership remains
+with Phase 10.
+
 ### Phase 8 baseline warning accounting — 2026-11-17
 
 Keep QtTest-tagged `QWARN` events distinct from raw stderr warning bodies and

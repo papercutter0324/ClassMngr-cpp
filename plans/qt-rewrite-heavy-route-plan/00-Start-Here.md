@@ -6,24 +6,18 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-17
-- Current milestone: Phases 0–7 and 7.5 are Complete, and Phase 8a is Complete
-  for current candidate `6aa3715a`; Phase 8 remains In progress for active
-  adapter-boundary implementation and review. Hosted clean current-source
-  baselines on docs-only commit `6aa3715a` passed Windows 618/618 and Linux
-  621/621, with required output and C53 evidence. The local Windows `286468ea` startup-case
-  failure did not reproduce hosted; its cause remains unknown and no fix is
-  claimed. Phase 11 owns test/release-gate investigation only if this
-  workstation-specific diagnostic recurs; see the [retained evidence](09.5-Phase-8a-Progress-Log.md#2026-11-17--windows-x64-current-tree-exit-gate-evidence).
-  Windows x64 and ARM64 Release checks
-  passed, and Linux Release verification completed; the Windows/Linux packages
-  at `6aa3715a` match the macOS `25190b33` source/package inputs, so the Release
-  matrix is covered. Phase 8a's unresolved historical diagnostics have Phase
-  10/11 handoffs; no historical causes are inferred. See the
+- Current milestone: Phases 0–8 and 8a are Complete. Phase 8 closed at
+  candidate `744e7ef1`; hosted Windows x64 and Linux x64 baselines passed
+  618/618 and 621/621, with required Schedule/Roster/Speaking outputs and
+  17-page C53 parity on both hosts. Windows ARM64 Debug cross-build and
+  three-host resource-layout checks passed. The test-only change preserves the
+  accepted macOS/Windows/Linux Release package matrix. Historical visual/font
+  warnings remain assigned to Phase 10; the unexplained workstation-only
+  `286468ea` startup timeout remains a Phase 11 handoff if it recurs. No
+  historical cause or fix is claimed. See the [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
   [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md),
-  [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md),
-  [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md), [Phase 8
-  progress log](09-Phase-8-Progress-Log.md), and [current batch
-  tracker](Current-Slice-Batches.md).
+  [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md), [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md),
+  and [current batch tracker](Current-Slice-Batches.md). Phase 9 is next.
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
@@ -47,7 +41,7 @@
 | 6 | 07-Phase-6-Shared-UI-Rewrite.md | Complete | Heavy | 5 |
 | 7 | 08-Phase-7-Feature-Migration.md | Complete | Heavy | 2–6 |
 | 7.5 | 08.5-Phase-7.5-Cross-Platform-Follow-Ups.md | Complete | Light | 0–7 |
-| 8 | 09-Phase-8-Platform-and-Output-Adapters.md | In progress | Heavy | 2, 3, 7 |
+| 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Complete | Heavy | 2, 3, 7 |
 | 8a | 09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md | Complete | Heavy | 8 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |

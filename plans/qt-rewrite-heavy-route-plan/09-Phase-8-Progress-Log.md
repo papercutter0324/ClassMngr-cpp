@@ -1414,8 +1414,8 @@ The independent tester accepted this result as well.
 
 At this point, Linux Release evidence was still the earlier `25004d36` run;
 the current-source package follow-up and matrix status are recorded below.
-Phase 8 remains In progress for final cross-host/source and adapter-boundary
-review. Evidence: [Windows baseline report](../../build/hosted-run-43908745977-windows/artifacts/baseline/windows-x64-debug.json),
+This is the intermediate status at `6aa3715a`, superseded by the final
+`744e7ef1` closeout below. Evidence: [Windows baseline report](../../build/hosted-run-43908745977-windows/artifacts/baseline/windows-x64-debug.json),
 [Linux baseline report](../../build/hosted-run-43908745977-linux/artifacts/baseline/linux-gcc-debug.json),
 [Windows package report](../../build/phase8-windows-release-43908562397/package/build/windows-x64-release/reports/windows-x64-final-package.json),
 [checksum file](../../build/phase8-windows-release-43908562397/package/dist/checksums-windows-x64.txt),
@@ -1437,9 +1437,54 @@ The macOS Release package at `25190b33` and Windows/Linux Release packages at
 `6aa3715a` share source/package inputs; intervening changes were documentation-
 only. The current cross-platform Release package matrix is therefore covered.
 Phase 8a is Complete for `6aa3715a` with residual diagnostics handed to
-Phases 10 and 11; no historical cause or fix is claimed. Phase 8 remains In
-progress for active adapter-boundary implementation and review. See the
+Phases 10 and 11; no historical cause or fix is claimed. At that candidate,
+Phase 8 was In Progress for adapter-boundary review; this historical status is
+superseded by the final `744e7ef1` closeout below. See the
 [Phase 8a closure record](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
 [Linux Release artifact 14261653802](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/43939557328/artifacts/14261653802),
 the [Windows package record](#2026-11-17--hosted-current-source-baseline-and-windows-release-verification),
 and [macOS package record](#8718--macos-debug-output-and-release-verification-at-25190b33-2026-11-16).
+
+### 2026-11-17 — Phase 8 exit-gate closeout at 744e7ef1
+
+This closeout supersedes all earlier Phase 8 open and In Progress statements
+in this log; they record the status of their dated candidates only.
+
+The final source-boundary review found no remaining v2 blocker. The font
+registration port, Calendar `ArchiveReadPort`, and PDF-generation session port
+were already implemented; their active tracker entries were stale. No other
+slices were found. Phase 8 is Complete. Phase 8a remains Complete with its
+historical diagnostic handoffs unchanged.
+
+The acceptance candidate is `744e7ef1ffdb490205b60b8d6711b007c9bddccf`. The
+only source-tree change since the accepted package inputs is the focused test
+in `tests/next/roster_output_tests.cpp`; no production, resource, build, or
+package input changed. Hosted baseline workflow
+[44001123251](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44001123251)
+passed Windows x64 Debug with 618/618 CTests and Linux x64 Debug with 621/621.
+Schedule, all Roster layouts, Speaking Standard/Advanced, and C53 output checks
+passed on both hosts. Windows ARM64 Debug cross-build passed in the same run.
+
+C53 matched 17 pages per platform with zero changed pixels and matching font
+provenance. The Windows baseline and matched capture each passed for 12 Sub
+Prep and 5 Roster pages. The current [Windows artifact 14302396889](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44001123251/artifacts/14302396889)
+and [Linux artifact 14300530858](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44001123251/artifacts/14300530858)
+retain the baseline reports and output evidence. Resource-layout workflow
+[44001123277](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44001123277)
+passed on macOS, Windows x64, and Linux. The accepted macOS, Windows, and Linux
+Release package matrix remains source/package-equivalent because this change
+adds only test coverage.
+
+`previewRenderFailureCleansUpGeneratedSession()` injects a successful PDF load
+followed by a null page render and checks the visible error, absence of a
+preview modal, and release/destruction of the generated session and temporary
+files. It passed in an isolated Qt 6.12 Ninja build (580 steps), focused CTest
+1/1, direct QtTest, and the hosted Linux full suite; the hosted Windows full
+suite also passed `ClassMngrNextRosterOutputTests`. No production behavior
+change was needed. The focused local case emitted Qt's optional missing-font-
+directory notice; it passed and the warning was not suppressed.
+
+The retained historical full-suite visual/font warning contexts remain with
+Phase 10. The local `286468ea` startup timeout remains unexplained, was not
+reproduced in hosted Windows, and has no claimed fix; Phase 11 owns follow-up
+if it recurs.

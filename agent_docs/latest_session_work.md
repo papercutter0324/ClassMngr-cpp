@@ -1,5 +1,33 @@
 # Latest Session Work
 
+## Phase 8/8a closeout — phase8_gate_close_20261117 — 2026-11-17
+
+- Acceptance candidate `744e7ef1ffdb490205b60b8d6711b007c9bddccf` adds the
+  Roster preview render-failure regression test. No production or package
+  inputs changed.
+- Hosted [Refactoring Baseline run 44001123251](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44001123251)
+  passed Windows x64 Debug with 618/618 CTests and Linux x64 Debug with
+  621/621. Schedule, Roster, Speaking Standard/Advanced, and C53 output checks
+  passed. C53 covered 17 pages per host with zero changed pixels and matching
+  font provenance. Windows ARM64 Debug cross-build passed.
+- The separate [resource-layout run 44001123277](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44001123277)
+  passed on macOS, Windows x64, and Linux. Existing Release package evidence
+  remains source/package-equivalent: the `744e7ef1` change is test-only.
+- The new `previewRenderFailureCleansUpGeneratedSession()` test passed in an
+  isolated Qt 6.12 Ninja rebuild (580 steps), focused CTest 1/1, and the hosted
+  Linux full suite. It verifies the visible error, no preview modal, and
+  generated PDF/temp-directory cleanup. A direct local QtTest run passed.
+- The source review found no remaining Phase 8 v2 boundary blocker. Previously
+  stale tracker entries for feature font registration, Calendar ZIP reading,
+  and PDF generation are implemented behind their ports. Phase 8 and Phase 8a
+  are Complete. The unresolved local `286468ea` startup timeout was not
+  reproduced hosted; retain the Phase 11 handoff without claiming a cause or
+  fix. Retained historical visual/font warnings remain assigned to Phase 10.
+  No warnings were suppressed.
+- The focused local test emitted Qt's optional missing font-directory notice;
+  it passed. The original protected Visual Studio build tree was not changed;
+  the isolated Ninja build was used for the focused verification.
+
 ## Local Windows diagnostic — windows_phase8_exit_gates — 2026-11-17
 
 - Current Windows source candidate `286468ea779a212bd43cd40a3866f38a2282d8dc`
@@ -49,10 +77,9 @@
   QWARNs plus 11 separate raw SubPrep visual-capture stderr lines assigned to
   Phase 10. Hosted bundles are under
   `build/hosted-run-43908745977-{windows,linux}/`.
-- Phase 8a is Complete for `6aa3715a` with Phase 10/11 handoffs for retained
-  historical diagnostics. Phase 8 remains in progress for active
-  adapter-boundary implementation and review. See the Phase 8 and Phase 8a
-  progress logs.
+- This earlier `6aa3715a` handoff is superseded by the `744e7ef1` closeout
+  above. Phase 8a remains Complete with Phase 10/11 handoffs for historical
+  diagnostics. See the Phase 8 and Phase 8a progress logs.
 
 ## Current Deployment Handoff — phase8-macos-windows-candidates-20261116 — 2026-11-16
 

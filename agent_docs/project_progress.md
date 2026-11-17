@@ -1,5 +1,39 @@
 # Project Progress
 
+## Phase 8/8a exit-gate closeout — 2026-11-17
+
+Deployment `phase8_gate_close_20261117` completed on Heavy; Light was used for
+Git commit and push. Acceptance candidate is
+`744e7ef1ffdb490205b60b8d6711b007c9bddccf`. The only source-tree change from
+the previously accepted package candidate is a Roster preview failure-path
+test; production and packaged inputs remain equivalent.
+
+Hosted Refactoring Baseline run
+[44001123251](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44001123251)
+passed clean Windows x64 Debug configure/build and 618/618 CTests, and Linux
+x64 Debug configure/build and 621/621 CTests. Required Schedule, all Roster,
+Speaking Standard/Advanced, and Sub Prep C53 captures passed. C53 matched 17
+pages on each host with zero changed pixels and matching font provenance.
+Windows ARM64 Debug cross-build and all three resource-layout jobs passed;
+resource-layout run
+[44001123277](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44001123277)
+was green on macOS, Windows, and Linux.
+
+`ClassMngrNextRosterOutputTests` passed on Windows and Linux. The new
+`previewRenderFailureCleansUpGeneratedSession()` case also passed locally in
+the isolated Qt 6.12 Ninja build and CTest 1/1, confirming the visible render
+error, no preview modal, and temporary-session cleanup. No production change
+was needed. The three stale tracker candidates—feature font registration,
+Calendar ZIP reading, and PDF generation—are already behind their ports; the
+source-boundary review found no other v2 blocker. Phase 8 and Phase 8a are
+Complete. The cross-platform Release package matrix remains valid because the
+test-only change does not alter packaged inputs. The workstation-only
+`286468ea` startup timeout remains unexplained and was not reproduced in the
+hosted clean run; preserve it as a Phase 11 handoff if it recurs. Retained
+historical visual/font warnings remain assigned to Phase 10. No warnings were
+suppressed. See the [Phase 8 closeout record](../plans/qt-rewrite-heavy-route-plan/09-Phase-8-Progress-Log.md)
+and [Phase 8a triage record](../plans/qt-rewrite-heavy-route-plan/09.5-Phase-8a-Progress-Log.md).
+
 ## Local Windows diagnostic — Phase 8 baseline — 2026-11-17
 
 Active deployment: `windows_phase8_exit_gates`; route: Heavy. Current source
@@ -52,15 +86,13 @@ package run `43939557328` passed the verifier, manifest/hash/resource checks,
 plugin checks, and archive checksum; the cross-platform Release package matrix
 is covered by the macOS, Windows, and Linux candidates.
 
-The local `286468ea` Windows run was 617/618, but its selector-unset
-`ClassMngr.exe` hang was not reproduced on the clean hosted runner. Its local
-cause remains unknown and is handed to Phase 11 if it recurs; the historical
-target-only observation remains unattributed. Phase 8a is Complete for
-`6aa3715a` with explicit Phase 10/11 handoffs for historical diagnostics.
-Phase 8 remains In progress for active adapter-boundary implementation and
-review. Hosted artifacts are IDs `14260381124` (Windows Debug), `14249636477`
-(Windows Release), `14255478849` (Linux Debug), and `14261653802` (Linux
-Release).
+This earlier continuation records the candidate-`6aa3715a` status and is
+superseded by the `744e7ef1` Phase 8/8a closeout above. The local
+`286468ea` selector-unset `ClassMngr.exe` timeout remains unexplained and is
+handed to Phase 11 only if it recurs; the historical target-only observation
+remains unattributed. Hosted artifacts from this earlier run are IDs
+`14260381124` (Windows Debug), `14249636477` (Windows Release),
+`14255478849` (Linux Debug), and `14261653802` (Linux Release).
 
 ## Current Deployment Continuation — Phase 8 Windows timeouts and Segoe UI — 2026-11-12
 
