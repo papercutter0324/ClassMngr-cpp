@@ -56,15 +56,26 @@ public:
 
     [[nodiscard]] int registrationId() const noexcept { return m_registrationId; }
     [[nodiscard]] const QStringList& familyNames() const noexcept { return m_familyNames; }
+    // Empty for data-backed registrations. File-backed registrations retain
+    // their canonical verified package path until the font registration ends.
+    [[nodiscard]] const QString& sourceFilePath() const noexcept
+    {
+        return m_sourceFilePath;
+    }
 
 private:
     friend class ResourceLoader;
 
-    RegisteredFont(int registrationId, QStringList familyNames) noexcept;
+    RegisteredFont(
+        int registrationId,
+        QStringList familyNames,
+        QString sourceFilePath = {}
+        ) noexcept;
     void release() noexcept;
 
     int m_registrationId = -1;
     QStringList m_familyNames;
+    QString m_sourceFilePath;
 };
 
 class ResourceTranslation final
@@ -137,6 +148,12 @@ public:
     [[nodiscard]] ResourceResult<ScopedResource<RegisteredFont>> loadFont(
         const ResourceRequest& request
         ) const;
+    // Registers a package-file font only after verifying its canonical path,
+    // catalog byte count, and SHA-256. The registration retains that path until
+    // its owning ScopedResource releases the Qt font registration.
+    [[nodiscard]] ResourceResult<ScopedResource<RegisteredFont>> loadFileBackedFont(
+        const ResourceRequest& request
+        ) const;
     [[nodiscard]] ResourceResult<ScopedResource<QString>> loadStylesheet(
         const ResourceRequest& request
         ) const;
@@ -154,6 +171,10 @@ public:
         ) const;
 
 private:
+    [[nodiscard]] ResourceResult<ScopedResource<RegisteredFont>> loadFontResource(
+        const ResourceRequest& request,
+        bool fileBacked
+        ) const;
     [[nodiscard]] ResourceResult<ScopedResource<QString>> loadTextResource(
         const ResourceRequest& request,
         std::optional<ResourceType> requiredType

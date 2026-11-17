@@ -11,9 +11,10 @@
   scenarios, but all six normal-use working-set checkpoints exceeded
   262,144,000 bytes; the memory exit gate has not passed. Supplemental external
   font-event snapshots are approximate because the app continues starting
-  while the runner receives log lines. P9-06R is investigating the Inter font
-  registration path using the same verified font asset. No Phase 9 memory
-  budget pass is claimed. See the
+  while the runner receives log lines. P9-06R now registers the exact verified
+  Inter font file through Qt's file-backed API; focused standard-tree Debug
+  tests pass, and the optimized Release memory remeasurement is pending. No
+  Phase 9 memory budget pass is claimed. See the
   [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
   [Phase 8a closeout](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
   [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), [Phase 9 progress

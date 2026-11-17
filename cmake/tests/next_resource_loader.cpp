@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFont>
 #include <QFontDatabase>
 #include <QGuiApplication>
 #include <QImage>
@@ -627,6 +628,311 @@ std::optional<QByteArray> sameSizeValidJsonMutation(const QByteArray& original)
     return std::nullopt;
 }
 
+bool testVerifiedInterFileBackedFontRegistration()
+{
+    QTemporaryDir packageRoot;
+    if (!packageRoot.isValid())
+    {
+        return fail(QStringLiteral("could not create Inter font package fixture root"));
+    }
+
+    auto catalog = ResourceCatalog::load(
+        QString::fromUtf8(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG),
+        packageRoot.path()
+        );
+    if (!catalog)
+    {
+        return fail(QStringLiteral("Inter font catalog load failed: ")
+            + catalog.error().message);
+    }
+    const QString relativePath = QStringLiteral("assets/fonts/Inter.ttc");
+    const QString bakedRoot = QString::fromUtf8(CLASSMNGR_NEXT_TEST_RESOURCE_ROOT);
+    if (!stageFile(bakedRoot, packageRoot.path(), relativePath))
+    {
+        return false;
+    }
+
+    const auto id = resourceId("resource:assets/fonts/Inter.ttc");
+    const auto request = id
+        ? resourceRequest(
+            *id,
+            ResourceScopeKind::Feature,
+            QStringLiteral("InterFileBackedRegistration")
+            )
+        : std::nullopt;
+    const ResourceDescriptor* descriptor = id ? catalog->find(*id) : nullptr;
+    const QString stagedPath = QFileInfo(
+        QDir(packageRoot.path()).filePath(relativePath)
+        ).canonicalFilePath();
+    if (!id || !request || descriptor == nullptr || stagedPath.isEmpty()
+        || descriptor->location() != ResourceLocation::PackageFile
+        || descriptor->expectedType() != ResourceType::Ttc
+        || !descriptor->expectedBytes().has_value()
+        || !descriptor->expectedSha256().has_value())
+    {
+        return fail(QStringLiteral("Inter font catalog fixture lacks its verified package identity"));
+    }
+
+    std::vector<ResourceDiagnostic> diagnostics;
+    ResourceLoader loader(
+        std::move(*catalog),
+        [&diagnostics](const ResourceDiagnostic& diagnostic) {
+            diagnostics.push_back(diagnostic);
+        }
+        );
+    const ResourceDescriptor* loadedDescriptor = loader.catalog().find(*id);
+    QFile stagedFile(stagedPath);
+    if (loadedDescriptor == nullptr
+        || !stagedFile.open(QIODevice::ReadOnly))
+    {
+        return fail(QStringLiteral("staged Inter font could not be checked against its catalog identity"));
+    }
+    const QByteArray stagedBytes = stagedFile.readAll();
+    if (stagedBytes.size() != *loadedDescriptor->expectedBytes()
+        || QCryptographicHash::hash(stagedBytes, QCryptographicHash::Sha256)
+            != *loadedDescriptor->expectedSha256())
+    {
+        return fail(QStringLiteral("staged Inter font bytes differ from its catalog identity"));
+    }
+
+    int dataRegistrationId = -1;
+    QStringList dataBackedFamilies;
+    {
+        auto dataBacked = loader.loadFont(*request);
+        if (!dataBacked || !dataBacked->get().sourceFilePath().isEmpty())
+        {
+            return fail(QStringLiteral("data-backed Inter registration behavior changed"));
+        }
+        dataRegistrationId = dataBacked->get().registrationId();
+        dataBackedFamilies = dataBacked->get().familyNames();
+    }
+    if (dataRegistrationId < 0 || dataBackedFamilies.isEmpty()
+        || !QFontDatabase::applicationFontFamilies(dataRegistrationId).isEmpty())
+    {
+        return fail(QStringLiteral("data-backed Inter registration was not released cleanly"));
+    }
+    diagnostics.clear();
+
+    int registrationId = -1;
+    QStringList returnedFamilies;
+    {
+        auto loaded = loader.loadFileBackedFont(*request);
+        if (!loaded)
+        {
+            return fail(QStringLiteral("verified file-backed Inter registration failed: ")
+                + loaded.error().message);
+        }
+        auto registration = std::move(*loaded);
+        registrationId = registration.get().registrationId();
+        returnedFamilies = registration.get().familyNames();
+        if (registrationId < 0
+            || registration.get().sourceFilePath() != stagedPath
+            || returnedFamilies != QFontDatabase::applicationFontFamilies(registrationId)
+            || returnedFamilies != dataBackedFamilies
+            || returnedFamilies.isEmpty()
+            || returnedFamilies.first() != QStringLiteral("Inter")
+            || !returnedFamilies.contains(QStringLiteral("Inter")))
+        {
+            return fail(QStringLiteral(
+                "file-backed Inter registration did not retain its canonical package path or family order"
+                ));
+        }
+
+        bool normal400 = false;
+        bool normal600 = false;
+        bool normal700 = false;
+        bool italic400 = false;
+        bool italic600 = false;
+        bool italic700 = false;
+        const QStringList styles = QFontDatabase::styles(QStringLiteral("Inter"));
+        for (const QString& style : styles)
+        {
+            const int weight = QFontDatabase::weight(QStringLiteral("Inter"), style);
+            const bool italic = QFontDatabase::italic(QStringLiteral("Inter"), style);
+            const QFont requested = QFontDatabase::font(
+                QStringLiteral("Inter"), style, 12
+                );
+            if (static_cast<int>(requested.weight()) != weight
+                || requested.italic() != italic)
+            {
+                return fail(QStringLiteral(
+                    "Qt returned an Inter face whose requested weight or italic style changed"
+                    ));
+            }
+            if (weight == QFont::Normal && !italic) normal400 = true;
+            if (weight == QFont::DemiBold && !italic) normal600 = true;
+            if (weight == QFont::Bold && !italic) normal700 = true;
+            if (weight == QFont::Normal && italic) italic400 = true;
+            if (weight == QFont::DemiBold && italic) italic600 = true;
+            if (weight == QFont::Bold && italic) italic700 = true;
+        }
+        if (!normal400 || !normal600 || !normal700
+            || !italic400 || !italic600 || !italic700)
+        {
+            return fail(QStringLiteral(
+                "Inter registration did not expose normal and italic 400/600/700 faces"
+                ));
+        }
+        if (diagnostics.size() != 1
+            || !diagnosticMatches(
+                diagnostics.back(),
+                *id,
+                ResourceScopeKind::Feature,
+                QStringLiteral("InterFileBackedRegistration")
+                )
+            || !diagnostics.back().succeeded
+            || diagnostics.back().errorCode.has_value()
+            || !diagnostics.back().fontFamilyNames.has_value()
+            || *diagnostics.back().fontFamilyNames != returnedFamilies
+            || diagnostics.back().decodedBytes.has_value())
+        {
+            return fail(QStringLiteral(
+                "file-backed Inter registration changed ResourceLoader diagnostic semantics"
+                ));
+        }
+    }
+
+    if (registrationId < 0
+        || !QFontDatabase::applicationFontFamilies(registrationId).isEmpty())
+    {
+        return fail(QStringLiteral("Inter file-backed registration was not removed with its owner"));
+    }
+
+    QFile stagedFont(stagedPath);
+    if (!stagedFont.open(QIODevice::ReadOnly))
+    {
+        return fail(QStringLiteral("could not read Inter font for catalog-integrity test"));
+    }
+    QByteArray modifiedFont = stagedFont.readAll();
+    stagedFont.close();
+    if (modifiedFont.isEmpty())
+    {
+        return fail(QStringLiteral("staged Inter font was empty"));
+    }
+    const qsizetype changedIndex = modifiedFont.size() / 2;
+    modifiedFont[changedIndex] = static_cast<char>(modifiedFont.at(changedIndex) ^ 0x01);
+    if (!writeBytes(stagedPath, modifiedFont))
+    {
+        return fail(QStringLiteral("could not corrupt staged Inter font for integrity test"));
+    }
+    const auto corrupted = loader.loadFileBackedFont(*request);
+    if (corrupted
+        || corrupted.error().code != ResourceErrorCode::CorruptResource
+        || diagnostics.size() != 2
+        || diagnostics.back().succeeded
+        || diagnostics.back().errorCode != ResourceErrorCode::CorruptResource
+        || !QFontDatabase::applicationFontFamilies(registrationId).isEmpty())
+    {
+        return fail(QStringLiteral(
+            "file-backed Inter registration accepted a package file that failed catalog verification"
+            ));
+    }
+    return true;
+}
+
+bool testFileBackedFontRejectsCatalogSizeOverLimit()
+{
+    constexpr qint64 maximumFontBytes = 128LL * 1024 * 1024;
+    const qint64 overLimitBytes = maximumFontBytes + 1;
+    QTemporaryDir packageRoot;
+    if (!packageRoot.isValid())
+    {
+        return fail(QStringLiteral("could not create oversized-font catalog fixture root"));
+    }
+
+    const QString relativePath = QStringLiteral("assets/test/oversized-font.ttc");
+    const QString digest = QString(64, QLatin1Char('0'));
+    const QJsonObject record{
+        {QStringLiteral("category"), QStringLiteral("test")},
+        {QStringLiteral("expected_type"), QStringLiteral("ttc")},
+        {QStringLiteral("loading"), QJsonObject{
+            {QStringLiteral("tier"), QStringLiteral("feature_on_demand")},
+            {QStringLiteral("policy"), QStringLiteral("reject oversized test font")},
+            {QStringLiteral("lifetime"), QStringLiteral("resource-loader test")},
+            {QStringLiteral("release_policy"), QStringLiteral("release with test scope")}
+        }},
+        {QStringLiteral("location"), QStringLiteral("resource_file")},
+        {QStringLiteral("logical_id"), QStringLiteral("resource:assets/test/oversized-font.ttc")},
+        {QStringLiteral("owner"), QStringLiteral("ResourceLoader font size bound test")},
+        {QStringLiteral("package_relative_path"), relativePath},
+        {QStringLiteral("provenance"), QJsonObject{
+            {QStringLiteral("baked"), QJsonObject{
+                {QStringLiteral("bytes"), static_cast<double>(overLimitBytes)},
+                {QStringLiteral("sha256"), digest}
+            }},
+            {QStringLiteral("source"), QJsonObject{
+                {QStringLiteral("bytes"), static_cast<double>(overLimitBytes)},
+                {QStringLiteral("path"), QStringLiteral("synthetic/oversized-font.ttc")},
+                {QStringLiteral("sha256"), digest}
+            }}
+        }},
+        {QStringLiteral("resource_kind"), QStringLiteral("test_font")},
+        {QStringLiteral("startup_necessity"), QStringLiteral("not_required_until_test_use")},
+        {QStringLiteral("streamability"), QJsonObject{
+            {QStringLiteral("method_ref"), QStringLiteral("test_fixture")},
+            {QStringLiteral("status"), QStringLiteral("no")}
+        }}
+    };
+    const QJsonObject catalogDocument{
+        {QStringLiteral("format"), QStringLiteral("ClassMngrNext.ResourceCatalog")},
+        {QStringLiteral("package_path_base"), QStringLiteral("ClassMngrNext::Resources")},
+        {QStringLiteral("path_format"), QStringLiteral("relative-posix")},
+        {QStringLiteral("records"), QJsonArray{record}},
+        {QStringLiteral("schema_version"), 1}
+    };
+    const QString catalogPath = QDir(packageRoot.path()).filePath(
+        QStringLiteral("resource-catalog.json")
+        );
+    if (!writeBytes(
+            catalogPath,
+            QJsonDocument(catalogDocument).toJson(QJsonDocument::Compact)
+            ))
+    {
+        return fail(QStringLiteral("could not write oversized-font catalog fixture"));
+    }
+
+    const auto id = resourceId("resource:assets/test/oversized-font.ttc");
+    const auto request = id
+        ? resourceRequest(
+            *id,
+            ResourceScopeKind::Feature,
+            QStringLiteral("OversizedFileBackedFont")
+            )
+        : std::nullopt;
+    auto catalog = ResourceCatalog::load(catalogPath, packageRoot.path());
+    if (!id || !request || !catalog)
+    {
+        return fail(QStringLiteral("oversized-font catalog fixture was invalid")
+            + (catalog ? QString() : QStringLiteral(": ") + catalog.error().message));
+    }
+
+    std::vector<ResourceDiagnostic> diagnostics;
+    ResourceLoader loader(
+        std::move(*catalog),
+        [&diagnostics](const ResourceDiagnostic& diagnostic) {
+            diagnostics.push_back(diagnostic);
+        }
+        );
+    const auto loaded = loader.loadFileBackedFont(*request);
+    if (loaded
+        || loaded.error().code != ResourceErrorCode::UnsupportedOperation
+        || diagnostics.size() != 1
+        || !diagnosticMatches(
+            diagnostics.back(),
+            *id,
+            ResourceScopeKind::Feature,
+            QStringLiteral("OversizedFileBackedFont")
+            )
+        || diagnostics.back().succeeded
+        || diagnostics.back().errorCode != ResourceErrorCode::UnsupportedOperation)
+    {
+        return fail(QStringLiteral(
+            "file-backed font catalog size above 128 MiB was not rejected before path access"
+            ));
+    }
+    return true;
+}
+
 bool testLoader(QCoreApplication& application)
 {
     QTemporaryDir temporaryRoot;
@@ -1132,7 +1438,8 @@ bool testLoader(QCoreApplication& application)
     QStringList loadedFontFamilies;
     {
         auto uncachedFont = cachedLoader.loadFont(*fontRequest);
-        if (!uncachedFont || uncachedFont->get().familyNames().isEmpty())
+        if (!uncachedFont || uncachedFont->get().familyNames().isEmpty()
+            || !uncachedFont->get().sourceFilePath().isEmpty())
         {
             return fail(QStringLiteral("cache bypass font load failed: ")
                 + (uncachedFont ? QStringLiteral("no family names")
@@ -1765,6 +2072,8 @@ int main(int argc, char** argv)
     QGuiApplication application(argc, argv);
     if (!testResourceDiagnosticSerialization()
         || !testResourceCacheCore() || !testBoundedImageCacheIdentity()
+        || !testFileBackedFontRejectsCatalogSizeOverLimit()
+        || !testVerifiedInterFileBackedFontRegistration()
         || !testLoader(application))
     {
         return 1;

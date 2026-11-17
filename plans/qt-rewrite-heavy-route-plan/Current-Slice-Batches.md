@@ -20,13 +20,16 @@ allocation or cleanup defect, route the fix to that feature boundary.
      all six gated working-set points were 679,813,120–687,775,744 bytes. The
      optimized run therefore establishes a valid budget failure, not a Phase 9
      pass. Details and hashes are in the Phase 9 progress log.
-2. **P9-06R — Required Inter font registration memory reduction** (Current
-   candidate)
+2. **P9-06R — Required Inter font registration memory reduction** (Code
+   implemented; local Debug tests passed; Release memory result pending)
    - Acceptance: test file-backed Qt registration of the exact catalog-verified
      bundled Inter.ttc while preserving family/style behavior, license, source
-     hash checks, and registration cleanup. Keep Pretendard unchanged. Re-run
-     the local packaged Windows Release gate; do not accept the route as a
-     memory fix unless complete valid evidence meets the required limit.
+     hash checks, size bound, and registration cleanup. Keep Pretendard
+     unchanged. Re-run the local packaged Windows Release gate; do not accept
+     the route as a memory fix unless complete valid evidence meets the limit.
+   - Verification: elevated local build in the standard Windows x64 Debug tree
+     passed for ResourceLoader and Bootstrap; focused CTest passed for both.
+     The Release memory remeasurement is pending.
    - Rationale: in-process checkpoints show roughly 559 MB of working-set
      growth between theme-loaded and required-fonts-loaded; the external
      per-font snapshots are asynchronous and cannot precisely assign that

@@ -364,3 +364,26 @@ next slice tests file-backed Qt registration of the same catalog-verified
 `Inter.ttc`, keeping Pretendard, the asset, and font family behavior unchanged.
 The final decision requires another complete local Release gate; P9-07 and
 P9-08 remain open.
+
+#### P9-06R — Same-asset Inter file-backed registration — 2026-11-18
+
+`ApplicationBootstrap` now registers only `Inter.ttc` through a new
+`ResourceLoader::loadFileBackedFont()` path. The loader requires a package-file
+catalog entry with an expected byte count and SHA-256, resolves its canonical
+path, verifies the exact file, checks the existing 128 MiB font bound against
+both catalog-declared and current file sizes, and passes that path to
+`QFontDatabase::addApplicationFont()`. The `RegisteredFont` scope owns the Qt
+registration and retains its source path through release. Pretendard remains
+on the existing data-backed route. No font, catalog, license, family name, or
+glyph asset changed.
+
+The focused ResourceLoader test compares file-backed and data-backed Inter
+family lists; verifies normal and italic 400/600/700 faces; checks diagnostic
+identity, catalog byte/hash rejection, scope release, and the oversized
+catalog guard without allocating a large test font. The standard local Windows
+x64 Debug tree `build/windows-x64-debug` rebuilt the ResourceLoader and
+Bootstrap targets with elevated access after sandbox FileTracker denials.
+`ClassMngrNextResourceLoaderTests` passed 1/1 (0.90s) and
+`ClassMngrNextBootstrapTests` passed 1/1 (80.20s). The full Debug suite has not
+been rerun for this slice. The same-asset optimized Release gate is still
+pending, so this is not yet accepted as a memory fix; no reduction is claimed.

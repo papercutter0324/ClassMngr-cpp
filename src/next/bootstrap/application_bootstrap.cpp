@@ -3813,7 +3813,7 @@ bool ApplicationBootstrap::loadRequiredFonts()
                               << interRequest.error().message;
         return false;
     }
-    auto interFont = m_coreServices->resourceLoader.loadFont(*interRequest);
+    auto interFont = m_coreServices->resourceLoader.loadFileBackedFont(*interRequest);
     if (!interFont)
     {
         qCritical().noquote() << "ClassMngrNext could not register Inter font:"

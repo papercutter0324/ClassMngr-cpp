@@ -178,15 +178,21 @@ void ResourceFileStream::close() noexcept
     }
 }
 
-RegisteredFont::RegisteredFont(int registrationId, QStringList familyNames) noexcept
+RegisteredFont::RegisteredFont(
+    int registrationId,
+    QStringList familyNames,
+    QString sourceFilePath
+    ) noexcept
     : m_registrationId(registrationId)
     , m_familyNames(std::move(familyNames))
+    , m_sourceFilePath(std::move(sourceFilePath))
 {
 }
 
 RegisteredFont::RegisteredFont(RegisteredFont&& other) noexcept
     : m_registrationId(std::exchange(other.m_registrationId, -1))
     , m_familyNames(std::move(other.m_familyNames))
+    , m_sourceFilePath(std::move(other.m_sourceFilePath))
 {
 }
 
@@ -197,6 +203,7 @@ RegisteredFont& RegisteredFont::operator=(RegisteredFont&& other) noexcept
         release();
         m_registrationId = std::exchange(other.m_registrationId, -1);
         m_familyNames = std::move(other.m_familyNames);
+        m_sourceFilePath = std::move(other.m_sourceFilePath);
     }
     return *this;
 }
@@ -213,6 +220,7 @@ void RegisteredFont::release() noexcept
         QFontDatabase::removeApplicationFont(m_registrationId);
         m_registrationId = -1;
     }
+    m_sourceFilePath.clear();
 }
 
 ResourceTranslation::ResourceTranslation(
@@ -804,6 +812,21 @@ ResourceResult<ScopedResource<RegisteredFont>> ResourceLoader::loadFont(
     const ResourceRequest& request
     ) const
 {
+    return loadFontResource(request, false);
+}
+
+ResourceResult<ScopedResource<RegisteredFont>> ResourceLoader::loadFileBackedFont(
+    const ResourceRequest& request
+    ) const
+{
+    return loadFontResource(request, true);
+}
+
+ResourceResult<ScopedResource<RegisteredFont>> ResourceLoader::loadFontResource(
+    const ResourceRequest& request,
+    const bool fileBacked
+    ) const
+{
     return withDiagnostics<ScopedResource<RegisteredFont>>(
         m_diagnostics,
         request,
@@ -824,12 +847,63 @@ ResourceResult<ScopedResource<RegisteredFont>> ResourceLoader::loadFont(
                     ));
             }
 
-            auto bytes = readBytes(**found, MaximumFontBytes);
-            if (!bytes)
+            QString sourceFilePath;
+            int registrationId = -1;
+            if (fileBacked)
             {
-                return std::unexpected(bytes.error());
+                if ((*found)->location() != ResourceLocation::PackageFile)
+                {
+                    return std::unexpected(error(
+                        ResourceErrorCode::UnsupportedOperation,
+                        QStringLiteral("file-backed font registration requires a package file")
+                        ));
+                }
+                if (!(*found)->expectedBytes().has_value()
+                    || !(*found)->expectedSha256().has_value())
+                {
+                    return std::unexpected(error(
+                        ResourceErrorCode::InvalidCatalog,
+                        QStringLiteral(
+                            "file-backed font registration requires catalog byte count and SHA-256"
+                            )
+                        ));
+                }
+                if (*(*found)->expectedBytes() > MaximumFontBytes)
+                {
+                    return std::unexpected(error(
+                        ResourceErrorCode::UnsupportedOperation,
+                        QStringLiteral("resource exceeds the bounded in-memory loading limit")
+                        ));
+                }
+                auto path = packageFilePath(**found);
+                if (!path)
+                {
+                    return std::unexpected(path.error());
+                }
+                if (QFileInfo(*path).size() > MaximumFontBytes)
+                {
+                    return std::unexpected(error(
+                        ResourceErrorCode::UnsupportedOperation,
+                        QStringLiteral("resource exceeds the bounded in-memory loading limit")
+                        ));
+                }
+                auto verified = verifyFile(**found, *path);
+                if (!verified)
+                {
+                    return std::unexpected(verified.error());
+                }
+                sourceFilePath = std::move(*path);
+                registrationId = QFontDatabase::addApplicationFont(sourceFilePath);
             }
-            const int registrationId = QFontDatabase::addApplicationFontFromData(*bytes);
+            else
+            {
+                auto bytes = readBytes(**found, MaximumFontBytes);
+                if (!bytes)
+                {
+                    return std::unexpected(bytes.error());
+                }
+                registrationId = QFontDatabase::addApplicationFontFromData(*bytes);
+            }
             if (registrationId < 0)
             {
                 return std::unexpected(error(
@@ -848,7 +922,7 @@ ResourceResult<ScopedResource<RegisteredFont>> ResourceLoader::loadFont(
             }
             diagnostic.setFontFamilyNames(families);
             return ScopedResource<RegisteredFont>(
-                RegisteredFont(registrationId, families),
+                RegisteredFont(registrationId, families, std::move(sourceFilePath)),
                 request.scope()
                 );
         }

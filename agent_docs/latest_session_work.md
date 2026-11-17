@@ -4,8 +4,10 @@
 
 Phase 9 is still In progress. Batch 1 is closed. P9-06 has a valid optimized
 local Windows x64 Release baseline, but it fails the 250 MiB normal-use gate.
-Current implementation work tests file-backed registration of the same
-catalog-verified Inter TTC; no font asset change or memory fix is accepted yet.
+P9-06R now registers the same catalog-verified Inter TTC through Qt's
+file-backed API; its focused standard-tree Windows Debug tests pass. The
+optimized packaged Release remeasurement is pending, so no memory fix is
+accepted yet.
 
 - The valid baseline run is
   `artifacts/phase9/packaged-idle-memory/20261117T190410131Z-43f692fcd33b4a2a87cf12518dbf1386/`.
@@ -31,11 +33,16 @@ catalog-verified Inter TTC; no font asset change or memory fix is accepted yet.
   and is not evaluated because the representative sample trace has a 1.997074s
   interval followed by two catch-up intervals. A separate earlier run is
   invalid because the 96-class app exited at sample 104; both remain preserved.
-- The next slice changes only Inter registration to use Qt's file-backed path
-  for the exact catalog-verified `Inter.ttc`; Pretendard and all font assets
-  remain unchanged. The same optimized local Release gate must pass with
-  complete evidence before the memory work is accepted. P9-07 and P9-08 remain
-  after this remediation in Batch 2. No GitHub validation is required or used.
+- The Inter source asset is 13,172,948 bytes with SHA-256
+  `ea4e3d9970b9b6b566110a1b0e13635fe235280b83dd2443dcb3faca1e2456ef`; the
+  ResourceLoader verifies the catalog path, byte count, hash, and 128 MiB bound
+  before file-backed registration. Tests compare family lists and normal and
+  italic 400/600/700 faces, tamper rejection, cleanup, and oversized catalog
+  rejection. Pretendard remains unchanged and data-backed. Standard Windows
+  Debug ResourceLoader and Bootstrap CTests passed after elevated builds. The
+  same optimized local Release gate must pass with complete evidence before the
+  memory work is accepted. P9-07 and P9-08 remain after this remediation in
+  Batch 2. No GitHub validation is required or used.
 
 The full handoff and current sequence are in the
 [Phase 9 progress log](../plans/qt-rewrite-heavy-route-plan/10-Phase-9-Progress-Log.md)

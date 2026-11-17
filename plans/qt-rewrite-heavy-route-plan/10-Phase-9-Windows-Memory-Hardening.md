@@ -43,10 +43,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   packaged Windows Release gate completed both startup-ready/five-minute idle
   scenarios with valid evidence, but all six working-set points exceeded
   262,144,000 bytes. No Phase 9 memory budget pass is claimed. P9-06R is the
-  current slice: test file-backed registration of the exact bundled Inter TTC,
-  preserving catalog verification and font behavior, then remeasure locally.
-  See the Phase 9 progress log and current slice-batch tracker for evidence,
-  invalid-run details, and remaining scenarios.
+  current slice: Inter now registers through Qt's file-backed path using the
+  exact catalog-verified TTC. Focused standard-tree Windows Debug tests pass;
+  optimized packaged Release remeasurement remains pending. See the Phase 9
+  progress log and current slice-batch tracker for evidence, invalid-run
+  details, and remaining scenarios.
 
 ### Slice batches
 

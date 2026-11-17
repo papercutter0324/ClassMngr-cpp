@@ -7,8 +7,10 @@ x64 Release P9-06 run completed valid 301-sample traces for empty and
 representative workspaces; all six startup-ready/external-startup/five-minute
 idle working-set checkpoints exceeded the strict 262,144,000-byte limit. The
 first memory remediation candidate is file-backed registration of the exact
-catalog-verified Inter TTC, with a fresh local Release gate required before
-acceptance. No memory pass is claimed.
+catalog-verified Inter TTC. Its focused standard-tree Windows Debug
+ResourceLoader and Bootstrap builds/tests pass; the optimized local Release
+gate must still be rerun before accepting it as a memory fix. No memory pass
+is claimed.
 
 See the [Phase 9 progress log](../plans/qt-rewrite-heavy-route-plan/10-Phase-9-Progress-Log.md)
 and [current slice-batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
