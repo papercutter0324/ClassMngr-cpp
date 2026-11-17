@@ -4,6 +4,8 @@
 #include "next/resources/resource_loader.h"
 #include "next/ui/classes_navigator_page.h"
 #include "next/ui/page_host.h"
+#include "next/ui/selected_class_editor.h"
+#include "next/bootstrap/qt_page_lifecycle_diagnostics.h"
 #include "preferences_test_ports.h"
 #include "splitter_state_test_port.h"
 
@@ -19,10 +21,12 @@
 #include <QJsonObject>
 #include <QLocale>
 #include <QPalette>
+#include <QPointer>
 #include <QTranslator>
 #include <QListView>
 #include <QTabBar>
 #include <QTemporaryDir>
+#include <QTableWidget>
 
 #include <algorithm>
 #include <array>
@@ -255,15 +259,23 @@ bool captureCase(
     int listReads = 0;
     int navigationReads = 0;
     int navigationQueryClassCount = 0;
+    int classesFactoryCalls = 0;
     int scheduleRows = 0;
 
     Ui::PageHost host(loader, preferences);
+    std::vector<QJsonObject> lifecycleTrace;
+    Bootstrap::QtPageLifecycleDiagnosticsRecorder lifecycleRecorder(
+        host, {}, [&lifecycleTrace](const QByteArray& record) {
+            lifecycleTrace.push_back(QJsonDocument::fromJson(record).object());
+        });
     Ui::PageDescriptor classesPage{
         .id = *Ui::PageId::fromString(QStringLiteral("classes")),
         .label = QStringLiteral("Classes"),
         .factory = [&classes, &navigation, &listReads, &navigationReads,
-                    &navigationQueryClassCount](const Ui::PageContext& context)
+                    &navigationQueryClassCount, &classesFactoryCalls](
+            const Ui::PageContext& context)
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
+            ++classesFactoryCalls;
             Ui::ClassesNavigatorPageActions actions;
             actions.splitterStatePort = std::make_shared<
                 Test::MemorySplitterStatePort>();
@@ -330,6 +342,7 @@ bool captureCase(
         if (error) *error = QStringLiteral("The Classes capture factory returned another page.");
         return false;
     }
+    QPointer<Ui::Page> originalPage(page);
     for (const auto& entry : navigation.classes)
     {
         if (entry.details)
@@ -396,6 +409,10 @@ bool captureCase(
     const int editors = sharedDetailEditorCount(page);
     const int listResultRows = classRows;
     const int navigationResultRows = static_cast<int>(navigation.classes.size());
+    const int initialListReads = listReads;
+    const int initialNavigationReads = navigationReads;
+    const int initialNavigationQueryClassCount = navigationQueryClassCount;
+    const int initialClassesFactoryCalls = classesFactoryCalls;
 
     if (!host.activatePage(QStringLiteral("other")))
     {
@@ -406,6 +423,137 @@ bool captureCase(
     const ProcessMemorySnapshot suspendedMemory = memoryProvider.snapshot();
     const bool clearedOnSuspension = page->model()->classCount() == 0
         && page->model()->visibleClassCount() == 0;
+    const bool perClassWidgetsClearedOnSuspension =
+        classPropertyWidgetCount(page) == 0;
+    const bool editorClearedOnSuspension = page->selectedClassEditor()
+        && !page->selectedClassEditor()->isLoaded()
+        && !page->selectedClassEditor()->classId().has_value()
+        && page->selectedClassEditor()->regularSchedule()
+        && page->selectedClassEditor()->regularSchedule()->rowCount() == 0
+        && page->selectedClassEditor()->intensiveSchedule()
+        && page->selectedClassEditor()->intensiveSchedule()->rowCount() == 0;
+    const int widgetCountAfterSuspension = widgetCount(page);
+    const int perClassWidgetCountAfterSuspension = classPropertyWidgetCount(page);
+    const int editorCountAfterSuspension = sharedDetailEditorCount(page);
+    if (!host.releasePage(QStringLiteral("classes")))
+    {
+        if (error) *error = QStringLiteral("The suspended Classes page did not release.");
+        return false;
+    }
+    const bool releasedPageDestroyed = originalPage.isNull()
+        && !host.hasPageInstance(QStringLiteral("classes"));
+    const ProcessMemorySnapshot releasedMemory = memoryProvider.snapshot();
+
+    if (!host.activatePage(QStringLiteral("classes")))
+    {
+        if (error) *error = QStringLiteral("The Classes page did not recreate.");
+        return false;
+    }
+    QApplication::processEvents();
+    auto* const recreatedPage = dynamic_cast<Ui::ClassesNavigatorPage*>(
+        host.pageInstance(QStringLiteral("classes")));
+    if (!recreatedPage)
+    {
+        if (error) *error = QStringLiteral("The Classes page was not recreated as expected.");
+        return false;
+    }
+    const ProcessMemorySnapshot recreatedMemory = memoryProvider.snapshot();
+    const bool pageWasRecreated = originalPage.isNull()
+        && recreatedPage != originalPage.data()
+        && classesFactoryCalls == initialClassesFactoryCalls + 1;
+    QPointer<Ui::Page> recreatedPageLifetime(recreatedPage);
+    const int recreatedClassRows = recreatedPage->model()->classCount();
+    const int recreatedPerClassWidgetCount = classPropertyWidgetCount(recreatedPage);
+    const int recreatedEditorCount = sharedDetailEditorCount(recreatedPage);
+    const bool recreationCountsMatch = pageWasRecreated
+        && recreatedClassRows == classCount
+        && recreatedPerClassWidgetCount == 0
+        && recreatedEditorCount == 1
+        && recreatedPage->selectedClassEditor()
+        && recreatedPage->selectedClassEditor()->regularSchedule()
+        && recreatedPage->selectedClassEditor()->intensiveSchedule();
+
+    if (!host.activatePage(QStringLiteral("other")))
+    {
+        if (error) *error = QStringLiteral("The recreated Classes page did not suspend.");
+        return false;
+    }
+    QApplication::processEvents();
+    const ProcessMemorySnapshot recreatedSuspendedMemory = memoryProvider.snapshot();
+    const bool recreatedStateCleared =
+        recreatedPage->model()->classCount() == 0
+        && recreatedPage->model()->visibleClassCount() == 0
+        && classPropertyWidgetCount(recreatedPage) == 0
+        && recreatedPage->selectedClassEditor()
+        && !recreatedPage->selectedClassEditor()->isLoaded()
+        && !recreatedPage->selectedClassEditor()->classId().has_value()
+        && recreatedPage->selectedClassEditor()->regularSchedule()
+        && recreatedPage->selectedClassEditor()->regularSchedule()->rowCount() == 0
+        && recreatedPage->selectedClassEditor()->intensiveSchedule()
+        && recreatedPage->selectedClassEditor()->intensiveSchedule()->rowCount() == 0;
+    if (!host.releasePage(QStringLiteral("classes")))
+    {
+        if (error) *error = QStringLiteral("The recreated Classes page did not release.");
+        return false;
+    }
+    const bool recreatedPageDestroyed =
+        recreatedPageLifetime.isNull()
+        && !host.hasPageInstance(QStringLiteral("classes"));
+    const ProcessMemorySnapshot releasedAfterRecreateMemory = memoryProvider.snapshot();
+    if (!host.releasePage(QStringLiteral("other")))
+    {
+        if (error) *error = QStringLiteral("The auxiliary page did not release.");
+        return false;
+    }
+
+    QJsonArray classLifecycleStates;
+    QJsonArray lifecycleTraceArray;
+    bool lifecycleAvailabilityMatches = true;
+    int classDestroyedEventCount = 0;
+    bool destroyedMetricsUnavailable = true;
+    for (const QJsonObject& event : lifecycleTrace)
+    {
+        lifecycleTraceArray.append(event);
+        if (event.value(QStringLiteral("page_key")).toString()
+            != QStringLiteral("classes"))
+        {
+            continue;
+        }
+        const QString eventName = event.value(QStringLiteral("event")).toString();
+        if (eventName == QStringLiteral("page-lifecycle"))
+        {
+            classLifecycleStates.append(event.value(QStringLiteral("state")));
+            const QString stateName = event.value(QStringLiteral("state")).toString();
+            const bool instanceAvailable = event.value(QStringLiteral(
+                "page_instance_available")).toBool();
+            lifecycleAvailabilityMatches = lifecycleAvailabilityMatches
+                && (stateName == QStringLiteral("activated")
+                        || stateName == QStringLiteral("suspended")
+                    ? instanceAvailable
+                    : !instanceAvailable);
+        }
+        else if (eventName == QStringLiteral("page-instance-destroyed"))
+        {
+            ++classDestroyedEventCount;
+            destroyedMetricsUnavailable = destroyedMetricsUnavailable
+                && !event.value(QStringLiteral(
+                    "page_instance_available")).toBool()
+                && event.value(QStringLiteral("page")).toObject()
+                    .value(QStringLiteral("widget_count")).isNull()
+                && event.value(QStringLiteral("sample_available")).toBool();
+        }
+    }
+    const QJsonArray expectedClassLifecycleStates{
+        QStringLiteral("created"), QStringLiteral("activated"),
+        QStringLiteral("suspended"), QStringLiteral("released"),
+        QStringLiteral("created"), QStringLiteral("activated"),
+        QStringLiteral("suspended"), QStringLiteral("released")
+    };
+    const bool lifecycleTraceMatches = classLifecycleStates
+            == expectedClassLifecycleStates
+        && lifecycleAvailabilityMatches;
+    const bool destructionTraceMatches = classDestroyedEventCount == 2
+        && destroyedMetricsUnavailable;
 
     *state = {
         {QStringLiteral("locale"), locale},
@@ -429,19 +577,46 @@ bool captureCase(
             {QStringLiteral("detailEditorCount"), editors},
             {QStringLiteral("classIdWidgetPropertyCount"), perClassWidgetCount},
             {QStringLiteral("modelClearedOnSuspension"), clearedOnSuspension},
-            {QStringLiteral("widgetCountAfterSuspension"), widgetCount(page)},
+            {QStringLiteral("widgetCountAfterSuspension"),
+             widgetCountAfterSuspension},
             {QStringLiteral("perClassWidgetCountAfterSuspension"),
-             classPropertyWidgetCount(page)},
+             perClassWidgetCountAfterSuspension},
             {QStringLiteral("detailEditorCountAfterSuspension"),
-             sharedDetailEditorCount(page)}
+             editorCountAfterSuspension},
+            {QStringLiteral("perClassWidgetsClearedOnSuspension"),
+             perClassWidgetsClearedOnSuspension},
+            {QStringLiteral("editorClearedOnSuspension"),
+             editorClearedOnSuspension},
+            {QStringLiteral("releasedPageDestroyed"), releasedPageDestroyed},
+            {QStringLiteral("pageWasRecreated"), pageWasRecreated},
+            {QStringLiteral("recreatedClassRows"), recreatedClassRows},
+            {QStringLiteral("recreatedPerClassWidgetCount"),
+             recreatedPerClassWidgetCount},
+            {QStringLiteral("recreatedEditorCount"), recreatedEditorCount},
+            {QStringLiteral("recreationCountsMatch"), recreationCountsMatch},
+            {QStringLiteral("recreatedStateCleared"), recreatedStateCleared},
+            {QStringLiteral("recreatedPageDestroyed"), recreatedPageDestroyed},
+            {QStringLiteral("pageLifecycleTraceMatches"), lifecycleTraceMatches},
+            {QStringLiteral("classDestroyedEventCount"),
+             classDestroyedEventCount},
+            {QStringLiteral("destructionTraceMatches"), destructionTraceMatches},
+            {QStringLiteral("pageLifecycleStates"), classLifecycleStates},
+            {QStringLiteral("pageLifecycleTrace"), lifecycleTraceArray}
         }},
         {QStringLiteral("readSizes"), QJsonObject{
-            {QStringLiteral("listReadCalls"), listReads},
+            {QStringLiteral("listReadCalls"), initialListReads},
+            {QStringLiteral("listReadCallsThroughRecreate"), listReads},
             {QStringLiteral("listResultClassRows"), listResultRows},
             {QStringLiteral("listResultClassNameUtf16CodeUnits"),
              static_cast<double>(classNameCodeUnits)},
-            {QStringLiteral("navigationReadCalls"), navigationReads},
-            {QStringLiteral("navigationQueryClassRows"), navigationQueryClassCount},
+            {QStringLiteral("navigationReadCalls"), initialNavigationReads},
+            {QStringLiteral("navigationReadCallsThroughRecreate"),
+             navigationReads},
+            {QStringLiteral("navigationQueryClassRows"),
+             initialNavigationQueryClassCount},
+            {QStringLiteral("navigationQueryClassRowsThroughRecreate"),
+             navigationQueryClassCount},
+            {QStringLiteral("classesPageFactoryCalls"), classesFactoryCalls},
             {QStringLiteral("navigationQueryNameUtf16CodeUnits"),
              static_cast<double>(classNameCodeUnits)},
             {QStringLiteral("navigationResultClassRows"), navigationResultRows},
@@ -461,17 +636,44 @@ bool captureCase(
                 "Whole-process observations; not page allocations or budgets")},
             {QStringLiteral("before"), memoryJson(beforeMemory)},
             {QStringLiteral("active"), memoryJson(activeMemory)},
-            {QStringLiteral("suspended"), memoryJson(suspendedMemory)}
+            {QStringLiteral("suspended"), memoryJson(suspendedMemory)},
+            {QStringLiteral("released"), memoryJson(releasedMemory)},
+            {QStringLiteral("recreated"), memoryJson(recreatedMemory)},
+            {QStringLiteral("recreatedSuspended"),
+             memoryJson(recreatedSuspendedMemory)},
+            {QStringLiteral("releasedAfterRecreate"),
+             memoryJson(releasedAfterRecreateMemory)}
         }}
     };
-    const bool countsMatch = clearedOnSuspension && modelCount == 1
+    const bool countsMatch = clearedOnSuspension
+        && perClassWidgetsClearedOnSuspension
+        && editorClearedOnSuspension
+        && releasedPageDestroyed
+        && recreationCountsMatch
+        && recreatedStateCleared
+        && recreatedPageDestroyed
+        && lifecycleTraceMatches
+        && destructionTraceMatches
+        && modelCount == 1
         && listViewCount == 1 && perClassWidgetCount == 0 && editors == 1
-        && sharedDetailEditorCount(page) == 1;
+        && editorCountAfterSuspension == 1;
     if (!countsMatch && error)
     {
         *error = QStringLiteral(
-            "Classes capture counts differed (cleared=%1, models=%2, lists=%3, per-class widgets=%4, editors=%5).")
+            "Classes capture lifecycle counts differed "
+            "(cleared=%1, widgets=%2, editor=%3, released=%4, recreated=%5, "
+            "rows=%6, recleared=%7, trace=%8, destroyed=%9/%10, "
+            "models=%11, lists=%12, per-class widgets=%13, editors=%14).")
                 .arg(clearedOnSuspension)
+                .arg(perClassWidgetsClearedOnSuspension)
+                .arg(editorClearedOnSuspension)
+                .arg(releasedPageDestroyed)
+                .arg(recreationCountsMatch)
+                .arg(recreatedClassRows)
+                .arg(recreatedStateCleared)
+                .arg(lifecycleTraceMatches)
+                .arg(classDestroyedEventCount)
+                .arg(destroyedMetricsUnavailable)
                 .arg(modelCount)
                 .arg(listViewCount)
                 .arg(perClassWidgetCount)

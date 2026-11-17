@@ -5,6 +5,7 @@
 #include "next/bootstrap/campus_edit_operation_actions.h"
 
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
+#include "next/bootstrap/qt_page_lifecycle_diagnostics.h"
 #include "next/application/recent_workspace_history_use_case.h"
 #include "next/application/normal_workspace_creation_flow.h"
 #include "next/application/open_existing_workspace_flow.h"
@@ -1198,6 +1199,7 @@ ApplicationBootstrap::~ApplicationBootstrap()
         m_coreServices->themePresenter.reset();
     }
     m_shell.reset();
+    m_pageLifecycleDiagnosticsRecorder.reset();
     static_cast<void>(releaseWorkspace());
     m_coreServices.reset();
     m_startupDiagnosticsSink.reset();
@@ -1464,6 +1466,16 @@ Application::StartupResult ApplicationBootstrap::start()
             std::make_unique<Platform::SettingsManagerWindowGeometryPort>(),
             m_coreServices->fontFamilyAvailabilityPort
             );
+        try
+        {
+            m_pageLifecycleDiagnosticsRecorder =
+                std::make_unique<QtPageLifecycleDiagnosticsRecorder>(
+                    m_shell->pageHost());
+        }
+        catch (...)
+        {
+            qWarning("ClassMngrNext page lifecycle diagnostics are unavailable.");
+        }
         if (!m_application.windowIcon().isNull())
         {
             m_shell->setWindowIcon(m_application.windowIcon());
@@ -6701,6 +6713,7 @@ Application::StartupResult ApplicationBootstrap::failStartupStage(
 void ApplicationBootstrap::rollbackStartupComposition() noexcept
 {
     m_shell.reset();
+    m_pageLifecycleDiagnosticsRecorder.reset();
     static_cast<void>(releaseWorkspace());
 
     if (m_coreServices)
@@ -6932,6 +6945,7 @@ void ApplicationBootstrap::finalizeShutdown()
         m_coreServices->themePresenter.reset();
     }
     m_shell.reset();
+    m_pageLifecycleDiagnosticsRecorder.reset();
     static_cast<void>(releaseWorkspace());
     m_coreServices.reset();
     m_startupDiagnosticsSink.reset();

@@ -47,6 +47,8 @@ struct SubPrepPageActions;
 namespace ClassMngr::Next::Bootstrap
 {
 
+class QtPageLifecycleDiagnosticsRecorder;
+
 class ApplicationBootstrap final
 {
 public:
@@ -310,6 +312,8 @@ private:
     ShutdownSeams m_shutdownSeams;
     std::shared_ptr<int> m_callbackLifetime = std::make_shared<int>(0);
     std::unique_ptr<StartupDiagnosticsSink> m_startupDiagnosticsSink;
+    std::unique_ptr<QtPageLifecycleDiagnosticsRecorder>
+        m_pageLifecycleDiagnosticsRecorder;
     std::unique_ptr<StartupUpdateDispatcher> m_startupUpdateDispatcher;
     std::unique_ptr<CoreServices> m_coreServices;
     std::unique_ptr<Application::WorkspaceGateway> m_workspaceGateway;

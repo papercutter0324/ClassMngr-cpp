@@ -5,6 +5,7 @@
 #include "next/ui/initial_page.h"
 #include "next/ui/page_host.h"
 #include "next/ui/page_host_active_page_changes_adapter.h"
+#include "next/bootstrap/qt_page_lifecycle_diagnostics.h"
 
 #include <QComboBox>
 #include <QColorDialog>
@@ -12,11 +13,17 @@
 #include <QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QPointer>
 #include <QPushButton>
 #include <QTimer>
+#include <QStandardItemModel>
+#include <QTableView>
 #include <QTest>
 #include <QVector>
+#include <QWidget>
 
 #include <memory>
 #include <optional>
@@ -27,6 +34,24 @@ using namespace ClassMngr::Next;
 
 namespace
 {
+
+class FixedProcessMemorySnapshotProvider final
+    : public ProcessMemorySnapshotProvider
+{
+public:
+    explicit FixedProcessMemorySnapshotProvider(ProcessMemorySnapshot value)
+        : m_value(std::move(value))
+    {
+    }
+
+    [[nodiscard]] ProcessMemorySnapshot snapshot() const override
+    {
+        return m_value;
+    }
+
+private:
+    ProcessMemorySnapshot m_value;
+};
 
 class ProbePage;
 
@@ -281,6 +306,9 @@ private slots:
     void descriptorRegistrationRetainsMetadataWithoutConstructingPages();
     void invalidAndDuplicateDescriptorsAreRejected();
     void lifecycleStatesAreQueryableObservableAndRejectReentrantMutations();
+    void lifecycleDiagnosticsSerializeSnapshotsAndUnavailableCounters();
+    void lifecycleDiagnosticsBoundDetailedModelRecords();
+    void lifecycleDiagnosticsObserveExplicitReleaseAndHostShutdown();
     void registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate();
     void factoryAndActivationFailuresPreserveTheCurrentPage();
     void initialSetupPageShowsPendingAndRecoveryActions();
@@ -695,6 +723,244 @@ void PageHostTests::lifecycleStatesAreQueryableObservableAndRejectReentrantMutat
         std::optional<Ui::PageLifecycleState>(Ui::PageLifecycleState::Released)
         );
     QVERIFY(notificationsMatchQueriedState);
+}
+
+void PageHostTests::lifecycleDiagnosticsSerializeSnapshotsAndUnavailableCounters()
+{
+    ProcessMemorySnapshot memory;
+    memory.isAvailable = true;
+    memory.workingSetBytes = 4096;
+    memory.handleCount = 0;
+    memory.capturedAt = QDateTime::fromString(
+        QStringLiteral("2026-11-17T09:30:45.123Z"), Qt::ISODateWithMs);
+    memory.platform = QStringLiteral("windows");
+    memory.workingSetBytesAvailable = true;
+    memory.handleCountAvailable = true;
+
+    Bootstrap::PageLifecycleWidgetSnapshot unavailablePage;
+    const QByteArray first = Bootstrap::pageLifecycleDiagnosticRecord(
+        QStringLiteral("classes"), Ui::PageLifecycleState::Created,
+        memory, unavailablePage);
+    const QByteArray second = Bootstrap::pageLifecycleDiagnosticRecord(
+        QStringLiteral("classes"), Ui::PageLifecycleState::Created,
+        memory, unavailablePage);
+    QCOMPARE(first, second);
+
+    const QJsonObject unavailableObject = QJsonDocument::fromJson(first)
+        .object();
+    QCOMPARE(unavailableObject.value(QStringLiteral("event")).toString(),
+             QStringLiteral("page-lifecycle"));
+    QCOMPARE(unavailableObject.value(QStringLiteral("page_key")).toString(),
+             QStringLiteral("classes"));
+    QCOMPARE(unavailableObject.value(QStringLiteral("state")).toString(),
+             QStringLiteral("created"));
+    QCOMPARE(unavailableObject.value(QStringLiteral("captured_at")).toString(),
+             QStringLiteral("2026-11-17T09:30:45.123Z"));
+    QCOMPARE(unavailableObject.value(QStringLiteral("platform")).toString(),
+             QStringLiteral("windows"));
+    QVERIFY(!unavailableObject.value(QStringLiteral(
+        "page_instance_available")).toBool());
+    const QJsonObject unavailableMemory = unavailableObject.value(
+        QStringLiteral("memory")).toObject();
+    QCOMPARE(unavailableMemory.value(QStringLiteral(
+        "working_set_bytes")).toInt(), 4096);
+    QCOMPARE(unavailableMemory.value(QStringLiteral(
+        "private_usage_bytes")).type(), QJsonValue::Null);
+    QCOMPARE(unavailableMemory.value(QStringLiteral("handle_count")).toInt(), 0);
+    const QJsonObject unavailablePageMetrics = unavailableObject.value(
+        QStringLiteral("page")).toObject();
+    QCOMPARE(unavailablePageMetrics.value(QStringLiteral("item_models")).type(),
+             QJsonValue::Null);
+    QCOMPARE(unavailablePageMetrics.value(QStringLiteral(
+        "table_item_count")).type(), QJsonValue::Null);
+    QCOMPARE(unavailablePageMetrics.value(QStringLiteral(
+        "editor_control_widget_count")).type(), QJsonValue::Null);
+
+    Bootstrap::PageLifecycleWidgetSnapshot emptyButAvailablePage;
+    emptyButAvailablePage.pageInstanceAvailable = true;
+    const QJsonObject availablePageObject = QJsonDocument::fromJson(
+        Bootstrap::pageLifecycleDiagnosticRecord(
+            QStringLiteral("classes"), Ui::PageLifecycleState::Activated,
+            memory, emptyButAvailablePage)).object();
+    QVERIFY(availablePageObject.value(QStringLiteral(
+        "page_instance_available")).toBool());
+    const QJsonObject availablePageMetrics = availablePageObject.value(
+        QStringLiteral("page")).toObject();
+    QCOMPARE(availablePageMetrics.value(QStringLiteral(
+        "table_item_count")).toInt(), 0);
+    QCOMPARE(availablePageMetrics.value(QStringLiteral(
+        "editor_control_widget_count")).toInt(), 0);
+    QVERIFY(availablePageMetrics.value(QStringLiteral("item_models")).isArray());
+}
+
+void PageHostTests::lifecycleDiagnosticsBoundDetailedModelRecords()
+{
+    constexpr int ModelCountOverDetailLimit = 257;
+    QWidget page;
+    for (int index = 0; index < ModelCountOverDetailLimit; ++index)
+    {
+        auto* const view = new QTableView(&page);
+        auto* const model = new QStandardItemModel(view);
+        model->setObjectName(QStringLiteral("model-%1").arg(index));
+        view->setModel(model);
+    }
+
+    const Bootstrap::PageLifecycleWidgetSnapshot snapshot =
+        Bootstrap::pageLifecycleWidgetSnapshot(&page);
+    QCOMPARE(snapshot.itemModelCount, ModelCountOverDetailLimit);
+    QCOMPARE(snapshot.itemModels.size(), 256);
+    QVERIFY(snapshot.itemModelsTruncated);
+
+    ProcessMemorySnapshot memory;
+    memory.isAvailable = true;
+    memory.platform = QStringLiteral("macos");
+    const QJsonObject record = QJsonDocument::fromJson(
+        Bootstrap::pageLifecycleDiagnosticRecord(
+            QStringLiteral("model-cap"), Ui::PageLifecycleState::Activated,
+            memory, snapshot)).object();
+    const QJsonObject pageMetrics = record.value(QStringLiteral("page")).toObject();
+    QCOMPARE(pageMetrics.value(QStringLiteral("item_models")).toArray().size(),
+             256);
+    QVERIFY(pageMetrics.value(QStringLiteral(
+        "item_models_truncated")).toBool());
+}
+
+void PageHostTests::lifecycleDiagnosticsObserveExplicitReleaseAndHostShutdown()
+{
+    ProcessMemorySnapshot memory;
+    memory.isAvailable = true;
+    memory.workingSetBytes = 4096;
+    memory.capturedAt = QDateTime::fromString(
+        QStringLiteral("2026-11-17T09:30:45.123Z"), Qt::ISODateWithMs);
+    memory.platform = QStringLiteral("windows");
+    memory.workingSetBytesAvailable = true;
+
+    PageProbe alpha;
+    alpha.key = QStringLiteral("alpha");
+    alpha.name = QStringLiteral("alpha");
+    PageProbe beta;
+    beta.key = QStringLiteral("beta");
+    beta.name = QStringLiteral("beta");
+    QVector<QJsonObject> releaseRecords;
+    auto host = std::make_unique<Ui::PageHost>(
+        *m_loader, m_preferences.model);
+    auto recorder = std::make_unique<Bootstrap::QtPageLifecycleDiagnosticsRecorder>(
+        *host,
+        std::make_unique<FixedProcessMemorySnapshotProvider>(memory),
+        [&releaseRecords](const QByteArray& record) {
+            releaseRecords.push_back(QJsonDocument::fromJson(record).object());
+        });
+    QVERIFY(host->registerPage(descriptorFor(alpha.key, factoryFor(alpha))));
+    QVERIFY(host->registerPage(descriptorFor(beta.key, factoryFor(beta))));
+    QVERIFY(host->activatePage(alpha.key));
+    QVERIFY(host->activatePage(beta.key));
+    QVERIFY(host->activatePage(alpha.key));
+    QVERIFY(host->releasePage(alpha.key));
+    QVERIFY(alpha.pages.front().isNull());
+
+    int alphaActivationCount = 0;
+    int alphaDestroyedCount = 0;
+    int destroyedRecordIndex = -1;
+    int releasedRecordIndex = -1;
+    QJsonObject alphaDestroyedRecord;
+    for (qsizetype index = 0; index < releaseRecords.size(); ++index)
+    {
+        const QJsonObject& record = releaseRecords[index];
+        if (record.value(QStringLiteral("page_key")).toString() != alpha.key)
+        {
+            continue;
+        }
+        if (record.value(QStringLiteral("event")).toString()
+            == QStringLiteral("page-lifecycle")
+            && record.value(QStringLiteral("state")).toString()
+                == QStringLiteral("activated"))
+        {
+            ++alphaActivationCount;
+        }
+        if (record.value(QStringLiteral("event")).toString()
+            == QStringLiteral("page-instance-destroyed"))
+        {
+            ++alphaDestroyedCount;
+            destroyedRecordIndex = static_cast<int>(index);
+            alphaDestroyedRecord = record;
+        }
+        if (record.value(QStringLiteral("event")).toString()
+                == QStringLiteral("page-lifecycle")
+            && record.value(QStringLiteral("state")).toString()
+                == QStringLiteral("released"))
+        {
+            releasedRecordIndex = static_cast<int>(index);
+        }
+    }
+    QCOMPARE(alphaActivationCount, 2);
+    QCOMPARE(alphaDestroyedCount, 1);
+    QVERIFY(destroyedRecordIndex >= 0);
+    QVERIFY(releasedRecordIndex > destroyedRecordIndex);
+    QCOMPARE(alphaDestroyedRecord.value(QStringLiteral("platform")).toString(),
+             QStringLiteral("windows"));
+    QCOMPARE(alphaDestroyedRecord.value(QStringLiteral(
+        "sample_available")).toBool(), true);
+    QCOMPARE(alphaDestroyedRecord.value(QStringLiteral("memory")).toObject()
+                 .value(QStringLiteral("working_set_bytes")).toInt(),
+             4096);
+    QVERIFY(!alphaDestroyedRecord.value(QStringLiteral(
+        "page_instance_available")).toBool());
+    const QJsonObject destroyedPageMetrics = alphaDestroyedRecord.value(
+        QStringLiteral("page")).toObject();
+    QCOMPARE(destroyedPageMetrics.value(QStringLiteral("widget_count")).type(),
+             QJsonValue::Null);
+
+    PageProbe closing;
+    closing.key = QStringLiteral("closing");
+    closing.name = QStringLiteral("closing");
+    QVector<QJsonObject> shutdownRecords;
+    auto closingHost = std::make_unique<Ui::PageHost>(
+        *m_loader, m_preferences.model);
+    auto closingRecorder =
+        std::make_unique<Bootstrap::QtPageLifecycleDiagnosticsRecorder>(
+            *closingHost,
+            std::make_unique<FixedProcessMemorySnapshotProvider>(memory),
+            [&shutdownRecords](const QByteArray& record) {
+                shutdownRecords.push_back(
+                    QJsonDocument::fromJson(record).object());
+            });
+    QVERIFY(closingHost->registerPage(
+        descriptorFor(closing.key, factoryFor(closing))));
+    QVERIFY(closingHost->activatePage(closing.key));
+    QPointer<Ui::Page> closingPage(closingHost->pageInstance(closing.key));
+    closingHost.reset();
+    QVERIFY(closingPage.isNull());
+
+    int closingDestroyedCount = 0;
+    int closingReleasedStateCount = 0;
+    for (const QJsonObject& record : shutdownRecords)
+    {
+        if (record.value(QStringLiteral("page_key")).toString() != closing.key)
+        {
+            continue;
+        }
+        if (record.value(QStringLiteral("event")).toString()
+            == QStringLiteral("page-instance-destroyed"))
+        {
+            ++closingDestroyedCount;
+            QCOMPARE(record.value(QStringLiteral(
+                "page_instance_available")).toBool(), false);
+            QCOMPARE(record.value(QStringLiteral("platform")).toString(),
+                     QStringLiteral("windows"));
+            QCOMPARE(record.value(QStringLiteral("memory")).toObject()
+                         .value(QStringLiteral("working_set_bytes")).toInt(),
+                     4096);
+        }
+        if (record.value(QStringLiteral("event")).toString()
+                == QStringLiteral("page-lifecycle")
+            && record.value(QStringLiteral("state")).toString()
+                == QStringLiteral("released"))
+        {
+            ++closingReleasedStateCount;
+        }
+    }
+    QCOMPARE(closingDestroyedCount, 1);
+    QCOMPARE(closingReleasedStateCount, 0);
 }
 
 void PageHostTests::registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate()

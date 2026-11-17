@@ -80,3 +80,39 @@ operation-start after export. Phase 9 must rerun the route on a source-bound
 packaged Release and measure matched cleanup, repeated-cycle growth, and five-
 minute idle. Preserve the old route sequence and output-parity checks as
 historical comparison context only.
+
+#### P9-02 — Next page and model lifecycle trace — 2026-11-17
+
+The production recorder now writes structured PageHost lifecycle records for
+Created, Activated, Suspended, and Released states. It joins each event to the
+platform process snapshot, counter availability, page instance availability,
+model names/types/root-row counts, table-item and index-widget counts, and
+editor-control counts. Page data is `null` before host storage and after
+release; a separate `page-instance-destroyed` event records actual QObject
+destruction, including shell shutdown, while marking page-object metrics
+unavailable. The recorder lives through shell teardown and does not alter
+PageHost lifecycle behavior.
+
+Page traversal is capped at 100,000 QObject nodes, view-cell inspection at
+65,536 cells, and detailed model records at 256 entries with explicit
+truncation flags. The existing 96-class Classes Navigator capture now records
+the full lifecycle trace through suspension, explicit release, recreation,
+rebuilding 96 class rows, and release of the recreated instance. It verifies
+that the shared editor widget remains bounded while its loaded class and
+schedule rows clear on suspension. Eight locale/theme/fixture cases pass.
+
+Independent macOS re-verification passed using the incremental standard
+`build/macos-clang-debug` folder. The affected targets were
+`ClassMngrNextPageHostTests`, `ClassMngrNextClassesNavigatorVisualCapture`,
+`ClassMngrNext`, and `ClassMngrNextBootstrapTests`. Focused CTest for
+`ClassMngrNextPageHostTests`, `ClassMngrNextClassesNavigatorVisualCapture`, and
+`ClassMngrNextBootstrapTests` passed 3/3; `git diff --check` passed. The latest
+capture manifest is generated under
+`build/macos-clang-debug/classes-navigator-visual-capture/manifest.json`.
+Hosted Windows/Linux Debug and packaged Windows Release verification remain
+pending at Batch 1 close; no memory threshold result is claimed.
+
+The hosted Release workflow currently checks out a mutable branch ref for
+push-triggered builds and does not compare the checked-out commit with the push
+SHA. A separate P9-05 slice was added to bind package evidence to the triggering
+commit and report the candidate SHA before the Batch 1 push.

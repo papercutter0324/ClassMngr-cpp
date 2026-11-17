@@ -43,9 +43,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   P9-01 is locally accepted after adding per-counter sample availability and
   explicit null output for failed counters. It extracts the existing process
   snapshot provider into a narrow shared target so Next does not depend on
-  broad legacy Core. Hosted Windows/Linux Debug and Windows packaged Release
-  results remain required at batch close. The existing Windows Release memory
-  step is advisory and has no numeric Phase 9 threshold, so no memory-gate
+  broad legacy Core. P9-02 is locally accepted with production page/model
+  traces, release/recreate coverage, and shutdown destruction records; hosted
+  checks remain pending. Hosted Windows/Linux Debug and Windows packaged
+  Release results remain required at batch close. The existing Windows Release
+  memory step is advisory and has no numeric Phase 9 threshold, so no memory-gate
   result is claimed yet.
 
 ### Slice batches

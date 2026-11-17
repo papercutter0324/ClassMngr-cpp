@@ -849,6 +849,7 @@ add_executable(ClassMngrNextPageHostTests
     src/next/ui/schedule_import_request_mapper.cpp
     src/next/ui/teacher_import_request_mapper.cpp
     src/next/ui/page_host.cpp
+    src/next/bootstrap/qt_page_lifecycle_diagnostics.cpp
 )
 target_compile_features(ClassMngrNextPageHostTests
     PRIVATE
@@ -865,6 +866,7 @@ target_compile_definitions(ClassMngrNextPageHostTests
 )
 target_link_libraries(ClassMngrNextPageHostTests
     PRIVATE
+        ClassMngrProcessMemory
         ClassMngrSignature
         ClassMngrNext::Resources
         ClassMngrTeacherImportParser
@@ -4811,6 +4813,7 @@ set_tests_properties(ClassMngrNextClassesFullWindowStateVisualCapture
 add_executable(ClassMngrNextClassesNavigatorVisualCapture
     tests/next/classes_navigator_visual_capture.cpp
     src/core/process_memory_snapshot.cpp
+    src/next/bootstrap/qt_page_lifecycle_diagnostics.cpp
     src/next/ui/classes_navigator_page.cpp
     src/next/ui/classes_navigator_model.cpp
     src/next/ui/selected_class_editor.cpp
