@@ -194,3 +194,20 @@ bounded writer/preview/print events, and 40 viewer page selections reduced to
 selection but no internal render-completion hook at this boundary. Native
 Windows counters and hosted Windows/Linux/package checks remain pending; no
 Windows memory gate is claimed.
+
+P9-04 is committed as `4a8141ff`.
+
+#### P9-05 — Source-bound Windows Release evidence — 2026-11-17
+
+Push-triggered `windows-release.yml` now checks out `github.sha` when no
+explicit reusable-workflow `source_ref` is supplied. Before setup, build, or
+packaging, it verifies that `git rev-parse HEAD` matches `GITHUB_SHA` and writes
+the candidate and trigger SHAs to the Actions summary. Manual dispatch continues
+to use the selected `github.ref`, and callers may still provide `source_ref`.
+
+Independent workflow review found no issues; Ruby Psych parsed the YAML and
+`git diff --check` passed. `actionlint` and PowerShell were unavailable, so
+GitHub expression/schema and PowerShell execution validation are deferred to
+hosted Windows. Batch 1 is ready for its authorized push; hosted Windows/Linux
+Debug and packaged Windows Release checks remain pending. Existing Windows
+Release memory sampling remains advisory and is not a Phase 9 budget pass.

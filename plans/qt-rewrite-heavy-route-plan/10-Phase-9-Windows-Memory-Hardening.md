@@ -48,10 +48,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   checks remain pending. P9-03 is locally accepted with production
   resource/cache/image/font diagnostics; its hosted checks remain pending.
   P9-04 is locally accepted with QtPdf and output lifecycle traces, bounded
-  page/render records, and release/reopen coverage. Hosted Windows/Linux Debug
-  and Windows packaged Release results remain required at batch close. P9-05
-  is binding push-triggered Windows Release packaging to its triggering SHA;
-  source-bound workflow verification remains pending.
+  page/render records, and release/reopen coverage, committed as `4a8141ff`.
+  P9-05 is locally accepted after binding push-triggered Windows Release
+  packaging to its triggering SHA and checking that SHA before build/package.
+  Hosted Windows/Linux Debug and Windows packaged Release results remain
+  required at Batch 1 close.
   The existing Windows Release
   memory step is advisory and has no numeric Phase 9 threshold, so no memory-gate
   result is claimed yet.

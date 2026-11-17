@@ -56,11 +56,19 @@ allocation or cleanup defect, route that fix to its owning feature boundary.
      suppressed details. `git diff --check` passed. QtPdf view records page
      selection rather than internal render completion, which QtPdf does not
      expose at this boundary. Hosted Windows/Linux checks remain pending.
-5. **P9-05 — Source-bound Windows Release evidence** (In progress)
+5. **P9-05 — Source-bound Windows Release evidence** (Locally accepted;
+   hosted verification pending)
    - Acceptance: push-triggered packaging checks out the exact commit that
      triggered the workflow, reports the candidate SHA, and fails before
      packaging if the checked-out SHA differs. Manual dispatch may continue to
      select an explicit source ref.
+   - Verification: independent workflow review passed; Ruby Psych parsed the
+     YAML and `git diff --check` passed. Push runs use `github.sha`, compare
+     checkout `HEAD` with `GITHUB_SHA` before setup/package work, and write the
+     candidate/trigger SHAs to the Actions summary. Explicit reusable-workflow
+     `source_ref` and manual dispatch's selected ref remain supported.
+     `actionlint` and PowerShell were unavailable for local validation. Hosted
+     Windows Release evidence remains pending.
 
 ## Phase 9 — Batch 2: Packaged Release scenario gates (Discovered)
 

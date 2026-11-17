@@ -93,7 +93,28 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.source_ref || github.ref }}
+          ref: ${{ inputs.source_ref || (github.event_name == 'push' && github.sha) || github.ref }}
+
+      - name: Verify triggering commit and record candidate SHA
+        if: github.event_name == 'push' && inputs.source_ref == ''
+        shell: pwsh
+        run: |
+          $candidateSha = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($candidateSha)) {
+            throw "Unable to determine the checked out commit."
+          }
+
+          $triggerSha = $env:GITHUB_SHA
+          if ($candidateSha -ne $triggerSha) {
+            throw "Windows Release checked out '$candidateSha', but the triggering push commit is '$triggerSha'."
+          }
+
+          @"
+          ### Windows Release source commit
+          - Event: $env:GITHUB_EVENT_NAME
+          - Candidate SHA: $candidateSha
+          - Trigger SHA: $triggerSha
+          "@ | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
 
       - name: Set up Python
         uses: actions/setup-python@v6
