@@ -1,22 +1,28 @@
 # Project Progress
 
-## Phase 9 Batch 1 handoff — 2026-11-17
+## Phase 9 Batch 1 Windows acceptance — 2026-11-18
 
-Phase 9 remains In progress. The handoff commit follows Batch 1 push
-`e3346a57869a04b91c10fa6a1c5de8bec2f3289a`. Hosted Windows Release x64/ARM64
-and Linux x64 Release passed; baseline run
-[44058668011](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44058668011)
-passed Linux x64 Debug and the Windows ARM64 Debug cross-build, but Windows
-x64 Debug had one `ClassMngrNextPlatformQtPdfSessionReleaseTests` process exit
-`0xc0000409` (619/620). No assertion, Qt fatal, stack, or failing subtest was
-identified, so the cause remains unconfirmed.
+Phase 9 remains In progress. P9-04S is accepted after an elevated local Windows
+x64 Debug preset build, focused QtPdf CTest (1/1), and fresh unfiltered CTest
+(620/620, zero skipped or not run, exit 0). The full suite took 1174.78 seconds;
+the changed session and test sources compiled in the successful 64.9-second
+build. The release test verifies deferred `FileNotFound` handling while the
+ResourceLoader stream remains active, then checks document destruction,
+replacement, stream-release ordering, final Null state, and no timeout.
 
-P9-04R isolates its 40-event cap test from accumulated jump history and native
-process sampling; the independent local macOS focused CTest passed 12/12. The
-new push must receive hosted Windows x64 re-verification before Batch 1 closes.
-Existing Windows memory sampling remains advisory; no numeric Phase 9 budget
-pass is claimed. After Batch 1 passes, continue with Batch 2 P9-06 as scoped in
-the [Phase 9 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
+The malformed-PDF attempt reached QtPdf `Q_UNREACHABLE` before `open()` returned
+or the queued session handler ran, so it did not exercise session cleanup. The
+test now uses a deterministic filename error to cover the reachable lifecycle
+path; malformed-PDF parsing is not claimed fixed or covered. The earlier hosted
+619/620 run did not identify a subtest and remains unconfirmed. The successful
+local run's `LastTest.log` is under
+`build/windows-x64-debug/Testing/Temporary/LastTest.log`.
+
+Batch 1's local Windows gate and existing P9-05 source-bound package evidence
+are accepted. The P9-04S slice commit and the batch's single push close Batch 1;
+then continue with local packaged Windows Release measurements at Batch 2 P9-06
+in the
+[Phase 9 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

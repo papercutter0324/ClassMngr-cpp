@@ -23,9 +23,11 @@ The project already has a platform process snapshot provider and stage-level
 Next startup diagnostics, but no common production trace joins them. The
 existing Windows x64 Release evidence workflow has a useful process sampler,
 but its memory step is advisory and does not enforce the Phase 9 threshold.
-Local acceptance will use the standard macOS Debug build and focused tests;
-Batch 1 closeout requires hosted Windows Debug and packaged Release results.
-No Windows memory budget or exit-gate result is claimed at batch start.
+Local acceptance initially used the standard macOS Debug build and focused
+tests, with hosted Windows Debug and packaged Release results planned for Batch 1
+closeout. The later local-only acceptance and Windows evidence are recorded in
+the 2026-11-18 entry below. No Windows memory budget or exit-gate result was
+claimed at batch start.
 
 #### P9-01 target-boundary decision
 
@@ -134,9 +136,9 @@ Sub Prep route through summary, first selection, refresh, package generation,
 leave, and repeated re-entry with bounded object counts and matched memory
 before/after release. The documented 536,870,912-byte value remains a
 diagnostic ceiling, not a hard transient budget, until current-source Windows
-Release data establishes a return-to-baseline allowance. Validator and route
-contract work can proceed on macOS; decisive package and native working-set
-evidence requires hosted Windows.
+Release data establishes a return-to-baseline allowance. At discovery, the
+package and native working-set evidence was planned for hosted Windows; the
+current local-only acceptance is recorded below.
 
 #### P9-03 — Resource/cache/image/font lifecycle trace — 2026-11-17
 
@@ -235,5 +237,60 @@ coupled to repeated Windows process/thread sampling. Assertions still verify
 independent local macOS Debug CTest both passed; the target reports 12/12 and
 `git diff --check` is clean. This is an isolation repair based on the strongest
 new-code hypothesis; the Windows crash cause remains unconfirmed until the
-hosted x64 Debug suite reruns. Batch 1 stays open and the repair must be
-committed and pushed before its hosted re-verification.
+additional Windows x64 Debug verification. Batch 1 stayed open pending that
+verification.
+
+#### Initial local Windows gate and QtPdf finding (superseded) — 2026-11-18
+
+At that point, acceptance was local Windows validation only. Batch 1 required a
+passing full CTest run on Windows x64 Debug and the existing P9-05 source-bound
+package evidence. Local packaged Windows Release memory measurements begin in
+Batch 2 with P9-06. The overall Phase 9 exit requires both the local full-suite
+result and local packaged Release memory measurements. GitHub validation is not
+required. Phase 9 remains In progress; no memory budget pass is claimed.
+
+The local full CTest run used the full preset build and reported 619/620 passed,
+with zero skipped or not run. Its sole failure was test #603,
+`ClassMngrNextPlatformQtPdfSessionReleaseTests`, exiting `0xc0000409`. Isolated
+logs show `malformedPdfErrorIsDeferredAndCanReleaseSafely()` receives
+`QPdfDocument::Status::Error` (error 4), then QtPdf reaches `Q_UNREACHABLE` at
+`qpdfdocument.cpp:201` before `open()` returns and before the queued session
+handler runs. The session error release path was not reached. The installed
+Qt6Pdf DLL version is `6.140.0.0`.
+
+Evidence is in `build/windows-x64-debug/p9_batch1_qtpdf_malformed_subtest.txt`,
+`build/windows-x64-debug/p9_batch1_qtpdf_qtestlog.txt`, and
+`build/windows-x64-debug/p9_batch1_local_windows_full_ctest_full_build.log`.
+This finding led to P9-04S and is superseded by the fresh passing full-suite run
+below. The earlier hosted run's artifacts did not identify a QtTest subfunction,
+so this local finding does not establish that the hosted failure had the same
+trigger.
+
+#### P9-04S accepted and Batch 1 local Windows gate — 2026-11-18
+
+P9-04S replaces the malformed-PDF case with a deterministic
+`QPdfDocument::load(missingPath)` error while the session's actual ResourceLoader
+stream is active. The focused test verifies the deferred error arrives after
+`open()` returns, reports `FileNotFound`, releases successfully, destroys and
+replaces the failed document, observes stream-release ordering, reaches final
+Null state, and does not time out. Production close waiting now treats both
+Null and Error as terminal before document destruction and stream release. The
+prior malformed-PDF case is not covered or fixed: QtPdf reached
+`Q_UNREACHABLE` at `qpdfdocument.cpp:201` before `open()` returned or the queued
+session handler ran (installed Qt6Pdf DLL `6.140.0.0`).
+
+The elevated local `cmake --build --preset windows-x64-debug` succeeded in
+64.9 seconds and compiled/linked the changed session and test sources. Focused
+CTest passed 1/1 in 10.999 seconds. A fresh elevated unfiltered CTest run passed
+620/620, with zero skipped or not run and exit 0, in 1174.78 seconds. This fresh
+run supersedes the earlier local 619/620 result. No ACL changes or cleanup were
+performed; non-elevated ACL-denied attempts were diagnostic only. The cause of
+the earlier hosted 619/620 failure and its relationship to the local malformed-
+PDF finding remain unconfirmed because hosted artifacts did not identify a
+subtest. P9-05 package evidence remains from prior hosted runs;
+GitHub validation was not run for this gate.
+
+P9-04 and P9-04S are accepted. Batch 1 local verification is complete. The
+accepted P9-04S slice commit and its single batch push close Batch 1; P9-06
+follows that push with the local packaged Windows Release startup-ready and
+five-minute-idle gate. No Phase 9 numeric memory budget has passed.

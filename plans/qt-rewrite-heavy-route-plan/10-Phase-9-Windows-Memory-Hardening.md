@@ -37,28 +37,16 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 4 through 8
 - Blocks: Release qualification and cutover
 - Owner: Codex
-- Last updated: 2026-11-17
-- Current note: Phase 9 began on macOS after Phases 4–8 closed. Batch 1 is
-  adding shared Next startup, page, resource, and QtPdf lifecycle memory traces;
-  P9-01 is locally accepted after adding per-counter sample availability and
-  explicit null output for failed counters. It extracts the existing process
-  snapshot provider into a narrow shared target so Next does not depend on
-  broad legacy Core. P9-02 is locally accepted with production page/model
-  traces, release/recreate coverage, and shutdown destruction records; hosted
-  checks remain pending. P9-03 is locally accepted with production
-  resource/cache/image/font diagnostics; its hosted checks remain pending.
-  P9-04 is locally accepted with QtPdf and output lifecycle traces, bounded
-  page/render records, and release/reopen coverage, committed as `4a8141ff`.
-  P9-05 is accepted after binding push-triggered Windows Release packaging to
-  its triggering SHA; hosted x64 and ARM64 packages and the candidate-SHA guard
-  passed. The first hosted baseline found one Windows x64 Debug failure in the
-  P9-04 QtPdf session test (619/620; process exception `0xc0000409`). P9-04R
-  locally passes after changing the cap test to emit repeated page-change
-  signals without jump-history accumulation or native sampler calls. Hosted
-  Windows x64 re-verification remains required before Batch 1 closes.
-  The existing Windows Release
-  memory step is advisory and has no numeric Phase 9 threshold, so no memory-gate
-  result is claimed yet.
+- Last updated: 2026-11-18
+- Current note: Phase 9 remains In progress. P9-01 through P9-04 and the P9-04S
+  error-release repair are locally accepted; P9-05's source-bound workflow
+  change and package runs are prior hosted evidence, not new validation. Batch
+  1 local verification is complete. The elevated local Windows x64 Debug build,
+  focused CTest, and fresh unfiltered CTest passed; the full suite was 620/620
+  with zero skipped or not run. The accepted P9-04S slice commit and its single
+  batch push close Batch 1; P9-06 follows that push with local packaged Windows
+  Release startup-ready and five-minute-idle measurement. No Phase 9 memory
+  budget result is claimed.
 
 ### Slice batches
 

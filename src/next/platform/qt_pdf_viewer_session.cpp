@@ -12,6 +12,15 @@
 namespace ClassMngr::Next::Platform
 {
 
+namespace
+{
+bool isTerminalCloseStatus(QPdfDocument::Status status)
+{
+    return status == QPdfDocument::Status::Null
+        || status == QPdfDocument::Status::Error;
+}
+}
+
 std::unique_ptr<PdfViewerSession> makeQtPdfViewerSession(
     Resources::ResourceLoader& loader, QWidget* viewParent)
 {
@@ -115,7 +124,14 @@ Domain::Result<bool> QtPdfViewerSession::open(
     }
     const quint64 generation = m_generation;
     record(QStringLiteral("qpdf-document-load"), QStringLiteral("before"));
-    m_document->load(&device);
+    if (m_documentLoadForTesting)
+    {
+        m_documentLoadForTesting(*m_document);
+    }
+    else
+    {
+        m_document->load(&device);
+    }
     record(QStringLiteral("qpdf-document-load"), QStringLiteral("after"));
     // Match the synchronous Ready contract without dispatching Error cleanup
     // until load() has unwound. Duplicate queued Ready events are suppressed.
@@ -170,7 +186,7 @@ void QtPdfViewerSession::releaseConsumers(bool recreate)
     {
         record(QStringLiteral("qpdf-document-close"), QStringLiteral("before"));
         m_document->close();
-        timedOut = !waitForNull();
+        timedOut = !waitForCloseCompletion();
         record(QStringLiteral("qpdf-document-close"), QStringLiteral("after"));
         if (timedOut)
         {
@@ -229,13 +245,13 @@ void QtPdfViewerSession::releaseConsumers(bool recreate)
     m_releasing = false;
 }
 
-bool QtPdfViewerSession::waitForNull()
+bool QtPdfViewerSession::waitForCloseCompletion()
 {
     if (m_closeWaiter)
     {
         return m_closeWaiter();
     }
-    if (status() == QPdfDocument::Status::Null)
+    if (isTerminalCloseStatus(status()))
     {
         return true;
     }
@@ -244,18 +260,18 @@ bool QtPdfViewerSession::waitForNull()
     timeout.setSingleShot(true);
     connect(m_document.get(), &QPdfDocument::statusChanged, &loop,
             [&loop](QPdfDocument::Status value) {
-        if (value == QPdfDocument::Status::Null)
+        if (isTerminalCloseStatus(value))
         {
             loop.quit();
         }
     });
     connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
     timeout.start(5000);
-    while (status() != QPdfDocument::Status::Null && timeout.isActive())
+    while (!isTerminalCloseStatus(status()) && timeout.isActive())
     {
         loop.exec(QEventLoop::ExcludeUserInputEvents);
     }
-    return status() == QPdfDocument::Status::Null;
+    return isTerminalCloseStatus(status());
 }
 
 QPdfView* QtPdfViewerSession::view() const noexcept { return m_view.get(); }
@@ -316,6 +332,11 @@ void QtPdfViewerSession::setLifecycleObserver(LifecycleObserver observer)
 void QtPdfViewerSession::setCloseWaiterForTesting(CloseWaiter waiter)
 {
     m_closeWaiter = std::move(waiter);
+}
+void QtPdfViewerSession::setDocumentLoadForTesting(
+    std::function<void(QPdfDocument&)> loader)
+{
+    m_documentLoadForTesting = std::move(loader);
 }
 void QtPdfViewerSession::recordRetiredDocument(
     const QString& phase, quint64 generation, int pagesBeforeClose,

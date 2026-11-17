@@ -1,5 +1,18 @@
 # Project Diary
 
+### Phase 9 QtPdf error-state lifecycle — 2026-11-18
+
+When malformed PDF bytes make the installed QtPdf 6.14 parser reach
+`Q_UNREACHABLE` inside `QPdfDocument::load()` before the session's `open()`
+returns, a queued session error handler cannot validate cleanup. Keep that
+parser boundary visible and test the reachable error-state contract separately:
+use a deterministic `FileNotFound` load while the session's real resource
+stream is held, then assert deferred notification, document destruction before
+stream release, replacement, and final Null state. The malformed-input case is
+not thereby fixed or covered. The fresh local Windows x64 Debug suite passed
+620/620 after this repair; the previous hosted run did not identify its failing
+subtest, so its cause remains unconfirmed.
+
 ### Phase 9 handoff lesson — 2026-11-17
 
 A Windows process exit such as `0xc0000409` without a stack, assertion, or

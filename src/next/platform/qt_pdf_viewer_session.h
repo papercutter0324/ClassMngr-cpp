@@ -48,13 +48,18 @@ public:
     void setStatusHandler(StatusHandler handler) override;
     void setLifecycleObserver(LifecycleObserver observer) override;
     void setCloseWaiterForTesting(CloseWaiter waiter) override;
+    // Override only the load operation in focused tests; production continues
+    // to load the session-owned resource device.
+    void setDocumentLoadForTesting(std::function<void(QPdfDocument&)> loader);
 
 private:
     void createDocument();
     void createView();
     void publishStatus(QPdfDocument::Status status, quint64 generation);
     void releaseConsumers(bool recreate);
-    [[nodiscard]] bool waitForNull();
+    // QPdfDocument::close() can leave a failed filename load in Error because
+    // it never acquired a document handle. Null and Error are terminal here.
+    [[nodiscard]] bool waitForCloseCompletion();
     void record(const QString& operation, const QString& phase,
                 const QJsonObject& additionalDetails = {}) const noexcept;
     void recordRetiredDocument(const QString& phase, quint64 generation,
@@ -70,6 +75,7 @@ private:
     StatusHandler m_statusHandler;
     LifecycleObserver m_observer;
     CloseWaiter m_closeWaiter;
+    std::function<void(QPdfDocument&)> m_documentLoadForTesting;
     quint64 m_generation = 0;
     std::optional<QPdfDocument::Status> m_publishedStatus;
     bool m_releasing = false;

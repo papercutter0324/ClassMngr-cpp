@@ -5,19 +5,18 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-11-17
-- Current milestone: Phase 9 Batch 1 remains open. P9-04R passed focused
-  macOS CTest 12/12; hosted Windows Release x64/ARM64 and Linux x64 Release
-  passed, but baseline run `44058668011` had 619/620 Windows x64 Debug tests
-  pass; `ClassMngrNextPlatformQtPdfSessionReleaseTests` exited `0xc0000409`
-  with cause unconfirmed. The next acceptance gate is a passing hosted Windows
-  x64 Debug rerun; keep Batch 1 open until it passes. Then begin Batch 2 with
-  P9-06's packaged startup-ready and five-minute-idle memory gate. Existing memory
-  sampling remains advisory, with no Phase 9 budget pass claimed. See the
+- Last updated: 2026-11-18
+- Current milestone: Phase 9 remains In progress. P9-04 and P9-04S are accepted;
+  Batch 1 local verification is complete. The accepted P9-04S slice commit and
+  its single batch push close Batch 1; P9-06 follows that push. The elevated
+  local Windows x64 Debug build and fresh unfiltered CTest passed (620/620, no
+  skipped or not-run tests). Existing P9-05 source-bound package evidence is
+  prior hosted evidence, not new validation. No Phase 9 memory budget pass is
+  claimed. See the
   [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
   [Phase 8a closeout](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
   [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), [Phase 9 progress
-  log](10-Phase-9-Progress-Log.md#batch-1-hosted-verification-and-p9-04r--2026-11-17),
+  log](10-Phase-9-Progress-Log.md),
   and [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and

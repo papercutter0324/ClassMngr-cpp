@@ -2,11 +2,7 @@
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_diagnostics.h"
 
-#include <QCryptographicHash>
-#include <QDir>
-#include <QFile>
 #include <QFileInfo>
-#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPdfView>
@@ -27,7 +23,6 @@ using namespace ClassMngr::Next;
 namespace
 {
 constexpr auto kReference = "resource://documents/Guides/DYB Lesson Planning Guide.pdf";
-constexpr auto kBodyPath = "assets/documents/Guides/DYB Lesson Planning Guide.pdf";
 constexpr auto kBodyId = "document.body:Guides/DYB Lesson Planning Guide.pdf";
 
 class FixedDiagnosticMemory final : public ProcessMemorySnapshotProvider
@@ -56,41 +51,6 @@ std::unique_ptr<Resources::ResourceLoader> loader(
     return std::make_unique<Resources::ResourceLoader>(std::move(*catalog), std::move(sink));
 }
 
-// Pass resource integrity validation while deliberately failing PDF parsing.
-QString malformedPackage(QTemporaryDir& package)
-{
-    QFile source(QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG));
-    if (!source.open(QIODevice::ReadOnly)) { return {}; }
-    QJsonObject root = QJsonDocument::fromJson(source.readAll()).object();
-    QJsonArray records = root.value(QStringLiteral("records")).toArray();
-    const QByteArray bytes("%PDF-1.7\nThis PDF has no catalog or pages.\n%%EOF\n");
-    const QString hash = QString::fromLatin1(QCryptographicHash::hash(bytes, QCryptographicHash::Sha256).toHex());
-    for (qsizetype i = 0; i < records.size(); ++i)
-    {
-        auto record = records.at(i).toObject();
-        if (record.value(QStringLiteral("logical_id")).toString() != QString::fromLatin1(kBodyId)) { continue; }
-        auto provenance = record.value(QStringLiteral("provenance")).toObject();
-        for (const auto& key : {QStringLiteral("source"), QStringLiteral("baked")})
-        {
-            auto entry = provenance.value(key).toObject();
-            entry.insert(QStringLiteral("bytes"), bytes.size());
-            entry.insert(QStringLiteral("sha256"), hash);
-            provenance.insert(key, entry);
-        }
-        record.insert(QStringLiteral("provenance"), provenance);
-        records.replace(i, record);
-    }
-    root.insert(QStringLiteral("records"), records);
-    const QString path = package.filePath(QString::fromLatin1(kBodyPath));
-    if (!QDir().mkpath(QFileInfo(path).absolutePath())) { return {}; }
-    QFile body(path);
-    if (!body.open(QIODevice::WriteOnly) || body.write(bytes) != bytes.size()) { return {}; }
-    body.close();
-    const QString catalogPath = package.filePath(QStringLiteral("resource-catalog.json"));
-    QFile output(catalogPath);
-    if (!output.open(QIODevice::WriteOnly) || output.write(QJsonDocument(root).toJson()) <= 0) { return {}; }
-    return catalogPath;
-}
 }
 
 class NextPlatformQtPdfSessionReleaseTests final : public QObject
@@ -105,7 +65,7 @@ private slots:
     void destroyingAnActiveOwnerClosesConsumersBeforeStream();
     void timeoutDestroysViewThenDocumentThenStreamAndReopens();
     void queuedStatusesCannotReachReplacementOrClosedSession();
-    void malformedPdfErrorIsDeferredAndCanReleaseSafely();
+    void failedFilenameLoadErrorIsDeferredAndCanReleaseSafely();
     void synchronousPrintBorrowProtectsTheActiveDocument();
 };
 
@@ -457,30 +417,91 @@ void NextPlatformQtPdfSessionReleaseTests::queuedStatusesCannotReachReplacementO
     QCOMPARE(session.status(), QPdfDocument::Status::Null);
 }
 
-void NextPlatformQtPdfSessionReleaseTests::malformedPdfErrorIsDeferredAndCanReleaseSafely()
+void NextPlatformQtPdfSessionReleaseTests::failedFilenameLoadErrorIsDeferredAndCanReleaseSafely()
 {
-    QTemporaryDir package;
-    QVERIFY(package.isValid());
-    const QString path = malformedPackage(package);
-    QVERIFY(!path.isEmpty());
-    auto catalog = Resources::ResourceCatalog::load(path, package.path());
-    QVERIFY(catalog);
-    Resources::ResourceLoader resources(std::move(*catalog));
+    QTemporaryDir missingFileDirectory;
+    QVERIFY(missingFileDirectory.isValid());
+    const QString missingPath = missingFileDirectory.filePath(QStringLiteral("missing.pdf"));
+    QVERIFY(!QFileInfo::exists(missingPath));
+    auto resources = loader();
+    QVERIFY(resources);
     QWidget parent;
-    Platform::QtPdfViewerSession session(resources, &parent);
     bool loadReturned = false;
     bool errorHandled = false;
+    bool callbackAfterOpenReturned = false;
+    bool streamActiveDuringCallback = false;
+    bool expectedFileNotFoundError = false;
+    bool releaseSucceeded = false;
+    bool failedDocumentDestroyed = false;
+    bool replacementDocumentBound = false;
+    bool streamReleasedDuringCallback = false;
+    QPdfDocument::Status statusAfterCallbackRelease = QPdfDocument::Status::Error;
+    bool closeCompletedWithErrorAndStream = false;
+    bool retiredDocumentDestroyedWithStream = false;
+    QStringList lifecycleEvents;
+    Platform::QtPdfViewerSession session(*resources, &parent);
+    session.setLifecycleObserver([&](const QString& operation, const QString& phase) {
+        lifecycleEvents.append(operation + QLatin1Char(':') + phase);
+        if (operation == QStringLiteral("qpdf-document-close")
+            && phase == QStringLiteral("after"))
+        {
+            closeCompletedWithErrorAndStream = session.status() == QPdfDocument::Status::Error
+                && session.hasActiveStream();
+        }
+        if (operation == QStringLiteral("qpdf-document-destroy")
+            && phase == QStringLiteral("before"))
+        {
+            retiredDocumentDestroyedWithStream = session.hasActiveStream();
+        }
+    });
+    session.setDocumentLoadForTesting([missingPath](QPdfDocument& document) {
+        document.load(missingPath);
+    });
     session.setStatusHandler([&](QPdfDocument::Status status) {
         if (status != QPdfDocument::Status::Error) { return; }
-        QVERIFY(loadReturned);
-        QVERIFY(session.hasActiveStream());
-        QVERIFY(session.error() != QPdfDocument::Error::None);
-        QVERIFY(session.release());
+        callbackAfterOpenReturned = loadReturned;
+        streamActiveDuringCallback = session.hasActiveStream();
+        expectedFileNotFoundError = status == session.status()
+            && session.error() == QPdfDocument::Error::FileNotFound;
+        QPointer<QPdfDocument> failedDocument(session.view()->document());
+        releaseSucceeded = session.release();
+        failedDocumentDestroyed = failedDocument.isNull();
+        replacementDocumentBound = session.view() && session.view()->document()
+            && session.view()->document()->status() == QPdfDocument::Status::Null;
+        streamReleasedDuringCallback = !session.hasActiveStream();
+        statusAfterCallbackRelease = session.status();
         errorHandled = true;
     });
-    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:invalid")));
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference),
+                         QStringLiteral("Viewer:missing-file-error")));
+    QVERIFY(!errorHandled);
     loadReturned = true;
     QTRY_VERIFY_WITH_TIMEOUT(errorHandled, 10000);
+    QVERIFY(callbackAfterOpenReturned);
+    QVERIFY(streamActiveDuringCallback);
+    QVERIFY(expectedFileNotFoundError);
+    QVERIFY(releaseSucceeded);
+    QVERIFY(failedDocumentDestroyed);
+    QVERIFY(replacementDocumentBound);
+    QVERIFY(streamReleasedDuringCallback);
+    QCOMPARE(statusAfterCallbackRelease, QPdfDocument::Status::Null);
+    QVERIFY(closeCompletedWithErrorAndStream);
+    QVERIFY(retiredDocumentDestroyedWithStream);
+    QVERIFY(!lifecycleEvents.contains(QStringLiteral("qpdf-document-close:timeout")));
+    const int closeAfter = lifecycleEvents.indexOf(QStringLiteral("qpdf-document-close:after"));
+    const int destroyBefore = lifecycleEvents.indexOf(
+        QStringLiteral("qpdf-document-destroy:before"), closeAfter + 1);
+    const int destroyAfter = lifecycleEvents.indexOf(
+        QStringLiteral("qpdf-document-destroy:after"), destroyBefore + 1);
+    const int streamReleaseBefore = lifecycleEvents.indexOf(
+        QStringLiteral("primary-stream-release:before"), destroyAfter + 1);
+    const int streamReleaseAfter = lifecycleEvents.indexOf(
+        QStringLiteral("primary-stream-release:after"), streamReleaseBefore + 1);
+    QVERIFY(closeAfter >= 0);
+    QVERIFY(closeAfter < destroyBefore);
+    QVERIFY(destroyBefore < destroyAfter);
+    QVERIFY(destroyAfter < streamReleaseBefore);
+    QVERIFY(streamReleaseBefore < streamReleaseAfter);
     QVERIFY(!session.hasActiveStream());
     QCOMPARE(session.status(), QPdfDocument::Status::Null);
 }

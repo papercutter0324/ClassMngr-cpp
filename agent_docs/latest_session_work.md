@@ -1,50 +1,40 @@
 # Latest Session Work
 
-## Phase 9 Batch 1 handoff — phase9_batch1_handoff_20261117 — 2026-11-17
+## Phase 9 Batch 1 closeout — phase9-windows-memory-hardening-20261117 — 2026-11-18
 
-The working branch is `Qt-Rewrite`, based on the previously pushed Batch 1
-commit `e3346a57869a04b91c10fa6a1c5de8bec2f3289a`. This handoff records the
-pending P9-04R test repair and its hosted re-verification gate. Phase 9 and
-Batch 1 remain open.
+Phase 9 remains In progress. P9-04S is accepted, and this closeout records the
+Batch 1 slice commit and single batch push. The next slice is P9-06 in Batch 2.
 
-- P9-05's hosted Windows Release x64/ARM64 run
-  [44058668038](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44058668038)
-  passed, including package artifacts and the candidate-SHA guard. Linux x64
-  Release run
-  [44058668021](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44058668021)
-  passed.
-- Refactoring Baseline run
-  [44058668011](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44058668011)
-  passed Linux x64 Debug, the Windows ARM64 Debug cross-build, and SQL Sub Prep
-  parity. Its Windows x64 Debug CTest result was 619/620; only
-  `ClassMngrNextPlatformQtPdfSessionReleaseTests` exited `0xc0000409` after
-  6.93 seconds. The
-  [Windows job log](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44058668011/job/133954487749)
-  contains no assertion, Qt fatal, stack trace, or failing subtest. The cause
-  remains unconfirmed.
-- P9-04R retains single real `jump()` coverage and drives the 40-event cap
-  check through alternating `QPdfPageNavigator::update()` calls with fixed
-  Windows-shaped memory snapshots, avoiding repeated jump-history growth and
-  native process sampling in that event-cap check. It asserts 40 page changes,
-  32 detail records, and 8 suppressed events. The focused local macOS Debug
-  CTest passed 12/12; logs are in `/private/tmp/p9-04r-build.log`,
-  `/private/tmp/p9-04r-ctest.log`, and
-  `build/macos-clang-debug/Testing/Temporary/LastTest.log`.
-- The P9-04R change is an isolation repair based on the strongest new-code
-  hypothesis, not a confirmed fix for the Windows process exit. Re-run hosted
-  Windows x64 Debug on this handoff push and inspect the full result before
-  closing Batch 1. If it passes, close Batch 1; if it fails, use the hosted
-  test artifacts to identify the failure without assuming the old cause.
-- After Batch 1 passes, start Batch 2 at P9-06. The discovery scope is a strict
-  `<262,144,000`-byte gate after app `startup-ready` and five minutes idle for
-  empty and representative workspaces; Initial Setup remains advisory. Keep
-  evidence validity separate from budget status and preserve artifacts for
-  valid over-budget runs. Follow the [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
+- Elevated local `cmake --build --preset windows-x64-debug` passed in 64.9s and
+  compiled/linked the changed QtPdf session and test sources. The focused
+  `ClassMngrNextPlatformQtPdfSessionReleaseTests` passed 1/1 in 10.999s. The
+  fresh elevated unfiltered Windows x64 Debug CTest suite passed 620/620, zero
+  skipped or not run, exit 0, in 1174.78s. Its current log is
+  `build/windows-x64-debug/Testing/Temporary/LastTest.log`.
+- The changed test defers a real `QPdfDocument::Status::Error` from
+  `load(missingPath)` until `open()` returns, while the ResourceLoader stream is
+  active. It verifies `FileNotFound`, release success, failed-document
+  destruction and replacement, stream-release order, final Null state, and no
+  timeout. The production close wait treats Null and Error as terminal before
+  document destruction and stream release.
+- The earlier malformed-PDF test drove installed QtPdf 6.14 to
+  `Q_UNREACHABLE` before `open()` returned and before the queued session handler
+  ran. Malformed-PDF parsing is not covered or claimed fixed. The previous
+  hosted 619/620 run identified no subtest, so its cause and relationship to
+  the local parser finding remain unconfirmed.
+- The initial non-elevated local attempts were invalid due to generated
+  resource and MSBuild FileTracker access denial. The accepted elevated runs
+  passed without ACL changes or cleanup. The existing P9-05 source-bound
+  package evidence is prior hosted evidence; no GitHub validation was run for
+  this gate.
+- Batch 2 discovery: P9-06 needs a locally packaged Windows x64 Release run for
+  empty and representative workspaces, an app `startup-ready` checkpoint, and
+  a five-minute idle sample. Enforce strict working set `<262,144,000` bytes
+  only for complete valid evidence; preserve complete over-budget artifacts.
+  Fresh Initial Setup remains advisory. No Phase 9 memory budget has passed.
+  The [current batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
   and [Phase 9 plan](../plans/qt-rewrite-heavy-route-plan/10-Phase-9-Windows-Memory-Hardening.md)
-  for the complete acceptance conditions.
-- Existing Windows Release memory sampling remains advisory. No numeric Phase
-  9 memory-budget result is established. The user requires any macOS validation
-  to run locally; the P9-04R focused check already did so.
+  contain the complete gate.
 
 ## Phase 8/8a closeout — phase8_gate_close_20261117 — 2026-11-17
 
