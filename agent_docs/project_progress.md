@@ -1,20 +1,21 @@
 # Project Progress
 
-## Phase 9 current position — P9-06 valid budget failure — 2026-11-18
+## Phase 9 current position — P9-06R result and diagnostic probe — 2026-11-18
 
 Phase 9 remains In progress. Batch 1 is closed. The optimized local Windows
 x64 Release P9-06 run completed valid 301-sample traces for empty and
 representative workspaces; all six startup-ready/external-startup/five-minute
-idle working-set checkpoints exceeded the strict 262,144,000-byte limit. The
-first memory remediation candidate is file-backed registration of the exact
-catalog-verified Inter TTC. Its focused standard-tree Windows Debug
-ResourceLoader and Bootstrap builds/tests pass; the optimized local Release
-gate must still be rerun before accepting it as a memory fix. No memory pass
-is claimed.
+working-set checkpoints exceeded the strict 262,144,000-byte limit. P9-06R
+passed optimized build and evidence validation but its file-backed registration
+of the exact catalog-verified Inter TTC did not reduce memory: its six points
+were 680,534,016–688,103,424 bytes, within 1 MB of baseline. Qt 6.12's Windows
+DirectWrite implementation still reads and retains font data on the file-backed
+path. No memory pass is claimed. The next slice isolates synchronous memory
+effects of each font operation before another production change.
 
 See the [Phase 9 progress log](../plans/qt-rewrite-heavy-route-plan/10-Phase-9-Progress-Log.md)
 and [current slice-batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-for the optimized build provenance, invalid follow-up runs, and next gate work.
+for optimized build provenance, invalid follow-up runs, and the diagnostic probe.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

@@ -387,3 +387,36 @@ Bootstrap targets with elevated access after sandbox FileTracker denials.
 `ClassMngrNextBootstrapTests` passed 1/1 (80.20s). The full Debug suite has not
 been rerun for this slice. The same-asset optimized Release gate is still
 pending, so this is not yet accepted as a memory fix; no reduction is claimed.
+
+#### P9-06R optimized Release measurement - 2026-11-18
+
+The source-bound local Windows x64 Release run on commit
+`e70ae0553dff97a6dd6689d707b76e8347675d84` is preserved at
+`artifacts/phase9/packaged-idle-memory/20261117T210831970Z-bbf3d6cbbdb04455a541aba7a2175375/`.
+The source fingerprint covered 2,371 files and was stable; the CMake cache
+hash and 1,575-file package hash were also stable. The actual app compile trace
+had 69 commands with `/O2` and `NDEBUG`, none with `/Od`; the app executable
+hash matched the packaged executable. Qt was 6.12.0, both fixture hashes
+matched, and the x64 app exited normally for each scenario.
+
+Both empty and 96-class scenarios completed 301 samples over about 300 seconds
+with cadence gaps between 0.975 and 1.030 seconds. Evidence validation returned
+`validation=valid`, `budgetResult=failed`, `errors=[]`. Every gated point
+exceeded the strict 262,144,000-byte limit:
+
+| Scenario | Startup-ready WS / private | External startup WS / private | Five-minute idle WS / private |
+|---|---:|---:|---:|
+| Empty | 680,534,016 / 613,031,936 B | 687,480,832 / 614,899,712 B | 687,075,328 / 613,617,664 B |
+| 96-class | 681,529,344 / 614,031,360 B | 688,103,424 / 615,546,880 B | 687,566,848 / 614,154,240 B |
+
+These points are within 0.3–0.9 MB of the prior valid baseline and do not show
+a meaningful reduction from file-backed registration of the exact Inter TTC.
+Internal process snapshots show the combined `theme-loaded` to
+`required-fonts-loaded` increase remained about 558 MB WS and 564 MB private;
+the stage includes Inter, Pretendard, and applying the startup font. External
+per-font snapshots are asynchronous and cannot assign that increase to one
+operation. Qt 6.12's Windows DirectWrite font database reads file-backed font
+data into memory and retains it for font-face creation, consistent with the
+lack of savings from the path change. P9-06R is therefore not accepted as a
+memory fix. P9-06S will measure each operation synchronously in fresh Release
+processes; the strict budget and cadence remain unchanged.

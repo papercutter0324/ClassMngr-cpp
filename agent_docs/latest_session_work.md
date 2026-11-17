@@ -1,22 +1,24 @@
 # Latest Session Work
 
-## Phase 9 current handoff — P9-06 and Inter memory remediation — 2026-11-18
+## Phase 9 current handoff - P9-06R measurement and font probe - 2026-11-18
 
-Phase 9 is still In progress. Batch 1 is closed. P9-06 has a valid optimized
+Phase 9 remains In progress. Batch 1 is closed. P9-06 has a valid optimized
 local Windows x64 Release baseline, but it fails the 250 MiB normal-use gate.
-P9-06R now registers the same catalog-verified Inter TTC through Qt's
-file-backed API; its focused standard-tree Windows Debug tests pass. The
-optimized packaged Release remeasurement is pending, so no memory fix is
-accepted yet.
+P9-06R's same-asset file-backed Inter registration passed focused Debug tests
+and a complete source-bound optimized Release measurement; the measurement
+validly failed the budget and showed no meaningful reduction. Qt 6.12's Windows
+DirectWrite backend reads and retains font bytes on both registration paths.
+The next slice builds a diagnostic probe around each synchronous startup-font
+operation before another production memory change.
 
-- The valid baseline run is
+- The valid P9-06 baseline run is
   `artifacts/phase9/packaged-idle-memory/20261117T190410131Z-43f692fcd33b4a2a87cf12518dbf1386/`.
   Both empty and 96-class fixtures opened successfully, each app emitted clean
   `workspace-opened` before `startup-ready`, completed 301 samples over about
   300 seconds, and exited normally. The validator reported `validation=valid`,
   `runStatus=completed`, `budgetResult=failed`; all six gated points exceeded
-  262,144,000 bytes. See the Phase 9 progress log for per-scenario values and
-  provenance hashes.
+  262,144,000 bytes. See the Phase 9 progress log for the per-scenario values
+  and provenance hashes.
 - The app was built as real MSVC optimized Release (`/MD /O2 /Ob2 /DNDEBUG`;
   69 app compile commands had `/O2` and `NDEBUG`, none had `/Od`) using Qt
   6.12.0. The Release cache, actual compile trace, package inventory, and
@@ -28,21 +30,42 @@ accepted yet.
   workspace-opened event adds only about 2 MB; shell-created is about 70 MB
   above the font-loaded stage. Supplemental external snapshots at Inter and
   Pretendard log events are approximate: asynchronous log receipt can occur
-  after later startup work. That full run is preserved at
-  `artifacts/phase9/packaged-idle-memory/20261117T194226492Z-42c8d910718d481da9ae9186dcf3c268/`
-  and is not evaluated because the representative sample trace has a 1.997074s
-  interval followed by two catch-up intervals. A separate earlier run is
-  invalid because the 96-class app exited at sample 104; both remain preserved.
+  after later startup work. That cadence-invalid run remains preserved at
+  `artifacts/phase9/packaged-idle-memory/20261117T194226492Z-42c8d910718d481da9ae9186dcf3c268/`.
+  A separate earlier run is invalid because the 96-class app exited at sample
+  104; both runs remain preserved and unevaluated.
 - The Inter source asset is 13,172,948 bytes with SHA-256
   `ea4e3d9970b9b6b566110a1b0e13635fe235280b83dd2443dcb3faca1e2456ef`; the
   ResourceLoader verifies the catalog path, byte count, hash, and 128 MiB bound
   before file-backed registration. Tests compare family lists and normal and
   italic 400/600/700 faces, tamper rejection, cleanup, and oversized catalog
   rejection. Pretendard remains unchanged and data-backed. Standard Windows
-  Debug ResourceLoader and Bootstrap CTests passed after elevated builds. The
-  same optimized local Release gate must pass with complete evidence before the
-  memory work is accepted. P9-07 and P9-08 remain after this remediation in
-  Batch 2. No GitHub validation is required or used.
+  Debug ResourceLoader and Bootstrap CTests passed after elevated builds.
+- P9-06R run `20261117T210831970Z-bbf3d6cbbdb04455a541aba7a2175375` used
+  commit `e70ae0553dff97a6dd6689d707b76e8347675d84`. Source fingerprint
+  `1ca1dc3567844a0798e9e1e63cece3fcdc637e2ffd60aaa2c73163d485f423a8`,
+  CMake cache SHA `57058dfc0307cd99eafbd7a351be45447ddaf1c6474d07dc578a2f661b9a8c2f`,
+  package SHA `2c61cfd115bd2a151d4adce1171ab65c3f92f25234fb149c856bcc5102d3f1e2`,
+  and app SHA `66d14e867105cbc2798e1801830820d777e12829f9d0bf5711a728494793edce`
+  remained consistent. The current compile trace had 69 optimized commands,
+  all with `/O2` and `NDEBUG`, none with `/Od`; Qt was 6.12.0.
+- Both P9-06R fixtures completed 301 samples over about 300 seconds with
+  cadence gaps 0.975–1.030 seconds, clean exits, and stable x64 process identity.
+  Evidence validation returned `validation=valid`, `budgetResult=failed`,
+  `errors=[]`. The six working-set / private-byte points were:
+  empty 680,534,016 / 613,031,936 B startup-ready; 687,480,832 / 614,899,712 B
+  external startup; 687,075,328 / 613,617,664 B idle. For 96-class they were
+  681,529,344 / 614,031,360 B startup-ready; 688,103,424 / 615,546,880 B
+  external startup; 687,566,848 / 614,154,240 B idle. All exceeded the strict
+  262,144,000-byte limit and were within 0.3–0.9 MB of the prior valid baseline.
+- Internal snapshots show the `theme-loaded` to `required-fonts-loaded`
+  increase remained about 558 MB WS and 564 MB private. The interval includes
+  Inter registration, Pretendard registration, and applying the startup font.
+  External per-font samples are asynchronous and cannot assign the increase
+  to one operation. Qt 6.12 Windows DirectWrite reads and retains font data
+  during file-backed registration too. P9-06S is the next diagnostic slice;
+  P9-07 and P9-08 remain after the memory gate work in Batch 2. No GitHub
+  validation is required or used.
 
 The full handoff and current sequence are in the
 [Phase 9 progress log](../plans/qt-rewrite-heavy-route-plan/10-Phase-9-Progress-Log.md)

@@ -20,27 +20,40 @@ allocation or cleanup defect, route the fix to that feature boundary.
      all six gated working-set points were 679,813,120–687,775,744 bytes. The
      optimized run therefore establishes a valid budget failure, not a Phase 9
      pass. Details and hashes are in the Phase 9 progress log.
-2. **P9-06R — Required Inter font registration memory reduction** (Code
-   implemented; local Debug tests passed; Release memory result pending)
+2. **P9-06R — Required Inter font registration memory reduction** (Valid
+   optimized Release experiment completed; no meaningful reduction)
    - Acceptance: test file-backed Qt registration of the exact catalog-verified
      bundled Inter.ttc while preserving family/style behavior, license, source
      hash checks, size bound, and registration cleanup. Keep Pretendard
-     unchanged. Re-run the local packaged Windows Release gate; do not accept
-     the route as a memory fix unless complete valid evidence meets the limit.
+     unchanged. Accept the route as a memory fix only if complete valid
+     evidence meets the limit.
    - Verification: elevated local build in the standard Windows x64 Debug tree
      passed for ResourceLoader and Bootstrap; focused CTest passed for both.
-     The Release memory remeasurement is pending.
+     The source-bound optimized Release run completed both 301-sample traces,
+     passed evidence validation, and exited normally. All six working-set
+     points were 680,534,016–688,103,424 bytes, so the gate validly failed.
+     This is within 1 MB of the prior baseline and shows no meaningful
+     reduction. Details and provenance are in the Phase 9 progress log.
    - Rationale: in-process checkpoints show roughly 559 MB of working-set
      growth between theme-loaded and required-fonts-loaded; the external
      per-font snapshots are asynchronous and cannot precisely assign that
-     increase to one registration. The same-asset file-backed route is the
-     first reversible experiment. Do not infer improvement before measurement.
-3. **P9-07 — Normal navigation and five-minute idle** (Proposed)
+     increase to one registration. Qt 6.12's Windows DirectWrite source reads
+     and retains font bytes for file-backed registration as well; the same-asset
+     path change therefore did not reduce memory.
+3. **P9-06S — Isolate font startup allocations** (Proposed diagnostic slice)
+   - Acceptance: a fresh-process Windows x64 Release probe using the app's Qt
+     6.12 runtime and exact packaged font assets captures synchronous memory
+     snapshots around QApplication creation, Inter and Pretendard registration,
+     family enumeration, font application, and system-family enumeration.
+     Compare no-font, each-font, and both registration orders across repeated
+     processes. Preserve source/build/asset provenance and raw evidence. This
+     diagnostic does not pass the normal-use budget or change production behavior.
+4. **P9-07 — Normal navigation and five-minute idle** (Proposed)
    - Acceptance: locally packaged Windows Release exercises repeated normal
      navigation, proves the document catalog has no loaded PDF body, and
      enforces the same strict normal-use working-set limit after navigation
      and idle.
-4. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Proposed)
+5. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Proposed)
    - Acceptance: the locally packaged Windows Release route covers entry,
      summary creation, first selection, refresh, package generation, leave,
      and repeated re-entry. Capture peak and settled process metrics plus
