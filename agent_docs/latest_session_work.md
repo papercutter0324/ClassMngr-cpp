@@ -1,5 +1,46 @@
 # Latest Session Work
 
+## Phase 9 current handoff — P9-06 and Inter memory remediation — 2026-11-18
+
+Phase 9 is still In progress. Batch 1 is closed. P9-06 has a valid optimized
+local Windows x64 Release baseline, but it fails the 250 MiB normal-use gate.
+Current implementation work tests file-backed registration of the same
+catalog-verified Inter TTC; no font asset change or memory fix is accepted yet.
+
+- The valid baseline run is
+  `artifacts/phase9/packaged-idle-memory/20261117T190410131Z-43f692fcd33b4a2a87cf12518dbf1386/`.
+  Both empty and 96-class fixtures opened successfully, each app emitted clean
+  `workspace-opened` before `startup-ready`, completed 301 samples over about
+  300 seconds, and exited normally. The validator reported `validation=valid`,
+  `runStatus=completed`, `budgetResult=failed`; all six gated points exceeded
+  262,144,000 bytes. See the Phase 9 progress log for per-scenario values and
+  provenance hashes.
+- The app was built as real MSVC optimized Release (`/MD /O2 /Ob2 /DNDEBUG`;
+  69 app compile commands had `/O2` and `NDEBUG`, none had `/Od`) using Qt
+  6.12.0. The Release cache, actual compile trace, package inventory, and
+  portable PowerShell 7.7.0 runtime verification are preserved under
+  `artifacts/phase9/packaged-idle-memory/optimized-prerequisite-build-20261118T040000Z/`
+  and `build/tools/PowerShell-7.7.0/`.
+- In-process startup records show the major increase between `theme-loaded`
+  (~30 MB WS) and `required-fonts-loaded` (~588 MB WS / ~570 MB private). The
+  workspace-opened event adds only about 2 MB; shell-created is about 70 MB
+  above the font-loaded stage. Supplemental external snapshots at Inter and
+  Pretendard log events are approximate: asynchronous log receipt can occur
+  after later startup work. That full run is preserved at
+  `artifacts/phase9/packaged-idle-memory/20261117T194226492Z-42c8d910718d481da9ae9186dcf3c268/`
+  and is not evaluated because the representative sample trace has a 1.997074s
+  interval followed by two catch-up intervals. A separate earlier run is
+  invalid because the 96-class app exited at sample 104; both remain preserved.
+- The next slice changes only Inter registration to use Qt's file-backed path
+  for the exact catalog-verified `Inter.ttc`; Pretendard and all font assets
+  remain unchanged. The same optimized local Release gate must pass with
+  complete evidence before the memory work is accepted. P9-07 and P9-08 remain
+  after this remediation in Batch 2. No GitHub validation is required or used.
+
+The full handoff and current sequence are in the
+[Phase 9 progress log](../plans/qt-rewrite-heavy-route-plan/10-Phase-9-Progress-Log.md)
+and [current slice-batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
+
 ## Phase 9 Batch 1 closeout — phase9-windows-memory-hardening-20261117 — 2026-11-18
 
 Phase 9 remains In progress. P9-04S is accepted, and this closeout records the

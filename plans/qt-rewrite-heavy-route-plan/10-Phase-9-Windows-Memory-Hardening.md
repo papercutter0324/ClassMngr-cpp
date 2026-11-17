@@ -38,15 +38,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Release qualification and cutover
 - Owner: Codex
 - Last updated: 2026-11-18
-- Current note: Phase 9 remains In progress. P9-01 through P9-04 and the P9-04S
-  error-release repair are locally accepted; P9-05's source-bound workflow
-  change and package runs are prior hosted evidence, not new validation. Batch
-  1 local verification is complete. The elevated local Windows x64 Debug build,
-  focused CTest, and fresh unfiltered CTest passed; the full suite was 620/620
-  with zero skipped or not run. The accepted P9-04S slice commit and its single
-  batch push close Batch 1; P9-06 follows that push with local packaged Windows
-  Release startup-ready and five-minute-idle measurement. No Phase 9 memory
-  budget result is claimed.
+- Current note: Phase 9 remains In progress. Batch 1 is closed after local
+  Windows x64 Debug verification (620/620 CTests, no skips). P9-06's optimized
+  packaged Windows Release gate completed both startup-ready/five-minute idle
+  scenarios with valid evidence, but all six working-set points exceeded
+  262,144,000 bytes. No Phase 9 memory budget pass is claimed. P9-06R is the
+  current slice: test file-backed registration of the exact bundled Inter TTC,
+  preserving catalog verification and font behavior, then remeasure locally.
+  See the Phase 9 progress log and current slice-batch tracker for evidence,
+  invalid-run details, and remaining scenarios.
 
 ### Slice batches
 

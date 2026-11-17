@@ -1,5 +1,17 @@
 # Project Diary
 
+### Phase 9 Release memory measurement lessons — 2026-11-18
+
+Do not treat a CMake `Release` configuration name as proof of optimized MSVC
+code: the first local tree had empty Release flags and `/Od` compile commands.
+Verify both generated project settings and actual compiler commands before
+accepting a memory baseline. Also, a process sample taken when an asynchronous
+log line is received may include work from later startup stages; use an
+in-process checkpoint for causal boundaries and keep external samples labeled
+as approximate. The optimized packaged run shows a valid ~680–688 MB working
+set, far above the 250 MiB normal-use limit; the application remains over
+budget until a measured fix passes.
+
 ### Phase 9 QtPdf error-state lifecycle — 2026-11-18
 
 When malformed PDF bytes make the installed QtPdf 6.14 parser reach

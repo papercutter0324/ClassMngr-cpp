@@ -6,13 +6,14 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-18
-- Current milestone: Phase 9 remains In progress. P9-04 and P9-04S are accepted;
-  Batch 1 local verification is complete. The accepted P9-04S slice commit and
-  its single batch push close Batch 1; P9-06 follows that push. The elevated
-  local Windows x64 Debug build and fresh unfiltered CTest passed (620/620, no
-  skipped or not-run tests). Existing P9-05 source-bound package evidence is
-  prior hosted evidence, not new validation. No Phase 9 memory budget pass is
-  claimed. See the
+- Current milestone: Phase 9 remains In progress. Batch 1 is closed. P9-06's
+  valid optimized local Windows Release run completed both 301-sample
+  scenarios, but all six normal-use working-set checkpoints exceeded
+  262,144,000 bytes; the memory exit gate has not passed. Supplemental external
+  font-event snapshots are approximate because the app continues starting
+  while the runner receives log lines. P9-06R is investigating the Inter font
+  registration path using the same verified font asset. No Phase 9 memory
+  budget pass is claimed. See the
   [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
   [Phase 8a closeout](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
   [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), [Phase 9 progress

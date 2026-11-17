@@ -294,3 +294,73 @@ P9-04 and P9-04S are accepted. Batch 1 local verification is complete. The
 accepted P9-04S slice commit and its single batch push close Batch 1; P9-06
 follows that push with the local packaged Windows Release startup-ready and
 five-minute-idle gate. No Phase 9 numeric memory budget has passed.
+
+#### P9-06 optimized packaged startup/idle gate — 2026-11-18
+
+The first packaged run was Release-configured but not optimized: its C and C++
+Release flags were empty and the generated app project/compiler trace lacked
+MSVC optimization. It is preserved at
+`artifacts/phase9/packaged-idle-memory/20261117T173949789Z-0700b5e42c684780a2bfd432c067cda4/`
+as diagnostic only and is not a Release baseline. Before rebuilding the
+standard `build/windows-x64-release` folder, the original cache, app project,
+and compile trace were copied to the run's `preoptimized-build-state` folder.
+No prior artifact or build tree was deleted.
+
+The standard Windows x64 Release tree was reconfigured with Visual Studio 18
+2026, Qt 6.12.0, `BUILD_TESTING=ON`,
+`CLASSMNGR_NEXT_RELEASE_PACKAGE=ON`, and `/MD /O2 /Ob2 /DNDEBUG` for C and C++.
+The actual `ClassMngrNext` compile trace contains 69 commands with `/O2` and
+`NDEBUG`, none with `/Od`; trace SHA-256 is
+`180f02f2e04075f2b57d755b89e22c1d0f37e00027cfab417b741355d86a67ce`. The
+prerequisite package and fixture targets built successfully. A local portable
+PowerShell 7.7.0 runtime was installed under ignored `build/tools`; its ZIP was
+verified against the official release SHA-256. No hosted validation was used.
+
+The complete valid run used for the P9-06 baseline is preserved at
+`artifacts/phase9/packaged-idle-memory/20261117T190410131Z-43f692fcd33b4a2a87cf12518dbf1386/`.
+Its source fingerprint is `a0c24aa2acb7ab5205b016fff454e4bf9d2ad3fe4928be1eb5af7cae5851a03c`
+(2,371 files, stable), CMakeCache SHA-256 is
+`57058dfc0307cd99eafbd7a351be45447ddaf1c6474d07dc578a2f661b9a8c2f` (stable),
+and package SHA-256 is
+`1e2e56d4778ad63358f6046e1c7ab46e94d9595e108e7deeb1ea4e7ec8b3e50f`
+(1,575 files). The Qt installation is 6.12.0. Both packaged fixtures opened,
+emitted successful `workspace-opened` before `startup-ready`, completed 301
+samples over about 300 seconds, and exited normally. The validator reported
+`validation=valid`, `runStatus=completed`, `budgetResult=failed`, with no
+validation errors.
+
+| Scenario | Startup-ready WS / private | External startup WS / private | Five-minute idle WS / private |
+|---|---:|---:|---:|
+| Empty workspace | 679,813,120 / 612,536,320 B | 686,862,336 / 614,686,720 B | 686,362,624 / 613,658,624 B |
+| Representative 96-class workspace | 680,648,704 / 614,563,840 B | 687,775,744 / 616,292,352 B | 686,927,872 / 615,014,400 B |
+
+All six gated working-set points exceed the strict 262,144,000-byte limit.
+Median five-minute idle working sets are 686,030,848 bytes (empty) and
+686,592,000 bytes (96-class). This is a valid over-budget result, not a Phase 9
+pass. In-process startup records show about 559 MB growth between
+`theme-loaded` and `required-fonts-loaded`; `workspace-opened` adds roughly
+2 MB, while `shell-created` is about 70 MB above the font-loaded stage. These
+checkpoints establish the combined font-loading stage as the primary startup
+boundary to reduce, but do not isolate each individual font.
+
+Two later runs are preserved but not evaluated. The first, at
+`20261117T185429628Z-d0504dc837744171849432246619a071`, completed the empty
+scenario but the 96-class process exited normally at sample 104. The next run,
+at `20261117T194226492Z-42c8d910718d481da9ae9186dcf3c268`, completed both
+scenarios and captured all ten supplemental external startup-boundary rows,
+but its representative trace had a 1.997074-second gap followed by 0.347319-
+and 0.633089-second catch-up intervals. The validator correctly reports
+`not-evaluated`; its cadence limit remains unchanged. The shell-created record
+also occurs after workspace-opened, as the application actually emits it; the
+validator contract now reflects that ordering and 35 focused tests plus the
+PowerShell 7.7 parser/marker checks pass.
+
+The supplemental per-font samples are approximate, not causal checkpoints:
+the app can continue startup while the external runner receives a log line.
+In the 96-class trace, the in-process `theme-loaded` sample is about 29.7 MB
+working set while the external sample received 17 ms later is about 596 MB.
+Do not attribute the jump to one font from these asynchronous readings. The
+next slice tests file-backed Qt registration of the same catalog-verified
+`Inter.ttc`, keeping Pretendard, the asset, and font family behavior unchanged.
+The final decision requires another complete local Release gate; P9-07 and
+P9-08 remain open.

@@ -1,28 +1,18 @@
 # Project Progress
 
-## Phase 9 Batch 1 Windows acceptance — 2026-11-18
+## Phase 9 current position — P9-06 valid budget failure — 2026-11-18
 
-Phase 9 remains In progress. P9-04S is accepted after an elevated local Windows
-x64 Debug preset build, focused QtPdf CTest (1/1), and fresh unfiltered CTest
-(620/620, zero skipped or not run, exit 0). The full suite took 1174.78 seconds;
-the changed session and test sources compiled in the successful 64.9-second
-build. The release test verifies deferred `FileNotFound` handling while the
-ResourceLoader stream remains active, then checks document destruction,
-replacement, stream-release ordering, final Null state, and no timeout.
+Phase 9 remains In progress. Batch 1 is closed. The optimized local Windows
+x64 Release P9-06 run completed valid 301-sample traces for empty and
+representative workspaces; all six startup-ready/external-startup/five-minute
+idle working-set checkpoints exceeded the strict 262,144,000-byte limit. The
+first memory remediation candidate is file-backed registration of the exact
+catalog-verified Inter TTC, with a fresh local Release gate required before
+acceptance. No memory pass is claimed.
 
-The malformed-PDF attempt reached QtPdf `Q_UNREACHABLE` before `open()` returned
-or the queued session handler ran, so it did not exercise session cleanup. The
-test now uses a deterministic filename error to cover the reachable lifecycle
-path; malformed-PDF parsing is not claimed fixed or covered. The earlier hosted
-619/620 run did not identify a subtest and remains unconfirmed. The successful
-local run's `LastTest.log` is under
-`build/windows-x64-debug/Testing/Temporary/LastTest.log`.
-
-Batch 1's local Windows gate and existing P9-05 source-bound package evidence
-are accepted. The P9-04S slice commit and the batch's single push close Batch 1;
-then continue with local packaged Windows Release measurements at Batch 2 P9-06
-in the
-[Phase 9 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
+See the [Phase 9 progress log](../plans/qt-rewrite-heavy-route-plan/10-Phase-9-Progress-Log.md)
+and [current slice-batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
+for the optimized build provenance, invalid follow-up runs, and next gate work.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 
