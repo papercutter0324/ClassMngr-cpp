@@ -1,8 +1,10 @@
 #include "next/platform/pdf_print_operation.h"
+#include "core/process_memory_diagnostics.h"
 
 #include "ui/shared/printing/pdf_print_service.h"
 
 #include <memory>
+#include <QPdfDocument>
 
 namespace ClassMngr::Next::Platform
 {
@@ -41,11 +43,15 @@ PdfPrintResult fromSharedResult(const PdfPrintService::Result& result)
 class QtPdfPrintOperation final : public PdfPrintOperation
 {
 public:
+    QtPdfPrintOperation() { record(QStringLiteral("print-operation-create")); }
+    ~QtPdfPrintOperation() override { record(QStringLiteral("print-operation-release")); }
     [[nodiscard]] PdfPrintResult printReadyDocument(
         const ReadyPdfPrintRequest& request
         ) override
     {
-        return fromSharedResult(PdfPrintService::printPdfDocument({
+        record(QStringLiteral("print-ready-before"), request.currentPageIndex,
+               request.document ? request.document->pageCount() : 0);
+        const auto result = fromSharedResult(PdfPrintService::printPdfDocument({
             .parent = request.parent,
             .document = request.document,
             .documentPath = request.documentPath,
@@ -60,13 +66,18 @@ public:
                 request.dialogGeometryPreferences
                 )
         }));
+        record(QStringLiteral("print-ready-after"), request.currentPageIndex,
+               request.document ? request.document->pageCount() : 0,
+               static_cast<int>(result.status));
+        return result;
     }
 
     [[nodiscard]] PdfPrintResult printLocalDocuments(
         const LocalPdfBatchPrintRequest& request
         ) override
     {
-        return fromSharedResult(PdfPrintService::printPdfDocuments({
+        record(QStringLiteral("print-batch-before"), -1, request.documentPaths.size());
+        const auto result = fromSharedResult(PdfPrintService::printPdfDocuments({
             .parent = request.parent,
             .documentPaths = request.documentPaths,
             .dialogTitle = request.dialogTitle,
@@ -74,7 +85,24 @@ public:
             .preferredPageSize = request.preferredPageSize,
             .fitToPage = request.fitToPage
         }));
+        record(QStringLiteral("print-batch-after"), -1, request.documentPaths.size(),
+               static_cast<int>(result.status));
+        return result;
     }
+private:
+    void record(const QString& event, int page = -1, int count = 0, int result = -1) noexcept
+    {
+        try
+        {
+            recordProcessMemoryDiagnostic(event, QStringLiteral("pdf_print_operation"), m_id, {
+                {QStringLiteral("page_index"), page},
+                {QStringLiteral("page_or_document_count"), count},
+                {QStringLiteral("result"), result}
+            });
+        }
+        catch (...) { }
+    }
+    quint64 m_id = nextProcessMemoryDiagnosticId();
 };
 
 } // namespace

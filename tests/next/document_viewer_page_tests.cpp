@@ -19,6 +19,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QLineEdit>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMessageBox>
 #include <QPdfDocument>
 #include <QPdfPageNavigator>
@@ -44,6 +46,33 @@ using namespace ClassMngr::Next::Ui;
 
 namespace
 {
+QVector<QJsonObject>* outputDiagnosticRecords = nullptr;
+void captureOutputDiagnostics(QtMsgType, const QMessageLogContext&, const QString& message)
+{
+    const QString prefix = QStringLiteral("ClassMngr lifecycle checkpoint=");
+    if (outputDiagnosticRecords && message.startsWith(prefix))
+    {
+        const auto record = QJsonDocument::fromJson(message.mid(prefix.size()).toUtf8()).object();
+        if (record.value(QStringLiteral("owner")) == QStringLiteral("document_viewer_output"))
+            outputDiagnosticRecords->append(record);
+    }
+}
+class OutputDiagnosticCapture final
+{
+public:
+    explicit OutputDiagnosticCapture(QVector<QJsonObject>& records)
+    {
+        outputDiagnosticRecords = &records;
+        m_previous = qInstallMessageHandler(captureOutputDiagnostics);
+    }
+    ~OutputDiagnosticCapture()
+    {
+        qInstallMessageHandler(m_previous);
+        outputDiagnosticRecords = nullptr;
+    }
+private:
+    QtMessageHandler m_previous;
+};
 
 QString resourceRoot()
 {
@@ -374,6 +403,7 @@ private slots:
     void folderSelectionAndPageReleaseClearTheActiveSession();
     void unknownAndCorruptSelectionsShowErrorsWithoutRetainingContent();
     void pdfAndOfficeExportsAreAtomicFileBackedCopies();
+    void outputDiagnosticsDescribeCopySuccessFailureAndPrintLifetime();
     void copyCancellationAndCorruptSourcePreserveTheDestination();
     void saveCopyUsesDocumentsHomeAndEmptyDefaultDirectories();
     void selectedDocumentPrintUsesInjectedBorrowedOperation();
@@ -768,6 +798,53 @@ void DocumentViewerPageTests::pdfAndOfficeExportsAreAtomicFileBackedCopies()
     QVERIFY(expectedOffice.open(QIODevice::ReadOnly));
     QVERIFY(actualOffice.open(QIODevice::ReadOnly));
     QCOMPARE(actualOffice.readAll(), expectedOffice.readAll());
+}
+
+void DocumentViewerPageTests::outputDiagnosticsDescribeCopySuccessFailureAndPrintLifetime()
+{
+    const auto printCalls = std::make_shared<PrintOperationCalls>();
+    ViewerHarness harness(*m_loader, m_projection, [printCalls] {
+        return std::make_unique<RecordingPdfPrintOperation>(printCalls);
+    });
+    harness.select(id("document_guides_lesson_planning"));
+    auto* const viewer = harness.viewer();
+    QVERIFY(viewer);
+    QTRY_VERIFY_WITH_TIMEOUT(viewer->hasLoadedDocument(), 10000);
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString target = temporary.filePath(QStringLiteral("private-destination.pdf"));
+    QVector<QJsonObject> records;
+    OutputDiagnosticCapture capture(records);
+    QString error;
+    QVERIFY(viewer->copySelectedExportTo(target, &error));
+    QVERIFY(!viewer->copySelectedExportTo(temporary.path(), &error));
+    auto* print = viewer->findChild<QPushButton*>(QStringLiteral("documentViewerPrint"));
+    QVERIFY(print);
+    print->click();
+    QCOMPARE(printCalls->singleDocumentCalls, 1);
+    QCOMPARE(records.size(), 6);
+    for (int index = 0; index < records.size(); index += 2)
+    {
+        const auto before = records[index].value(QStringLiteral("details")).toObject();
+        const auto after = records[index + 1].value(QStringLiteral("details")).toObject();
+        QCOMPARE(before.value(QStringLiteral("phase")).toString(), QStringLiteral("before"));
+        QCOMPARE(after.value(QStringLiteral("phase")).toString(), QStringLiteral("after"));
+        QCOMPARE(records[index].value(QStringLiteral("instance_id")),
+                 records[index + 1].value(QStringLiteral("instance_id")));
+        QVERIFY(!QJsonDocument(records[index + 1]).toJson().contains("private-destination"));
+        QVERIFY(!records[index + 1].value(QStringLiteral("memory")).toObject().isEmpty());
+    }
+    const auto copied = records[1].value(QStringLiteral("details")).toObject();
+    QVERIFY(copied.value(QStringLiteral("succeeded")).toBool());
+    QCOMPARE(copied.value(QStringLiteral("copied_bytes")).toInteger(), QFileInfo(target).size());
+    const auto failed = records[3].value(QStringLiteral("details")).toObject();
+    QVERIFY(!failed.value(QStringLiteral("succeeded")).toBool());
+    QCOMPARE(failed.value(QStringLiteral("copied_bytes")).toInteger(), 0);
+    const auto printed = records[5].value(QStringLiteral("details")).toObject();
+    QCOMPARE(printed.value(QStringLiteral("page_index")).toInt(), 0);
+    QCOMPARE(printed.value(QStringLiteral("print_status")).toInt(),
+             static_cast<int>(Platform::PdfPrintStatus::Sent));
+    QVERIFY(viewer->hasActivePrimaryStream());
 }
 
 void DocumentViewerPageTests::copyCancellationAndCorruptSourcePreserveTheDestination()

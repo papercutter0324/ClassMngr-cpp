@@ -2,6 +2,7 @@
 
 #include "ui/shared/printing/pdf_print_dialog.h"
 #include "ui/shared/printing/pdf_print_service_internal.h"
+#include "core/process_memory_diagnostics.h"
 
 #include <QFileInfo>
 #include <QImage>
@@ -115,6 +116,7 @@ public:
     ~LoadedBatchDocument()
     {
         m_document.reset();
+        record(QStringLiteral("print-document-release"));
         if (m_hooks.documentReleased)
         {
             m_hooks.documentReleased(m_path, m_pass, m_wasReady);
@@ -136,8 +138,10 @@ public:
         }
 
         loaded->m_document = std::make_unique<QPdfDocument>();
+        loaded->record(QStringLiteral("print-document-load-before"));
         const QPdfDocument::Error loadError =
             loaded->m_document->load(path);
+        loaded->record(QStringLiteral("print-document-load-after"));
         if (loadError != QPdfDocument::Error::None
             || loaded->m_document->status() != QPdfDocument::Status::Ready
             || loaded->m_document->pageCount() <= 0)
@@ -163,6 +167,20 @@ public:
     }
 
 private:
+    void record(const QString& event) noexcept
+    {
+        try
+        {
+            recordProcessMemoryDiagnostic(event, QStringLiteral("pdf_batch_print"), m_id, {
+                {QStringLiteral("pass"), static_cast<int>(m_pass)},
+                {QStringLiteral("document_present"), bool(m_document)},
+                {QStringLiteral("page_count"), m_document ? m_document->pageCount() : 0},
+                {QStringLiteral("status"), m_document ? static_cast<int>(m_document->status()) : 0}
+            });
+        }
+        catch (...) { }
+    }
+    quint64 m_id = nextProcessMemoryDiagnosticId();
     QString m_path;
     Internal::BatchDocumentPass m_pass;
     const Internal::BatchPrintTestHooks& m_hooks;
@@ -358,12 +376,74 @@ QRectF naturalPrintRect(
         );
 }
 
+class PrintRenderTrace final
+{
+public:
+    ~PrintRenderTrace()
+    {
+        try
+        {
+            recordProcessMemoryDiagnostic(QStringLiteral("qpdf-print-render-summary"),
+                QStringLiteral("pdf_print_renderer"), m_id, {
+                    {QStringLiteral("render_count"), static_cast<qint64>(m_count)},
+                    {QStringLiteral("failed_render_count"), static_cast<qint64>(m_failed)},
+                    {QStringLiteral("maximum_decoded_pixel_bytes"), m_maximumBytes},
+                    {QStringLiteral("page_detail_limit"), 16},
+                    {QStringLiteral("page_details_suppressed"), static_cast<qint64>(
+                        m_count > 16 ? m_count - 16 : 0)}
+                });
+        }
+        catch (...) { }
+    }
+    void begin(int page, const QSize& target) noexcept
+    {
+        ++m_count;
+        m_page = page;
+        m_target = target;
+        record(QStringLiteral("before"));
+    }
+    void rendered(const QImage& image) noexcept
+    {
+        if (image.isNull()) ++m_failed;
+        m_maximumBytes = std::max(m_maximumBytes, image.sizeInBytes());
+        record(image.isNull() ? QStringLiteral("failed") : QStringLiteral("after"), &image);
+    }
+    void imageReleased() noexcept { record(QStringLiteral("image-released")); }
+private:
+    void record(const QString& phase, const QImage* image = nullptr) noexcept
+    {
+        if (m_count > 16) return;
+        try
+        {
+            recordProcessMemoryDiagnostic(QStringLiteral("qpdf-print-render"),
+                QStringLiteral("pdf_print_renderer"), m_id, {
+                    {QStringLiteral("phase"), phase},
+                    {QStringLiteral("render_sequence"), static_cast<qint64>(m_count)},
+                    {QStringLiteral("page_index"), m_page},
+                    {QStringLiteral("target_width_pixels"), m_target.width()},
+                    {QStringLiteral("target_height_pixels"), m_target.height()},
+                    {QStringLiteral("image_present"), image && !image->isNull()},
+                    {QStringLiteral("decoded_pixel_bytes"), image
+                        ? QJsonValue(image->sizeInBytes()) : QJsonValue(QJsonValue::Null)}
+                });
+        }
+        catch (...) { }
+    }
+    quint64 m_id = nextProcessMemoryDiagnosticId();
+    quint64 m_count = 0;
+    quint64 m_failed = 0;
+    qsizetype m_maximumBytes = 0;
+    int m_page = -1;
+    QSize m_target;
+};
+
 bool renderPdfPageToPrinter(
     QPdfDocument* document,
     int pageIndex,
     QPrinter& printer,
     QPainter& painter,
-    const PdfPrintDialogSupport::RenderOptions& options
+    const PdfPrintDialogSupport::RenderOptions& options,
+    PrintRenderTrace& trace
     )
 {
     if (!document)
@@ -454,11 +534,14 @@ bool renderPdfPageToPrinter(
             )
         );
 
+    trace.begin(pageIndex, renderSize);
     QImage image =
         document->render(
             pageIndex,
             renderSize
             );
+
+    trace.rendered(image);
 
     if (image.isNull())
     {
@@ -488,6 +571,9 @@ bool renderPdfPageToPrinter(
         );
     painter.restore();
 
+    image = {};
+    trace.imageReleased();
+
     return true;
 }
 
@@ -497,6 +583,7 @@ Result paintPdfDocumentToPrinter(
     const PdfPrintDialogSupport::RenderOptions& options
     )
 {
+    PrintRenderTrace renderTrace;
     if (
         !document
         || document->status() != QPdfDocument::Status::Ready
@@ -550,7 +637,8 @@ Result paintPdfDocumentToPrinter(
                 pageIndex,
                 printer,
                 painter,
-                options
+                options,
+                renderTrace
                 )
             )
         {
@@ -765,6 +853,7 @@ Result printPdfDocumentsWithHooks(
     const BatchPrintTestHooks& hooks
     )
 {
+    PrintRenderTrace renderTrace;
     if (request.documentPaths.isEmpty())
     {
         return failed(
@@ -999,7 +1088,8 @@ Result printPdfDocumentsWithHooks(
                     pageIndex,
                     printer,
                     painter,
-                    options
+                    options,
+                    renderTrace
                     ))
             {
                 painter.end();

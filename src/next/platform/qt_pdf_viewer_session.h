@@ -2,6 +2,7 @@
 
 #include "next/platform/document_content_resource_port.h"
 #include "next/platform/pdf_viewer_session.h"
+#include "core/process_memory_diagnostics.h"
 
 #include <QObject>
 #include <QPdfDocument>
@@ -23,7 +24,9 @@ namespace ClassMngr::Next::Platform
 class QtPdfViewerSession final : public QObject, public PdfViewerSession
 {
 public:
-    explicit QtPdfViewerSession(Resources::ResourceLoader& loader, QWidget* viewParent);
+    explicit QtPdfViewerSession(
+        Resources::ResourceLoader& loader, QWidget* viewParent,
+        std::shared_ptr<ProcessMemoryDiagnostics> diagnostics = {});
     ~QtPdfViewerSession() override;
 
     [[nodiscard]] Domain::Result<bool> open(
@@ -52,8 +55,13 @@ private:
     void publishStatus(QPdfDocument::Status status, quint64 generation);
     void releaseConsumers(bool recreate);
     [[nodiscard]] bool waitForNull();
-    void record(const QString& operation, const QString& phase) const;
+    void record(const QString& operation, const QString& phase,
+                const QJsonObject& additionalDetails = {}) const noexcept;
+    void recordRetiredDocument(const QString& phase, quint64 generation,
+        int pagesBeforeClose, QPdfDocument::Status status, bool present) const noexcept;
 
+    std::shared_ptr<ProcessMemoryDiagnostics> m_diagnostics;
+    quint64 m_diagnosticId = nextProcessMemoryDiagnosticId();
     DocumentContentResourcePort m_resourcePort;
     QWidget* m_viewParent;
     std::unique_ptr<QPdfView> m_view;
@@ -66,6 +74,7 @@ private:
     std::optional<QPdfDocument::Status> m_publishedStatus;
     bool m_releasing = false;
     int m_borrowCount = 0;
+    quint64 m_pageSelectionCount = 0;
 };
 
 } // namespace ClassMngr::Next::Platform

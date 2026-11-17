@@ -46,11 +46,17 @@ allocation or cleanup defect, route that fix to its owning feature boundary.
    - Begin discovery of Batch 2 when this slice starts, before work turns to
      the broader scenario gates; keep only the active batch and the next
      discovered batch here.
-4. **P9-04 — QtPdf and output lifecycle trace** (Discovered)
+4. **P9-04 — QtPdf and output lifecycle trace** (Locally accepted;
+   hosted verification pending)
    - Acceptance: document load/status/page/render/close/release/reopen and
      PDF/export object lifetimes are observable in the shared trace, including
      release after leaving or closing the owning view/operation.
-5. **P9-05 — Source-bound Windows Release evidence** (Discovered)
+   - Verification: independent macOS Debug build and focused CTest passed
+     5/5, including a 40-selection check proving 32 page-detail events and 8
+     suppressed details. `git diff --check` passed. QtPdf view records page
+     selection rather than internal render completion, which QtPdf does not
+     expose at this boundary. Hosted Windows/Linux checks remain pending.
+5. **P9-05 — Source-bound Windows Release evidence** (In progress)
    - Acceptance: push-triggered packaging checks out the exact commit that
      triggered the workflow, reports the candidate SHA, and fails before
      packaging if the checked-out SHA differs. Manual dispatch may continue to

@@ -163,9 +163,34 @@ Bootstrap targets passed 2/2; `git diff --check` passed. The tests cover
 deterministic serialization, configured empty versus unavailable cache,
 cache-hit ownership, image dimensions, font families, `resolveFile()`, and a
 throwing diagnostic callback. Hosted Windows/Linux Debug and packaged Windows
-Release checks remain pending at Batch 1 close.
+Release checks remain pending at Batch 1 close. The accepted P9-03 slice is
+committed as `e157c89c`.
 
 The workspace signature-image upload decodes user-selected workspace data
 directly in `MyWorkspacePage`, outside the resource catalog and `ResourceLoader`.
 It is not included in the P9-03 catalog-resource trace; any future requirement to
 trace that workspace-data path belongs with its feature-owned diagnostics.
+
+#### P9-04 — QtPdf and output lifecycle trace — 2026-11-17
+
+Production tracing now joins QtPdf viewer-session status, selection, load,
+close, stream, document, and view lifetimes with whole-process checkpoints.
+Retired documents retain their original generation and status in the trace.
+The Next viewer records successful and failed export-copy outcomes and print
+status; shared print rendering, roster preview rendering, and `QPdfWriter`
+lifetime/finalization are also observable. Detailed page events are bounded
+(viewer and preview 32, print 16, writer 32) with total and suppressed counts.
+The trace records rendered pixel payload separately from process resident
+memory and uses null before a render has produced an image. It does not log
+document titles or filesystem paths.
+
+Independent macOS Debug verification passed the affected-target build and
+focused CTest set 5/5: PDF lifecycle diagnostics, QtPdf session release,
+DocumentViewer, Bootstrap, and the startup workspace dependency boundary.
+Coverage includes release/reopen and final view-document-stream destruction
+order, retired generation identity, export success/failure, print status,
+bounded writer/preview/print events, and 40 viewer page selections reduced to
+32 details plus 8 suppressed. `git diff --check` passed. `QPdfView` exposes
+selection but no internal render-completion hook at this boundary. Native
+Windows counters and hosted Windows/Linux/package checks remain pending; no
+Windows memory gate is claimed.

@@ -8354,7 +8354,7 @@ target_compile_definitions(ClassMngrNextPlatformQtPdfSessionReleaseTests PRIVATE
     CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
 )
 target_link_libraries(ClassMngrNextPlatformQtPdfSessionReleaseTests PRIVATE
-    ClassMngrNext::Resources Qt6::PdfWidgets Qt6::Test
+    ClassMngrNext::Resources ClassMngrProcessMemory Qt6::PdfWidgets Qt6::Test
 )
 set_target_properties(ClassMngrNextPlatformQtPdfSessionReleaseTests PROPERTIES
     AUTOMOC ON AUTOUIC OFF AUTORCC OFF CLASSMNGR_STANDALONE_CPP_TEST TRUE
@@ -8362,6 +8362,21 @@ set_target_properties(ClassMngrNextPlatformQtPdfSessionReleaseTests PROPERTIES
 add_dependencies(ClassMngrNextPlatformQtPdfSessionReleaseTests ClassMngrNextResourcePackage)
 add_test(NAME ClassMngrNextPlatformQtPdfSessionReleaseTests COMMAND ClassMngrNextPlatformQtPdfSessionReleaseTests)
 set_tests_properties(ClassMngrNextPlatformQtPdfSessionReleaseTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
+
+add_executable(ClassMngrPdfLifecycleDiagnosticsTests
+    tests/pdf_lifecycle_diagnostics_tests.cpp
+    src/next/platform/qt_roster_pdf_preview_session_adapter.cpp
+)
+target_compile_features(ClassMngrPdfLifecycleDiagnosticsTests PRIVATE cxx_std_23)
+target_include_directories(ClassMngrPdfLifecycleDiagnosticsTests PRIVATE "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(ClassMngrPdfLifecycleDiagnosticsTests PRIVATE
+    ClassMngrProcessMemory ClassMngrQtPdfGeneration ClassMngrQtPdfPrint Qt6::Pdf Qt6::Test Qt6::Widgets
+)
+set_target_properties(ClassMngrPdfLifecycleDiagnosticsTests PROPERTIES
+    AUTOMOC ON AUTOUIC OFF AUTORCC OFF CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(NAME ClassMngrPdfLifecycleDiagnosticsTests COMMAND ClassMngrPdfLifecycleDiagnosticsTests)
+set_tests_properties(ClassMngrPdfLifecycleDiagnosticsTests PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen")
 
 classmngr_add_qt_test(
     NAME NextPlatformQtJobWorker

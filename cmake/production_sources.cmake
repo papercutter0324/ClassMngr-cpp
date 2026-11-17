@@ -34,6 +34,8 @@ set(CLASSMNGR_CORE_SOURCES
 )
 
 set(CLASSMNGR_PROCESS_MEMORY_SOURCES
+    "src/core/process_memory_diagnostics.cpp"
+    "src/core/process_memory_diagnostics.h"
     "src/core/process_memory_snapshot.cpp"
     "src/core/process_memory_snapshot.h"
 )

@@ -1,4 +1,7 @@
 #pragma once
 #include "core/pdf_generation_port.h"
 
-[[nodiscard]] std::shared_ptr<PdfGenerationPort> makeQtPdfGenerationPort();
+class ProcessMemoryDiagnostics;
+
+[[nodiscard]] std::shared_ptr<PdfGenerationPort> makeQtPdfGenerationPort(
+    std::shared_ptr<ProcessMemoryDiagnostics> diagnostics = {});

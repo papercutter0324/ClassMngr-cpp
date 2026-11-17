@@ -10,6 +10,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPdfView>
+#include <QPdfPageNavigator>
+#include <QSet>
 #include <QPointer>
 #include <QStringList>
 #include <QTemporaryDir>
@@ -79,6 +81,8 @@ class NextPlatformQtPdfSessionReleaseTests final : public QObject
 {
     Q_OBJECT
 private slots:
+    void structuredDiagnosticsCoverReleaseReopenAndFinalTeardown();
+    void navigationDetailsAreBoundedAndReleaseReportsSuppressedSelections();
     void constructionIsLazy();
     void closeAndReplacementUseFreshDocumentAndStreamGeneration();
     void failedOpenKeepsAnEmptyBoundViewAndCanReopen();
@@ -88,6 +92,126 @@ private slots:
     void malformedPdfErrorIsDeferredAndCanReleaseSafely();
     void synchronousPrintBorrowProtectsTheActiveDocument();
 };
+
+void NextPlatformQtPdfSessionReleaseTests::structuredDiagnosticsCoverReleaseReopenAndFinalTeardown()
+{
+    auto resources = loader();
+    QVERIFY(resources);
+    QWidget parent;
+    QVector<QJsonObject> events;
+    auto diagnostics = std::make_shared<ProcessMemoryDiagnostics>(nullptr,
+        [&](const QByteArray& bytes) { events.append(QJsonDocument::fromJson(bytes).object()); });
+    {
+        Platform::QtPdfViewerSession session(*resources, &parent, diagnostics);
+        QVERIFY(session.open(Domain::DocumentContentReference(kReference),
+                             QStringLiteral("private-label-must-not-be-logged")));
+        QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+        session.view()->pageNavigator()->jump(1, {}, 1.0);
+        QVERIFY(session.release());
+        QVERIFY(session.open(Domain::DocumentContentReference(kReference),
+                             QStringLiteral("private-reopen-label")));
+        QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+    }
+    QStringList phases;
+    QSet<qint64> loadedGenerations;
+    bool statusReady = false;
+    bool pageSelection = false;
+    int retiredLoadedDocuments = 0;
+    for (const auto& event : events)
+    {
+        const QString name = event.value(QStringLiteral("event")).toString();
+        const auto details = event.value(QStringLiteral("details")).toObject();
+        const QString phase = details.value(QStringLiteral("phase")).toString();
+        phases.append(name + QLatin1Char(':') + phase);
+        if (name == QStringLiteral("qpdf-document-load") && phase == QStringLiteral("after"))
+        {
+            loadedGenerations.insert(details.value(QStringLiteral("generation")).toInteger());
+            QVERIFY(details.value(QStringLiteral("active_stream")).toBool());
+        }
+        if (name == QStringLiteral("qpdf-document-status") && phase == QStringLiteral("published"))
+            statusReady |= details.value(QStringLiteral("status")).toInt()
+                == static_cast<int>(QPdfDocument::Status::Ready);
+        if (name == QStringLiteral("qpdf-view-page-selection"))
+        {
+            pageSelection = true;
+            QVERIFY(details.value(QStringLiteral("render_observation")).toString()
+                .contains(QStringLiteral("completion unavailable")));
+        }
+        if (name == QStringLiteral("qpdf-document-destroy") && phase == QStringLiteral("after")
+            && details.value(QStringLiteral("retired_page_count_before_close")).toInt() > 0)
+        {
+            ++retiredLoadedDocuments;
+            QVERIFY(loadedGenerations.contains(
+                details.value(QStringLiteral("retired_generation")).toInteger()));
+            QVERIFY(!details.value(QStringLiteral("retired_document_present")).toBool());
+        }
+        QVERIFY(!event.value(QStringLiteral("memory")).toObject().isEmpty());
+        QVERIFY(!QJsonDocument(event).toJson().contains("private-label"));
+        QVERIFY(!QJsonDocument(event).toJson().contains("private-reopen"));
+    }
+    QCOMPARE(loadedGenerations.size(), 2);
+    QCOMPARE(retiredLoadedDocuments, 2);
+    QVERIFY(statusReady);
+    QVERIFY(pageSelection);
+    const int finalView = phases.lastIndexOf(QStringLiteral("qpdf-view-destroy:after"));
+    const int finalDocument = phases.lastIndexOf(QStringLiteral("qpdf-document-destroy:after"));
+    const int finalStream = phases.lastIndexOf(QStringLiteral("primary-stream-release:after"));
+    QVERIFY(finalView >= 0);
+    QVERIFY(finalView < finalDocument);
+    QVERIFY(finalDocument < finalStream);
+    QCOMPARE(phases.back(), QStringLiteral("qpdf-session-release:after"));
+    const auto final = events.back().value(QStringLiteral("details")).toObject();
+    QVERIFY(!final.value(QStringLiteral("active_stream")).toBool());
+    QVERIFY(!final.value(QStringLiteral("document_present")).toBool());
+    QVERIFY(!final.value(QStringLiteral("view_present")).toBool());
+}
+
+void NextPlatformQtPdfSessionReleaseTests::navigationDetailsAreBoundedAndReleaseReportsSuppressedSelections()
+{
+    auto resources = loader();
+    QVERIFY(resources);
+    QWidget parent;
+    QVector<QJsonObject> events;
+    auto diagnostics = std::make_shared<ProcessMemoryDiagnostics>(nullptr,
+        [&](const QByteArray& bytes) { events.append(QJsonDocument::fromJson(bytes).object()); });
+    Platform::QtPdfViewerSession session(*resources, &parent, diagnostics);
+    QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:bounded-navigation")));
+    QTRY_VERIFY_WITH_TIMEOUT(session.isReady(), 10000);
+    QVERIFY(session.pageCount() > 1);
+    auto* const navigator = session.view()->pageNavigator();
+    QVERIFY(navigator);
+    QCOMPARE(navigator->currentPage(), 0);
+    const qint64 initialSelections = events.back().value(QStringLiteral("details")).toObject()
+        .value(QStringLiteral("page_selection_count")).toInteger();
+    for (int index = 0; index < 40; ++index)
+    {
+        const int page = index % 2 == 0 ? 1 : 0;
+        navigator->jump(page, {}, 1.0);
+        QCOMPARE(navigator->currentPage(), page);
+    }
+    QVERIFY(session.release());
+
+    int selectionDetails = 0;
+    QJsonObject released;
+    for (const auto& event : events)
+    {
+        const auto details = event.value(QStringLiteral("details")).toObject();
+        if (event.value(QStringLiteral("event")) == QStringLiteral("qpdf-view-page-selection"))
+        {
+            ++selectionDetails;
+            QCOMPARE(details.value(QStringLiteral("page_selection_count")).toInt(), selectionDetails);
+            QCOMPARE(details.value(QStringLiteral("page_selection_details_suppressed")).toInt(), 0);
+        }
+        if (event.value(QStringLiteral("event")) == QStringLiteral("qpdf-generation-release")
+            && details.value(QStringLiteral("phase")) == QStringLiteral("after"))
+            released = details;
+    }
+    QCOMPARE(selectionDetails, 32);
+    QCOMPARE(released.value(QStringLiteral("page_selection_detail_limit")).toInt(), 32);
+    QCOMPARE(released.value(QStringLiteral("page_selection_count")).toInteger(), initialSelections + 40);
+    QCOMPARE(released.value(QStringLiteral("page_selection_details_suppressed")).toInteger(),
+             initialSelections + 8);
+}
 
 void NextPlatformQtPdfSessionReleaseTests::constructionIsLazy()
 {

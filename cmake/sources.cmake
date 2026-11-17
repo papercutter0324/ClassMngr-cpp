@@ -263,6 +263,8 @@ target_link_libraries(ClassMngrQtPdfPrint
         Qt6::Pdf
         Qt6::PrintSupport
         Qt6::Widgets
+    PRIVATE
+        ClassMngrProcessMemory
 )
 set_target_properties(ClassMngrQtPdfPrint
     PROPERTIES
@@ -286,6 +288,7 @@ add_library(ClassMngrQtPdfGeneration STATIC ${CLASSMNGR_QT_PDF_GENERATION_SOURCE
 target_compile_features(ClassMngrQtPdfGeneration PUBLIC cxx_std_23)
 target_include_directories(ClassMngrQtPdfGeneration PUBLIC "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(ClassMngrQtPdfGeneration PUBLIC Qt6::Gui)
+target_link_libraries(ClassMngrQtPdfGeneration PRIVATE ClassMngrProcessMemory)
 set_target_properties(ClassMngrQtPdfGeneration PROPERTIES AUTOMOC OFF AUTOUIC OFF AUTORCC OFF CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
 
 add_library(ClassMngrRosterTemplateRenderer STATIC ${CLASSMNGR_ROSTER_TEMPLATE_RENDERER_SOURCES})

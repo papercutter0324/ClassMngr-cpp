@@ -1,4 +1,5 @@
 #include "next/ui/document_viewer_page.h"
+#include "core/process_memory_diagnostics.h"
 
 #include "next/application/document_catalog_use_case.h"
 #include "next/ui/dialog_geometry_preferences_callbacks.h"
@@ -30,6 +31,44 @@ namespace ClassMngr::Next::Ui
 {
 namespace
 {
+class DocumentOutputTrace final
+{
+public:
+    explicit DocumentOutputTrace(QString event, int pageIndex = -1)
+        : m_event(std::move(event)), m_pageIndex(pageIndex)
+    { record(QStringLiteral("before")); }
+    ~DocumentOutputTrace() { record(QStringLiteral("after")); }
+    void addCopiedBytes(qint64 count) noexcept { m_copiedBytes += count; }
+    void succeeded() noexcept { m_succeeded = true; }
+    void setPrintStatus(Platform::PdfPrintStatus status) noexcept
+    {
+        m_printStatus = static_cast<int>(status);
+        m_succeeded = status == Platform::PdfPrintStatus::Sent;
+    }
+private:
+    void record(const QString& phase) noexcept
+    {
+        try
+        {
+            recordProcessMemoryDiagnostic(m_event, QStringLiteral("document_viewer_output"), m_id, {
+                {QStringLiteral("phase"), phase},
+                {QStringLiteral("succeeded"), m_succeeded},
+                {QStringLiteral("copied_bytes"), m_copiedBytes},
+                {QStringLiteral("page_index"), m_pageIndex},
+                {QStringLiteral("print_status"), m_printStatus},
+                {QStringLiteral("end_meaning"), QStringLiteral(
+                    "After operation-local objects leave scope; viewer document remains session-owned")}
+            });
+        }
+        catch (...) { }
+    }
+    QString m_event;
+    quint64 m_id = nextProcessMemoryDiagnosticId();
+    qint64 m_copiedBytes = 0;
+    int m_pageIndex = -1;
+    int m_printStatus = -1;
+    bool m_succeeded = false;
+};
 
 constexpr qreal kZoomStep = 1.2;
 constexpr qreal kMinimumZoom = 0.25;
@@ -299,6 +338,9 @@ bool DocumentViewerPage::copySelectedExportTo(
     QString* errorMessage
     ) const
 {
+    // Declared before the stream and QSaveFile so the final sample follows
+    // their destruction on success and on every early-return failure path.
+    DocumentOutputTrace trace(QStringLiteral("document-export-copy"));
     const auto fail = [errorMessage](const QString& message) {
         if (errorMessage)
         {
@@ -380,6 +422,7 @@ bool DocumentViewerPage::copySelectedExportTo(
                     .arg(targetPath));
             }
             written += static_cast<qsizetype>(amount);
+            trace.addCopiedBytes(amount);
         }
     }
 
@@ -391,6 +434,7 @@ bool DocumentViewerPage::copySelectedExportTo(
     {
         errorMessage->clear();
     }
+    trace.succeeded();
     return true;
 }
 
@@ -879,6 +923,7 @@ void DocumentViewerPage::printSelectedDocument()
     const auto geometryPreferences =
         settingsManagerDialogGeometryPreferencesCallbacks();
     m_pdfSession->withReadyDocument([&](QPdfDocument* document) {
+        DocumentOutputTrace trace(QStringLiteral("document-print-operation"), pageIndex);
         auto printOperation = makePrintOperation(m_printOperationFactory);
         const auto result = printOperation->printReadyDocument({
             .parent = this,
@@ -891,6 +936,7 @@ void DocumentViewerPage::printSelectedDocument()
                 geometryPreferences.write
             }
         });
+        trace.setPrintStatus(result.status);
         if (result.status == Platform::PdfPrintStatus::Failed)
         {
             QMessageBox::warning(this, viewerText("Print File"), result.message);
@@ -1014,6 +1060,16 @@ void DocumentViewerPage::recordLifecycleBoundary(
     const QString& phase
     ) const
 {
+    try
+    {
+        recordProcessMemoryDiagnostic(operation, QStringLiteral("document_content_session"),
+            m_requestSequence, {
+                {QStringLiteral("phase"), phase},
+                {QStringLiteral("content_phase"), static_cast<int>(m_contentSession.snapshot().phase())},
+                {QStringLiteral("active_stream"), m_pdfSession->hasActiveStream()}
+            });
+    }
+    catch (...) { }
     if (m_lifecycleObserver)
     {
         m_lifecycleObserver(operation, phase);
