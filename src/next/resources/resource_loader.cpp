@@ -551,7 +551,7 @@ ResourceResult<ScopedResource<QString>> ResourceLoader::loadTextResource(
             {
                 return std::unexpected(found.error());
             }
-            diagnostic.setSourceBytes((*found)->sourceBytes());
+            diagnostic.setCatalogResource(**found);
 
             if (requiredType.has_value())
             {
@@ -626,7 +626,7 @@ ResourceResult<ScopedResource<QJsonDocument>> ResourceLoader::loadJson(
             {
                 return std::unexpected(found.error());
             }
-            diagnostic.setSourceBytes((*found)->sourceBytes());
+            diagnostic.setCatalogResource(**found);
             if ((*found)->expectedType() != ResourceType::Json)
             {
                 return std::unexpected(error(
@@ -712,7 +712,7 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImageResource(
             {
                 return std::unexpected(found.error());
             }
-            diagnostic.setSourceBytes((*found)->sourceBytes());
+            diagnostic.setCatalogResource(**found);
             if (!isImageType((*found)->expectedType()))
             {
                 return std::unexpected(error(
@@ -726,19 +726,6 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImageResource(
             {
                 return std::unexpected(bytes.error());
             }
-            if (m_cache != nullptr && isCacheableDecodedResource(**found))
-            {
-                if (auto cached = m_cache->findImage(request.id(), maximumDimension))
-                {
-                    diagnostic.markCacheHit();
-                    if (const auto size = resourceDecodedPayloadBytes(*cached))
-                    {
-                        diagnostic.setDecodedBytes(*size);
-                    }
-                    return ScopedResource<QImage>(std::move(*cached), request.scope());
-                }
-            }
-
             QBuffer buffer(&*bytes);
             if (!buffer.open(QIODevice::ReadOnly))
             {
@@ -749,9 +736,23 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImageResource(
             }
             QImageReader reader(&buffer);
             reader.setDecideFormatFromContent(true);
+            const QSize sourceSize = reader.size();
+            diagnostic.setSourceImageDimensions(sourceSize);
+            if (m_cache != nullptr && isCacheableDecodedResource(**found))
+            {
+                if (auto cached = m_cache->findImage(request.id(), maximumDimension))
+                {
+                    diagnostic.markCacheHit();
+                    diagnostic.setDecodedImageDimensions(cached->size());
+                    if (const auto size = resourceDecodedPayloadBytes(*cached))
+                    {
+                        diagnostic.setDecodedBytes(*size);
+                    }
+                    return ScopedResource<QImage>(std::move(*cached), request.scope());
+                }
+            }
             if (maximumDimension > 0)
             {
-                const QSize sourceSize = reader.size();
                 if (sourceSize.isValid()
                     && (sourceSize.width() > maximumDimension
                         || sourceSize.height() > maximumDimension))
@@ -771,6 +772,11 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImageResource(
                     QStringLiteral("image resource cannot be decoded: ") + reader.errorString()
                     ));
             }
+            diagnostic.setDecodedImageDimensions(image.size());
+            if (const auto size = resourceDecodedPayloadBytes(image))
+            {
+                diagnostic.setDecodedBytes(*size);
+            }
             if (maximumDimension > 0
                 && (image.width() > maximumDimension
                     || image.height() > maximumDimension))
@@ -788,10 +794,6 @@ ResourceResult<ScopedResource<QImage>> ResourceLoader::loadImageResource(
                     request.scope(),
                     maximumDimension
                     );
-            }
-            if (const auto size = resourceDecodedPayloadBytes(image))
-            {
-                diagnostic.setDecodedBytes(*size);
             }
             return ScopedResource<QImage>(image, request.scope());
         }
@@ -813,7 +815,7 @@ ResourceResult<ScopedResource<RegisteredFont>> ResourceLoader::loadFont(
             {
                 return std::unexpected(found.error());
             }
-            diagnostic.setSourceBytes((*found)->sourceBytes());
+            diagnostic.setCatalogResource(**found);
             if (!isFontType((*found)->expectedType()))
             {
                 return std::unexpected(error(
@@ -844,6 +846,7 @@ ResourceResult<ScopedResource<RegisteredFont>> ResourceLoader::loadFont(
                     QStringLiteral("registered font resource has no family names")
                     ));
             }
+            diagnostic.setFontFamilyNames(families);
             return ScopedResource<RegisteredFont>(
                 RegisteredFont(registrationId, families),
                 request.scope()
@@ -875,7 +878,7 @@ ResourceResult<ScopedResource<ResourceTranslation>> ResourceLoader::loadTranslat
             {
                 return std::unexpected(found.error());
             }
-            diagnostic.setSourceBytes((*found)->sourceBytes());
+            diagnostic.setCatalogResource(**found);
             if ((*found)->expectedType() != ResourceType::Qm
                 || (*found)->location() != ResourceLocation::PackageFile)
             {
@@ -947,7 +950,7 @@ ResourceResult<ScopedResource<ResourceFileStream>> ResourceLoader::openStream(
                 return std::unexpected(found.error());
             }
             const ResourceDescriptor& resource = **found;
-            diagnostic.setSourceBytes(resource.sourceBytes());
+            diagnostic.setCatalogResource(resource);
             if (resource.location() != ResourceLocation::PackageFile)
             {
                 return std::unexpected(error(
@@ -1004,12 +1007,30 @@ namespace ClassMngr::Next::Resources
 ResourceResult<ScopedResource<QString>> ResourceLoader::resolveFile(
     const ResourceRequest& request) const
 {
-    const auto record = descriptor(request.id());
-    if (!record) return std::unexpected(record.error());
-    const auto path = packageFilePath(**record);
-    if (!path) return std::unexpected(path.error());
-    const auto verified = verifyFile(**record, *path);
-    if (!verified) return std::unexpected(verified.error());
-    return ScopedResource<QString>(*path, request.scope());
+    return withDiagnostics<ScopedResource<QString>>(
+        m_diagnostics,
+        request,
+        m_cache,
+        [&](ResourceDiagnosticRecorder& diagnostic)
+            -> ResourceResult<ScopedResource<QString>> {
+            const auto record = descriptor(request.id());
+            if (!record)
+            {
+                return std::unexpected(record.error());
+            }
+            diagnostic.setCatalogResource(**record);
+            const auto path = packageFilePath(**record);
+            if (!path)
+            {
+                return std::unexpected(path.error());
+            }
+            const auto verified = verifyFile(**record, *path);
+            if (!verified)
+            {
+                return std::unexpected(verified.error());
+            }
+            return ScopedResource<QString>(*path, request.scope());
+        }
+        );
 }
 }

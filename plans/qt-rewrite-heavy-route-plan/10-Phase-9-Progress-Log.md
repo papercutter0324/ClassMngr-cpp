@@ -100,6 +100,7 @@ the full lifecycle trace through suspension, explicit release, recreation,
 rebuilding 96 class rows, and release of the recreated instance. It verifies
 that the shared editor widget remains bounded while its loaded class and
 schedule rows clear on suspension. Eight locale/theme/fixture cases pass.
+The accepted P9-02 slice is committed as `112eaa14`.
 
 Independent macOS re-verification passed using the incremental standard
 `build/macos-clang-debug` folder. The affected targets were
@@ -116,3 +117,55 @@ The hosted Release workflow currently checks out a mutable branch ref for
 push-triggered builds and does not compare the checked-out commit with the push
 SHA. A separate P9-05 slice was added to bind package evidence to the triggering
 commit and report the candidate SHA before the Batch 1 push.
+
+#### Batch 2 scenario-gate discovery — started 2026-11-17
+
+Batch 2 is being shaped around packaged Windows Release gates after Batch 1
+instrumentation. The current sampler waits ten seconds after a visible window,
+takes five one-second samples, and sets no numeric memory pass threshold; it
+does not measure startup-ready or five-minute idle. The proposed first gate is
+strictly below 262,144,000 bytes at startup-ready and five-minute idle for empty
+and representative workspaces, with fresh Initial Setup remaining advisory.
+Complete over-budget runs must fail while preserving artifacts; incomplete or
+invalid evidence must remain not evaluated.
+
+Follow-up candidates add repeated normal navigation and idle, then the 96-class
+Sub Prep route through summary, first selection, refresh, package generation,
+leave, and repeated re-entry with bounded object counts and matched memory
+before/after release. The documented 536,870,912-byte value remains a
+diagnostic ceiling, not a hard transient budget, until current-source Windows
+Release data establishes a return-to-baseline allowance. Validator and route
+contract work can proceed on macOS; decisive package and native working-set
+evidence requires hosted Windows.
+
+#### P9-03 — Resource/cache/image/font lifecycle trace — 2026-11-17
+
+Production `CoreServices` now wires the existing `ResourceLoader` diagnostic
+callback to a compact JSON logger. Events include request scope and owner,
+catalog owner/category/kind/type/location, outcome/error/elapsed time, catalog
+source bytes, decoded payload bytes, source and decoded image dimensions, and
+font family names. Payload values are explicitly documented as weights, not
+resident allocation sizes. `resolveFile()` now follows the same diagnostic
+path and reports source bytes without decoded payload size.
+
+Cache snapshots now include entry count and preserve cached entry kind, owner
+scope, accounted payload bytes, and image bound. The app still has no production
+`ResourceCache`; events mark cache data unavailable instead of reporting fake
+zeros, and this instrumentation does not add a cache. The logger serializes
+concurrent callbacks and catches its own failures. Catalog/font metadata
+enrichment is exception-safe so diagnostics cannot change resource results.
+
+Independent macOS re-verification passed with an incremental build in the
+standard `build/macos-clang-debug` folder. Built targets were
+`ClassMngrNextResourceLoaderTests`, `ClassMngrNext`, and
+`ClassMngrNextBootstrapTests`. Focused CTest for the ResourceLoader and
+Bootstrap targets passed 2/2; `git diff --check` passed. The tests cover
+deterministic serialization, configured empty versus unavailable cache,
+cache-hit ownership, image dimensions, font families, `resolveFile()`, and a
+throwing diagnostic callback. Hosted Windows/Linux Debug and packaged Windows
+Release checks remain pending at Batch 1 close.
+
+The workspace signature-image upload decodes user-selected workspace data
+directly in `MyWorkspacePage`, outside the resource catalog and `ResourceLoader`.
+It is not included in the P9-03 catalog-resource trace; any future requirement to
+trace that workspace-data path belongs with its feature-owned diagnostics.

@@ -45,8 +45,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   snapshot provider into a narrow shared target so Next does not depend on
   broad legacy Core. P9-02 is locally accepted with production page/model
   traces, release/recreate coverage, and shutdown destruction records; hosted
-  checks remain pending. Hosted Windows/Linux Debug and Windows packaged
-  Release results remain required at batch close. The existing Windows Release
+  checks remain pending. P9-03 is locally accepted with production
+  resource/cache/image/font diagnostics; its hosted checks remain pending.
+  Hosted Windows/Linux Debug and Windows packaged Release results remain
+  required at batch close. The existing Windows Release
   memory step is advisory and has no numeric Phase 9 threshold, so no memory-gate
   result is claimed yet.
 

@@ -39,6 +39,7 @@ public:
     {
         qint64 capacityBytes;
         qint64 accountedBytes;
+        qsizetype entryCount;
         std::optional<EntryInfo> entry;
     };
 

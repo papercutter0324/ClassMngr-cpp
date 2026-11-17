@@ -5,6 +5,7 @@
 #include "next/bootstrap/campus_edit_operation_actions.h"
 
 #include "next/bootstrap/qt_startup_diagnostics_sink.h"
+#include "next/bootstrap/qt_resource_diagnostics_sink.h"
 #include "next/bootstrap/qt_page_lifecycle_diagnostics.h"
 #include "next/application/recent_workspace_history_use_case.h"
 #include "next/application/normal_workspace_creation_flow.h"
@@ -829,7 +830,10 @@ struct ApplicationBootstrap::CoreServices final
         Resources::ResourceCatalog catalog,
         Resources::ResourceScope startupScope
         )
-        : resourceLoader(std::move(catalog))
+        : resourceLoader(
+              std::move(catalog),
+              makeQtResourceDiagnosticsSink()
+              )
         , startupResourceScope(std::move(startupScope))
         , clipboardWritePort(
               std::make_shared<Platform::QtClipboardWriteAdapter>()

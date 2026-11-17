@@ -15,6 +15,7 @@ ResourceDiagnosticRecorder::ResourceDiagnosticRecorder(
     , m_started(std::chrono::steady_clock::now())
     , m_event{request.id(), request.scope()}
 {
+    m_event.cacheConfigured = cache != nullptr;
 }
 
 ResourceDiagnosticRecorder::~ResourceDiagnosticRecorder() noexcept
@@ -32,12 +33,14 @@ ResourceDiagnosticRecorder::~ResourceDiagnosticRecorder() noexcept
         if (m_cache != nullptr)
         {
             const auto snapshot = m_cache->snapshot(m_event.resourceId);
+            m_event.cacheEntryCount = snapshot.entryCount;
             m_event.cacheAccountedBytes = snapshot.accountedBytes;
             m_event.cacheCapacityBytes = snapshot.capacityBytes;
             if (snapshot.entry)
             {
                 m_event.cacheEntryAccountedBytes = snapshot.entry->accountedBytes;
             }
+            m_event.cacheEntry = snapshot.entry;
         }
         m_sink(m_event);
     }
@@ -47,14 +50,68 @@ ResourceDiagnosticRecorder::~ResourceDiagnosticRecorder() noexcept
     }
 }
 
-void ResourceDiagnosticRecorder::setSourceBytes(qint64 bytes) noexcept
+void ResourceDiagnosticRecorder::setCatalogResource(
+    const ResourceDescriptor& descriptor
+    ) noexcept
 {
-    m_event.sourceBytes = bytes;
+    m_event.sourceBytes = descriptor.sourceBytes();
+    try
+    {
+        m_event.catalogOwner = descriptor.owner();
+        m_event.catalogCategory = descriptor.category();
+        m_event.resourceKind = descriptor.resourceKind();
+        m_event.expectedType = descriptor.expectedTypeName();
+        m_event.location = descriptor.location() == ResourceLocation::PackageFile
+            ? QStringLiteral("package_file")
+            : QStringLiteral("qt_resource");
+    }
+    catch (...)
+    {
+        m_event.catalogOwner.reset();
+        m_event.catalogCategory.reset();
+        m_event.resourceKind.reset();
+        m_event.expectedType.reset();
+        m_event.location.reset();
+    }
 }
 
 void ResourceDiagnosticRecorder::setDecodedBytes(qint64 bytes) noexcept
 {
     m_event.decodedBytes = bytes;
+}
+
+void ResourceDiagnosticRecorder::setSourceImageDimensions(
+    const QSize dimensions
+    ) noexcept
+{
+    if (dimensions.isValid())
+    {
+        m_event.sourceImageDimensions = dimensions;
+    }
+}
+
+void ResourceDiagnosticRecorder::setDecodedImageDimensions(
+    const QSize dimensions
+    ) noexcept
+{
+    if (dimensions.isValid())
+    {
+        m_event.decodedImageDimensions = dimensions;
+    }
+}
+
+void ResourceDiagnosticRecorder::setFontFamilyNames(
+    const QStringList& familyNames
+    ) noexcept
+{
+    try
+    {
+        m_event.fontFamilyNames = familyNames;
+    }
+    catch (...)
+    {
+        m_event.fontFamilyNames.reset();
+    }
 }
 
 void ResourceDiagnosticRecorder::markCacheHit() noexcept

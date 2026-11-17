@@ -1711,6 +1711,7 @@ add_test(
 # fixtures, proving document bodies are not opened during catalog initialization.
 add_executable(ClassMngrNextResourceLoaderTests
     cmake/tests/next_resource_loader.cpp
+    src/next/bootstrap/qt_resource_diagnostics_sink.cpp
 )
 target_compile_features(ClassMngrNextResourceLoaderTests
     PRIVATE

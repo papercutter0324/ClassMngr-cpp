@@ -1,8 +1,12 @@
 #pragma once
 
 #include "resource_cache.h"
+#include "resource_descriptor.h"
 #include "resource_error.h"
 #include "resource_scope.h"
+
+#include <QSize>
+#include <QStringList>
 
 #include <chrono>
 #include <functional>
@@ -15,6 +19,11 @@ struct ResourceDiagnostic final
 {
     ResourceId resourceId;
     ResourceScope scope;
+    std::optional<QString> catalogOwner;
+    std::optional<QString> catalogCategory;
+    std::optional<QString> resourceKind;
+    std::optional<QString> expectedType;
+    std::optional<QString> location;
     // Monotonic time covering descriptor lookup, verification, decode, and cache lookup.
     std::chrono::nanoseconds elapsed{};
     // Catalog source size; absent when the ID is not in the catalog.
@@ -22,11 +31,17 @@ struct ResourceDiagnostic final
     // Payload accounting: UTF-16 text, compact-UTF-8 JSON, and decoded image
     // pixels. Unavailable for fonts, translations, and streams.
     std::optional<qint64> decodedBytes;
+    std::optional<QSize> sourceImageDimensions;
+    std::optional<QSize> decodedImageDimensions;
+    std::optional<QStringList> fontFamilyNames;
     bool succeeded = false;
+    bool cacheConfigured = false;
     bool cacheHit = false;
+    std::optional<qsizetype> cacheEntryCount;
     std::optional<qint64> cacheEntryAccountedBytes;
     std::optional<qint64> cacheAccountedBytes;
     std::optional<qint64> cacheCapacityBytes;
+    std::optional<ResourceCache::EntryInfo> cacheEntry;
     std::optional<ResourceErrorCode> errorCode;
 };
 
@@ -49,8 +64,11 @@ public:
     ResourceDiagnosticRecorder(const ResourceDiagnosticRecorder&) = delete;
     ResourceDiagnosticRecorder& operator=(const ResourceDiagnosticRecorder&) = delete;
 
-    void setSourceBytes(qint64 bytes) noexcept;
+    void setCatalogResource(const ResourceDescriptor& descriptor) noexcept;
     void setDecodedBytes(qint64 bytes) noexcept;
+    void setSourceImageDimensions(QSize dimensions) noexcept;
+    void setDecodedImageDimensions(QSize dimensions) noexcept;
+    void setFontFamilyNames(const QStringList& familyNames) noexcept;
     void markCacheHit() noexcept;
     void setSuccess() noexcept;
     void setError(ResourceErrorCode code) noexcept;

@@ -847,6 +847,8 @@ set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/bootstrap/startup_diagnostics_sink.h"
     "src/next/bootstrap/qt_startup_diagnostics_sink.cpp"
     "src/next/bootstrap/qt_startup_diagnostics_sink.h"
+    "src/next/bootstrap/qt_resource_diagnostics_sink.cpp"
+    "src/next/bootstrap/qt_resource_diagnostics_sink.h"
     "src/next/bootstrap/qt_page_lifecycle_diagnostics.cpp"
     "src/next/bootstrap/qt_page_lifecycle_diagnostics.h"
     "src/next/ui/application_shell.cpp"

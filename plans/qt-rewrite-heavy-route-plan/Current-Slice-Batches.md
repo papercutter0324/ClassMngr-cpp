@@ -34,10 +34,15 @@ allocation or cleanup defect, route that fix to its owning feature boundary.
      actual QObject destruction, including shell shutdown, with page-object
      metrics unavailable at the destruction event. Bound object traversal,
      view-cell scans, and per-model JSON detail.
-3. **P9-03 — Resource and cache lifecycle trace** (Discovered)
-   - Acceptance: production diagnostics report resource load/cache owners,
-     source and decoded bytes, image dimensions/decoded bytes, and font load
-     events at the owning lifecycle boundary.
+3. **P9-03 — Resource and cache lifecycle trace** (Locally accepted;
+   hosted verification pending)
+   - Acceptance: production `ResourceLoader` events report request-scope and
+     catalog owners, resource kind/type, outcomes, elapsed time, source and
+     decoded payload bytes, decoded image dimensions, and font family names.
+     Include cache hit/entry owner/kind/accounted bytes/capacity when configured;
+     report cache data as unavailable when absent and do not add a production
+     cache. Cover `resolveFile()`. Keep the sink exception-safe and thread-safe,
+     and label payload accounting as distinct from resident allocation.
    - Begin discovery of Batch 2 when this slice starts, before work turns to
      the broader scenario gates; keep only the active batch and the next
      discovered batch here.
@@ -50,6 +55,30 @@ allocation or cleanup defect, route that fix to its owning feature boundary.
      triggered the workflow, reports the candidate SHA, and fails before
      packaging if the checked-out SHA differs. Manual dispatch may continue to
      select an explicit source ref.
+
+## Phase 9 — Batch 2: Packaged Release scenario gates (Discovered)
+
+Batch goal: turn the common lifecycle trace into source-bound Windows Release
+measurements and enforce normal-use budgets with complete, reviewable failure
+artifacts. Do not claim a transient operation budget until its return-to-baseline
+allowance has been measured and recorded.
+
+1. **P9-06 — Empty and representative startup-ready/idle gate** (Proposed)
+   - Acceptance: packaged Windows Release records startup-ready and five-minute
+     idle working set for empty and representative workspaces. Enforce the
+     strict `<262,144,000` byte normal-use limit. Keep fresh Initial Setup
+     advisory. Complete over-budget evidence fails the gate and preserves all
+     artifacts; incomplete or invalid evidence is not evaluated.
+2. **P9-07 — Normal navigation and five-minute idle** (Proposed)
+   - Acceptance: packaged Release exercises repeated normal navigation, proves
+     the document catalog has no loaded PDF body, and enforces the same strict
+     normal-use working-set limit after navigation and idle.
+3. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Proposed)
+   - Acceptance: the packaged route covers entry, summary creation, first
+     selection, refresh, package generation, leave, and repeated re-entry.
+     Capture peak and settled process metrics plus bounded model/widget/editor
+     counts and a matched pre/post-release memory pair. Keep it advisory until
+     the return allowance is defined from current-source Windows Release runs.
 
 Batch completion requires each slice's focused acceptance and commit, then one
 push for the batch. The hosted Windows package measurement is required evidence

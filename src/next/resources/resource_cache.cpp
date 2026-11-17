@@ -121,7 +121,12 @@ ResourceCache::Snapshot ResourceCache::snapshot(const ResourceId& id) const
             found->second.imageMaximumDimension
         };
     }
-    return Snapshot{m_capacityBytes, m_accountedBytes, std::move(entry)};
+    return Snapshot{
+        m_capacityBytes,
+        m_accountedBytes,
+        static_cast<qsizetype>(m_entries.size()),
+        std::move(entry)
+    };
 }
 
 void ResourceCache::insertText(

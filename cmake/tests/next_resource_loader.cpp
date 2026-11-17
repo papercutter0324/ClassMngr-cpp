@@ -1,4 +1,5 @@
 #include "next/resources/resource_loader.h"
+#include "next/bootstrap/qt_resource_diagnostics_sink.h"
 
 #include <QBuffer>
 #include <QCoreApplication>
@@ -15,6 +16,7 @@
 #include <QTemporaryDir>
 
 #include <cerrno>
+#include <chrono>
 #include <cstring>
 #include <iostream>
 #include <optional>
@@ -36,6 +38,8 @@ using namespace ClassMngr::Next::Resources;
 
 namespace
 {
+
+namespace Bootstrap = ClassMngr::Next::Bootstrap;
 
 bool fail(const QString& message)
 {
@@ -119,6 +123,130 @@ bool scopeMatches(
     )
 {
     return scope.kind() == kind && scope.ownerLabel() == ownerLabel;
+}
+
+bool testResourceDiagnosticSerialization()
+{
+    const auto id = resourceId("resource:diagnostic-probe.png");
+    const auto requestScope = ResourceScope::create(
+        ResourceScopeKind::Page,
+        QStringLiteral("classes")
+        );
+    const auto cacheScope = ResourceScope::create(
+        ResourceScopeKind::Startup,
+        QStringLiteral("shared-image-cache")
+        );
+    if (!id || !requestScope || !cacheScope)
+    {
+        return fail(QStringLiteral("resource diagnostic serializer fixture was invalid"));
+    }
+
+    ResourceDiagnostic diagnostic{*id, *requestScope};
+    diagnostic.catalogOwner = QStringLiteral("ClassMngrNext bootstrap");
+    diagnostic.catalogCategory = QStringLiteral("visual");
+    diagnostic.resourceKind = QStringLiteral("icon");
+    diagnostic.expectedType = QStringLiteral("png");
+    diagnostic.location = QStringLiteral("package_file");
+    diagnostic.elapsed = std::chrono::nanoseconds(123456);
+    diagnostic.sourceBytes = 4096;
+    diagnostic.decodedBytes = 2400;
+    diagnostic.sourceImageDimensions = QSize(120, 80);
+    diagnostic.decodedImageDimensions = QSize(30, 20);
+    diagnostic.fontFamilyNames = QStringList{QStringLiteral("Caveat")};
+    diagnostic.succeeded = false;
+    diagnostic.errorCode = ResourceErrorCode::DecodeError;
+
+    const QByteArray first = Bootstrap::qtResourceDiagnosticRecord(diagnostic);
+    const QByteArray second = Bootstrap::qtResourceDiagnosticRecord(diagnostic);
+    if (first != second)
+    {
+        return fail(QStringLiteral("resource diagnostic serialization was not deterministic"));
+    }
+
+    const QJsonObject serialized = QJsonDocument::fromJson(first).object();
+    const QJsonObject request = serialized.value(
+        QStringLiteral("request_scope")).toObject();
+    const QJsonObject catalog = serialized.value(
+        QStringLiteral("catalog_resource")).toObject();
+    const QJsonObject payload = serialized.value(
+        QStringLiteral("payload_accounting")).toObject();
+    const QJsonObject image = serialized.value(QStringLiteral("image")).toObject();
+    const QJsonObject font = serialized.value(QStringLiteral("font")).toObject();
+    const QJsonObject cache = serialized.value(QStringLiteral("cache")).toObject();
+    if (serialized.value(QStringLiteral("resource_id")).toString() != id->value()
+        || request.value(QStringLiteral("kind")).toString() != QStringLiteral("page")
+        || request.value(QStringLiteral("owner")).toString() != QStringLiteral("classes")
+        || catalog.value(QStringLiteral("owner")).toString()
+            != QStringLiteral("ClassMngrNext bootstrap")
+        || serialized.value(QStringLiteral("outcome")).toString()
+            != QStringLiteral("failed")
+        || serialized.value(QStringLiteral("error_code")).toString()
+            != QStringLiteral("decode_error")
+        || payload.value(QStringLiteral("source_catalog_bytes")).toInt() != 4096
+        || payload.value(QStringLiteral("decoded_payload_bytes")).toInt() != 2400
+        || image.value(QStringLiteral("source_dimensions")).toObject()
+            .value(QStringLiteral("width_pixels")).toInt() != 120
+        || image.value(QStringLiteral("decoded_dimensions")).toObject()
+            .value(QStringLiteral("height_pixels")).toInt() != 20
+        || font.value(QStringLiteral("family_names")).toArray().size() != 1
+        || cache.value(QStringLiteral("configured")).toBool()
+        || !cache.value(QStringLiteral("hit")).isNull()
+        || !cache.value(QStringLiteral("entry_count")).isNull()
+        || !cache.value(QStringLiteral("accounted_payload_bytes")).isNull()
+        || !cache.value(QStringLiteral("capacity_payload_bytes")).isNull())
+    {
+        return fail(QStringLiteral("resource diagnostic serialized fields were incorrect"));
+    }
+
+    diagnostic.succeeded = true;
+    diagnostic.errorCode.reset();
+    diagnostic.cacheConfigured = true;
+    diagnostic.cacheEntryCount = 0;
+    diagnostic.cacheAccountedBytes = 0;
+    diagnostic.cacheCapacityBytes = 8192;
+    const QJsonObject configuredEmptyCache = QJsonDocument::fromJson(
+        Bootstrap::qtResourceDiagnosticRecord(diagnostic)).object()
+        .value(QStringLiteral("cache")).toObject();
+    if (!configuredEmptyCache.value(QStringLiteral("configured")).toBool()
+        || configuredEmptyCache.value(QStringLiteral("hit")).toBool()
+        || configuredEmptyCache.value(QStringLiteral("entry_count")).toInt() != 0
+        || configuredEmptyCache.value(QStringLiteral(
+            "accounted_payload_bytes")).toInt() != 0
+        || configuredEmptyCache.value(QStringLiteral(
+            "capacity_payload_bytes")).toInt() != 8192)
+    {
+        return fail(QStringLiteral(
+            "configured empty cache was confused with an unavailable cache"));
+    }
+
+    diagnostic.cacheHit = true;
+    diagnostic.cacheEntryCount = 1;
+    diagnostic.cacheEntryAccountedBytes = 2400;
+    diagnostic.cacheAccountedBytes = 2400;
+    diagnostic.cacheEntry = ResourceCache::EntryInfo{
+        ResourceCacheValueKind::Image,
+        2400,
+        *cacheScope,
+        30
+    };
+    const QJsonObject configuredCache = QJsonDocument::fromJson(
+        Bootstrap::qtResourceDiagnosticRecord(diagnostic)).object()
+        .value(QStringLiteral("cache")).toObject();
+    const QJsonObject cacheEntry = configuredCache.value(
+        QStringLiteral("entry")).toObject();
+    if (!configuredCache.value(QStringLiteral("hit")).toBool()
+        || configuredCache.value(QStringLiteral("entry_count")).toInt() != 1
+        || cacheEntry.value(QStringLiteral("kind")).toString()
+            != QStringLiteral("image")
+        || cacheEntry.value(QStringLiteral("owner_scope")).toObject()
+            .value(QStringLiteral("owner")).toString()
+            != QStringLiteral("shared-image-cache")
+        || cacheEntry.value(QStringLiteral(
+            "image_maximum_dimension_pixels")).toInt() != 30)
+    {
+        return fail(QStringLiteral("resource diagnostic lost cache-entry ownership"));
+    }
+    return true;
 }
 
 bool diagnosticMatches(
@@ -550,7 +678,10 @@ bool testLoader(QCoreApplication& application)
             )
         || absentCatalogDiagnostics.front().succeeded
         || absentCatalogDiagnostics.front().errorCode != ResourceErrorCode::NotFound
-        || absentCatalogDiagnostics.front().sourceBytes.has_value())
+        || absentCatalogDiagnostics.front().sourceBytes.has_value()
+        || absentCatalogDiagnostics.front().cacheConfigured
+        || absentCatalogDiagnostics.front().cacheEntryCount.has_value()
+        || absentCatalogDiagnostics.front().cacheAccountedBytes.has_value())
     {
         return fail(QStringLiteral(
             "missing catalog resource did not return NotFound with one failed diagnostic"
@@ -725,6 +856,30 @@ bool testLoader(QCoreApplication& application)
         }
         );
 
+    ResourceCache emptyLoaderCache(4096);
+    std::vector<ResourceDiagnostic> emptyCacheDiagnostics;
+    ResourceLoader emptyCacheLoader(
+        cachedLoader.catalog(),
+        emptyLoaderCache,
+        [&emptyCacheDiagnostics](const ResourceDiagnostic& diagnostic) {
+            emptyCacheDiagnostics.push_back(diagnostic);
+        }
+        );
+    const auto emptyCacheResolvedFile = emptyCacheLoader.resolveFile(*pdfRequest);
+    if (!emptyCacheResolvedFile
+        || emptyCacheDiagnostics.size() != 1
+        || !emptyCacheDiagnostics.back().succeeded
+        || !emptyCacheDiagnostics.back().cacheConfigured
+        || emptyCacheDiagnostics.back().cacheEntryCount != 0
+        || emptyCacheDiagnostics.back().cacheAccountedBytes != 0
+        || emptyCacheDiagnostics.back().cacheCapacityBytes != 4096
+        || emptyCacheDiagnostics.back().cacheEntry.has_value())
+    {
+        return fail(QStringLiteral(
+            "configured empty ResourceLoader cache was reported as unavailable"
+            ));
+    }
+
     auto cachedJson = cachedLoader.loadJson(*jsonRequest);
     if (!cachedJson || !cachedJson->get().isObject())
     {
@@ -748,12 +903,25 @@ bool testLoader(QCoreApplication& application)
         || !cacheDiagnostics.back().succeeded
         || cacheDiagnostics.back().errorCode.has_value()
         || cacheDiagnostics.back().cacheHit
+        || !cacheDiagnostics.back().cacheConfigured
+        || cacheDiagnostics.back().cacheEntryCount != jsonCacheSnapshot.entryCount
         || cacheDiagnostics.back().elapsed.count() < 0
         || cacheDiagnostics.back().sourceBytes != cachedJsonDescriptor->sourceBytes()
+        || cacheDiagnostics.back().catalogOwner != cachedJsonDescriptor->owner()
+        || cacheDiagnostics.back().catalogCategory != cachedJsonDescriptor->category()
+        || cacheDiagnostics.back().resourceKind != cachedJsonDescriptor->resourceKind()
+        || cacheDiagnostics.back().expectedType != cachedJsonDescriptor->expectedTypeName()
+        || cacheDiagnostics.back().location != QStringLiteral("package_file")
         || cacheDiagnostics.back().decodedBytes != jsonWeight
         || jsonCacheSnapshot.entry->accountedBytes != jsonWeight
         || cacheDiagnostics.back().cacheEntryAccountedBytes
             != jsonCacheSnapshot.entry->accountedBytes
+        || !cacheDiagnostics.back().cacheEntry
+        || cacheDiagnostics.back().cacheEntry->kind != jsonCacheSnapshot.entry->kind
+        || cacheDiagnostics.back().cacheEntry->scope.kind()
+            != jsonCacheSnapshot.entry->scope.kind()
+        || cacheDiagnostics.back().cacheEntry->scope.ownerLabel()
+            != jsonCacheSnapshot.entry->scope.ownerLabel()
         || cacheDiagnostics.back().cacheAccountedBytes != jsonCacheSnapshot.accountedBytes
         || cacheDiagnostics.back().cacheCapacityBytes != jsonCacheSnapshot.capacityBytes)
     {
@@ -795,8 +963,13 @@ bool testLoader(QCoreApplication& application)
             )
         || !cacheDiagnostics.back().succeeded
         || !cacheDiagnostics.back().cacheHit
+        || cacheDiagnostics.back().cacheEntryCount != loaderCache.entryCount()
         || cacheDiagnostics.back().decodedBytes != jsonWeight
-        || cacheDiagnostics.back().cacheEntryAccountedBytes != jsonWeight)
+        || cacheDiagnostics.back().cacheEntryAccountedBytes != jsonWeight
+        || !cacheDiagnostics.back().cacheEntry
+        || cacheDiagnostics.back().cacheEntry->kind != ResourceCacheValueKind::Json
+        || cacheDiagnostics.back().cacheEntry->scope.ownerLabel()
+            != QStringLiteral("CampusCatalog"))
     {
         return fail(QStringLiteral("JSON cache-hit diagnostic did not use the current owner"));
     }
@@ -858,6 +1031,8 @@ bool testLoader(QCoreApplication& application)
     if (cacheDiagnostics.size() != 4
         || cacheDiagnostics.back().decodedBytes != cachedImage->get().sizeInBytes()
         || cacheDiagnostics.back().cacheHit
+        || cacheDiagnostics.back().sourceImageDimensions != cachedImage->get().size()
+        || cacheDiagnostics.back().decodedImageDimensions != cachedImage->get().size()
         || !cacheDiagnostics.back().succeeded)
     {
         return fail(QStringLiteral("image cache-miss diagnostic size or outcome was incorrect"));
@@ -896,7 +1071,12 @@ bool testLoader(QCoreApplication& application)
             QStringLiteral("ImageCacheProbe")
             )
         || !cacheDiagnostics.back().cacheHit
-        || cacheDiagnostics.back().decodedBytes != cachedImageHit->get().sizeInBytes())
+        || cacheDiagnostics.back().decodedBytes != cachedImageHit->get().sizeInBytes()
+        || cacheDiagnostics.back().sourceImageDimensions != cachedImageHit->get().size()
+        || cacheDiagnostics.back().decodedImageDimensions != cachedImageHit->get().size()
+        || !cacheDiagnostics.back().cacheEntry
+        || cacheDiagnostics.back().cacheEntry->scope.ownerLabel()
+            != QStringLiteral("CampusDetails"))
     {
         return fail(QStringLiteral("image cache-hit diagnostic did not report its current scope"));
     }
@@ -949,6 +1129,7 @@ bool testLoader(QCoreApplication& application)
     const qsizetype cachedEntryCount = loaderCache.entryCount();
     const qint64 cachedAccountedBytes = loaderCache.accountedBytes();
     const qsizetype beforeFontEvents = static_cast<qsizetype>(cacheDiagnostics.size());
+    QStringList loadedFontFamilies;
     {
         auto uncachedFont = cachedLoader.loadFont(*fontRequest);
         if (!uncachedFont || uncachedFont->get().familyNames().isEmpty())
@@ -957,6 +1138,7 @@ bool testLoader(QCoreApplication& application)
                 + (uncachedFont ? QStringLiteral("no family names")
                                 : uncachedFont.error().message));
         }
+        loadedFontFamilies = uncachedFont->get().familyNames();
     }
     if (static_cast<qsizetype>(cacheDiagnostics.size()) != beforeFontEvents + 1
         || !diagnosticMatches(
@@ -966,7 +1148,11 @@ bool testLoader(QCoreApplication& application)
             QStringLiteral("Typography")
             )
         || !cacheDiagnostics.back().succeeded
-        || cacheDiagnostics.back().decodedBytes.has_value())
+        || cacheDiagnostics.back().decodedBytes.has_value()
+        || !cacheDiagnostics.back().fontFamilyNames
+        || *cacheDiagnostics.back().fontFamilyNames != loadedFontFamilies
+        || !cacheDiagnostics.back().catalogOwner
+        || cacheDiagnostics.back().catalogOwner->isEmpty())
     {
         return fail(QStringLiteral("font diagnostic decoded size should remain unavailable"));
     }
@@ -1021,6 +1207,33 @@ bool testLoader(QCoreApplication& application)
         return fail(QStringLiteral("PDF stream diagnostic read a decoded size or lost source size"));
     }
 
+    const qsizetype beforeResolveFileEvents =
+        static_cast<qsizetype>(cacheDiagnostics.size());
+    const auto resolvedPdfFile = cachedLoader.resolveFile(*pdfRequest);
+    if (!resolvedPdfFile
+        || !QFileInfo(resolvedPdfFile->get()).isFile())
+    {
+        return fail(QStringLiteral("PDF resolveFile request did not return a package file"));
+    }
+    if (static_cast<qsizetype>(cacheDiagnostics.size()) != beforeResolveFileEvents + 1
+        || !diagnosticMatches(
+            cacheDiagnostics.back(),
+            *pdfId,
+            ResourceScopeKind::Operation,
+            QStringLiteral("RubricPreview")
+            )
+        || !cacheDiagnostics.back().succeeded
+        || !cacheDiagnostics.back().cacheConfigured
+        || cacheDiagnostics.back().sourceBytes != pdfDescriptor->sourceBytes()
+        || cacheDiagnostics.back().decodedBytes.has_value()
+        || cacheDiagnostics.back().catalogOwner != pdfDescriptor->owner()
+        || cacheDiagnostics.back().expectedType != pdfDescriptor->expectedTypeName()
+        || cacheDiagnostics.back().location != QStringLiteral("package_file"))
+    {
+        return fail(QStringLiteral(
+            "resolveFile did not report its source-only resource diagnostic"));
+    }
+
     const qsizetype beforeTypeMismatchEvents = static_cast<qsizetype>(cacheDiagnostics.size());
     auto diagnosticTypeMismatch = cachedLoader.loadImage(*jsonRequest);
     if (diagnosticTypeMismatch
@@ -1052,6 +1265,9 @@ bool testLoader(QCoreApplication& application)
             QStringLiteral("EventCalendar")
             )
         || !isolatedDiagnostics.back().succeeded
+        || isolatedDiagnostics.back().cacheConfigured
+        || isolatedDiagnostics.back().cacheEntryCount.has_value()
+        || isolatedDiagnostics.back().cacheEntry.has_value()
         || isolatedDiagnostics.back().cacheAccountedBytes.has_value()
         || isolatedDiagnostics.back().cacheCapacityBytes.has_value())
     {
@@ -1547,7 +1763,8 @@ bool testLoader(QCoreApplication& application)
 int main(int argc, char** argv)
 {
     QGuiApplication application(argc, argv);
-    if (!testResourceCacheCore() || !testBoundedImageCacheIdentity()
+    if (!testResourceDiagnosticSerialization()
+        || !testResourceCacheCore() || !testBoundedImageCacheIdentity()
         || !testLoader(application))
     {
         return 1;
