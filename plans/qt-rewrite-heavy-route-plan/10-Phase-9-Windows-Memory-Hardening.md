@@ -32,13 +32,21 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phases 4 through 8
 - Blocks: Release qualification and cutover
-- Owner: Unassigned
-- Last updated: 2026-09-16
-- Current note: The less-than-250-MiB Windows target is a hard release gate.
+- Owner: Codex
+- Last updated: 2026-11-17
+- Current note: Phase 9 began on macOS after Phases 4–8 closed. Batch 1 is
+  adding shared Next startup, page, resource, and QtPdf lifecycle memory traces;
+  P9-01 is locally accepted after adding per-counter sample availability and
+  explicit null output for failed counters. It extracts the existing process
+  snapshot provider into a narrow shared target so Next does not depend on
+  broad legacy Core. Hosted Windows/Linux Debug and Windows packaged Release
+  results remain required at batch close. The existing Windows Release memory
+  step is advisory and has no numeric Phase 9 threshold, so no memory-gate
+  result is claimed yet.
 
 ### Slice batches
 

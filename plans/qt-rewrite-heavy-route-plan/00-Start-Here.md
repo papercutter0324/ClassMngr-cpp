@@ -6,18 +6,18 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-17
-- Current milestone: Phases 0–8 and 8a are Complete. Phase 8 closed at
-  candidate `744e7ef1`; hosted Windows x64 and Linux x64 baselines passed
-  618/618 and 621/621, with required Schedule/Roster/Speaking outputs and
-  17-page C53 parity on both hosts. Windows ARM64 Debug cross-build and
-  three-host resource-layout checks passed. The test-only change preserves the
-  accepted macOS/Windows/Linux Release package matrix. Historical visual/font
-  warnings remain assigned to Phase 10; the unexplained workstation-only
-  `286468ea` startup timeout remains a Phase 11 handoff if it recurs. No
-  historical cause or fix is claimed. See the [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
-  [Phase 8a triage plan](09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md),
-  [Phase 8a progress log](09.5-Phase-8a-Progress-Log.md), [Phase 8 plan](09-Phase-8-Platform-and-Output-Adapters.md),
-  and [current batch tracker](Current-Slice-Batches.md). Phase 9 is next.
+- Current milestone: Phase 9 began on macOS after Phases 0–8 and 8a closed.
+  Phase 8 closed at candidate `744e7ef1`; hosted Windows x64 and Linux x64
+  baselines passed 618/618 and 621/621, required outputs and 17-page C53 parity
+  passed on both hosts, and the cross-platform Release package matrix remains
+  accepted. Phase 9 Batch 1 is adding common startup, page, resource, and QtPdf
+  lifecycle memory traces. The first active slice is P9-01; hosted Windows
+  Debug and packaged Release verification remain required. The existing
+  Windows Release memory step is advisory and does not yet enforce the Phase 9
+  `<250 MiB` gate. See the [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
+  [Phase 8a closeout](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
+  [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), and [current batch
+  tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)
@@ -43,7 +43,7 @@
 | 7.5 | 08.5-Phase-7.5-Cross-Platform-Follow-Ups.md | Complete | Light | 0–7 |
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Complete | Heavy | 2, 3, 7 |
 | 8a | 09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md | Complete | Heavy | 8 |
-| 9 | 10-Phase-9-Windows-Memory-Hardening.md | Not started | Heavy | 4–8 |
+| 9 | 10-Phase-9-Windows-Memory-Hardening.md | In progress | Heavy | 4–8 |
 | 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |
 | 11 | 12-Phase-11-Test-Restructuring-and-Release-Gates.md | Not started | Heavy | 0–10 |
 | 12 | 13-Phase-12-Beta-Cutover-and-Legacy-Removal.md | Not started | Heavy | 10, 11 |

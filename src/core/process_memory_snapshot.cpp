@@ -1,6 +1,7 @@
 #include "process_memory_snapshot.h"
 
 #include <limits>
+#include <optional>
 #include <utility>
 
 #if defined(Q_OS_WIN)
@@ -18,7 +19,7 @@
 namespace
 {
 #if defined(Q_OS_LINUX)
-quint64 procKiBValue(
+std::optional<quint64> procKiBValue(
     const QString& filePath,
     const QByteArray& key
     )
@@ -26,7 +27,7 @@ quint64 procKiBValue(
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        return 0;
+        return std::nullopt;
     }
 
     // Some procfs pseudo-files report a size of zero even though they still
@@ -49,27 +50,32 @@ quint64 procKiBValue(
             line.mid(key.size()).simplified().split(' ');
         if (parts.isEmpty())
         {
-            return 0;
+            return std::nullopt;
         }
 
         bool converted = false;
         const quint64 kibibytes = parts.constFirst().toULongLong(&converted);
-        return converted ? kibibytes * 1024 : 0;
+        return converted
+            ? std::optional<quint64>(kibibytes * 1024)
+            : std::nullopt;
     }
 
-    return 0;
+    return std::nullopt;
 }
 
-quint64 procEntryCount(const QString& path)
+std::optional<quint64> procEntryCount(const QString& path)
 {
     QDir directory(path);
-    return directory.exists()
-        ? static_cast<quint64>(
-            directory.entryList(
-                QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot
-                ).size()
-            )
-        : 0;
+    if (!directory.exists() || !directory.isReadable())
+    {
+        return std::nullopt;
+    }
+
+    return static_cast<quint64>(
+        directory.entryList(
+            QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot
+            ).size()
+        );
 }
 #endif
 }
@@ -104,15 +110,21 @@ ProcessMemorySnapshot PlatformProcessMemorySnapshotProvider::snapshot() const
 
     result.isAvailable = true;
     result.workingSetBytes = counters.WorkingSetSize;
+    result.workingSetBytesAvailable = true;
     result.peakWorkingSetBytes = counters.PeakWorkingSetSize;
+    result.peakWorkingSetBytesAvailable = true;
     result.privateUsageBytes = counters.PrivateUsage;
+    result.privateUsageBytesAvailable = true;
     result.pagefileUsageBytes = counters.PagefileUsage;
+    result.pagefileUsageBytesAvailable = true;
     result.privateWorkingSetBytes = counters.PrivateWorkingSetSize;
+    result.privateWorkingSetBytesAvailable = true;
 
     DWORD handleCount = 0;
     if (GetProcessHandleCount(GetCurrentProcess(), &handleCount))
     {
         result.handleCount = handleCount;
+        result.handleCountAvailable = true;
     }
 
     const DWORD processId = GetCurrentProcessId();
@@ -125,14 +137,21 @@ ProcessMemorySnapshot PlatformProcessMemorySnapshotProvider::snapshot() const
 
         if (Thread32First(threadSnapshot, &thread))
         {
-            do
+            while (true)
             {
                 if (thread.th32OwnerProcessID == processId)
                 {
                     ++result.threadCount;
                 }
+
+                SetLastError(ERROR_SUCCESS);
+                if (!Thread32Next(threadSnapshot, &thread))
+                {
+                    result.threadCountAvailable =
+                        GetLastError() == ERROR_NO_MORE_FILES;
+                    break;
+                }
             }
-            while (Thread32Next(threadSnapshot, &thread));
         }
 
         CloseHandle(threadSnapshot);
@@ -154,16 +173,22 @@ ProcessMemorySnapshot PlatformProcessMemorySnapshotProvider::snapshot() const
 
     result.isAvailable = true;
     result.workingSetBytes = vmInfo.resident_size;
+    result.workingSetBytesAvailable = true;
     result.peakWorkingSetBytes = vmInfo.resident_size_peak;
+    result.peakWorkingSetBytesAvailable = true;
     result.privateUsageBytes = vmInfo.phys_footprint;
+    result.privateUsageBytesAvailable = true;
     result.privateWorkingSetBytes = vmInfo.internal;
+    result.privateWorkingSetBytesAvailable = true;
     result.pagefileUsageBytes = vmInfo.compressed;
+    result.pagefileUsageBytesAvailable = true;
 
     thread_act_array_t threads = nullptr;
     mach_msg_type_number_t threadCount = 0;
     if (task_threads(mach_task_self(), &threads, &threadCount) == KERN_SUCCESS)
     {
         result.threadCount = threadCount;
+        result.threadCountAvailable = true;
         vm_deallocate(
             mach_task_self(),
             reinterpret_cast<vm_address_t>(threads),
@@ -182,52 +207,86 @@ ProcessMemorySnapshot PlatformProcessMemorySnapshotProvider::snapshot() const
     const QString tasksPath =
         procDirectory.filePath(QStringLiteral("self/task"));
 
-    const quint64 rss = procKiBValue(
+    const std::optional<quint64> rss = procKiBValue(
         statusPath,
         QByteArrayLiteral("VmRSS:")
         );
-    if (rss == 0)
+    if (!rss.has_value())
     {
         return result;
     }
 
     result.isAvailable = true;
-    result.workingSetBytes = rss;
-    result.peakWorkingSetBytes = procKiBValue(
+    result.workingSetBytes = *rss;
+    result.workingSetBytesAvailable = true;
+    const std::optional<quint64> peakRss = procKiBValue(
         statusPath,
         QByteArrayLiteral("VmHWM:")
         );
-    result.privateWorkingSetBytes = procKiBValue(
+    if (peakRss.has_value())
+    {
+        result.peakWorkingSetBytes = *peakRss;
+        result.peakWorkingSetBytesAvailable = true;
+    }
+
+    const std::optional<quint64> anonymousResident = procKiBValue(
         statusPath,
         QByteArrayLiteral("RssAnon:")
         );
-    result.privateUsageBytes = procKiBValue(
+    if (anonymousResident.has_value())
+    {
+        result.privateWorkingSetBytes = *anonymousResident;
+        result.privateWorkingSetBytesAvailable = true;
+    }
+
+    const std::optional<quint64> proportionalSetSize = procKiBValue(
         smapsRollupPath,
         QByteArrayLiteral("Pss:")
         );
-    if (result.privateUsageBytes == 0)
+    if (proportionalSetSize.has_value())
     {
-        result.privateUsageBytes = result.privateWorkingSetBytes;
+        result.privateUsageBytes = *proportionalSetSize;
+        result.privateUsageBytesAvailable = true;
     }
 
-    const quint64 privateClean = procKiBValue(
+    const std::optional<quint64> privateClean = procKiBValue(
         smapsRollupPath,
         QByteArrayLiteral("Private_Clean:")
         );
-    const quint64 privateDirty = procKiBValue(
+    const std::optional<quint64> privateDirty = procKiBValue(
         smapsRollupPath,
         QByteArrayLiteral("Private_Dirty:")
         );
-    result.privateDirtyBytes = privateDirty;
-    result.pagefileUsageBytes = privateClean + privateDirty;
-    result.handleCount = static_cast<quint32>(qMin<quint64>(
-        procEntryCount(fileDescriptorsPath),
-        std::numeric_limits<quint32>::max()
-        ));
-    result.threadCount = static_cast<quint32>(qMin<quint64>(
-        procEntryCount(tasksPath),
-        std::numeric_limits<quint32>::max()
-        ));
+    if (privateDirty.has_value())
+    {
+        result.privateDirtyBytes = *privateDirty;
+        result.privateDirtyBytesAvailable = true;
+    }
+    if (privateClean.has_value() && privateDirty.has_value())
+    {
+        result.pagefileUsageBytes = *privateClean + *privateDirty;
+        result.pagefileUsageBytesAvailable = true;
+    }
+
+    const std::optional<quint64> handleCount =
+        procEntryCount(fileDescriptorsPath);
+    if (handleCount.has_value())
+    {
+        result.handleCount = static_cast<quint32>(qMin<quint64>(
+            *handleCount,
+            std::numeric_limits<quint32>::max()
+            ));
+        result.handleCountAvailable = true;
+    }
+    const std::optional<quint64> threadCount = procEntryCount(tasksPath);
+    if (threadCount.has_value())
+    {
+        result.threadCount = static_cast<quint32>(qMin<quint64>(
+            *threadCount,
+            std::numeric_limits<quint32>::max()
+            ));
+        result.threadCountAvailable = true;
+    }
 #endif
 
     return result;

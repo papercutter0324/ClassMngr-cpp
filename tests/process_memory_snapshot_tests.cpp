@@ -21,7 +21,8 @@ class ProcessMemorySnapshotTests : public QObject
 
 private slots:
     void readsLinuxProcMetricsInBytes();
-    void fallsBackWhenSmapsRollupIsUnavailable();
+    void doesNotSubstituteAnonymousResidentForMissingPss();
+    void tracksPartialLinuxCounterAvailability();
     void reportsUnavailableWhenRssCannotBeRead();
     void readsLiveLinuxProcfsPseudoFiles();
 };
@@ -63,9 +64,18 @@ void ProcessMemorySnapshotTests::readsLinuxProcMetricsInBytes()
     QCOMPARE(snapshot.privateUsageBytes, quint64(20 * 1024));
     QCOMPARE(snapshot.privateDirtyBytes, quint64(5 * 1024));
     QCOMPARE(snapshot.pagefileUsageBytes, quint64(8 * 1024));
+    QVERIFY(snapshot.workingSetBytesAvailable);
+    QVERIFY(snapshot.peakWorkingSetBytesAvailable);
+    QVERIFY(snapshot.privateWorkingSetBytesAvailable);
+    QVERIFY(snapshot.privateUsageBytesAvailable);
+    QVERIFY(snapshot.privateDirtyBytesAvailable);
+    QVERIFY(snapshot.pagefileUsageBytesAvailable);
+    QVERIFY(!snapshot.handleCountAvailable);
+    QVERIFY(!snapshot.threadCountAvailable);
 }
 
-void ProcessMemorySnapshotTests::fallsBackWhenSmapsRollupIsUnavailable()
+void ProcessMemorySnapshotTests
+    ::doesNotSubstituteAnonymousResidentForMissingPss()
 {
     QTemporaryDir procRoot;
     QVERIFY(procRoot.isValid());
@@ -89,7 +99,69 @@ void ProcessMemorySnapshotTests::fallsBackWhenSmapsRollupIsUnavailable()
     QCOMPARE(snapshot.workingSetBytes, quint64(40 * 1024));
     QCOMPARE(snapshot.peakWorkingSetBytes, quint64(48 * 1024));
     QCOMPARE(snapshot.privateWorkingSetBytes, quint64(14 * 1024));
-    QCOMPARE(snapshot.privateUsageBytes, quint64(14 * 1024));
+    QCOMPARE(snapshot.privateUsageBytes, quint64(0));
+    QVERIFY(snapshot.workingSetBytesAvailable);
+    QVERIFY(snapshot.peakWorkingSetBytesAvailable);
+    QVERIFY(snapshot.privateWorkingSetBytesAvailable);
+    QVERIFY(!snapshot.privateUsageBytesAvailable);
+    QVERIFY(!snapshot.pagefileUsageBytesAvailable);
+    QVERIFY(!snapshot.privateDirtyBytesAvailable);
+    QVERIFY(!snapshot.handleCountAvailable);
+    QVERIFY(!snapshot.threadCountAvailable);
+}
+
+void ProcessMemorySnapshotTests::tracksPartialLinuxCounterAvailability()
+{
+    QTemporaryDir procRoot;
+    QVERIFY(procRoot.isValid());
+
+    const QString selfDirectory =
+        QDir(procRoot.path()).filePath(QStringLiteral("self"));
+    const QString fileDescriptorsDirectory =
+        QDir(selfDirectory).filePath(QStringLiteral("fd"));
+    const QString tasksDirectory =
+        QDir(selfDirectory).filePath(QStringLiteral("task"));
+    QVERIFY(QDir().mkpath(fileDescriptorsDirectory));
+    QVERIFY(QDir().mkpath(tasksDirectory));
+    QVERIFY(writeFile(
+        QDir(selfDirectory).filePath(QStringLiteral("status")),
+        QByteArrayLiteral("VmRSS:\t 0 kB\nRssAnon:\t 7 kB\n")
+        ));
+    QVERIFY(writeFile(
+        QDir(selfDirectory).filePath(QStringLiteral("smaps_rollup")),
+        QByteArrayLiteral("Pss:\t 0 kB\nPrivate_Dirty:\t 0 kB\n")
+        ));
+    QVERIFY(writeFile(
+        QDir(fileDescriptorsDirectory).filePath(QStringLiteral("3")),
+        QByteArrayLiteral("fd entry\n")
+        ));
+    QVERIFY(writeFile(
+        QDir(tasksDirectory).filePath(QStringLiteral("11")),
+        QByteArrayLiteral("task entry\n")
+        ));
+    QVERIFY(writeFile(
+        QDir(tasksDirectory).filePath(QStringLiteral("12")),
+        QByteArrayLiteral("task entry\n")
+        ));
+
+    const ProcessMemorySnapshot snapshot =
+        PlatformProcessMemorySnapshotProvider(procRoot.path()).snapshot();
+
+    QVERIFY(snapshot.isAvailable);
+    QVERIFY(snapshot.workingSetBytesAvailable);
+    QCOMPARE(snapshot.workingSetBytes, quint64(0));
+    QVERIFY(!snapshot.peakWorkingSetBytesAvailable);
+    QVERIFY(snapshot.privateWorkingSetBytesAvailable);
+    QCOMPARE(snapshot.privateWorkingSetBytes, quint64(7 * 1024));
+    QVERIFY(snapshot.privateUsageBytesAvailable);
+    QCOMPARE(snapshot.privateUsageBytes, quint64(0));
+    QVERIFY(snapshot.privateDirtyBytesAvailable);
+    QCOMPARE(snapshot.privateDirtyBytes, quint64(0));
+    QVERIFY(!snapshot.pagefileUsageBytesAvailable);
+    QVERIFY(snapshot.handleCountAvailable);
+    QCOMPARE(snapshot.handleCount, quint32(1));
+    QVERIFY(snapshot.threadCountAvailable);
+    QCOMPARE(snapshot.threadCount, quint32(2));
 }
 
 void ProcessMemorySnapshotTests::reportsUnavailableWhenRssCannotBeRead()
@@ -113,6 +185,9 @@ void ProcessMemorySnapshotTests::reportsUnavailableWhenRssCannotBeRead()
     QCOMPARE(snapshot.workingSetBytes, quint64(0));
     QCOMPARE(snapshot.peakWorkingSetBytes, quint64(0));
     QCOMPARE(snapshot.privateUsageBytes, quint64(0));
+    QVERIFY(!snapshot.workingSetBytesAvailable);
+    QVERIFY(!snapshot.peakWorkingSetBytesAvailable);
+    QVERIFY(!snapshot.privateUsageBytesAvailable);
 }
 
 void ProcessMemorySnapshotTests::readsLiveLinuxProcfsPseudoFiles()
@@ -124,6 +199,7 @@ void ProcessMemorySnapshotTests::readsLiveLinuxProcfsPseudoFiles()
     QCOMPARE(snapshot.platform, QStringLiteral("linux"));
     QVERIFY(snapshot.workingSetBytes > 0);
     QVERIFY(snapshot.privateUsageBytes > 0);
+    QVERIFY(snapshot.privateUsageBytesAvailable);
     QVERIFY(
         snapshot.peakWorkingSetBytes >= snapshot.workingSetBytes
         );

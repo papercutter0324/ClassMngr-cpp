@@ -15,7 +15,7 @@ struct ProcessMemorySnapshot
     quint64 peakWorkingSetBytes = 0;
     // Windows: private usage. macOS: physical footprint. Linux: PSS.
     quint64 privateUsageBytes = 0;
-    // Windows: pagefile usage. Linux: private dirty memory where available.
+    // Windows: pagefile usage. Linux: private clean plus private dirty bytes.
     quint64 pagefileUsageBytes = 0;
     quint32 handleCount = 0;
     quint32 threadCount = 0;
@@ -26,6 +26,17 @@ struct ProcessMemorySnapshot
     quint64 privateWorkingSetBytes = 0;
     quint64 privateDirtyBytes = 0;
     QString platform;
+
+    // Availability is tracked independently because a platform can return a
+    // primary memory sample while optional counters fail or are absent.
+    bool workingSetBytesAvailable = false;
+    bool peakWorkingSetBytesAvailable = false;
+    bool privateUsageBytesAvailable = false;
+    bool pagefileUsageBytesAvailable = false;
+    bool handleCountAvailable = false;
+    bool threadCountAvailable = false;
+    bool privateWorkingSetBytesAvailable = false;
+    bool privateDirtyBytesAvailable = false;
 };
 
 class ProcessMemorySnapshotProvider

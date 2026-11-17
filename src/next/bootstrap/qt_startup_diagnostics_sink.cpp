@@ -2,8 +2,12 @@
 
 #include <QByteArray>
 #include <QDebug>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonValue>
 
 #include <cstdio>
+#include <utility>
 
 namespace ClassMngr::Next::Bootstrap
 {
@@ -83,7 +87,190 @@ namespace
     return "unknown-diagnostic";
 }
 
-[[nodiscard]] QByteArray startupRecord(const Application::StartupEvent& event)
+[[nodiscard]] QJsonValue memoryCounterValue(
+    const bool available,
+    const quint64 value
+    )
+{
+    return available
+        ? QJsonValue(static_cast<qint64>(value))
+        : QJsonValue(QJsonValue::Null);
+}
+
+[[nodiscard]] QJsonObject memoryMetrics(
+    const ProcessMemorySnapshot& snapshot
+    )
+{
+    QJsonObject metrics;
+    if (!snapshot.isAvailable)
+    {
+        return metrics;
+    }
+
+    if (snapshot.platform == QStringLiteral("windows"))
+    {
+        metrics.insert(
+            QStringLiteral("working_set_bytes"),
+            memoryCounterValue(
+                snapshot.workingSetBytesAvailable,
+                snapshot.workingSetBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("peak_working_set_bytes"),
+            memoryCounterValue(
+                snapshot.peakWorkingSetBytesAvailable,
+                snapshot.peakWorkingSetBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("private_usage_bytes"),
+            memoryCounterValue(
+                snapshot.privateUsageBytesAvailable,
+                snapshot.privateUsageBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("pagefile_usage_bytes"),
+            memoryCounterValue(
+                snapshot.pagefileUsageBytesAvailable,
+                snapshot.pagefileUsageBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("handle_count"),
+            memoryCounterValue(
+                snapshot.handleCountAvailable,
+                snapshot.handleCount
+                )
+            );
+        metrics.insert(
+            QStringLiteral("thread_count"),
+            memoryCounterValue(
+                snapshot.threadCountAvailable,
+                snapshot.threadCount
+                )
+            );
+        metrics.insert(
+            QStringLiteral("private_working_set_bytes"),
+            memoryCounterValue(
+                snapshot.privateWorkingSetBytesAvailable,
+                snapshot.privateWorkingSetBytes
+                )
+            );
+    }
+    else if (snapshot.platform == QStringLiteral("macos"))
+    {
+        metrics.insert(
+            QStringLiteral("resident_bytes"),
+            memoryCounterValue(
+                snapshot.workingSetBytesAvailable,
+                snapshot.workingSetBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("peak_resident_bytes"),
+            memoryCounterValue(
+                snapshot.peakWorkingSetBytesAvailable,
+                snapshot.peakWorkingSetBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("physical_footprint_bytes"),
+            memoryCounterValue(
+                snapshot.privateUsageBytesAvailable,
+                snapshot.privateUsageBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("compressed_bytes"),
+            memoryCounterValue(
+                snapshot.pagefileUsageBytesAvailable,
+                snapshot.pagefileUsageBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("thread_count"),
+            memoryCounterValue(
+                snapshot.threadCountAvailable,
+                snapshot.threadCount
+                )
+            );
+        metrics.insert(
+            QStringLiteral("internal_bytes"),
+            memoryCounterValue(
+                snapshot.privateWorkingSetBytesAvailable,
+                snapshot.privateWorkingSetBytes
+                )
+            );
+    }
+    else if (snapshot.platform == QStringLiteral("linux"))
+    {
+        metrics.insert(
+            QStringLiteral("rss_bytes"),
+            memoryCounterValue(
+                snapshot.workingSetBytesAvailable,
+                snapshot.workingSetBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("peak_rss_bytes"),
+            memoryCounterValue(
+                snapshot.peakWorkingSetBytesAvailable,
+                snapshot.peakWorkingSetBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("private_usage_bytes"),
+            memoryCounterValue(
+                snapshot.privateUsageBytesAvailable,
+                snapshot.privateUsageBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("private_clean_and_dirty_bytes"),
+            memoryCounterValue(
+                snapshot.pagefileUsageBytesAvailable,
+                snapshot.pagefileUsageBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("file_descriptor_count"),
+            memoryCounterValue(
+                snapshot.handleCountAvailable,
+                snapshot.handleCount
+                )
+            );
+        metrics.insert(
+            QStringLiteral("thread_count"),
+            memoryCounterValue(
+                snapshot.threadCountAvailable,
+                snapshot.threadCount
+                )
+            );
+        metrics.insert(
+            QStringLiteral("anonymous_resident_bytes"),
+            memoryCounterValue(
+                snapshot.privateWorkingSetBytesAvailable,
+                snapshot.privateWorkingSetBytes
+                )
+            );
+        metrics.insert(
+            QStringLiteral("private_dirty_bytes"),
+            memoryCounterValue(
+                snapshot.privateDirtyBytesAvailable,
+                snapshot.privateDirtyBytes
+                )
+            );
+    }
+
+    return metrics;
+}
+
+[[nodiscard]] QByteArray startupRecord(
+    const Application::StartupEvent& event,
+    const ProcessMemorySnapshot& snapshot
+    )
 {
     QByteArray record("ClassMngrNext startup stage=");
     record += stageName(event.stage);
@@ -102,6 +289,14 @@ namespace
     {
         record += "none diagnostic_stage=none";
     }
+    record += " checkpoint=";
+    record += QJsonDocument(QJsonObject{
+        {QStringLiteral("stage"), stageName(event.stage)},
+        {QStringLiteral("outcome"), outcomeName(event.outcome)},
+        {QStringLiteral("sample_available"), snapshot.isAvailable},
+        {QStringLiteral("platform"), snapshot.platform},
+        {QStringLiteral("metrics"), memoryMetrics(snapshot)}
+    }).toJson(QJsonDocument::Compact);
     return record;
 }
 
@@ -127,11 +322,22 @@ void writeQtStartupRecord(
 class QtStartupDiagnosticsSink final : public StartupDiagnosticsSink
 {
 public:
+    explicit QtStartupDiagnosticsSink(
+        std::unique_ptr<ProcessMemorySnapshotProvider> snapshotProvider
+        )
+        : m_snapshotProvider(snapshotProvider
+              ? std::move(snapshotProvider)
+              : std::make_unique<PlatformProcessMemorySnapshotProvider>())
+    {
+    }
+
     void record(const Application::StartupEvent& event) noexcept override
     {
         try
         {
-            const QByteArray record = startupRecord(event);
+            const ProcessMemorySnapshot snapshot =
+                m_snapshotProvider->snapshot();
+            const QByteArray record = startupRecord(event, snapshot);
             writeQtStartupRecord(event, record);
         }
         catch (...)
@@ -139,13 +345,20 @@ public:
             std::fprintf(stderr, "ClassMngrNext startup diagnostics failed.\n");
         }
     }
+
+private:
+    std::unique_ptr<ProcessMemorySnapshotProvider> m_snapshotProvider;
 };
 
 }  // namespace
 
-std::unique_ptr<StartupDiagnosticsSink> makeQtStartupDiagnosticsSink()
+std::unique_ptr<StartupDiagnosticsSink> makeQtStartupDiagnosticsSink(
+    std::unique_ptr<ProcessMemorySnapshotProvider> snapshotProvider
+    )
 {
-    return std::make_unique<QtStartupDiagnosticsSink>();
+    return std::make_unique<QtStartupDiagnosticsSink>(
+        std::move(snapshotProvider)
+        );
 }
 
 void writeEarlyQtStartupDiagnostic(
@@ -154,7 +367,9 @@ void writeEarlyQtStartupDiagnostic(
 {
     try
     {
-        const QByteArray record = startupRecord(event);
+        const ProcessMemorySnapshot snapshot =
+            PlatformProcessMemorySnapshotProvider().snapshot();
+        const QByteArray record = startupRecord(event, snapshot);
         writeQtStartupRecord(event, record);
         std::fprintf(stderr, "%s\n", record.constData());
     }

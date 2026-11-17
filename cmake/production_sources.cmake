@@ -12,8 +12,6 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/enums/schedule_type.h"
     "src/core/language_service.cpp"
     "src/core/language_service.h"
-    "src/core/process_memory_snapshot.cpp"
-    "src/core/process_memory_snapshot.h"
     "src/core/resource_packs/resource_pack_configuration.cpp"
     "src/core/resource_packs/resource_pack_configuration.h"
     "src/core/resource_packs/resource_pack_manager.cpp"
@@ -33,6 +31,11 @@ set(CLASSMNGR_CORE_SOURCES
     "src/core/utils/colorutils.h"
     "src/core/utils/platform.cpp"
     "src/core/utils/platform.h"
+)
+
+set(CLASSMNGR_PROCESS_MEMORY_SOURCES
+    "src/core/process_memory_snapshot.cpp"
+    "src/core/process_memory_snapshot.h"
 )
 
 # Font resolution is shared by the legacy runtime and the narrow Next output

@@ -51,6 +51,9 @@ function(classmngr_check_source_ownership)
         ${CLASSMNGR_COLOR_VALIDATION_SOURCES}
     )
     _classmngr_record_manifest(ClassMngrCore ${CLASSMNGR_CORE_SOURCES})
+    _classmngr_record_manifest(ClassMngrProcessMemory
+        ${CLASSMNGR_PROCESS_MEMORY_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrFontManager
         ${CLASSMNGR_FONT_MANAGER_SOURCES}
     )

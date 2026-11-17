@@ -429,6 +429,7 @@ set_tests_properties(ClassMngrNextCampusDirectoryVisualCapture
 # without linking the legacy runtime or any feature services.
 add_executable(ClassMngrNextBootstrapTests
     tests/next/application_bootstrap_tests.cpp
+    tests/next/captured_speaking_evaluation_ai_url_handler.h
     ${CLASSMNGR_NEXT_BOOTSTRAP_SOURCES}
     $<TARGET_OBJECTS:ClassMngrSettings>
     $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
@@ -453,6 +454,7 @@ target_compile_definitions(ClassMngrNextBootstrapTests
 )
 target_link_libraries(ClassMngrNextBootstrapTests
     PRIVATE
+        ClassMngrProcessMemory
         ClassMngrClassTransferSupport
         ClassMngrNextCalendarUi
         ClassMngrQtZipArchiveReadAdapter
@@ -473,6 +475,37 @@ target_link_libraries(ClassMngrNextBootstrapTests
         Qt6::Test
         Qt6::PdfWidgets
         Qt6::Widgets
+)
+
+add_executable(ClassMngrNextStartupDiagnosticsSinkTests
+    tests/next/qt_startup_diagnostics_sink_tests.cpp
+    src/next/bootstrap/qt_startup_diagnostics_sink.cpp
+)
+target_compile_features(ClassMngrNextStartupDiagnosticsSinkTests
+    PRIVATE
+        cxx_std_23
+)
+target_include_directories(ClassMngrNextStartupDiagnosticsSinkTests
+    PRIVATE
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrNextStartupDiagnosticsSinkTests
+    PRIVATE
+        ClassMngrProcessMemory
+        Qt6::Test
+)
+set_target_properties(ClassMngrNextStartupDiagnosticsSinkTests
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+)
+set_property(TARGET ClassMngrNextStartupDiagnosticsSinkTests
+    PROPERTY CLASSMNGR_STANDALONE_CPP_TEST TRUE
+)
+add_test(
+    NAME ClassMngrNextStartupDiagnosticsSinkTests
+    COMMAND ClassMngrNextStartupDiagnosticsSinkTests
 )
 set_target_properties(ClassMngrNextBootstrapTests
     PROPERTIES

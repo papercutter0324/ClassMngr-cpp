@@ -9,6 +9,7 @@
 #include "next/application/native_english_teacher_birthday_directory_read_port.h"
 #include "next/bootstrap/application_bootstrap.h"
 #include "next/bootstrap/update_coordinator.h"
+#include "captured_speaking_evaluation_ai_url_handler.h"
 #include "next/platform/settings_manager_skipped_update_version_port.h"
 #include "next/platform/qt_update_download_port.h"
 #include "next/platform/qt_update_package_action_port.h"
@@ -96,6 +97,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QRegularExpression>
 #include <QMap>
 #include <QLocale>
 #include <QPainter>
@@ -146,6 +148,7 @@
 #include <vector>
 
 using namespace ClassMngr::Next;
+using ClassMngr::Next::Bootstrap::Tests::CapturedSpeakingEvaluationAiUrlHandler;
 
 class ApplicationBootstrapTests final : public QObject
 {
@@ -1182,17 +1185,43 @@ void verifyWorkspaceStartupOrder(
     QVERIFY(bootstrap.shell()->isVisible());
 }
 
+void ignoreStartupStageMessage(
+    const QtMsgType messageType,
+    const char* stage,
+    const char* outcome,
+    const char* diagnostic,
+    const char* diagnosticStage
+    )
+{
+    const QString pattern = QStringLiteral(
+        R"(^ClassMngrNext startup stage=%1 outcome=%2 diagnostic=%3 diagnostic_stage=%4 checkpoint=\{"metrics":\{[^}]*\},"outcome":"%2","platform":"[^"]*","sample_available":(?:true|false),"stage":"%1"\}$)"
+        ).arg(
+            QString::fromLatin1(stage),
+            QString::fromLatin1(outcome),
+            QString::fromLatin1(diagnostic),
+            QString::fromLatin1(diagnosticStage)
+            );
+    QTest::ignoreMessage(
+        messageType,
+        QRegularExpression(pattern)
+        );
+}
+
 void ignoreCoreServicesFailureMessages()
 {
-    QTest::ignoreMessage(
+    ignoreStartupStageMessage(
         QtInfoMsg,
-        "ClassMngrNext startup stage=process-created outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
+        "process-created",
+        "completed",
+        "none",
+        "none"
         );
-    QTest::ignoreMessage(
+    ignoreStartupStageMessage(
         QtCriticalMsg,
-        "ClassMngrNext startup stage=core-services-created outcome=failed "
-        "diagnostic=stage-failed diagnostic_stage=core-services-created"
+        "core-services-created",
+        "failed",
+        "stage-failed",
+        "core-services-created"
         );
 }
 
@@ -1615,22 +1644,6 @@ public:
 private:
     std::array<QString, 3> m_keys;
     std::array<QVariant, 3> m_values;
-};
-
-class CapturedSpeakingEvaluationAiUrlHandler final : public QObject
-{
-    Q_OBJECT
-
-public:
-    QList<QUrl> urls;
-    QString clipboardTextOnOpen;
-
-public slots:
-    void capture(const QUrl& url)
-    {
-        urls.append(url);
-        clipboardTextOnOpen = QApplication::clipboard()->text();
-    }
 };
 
 class SpeakingEvaluationAiHttpsUrlHandlerRegistration final
@@ -2293,31 +2306,16 @@ createsVisibleShellAndReportsOnlyCompletedStartupStage()
              qPrintable(QStringLiteral("could not stage selected startup resources for %1").arg(locale)));
     InitialPageShowOrderProbe showOrder(application);
 
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=process-created outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=core-services-created outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=shell-created outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=initial-page-ready outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=startup-ready outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
+    ignoreStartupStageMessage(
+        QtInfoMsg, "process-created", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "core-services-created", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "shell-created", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "initial-page-ready", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "startup-ready", "completed", "none", "none");
     Bootstrap::ApplicationBootstrap bootstrap(
         application,
         [&observedEvents, &showOrder](const Application::StartupEvent& event) {
@@ -5818,15 +5816,14 @@ diagnosticsSinkConstructionFailureStopsBeforeShellCreation()
     const bool previousQuitPolicy = application.quitOnLastWindowClosed();
     std::vector<Application::StartupEvent> observedEvents;
 
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=process-created outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
+    ignoreStartupStageMessage(
+        QtInfoMsg, "process-created", "completed", "none", "none");
+    ignoreStartupStageMessage(
         QtCriticalMsg,
-        "ClassMngrNext startup stage=core-services-created outcome=failed "
-        "diagnostic=stage-failed diagnostic_stage=core-services-created"
+        "core-services-created",
+        "failed",
+        "stage-failed",
+        "core-services-created"
         );
     Bootstrap::ApplicationBootstrap bootstrap(
         application,
@@ -5936,51 +5933,24 @@ void ApplicationBootstrapTests::generatedCatalogStartsWithOnlySelectedStartupPay
 
     std::vector<Application::StartupEvent> observedEvents;
     int resolverCalls = 0;
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=process-created outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=core-services-created outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=settings-loaded outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=language-loaded outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=theme-loaded outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=required-fonts-loaded outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=shell-created outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=initial-page-ready outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
-    QTest::ignoreMessage(
-        QtInfoMsg,
-        "ClassMngrNext startup stage=startup-ready outcome=completed "
-        "diagnostic=none diagnostic_stage=none"
-        );
+    ignoreStartupStageMessage(
+        QtInfoMsg, "process-created", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "core-services-created", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "settings-loaded", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "language-loaded", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "theme-loaded", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "required-fonts-loaded", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "shell-created", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "initial-page-ready", "completed", "none", "none");
+    ignoreStartupStageMessage(
+        QtInfoMsg, "startup-ready", "completed", "none", "none");
     Bootstrap::ApplicationBootstrap bootstrap(
         application,
         [&observedEvents](const Application::StartupEvent& event) {
@@ -6165,11 +6135,12 @@ void ApplicationBootstrapTests::documentCatalogMetadataFailureStopsBeforeShellCr
         "ClassMngrNext could not project startup document catalog metadata: "
         "The document catalog metadata resource could not be loaded."
         );
-    QTest::ignoreMessage(
+    ignoreStartupStageMessage(
         QtCriticalMsg,
-        "ClassMngrNext startup stage=initial-page-ready outcome=failed "
-        "diagnostic=initial-experience-unavailable "
-        "diagnostic_stage=initial-page-ready"
+        "initial-page-ready",
+        "failed",
+        "initial-experience-unavailable",
+        "initial-page-ready"
         );
     Bootstrap::ApplicationBootstrap bootstrap(
         application,

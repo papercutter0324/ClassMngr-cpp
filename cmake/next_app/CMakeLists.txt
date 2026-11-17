@@ -121,6 +121,7 @@ target_link_libraries(ClassMngrNext
     PRIVATE
         "$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>"
         "$<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>"
+        ClassMngrProcessMemory
         Qt6::Widgets
         ClassMngrNext::Application
         ClassMngrClassTransferSupport
@@ -149,10 +150,10 @@ get_target_property(_classmngr_next_executable_dependencies
 )
 list(REMOVE_DUPLICATES _classmngr_next_executable_dependencies)
 if(NOT "${_classmngr_next_executable_dependencies}"
-   STREQUAL "Qt6::Core;$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>;$<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextSubPrepOutput;ClassMngrNextRosterOutput;ClassMngrNextSpeakingEvaluationOutput;ClassMngrNextCalendarUi;ClassMngrQtZipArchiveReadAdapter;ClassMngrNextDocumentCatalog;ClassMngrQtPdfPrint;ClassMngrQtPdfGeneration;Qt6::PdfWidgets;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
+   STREQUAL "Qt6::Core;$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>;$<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>;ClassMngrProcessMemory;Qt6::Widgets;ClassMngrNext::Application;ClassMngrClassTransferSupport;ClassMngrNext::Resources;ClassMngrNextWorkspace;ClassMngrNextScheduleOutput;ClassMngrNextSubPrepOutput;ClassMngrNextRosterOutput;ClassMngrNextSpeakingEvaluationOutput;ClassMngrNextCalendarUi;ClassMngrQtZipArchiveReadAdapter;ClassMngrNextDocumentCatalog;ClassMngrQtPdfPrint;ClassMngrQtPdfGeneration;Qt6::PdfWidgets;ClassMngrNextStartupUpdates;ClassMngrTeacherImportParser;ClassMngrScheduleImportParser;Qt6::Concurrent;Qt6::Network")
     message(FATAL_ERROR
         "ClassMngrNext must link its inactive-profiler object before "
-        "the following dependent targets: Qt6::Widgets, "
+        "the following dependent targets: ClassMngrProcessMemory, Qt6::Widgets, "
         "ClassMngrNext::Application, ClassMngrClassTransferSupport, "
         "ClassMngrNext::Resources, "
         "ClassMngrNextWorkspace, ClassMngrNextScheduleOutput, ClassMngrNextSubPrepOutput, ClassMngrNextRosterOutput, "

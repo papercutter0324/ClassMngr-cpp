@@ -151,6 +151,31 @@ classmngr_add_production_objects(
         Qt6::Widgets
         ZLIB::ZLIB
 )
+add_library(ClassMngrProcessMemory STATIC
+    ${CLASSMNGR_PROCESS_MEMORY_SOURCES}
+)
+target_compile_features(ClassMngrProcessMemory
+    PUBLIC
+        cxx_std_23
+)
+target_link_libraries(ClassMngrProcessMemory
+    PUBLIC
+        ClassMngrBuildSettings
+)
+if(WIN32)
+    target_link_libraries(ClassMngrProcessMemory
+        PRIVATE
+            Psapi
+    )
+endif()
+set_target_properties(ClassMngrProcessMemory
+    PROPERTIES
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 add_library(ClassMngrFontManager STATIC
     ${CLASSMNGR_FONT_MANAGER_SOURCES}
 )
@@ -694,6 +719,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrSpeakingEvalPowerPointAdapter
         ${_classmngr_legacy_runtime_dependencies}
     PRIVATE
+        ClassMngrProcessMemory
         ClassMngrQtPdfGeneration
         ClassMngrDomainArchive
         ClassMngrSQLiteSnapshot
@@ -746,6 +772,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrSpeakingEvalPowerPointAdapter
             ${_classmngr_legacy_runtime_dependencies}
         PRIVATE
+            ClassMngrProcessMemory
             ClassMngrQtPdfGeneration
             ClassMngrDomainArchive
             ClassMngrSQLiteSnapshot
@@ -762,7 +789,6 @@ if(WIN32)
         PUBLIC
             Bcrypt
             Crypt32
-            Psapi
     )
 endif()
 
