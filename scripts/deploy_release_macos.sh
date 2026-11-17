@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-QT_DIR="${QT_DIR:-${QT_MACOS_PREFIX:-${HOME}/Qt/6.11.1/macos}}"
+QT_DIR="${QT_DIR:-${QT_MACOS_PREFIX:-${HOME}/Qt/6.12.0/macos}}"
 APP_BUNDLE="${PROJECT_ROOT}/dist/ClassMngr-macos/ClassMngr.app"
 QML_DIR="${QML_DIR:-${PROJECT_ROOT}/src/features/calendar/ui/qml}"
 
