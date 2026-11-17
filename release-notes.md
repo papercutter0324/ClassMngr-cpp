@@ -29,3 +29,14 @@ performance and reliability.
 - Improved startup reliability when an expected resource folder is missing.
 - Added a **Don't Show Again Today** option to birthday notices.
 - Improved Korean text rendering to better match the selected interface font.
+
+# ClassMngr 0.19.1 Release Notes
+
+ClassMngr 0.19.1 is a maintenance release with an improved Windows installer
+and an updated Qt requirement.
+
+## Installer and Build Requirements
+
+- The Windows installer now shows the destination-folder page during upgrades,
+  so you can choose where to install ClassMngr.
+- Updated the required Qt version to 6.12.0.
