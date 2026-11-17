@@ -385,8 +385,7 @@ x64 Debug tree `build/windows-x64-debug` rebuilt the ResourceLoader and
 Bootstrap targets with elevated access after sandbox FileTracker denials.
 `ClassMngrNextResourceLoaderTests` passed 1/1 (0.90s) and
 `ClassMngrNextBootstrapTests` passed 1/1 (80.20s). The full Debug suite has not
-been rerun for this slice. The same-asset optimized Release gate is still
-pending, so this is not yet accepted as a memory fix; no reduction is claimed.
+been rerun for this slice. The optimized Release gate result is recorded in the P9-06R measurement subsection below; it showed no meaningful reduction, so this is not accepted as a memory fix.
 
 #### P9-06R optimized Release measurement - 2026-11-18
 
@@ -418,5 +417,53 @@ per-font snapshots are asynchronous and cannot assign that increase to one
 operation. Qt 6.12's Windows DirectWrite font database reads file-backed font
 data into memory and retains it for font-face creation, consistent with the
 lack of savings from the path change. P9-06R is therefore not accepted as a
-memory fix. P9-06S will measure each operation synchronously in fresh Release
-processes; the strict budget and cadence remain unchanged.
+memory fix. P9-06S now measures each operation synchronously in fresh Release
+processes; see its verified results below. The strict budget and cadence remain
+unchanged.
+
+#### P9-06S fresh-process font allocation probe
+
+The diagnostic probe is in the local Windows x64 Release tree and uses the
+packaged Qt 6.12.0 qwindows plugin and catalog-verified Inter and Pretendard
+files. The optimized probe target compiled with /MD /O2 /Ob2 /DNDEBUG, with
+the actual compiler trace naming font_allocation_probe.cpp; it did not alter
+application startup or the P9-06 gate.
+
+The first complete run is preserved at
+artifacts/phase9/font-allocation-probe/20261117T220225631Z-9ff383b0a0944d9d8d36b6f38d689520/.
+Independent Tester verification reran seven fresh processes in each of five
+scenarios and preserved the result at
+artifacts/phase9/font-allocation-probe/20261117T221147310Z-66cd20c5fc88415a852a17a5d7f15c7d/.
+Both runs used source fingerprint
+29ed73b6b077b410c0fd3ff590a5aceeadd08b4216fd6bc6770c1a6f2d9ee2f8,
+Qt 6.12.0, and packaged Inter (13,172,948 bytes,
+ea4e3d9970b9b6b566110a1b0e13635fe235280b83dd2443dcb3faca1e2456ef) and
+Pretendard (6,739,336 bytes,
+3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22) hashes.
+The second run completed 35/35 processes on 35 unique PIDs. The independent
+Tester checked all raw records for event order, sequence, PID, architecture,
+executable, Qt version, metrics, and completion; it recomputed 203 operation
+deltas and matched the process summary.
+
+| Scenario / operation | Median WS delta | Median private-usage delta |
+|---|---:|---:|
+| No-font process, final | 25.5 MB WS | 6.0 MB private |
+| Inter only, registration | 489,877,504 B | 493,740,032 B |
+| Pretendard only, data registration | 62,431,232 B | 61,841,408 B |
+| Inter then Pretendard, Inter registration | 489,885,696 B | 493,740,032 B |
+| Inter then Pretendard, Pretendard registration | about 61–62 MB | about 61–62 MB |
+| Pretendard then Inter, Inter registration | 488,849,408 B | 493,371,392 B |
+| Family enumeration / startup-font application | no material immediate median delta | no material immediate median delta |
+| Full system-family query | about 5–6 MB WS | negligible private delta |
+
+The dominant measured increase is synchronous with
+QFontDatabase::addApplicationFont(file) for the packaged Inter TTC and is
+stable in both font orders. It does not identify Qt/DirectWrite's internal
+allocator or prove the full application's steady-state budget; the probe does
+not construct the full shell or idle.
+
+Source usage requests six exact styles: Normal 400, Medium 500, DemiBold 600,
+Bold 700, BoldItalic 700, and Black 900 upright. P9-06T compares these six
+unmodified, version-matched static TTFs from Inter v4.0 under DirectWrite
+with the bundled TTC under Qt GDI. The strict P9-06 gate remains unchanged; no
+normal-use memory pass is claimed.

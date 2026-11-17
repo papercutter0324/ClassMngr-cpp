@@ -40,20 +40,42 @@ allocation or cleanup defect, route the fix to that feature boundary.
      increase to one registration. Qt 6.12's Windows DirectWrite source reads
      and retains font bytes for file-backed registration as well; the same-asset
      path change therefore did not reduce memory.
-3. **P9-06S — Isolate font startup allocations** (Proposed diagnostic slice)
-   - Acceptance: a fresh-process Windows x64 Release probe using the app's Qt
-     6.12 runtime and exact packaged font assets captures synchronous memory
-     snapshots around QApplication creation, Inter and Pretendard registration,
-     family enumeration, font application, and system-family enumeration.
-     Compare no-font, each-font, and both registration orders across repeated
-     processes. Preserve source/build/asset provenance and raw evidence. This
-     diagnostic does not pass the normal-use budget or change production behavior.
-4. **P9-07 — Normal navigation and five-minute idle** (Proposed)
+3. **P9-06S — Isolate font startup allocations** (Diagnostic complete; no
+   normal-use budget result)
+   - Acceptance: fresh-process local Windows x64 Release probe using packaged
+     Qt 6.12 and exact catalog-hashed font assets captures synchronous metrics
+     around Qt startup, each font registration, family enumeration, startup
+     font application, and full system-family enumeration.
+   - Result: the probe ran seven fresh processes per scenario in five scenarios
+     (no fonts, Inter, Pretendard, and both orders). An independent local
+     seven-process-per-scenario run validated all 35 process identities and
+     ordered metric records and recomputed 203 operation deltas from raw
+     snapshots. Inter registration added a median about 490 MB WS / 494 MB
+     private in either order; Pretendard added about 62 MB. This localizes the
+     dominant increase to Inter registration but does not establish Qt's
+     internal cause. The diagnostic does not pass the normal-use budget. Both
+     run IDs and hashes are recorded in the Phase 9 progress log.
+4. **P9-06T — Compare Inter faces and Qt font backends**
+   (Proposed diagnostic slice)
+   - Acceptance: compare the packaged Inter TTC registered under the current
+     DirectWrite backend, the six unmodified version-matched v4.0 static TTF
+     faces requested by source usage under DirectWrite, and the same TTC under
+     Qt's GDI backend. The six exact styles are Regular 400, Medium 500,
+     SemiBold 600, Bold 700, BoldItalic 700, and Black 900 upright. First
+     verify official source archive, each asset hash, license, and Qt backend.
+     Use repeated fresh x64 Release processes; record per-registration and
+     cumulative WS/private metrics, family/style resolution, and environment.
+     Preserve all artifacts. This diagnostic does not alter product assets or
+     pass the normal-use budget. If an arm can plausibly save at least 426 MB,
+     implement that candidate separately and run the unchanged packaged P9-06
+     gate before claiming a fix.
+
+5. **P9-07 — Normal navigation and five-minute idle** (Proposed)
    - Acceptance: locally packaged Windows Release exercises repeated normal
      navigation, proves the document catalog has no loaded PDF body, and
      enforces the same strict normal-use working-set limit after navigation
      and idle.
-5. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Proposed)
+6. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Proposed)
    - Acceptance: the locally packaged Windows Release route covers entry,
      summary creation, first selection, refresh, package generation, leave,
      and repeated re-entry. Capture peak and settled process metrics plus

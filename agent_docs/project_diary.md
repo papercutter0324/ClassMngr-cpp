@@ -2,19 +2,17 @@
 
 ### Phase 9 Release memory measurement lessons — 2026-11-18
 
-Do not treat a CMake `Release` configuration name as proof of optimized MSVC
-code: the first local tree had empty Release flags and `/Od` compile commands.
-Verify both generated project settings and actual compiler commands before
-accepting a memory baseline. Also, a process sample taken when an asynchronous
-log line is received may include work from later startup stages; use an
-in-process checkpoint for causal boundaries and keep external samples labeled
-as approximate. The optimized packaged run shows a valid ~680–688 MB working
-set, far above the 250 MiB normal-use limit; the application remains over
-budget until a measured fix passes. Qt 6.12's Windows DirectWrite path reads
-and retains font bytes even for file-backed application-font registration, so
-changing the Inter input path alone did not reduce the measured working set.
-Measure individual synchronous operations before selecting another font asset
-or backend change.
+Do not treat a CMake Release configuration name as proof of optimized MSVC
+code: verify generated project settings and actual compiler commands before
+accepting a memory baseline. A process sample taken when an asynchronous log
+line is received may include work from later startup stages; use synchronous
+in-process checkpoints for causal boundaries. On the verified Qt 6.12 Windows
+Release candidate, QFontDatabase::addApplicationFont(file) for the bundled
+Inter TTC added about 490 MB WS / 494 MB private in fresh processes in either
+font order; file-backed registration did not reduce the full-app measurements.
+This localizes the spike to the registration operation but does not identify
+Qt's internal allocator or explain its cause. Keep the strict 250 MiB gate until
+a source-bound packaged app run passes it.
 
 ### Phase 9 QtPdf error-state lifecycle — 2026-11-18
 

@@ -5,17 +5,17 @@
 Phase 9 remains In progress. Batch 1 is closed. The optimized local Windows
 x64 Release P9-06 run completed valid 301-sample traces for empty and
 representative workspaces; all six startup-ready/external-startup/five-minute
-working-set checkpoints exceeded the strict 262,144,000-byte limit. P9-06R
-passed optimized build and evidence validation but its file-backed registration
-of the exact catalog-verified Inter TTC did not reduce memory: its six points
-were 680,534,016–688,103,424 bytes, within 1 MB of baseline. Qt 6.12's Windows
-DirectWrite implementation still reads and retains font data on the file-backed
-path. No memory pass is claimed. The next slice isolates synchronous memory
-effects of each font operation before another production change.
+working-set checkpoints exceeded the strict 262,144,000-byte limit. P9-06R's
+same-asset Inter file-backed registration did not reduce memory: its six points
+were 680,534,016–688,103,424 bytes, within 1 MB of baseline. Two independent
+fresh-process Qt 6.12 Release probes now confirm a median ~490 MB WS / ~494 MB
+private increase at Inter registration itself, regardless of font order.
+This identifies the large synchronous operation but not Qt's internal cause.
+No memory pass is claimed. The next diagnostic compares the six exact static
+Inter faces under DirectWrite and the bundled TTC under Qt GDI.
 
-See the [Phase 9 progress log](../plans/qt-rewrite-heavy-route-plan/10-Phase-9-Progress-Log.md)
-and [current slice-batch tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-for optimized build provenance, invalid follow-up runs, and the diagnostic probe.
+See the Phase 9 progress log and current slice-batch tracker for source/build
+provenance, run artifacts, and the next diagnostic.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

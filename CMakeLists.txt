@@ -268,6 +268,7 @@ if(BUILD_TESTING)
     include(cmake/tests/platform_and_reports.cmake)
     include(cmake/tests/next.cmake)
     include(cmake/tests/phase7_profile_file_workflow.cmake)
+    include(cmake/phase9/font_allocation_probe.cmake)
 
     # These standalone test executables instantiate shared widgets without
     # inheriting the production application's embedded resource collection.
