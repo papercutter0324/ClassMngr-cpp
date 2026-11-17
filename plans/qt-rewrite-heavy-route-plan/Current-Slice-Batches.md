@@ -47,17 +47,21 @@ allocation or cleanup defect, route that fix to its owning feature boundary.
      the broader scenario gates; keep only the active batch and the next
      discovered batch here.
 4. **P9-04 — QtPdf and output lifecycle trace** (Locally accepted;
-   hosted verification pending)
+   hosted re-verification pending)
    - Acceptance: document load/status/page/render/close/release/reopen and
      PDF/export object lifetimes are observable in the shared trace, including
      release after leaving or closing the owning view/operation.
    - Verification: independent macOS Debug build and focused CTest passed
      5/5, including a 40-selection check proving 32 page-detail events and 8
-     suppressed details. `git diff --check` passed. QtPdf view records page
-     selection rather than internal render completion, which QtPdf does not
-     expose at this boundary. Hosted Windows/Linux checks remain pending.
-5. **P9-05 — Source-bound Windows Release evidence** (Locally accepted;
-   hosted verification pending)
+     suppressed details. The first hosted full Windows x64 Debug run failed
+     only this target (619/620; process exception `0xc0000409`). P9-04R now
+     exercises the same 40 `currentPageChanged` events using alternating
+     `QPdfPageNavigator::update()` calls and deterministic snapshots, while
+     retaining real `jump()` coverage. Independent macOS focused CTest passed
+     12/12 after the repair; Windows re-verification is pending. QtPdf view
+     records page selection rather than internal render completion, which
+     QtPdf does not expose at this boundary.
+5. **P9-05 — Source-bound Windows Release evidence** (Accepted; hosted check passed)
    - Acceptance: push-triggered packaging checks out the exact commit that
      triggered the workflow, reports the candidate SHA, and fails before
      packaging if the checked-out SHA differs. Manual dispatch may continue to
@@ -68,7 +72,8 @@ allocation or cleanup defect, route that fix to its owning feature boundary.
      candidate/trigger SHAs to the Actions summary. Explicit reusable-workflow
      `source_ref` and manual dispatch's selected ref remain supported.
      `actionlint` and PowerShell were unavailable for local validation. Hosted
-     Windows Release evidence remains pending.
+     x64 and ARM64 Release jobs passed, including the candidate SHA guard and
+     package artifacts. Batch 1 remains open for Windows x64 Debug re-run.
 
 ## Phase 9 — Batch 2: Packaged Release scenario gates (Discovered)
 

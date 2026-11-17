@@ -6,18 +6,19 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-17
-- Current milestone: Phase 9 began on macOS after Phases 0–8 and 8a closed.
-  Phase 8 closed at candidate `744e7ef1`; hosted Windows x64 and Linux x64
-  baselines passed 618/618 and 621/621, required outputs and 17-page C53 parity
-  passed on both hosts, and the cross-platform Release package matrix remains
-  accepted. Phase 9 Batch 1 is adding common startup, page, resource, and QtPdf
-  lifecycle memory traces. The first active slice is P9-01; hosted Windows
-  Debug and packaged Release verification remain required. The existing
-  Windows Release memory step is advisory and does not yet enforce the Phase 9
-  `<250 MiB` gate. See the [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
+- Current milestone: Phase 9 Batch 1 remains open. P9-04R passed focused
+  macOS CTest 12/12; hosted Windows Release x64/ARM64 and Linux x64 Release
+  passed, but baseline run `44058668011` had 619/620 Windows x64 Debug tests
+  pass; `ClassMngrNextPlatformQtPdfSessionReleaseTests` exited `0xc0000409`
+  with cause unconfirmed. The next acceptance gate is a passing hosted Windows
+  x64 Debug rerun; keep Batch 1 open until it passes. Then begin Batch 2 with
+  P9-06's packaged startup-ready and five-minute-idle memory gate. Existing memory
+  sampling remains advisory, with no Phase 9 budget pass claimed. See the
+  [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
   [Phase 8a closeout](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
-  [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), and [current batch
-  tracker](Current-Slice-Batches.md).
+  [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), [Phase 9 progress
+  log](10-Phase-9-Progress-Log.md#batch-1-hosted-verification-and-p9-04r--2026-11-17),
+  and [current batch tracker](Current-Slice-Batches.md).
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

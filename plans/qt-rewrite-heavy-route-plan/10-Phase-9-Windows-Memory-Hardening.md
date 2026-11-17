@@ -49,10 +49,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   resource/cache/image/font diagnostics; its hosted checks remain pending.
   P9-04 is locally accepted with QtPdf and output lifecycle traces, bounded
   page/render records, and release/reopen coverage, committed as `4a8141ff`.
-  P9-05 is locally accepted after binding push-triggered Windows Release
-  packaging to its triggering SHA and checking that SHA before build/package.
-  Hosted Windows/Linux Debug and Windows packaged Release results remain
-  required at Batch 1 close.
+  P9-05 is accepted after binding push-triggered Windows Release packaging to
+  its triggering SHA; hosted x64 and ARM64 packages and the candidate-SHA guard
+  passed. The first hosted baseline found one Windows x64 Debug failure in the
+  P9-04 QtPdf session test (619/620; process exception `0xc0000409`). P9-04R
+  locally passes after changing the cap test to emit repeated page-change
+  signals without jump-history accumulation or native sampler calls. Hosted
+  Windows x64 re-verification remains required before Batch 1 closes.
   The existing Windows Release
   memory step is advisory and has no numeric Phase 9 threshold, so no memory-gate
   result is claimed yet.

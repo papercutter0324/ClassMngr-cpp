@@ -208,6 +208,32 @@ to use the selected `github.ref`, and callers may still provide `source_ref`.
 Independent workflow review found no issues; Ruby Psych parsed the YAML and
 `git diff --check` passed. `actionlint` and PowerShell were unavailable, so
 GitHub expression/schema and PowerShell execution validation are deferred to
-hosted Windows. Batch 1 is ready for its authorized push; hosted Windows/Linux
-Debug and packaged Windows Release checks remain pending. Existing Windows
-Release memory sampling remains advisory and is not a Phase 9 budget pass.
+hosted Windows. Existing Windows Release memory sampling remains advisory and
+is not a Phase 9 budget pass.
+
+#### Batch 1 hosted verification and P9-04R — 2026-11-17
+
+Batch 1 was pushed at `e3346a57869a04b91c10fa6a1c5de8bec2f3289a`.
+Windows Release run `44058668038` passed both x64 and ARM64 jobs; both package
+artifacts were uploaded, and the push-triggered candidate-SHA guard passed.
+Linux x64 Release run `44058668021` passed. In Refactoring baseline run
+`44058668011`, Linux x64 Debug and the Windows ARM64 Debug cross-build passed,
+and SQL Sub Prep parity passed. Windows x64 Debug CTest reported 619/620; only
+`ClassMngrNextPlatformQtPdfSessionReleaseTests` failed with process exception
+`0xc0000409` after 6.93 seconds. The job log contains no assertion, Qt fatal,
+or stack trace, and does not identify the QtTest subfunction. The Windows
+baseline artifacts include `LastTest.log` and `LastTestsFailed.log`; no separate
+crash dump was uploaded. The first Batch 1 hosted verification therefore does
+not pass.
+
+The focused P9-04R repair keeps real single-`jump()` coverage and changes the
+40-event cap test to alternating `QPdfPageNavigator::update()` calls, which
+exercise all 40 page-change records without accumulating jump history. It
+injects deterministic Windows-shaped snapshots so this event-cap test is not
+coupled to repeated Windows process/thread sampling. Assertions still verify
+40 changed pages, 32 details, and 8 suppressed events. The executor build and
+independent local macOS Debug CTest both passed; the target reports 12/12 and
+`git diff --check` is clean. This is an isolation repair based on the strongest
+new-code hypothesis; the Windows crash cause remains unconfirmed until the
+hosted x64 Debug suite reruns. Batch 1 stays open and the repair must be
+committed and pushed before its hosted re-verification.

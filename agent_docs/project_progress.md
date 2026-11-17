@@ -1,5 +1,23 @@
 # Project Progress
 
+## Phase 9 Batch 1 handoff — 2026-11-17
+
+Phase 9 remains In progress. The handoff commit follows Batch 1 push
+`e3346a57869a04b91c10fa6a1c5de8bec2f3289a`. Hosted Windows Release x64/ARM64
+and Linux x64 Release passed; baseline run
+[44058668011](https://github.com/papercutter0324/ClassMngr-cpp/actions/runs/44058668011)
+passed Linux x64 Debug and the Windows ARM64 Debug cross-build, but Windows
+x64 Debug had one `ClassMngrNextPlatformQtPdfSessionReleaseTests` process exit
+`0xc0000409` (619/620). No assertion, Qt fatal, stack, or failing subtest was
+identified, so the cause remains unconfirmed.
+
+P9-04R isolates its 40-event cap test from accumulated jump history and native
+process sampling; the independent local macOS focused CTest passed 12/12. The
+new push must receive hosted Windows x64 re-verification before Batch 1 closes.
+Existing Windows memory sampling remains advisory; no numeric Phase 9 budget
+pass is claimed. After Batch 1 passes, continue with Batch 2 P9-06 as scoped in
+the [Phase 9 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).
+
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 
 Deployment `phase8_gate_close_20261117` completed on Heavy; Light was used for

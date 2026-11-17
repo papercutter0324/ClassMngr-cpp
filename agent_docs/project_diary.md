@@ -1,5 +1,14 @@
 # Project Diary
 
+### Phase 9 handoff lesson — 2026-11-17
+
+A Windows process exit such as `0xc0000409` without a stack, assertion, or
+identified test case is not enough to claim a root cause. Keep the cause
+unconfirmed, isolate stress coverage from native platform sampling where the
+contract allows it, and rerun the full hosted Windows test before accepting the
+repair. A local macOS pass validates the portable test behavior but cannot
+validate Windows-only native runtime behavior.
+
 ### Phase 8/8a exit-gate closeout — 2026-11-17
 
 The source-boundary review found the font-registration, Calendar archive-read,

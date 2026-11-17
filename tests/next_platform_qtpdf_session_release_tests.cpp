@@ -30,6 +30,22 @@ constexpr auto kReference = "resource://documents/Guides/DYB Lesson Planning Gui
 constexpr auto kBodyPath = "assets/documents/Guides/DYB Lesson Planning Guide.pdf";
 constexpr auto kBodyId = "document.body:Guides/DYB Lesson Planning Guide.pdf";
 
+class FixedDiagnosticMemory final : public ProcessMemorySnapshotProvider
+{
+public:
+    ProcessMemorySnapshot snapshot() const override
+    {
+        ProcessMemorySnapshot memory;
+        memory.platform = QStringLiteral("windows");
+        memory.isAvailable = true;
+        memory.workingSetBytes = 4096;
+        memory.workingSetBytesAvailable = true;
+        memory.capturedAt = QDateTime::fromString(
+            QStringLiteral("2026-11-17T12:00:00.000Z"), Qt::ISODateWithMs);
+        return memory;
+    }
+};
+
 std::unique_ptr<Resources::ResourceLoader> loader(
     Resources::ResourceDiagnosticsSink sink = {})
 {
@@ -172,7 +188,7 @@ void NextPlatformQtPdfSessionReleaseTests::navigationDetailsAreBoundedAndRelease
     QVERIFY(resources);
     QWidget parent;
     QVector<QJsonObject> events;
-    auto diagnostics = std::make_shared<ProcessMemoryDiagnostics>(nullptr,
+    auto diagnostics = std::make_shared<ProcessMemoryDiagnostics>(std::make_unique<FixedDiagnosticMemory>(),
         [&](const QByteArray& bytes) { events.append(QJsonDocument::fromJson(bytes).object()); });
     Platform::QtPdfViewerSession session(*resources, &parent, diagnostics);
     QVERIFY(session.open(Domain::DocumentContentReference(kReference), QStringLiteral("Viewer:bounded-navigation")));
@@ -183,18 +199,29 @@ void NextPlatformQtPdfSessionReleaseTests::navigationDetailsAreBoundedAndRelease
     QCOMPARE(navigator->currentPage(), 0);
     const qint64 initialSelections = events.back().value(QStringLiteral("details")).toObject()
         .value(QStringLiteral("page_selection_count")).toInteger();
+    const bool initialBackAvailable = navigator->backAvailable();
+    const bool initialForwardAvailable = navigator->forwardAvailable();
+    QSignalSpy changedPages(navigator, &QPdfPageNavigator::currentPageChanged);
     for (int index = 0; index < 40; ++index)
     {
         const int page = index % 2 == 0 ? 1 : 0;
-        navigator->jump(page, {}, 1.0);
+        // Exercise changing observations without adding jump-history entries
+        // or requesting a rendering scroll for each counter observation.
+        navigator->update(page, {}, 1.0);
         QCOMPARE(navigator->currentPage(), page);
     }
+    QCOMPARE(changedPages.size(), 40);
+    QCOMPARE(navigator->backAvailable(), initialBackAvailable);
+    QCOMPARE(navigator->forwardAvailable(), initialForwardAvailable);
     QVERIFY(session.release());
 
     int selectionDetails = 0;
     QJsonObject released;
     for (const auto& event : events)
     {
+        QCOMPARE(event.value(QStringLiteral("platform")).toString(), QStringLiteral("windows"));
+        QCOMPARE(event.value(QStringLiteral("memory")).toObject()
+            .value(QStringLiteral("working_set_bytes")).toInteger(), 4096);
         const auto details = event.value(QStringLiteral("details")).toObject();
         if (event.value(QStringLiteral("event")) == QStringLiteral("qpdf-view-page-selection"))
         {
