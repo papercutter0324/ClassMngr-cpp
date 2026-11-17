@@ -11,8 +11,11 @@ Release candidate, QFontDatabase::addApplicationFont(file) for the bundled
 Inter TTC added about 490 MB WS / 494 MB private in fresh processes in either
 font order; file-backed registration did not reduce the full-app measurements.
 This localizes the spike to the registration operation but does not identify
-Qt's internal allocator or explain its cause. Keep the strict 250 MiB gate until
-a source-bound packaged app run passes it.
+Qt's internal allocator or explain its cause. Six original Inter v4.0 static
+faces and the original TTC under Qt GDI both measured far below the DirectWrite
+TTC, but the static font version differs and GDI changes rendering broadly.
+Test the exact v4.1 static files before adopting either candidate. Keep the
+strict 250 MiB gate until a source-bound packaged app run passes it.
 
 ### Phase 9 QtPdf error-state lifecycle — 2026-11-18
 

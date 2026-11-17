@@ -39,15 +39,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Codex
 - Last updated: 2026-11-18
 - Current note: Phase 9 remains In progress. Batch 1 is closed after local
-  Windows x64 Debug verification (620/620 CTests, no skips). The optimized
-  packaged P9-06 and P9-06R scenarios have valid evidence but remain above the
-  262,144,000-byte limit. Two independent P9-06S local Windows x64 Release
-  probes found a median about 490 MB WS / 494 MB private increase synchronous
-  with registering the packaged Inter TTC; this is not a budget pass or a
-  finding about Qt's internal cause. P9-06T will compare the six exact source-
-  requested static Inter faces under DirectWrite with the bundled TTC under
-  GDI in fresh processes. See the Phase 9 progress log and current slice-batch
-  tracker for evidence and live sequencing.
+  Windows x64 Debug verification (620/620 CTests, no skips). P9-06 and P9-06R
+  are valid optimized packaged Windows Release budget failures. P9-06S isolated
+  a median ~490 MB WS / ~494 MB private increase during Inter TTC registration
+  under Qt DirectWrite. P9-06T measured low registration deltas for six static
+  v4.0 TTFs and for the TTC under GDI, but the static set's version tag is
+  4.000 instead of the packaged 4.001 and GDI changes text rendering broadly.
+  P9-06U will probe exact-version v4.1 static faces under DirectWrite before a
+  production change. See the Phase 9 progress log and current slice-batch
+  tracker. The strict memory limit and cadence remain unchanged.
 
 ### Slice batches
 

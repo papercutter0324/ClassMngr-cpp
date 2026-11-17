@@ -9,18 +9,19 @@
 - Current milestone: Phase 9 remains In progress. Batch 1 is closed. P9-06's
   valid optimized local Windows Release run completed both 301-sample
   scenarios, but all six normal-use working-set checkpoints exceeded
-  262,144,000 bytes; the memory exit gate has not passed. P9-06R's same-asset
-  file-backed Inter registration did not reduce memory; its complete optimized
-  Release result remained within 1 MB of baseline. Two independent seven-run
-  fresh-process probes now confirm the Inter registration operation adds about
-  490 MB WS / 494 MB private under packaged Qt 6.12, regardless of font order.
-  This is an operation-level measurement, not a Phase 9 budget result. P9-06T
-  will compare exact version-matched static Inter faces before any product font
-  change. No memory budget pass is claimed. See the
+  262,144,000 bytes. P9-06R's file-backed Inter route did not reduce memory.
+  Independent P9-06S probes identify a median about 490 MB WS / 494 MB private
+  increase synchronous with Inter TTC registration under Qt 6.12 DirectWrite.
+  P9-06T found low registration memory using six original v4.0 static TTFs or
+  the TTC under GDI, but v4.0 differs from the bundled TTC's 4.001 version tag
+  and GDI changes rendering across Qt. P9-06U will test the exact-version v4.1
+  static faces before a product change. No Phase 9 memory budget pass is
+  claimed. See the
   [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
   [Phase 8a closeout](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
   [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), [Phase 9 progress
   log](10-Phase-9-Progress-Log.md), and [current batch tracker](Current-Slice-Batches.md).
+
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
   does not reopen that declaration; see the [Phase 0 progress log](01-Phase-0-Progress-Log.md)

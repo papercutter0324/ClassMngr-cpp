@@ -1,20 +1,22 @@
 <#
 .SYNOPSIS
-Runs source-bound fresh-process Qt font allocation probes for Windows x64 Release.
+Runs source-bound fresh-process Inter representation/backend probes for Windows x64 Release.
 
 .DESCRIPTION
-This diagnostic captures synchronous process-memory snapshots around Qt startup,
-application-font registration and queries, startup-font application, and the full
-system-font-family query. It does not launch or modify the packaged application.
+This diagnostic compares the packaged Inter TTC under DirectWrite and GDI with
+the six official Inter v4.0 static TTFs under DirectWrite. It does not launch or
+modify the packaged application.
 #>
 [CmdletBinding()]
 param(
     [string]$RepositoryRoot = (Join-Path $PSScriptRoot "..\.."),
     [string]$BuildDirectory = "build\windows-x64-release",
     [string]$PackageDirectory = "dist\ClassMngr-windows-x64",
+    [Parameter(Mandatory = $true)]
+    [string]$InterV40SourceDirectory,
     [string]$QtPrefix = "",
     [string]$EvidenceRoot = "artifacts\phase9\font-allocation-probe",
-    [ValidateRange(5, 20)]
+    [ValidateRange(7, 7)]
     [int]$Repetitions = 7,
     [switch]$SkipBuild,
     [string]$ExistingBuildLog = ""
@@ -23,8 +25,8 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$TaskId = "P9_06S_FONT_ALLOCATION_PROBE"
-$Schema = "classmngr-phase9-font-allocation-probe-v1"
+$TaskId = "P9_06T_INTER_REPRESENTATION_BACKEND_PROBE"
+$Schema = "classmngr-phase9-font-allocation-probe-v2"
 $IncludedRoots = @(
     "CMakeLists.txt",
     "CMakePresets.json",
@@ -39,11 +41,17 @@ $IncludedRoots = @(
     "third_party"
 )
 $Scenarios = @(
-    "no-font",
-    "inter-only",
-    "pretendard-only",
-    "inter-then-pretendard",
-    "pretendard-then-inter"
+    "inter-ttc-directwrite",
+    "inter-static-directwrite",
+    "inter-ttc-gdi"
+)
+$StaticFaceDefinitions = @(
+    [ordered]@{ key = "regular"; file = "Inter-Regular.ttf"; style = "Regular"; weight = 400; italic = $false }
+    [ordered]@{ key = "medium"; file = "Inter-Medium.ttf"; style = "Medium"; weight = 500; italic = $false }
+    [ordered]@{ key = "semibold"; file = "Inter-SemiBold.ttf"; style = "SemiBold"; weight = 600; italic = $false }
+    [ordered]@{ key = "bold"; file = "Inter-Bold.ttf"; style = "Bold"; weight = 700; italic = $false }
+    [ordered]@{ key = "bold-italic"; file = "Inter-BoldItalic.ttf"; style = "Bold Italic"; weight = 700; italic = $true }
+    [ordered]@{ key = "black"; file = "Inter-Black.ttf"; style = "Black"; weight = 900; italic = $false }
 )
 $RepositoryRoot = [System.IO.Path]::GetFullPath($RepositoryRoot)
 $BuildDirectory = if ([System.IO.Path]::IsPathRooted($BuildDirectory)) {
@@ -55,6 +63,11 @@ $PackageDirectory = if ([System.IO.Path]::IsPathRooted($PackageDirectory)) {
     [System.IO.Path]::GetFullPath($PackageDirectory)
 } else {
     [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot $PackageDirectory))
+}
+$InterV40SourceDirectory = if ([System.IO.Path]::IsPathRooted($InterV40SourceDirectory)) {
+    [System.IO.Path]::GetFullPath($InterV40SourceDirectory)
+} else {
+    [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot $InterV40SourceDirectory))
 }
 $EvidenceRoot = if ([System.IO.Path]::IsPathRooted($EvidenceRoot)) {
     [System.IO.Path]::GetFullPath($EvidenceRoot)
@@ -93,6 +106,9 @@ $Manifest = [ordered]@{
     configuration = $null
     qtRuntime = $null
     package = $null
+    upstreamRelease = $null
+    staticFontAssets = $null
+    licenseIdentity = $null
     probe = $null
     executionOrder = [System.Collections.Generic.List[string]]::new()
     processRuns = $ProcessRuns
@@ -253,6 +269,31 @@ function Get-ReleaseConfiguration {
     }
 }
 
+function Get-ProbeProjectReleaseConfiguration {
+    param([string]$ProjectPath)
+    if (-not (Test-Path -LiteralPath $ProjectPath -PathType Leaf)) { throw "Generated probe project is missing: $ProjectPath" }
+    $project = [System.Xml.XmlDocument]::new()
+    $project.Load($ProjectPath)
+    $namespace = [System.Xml.XmlNamespaceManager]::new($project.NameTable)
+    $namespace.AddNamespace("msbuild", "http://schemas.microsoft.com/developer/msbuild/2003")
+    $groups = @($project.SelectNodes("//msbuild:ItemDefinitionGroup", $namespace) | Where-Object {
+        $_.GetAttribute("Condition") -match "'\$\(Configuration\)\|\$\(Platform\)'\s*==\s*'Release\|x64'"
+    })
+    if ($groups.Count -ne 1) { throw "Expected one Release|x64 probe compiler group; found $($groups.Count)." }
+    $compile = $groups[0].SelectSingleNode("msbuild:ClCompile", $namespace)
+    $optimization = $compile.SelectSingleNode("msbuild:Optimization", $namespace).InnerText.Trim()
+    $definitions = $compile.SelectSingleNode("msbuild:PreprocessorDefinitions", $namespace).InnerText
+    if ($optimization -notin @("MaxSpeed", "MinSpace") -or $definitions -notmatch '(^|;)NDEBUG(;|%\()') {
+        throw "Generated Release|x64 probe project does not enable optimization and NDEBUG."
+    }
+    return [ordered]@{
+        path = [System.IO.Path]::GetFullPath($ProjectPath)
+        sha256 = Get-FileSha256 -Path $ProjectPath
+        optimization = $optimization
+        definesNdebug = $true
+    }
+}
+
 function Get-PackageFontIdentity {
     param([string]$LogicalId, [string]$RelativePath, [string]$ExpectedType, [object]$Catalog, [string]$Root)
     $records = @($Catalog.records | Where-Object { $_.logical_id -eq $LogicalId })
@@ -277,6 +318,189 @@ function Get-PackageFontIdentity {
         sha256 = $actualHash
         catalogSha256 = ([string]$baked.sha256).ToLowerInvariant()
         catalogBytes = [Int64]$baked.bytes
+    }
+}
+
+function Get-BigEndianUInt16 {
+    param([byte[]]$Bytes, [int]$Offset)
+    if ($Offset -lt 0 -or ($Offset + 2) -gt $Bytes.Length) { throw "Invalid sfnt uint16 offset $Offset." }
+    return (([int]$Bytes[$Offset] -shl 8) -bor [int]$Bytes[$Offset + 1])
+}
+
+function Get-BigEndianUInt32 {
+    param([byte[]]$Bytes, [int]$Offset)
+    if ($Offset -lt 0 -or ($Offset + 4) -gt $Bytes.Length) { throw "Invalid sfnt uint32 offset $Offset." }
+    return (([UInt64]$Bytes[$Offset] -shl 24) -bor
+        ([UInt64]$Bytes[$Offset + 1] -shl 16) -bor
+        ([UInt64]$Bytes[$Offset + 2] -shl 8) -bor
+        [UInt64]$Bytes[$Offset + 3])
+}
+
+function Get-SfntFontMetadata {
+    param([string]$Path)
+    $bytes = [System.IO.File]::ReadAllBytes($Path)
+    if ($bytes.Length -lt 12 -or (Get-BigEndianUInt16 $bytes 4) -le 0) {
+        throw "Font is not a valid sfnt file: $Path"
+    }
+    $tableCount = Get-BigEndianUInt16 $bytes 4
+    $tables = @{}
+    for ($index = 0; $index -lt $tableCount; $index++) {
+        $recordOffset = 12 + ($index * 16)
+        if (($recordOffset + 16) -gt $bytes.Length) { throw "Truncated sfnt table directory: $Path" }
+        $tag = [System.Text.Encoding]::ASCII.GetString($bytes, $recordOffset, 4)
+        $offset = [UInt64](Get-BigEndianUInt32 $bytes ($recordOffset + 8))
+        $length = [UInt64](Get-BigEndianUInt32 $bytes ($recordOffset + 12))
+        if (($offset + $length) -gt [UInt64]$bytes.Length) { throw "Sfnt table $tag is out of bounds: $Path" }
+        $tables[$tag] = [ordered]@{ offset = [Int64]$offset; length = [Int64]$length }
+    }
+    if (-not $tables.ContainsKey("name") -or -not $tables.ContainsKey("OS/2")) {
+        throw "Font lacks required name or OS/2 tables: $Path"
+    }
+
+    $nameTable = $tables["name"]
+    if ($nameTable.length -lt 6) { throw "Font name table is truncated: $Path" }
+    $nameFormat = Get-BigEndianUInt16 $bytes $nameTable.offset
+    $nameCount = Get-BigEndianUInt16 $bytes ($nameTable.offset + 2)
+    $stringOffset = Get-BigEndianUInt16 $bytes ($nameTable.offset + 4)
+    if (($nameTable.offset + 6 + ($nameCount * 12)) -gt ($nameTable.offset + $nameTable.length)) {
+        throw "Font name records are truncated: $Path"
+    }
+    $nameValues = @{}
+    for ($index = 0; $index -lt $nameCount; $index++) {
+        $recordOffset = $nameTable.offset + 6 + ($index * 12)
+        $platform = Get-BigEndianUInt16 $bytes $recordOffset
+        $language = Get-BigEndianUInt16 $bytes ($recordOffset + 4)
+        $nameId = Get-BigEndianUInt16 $bytes ($recordOffset + 6)
+        $byteLength = Get-BigEndianUInt16 $bytes ($recordOffset + 8)
+        $valueOffset = Get-BigEndianUInt16 $bytes ($recordOffset + 10)
+        if ($nameId -notin @(1, 2, 4, 5, 6, 16, 17) -or $platform -notin @(0, 3)) { continue }
+        $start = $nameTable.offset + $stringOffset + $valueOffset
+        if (($start + $byteLength) -gt ($nameTable.offset + $nameTable.length)) { throw "Font name string is out of bounds: $Path" }
+        $value = [System.Text.Encoding]::BigEndianUnicode.GetString($bytes, $start, $byteLength).Trim([char]0)
+        if (-not $nameValues.ContainsKey($nameId)) {
+            $nameValues[$nameId] = [System.Collections.Generic.List[object]]::new()
+        }
+        $nameValues[$nameId].Add([ordered]@{
+            platform = $platform
+            language = $language
+            value = $value
+        })
+    }
+    $selectName = {
+        param([int]$NameId, [int]$FallbackId)
+        $selectedId = if ($nameValues.ContainsKey($NameId)) { $NameId } else { $FallbackId }
+        if (-not $nameValues.ContainsKey($selectedId)) { return "" }
+        $entries = @($nameValues[$selectedId] | Sort-Object @{
+            Expression = { if ($_.platform -eq 3 -and $_.language -eq 1033) { 0 } elseif ($_.platform -eq 3) { 1 } else { 2 } }
+        })
+        return [string]$entries[0].value
+    }
+    $os2 = $tables["OS/2"]
+    if ($os2.length -lt 64) { throw "Font OS/2 table is too short for weight/italic metadata: $Path" }
+    $weight = Get-BigEndianUInt16 $bytes ($os2.offset + 4)
+    $selection = Get-BigEndianUInt16 $bytes ($os2.offset + 62)
+    return [ordered]@{
+        path = [System.IO.Path]::GetFullPath($Path)
+        sizeBytes = [Int64]$bytes.Length
+        sha256 = Get-FileSha256 -Path $Path
+        sfntNameFormat = $nameFormat
+        familyName = & $selectName 16 1
+        subfamilyName = & $selectName 17 2
+        fullName = & $selectName 4 4
+        version = & $selectName 5 5
+        postScriptName = & $selectName 6 6
+        weight = [int]$weight
+        italic = (($selection -band 1) -ne 0)
+    }
+}
+
+function Get-Sha256OfNormalizedText {
+    param([string]$Value)
+    return Get-StringSha256 -Value ($Value -replace "`r`n?", "`n")
+}
+
+function Get-InterV40Assets {
+    param([string]$SourceDirectory)
+    $root = [System.IO.Path]::GetFullPath($SourceDirectory)
+    $archivePath = Join-Path $root "Inter-4.0.zip"
+    $releaseMetadataPath = Join-Path $root "github-release-v4.0.json"
+    $extractedRoot = Join-Path $root "extracted"
+    foreach ($path in @($archivePath, $releaseMetadataPath, $extractedRoot)) {
+        if (-not (Test-Path -LiteralPath $path)) { throw "Inter v4.0 source material is missing: $path" }
+    }
+    $release = Get-Content -LiteralPath $releaseMetadataPath -Raw | ConvertFrom-Json
+    $asset = @($release.assets | Where-Object { $_.name -eq "Inter-4.0.zip" })
+    $expectedUrl = "https://github.com/rsms/inter/releases/download/v4.0/Inter-4.0.zip"
+    if ($release.tag_name -ne "v4.0" -or $release.html_url -ne "https://github.com/rsms/inter/releases/tag/v4.0" -or
+        $asset.Count -ne 1 -or $asset[0].browser_download_url -ne $expectedUrl) {
+        throw "Downloaded Inter archive is not the official rsms/inter v4.0 release asset."
+    }
+    $archiveSize = (Get-Item -LiteralPath $archivePath).Length
+    $archiveHash = Get-FileSha256 -Path $archivePath
+    if ($archiveSize -ne [Int64]$asset[0].size -or $archiveHash -ne "ff970a5d4561a04f102a7cb781adbd6ac4e9b6c460914c7a101f15acb7f7d1a4") {
+        throw "Inter v4.0 release archive size/SHA-256 does not match the locally verified release asset."
+    }
+    $archiveLicensePath = Join-Path $extractedRoot "LICENSE.txt"
+    $bundledLicensePath = Join-Path $RepositoryRoot "licenses\fonts\inter\LICENSE.txt"
+    if (-not (Test-Path -LiteralPath $archiveLicensePath -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $bundledLicensePath -PathType Leaf)) {
+        throw "Inter archive license or bundled package license is missing."
+    }
+    $archiveLicenseText = [System.IO.File]::ReadAllText($archiveLicensePath)
+    $bundledLicenseText = [System.IO.File]::ReadAllText($bundledLicensePath)
+    if ((Get-Sha256OfNormalizedText $archiveLicenseText) -ne (Get-Sha256OfNormalizedText $bundledLicenseText)) {
+        throw "The bundled Inter license text differs from the official v4.0 release license."
+    }
+    if ([regex]::IsMatch($bundledLicenseText, '(?im)^Reserved Font Name\s*:')) {
+        throw "Bundled Inter license declares a Reserved Font Name; static-face substitution requires review."
+    }
+
+    $faces = [System.Collections.Generic.List[object]]::new()
+    $faceRoot = Join-Path $extractedRoot "extras\ttf"
+    foreach ($definition in $StaticFaceDefinitions) {
+        $path = Join-Path $faceRoot $definition.file
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Inter v4.0 static face is missing: $path" }
+        $metadata = Get-SfntFontMetadata -Path $path
+        if ($metadata.familyName -ne "Inter" -or
+            $metadata.subfamilyName -ne $definition.style -or
+            $metadata.version -notmatch '^Version 4\.000;git-' -or
+            $metadata.weight -ne $definition.weight -or
+            $metadata.italic -ne $definition.italic) {
+            throw "Inter v4.0 static face metadata differs from expected family/version/style: $($definition.file)"
+        }
+        $metadata.file = $definition.file
+        $metadata.key = $definition.key
+        $metadata.expectedStyle = $definition.style
+        $faces.Add($metadata)
+    }
+    return [ordered]@{
+        archive = [ordered]@{
+            path = [System.IO.Path]::GetFullPath($archivePath)
+            url = $expectedUrl
+            releasePage = [string]$release.html_url
+            apiReleaseUrl = [string]$release.url
+            releaseTag = [string]$release.tag_name
+            publishedAtUtc = [string]$release.published_at
+            sizeBytes = [Int64]$archiveSize
+            sha256 = $archiveHash
+            officialChecksumPublished = ($null -ne $asset[0].digest)
+            officialDigest = $asset[0].digest
+        }
+        releaseMetadata = [ordered]@{
+            path = [System.IO.Path]::GetFullPath($releaseMetadataPath)
+            sha256 = Get-FileSha256 -Path $releaseMetadataPath
+        }
+        extractedDirectory = [System.IO.Path]::GetFullPath($faceRoot)
+        faces = @($faces)
+        license = [ordered]@{
+            archivePath = [System.IO.Path]::GetFullPath($archiveLicensePath)
+            archiveRawSha256 = Get-FileSha256 -Path $archiveLicensePath
+            bundledPath = [System.IO.Path]::GetFullPath($bundledLicensePath)
+            bundledRawSha256 = Get-FileSha256 -Path $bundledLicensePath
+            normalizedTextSha256 = Get-Sha256OfNormalizedText $archiveLicenseText
+            normalizedTextMatches = $true
+            reservedFontNamePresent = $false
+        }
     }
 }
 
@@ -305,10 +529,12 @@ function Get-Delta {
 }
 
 function Invoke-ProbeProcess {
-    param([string]$Scenario, [int]$Repetition, [string]$ProbePath, [string]$ProbeSha, [string]$InterPath, [string]$PretendardPath, [string]$PackageRoot, [string]$QtBin, [string]$PluginRoot)
+    param([string]$Scenario, [int]$Repetition, [string]$ProbePath, [string]$ProbeSha, [object]$Inter, [object[]]$StaticFaces, [string]$PackageRoot, [string]$QtBin, [string]$PluginRoot)
     $runName = "{0}-run-{1:D2}" -f $Scenario, $Repetition
     $stdoutPath = Join-Path $RunsDirectory ($runName + ".stdout.jsonl")
     $stderrPath = Join-Path $RunsDirectory ($runName + ".stderr.txt")
+    $qpaOption = if ($Scenario -eq "inter-ttc-gdi") { "windows:nodirectwrite" } else { "windows" }
+    $expectedEngine = if ($Scenario -eq "inter-ttc-gdi") { "Win" } else { "DirectWrite" }
     $run = [ordered]@{
         scenario = $Scenario
         repetition = $Repetition
@@ -318,6 +544,10 @@ function Invoke-ProbeProcess {
         processCreatedAtUtc = $null
         exitCode = $null
         succeeded = $false
+        qpaPlatformOption = $qpaOption
+        expectedFontEngine = $expectedEngine
+        backendConfirmed = $false
+        sourceFaceStyleIdentityConfirmed = $false
         executablePath = $ProbePath
         executableSha256 = $ProbeSha
         stdoutPath = $stdoutPath
@@ -341,14 +571,19 @@ function Invoke-ProbeProcess {
         $startInfo.RedirectStandardError = $true
         $startInfo.ArgumentList.Add("--scenario")
         $startInfo.ArgumentList.Add($Scenario)
-        $startInfo.ArgumentList.Add("--inter")
-        $startInfo.ArgumentList.Add($InterPath)
-        $startInfo.ArgumentList.Add("--pretendard")
-        $startInfo.ArgumentList.Add($PretendardPath)
+        if ($Scenario -eq "inter-static-directwrite") {
+            foreach ($face in $StaticFaces) {
+                $startInfo.ArgumentList.Add("--static-face")
+                $startInfo.ArgumentList.Add([string]$face.path)
+            }
+        } else {
+            $startInfo.ArgumentList.Add("--inter")
+            $startInfo.ArgumentList.Add([string]$Inter.path)
+        }
         $startInfo.Environment["PATH"] = "$PackageRoot;$QtBin;$($env:PATH)"
         $startInfo.Environment["QT_PLUGIN_PATH"] = $PluginRoot
         $startInfo.Environment["QT_QPA_PLATFORM_PLUGIN_PATH"] = Join-Path $PluginRoot "platforms"
-        $startInfo.Environment["QT_QPA_PLATFORM"] = "windows"
+        $startInfo.Environment["QT_QPA_PLATFORM"] = $qpaOption
         foreach ($name in @("QT_QPA_FONTDIR", "QT_QPA_PLATFORMTHEME", "QT_SCALE_FACTOR", "QT_SCALE_FACTOR_ROUNDING_POLICY", "QT_AUTO_SCREEN_SCALE_FACTOR")) {
             $null = $startInfo.Environment.Remove($name)
         }
@@ -379,37 +614,27 @@ function Invoke-ProbeProcess {
         }
         $snapshots = @($records | Where-Object { $_.recordType -eq "snapshot" })
         $completions = @($records | Where-Object { $_.recordType -eq "complete" })
-        if ($completions.Count -ne 1 -or $snapshots.Count -lt 5) {
+        if ($completions.Count -ne 1 -or $snapshots.Count -lt 6) {
             throw "Probe process $runName produced incomplete snapshot or completion evidence."
         }
         $expectedEvents = [System.Collections.Generic.List[string]]::new()
         $expectedEvents.Add("before-qapplication")
         $expectedEvents.Add("after-qapplication")
-        $order = @(switch ($Scenario) {
-            "inter-only" { @("inter") }
-            "pretendard-only" { @("pretendard") }
-            "inter-then-pretendard" { @("inter", "pretendard") }
-            "pretendard-then-inter" { @("pretendard", "inter") }
-            default { }
-        })
-        foreach ($font in $order) {
-            if ($font -eq "pretendard") {
-                $expectedEvents.Add("before-pretendard-file-read")
-                $expectedEvents.Add("after-pretendard-file-read")
+        if ($Scenario -eq "inter-static-directwrite") {
+            foreach ($face in $StaticFaces) {
+                $expectedEvents.Add("before-static-face-$($face.key)-registration")
+                $expectedEvents.Add("after-static-face-$($face.key)-registration")
             }
-            $expectedEvents.Add("before-$font-registration")
-            $expectedEvents.Add("after-$font-registration")
-            $expectedEvents.Add("before-$font-family-enumeration")
-            $expectedEvents.Add("after-$font-family-enumeration")
-        }
-        if ($order.Count -eq 0) {
-            $expectedEvents.Add("startup-font-application-skipped")
+            $expectedEvents.Add("before-static-face-family-enumeration")
+            $expectedEvents.Add("after-static-face-family-enumeration")
         } else {
-            $expectedEvents.Add("before-startup-font-application")
-            $expectedEvents.Add("after-startup-font-application")
+            $expectedEvents.Add("before-inter-ttc-registration")
+            $expectedEvents.Add("after-inter-ttc-registration")
+            $expectedEvents.Add("before-inter-ttc-family-enumeration")
+            $expectedEvents.Add("after-inter-ttc-family-enumeration")
         }
-        $expectedEvents.Add("before-system-font-families-query")
-        $expectedEvents.Add("after-system-font-families-query")
+        $expectedEvents.Add("before-style-resolution")
+        $expectedEvents.Add("after-style-resolution")
         $actualEvents = @($snapshots | ForEach-Object { [string]$_.event })
         if (($actualEvents -join "|") -ne ($expectedEvents -join "|")) {
             throw "Probe process $runName snapshot order/schema mismatch: $($actualEvents -join ', ')."
@@ -417,8 +642,9 @@ function Invoke-ProbeProcess {
         $previousTime = [DateTimeOffset]::MinValue
         foreach ($index in 0..($snapshots.Count - 1)) {
             $snapshot = $snapshots[$index]
-            if ($snapshot.schema -ne "classmngr-phase9-font-allocation-snapshot-v1" -or
+            if ($snapshot.schema -ne "classmngr-phase9-font-allocation-snapshot-v2" -or
                 [int]$snapshot.sequence -ne $index -or
+                [string]$snapshot.scenario -ne $Scenario -or
                 [int]$snapshot.pid -ne [int]$process.Id -or
                 $snapshot.architecture -ne "x64" -or
                 -not [string]::Equals([string]$snapshot.executablePath, $ProbePath, [StringComparison]::OrdinalIgnoreCase) -or
@@ -436,41 +662,103 @@ function Invoke-ProbeProcess {
         }
         $completion = $completions[0]
         if ($completion.schema -ne $Schema -or
+            [string]$completion.scenario -ne $Scenario -or
             [int]$completion.pid -ne [int]$process.Id -or
             $completion.architecture -ne "x64" -or
+            -not [string]::Equals([string]$completion.executablePath, $ProbePath, [StringComparison]::OrdinalIgnoreCase) -or
             $completion.qtVersion -ne "6.12.0" -or
-            [int]$completion.snapshotCount -ne $snapshots.Count) {
-            throw "Probe process $runName completion record does not match its snapshots."
+            [int]$completion.snapshotCount -ne $snapshots.Count -or
+            $completion.qpaPlatformOption -ne $qpaOption -or
+            $completion.actualPlatformName -ne "windows") {
+            throw "Probe process $runName completion identity or QPA selection does not match its snapshots."
         }
         $run.snapshotCount = $snapshots.Count
         $run.events = $actualEvents
         $byEvent = @{}
         foreach ($snapshot in $snapshots) { $byEvent[[string]$snapshot.event] = $snapshot }
-        $deltas = [ordered]@{
-            qapplicationInitialization = Get-Delta $byEvent["before-qapplication"] $byEvent["after-qapplication"]
-            systemFontFamiliesQuery = Get-Delta $byEvent["before-system-font-families-query"] $byEvent["after-system-font-families-query"]
-        }
-        foreach ($font in $order) {
-            $deltas[($font + "Registration")] = Get-Delta -Before $byEvent["before-$font-registration"] -After $byEvent["after-$font-registration"]
-            $deltas[($font + "FamilyEnumeration")] = Get-Delta -Before $byEvent["before-$font-family-enumeration"] -After $byEvent["after-$font-family-enumeration"]
-            if ($font -eq "pretendard") {
-                $deltas.pretendardFileRead = Get-Delta -Before $byEvent["before-pretendard-file-read"] -After $byEvent["after-pretendard-file-read"]
+        $deltas = [ordered]@{}
+        $faceDeltas = [System.Collections.Generic.List[object]]::new()
+        if ($Scenario -eq "inter-static-directwrite") {
+            $baseline = $byEvent["after-qapplication"]
+            foreach ($face in $StaticFaces) {
+                $prefix = "static-face-$($face.key)-registration"
+                $before = $byEvent["before-$prefix"]
+                $after = $byEvent["after-$prefix"]
+                $perFile = Get-Delta -Before $before -After $after
+                $cumulative = Get-Delta -Before $baseline -After $after
+                $deltas["registration-$($face.key)"] = $perFile
+                $deltas["cumulative-after-$($face.key)"] = $cumulative
+                $faceDeltas.Add([ordered]@{
+                    key = $face.key
+                    expectedStyle = $face.expectedStyle
+                    expectedWeight = $face.weight
+                    expectedItalic = $face.italic
+                    registrationDelta = $perFile
+                    cumulativeDeltaFromPostQApplication = $cumulative
+                    postRegistrationWorkingSetBytes = [Int64]$after.memory.workingSetBytes
+                    postRegistrationPrivateUsageBytes = [Int64]$after.memory.privateUsageBytes
+                })
             }
+        } else {
+            $registration = Get-Delta -Before $byEvent["before-inter-ttc-registration"] -After $byEvent["after-inter-ttc-registration"]
+            $cumulative = Get-Delta -Before $byEvent["after-qapplication"] -After $byEvent["after-inter-ttc-registration"]
+            $deltas.interTtcRegistration = $registration
+            $deltas.cumulativeAfterTtcRegistration = $cumulative
+            $faceDeltas.Add([ordered]@{
+                key = "inter-ttc"
+                registrationDelta = $registration
+                cumulativeDeltaFromPostQApplication = $cumulative
+                postRegistrationWorkingSetBytes = [Int64]$byEvent["after-inter-ttc-registration"].memory.workingSetBytes
+                postRegistrationPrivateUsageBytes = [Int64]$byEvent["after-inter-ttc-registration"].memory.privateUsageBytes
+            })
         }
-        if ($order.Count -gt 0) {
-            $deltas.startupFontApplication = Get-Delta $byEvent["before-startup-font-application"] $byEvent["after-startup-font-application"]
-        }
+        $deltas.styleResolution = Get-Delta -Before $byEvent["before-style-resolution"] -After $byEvent["after-style-resolution"]
+        $styleDetails = $byEvent["after-style-resolution"].details
+        $styleResolutions = @($styleDetails.styleResolutions)
+        $actualEngines = @($styleResolutions | ForEach-Object { [string]$_.engineType } | Sort-Object -Unique)
+        $backendConfirmed = $completion.qpaPlatformOption -eq $qpaOption -and
+            $completion.actualPlatformName -eq "windows" -and
+            $actualEngines.Count -eq 1 -and $actualEngines[0] -eq $expectedEngine -and
+            $styleResolutions.Count -eq 6
+        $sourceStylesConfirmed = [bool]$completion.allStylesMatchExpectedIdentity
+        $run.backendConfirmed = $backendConfirmed
+        $run.sourceFaceStyleIdentityConfirmed = $sourceStylesConfirmed
+        $styleEngineRows = @($styleResolutions | ForEach-Object {
+            [ordered]@{
+                requestedStyle = $_.requestedStyle
+                requestedWeight = $_.requestedWeight
+                requestedItalic = $_.requestedItalic
+                matchedStyle = $_.matchedStyle
+                resolvedFontFamily = $_.resolvedFontFamily
+                resolvedFontStyle = $_.resolvedFontStyle
+                resolvedWeight = $_.resolvedWeight
+                resolvedItalic = $_.resolvedItalic
+                familySelectionMatches = $_.familySelectionMatches
+                resolvedFamilyNameIsLegacyAlias = $_.resolvedFamilyNameIsLegacyAlias
+                weightMatches = $_.weightMatches
+                italicMatches = $_.italicMatches
+                engineType = $_.engineType
+                identityMatches = $_.identityMatches
+            }
+        })
+        $afterStyle = $byEvent["after-style-resolution"]
         $run.summary = [ordered]@{
             scenario = $Scenario
             repetition = $Repetition
             pid = [int]$process.Id
             capturedAtUtc = @($snapshots | ForEach-Object { $_.capturedAtUtc })
-            finalWorkingSetBytes = [Int64]$byEvent["after-system-font-families-query"].memory.workingSetBytes
-            finalPrivateUsageBytes = [Int64]$byEvent["after-system-font-families-query"].memory.privateUsageBytes
-            finalPrivateWorkingSetBytes = if ($byEvent["after-system-font-families-query"].memory.privateWorkingSetBytesAvailable) {
-                [Int64]$byEvent["after-system-font-families-query"].memory.privateWorkingSetBytes
-            } else { $null }
-            fullSystemFamilyCount = [int]$byEvent["after-system-font-families-query"].details.familyCount
+            qpaPlatformOption = $qpaOption
+            actualPlatformName = [string]$completion.actualPlatformName
+            expectedFontEngine = $expectedEngine
+            selectedEngineTypes = $actualEngines
+            backendConfirmed = $backendConfirmed
+            sourceFaceStyleIdentityConfirmed = $sourceStylesConfirmed
+            selectedInterFamily = [string]$completion.selectedInterFamily
+            styleResolutions = $styleEngineRows
+            faceDeltas = @($faceDeltas)
+            finalWorkingSetBytes = [Int64]$afterStyle.memory.workingSetBytes
+            finalPrivateUsageBytes = [Int64]$afterStyle.memory.privateUsageBytes
+            finalPrivateWorkingSetBytes = if ($afterStyle.memory.privateWorkingSetBytesAvailable) { [Int64]$afterStyle.memory.privateWorkingSetBytes } else { $null }
             locale = [string]$completion.locale
             deltas = $deltas
         }
@@ -503,6 +791,9 @@ try {
     Save-Manifest
     $sourceStart = Get-CandidateSourceIdentity -Root $RepositoryRoot
     Write-JsonFile -Path $SourceStartPath -Value $sourceStart.files
+    $releaseAssets = Get-InterV40Assets -SourceDirectory $InterV40SourceDirectory
+    $staticFaces = @($releaseAssets.faces)
+    if ($staticFaces.Count -ne 6) { throw "Expected exactly six verified static Inter v4.0 faces." }
     $buildInfoPath = Join-Path $BuildDirectory "generated\core\build_info.h"
     $buildInfo = [System.IO.File]::ReadAllText($buildInfoPath)
     $revisionMatch = [regex]::Match($buildInfo, 'GitRevision\s*=\s*"([^"]+)"')
@@ -553,7 +844,6 @@ try {
     if (-not (Test-Path -LiteralPath $catalogPath -PathType Leaf)) { throw "Packaged resource catalog is missing: $catalogPath" }
     $catalog = Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json
     $inter = Get-PackageFontIdentity -LogicalId "resource:assets/fonts/Inter.ttc" -RelativePath "assets/fonts/Inter.ttc" -ExpectedType "ttc" -Catalog $catalog -Root (Join-Path $PackageDirectory "resources")
-    $pretendard = Get-PackageFontIdentity -LogicalId "resource:assets/fonts/PretendardVariable.ttf" -RelativePath "assets/fonts/PretendardVariable.ttf" -ExpectedType "ttf" -Catalog $catalog -Root (Join-Path $PackageDirectory "resources")
     $appPath = Join-Path $PackageDirectory "ClassMngr.exe"
     if (-not (Test-Path -LiteralPath $appPath -PathType Leaf)) { throw "Packaged ClassMngr.exe is missing: $appPath" }
     if ((Get-PeArchitecture -Path $appPath) -ne "x64") { throw "Packaged ClassMngr.exe is not Windows x64." }
@@ -605,6 +895,7 @@ try {
     foreach ($path in @($probeProjectPath, $probePath)) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Release probe build output is missing: $path" }
     }
+    $probeProjectRelease = Get-ProbeProjectReleaseConfiguration -ProjectPath $probeProjectPath
     if ((Get-PeArchitecture -Path $probePath) -ne "x64") { throw "Probe executable is not Windows x64." }
     $probeSha = Get-FileSha256 -Path $probePath
     $qtBin = Join-Path $QtPrefix "bin"
@@ -625,6 +916,7 @@ try {
         cmakeCachePath = [System.IO.Path]::GetFullPath($cachePath)
         cmakeCacheSha256 = $cacheSha
         releaseCompiler = $releaseConfiguration
+        probeProjectRelease = $probeProjectRelease
         appPath = [System.IO.Path]::GetFullPath($appPath)
         appSha256 = Get-FileSha256 -Path $appPath
         appArchitecture = "x64"
@@ -649,14 +941,22 @@ try {
         packagedRuntimeFiles = $qtRuntimeFiles
         platform = "windows"
         platformPlugin = "qwindows"
-        fontBackend = "Qt 6.12 Windows DirectWrite"
+        fontBackend = "Recorded from the selected Qt QRawFont engine after style resolution"
+        platformOptions = @{
+            directWrite = "windows"
+            gdi = "windows:nodirectwrite"
+        }
     }
     $Manifest.package = [ordered]@{
         root = $PackageDirectory
         catalogPath = [System.IO.Path]::GetFullPath($catalogPath)
         catalogSha256 = Get-FileSha256 -Path $catalogPath
-        fonts = @($inter, $pretendard)
+        fonts = @($inter)
+        catalogFontResourceId = "resource:assets/fonts/Inter.ttc"
     }
+    $Manifest.upstreamRelease = $releaseAssets.archive
+    $Manifest.staticFontAssets = @($releaseAssets.faces)
+    $Manifest.licenseIdentity = $releaseAssets.license
     $Manifest.probe = [ordered]@{
         path = [System.IO.Path]::GetFullPath($probePath)
         sha256 = $probeSha
@@ -665,9 +965,12 @@ try {
         qtVersion = $qtVersion
         processMemoryProvider = "PlatformProcessMemorySnapshotProvider"
         fontRegistrationRoutes = [ordered]@{
-            inter = "QFontDatabase::addApplicationFont(file)"
-            pretendard = "QFile::readAll + QFontDatabase::addApplicationFontFromData(bytes)"
+            interTtcDirectWrite = "QFontDatabase::addApplicationFont(file); QT_QPA_PLATFORM=windows"
+            sixStaticInterFontsDirectWrite = "QFontDatabase::addApplicationFont(file) once per static face; QT_QPA_PLATFORM=windows"
+            interTtcGdi = "QFontDatabase::addApplicationFont(file); QT_QPA_PLATFORM=windows:nodirectwrite"
         }
+        backendVerification = "QRawFontPrivate::fontEngine->type() after resolving each requested Inter weight/style"
+        expectedFaces = @($StaticFaceDefinitions)
     }
     Save-Manifest
 
@@ -676,7 +979,7 @@ try {
         for ($position = 0; $position -lt $Scenarios.Count; $position++) {
             $scenario = $Scenarios[($position + $offset) % $Scenarios.Count]
             $repetitionForScenario = @($ProcessRuns | Where-Object { $_.scenario -eq $scenario }).Count + 1
-            $run = Invoke-ProbeProcess -Scenario $scenario -Repetition $repetitionForScenario -ProbePath $probePath -ProbeSha $probeSha -InterPath $inter.path -PretendardPath $pretendard.path -PackageRoot $PackageDirectory -QtBin $qtBin -PluginRoot $pluginRoot
+            $run = Invoke-ProbeProcess -Scenario $scenario -Repetition $repetitionForScenario -ProbePath $probePath -ProbeSha $probeSha -Inter $inter -StaticFaces $staticFaces -PackageRoot $PackageDirectory -QtBin $qtBin -PluginRoot $pluginRoot
             Add-JsonLine -Path $ProcessSummaryPath -Value $run.summary
         }
     }
@@ -713,7 +1016,12 @@ try {
             }
         }
     }
-    $medianRows | Export-Csv -LiteralPath $MediansCsvPath -NoTypeInformation -Encoding utf8NoBOM
+    $medianRows | Export-Csv -LiteralPath $MediansCsvPath -Encoding utf8NoBOM
+    $allBackendConfirmed = $ProcessRuns.Count -eq ($Repetitions * $Scenarios.Count) -and
+        @($ProcessRuns | Where-Object { -not $_.backendConfirmed }).Count -eq 0
+    $staticRuns = @($ProcessRuns | Where-Object { $_.scenario -eq "inter-static-directwrite" })
+    $allStaticStylesConfirmed = $staticRuns.Count -eq $Repetitions -and
+        @($staticRuns | Where-Object { -not $_.sourceFaceStyleIdentityConfirmed }).Count -eq 0
     Write-JsonFile -Path $SummaryPath -Value ([ordered]@{
         schema = $Schema
         taskId = $TaskId
@@ -723,9 +1031,21 @@ try {
         scenarioCount = $Scenarios.Count
         totalProcessCount = $ProcessRuns.Count
         uniquePidCount = $UniquePids.Count
+        allBackendSelectionsConfirmed = $allBackendConfirmed
+        allStaticFaceStyleIdentitiesConfirmed = $allStaticStylesConfirmed
+        diagnosticConclusion = if (-not $allBackendConfirmed) {
+            "Backend selection could not be confirmed for every resolved style; the requested comparison is incomplete."
+        } elseif (-not $allStaticStylesConfirmed) {
+            "Qt did not resolve every requested Inter family/weight/italic identity; static-face arm is not behavior-compatible."
+        } else {
+            "All requested font styles resolved and backend engines matched each QPA arm; compare measured allocation deltas only."
+        }
         sourceSha256 = $sourceEnd.sha256
         qtVersion = $qtVersion
-        packageFontHashes = @($inter, $pretendard)
+        packageFontHashes = @($inter)
+        upstreamRelease = $releaseAssets.archive
+        staticFontAssets = @($releaseAssets.faces)
+        licenseIdentity = $releaseAssets.license
         scenarios = $Scenarios
         executionOrder = @($Manifest.executionOrder)
         processes = @($ProcessRuns | ForEach-Object { $_.summary })

@@ -2,6 +2,11 @@ if(NOT WIN32)
     return()
 endif()
 
+# The diagnostic inspects the actual selected QFontEngine backend after
+# resolving Inter styles. Qt exposes that implementation type through this
+# exact-version private module; product targets do not depend on it.
+find_package(Qt6GuiPrivate 6.12.0 EXACT REQUIRED CONFIG)
+
 add_executable(ClassMngrNextFontAllocationProbe
     "${PROJECT_SOURCE_DIR}/cmake/phase9/font_allocation_probe.cpp"
 )
@@ -17,6 +22,7 @@ target_link_libraries(ClassMngrNextFontAllocationProbe
     PRIVATE
         ClassMngrBuildSettings
         ClassMngrProcessMemory
+        Qt6::GuiPrivate
         Qt6::Widgets
 )
 set_target_properties(ClassMngrNextFontAllocationProbe

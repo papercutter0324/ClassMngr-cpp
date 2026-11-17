@@ -2,14 +2,16 @@
 
 ## Phase 9 current handoff - P9-06S Inter allocation result - 2026-11-18
 
-Phase 9 remains In progress. Batch 1 is closed. P9-06 and P9-06R both have
-valid source-bound optimized local Windows x64 Release evidence and both fail
-the strict 262,144,000-byte normal-use memory limit. P9-06S's diagnostic probe
-was independently repeated and confirms that registering the bundled Inter
-TTC itself adds about 490 MB WS / 494 MB private usage in fresh Qt 6.12 Windows
-processes. This is an operation-level measurement, not a finding about Qt's
-internal cause or a Phase 9 budget result. P9-06T will compare candidate Inter
-representations before any production font change.
+Phase 9 remains In progress. Batch 1 is closed. P9-06 and P9-06R have valid
+source-bound optimized local Windows x64 Release evidence, and both fail the
+strict 262,144,000-byte normal-use memory limit. P9-06S independently measured
+about 490 MB WS / 494 MB private added synchronously by registering the bundled
+Inter TTC under Qt 6.12 DirectWrite. P9-06T found that six static Inter v4.0
+faces register with a small memory increase, but those faces are version 4.000
+rather than the bundled TTC's 4.001. A same-TTC GDI probe also uses little
+memory, but changing Qt's global backend affects text rendering more broadly.
+P9-06U will test exact-version Inter v4.1 static faces before any production
+change. These are diagnostic results, not a Phase 9 memory pass.
 
 - The valid P9-06 baseline run is
   artifacts/phase9/packaged-idle-memory/20261117T190410131Z-43f692fcd33b4a2a87cf12518dbf1386/.
@@ -61,11 +63,22 @@ representations before any production font change.
 - The packaged app requests six exact styles: Normal 400, Medium 500, DemiBold
   600, Bold 700, BoldItalic 700, and Black 900 upright. No Inter Display use or
   other Inter italic weight was found in production. The bundled Inter v4.001
-  local OFL license has no explicit Reserved Font Name value; the v4.0 original
-  static font files must be kept unmodified with their matching license and
-  provenance. P9-06T will compare the six exact static TTFs under DirectWrite
-  with the bundled TTC under Qt GDI. The diagnostic records backend and
-  environment identity before any product change.
+  local OFL license has no explicit Reserved Font Name value.
+- P9-06T final run
+  artifacts/phase9/font-allocation-probe/20261117T232318887Z-7bb3c8eb1e274cb1991c64bdb2b6437f/
+  completed 21 fresh processes, seven per arm, with stable source identity.
+  Independent verification confirmed the three arms and all six styles; the
+  clean PowerShell 7.7 rerun has the unchanged CSV header and no deprecated
+  Export-Csv parameter. The packaged TTC under DirectWrite added 489,861,120
+  WS / 493,707,264 private bytes. Six original Inter v4.0 static TTFs under
+  DirectWrite added 6,287,360 / 6,213,632 cumulatively. The same TTC under Qt
+  GDI added 405,504 / 0 bytes. The static files report version 4.000, unlike
+  the TTC's 4.001; the GDI backend changes text rendering across Qt.
+- The official Inter v4.1 release metadata reports version 4.001, matching the
+  bundled TTC tag. P9-06U will verify the six exact-version original static
+  files and repeat the DirectWrite measurement before a product change. The
+  Phase 9 log records all source, archive, runtime, and run hashes.
+
 - The probe does not construct the full app UI or idle for five minutes. It
   therefore localizes the synchronous allocation operation, but it does not
   prove the full app's internal cause or pass the normal-use gate. P9-07 and

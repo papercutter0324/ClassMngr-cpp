@@ -1,23 +1,24 @@
 #include "core/process_memory_snapshot.h"
-#include "next/application/font_presentation_port.h"
-#include "next/ui/font_size_presenter.h"
 
 #include <QApplication>
 #include <QDateTime>
-#include <QFile>
 #include <QFontDatabase>
+#include <QGuiApplication>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLocale>
+#include <QRawFont>
 #include <QSysInfo>
 #include <QTextStream>
+
+#include <QtGui/private/qfontengine_p.h>
+#include <QtGui/private/qrawfont_p.h>
 
 #define NOMINMAX
 #include <windows.h>
 
 #include <chrono>
-#include <iostream>
 #include <optional>
 #include <string_view>
 #include <utility>
@@ -28,27 +29,49 @@ namespace
 
 using Clock = std::chrono::steady_clock;
 
+struct StaticFace final
+{
+    QString key;
+    QString path;
+    int weight = 0;
+    bool italic = false;
+    QString expectedStyle;
+    int registrationId = -1;
+    QStringList registeredFamilies;
+};
+
 struct ProbeArguments final
 {
     QString scenario;
     QString interPath;
-    QString pretendardPath;
+    QStringList staticFacePaths;
 };
 
-class ProbeFontPresentationPort final
-    : public ClassMngr::Next::Application::FontPresentationPort
+struct FaceExpectation final
 {
-public:
-    [[nodiscard]] int applicationBaseFontPointSize() const override
-    {
-        return 14;
-    }
-
-    [[nodiscard]] int teacherProfileKoreanFontPointSize() const override
-    {
-        return 15;
-    }
+    QString key;
+    QString style;
+    int weight;
+    bool italic;
 };
+
+const std::vector<FaceExpectation>& expectedFaces()
+{
+    static const std::vector<FaceExpectation> faces{
+        {QStringLiteral("regular"), QStringLiteral("Regular"), 400, false},
+        {QStringLiteral("medium"), QStringLiteral("Medium"), 500, false},
+        {QStringLiteral("semibold"), QStringLiteral("SemiBold"), 600, false},
+        {QStringLiteral("bold"), QStringLiteral("Bold"), 700, false},
+        {QStringLiteral("bold-italic"), QStringLiteral("Bold Italic"), 700, true},
+        {QStringLiteral("black"), QStringLiteral("Black"), 900, false}
+    };
+    return faces;
+}
+
+QString schema()
+{
+    return QStringLiteral("classmngr-phase9-font-allocation-probe-v2");
+}
 
 std::optional<ProbeArguments> parseArguments(const int argc, char** argv)
 {
@@ -69,9 +92,9 @@ std::optional<ProbeArguments> parseArguments(const int argc, char** argv)
         {
             result.interPath = value;
         }
-        else if (argument == "--pretendard")
+        else if (argument == "--static-face")
         {
-            result.pretendardPath = value;
+            result.staticFacePaths.push_back(value);
         }
         else
         {
@@ -79,16 +102,12 @@ std::optional<ProbeArguments> parseArguments(const int argc, char** argv)
         }
     }
 
-    static const QStringList scenarios{
-        QStringLiteral("no-font"),
-        QStringLiteral("inter-only"),
-        QStringLiteral("pretendard-only"),
-        QStringLiteral("inter-then-pretendard"),
-        QStringLiteral("pretendard-then-inter")
-    };
-    if (!scenarios.contains(result.scenario)
-        || result.interPath.isEmpty()
-        || result.pretendardPath.isEmpty())
+    const bool staticScenario = result.scenario == QStringLiteral("inter-static-directwrite");
+    const bool ttcScenario = result.scenario == QStringLiteral("inter-ttc-directwrite")
+        || result.scenario == QStringLiteral("inter-ttc-gdi");
+    if ((!staticScenario && !ttcScenario)
+        || (ttcScenario && result.interPath.isEmpty())
+        || (staticScenario && result.staticFacePaths.size() != static_cast<qsizetype>(expectedFaces().size())))
     {
         return std::nullopt;
     }
@@ -98,11 +117,7 @@ std::optional<ProbeArguments> parseArguments(const int argc, char** argv)
 QString executablePath()
 {
     std::vector<wchar_t> path(32768);
-    const DWORD length = GetModuleFileNameW(
-        nullptr,
-        path.data(),
-        static_cast<DWORD>(path.size())
-        );
+    const DWORD length = GetModuleFileNameW(nullptr, path.data(), static_cast<DWORD>(path.size()));
     if (length == 0 || length >= path.size())
     {
         return {};
@@ -117,6 +132,39 @@ QString architecture()
         return QStringLiteral("x64");
     }
     return QStringLiteral("x86");
+}
+
+QString engineName(const QRawFont& rawFont)
+{
+    const QRawFontPrivate* const rawPrivate = QRawFontPrivate::get(rawFont);
+    if (rawPrivate == nullptr || rawPrivate->fontEngine == nullptr)
+    {
+        return QStringLiteral("unavailable");
+    }
+    switch (rawPrivate->fontEngine->type())
+    {
+    case QFontEngine::Win:
+        return QStringLiteral("Win");
+    case QFontEngine::DirectWrite:
+        return QStringLiteral("DirectWrite");
+    case QFontEngine::Multi:
+        return QStringLiteral("Multi");
+    case QFontEngine::Freetype:
+        return QStringLiteral("Freetype");
+    case QFontEngine::Box:
+        return QStringLiteral("Box");
+    case QFontEngine::Mac:
+        return QStringLiteral("Mac");
+    case QFontEngine::QPF1:
+        return QStringLiteral("QPF1");
+    case QFontEngine::QPF2:
+        return QStringLiteral("QPF2");
+    case QFontEngine::Proxy:
+        return QStringLiteral("Proxy");
+    case QFontEngine::TestFontEngine:
+        return QStringLiteral("TestFontEngine");
+    }
+    return QStringLiteral("unknown");
 }
 
 QJsonArray stringArray(const QStringList& values)
@@ -143,11 +191,11 @@ bool captureSnapshot(
         || !snapshot.workingSetBytesAvailable
         || !snapshot.privateUsageBytesAvailable)
     {
-        std::cerr << "ProcessMemorySnapshotProvider did not return working set and private usage.\n";
+        QTextStream(stderr) << "ProcessMemorySnapshotProvider did not return working set and private usage.\n";
         return false;
     }
 
-    QJsonObject memory{
+    const QJsonObject memory{
         {QStringLiteral("isAvailable"), snapshot.isAvailable},
         {QStringLiteral("workingSetBytesAvailable"), snapshot.workingSetBytesAvailable},
         {QStringLiteral("workingSetBytes"), static_cast<qint64>(snapshot.workingSetBytes)},
@@ -165,9 +213,8 @@ bool captureSnapshot(
         {QStringLiteral("threadCount"), static_cast<int>(snapshot.threadCount)},
         {QStringLiteral("platform"), snapshot.platform}
     };
-
-    QJsonObject record{
-        {QStringLiteral("schema"), QStringLiteral("classmngr-phase9-font-allocation-snapshot-v1")},
+    const QJsonObject record{
+        {QStringLiteral("schema"), QStringLiteral("classmngr-phase9-font-allocation-snapshot-v2")},
         {QStringLiteral("recordType"), QStringLiteral("snapshot")},
         {QStringLiteral("scenario"), scenario},
         {QStringLiteral("event"), event},
@@ -207,25 +254,98 @@ bool capture(
         );
 }
 
-QStringList fontOrder(const QString& scenario)
+QJsonArray registrationRecords(const std::vector<StaticFace>& faces)
 {
-    if (scenario == QStringLiteral("inter-only"))
+    QJsonArray result;
+    for (const StaticFace& face : faces)
     {
-        return {QStringLiteral("inter")};
+        result.append(QJsonObject{
+            {QStringLiteral("key"), face.key},
+            {QStringLiteral("path"), face.path},
+            {QStringLiteral("expectedStyle"), face.expectedStyle},
+            {QStringLiteral("expectedWeight"), face.weight},
+            {QStringLiteral("expectedItalic"), face.italic},
+            {QStringLiteral("registrationId"), face.registrationId},
+            {QStringLiteral("registeredFamilies"), stringArray(face.registeredFamilies)}
+        });
     }
-    if (scenario == QStringLiteral("pretendard-only"))
+    return result;
+}
+
+QJsonArray resolveInterStyles()
+{
+    QJsonArray results;
+    const QStringList allFamilies = QFontDatabase::families();
+    QString interFamily;
+    for (const QString& family : allFamilies)
     {
-        return {QStringLiteral("pretendard")};
+        if (family.compare(QStringLiteral("Inter"), Qt::CaseInsensitive) == 0)
+        {
+            interFamily = family;
+            break;
+        }
     }
-    if (scenario == QStringLiteral("inter-then-pretendard"))
+
+    const QStringList availableStyles = interFamily.isEmpty()
+        ? QStringList{}
+        : QFontDatabase::styles(interFamily);
+    for (const FaceExpectation& expected : expectedFaces())
     {
-        return {QStringLiteral("inter"), QStringLiteral("pretendard")};
+        QString matchedStyle;
+        for (const QString& style : availableStyles)
+        {
+            if (QFontDatabase::weight(interFamily, style) == expected.weight
+                && QFontDatabase::italic(interFamily, style) == expected.italic)
+            {
+                matchedStyle = style;
+                break;
+            }
+        }
+
+        QJsonObject resolved{
+            {QStringLiteral("requestedFamily"), QStringLiteral("Inter")},
+            {QStringLiteral("requestedStyle"), expected.style},
+            {QStringLiteral("requestedWeight"), expected.weight},
+            {QStringLiteral("requestedItalic"), expected.italic},
+            {QStringLiteral("availableStyles"), stringArray(availableStyles)},
+            {QStringLiteral("matchedStyle"), matchedStyle},
+            {QStringLiteral("styleMatchFound"), !matchedStyle.isEmpty()}
+        };
+        if (!matchedStyle.isEmpty())
+        {
+            const QFont font = QFontDatabase::font(interFamily, matchedStyle, 14);
+            const QRawFont rawFont = QRawFont::fromFont(font, QFontDatabase::Latin);
+            resolved.insert(QStringLiteral("resolvedFontFamily"), rawFont.familyName());
+            resolved.insert(QStringLiteral("resolvedFontStyle"), rawFont.styleName());
+            resolved.insert(QStringLiteral("resolvedWeight"), rawFont.weight());
+            resolved.insert(QStringLiteral("resolvedItalic"), rawFont.style() == QFont::StyleItalic);
+            resolved.insert(QStringLiteral("resolvedRawFontValid"), rawFont.isValid());
+            resolved.insert(QStringLiteral("engineType"), engineName(rawFont));
+            const bool familySelectionMatches = interFamily.compare(
+                QStringLiteral("Inter"), Qt::CaseInsensitive
+                ) == 0;
+            const bool weightMatches = rawFont.isValid() && rawFont.weight() == expected.weight;
+            const bool italicMatches = rawFont.isValid()
+                && (rawFont.style() == QFont::StyleItalic) == expected.italic;
+            resolved.insert(QStringLiteral("familySelectionMatches"), familySelectionMatches);
+            resolved.insert(QStringLiteral("resolvedFamilyNameIsLegacyAlias"), rawFont.isValid()
+                && rawFont.familyName().compare(interFamily, Qt::CaseInsensitive) != 0);
+            resolved.insert(QStringLiteral("weightMatches"), weightMatches);
+            resolved.insert(QStringLiteral("italicMatches"), italicMatches);
+            resolved.insert(
+                QStringLiteral("identityMatches"),
+                familySelectionMatches && weightMatches && italicMatches
+                );
+        }
+        else
+        {
+            resolved.insert(QStringLiteral("resolvedRawFontValid"), false);
+            resolved.insert(QStringLiteral("identityMatches"), false);
+            resolved.insert(QStringLiteral("engineType"), QStringLiteral("unavailable"));
+        }
+        results.append(resolved);
     }
-    if (scenario == QStringLiteral("pretendard-then-inter"))
-    {
-        return {QStringLiteral("pretendard"), QStringLiteral("inter")};
-    }
-    return {};
+    return results;
 }
 
 int runProbe(const ProbeArguments& arguments)
@@ -233,7 +353,7 @@ int runProbe(const ProbeArguments& arguments)
     const QString processExecutablePath = executablePath();
     if (processExecutablePath.isEmpty())
     {
-        std::cerr << "Could not resolve the probe executable path.\n";
+        QTextStream(stderr) << "Could not resolve the probe executable path.\n";
         return 2;
     }
 
@@ -245,7 +365,8 @@ int runProbe(const ProbeArguments& arguments)
             arguments.scenario,
             QString{},
             QStringLiteral("before-qapplication"),
-            processExecutablePath
+            processExecutablePath,
+            {{QStringLiteral("qpaPlatformOption"), qEnvironmentVariable("QT_QPA_PLATFORM")}}
             ))
     {
         return 2;
@@ -256,189 +377,117 @@ int runProbe(const ProbeArguments& arguments)
     int applicationArgumentCount = 1;
     QApplication application(applicationArgumentCount, applicationArguments);
     const QString locale = QLocale::system().name();
+    const QString actualPlatformName = QGuiApplication::platformName();
+    const QString qpaPlatformOption = qEnvironmentVariable("QT_QPA_PLATFORM");
     if (!capture(
             provider,
             sequence,
             arguments.scenario,
             locale,
             QStringLiteral("after-qapplication"),
-            processExecutablePath
+            processExecutablePath,
+            {
+                {QStringLiteral("qpaPlatformOption"), qpaPlatformOption},
+                {QStringLiteral("actualPlatformName"), actualPlatformName}
+            }
             ))
     {
         return 2;
     }
 
-    struct RegisteredFont final
+    const bool staticScenario = arguments.scenario == QStringLiteral("inter-static-directwrite");
+    const bool gdiScenario = arguments.scenario == QStringLiteral("inter-ttc-gdi");
+    std::vector<StaticFace> faces;
+    QJsonArray registrationEvents;
+    if (staticScenario)
     {
-        int registrationId = -1;
-        QString familyName;
-    };
-    RegisteredFont inter;
-    RegisteredFont pretendard;
-
-    const auto pathFor = [&arguments](const QString& name) {
-        return name == QStringLiteral("inter")
-            ? arguments.interPath
-            : arguments.pretendardPath;
-    };
-    const QStringList registrationOrder = fontOrder(arguments.scenario);
-    for (const QString& name : registrationOrder)
-    {
-        const QString path = pathFor(name);
-        const QString prefix = name + QStringLiteral("-registration");
-        QByteArray fontBytes;
-        if (name == QStringLiteral("pretendard"))
+        for (std::size_t index = 0; index < expectedFaces().size(); ++index)
         {
-            if (!capture(
-                    provider,
-                    sequence,
-                    arguments.scenario,
-                    locale,
-                    QStringLiteral("before-pretendard-file-read"),
-                    processExecutablePath,
-                    {{QStringLiteral("path"), path}}
-                    ))
-            {
-                return 2;
-            }
-            QFile fontFile(path);
-            if (!fontFile.open(QIODevice::ReadOnly))
-            {
-                std::cerr << "Could not read packaged Pretendard font: "
-                          << path.toStdString() << ".\n";
-                return 3;
-            }
-            const auto fileReadStarted = Clock::now();
-            fontBytes = fontFile.readAll();
-            const auto fileReadDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                Clock::now() - fileReadStarted
-                ).count();
-            if (fontFile.error() != QFileDevice::NoError || fontBytes.isEmpty())
-            {
-                std::cerr << "Could not read the complete packaged Pretendard font.\n";
-                return 3;
-            }
-            if (!capture(
-                    provider,
-                    sequence,
-                    arguments.scenario,
-                    locale,
-                    QStringLiteral("after-pretendard-file-read"),
-                    processExecutablePath,
-                    {
-                        {QStringLiteral("path"), path},
-                        {QStringLiteral("inputBytes"), fontBytes.size()},
-                        {QStringLiteral("operationDurationNanoseconds"), static_cast<qint64>(fileReadDuration)}
-                    }
-                    ))
-            {
-                return 2;
-            }
-        }
-        if (!capture(
-                provider,
-                sequence,
-                arguments.scenario,
-                locale,
-                QStringLiteral("before-") + prefix,
-                processExecutablePath,
-                {{QStringLiteral("font"), name}, {QStringLiteral("path"), path}}
-                ))
-        {
-            return 2;
-        }
-        const auto registrationStarted = Clock::now();
-        const QString registrationApi = name == QStringLiteral("inter")
-            ? QStringLiteral("QFontDatabase::addApplicationFont(file)")
-            : QStringLiteral("QFontDatabase::addApplicationFontFromData(bytes)");
-        const int registrationId = name == QStringLiteral("inter")
-            ? QFontDatabase::addApplicationFont(path)
-            : QFontDatabase::addApplicationFontFromData(fontBytes);
-        const auto registrationDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            Clock::now() - registrationStarted
-            ).count();
-        if (registrationId < 0)
-        {
-            std::cerr << "Qt could not register " << name.toStdString() << " from "
-                      << path.toStdString() << ".\n";
-            return 3;
-        }
-        RegisteredFont& registered = name == QStringLiteral("inter") ? inter : pretendard;
-        registered.registrationId = registrationId;
-        if (!capture(
-                provider,
-                sequence,
-                arguments.scenario,
-                locale,
-                QStringLiteral("after-") + prefix,
-                processExecutablePath,
-                {
-                    {QStringLiteral("font"), name},
-                    {QStringLiteral("path"), path},
-                    {QStringLiteral("registrationApi"), registrationApi},
-                    {QStringLiteral("inputBytes"), name == QStringLiteral("inter") ? 0 : fontBytes.size()},
-                    {QStringLiteral("registrationId"), registrationId},
-                    {QStringLiteral("operationDurationNanoseconds"), static_cast<qint64>(registrationDuration)}
-                }
-                ))
-        {
-            return 2;
-        }
-
-        const QString enumerationPrefix = name + QStringLiteral("-family-enumeration");
-        if (!capture(
-                provider,
-                sequence,
-                arguments.scenario,
-                locale,
-                QStringLiteral("before-") + enumerationPrefix,
-                processExecutablePath,
-                {{QStringLiteral("font"), name}, {QStringLiteral("registrationId"), registrationId}}
-                ))
-        {
-            return 2;
-        }
-        const auto enumerationStarted = Clock::now();
-        const QStringList families = QFontDatabase::applicationFontFamilies(registrationId);
-        const auto enumerationDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            Clock::now() - enumerationStarted
-            ).count();
-        if (families.isEmpty())
-        {
-            std::cerr << "Qt returned no application font families for "
-                      << name.toStdString() << ".\n";
-            return 4;
-        }
-        registered.familyName = families.constFirst();
-        if (!capture(
-                provider,
-                sequence,
-                arguments.scenario,
-                locale,
-                QStringLiteral("after-") + enumerationPrefix,
-                processExecutablePath,
-                {
-                    {QStringLiteral("font"), name},
-                    {QStringLiteral("registrationId"), registrationId},
-                    {QStringLiteral("familyNames"), stringArray(families)},
-                    {QStringLiteral("operationDurationNanoseconds"), static_cast<qint64>(enumerationDuration)}
-                }
-                ))
-        {
-            return 2;
+            const FaceExpectation& expected = expectedFaces()[index];
+            faces.push_back({
+                expected.key,
+                arguments.staticFacePaths.at(static_cast<qsizetype>(index)),
+                expected.weight,
+                expected.italic,
+                expected.style
+            });
         }
     }
 
-    if (registrationOrder.isEmpty())
+    QString ttcFamily;
+    int ttcRegistrationId = -1;
+    if (!staticScenario)
     {
         if (!capture(
                 provider,
                 sequence,
                 arguments.scenario,
                 locale,
-                QStringLiteral("startup-font-application-skipped"),
+                QStringLiteral("before-inter-ttc-registration"),
                 processExecutablePath,
-                {{QStringLiteral("reason"), QStringLiteral("no-font baseline")}}
+                {{QStringLiteral("path"), arguments.interPath}}
+                ))
+        {
+            return 2;
+        }
+        const auto started = Clock::now();
+        ttcRegistrationId = QFontDatabase::addApplicationFont(arguments.interPath);
+        const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - started).count();
+        if (ttcRegistrationId < 0)
+        {
+            QTextStream(stderr) << "Qt could not register packaged Inter TTC.\n";
+            return 3;
+        }
+        if (!capture(
+                provider,
+                sequence,
+                arguments.scenario,
+                locale,
+                QStringLiteral("after-inter-ttc-registration"),
+                processExecutablePath,
+                {
+                    {QStringLiteral("path"), arguments.interPath},
+                    {QStringLiteral("registrationId"), ttcRegistrationId},
+                    {QStringLiteral("registrationApi"), QStringLiteral("QFontDatabase::addApplicationFont(file)")},
+                    {QStringLiteral("operationDurationNanoseconds"), static_cast<qint64>(duration)}
+                }
+                ))
+        {
+            return 2;
+        }
+        if (!capture(
+                provider,
+                sequence,
+                arguments.scenario,
+                locale,
+                QStringLiteral("before-inter-ttc-family-enumeration"),
+                processExecutablePath,
+                {{QStringLiteral("registrationId"), ttcRegistrationId}}
+                ))
+        {
+            return 2;
+        }
+        const QStringList families = QFontDatabase::applicationFontFamilies(ttcRegistrationId);
+        for (const QString& family : families)
+        {
+            if (family.compare(QStringLiteral("Inter"), Qt::CaseInsensitive) == 0)
+            {
+                ttcFamily = family;
+                break;
+            }
+        }
+        if (!capture(
+                provider,
+                sequence,
+                arguments.scenario,
+                locale,
+                QStringLiteral("after-inter-ttc-family-enumeration"),
+                processExecutablePath,
+                {
+                    {QStringLiteral("registrationId"), ttcRegistrationId},
+                    {QStringLiteral("familyNames"), stringArray(families)},
+                    {QStringLiteral("selectedInterFamily"), ttcFamily}
+                }
                 ))
         {
             return 2;
@@ -446,48 +495,90 @@ int runProbe(const ProbeArguments& arguments)
     }
     else
     {
-        ProbeFontPresentationPort fontPresentationPort;
-        ClassMngr::Next::Ui::FontSizePresenter fontPresenter(
-            application,
-            fontPresentationPort
-            );
+        for (std::size_t index = 0; index < faces.size(); ++index)
+        {
+            StaticFace& face = faces[index];
+            const QString eventBase = QStringLiteral("static-face-%1-registration").arg(face.key);
+            if (!capture(
+                    provider,
+                    sequence,
+                    arguments.scenario,
+                    locale,
+                    QStringLiteral("before-") + eventBase,
+                    processExecutablePath,
+                    {
+                        {QStringLiteral("faceKey"), face.key},
+                        {QStringLiteral("faceIndex"), static_cast<int>(index)},
+                        {QStringLiteral("path"), face.path},
+                        {QStringLiteral("expectedStyle"), face.expectedStyle},
+                        {QStringLiteral("expectedWeight"), face.weight},
+                        {QStringLiteral("expectedItalic"), face.italic}
+                    }
+                    ))
+            {
+                return 2;
+            }
+            const auto started = Clock::now();
+            face.registrationId = QFontDatabase::addApplicationFont(face.path);
+            const auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - started).count();
+            if (face.registrationId < 0)
+            {
+                QTextStream(stderr) << "Qt could not register Inter static face: " << face.path << "\n";
+                return 3;
+            }
+            if (!capture(
+                    provider,
+                    sequence,
+                    arguments.scenario,
+                    locale,
+                    QStringLiteral("after-") + eventBase,
+                    processExecutablePath,
+                    {
+                        {QStringLiteral("faceKey"), face.key},
+                        {QStringLiteral("faceIndex"), static_cast<int>(index)},
+                        {QStringLiteral("path"), face.path},
+                        {QStringLiteral("expectedStyle"), face.expectedStyle},
+                        {QStringLiteral("expectedWeight"), face.weight},
+                        {QStringLiteral("expectedItalic"), face.italic},
+                        {QStringLiteral("registrationId"), face.registrationId},
+                        {QStringLiteral("registrationApi"), QStringLiteral("QFontDatabase::addApplicationFont(file)")},
+                        {QStringLiteral("operationDurationNanoseconds"), static_cast<qint64>(duration)}
+                    }
+                    ))
+            {
+                return 2;
+            }
+        }
+
         if (!capture(
                 provider,
                 sequence,
                 arguments.scenario,
                 locale,
-                QStringLiteral("before-startup-font-application"),
+                QStringLiteral("before-static-face-family-enumeration"),
                 processExecutablePath,
-                {
-                    {QStringLiteral("interFamily"), inter.familyName},
-                    {QStringLiteral("pretendardFamily"), pretendard.familyName}
-                }
+                {{QStringLiteral("registrationCount"), static_cast<int>(faces.size())}}
                 ))
         {
             return 2;
         }
-        const auto applicationStarted = Clock::now();
-        fontPresenter.applyStartupPreference(
-            ClassMngr::Next::Application::FontSize::Normal,
-            locale,
-            inter.familyName,
-            pretendard.familyName
-            );
-        const auto applicationDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            Clock::now() - applicationStarted
-            ).count();
+        for (StaticFace& face : faces)
+        {
+            face.registeredFamilies = QFontDatabase::applicationFontFamilies(face.registrationId);
+            if (face.registeredFamilies.contains(QStringLiteral("Inter"), Qt::CaseInsensitive))
+            {
+                ttcFamily = QStringLiteral("Inter");
+            }
+        }
+        registrationEvents = registrationRecords(faces);
         if (!capture(
                 provider,
                 sequence,
                 arguments.scenario,
                 locale,
-                QStringLiteral("after-startup-font-application"),
+                QStringLiteral("after-static-face-family-enumeration"),
                 processExecutablePath,
-                {
-                    {QStringLiteral("interFamily"), inter.familyName},
-                    {QStringLiteral("pretendardFamily"), pretendard.familyName},
-                    {QStringLiteral("operationDurationNanoseconds"), static_cast<qint64>(applicationDuration)}
-                }
+                {{QStringLiteral("registrations"), registrationEvents}}
                 ))
         {
             return 2;
@@ -499,42 +590,50 @@ int runProbe(const ProbeArguments& arguments)
             sequence,
             arguments.scenario,
             locale,
-            QStringLiteral("before-system-font-families-query"),
-            processExecutablePath
+            QStringLiteral("before-style-resolution"),
+            processExecutablePath,
+            {
+                {QStringLiteral("qpaPlatformOption"), qpaPlatformOption},
+                {QStringLiteral("actualPlatformName"), actualPlatformName},
+                {QStringLiteral("selectedInterFamily"), ttcFamily},
+                {QStringLiteral("registrationCount"), staticScenario ? static_cast<int>(faces.size()) : 1}
+            }
             ))
     {
         return 2;
     }
-    const auto familyQueryStarted = Clock::now();
-    const QStringList systemFamilies = QFontDatabase::families();
-    const auto familyQueryDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-        Clock::now() - familyQueryStarted
-        ).count();
-    if (systemFamilies.isEmpty())
+    const auto styleStarted = Clock::now();
+    const QJsonArray styleResolutions = resolveInterStyles();
+    const auto styleDuration = std::chrono::duration_cast<std::chrono::nanoseconds>(Clock::now() - styleStarted).count();
+    bool allStylesMatch = styleResolutions.size() == static_cast<qsizetype>(expectedFaces().size());
+    QJsonArray selectedEngines;
+    for (const QJsonValue& value : styleResolutions)
     {
-        std::cerr << "Qt returned an empty system font family list.\n";
-        return 5;
+        const QJsonObject style = value.toObject();
+        allStylesMatch = allStylesMatch && style.value(QStringLiteral("identityMatches")).toBool();
+        selectedEngines.append(style.value(QStringLiteral("engineType")));
     }
     if (!capture(
             provider,
             sequence,
             arguments.scenario,
             locale,
-            QStringLiteral("after-system-font-families-query"),
+            QStringLiteral("after-style-resolution"),
             processExecutablePath,
             {
-                {QStringLiteral("familyCount"), systemFamilies.size()},
-                {QStringLiteral("families"), stringArray(systemFamilies)},
-                {QStringLiteral("operationDurationNanoseconds"), static_cast<qint64>(familyQueryDuration)}
+                {QStringLiteral("selectedInterFamily"), ttcFamily},
+                {QStringLiteral("allStylesMatchExpectedIdentity"), allStylesMatch},
+                {QStringLiteral("styleResolutions"), styleResolutions},
+                {QStringLiteral("selectedEngineTypes"), selectedEngines},
+                {QStringLiteral("operationDurationNanoseconds"), static_cast<qint64>(styleDuration)}
             }
             ))
     {
         return 2;
     }
 
-    QTextStream output(stdout);
-    output << QJsonDocument(QJsonObject{
-        {QStringLiteral("schema"), QStringLiteral("classmngr-phase9-font-allocation-probe-v1")},
+    const QJsonObject completion{
+        {QStringLiteral("schema"), schema()},
         {QStringLiteral("recordType"), QStringLiteral("complete")},
         {QStringLiteral("scenario"), arguments.scenario},
         {QStringLiteral("pid"), static_cast<qint64>(GetCurrentProcessId())},
@@ -542,8 +641,18 @@ int runProbe(const ProbeArguments& arguments)
         {QStringLiteral("executablePath"), processExecutablePath},
         {QStringLiteral("qtVersion"), QStringLiteral(QT_VERSION_STR)},
         {QStringLiteral("locale"), locale},
-        {QStringLiteral("snapshotCount"), sequence}
-    }).toJson(QJsonDocument::Compact) << Qt::endl;
+        {QStringLiteral("snapshotCount"), sequence},
+        {QStringLiteral("qpaPlatformOption"), qpaPlatformOption},
+        {QStringLiteral("actualPlatformName"), actualPlatformName},
+        {QStringLiteral("selectedInterFamily"), ttcFamily},
+        {QStringLiteral("allStylesMatchExpectedIdentity"), allStylesMatch},
+        {QStringLiteral("ttcRegistrationId"), ttcRegistrationId},
+        {QStringLiteral("staticFaceRegistrations"), registrationEvents},
+        {QStringLiteral("staticFacePaths"), QJsonArray::fromStringList(arguments.staticFacePaths)},
+        {QStringLiteral("backendExpectation"), gdiScenario ? QStringLiteral("Win") : QStringLiteral("DirectWrite")}
+    };
+    QTextStream output(stdout);
+    output << QJsonDocument(completion).toJson(QJsonDocument::Compact) << Qt::endl;
     return 0;
 }
 
@@ -554,7 +663,7 @@ int main(int argc, char** argv)
     const auto arguments = parseArguments(argc, argv);
     if (!arguments)
     {
-        std::cerr << "Expected --scenario, --inter, and --pretendard arguments.\n";
+        QTextStream(stderr) << "Expected a known --scenario, --inter for TTC arms, or six --static-face paths.\n";
         return 1;
     }
     return runProbe(*arguments);

@@ -6,13 +6,14 @@ Phase 9 remains In progress. Batch 1 is closed. The optimized local Windows
 x64 Release P9-06 run completed valid 301-sample traces for empty and
 representative workspaces; all six startup-ready/external-startup/five-minute
 working-set checkpoints exceeded the strict 262,144,000-byte limit. P9-06R's
-same-asset Inter file-backed registration did not reduce memory: its six points
-were 680,534,016–688,103,424 bytes, within 1 MB of baseline. Two independent
-fresh-process Qt 6.12 Release probes now confirm a median ~490 MB WS / ~494 MB
-private increase at Inter registration itself, regardless of font order.
-This identifies the large synchronous operation but not Qt's internal cause.
-No memory pass is claimed. The next diagnostic compares the six exact static
-Inter faces under DirectWrite and the bundled TTC under Qt GDI.
+same-asset Inter file-backed registration did not reduce memory. P9-06S
+independently confirmed about 490 MB WS / 494 MB private growth synchronous
+with Inter TTC registration under Qt DirectWrite. P9-06T found the six static
+Inter v4.0 TTFs register at about 6.3 MB and the same TTC under GDI at about
+0.4 MB, but v4.0 differs from the bundled TTC's 4.001 version tag and GDI
+changes rendering across the app. The next diagnostic tests exact-version
+Inter v4.1 static files under DirectWrite. No memory pass is claimed; only the
+unchanged packaged P9-06 gate can establish one.
 
 See the Phase 9 progress log and current slice-batch tracker for source/build
 provenance, run artifacts, and the next diagnostic.

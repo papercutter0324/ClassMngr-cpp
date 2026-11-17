@@ -463,7 +463,56 @@ allocator or prove the full application's steady-state budget; the probe does
 not construct the full shell or idle.
 
 Source usage requests six exact styles: Normal 400, Medium 500, DemiBold 600,
-Bold 700, BoldItalic 700, and Black 900 upright. P9-06T compares these six
-unmodified, version-matched static TTFs from Inter v4.0 under DirectWrite
-with the bundled TTC under Qt GDI. The strict P9-06 gate remains unchanged; no
-normal-use memory pass is claimed.
+Bold 700, BoldItalic 700, and Black 900 upright. P9-06T comparison results
+are recorded in the next subsection. The strict P9-06 gate remains unchanged;
+no normal-use memory pass is claimed.
+#### P9-06T Inter representation and Qt backend probe
+
+The three-arm diagnostic used the standard local Windows x64 Release tree,
+packaged Qt 6.12.0, and seven fresh processes per arm. The first result is at
+artifacts/phase9/font-allocation-probe/20261117T230733178Z-8a835931bfce462197075f20075a0034/.
+The independent seven-process-per-arm rerun is at
+artifacts/phase9/font-allocation-probe/20261117T231413177Z-97221786522349e5a3ae58cbb7297183/.
+After removing PowerShell 7.7's obsolete Export-Csv -NoTypeInformation
+argument, the clean final run is at
+artifacts/phase9/font-allocation-probe/20261117T232318887Z-7bb3c8eb1e274cb1991c64bdb2b6437f/.
+The warning was removed by deleting the obsolete parameter; no warning was
+suppressed. The final CSV header is unchanged and contains 57 data rows.
+
+The final run completed 21 fresh processes on 21 unique PIDs with a stable
+source fingerprint, an optimized VS 18 2026 x64 Release probe
+(/MD /O2 /Ob2 /DNDEBUG), and Qt 6.12.0. The standard Release cache hash is
+f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47; the probe
+SHA-256 is ec1e2a5a077094a6c5020ffa74ee970cb3dd666e00457468d5fffb7a037bedc4.
+The independent Tester verified raw stream identity, QPA option, backend,
+style resolution, archive/license hashes, and per-process deltas. The QRawFont
+engine type was DirectWrite for the first two arms and Win for the GDI arm.
+
+| Arm | Median registration WS / private usage |
+|---|---:|
+| Packaged Inter TTC, DirectWrite | 489,861,120 / 493,707,264 B |
+| Six Inter v4.0 static TTFs, DirectWrite, cumulative after six | 6,287,360 / 6,213,632 B |
+| Packaged Inter TTC, windows:nodirectwrite / Qt Win | 405,504 / 0 B |
+
+Each of the six source-requested styles resolved in all arms: Regular 400,
+Medium 500, SemiBold 600, Bold 700, BoldItalic 700, and Black 900 upright.
+Application-font enumeration added only about 8–12 KB WS and zero median
+private usage. Subsequent style resolution added about 6.3 MB WS / 5.7 MB
+private for DirectWrite and 1.6 MB / 1.3 MB for Qt Win. This probe does not
+construct the full application or establish a P9-06 budget result.
+
+The official Inter v4.0 archive was 27,885,132 bytes, SHA-256
+ff970a5d4561a04f102a7cb781adbd6ac4e9b6c460914c7a101f15acb7f7d1a4. Its six
+static files match the archive members and local OFL license, but their name
+tables report version 4.000; all faces in the bundled TTC report 4.001. The
+version difference prevents treating these static TTFs as exact-version
+replacements without parity review. Official Inter v4.1 release metadata
+reports 4.001; P9-06U will verify and measure the six static files under
+DirectWrite. See the official [Inter v4.1 release](https://github.com/rsms/inter/releases/tag/v4.1)
+and [font metadata](https://github.com/rsms/inter/blob/master/docs/_data/fontinfo.json).
+
+The GDI arm retained the packaged TTC and selected Qt's Win engine for each
+requested style, with near-zero registration delta. It preserves the asset
+version but changes Qt's text rendering backend broadly; keep it as a fallback
+if the exact-version DirectWrite static-face candidate is unsuitable. Neither
+diagnostic alters product files or replaces the strict packaged Release gate.

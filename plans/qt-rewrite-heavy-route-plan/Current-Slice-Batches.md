@@ -55,27 +55,38 @@ allocation or cleanup defect, route the fix to that feature boundary.
      dominant increase to Inter registration but does not establish Qt's
      internal cause. The diagnostic does not pass the normal-use budget. Both
      run IDs and hashes are recorded in the Phase 9 progress log.
-4. **P9-06T — Compare Inter faces and Qt font backends**
-   (Proposed diagnostic slice)
-   - Acceptance: compare the packaged Inter TTC registered under the current
-     DirectWrite backend, the six unmodified version-matched v4.0 static TTF
-     faces requested by source usage under DirectWrite, and the same TTC under
-     Qt's GDI backend. The six exact styles are Regular 400, Medium 500,
-     SemiBold 600, Bold 700, BoldItalic 700, and Black 900 upright. First
-     verify official source archive, each asset hash, license, and Qt backend.
-     Use repeated fresh x64 Release processes; record per-registration and
-     cumulative WS/private metrics, family/style resolution, and environment.
-     Preserve all artifacts. This diagnostic does not alter product assets or
-     pass the normal-use budget. If an arm can plausibly save at least 426 MB,
-     implement that candidate separately and run the unchanged packaged P9-06
-     gate before claiming a fix.
-
-5. **P9-07 — Normal navigation and five-minute idle** (Proposed)
+4. **P9-06T — Compare Inter faces and Qt font backends** (Diagnostic complete)
+   - Acceptance: compare the packaged Inter TTC with six static Inter faces
+     under DirectWrite and the same TTC under Qt GDI in fresh x64 Release
+     processes; record source/version/hash/license, backend, face resolution,
+     and per-registration/cumulative WS/private metrics.
+   - Result: seven fresh processes per arm. The TTC under DirectWrite added a
+     median 489,861,120 WS / 493,707,264 private bytes. Six original static
+     Inter v4.0 TTFs under DirectWrite added 6,287,360 / 6,213,632 bytes
+     cumulatively. The TTC under GDI added 405,504 / 0 bytes. All six requested
+     styles resolved. The independent Tester validated all 21 processes,
+     backends, face results, asset hashes, and deltas; the PowerShell warning
+     was fixed by removing the obsolete parameter, not suppressing it.
+   - The static files are v4.000 while the bundled TTC is v4.001, so do not
+     integrate them as an exact-version replacement yet. GDI changes text
+     rendering across the app and remains a fallback candidate. See the Phase
+     9 progress log for run IDs and full provenance. This probe is diagnostic
+     only and did not run the packaged P9-06 gate.
+5. **P9-06U — Test exact-version Inter static faces** (Proposed diagnostic slice)
+   - Acceptance: fetch the six original static TTFs from official Inter v4.1,
+     verify archive/member SHA-256, metadata, license, and candidate source
+     version against the bundled TTC's 4.001 tag. Compare glyph coverage and
+     style/metric parity for the six product-required faces, then measure
+     repeated fresh x64 Release registration under DirectWrite. Preserve all
+     artifacts and failed attempts. This is diagnostic only; do not alter the
+     product package or claim a memory pass. If viable, follow with a separate
+     production slice and the unchanged packaged P9-06 gate.
+6. **P9-07 — Normal navigation and five-minute idle** (Proposed)
    - Acceptance: locally packaged Windows Release exercises repeated normal
      navigation, proves the document catalog has no loaded PDF body, and
      enforces the same strict normal-use working-set limit after navigation
      and idle.
-6. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Proposed)
+7. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Proposed)
    - Acceptance: the locally packaged Windows Release route covers entry,
      summary creation, first selection, refresh, package generation, leave,
      and repeated re-entry. Capture peak and settled process metrics plus
