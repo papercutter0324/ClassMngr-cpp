@@ -17,9 +17,12 @@
   and GDI changes rendering across Qt. P9-06U verified six exact-version v4.1
   static faces against the TTC and independently measured about 6.3 MB WS /
   6.2 MB private cumulative registration under DirectWrite, compared with
-  about 489.9 MB / 493.8 MB for the TTC. P9-06V will migrate production to
-  those faces and run the unchanged packaged gate. No Phase 9 memory budget
-  pass is claimed yet. See the
+  about 489.9 MB / 493.8 MB for the TTC. P9-06V moved production to those six
+  faces, included the OFL license in the package, and passed the unchanged
+  local packaged gate: both fixtures completed 301 samples, and all six
+  checkpoints were 199,380,992–207,187,968 bytes against the strict
+  262,144,000-byte limit. P9-07 normal navigation and P9-08 lifecycle/cleanup
+  remain; the Phase 9 exit gate is still open. See the
   [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
   [Phase 8a closeout](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
   [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), [Phase 9 progress

@@ -8,6 +8,8 @@
 #include <QString>
 #include <QStringList>
 
+#include <array>
+
 #ifndef CLASSMNGR_SOURCE_DIR
 #define CLASSMNGR_SOURCE_DIR ""
 #endif
@@ -186,8 +188,14 @@ inline QString filePath(
 
 namespace ResourcePaths::Fonts
 {
-inline constexpr auto Inter =
-    ":/assets/fonts/Inter.ttc";
+inline constexpr std::array<const char*, 6> InterStaticFaces{
+    ":/assets/fonts/Inter-Regular.ttf",
+    ":/assets/fonts/Inter-Medium.ttf",
+    ":/assets/fonts/Inter-SemiBold.ttf",
+    ":/assets/fonts/Inter-Bold.ttf",
+    ":/assets/fonts/Inter-BoldItalic.ttf",
+    ":/assets/fonts/Inter-Black.ttf",
+};
 
 inline constexpr auto Pretendard =
     ":/assets/fonts/PretendardVariable.ttf";
@@ -207,8 +215,20 @@ inline constexpr auto Caveat =
 inline QString inter()
 {
     return Detail::resolveResourcePath(
-        QString::fromUtf8(Inter)
+        QString::fromUtf8(InterStaticFaces.front())
         );
+}
+
+inline std::array<QString, InterStaticFaces.size()> interStaticFaces()
+{
+    std::array<QString, InterStaticFaces.size()> paths;
+    for (std::size_t index = 0; index < InterStaticFaces.size(); ++index)
+    {
+        paths.at(index) = Detail::resolveResourcePath(
+            QString::fromUtf8(InterStaticFaces.at(index))
+            );
+    }
+    return paths;
 }
 
 inline QString pretendard()

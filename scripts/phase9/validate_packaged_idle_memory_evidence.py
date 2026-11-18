@@ -17,7 +17,7 @@ from typing import Any
 
 
 TASK_ID = "P9_06_PACKAGED_STARTUP_IDLE_GATE"
-MANIFEST_SCHEMA = "classmngr-phase9-packaged-idle-memory-v2"
+MANIFEST_SCHEMA = "classmngr-phase9-packaged-idle-memory-v3"
 SUMMARY_SCHEMA = "classmngr-phase9-packaged-idle-memory-summary-v2"
 EXPECTED_SCENARIOS = ("empty-workspace", "representative-96-class-workspace")
 EXPECTED_FIXTURES = {
@@ -40,7 +40,7 @@ EXPECTED_STARTUP_BOUNDARIES = (
     {
         "eventId": "inter-font-resource-loaded",
         "kind": "resource",
-        "value": "resource:assets/fonts/Inter.ttc",
+        "value": "resource:assets/fonts/Inter-Regular.ttf",
     },
     {
         "eventId": "pretendard-font-resource-loaded",
@@ -54,11 +54,30 @@ EXPECTED_STARTUP_BOUNDARIES = (
     },
     {"eventId": "shell-created", "kind": "stage", "value": "shell-created"},
 )
+EXPECTED_INTER_FONT_RESOURCE_IDS = (
+    "resource:assets/fonts/Inter-Regular.ttf",
+    "resource:assets/fonts/Inter-Medium.ttf",
+    "resource:assets/fonts/Inter-SemiBold.ttf",
+    "resource:assets/fonts/Inter-Bold.ttf",
+    "resource:assets/fonts/Inter-BoldItalic.ttf",
+    "resource:assets/fonts/Inter-Black.ttf",
+)
+EXPECTED_INTER_FONT_CATALOG_ENTRIES = tuple(
+    {
+        "resourceId": resource_id,
+        "sourcePath": resource_id.replace("resource:assets/", "resources/assets/"),
+        "packageRelativePath": resource_id.replace("resource:", ""),
+    }
+    for resource_id in EXPECTED_INTER_FONT_RESOURCE_IDS
+)
+INTER_FONT_LICENSE_SOURCE_PATH = "licenses/fonts/inter/LICENSE.txt"
+INTER_FONT_LICENSE_PACKAGE_PATH = "licenses/fonts/inter/LICENSE.txt"
 REQUIRED_SOURCE_FILES = {
     "CMakeLists.txt",
     "CMakePresets.json",
     "docs/qt-rewrite/phase-4-resource-inventory.json",
     "licenses/qt/LGPL-3.0-only.txt",
+    "licenses/fonts/inter/LICENSE.txt",
     "scripts/phase4/bake_resources.py",
     "scripts/phase4/generate_resource_catalog.py",
     "scripts/phase4/generate_resource_inventory.py",
@@ -195,6 +214,21 @@ def _startup_boundary_event_id(line: str) -> str | None:
             )
         return str(boundary["eventId"])
     return None
+
+
+def _inter_font_resource_checkpoint(line: str) -> dict[str, Any] | None:
+    if "resource:assets/fonts/Inter" not in line:
+        return None
+    match = RESOURCE_CHECKPOINT_RE.fullmatch(line)
+    if match is None:
+        raise EvidenceValidationError("Inter font resource startup record is malformed")
+    try:
+        checkpoint = json.loads(match.group(1))
+    except json.JSONDecodeError as error:
+        raise EvidenceValidationError("Inter font resource checkpoint JSON is malformed") from error
+    if not isinstance(checkpoint, dict):
+        raise EvidenceValidationError("Inter font resource checkpoint must be an object")
+    return checkpoint
 
 
 def _validate_msvc_release_flags(value: Any, label: str) -> dict[str, Any]:
@@ -553,6 +587,91 @@ def validate_documents(
     file_paths = [entry.get("path") for entry in package_files]
     if len(file_paths) != len(set(file_paths)):
         raise EvidenceValidationError("package inventory contains duplicate paths")
+    if manifest.get("requiredInterFontResourceIds") != list(EXPECTED_INTER_FONT_RESOURCE_IDS):
+        raise EvidenceValidationError("manifest Inter font resource contract is missing or malformed")
+    package_by_path = {
+        str(entry["path"]).replace("\\", "/").casefold(): entry
+        for entry in package_files
+        if isinstance(entry, dict) and isinstance(entry.get("path"), str)
+    }
+    source_by_path = {
+        str(entry["path"]).replace("\\", "/").casefold(): entry
+        for entry in source_files
+        if isinstance(entry, dict) and isinstance(entry.get("path"), str)
+    }
+    expected_inter_package_paths = {
+        f"resources/{entry['packageRelativePath']}".casefold()
+        for entry in EXPECTED_INTER_FONT_CATALOG_ENTRIES
+    }
+    actual_inter_package_paths = {
+        path
+        for path in package_by_path
+        if re.fullmatch(r"resources/assets/fonts/inter[^/]*\.(?:ttf|ttc)", path)
+    }
+    if actual_inter_package_paths != expected_inter_package_paths:
+        raise EvidenceValidationError(
+            "package must contain exactly the six catalogued Inter TTF files and no TTC alias"
+        )
+    resource_catalog_path = package.get("resourceCatalogPath")
+    if resource_catalog_path != "resources/resource-catalog.json":
+        raise EvidenceValidationError("package resource catalog path is unexpected")
+    resource_catalog_file = package_by_path.get(resource_catalog_path.casefold())
+    if resource_catalog_file is None or _require_sha(
+        package.get("resourceCatalogSha256"), "package.resourceCatalogSha256"
+    ) != resource_catalog_file.get("sha256"):
+        raise EvidenceValidationError("package resource catalog hash is missing or mismatched")
+    catalog_entries = package.get("interFontCatalogEntries")
+    if not isinstance(catalog_entries, list) or len(catalog_entries) != len(
+        EXPECTED_INTER_FONT_CATALOG_ENTRIES
+    ):
+        raise EvidenceValidationError("package Inter font catalog entries are incomplete")
+    for index, (expected, raw_entry) in enumerate(
+        zip(EXPECTED_INTER_FONT_CATALOG_ENTRIES, catalog_entries, strict=True)
+    ):
+        entry = _require_object(raw_entry, f"package.interFontCatalogEntries[{index}]")
+        if any(entry.get(name) != expected[name] for name in ("resourceId", "sourcePath", "packageRelativePath")):
+            raise EvidenceValidationError("package Inter font catalog entries are missing, unexpected, or out of order")
+        source_path = str(expected["sourcePath"]).casefold()
+        package_path = f"resources/{expected['packageRelativePath']}".casefold()
+        source_entry = source_by_path.get(source_path)
+        packaged_entry = package_by_path.get(package_path)
+        if source_entry is None or packaged_entry is None:
+            raise EvidenceValidationError(f"catalogued Inter font is absent from source or package: {expected['resourceId']}")
+        font_size = _require_positive_int(entry.get("sizeBytes"), f"Inter catalog entry {index}.sizeBytes")
+        font_sha = _require_sha(entry.get("sha256"), f"Inter catalog entry {index}.sha256")
+        if (
+            source_entry.get("sizeBytes") != font_size
+            or source_entry.get("sha256") != font_sha
+            or packaged_entry.get("sizeBytes") != font_size
+            or packaged_entry.get("sha256") != font_sha
+        ):
+            raise EvidenceValidationError(f"catalogued Inter source/package identity differs: {expected['resourceId']}")
+
+    inter_license = _require_object(package.get("interFontLicense"), "package.interFontLicense")
+    if (
+        inter_license.get("sourcePath") != INTER_FONT_LICENSE_SOURCE_PATH
+        or inter_license.get("packagePath") != INTER_FONT_LICENSE_PACKAGE_PATH
+    ):
+        raise EvidenceValidationError("package Inter OFL license path is missing or unexpected")
+    source_license = source_by_path.get(INTER_FONT_LICENSE_SOURCE_PATH.casefold())
+    packaged_license = package_by_path.get(INTER_FONT_LICENSE_PACKAGE_PATH.casefold())
+    if source_license is None or packaged_license is None:
+        raise EvidenceValidationError("Inter OFL license is absent from source or package inventory")
+    inter_license_size = _require_positive_int(
+        inter_license.get("sizeBytes"), "package.interFontLicense.sizeBytes"
+    )
+    inter_license_sha = _require_sha(
+        inter_license.get("sha256"), "package.interFontLicense.sha256"
+    )
+    if (
+        source_license.get("sizeBytes") != inter_license_size
+        or source_license.get("sha256") != inter_license_sha
+        or packaged_license.get("sizeBytes") != inter_license_size
+        or packaged_license.get("sha256") != inter_license_sha
+    ):
+        raise EvidenceValidationError(
+            "packaged Inter OFL license hash or size differs from its exact source identity"
+        )
 
     if len(startup_events) < 1:
         raise EvidenceValidationError("startup log is empty")
@@ -790,6 +909,97 @@ def validate_documents(
         if workspace_log_index >= ready_log_index or workspace_at >= diagnostic_at:
             raise EvidenceValidationError(
                 f"{scenario_id} workspace-opened record did not precede startup-ready"
+            )
+
+        required_fonts_log_matches = [
+            (index, event)
+            for index, event in enumerate(startup_events)
+            if event.get("scenarioId") == scenario_id
+            and isinstance(event.get("line"), str)
+            and "ClassMngrNext startup stage=required-fonts-loaded " in event["line"]
+        ]
+        if len(required_fonts_log_matches) != 1:
+            raise EvidenceValidationError(
+                f"{scenario_id} must have exactly one required-fonts-loaded startup record"
+            )
+        required_fonts_log_index, _ = required_fonts_log_matches[0]
+        if required_fonts_log_index >= workspace_log_index or required_fonts_log_index >= ready_log_index:
+            raise EvidenceValidationError(
+                f"{scenario_id} required-fonts-loaded record did not precede workspace-opened and startup-ready"
+            )
+
+        inter_font_log_matches: list[tuple[int, dict[str, Any], dict[str, Any]]] = []
+        for index, event in enumerate(startup_events):
+            if event.get("scenarioId") != scenario_id or not isinstance(event.get("line"), str):
+                continue
+            checkpoint = _inter_font_resource_checkpoint(event["line"])
+            if checkpoint is None:
+                continue
+            resource_id = checkpoint.get("resource_id")
+            if resource_id not in EXPECTED_INTER_FONT_RESOURCE_IDS:
+                raise EvidenceValidationError(
+                    f"{scenario_id} has unexpected Inter font resource ID {resource_id!r}; TTC aliases are rejected"
+                )
+            request_scope = checkpoint.get("request_scope")
+            if (
+                checkpoint.get("event") != "resource-load"
+                or checkpoint.get("outcome") != "succeeded"
+                or not isinstance(request_scope, dict)
+                or request_scope.get("kind") != "startup"
+            ):
+                raise EvidenceValidationError(
+                    f"{scenario_id} Inter font resource {resource_id} did not complete successfully during startup"
+                )
+            inter_font_log_matches.append((index, event, checkpoint))
+        if [match[2].get("resource_id") for match in inter_font_log_matches] != list(
+            EXPECTED_INTER_FONT_RESOURCE_IDS
+        ):
+            raise EvidenceValidationError(
+                f"{scenario_id} must have exactly one successful startup event for each catalogued Inter TTF in order"
+            )
+        recorded_inter_events = scenario.get("interFontResourceEvents")
+        if not isinstance(recorded_inter_events, list) or len(recorded_inter_events) != len(
+            EXPECTED_INTER_FONT_RESOURCE_IDS
+        ):
+            raise EvidenceValidationError(f"{scenario_id} manifest Inter font event records are incomplete")
+        prior_inter_at: datetime | None = None
+        inter_font_summaries: list[dict[str, Any]] = []
+        for expected_id, (index, event, checkpoint), raw_record in zip(
+            EXPECTED_INTER_FONT_RESOURCE_IDS,
+            inter_font_log_matches,
+            recorded_inter_events,
+            strict=True,
+        ):
+            record = _require_object(raw_record, f"{scenario_id}.interFontResourceEvents")
+            event_at = _parse_timestamp(
+                event.get("observedAtUtc"), f"{scenario_id}.{expected_id}.observedAtUtc"
+            )
+            if prior_inter_at is not None and event_at < prior_inter_at:
+                raise EvidenceValidationError(f"{scenario_id} Inter TTF startup event timestamps are out of order")
+            prior_inter_at = event_at
+            if index >= required_fonts_log_index or index >= workspace_log_index or index >= ready_log_index or event_at >= diagnostic_at:
+                raise EvidenceValidationError(
+                    f"{scenario_id} Inter font resource {expected_id} occurred after startup readiness"
+                )
+            if (
+                record.get("resourceId") != expected_id
+                or record.get("outcome") != "succeeded"
+                or record.get("requestScopeKind") != "startup"
+                or record.get("startupLogIndex") != index
+                or record.get("stream") != event.get("stream")
+                or record.get("observedAtUtc") != event.get("observedAtUtc")
+                or record.get("rawLine") != event.get("line")
+            ):
+                raise EvidenceValidationError(
+                    f"{scenario_id} Inter font manifest event differs from its startup log record"
+                )
+            inter_font_summaries.append(
+                {
+                    "resourceId": expected_id,
+                    "startupLogIndex": index,
+                    "outcome": "succeeded",
+                    "observedAtUtc": event.get("observedAtUtc"),
+                }
             )
 
         scenario_boundary_rows = [
@@ -1099,6 +1309,7 @@ def validate_documents(
                 "fixturePathPassedToApp": fixture_argument,
                 "workspaceOpenedAtUtc": workspace_diagnostic.get("observedAtUtc"),
                 "workspaceOpenedOutcome": workspace_diagnostic.get("outcome"),
+                "interFontResourceEvents": inter_font_summaries,
                 "startupBoundaryMetrics": scenario_boundary_summaries,
                 "sampleCount": SAMPLE_COUNT,
                 "startupReadyDiagnosticAtUtc": diagnostic.get("observedAtUtc"),

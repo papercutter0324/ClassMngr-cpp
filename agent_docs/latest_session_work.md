@@ -1,6 +1,6 @@
 # Latest Session Work
 
-## Phase 9 current handoff - P9-06U exact-version Inter parity - 2026-11-18
+## Phase 9 current handoff - P9-06V packaged memory gate pass - 2026-11-18
 
 Phase 9 remains In progress. Batch 1 is closed. P9-06 and P9-06R have valid
 source-bound optimized local Windows x64 Release evidence, and both fail the
@@ -11,12 +11,32 @@ faces register with a small memory increase, but those faces are version 4.000
 rather than the bundled TTC's 4.001. A same-TTC GDI probe also uses little
 memory, but changing Qt's global backend affects text rendering more broadly.
 P9-06U verified exact-version v4.1 faces against the TTC for styles, Unicode
-coverage, outlines, and horizontal metrics. Independent Windows measurement
-found about 6.3 MB WS / 6.2 MB private cumulative registration for the six
-static faces, compared with about 489.9 MB / 493.8 MB for the TTC. P9-06V is
-migrating production and will run the unchanged packaged gate. These are
-diagnostic results, not a Phase 9 memory pass.
+coverage, outlines, and horizontal metrics. P9-06V migrated production to the
+six static faces, included the Inter OFL license in the package, and passed
+the unchanged packaged P9-06 gate. Both empty and 96-class scenarios completed
+301 samples. Their six gated WS points ranged from 199,380,992 to 207,187,968
+bytes against the strict 262,144,000-byte limit. Phase 9 remains in progress;
+P9-07 navigation and P9-08 lifecycle/cleanup remain open.
 
+- Final license-inclusive run
+  artifacts/phase9/packaged-idle-memory/20261118T014537306Z-212490675a364c8fb30d334495d2f5f3/
+  validated as valid/passed. Empty workspace WS checkpoints were 199,716,864
+  startup-ready, 206,819,328 external-startup, and 206,180,352 at five-minute
+  idle; 96-class values were 200,421,376, 207,167,488, and 206,553,088. The
+  max idle WS was 207,187,968. Source fingerprint is
+  `e717f47b15f8de5404ba55eac46ad37cdf88a367e147b355e9e98b3940d1ddb8`,
+  cache hash `f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47`,
+  and package hash `e0898b2e6517d8e26989982dad6daffc977f7ecbc65a7bc8ea4b9587c6aecc16`.
+  The earlier passing run without the package license remains preserved but is
+  not the accepted candidate.
+- The package contains the six exact Inter v4.1 static faces and no TTC or
+  alias, the unchanged Pretendard asset, and exactly one OFL license file
+  (4,472 bytes, SHA-256
+  `b3195af0fb14368d1b3b10fb9d3fe503b7163ea083859d2ee553bc74da07c320`). The
+  gate validator requires all six successful, ordered TTF events and rejects
+  a TTC alias while preserving the existing sampling and budget contract.
+  Its focused suite passed 44/44; Phase 4 inventory tests passed 34 with one
+  expected symlink-privilege skip.
 - The valid P9-06 baseline run is
   artifacts/phase9/packaged-idle-memory/20261117T190410131Z-43f692fcd33b4a2a87cf12518dbf1386/.
   Both empty and 96-class fixtures opened successfully, each app emitted clean
@@ -80,15 +100,16 @@ diagnostic results, not a Phase 9 memory pass.
   the TTC's 4.001; the GDI backend changes text rendering across Qt.
 - The official Inter v4.1 release metadata reports version 4.001, matching the
   bundled TTC tag. P9-06U's independent run verified all six exact-version
-  original static files and repeated the DirectWrite measurement. P9-06V now
-  owns the product migration and full packaged memory gate. The Phase 9 log
-  records all source, archive, runtime, parity, and run hashes.
+  original static files and repeated the DirectWrite measurement. P9-06V
+  integrated those files, packaged their license, and retained the strict
+  sample protocol and memory threshold. The Phase 9 log records all source,
+  archive, runtime, parity, and run hashes.
 
-- The probe does not construct the full app UI or idle for five minutes. It
-  therefore localizes the synchronous allocation operation, but it does not
-  prove the full app's internal cause or pass the normal-use gate. P9-06V is
-  now applying the verified static files and rerunning the full gate; P9-07
-  and P9-08 follow in Batch 2. No GitHub validation is required or used.
+- The font-allocation probes do not construct the full app or idle for five
+  minutes; they only localized the synchronous allocation. The full P9-06V
+  package gate now passes. P9-07 and P9-08 remain in Batch 2; the full Debug
+  CTest exit check is still required after source work. No GitHub validation
+  is required or used.
 
 The full handoff and current sequence are in the Phase 9 progress log and
 current slice-batch tracker.

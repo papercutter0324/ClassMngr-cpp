@@ -144,6 +144,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -1377,7 +1378,12 @@ public:
 
     [[nodiscard]] bool addRequiredFonts() const
     {
-        return addResource(QStringLiteral("assets/fonts/Inter.ttc"))
+        return addResource(QStringLiteral("assets/fonts/Inter-Regular.ttf"))
+            && addResource(QStringLiteral("assets/fonts/Inter-Medium.ttf"))
+            && addResource(QStringLiteral("assets/fonts/Inter-SemiBold.ttf"))
+            && addResource(QStringLiteral("assets/fonts/Inter-Bold.ttf"))
+            && addResource(QStringLiteral("assets/fonts/Inter-BoldItalic.ttf"))
+            && addResource(QStringLiteral("assets/fonts/Inter-Black.ttf"))
             && addResource(QStringLiteral("assets/fonts/PretendardVariable.ttf"));
     }
 
@@ -3002,10 +3008,28 @@ loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell()
     const QStringList registeredFamilies = QFontDatabase::families();
     QVERIFY(containsFontFamilyLike(registeredFamilies, QStringLiteral("Inter")));
     QVERIFY(containsFontFamilyLike(registeredFamilies, QStringLiteral("Pretendard")));
+    const std::array<std::tuple<QString, int, bool>, 6> expectedInterStyles{{
+        {QStringLiteral("Regular"), 400, false},
+        {QStringLiteral("Medium"), 500, false},
+        {QStringLiteral("SemiBold"), 600, false},
+        {QStringLiteral("Bold"), 700, false},
+        {QStringLiteral("Bold Italic"), 700, true},
+        {QStringLiteral("Black"), 900, false},
+    }};
+    const QStringList interStyles = QFontDatabase::styles(QStringLiteral("Inter"));
+    for (const auto& [style, weight, italic] : expectedInterStyles)
+    {
+        QVERIFY2(interStyles.contains(style), qPrintable(style));
+        QCOMPARE(QFontDatabase::weight(QStringLiteral("Inter"), style), weight);
+        QCOMPARE(QFontDatabase::italic(QStringLiteral("Inter"), style), italic);
+        const QFont resolved = QFontDatabase::font(QStringLiteral("Inter"), style, 12);
+        QCOMPARE(static_cast<int>(resolved.weight()), weight);
+        QCOMPARE(resolved.italic(), italic);
+    }
 
-    // Only the selected translation, selected theme, two required fonts, and
-    // document catalog metadata exist in this package root. Startup succeeds
-    // without staging any document bodies.
+    // Only the selected translation and theme, six required Inter faces,
+    // Pretendard, and document catalog metadata exist in this package root.
+    // Startup succeeds without staging any document bodies.
     languageProbe.close();
     application.setStyleSheet(previousStyleSheet);
 }
@@ -5765,7 +5789,7 @@ requiredFontFailureRollsBackTranslationThemeAndFirstFont()
     QVERIFY(resources.isValid());
     QVERIFY(resources.addTranslation(QStringLiteral("ko_KR")));
     QVERIFY(resources.addTheme(QStringLiteral("dark")));
-    QVERIFY(resources.addResource(QStringLiteral("assets/fonts/Inter.ttc")));
+    QVERIFY(resources.addResource(QStringLiteral("assets/fonts/Inter-Regular.ttf")));
 
     LanguageChangeProbe languageProbe;
     languageProbe.show();
@@ -5903,7 +5927,12 @@ void ApplicationBootstrapTests::generatedCatalogStartsWithOnlySelectedStartupPay
     const std::array expectedStartupPayloads{
         QStringLiteral("assets/translations/ClassMngr_ko_KR.qm"),
         QStringLiteral("assets/styles/light.qss"),
-        QStringLiteral("assets/fonts/Inter.ttc"),
+        QStringLiteral("assets/fonts/Inter-Regular.ttf"),
+        QStringLiteral("assets/fonts/Inter-Medium.ttf"),
+        QStringLiteral("assets/fonts/Inter-SemiBold.ttf"),
+        QStringLiteral("assets/fonts/Inter-Bold.ttf"),
+        QStringLiteral("assets/fonts/Inter-BoldItalic.ttf"),
+        QStringLiteral("assets/fonts/Inter-Black.ttf"),
         QStringLiteral("assets/fonts/PretendardVariable.ttf"),
         QStringLiteral("assets/documents/documents.json"),
         QStringLiteral("assets/icons/icon_256x256.png")

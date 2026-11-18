@@ -194,7 +194,12 @@ qt_add_resources(ClassMngrFontManager sub_prep_font_resources
     PREFIX "/"
     BASE "${PROJECT_SOURCE_DIR}/resources"
     FILES
-        resources/assets/fonts/Inter.ttc
+        resources/assets/fonts/Inter-Regular.ttf
+        resources/assets/fonts/Inter-Medium.ttf
+        resources/assets/fonts/Inter-SemiBold.ttf
+        resources/assets/fonts/Inter-Bold.ttf
+        resources/assets/fonts/Inter-BoldItalic.ttf
+        resources/assets/fonts/Inter-Black.ttf
         resources/assets/fonts/PretendardVariable.ttf
 )
 set_target_properties(ClassMngrFontManager

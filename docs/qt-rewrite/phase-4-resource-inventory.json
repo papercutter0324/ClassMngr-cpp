@@ -3,24 +3,31 @@
   "title": "Phase 4 effective resource inventory",
   "source_snapshot": {
     "tracked_source_tree_ids": {
-      "resources": "e5f2a4812cd3294cac1bbb94330df705b7c60858",
+      "resources": "5963689a67a64b3c8d82e37160157202220b1188",
       "calendar_qml": "b75d01f27817b205ad63deca347be0506e3b9796"
     },
-    "tracked_input_worktree_changes": [],
+    "tracked_input_worktree_changes": [
+      "resources/assets/fonts/Inter-Black.ttf",
+      "resources/assets/fonts/Inter-Bold.ttf",
+      "resources/assets/fonts/Inter-BoldItalic.ttf",
+      "resources/assets/fonts/Inter-Medium.ttf",
+      "resources/assets/fonts/Inter-Regular.ttf",
+      "resources/assets/fonts/Inter-SemiBold.ttf"
+    ],
     "effective_baseline": "Tracked source content at the recorded Git tree IDs plus the exact working-tree bytes recorded below. No installed resource-pack overrides were available in the checked application-owned resource-pack directory."
   },
   "scope": {
-    "tracked_files_under_resources": 229,
-    "tracked_files_under_resources_assets": 226,
-    "tracked_files_under_resources_windows": 3,
+    "tracked_files_under_resources": 236,
+    "tracked_files_under_resources_assets": 232,
+    "tracked_files_under_resources_windows": 4,
     "tracked_calendar_qml_sources_outside_resources": 2,
-    "resource_asset_source_bytes_exact": 66087951,
-    "all_tracked_resources_source_bytes_exact": 66089137,
+    "resource_asset_source_bytes_exact": 68602327,
+    "all_tracked_resources_source_bytes_exact": 68603659,
     "calendar_qml_source_bytes_exact": 35154,
     "disposition_record_counts": {
-      "build_only_excluded": 31,
-      "excluded_v2": 6,
-      "runtime_packaged": 187,
+      "build_only_excluded": 32,
+      "excluded_v2": 7,
+      "runtime_packaged": 192,
       "runtime_packaged_generated": 7
     },
     "resource_assets_by_directory": {
@@ -37,8 +44,8 @@
         "source_bytes": 38903
       },
       "fonts": {
-        "files": 6,
-        "source_bytes": 21098232
+        "files": 12,
+        "source_bytes": 23612608
       },
       "icons": {
         "files": 83,
@@ -83,8 +90,8 @@
         "source_bytes": 38903
       },
       "fonts": {
-        "files": 6,
-        "source_bytes": 21098232
+        "files": 12,
+        "source_bytes": 23612608
       },
       "icons": {
         "files": 83,
@@ -95,8 +102,8 @@
         "source_bytes": 9861
       },
       "platform_packaging": {
-        "files": 3,
-        "source_bytes": 1186
+        "files": 4,
+        "source_bytes": 1332
       },
       "splash": {
         "files": 1,
@@ -2468,16 +2475,176 @@
       }
     },
     {
-      "logical_id": "resource:assets/fonts/Inter.ttc",
-      "source_path": "resources/assets/fonts/Inter.ttc",
+      "logical_id": "resource:assets/fonts/Inter-Black.ttf",
+      "source_path": "resources/assets/fonts/Inter-Black.ttf",
       "resource_kind": "required_ui_font",
       "category": "fonts",
       "owner_feature": "Shared UI typography",
       "package_disposition": "runtime_packaged",
       "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
       "source_file": {
-        "bytes": 13172948,
-        "sha256": "ea4e3d9970b9b6b566110a1b0e13635fe235280b83dd2443dcb3faca1e2456ef"
+        "bytes": 419968,
+        "sha256": "6342d3ea6dc088b43867f615e807d898adf100c93edb978b8e52c5eb71a264da"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_measured",
+        "method_ref": "installed_direct"
+      },
+      "startup_necessity": "required_for_primary_ui",
+      "loading_tier": "core_startup",
+      "loading_method": "Register the required family at UI startup.",
+      "expected_lifetime": "Process lifetime for required UI families.",
+      "release_policy": "Keep required UI families for process lifetime; remove optional registrations when the owning feature/operation releases them.",
+      "streamability": {
+        "status": "no",
+        "method_ref": "stream_no"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "unknown",
+        "method_ref": "resident_font"
+      }
+    },
+    {
+      "logical_id": "resource:assets/fonts/Inter-Bold.ttf",
+      "source_path": "resources/assets/fonts/Inter-Bold.ttf",
+      "resource_kind": "required_ui_font",
+      "category": "fonts",
+      "owner_feature": "Shared UI typography",
+      "package_disposition": "runtime_packaged",
+      "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
+      "source_file": {
+        "bytes": 420428,
+        "sha256": "288316099b1e0a47a4716d159098005eef7c0066921f34e3200393dbdb01947f"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_measured",
+        "method_ref": "installed_direct"
+      },
+      "startup_necessity": "required_for_primary_ui",
+      "loading_tier": "core_startup",
+      "loading_method": "Register the required family at UI startup.",
+      "expected_lifetime": "Process lifetime for required UI families.",
+      "release_policy": "Keep required UI families for process lifetime; remove optional registrations when the owning feature/operation releases them.",
+      "streamability": {
+        "status": "no",
+        "method_ref": "stream_no"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "unknown",
+        "method_ref": "resident_font"
+      }
+    },
+    {
+      "logical_id": "resource:assets/fonts/Inter-BoldItalic.ttf",
+      "source_path": "resources/assets/fonts/Inter-BoldItalic.ttf",
+      "resource_kind": "required_ui_font",
+      "category": "fonts",
+      "owner_feature": "Shared UI typography",
+      "package_disposition": "runtime_packaged",
+      "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
+      "source_file": {
+        "bytes": 425296,
+        "sha256": "948405a16cdc62701da5f4005ed068ca5f4d27061d98f7974ccfc37831d9581d"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_measured",
+        "method_ref": "installed_direct"
+      },
+      "startup_necessity": "required_for_primary_ui",
+      "loading_tier": "core_startup",
+      "loading_method": "Register the required family at UI startup.",
+      "expected_lifetime": "Process lifetime for required UI families.",
+      "release_policy": "Keep required UI families for process lifetime; remove optional registrations when the owning feature/operation releases them.",
+      "streamability": {
+        "status": "no",
+        "method_ref": "stream_no"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "unknown",
+        "method_ref": "resident_font"
+      }
+    },
+    {
+      "logical_id": "resource:assets/fonts/Inter-Medium.ttf",
+      "source_path": "resources/assets/fonts/Inter-Medium.ttf",
+      "resource_kind": "required_ui_font",
+      "category": "fonts",
+      "owner_feature": "Shared UI typography",
+      "package_disposition": "runtime_packaged",
+      "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
+      "source_file": {
+        "bytes": 417300,
+        "sha256": "97ad806f526e41546d46365bb3a393145f75b7b1568913db74549ad8b8dba872"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_measured",
+        "method_ref": "installed_direct"
+      },
+      "startup_necessity": "required_for_primary_ui",
+      "loading_tier": "core_startup",
+      "loading_method": "Register the required family at UI startup.",
+      "expected_lifetime": "Process lifetime for required UI families.",
+      "release_policy": "Keep required UI families for process lifetime; remove optional registrations when the owning feature/operation releases them.",
+      "streamability": {
+        "status": "no",
+        "method_ref": "stream_no"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "unknown",
+        "method_ref": "resident_font"
+      }
+    },
+    {
+      "logical_id": "resource:assets/fonts/Inter-Regular.ttf",
+      "source_path": "resources/assets/fonts/Inter-Regular.ttf",
+      "resource_kind": "required_ui_font",
+      "category": "fonts",
+      "owner_feature": "Shared UI typography",
+      "package_disposition": "runtime_packaged",
+      "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
+      "source_file": {
+        "bytes": 411640,
+        "sha256": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_measured",
+        "method_ref": "installed_direct"
+      },
+      "startup_necessity": "required_for_primary_ui",
+      "loading_tier": "core_startup",
+      "loading_method": "Register the required family at UI startup.",
+      "expected_lifetime": "Process lifetime for required UI families.",
+      "release_policy": "Keep required UI families for process lifetime; remove optional registrations when the owning feature/operation releases them.",
+      "streamability": {
+        "status": "no",
+        "method_ref": "stream_no"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "unknown",
+        "method_ref": "resident_font"
+      }
+    },
+    {
+      "logical_id": "resource:assets/fonts/Inter-SemiBold.ttf",
+      "source_path": "resources/assets/fonts/Inter-SemiBold.ttf",
+      "resource_kind": "required_ui_font",
+      "category": "fonts",
+      "owner_feature": "Shared UI typography",
+      "package_disposition": "runtime_packaged",
+      "disposition_reason": "Canonical source payload is part of the v2 installed resource tree.",
+      "source_file": {
+        "bytes": 419744,
+        "sha256": "78a843fade9d4612a5567302fb595b56976eb5fcebf4fea5a5912d638bafcde3"
       },
       "installed_size": {
         "bytes": null,
@@ -6435,6 +6602,38 @@
       }
     },
     {
+      "logical_id": "resource:assets/fonts/Inter.ttc",
+      "source_path": "resources/assets/fonts/Inter.ttc",
+      "resource_kind": "superseded_inter_font_collection",
+      "category": "fonts",
+      "owner_feature": "Shared UI typography provenance",
+      "package_disposition": "excluded_v2",
+      "disposition_reason": "The Inter collection includes unused Inter Display faces. The v2 package registers the six original Inter v4.1 static faces instead; retain this collection in source for legacy parity and migration provenance.",
+      "source_file": {
+        "bytes": 13172948,
+        "sha256": "ea4e3d9970b9b6b566110a1b0e13635fe235280b83dd2443dcb3faca1e2456ef"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "installed_none"
+      },
+      "startup_necessity": "replaced_by_static_inter_faces",
+      "loading_tier": "excluded",
+      "loading_method": "Do not load or install this superseded font collection in the v2 package.",
+      "expected_lifetime": "No v2 runtime lifetime.",
+      "release_policy": "Excluded from the v2 runtime package; retained in source for legacy parity and provenance.",
+      "streamability": {
+        "status": "not_applicable",
+        "method_ref": "stream_build_only"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "resident_build_only"
+      }
+    },
+    {
       "logical_id": "resource:assets/images/dyb.png",
       "source_path": "resources/assets/images/dyb.png",
       "resource_kind": "optional_dynamic_image",
@@ -7406,6 +7605,38 @@
       "source_file": {
         "bytes": 1039,
         "sha256": "813491016e56c11b3837d4eed3774bf2f28f65e91a191b18ed426575c37f956a"
+      },
+      "installed_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "installed_none"
+      },
+      "startup_necessity": "not_a_runtime_resource",
+      "loading_tier": "build_only",
+      "loading_method": "Read by the relevant CMake configure/deployment step.",
+      "expected_lifetime": "Build or deployment process only.",
+      "release_policy": "No source template is installed as a resource.",
+      "streamability": {
+        "status": "not_applicable",
+        "method_ref": "stream_build_only"
+      },
+      "expected_resident_size": {
+        "bytes": null,
+        "status": "not_applicable",
+        "method_ref": "resident_build_only"
+      }
+    },
+    {
+      "logical_id": "resource:windows/ClassMngrNext.rc.in",
+      "source_path": "resources/windows/ClassMngrNext.rc.in",
+      "resource_kind": "windows_packaging_template",
+      "category": "platform_packaging",
+      "owner_feature": "Windows build/deployment configuration",
+      "package_disposition": "build_only_excluded",
+      "disposition_reason": "Template/configuration input consumed during Windows configure or deployment; it is not a v2 ResourceLoader item.",
+      "source_file": {
+        "bytes": 146,
+        "sha256": "67a4f191da384edaf1d681420f3decd74a40f1fa0a275f0340534adc05ca65f8"
       },
       "installed_size": {
         "bytes": null,

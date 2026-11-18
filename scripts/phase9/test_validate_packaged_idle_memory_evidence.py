@@ -8,8 +8,12 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from validate_packaged_idle_memory_evidence import (
+    EXPECTED_INTER_FONT_CATALOG_ENTRIES,
+    EXPECTED_INTER_FONT_RESOURCE_IDS,
     EXPECTED_STARTUP_BOUNDARIES,
     EXPECTED_SCENARIOS,
+    INTER_FONT_LICENSE_PACKAGE_PATH,
+    INTER_FONT_LICENSE_SOURCE_PATH,
     STARTUP_BOUNDARY_MAX_DELAY_MILLISECONDS,
     STARTUP_BOUNDARY_METRICS_SCHEMA,
     THRESHOLD_BYTES,
@@ -29,6 +33,32 @@ def valid_documents(startup_bytes: int = 90_000_000, idle_bytes: int = 95_000_00
     run_started = datetime(2026, 11, 10, 9, 0, tzinfo=timezone.utc)
     executable = r"C:\runner-temp\phase9\package\ClassMngrNext.exe"
     image_sha = "a" * 64
+    inter_font_catalog_entries = []
+    inter_font_source_entries = []
+    inter_font_package_entries = []
+    font_hash_characters = "123456"
+    for index, expected in enumerate(EXPECTED_INTER_FONT_CATALOG_ENTRIES):
+        size_bytes = 110_000 + index
+        font_sha = font_hash_characters[index] * 64
+        entry = {**expected, "sizeBytes": size_bytes, "sha256": font_sha}
+        inter_font_catalog_entries.append(entry)
+        inter_font_source_entries.append(
+            {"path": expected["sourcePath"], "sizeBytes": size_bytes, "sha256": font_sha}
+        )
+        inter_font_package_entries.append(
+            {
+                "path": f"resources/{expected['packageRelativePath']}",
+                "sizeBytes": size_bytes,
+                "sha256": font_sha,
+            }
+        )
+    license_fixture = b"Inter Open Font License fixture\n"
+    inter_license_entry = {
+        "sourcePath": INTER_FONT_LICENSE_SOURCE_PATH,
+        "packagePath": INTER_FONT_LICENSE_PACKAGE_PATH,
+        "sizeBytes": len(license_fixture),
+        "sha256": hashlib.sha256(license_fixture).hexdigest(),
+    }
     source_files = [
         {"path": "CMakeLists.txt", "sizeBytes": 100, "sha256": "b" * 64},
         {"path": "CMakePresets.json", "sizeBytes": 150, "sha256": "1" * 64},
@@ -75,13 +105,26 @@ def valid_documents(startup_bytes: int = 90_000_000, idle_bytes: int = 95_000_00
             "sha256": "b" * 64,
         },
         {"path": "src/main.cpp", "sizeBytes": 200, "sha256": "c" * 64},
+        {
+            "path": INTER_FONT_LICENSE_SOURCE_PATH,
+            "sizeBytes": inter_license_entry["sizeBytes"],
+            "sha256": inter_license_entry["sha256"],
+        },
     ]
+    source_files.extend(inter_font_source_entries)
     source_files.sort(key=lambda item: item["path"].casefold())
     source_sha = _canonical_package_sha(source_files)
     package_files = [
         {"path": "ClassMngrNext.exe", "sizeBytes": 1_000_000, "sha256": image_sha},
         {"path": "Qt6Core.dll", "sizeBytes": 5_000_000, "sha256": "c" * 64},
+        {"path": "resources/resource-catalog.json", "sizeBytes": 20_000, "sha256": "7" * 64},
+        {
+            "path": INTER_FONT_LICENSE_PACKAGE_PATH,
+            "sizeBytes": inter_license_entry["sizeBytes"],
+            "sha256": inter_license_entry["sha256"],
+        },
     ]
+    package_files.extend(inter_font_package_entries)
     package_files.sort(key=lambda item: item["path"].casefold())
     package_sha = _canonical_package_sha(package_files)
     qt_prefix = r"C:\Qt\6.14.2\msvc2022_64"
@@ -114,7 +157,7 @@ def valid_documents(startup_bytes: int = 90_000_000, idle_bytes: int = 95_000_00
         for generator_id, generator_path, generator_sha in fixture_generator_specs
     ]
     manifest = {
-        "schema": "classmngr-phase9-packaged-idle-memory-v2",
+        "schema": "classmngr-phase9-packaged-idle-memory-v3",
         "taskId": "P9_06_PACKAGED_STARTUP_IDLE_GATE",
         "status": "completed",
         "revision": "d" * 40,
@@ -131,6 +174,7 @@ def valid_documents(startup_bytes: int = 90_000_000, idle_bytes: int = 95_000_00
             "samplesPerScenario": len(EXPECTED_STARTUP_BOUNDARIES),
             "maxSampleDelayMilliseconds": STARTUP_BOUNDARY_MAX_DELAY_MILLISECONDS,
         },
+        "requiredInterFontResourceIds": list(EXPECTED_INTER_FONT_RESOURCE_IDS),
         "advisoryScenarios": [
             {"id": "fresh-initial-setup", "budgetScope": "advisory"}
         ],
@@ -241,6 +285,10 @@ def valid_documents(startup_bytes: int = 90_000_000, idle_bytes: int = 95_000_00
             "applicationRelativePath": "ClassMngrNext.exe",
             "applicationSha256": image_sha,
             "candidateSourceSha256": source_sha,
+            "resourceCatalogPath": "resources/resource-catalog.json",
+            "resourceCatalogSha256": "7" * 64,
+            "interFontCatalogEntries": inter_font_catalog_entries,
+            "interFontLicense": inter_license_entry,
         },
         "scenarios": [],
     }
@@ -382,6 +430,25 @@ def valid_documents(startup_bytes: int = 90_000_000, idle_bytes: int = 95_000_00
                     "rawLine": boundary_line,
                 }
             )
+            if boundary["eventId"] == "inter-font-resource-loaded":
+                for font_index, resource_id in enumerate(EXPECTED_INTER_FONT_RESOURCE_IDS[1:], start=1):
+                    font_checkpoint = {
+                        "event": "resource-load",
+                        "resource_id": resource_id,
+                        "outcome": "succeeded",
+                        "request_scope": {"kind": "startup"},
+                    }
+                    startup_events.append(
+                        {
+                            "scenarioId": scenario_id,
+                            "stream": "stderr",
+                            "observedAtUtc": timestamp(
+                                event_at + timedelta(milliseconds=font_index * 10)
+                            ),
+                            "line": "ClassMngrNext resource checkpoint="
+                            + json.dumps(font_checkpoint, separators=(",", ":")),
+                        }
+                    )
         raw_line = (
             "ClassMngrNext startup stage=startup-ready outcome=completed "
             "diagnostic=none diagnostic_stage=none checkpoint="
@@ -405,6 +472,22 @@ def valid_documents(startup_bytes: int = 90_000_000, idle_bytes: int = 95_000_00
                 "line": raw_line,
             }
         )
+        inter_font_resource_events = []
+        for startup_log_index, event in enumerate(startup_events):
+            if event.get("scenarioId") != scenario_id or "resource:assets/fonts/Inter" not in event["line"]:
+                continue
+            font_checkpoint = json.loads(event["line"].split("=", 1)[1])
+            inter_font_resource_events.append(
+                {
+                    "resourceId": font_checkpoint["resource_id"],
+                    "outcome": font_checkpoint["outcome"],
+                    "requestScopeKind": font_checkpoint["request_scope"]["kind"],
+                    "startupLogIndex": startup_log_index,
+                    "stream": event["stream"],
+                    "observedAtUtc": event["observedAtUtc"],
+                    "rawLine": event["line"],
+                }
+            )
         scenario_metrics = []
         for sample_index in range(301):
             sampled_at = observed_at + timedelta(milliseconds=100) + timedelta(seconds=sample_index)
@@ -467,6 +550,7 @@ def valid_documents(startup_bytes: int = 90_000_000, idle_bytes: int = 95_000_00
                     "mainWindowTitle": "ClassMngr Next",
                 },
                 "startupReadyDiagnostic": diagnostic,
+                "interFontResourceEvents": inter_font_resource_events,
                 "startupBoundarySampleCount": len(EXPECTED_STARTUP_BOUNDARIES),
                 "startupBoundaryEventIds": [
                     boundary["eventId"] for boundary in EXPECTED_STARTUP_BOUNDARIES
@@ -498,6 +582,136 @@ class PackagedIdleMemoryEvidenceTests(unittest.TestCase):
         self.assertEqual(summary["thresholdBytes"], THRESHOLD_BYTES)
         self.assertEqual(summary["scenarios"][1]["sampleCount"], 301)
         self.assertEqual(summary["startupBoundaryMetrics"]["sampleCount"], 10)
+        self.assertEqual(
+            [item["resourceId"] for item in summary["scenarios"][0]["interFontResourceEvents"]],
+            list(EXPECTED_INTER_FONT_RESOURCE_IDS),
+        )
+
+    def test_all_six_catalogued_inter_ttf_events_are_required_and_correlated(self) -> None:
+        manifest, metrics, events, files, source_files, boundary_metrics = valid_documents()
+
+        summary = validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
+
+        scenario = summary["scenarios"][0]
+        self.assertEqual(
+            [item["resourceId"] for item in scenario["interFontResourceEvents"]],
+            list(EXPECTED_INTER_FONT_RESOURCE_IDS),
+        )
+        self.assertTrue(
+            all(item["outcome"] == "succeeded" for item in scenario["interFontResourceEvents"])
+        )
+
+    def test_inter_font_license_is_in_package_and_matches_source(self) -> None:
+        manifest, metrics, events, files, source_files, boundary_metrics = valid_documents()
+
+        summary = validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
+
+        license_entry = manifest["package"]["interFontLicense"]
+        self.assertEqual(license_entry["sourcePath"], INTER_FONT_LICENSE_SOURCE_PATH)
+        self.assertEqual(license_entry["packagePath"], INTER_FONT_LICENSE_PACKAGE_PATH)
+        self.assertEqual(summary["package"]["sha256"], manifest["package"]["sha256"])
+
+    def test_missing_inter_font_license_is_not_evaluated(self) -> None:
+        manifest, metrics, events, files, source_files, boundary_metrics = valid_documents()
+        files[:] = [entry for entry in files if entry["path"] != INTER_FONT_LICENSE_PACKAGE_PATH]
+        manifest["package"]["fileCount"] = len(files)
+        manifest["package"]["sha256"] = _canonical_package_sha(files)
+
+        with self.assertRaisesRegex(ValueError, "Inter OFL license is absent from source or package inventory"):
+            validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
+
+    def test_inter_font_license_package_hash_must_match_source(self) -> None:
+        manifest, metrics, events, files, source_files, boundary_metrics = valid_documents()
+        package_license = next(
+            entry for entry in files if entry["path"] == INTER_FONT_LICENSE_PACKAGE_PATH
+        )
+        package_license["sha256"] = "0" * 64
+        manifest["package"]["sha256"] = _canonical_package_sha(files)
+
+        with self.assertRaisesRegex(ValueError, "Inter OFL license hash or size differs"):
+            validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
+
+    def test_missing_inter_ttf_event_is_not_evaluated(self) -> None:
+        manifest, metrics, events, files, source_files, boundary_metrics = valid_documents()
+        target_id = EXPECTED_INTER_FONT_RESOURCE_IDS[-1]
+        events[:] = [
+            event
+            for event in events
+            if not (
+                event["scenarioId"] == "empty-workspace"
+                and target_id in event["line"]
+            )
+        ]
+
+        with self.assertRaisesRegex(ValueError, "successful startup event for each catalogued Inter TTF"):
+            validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
+
+    def test_duplicate_inter_ttf_event_is_not_evaluated(self) -> None:
+        manifest, metrics, events, files, source_files, boundary_metrics = valid_documents()
+        original = next(
+            event
+            for event in events
+            if event["scenarioId"] == "empty-workspace"
+            and EXPECTED_INTER_FONT_RESOURCE_IDS[-1] in event["line"]
+        )
+        events.insert(events.index(original) + 1, dict(original))
+
+        with self.assertRaisesRegex(ValueError, "successful startup event for each catalogued Inter TTF"):
+            validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
+
+    def test_failed_inter_ttf_event_is_not_evaluated(self) -> None:
+        manifest, metrics, events, files, source_files, boundary_metrics = valid_documents()
+        target_id = EXPECTED_INTER_FONT_RESOURCE_IDS[1]
+        event = next(
+            item
+            for item in events
+            if item["scenarioId"] == "empty-workspace" and target_id in item["line"]
+        )
+        checkpoint = json.loads(event["line"].split("=", 1)[1])
+        checkpoint["outcome"] = "warning"
+        event["line"] = "ClassMngrNext resource checkpoint=" + json.dumps(
+            checkpoint, separators=(",", ":")
+        )
+
+        with self.assertRaisesRegex(ValueError, "did not complete successfully during startup"):
+            validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
+
+    def test_inter_ttf_events_must_be_in_registration_order(self) -> None:
+        manifest, metrics, events, files, source_files, boundary_metrics = valid_documents()
+        first_id, second_id = EXPECTED_INTER_FONT_RESOURCE_IDS[1:3]
+        first = next(
+            event
+            for event in events
+            if event["scenarioId"] == "empty-workspace" and first_id in event["line"]
+        )
+        second = next(
+            event
+            for event in events
+            if event["scenarioId"] == "empty-workspace" and second_id in event["line"]
+        )
+        first_line, first_time = first["line"], first["observedAtUtc"]
+        first["line"], first["observedAtUtc"] = second["line"], second["observedAtUtc"]
+        second["line"], second["observedAtUtc"] = first_line, first_time
+
+        with self.assertRaisesRegex(ValueError, "successful startup event for each catalogued Inter TTF"):
+            validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
+
+    def test_inter_ttc_alias_is_rejected(self) -> None:
+        manifest, metrics, events, files, source_files, boundary_metrics = valid_documents()
+        target_id = EXPECTED_INTER_FONT_RESOURCE_IDS[1]
+        event = next(
+            item
+            for item in events
+            if item["scenarioId"] == "empty-workspace" and target_id in item["line"]
+        )
+        checkpoint = json.loads(event["line"].split("=", 1)[1])
+        checkpoint["resource_id"] = "resource:assets/fonts/Inter.ttc"
+        event["line"] = "ClassMngrNext resource checkpoint=" + json.dumps(
+            checkpoint, separators=(",", ":")
+        )
+
+        with self.assertRaisesRegex(ValueError, "unexpected Inter font resource ID.*TTC aliases are rejected"):
+            validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
 
     def test_valid_startup_boundary_samples_are_diagnostic_only(self) -> None:
         manifest, metrics, events, files, source_files, boundary_metrics = valid_documents()
@@ -556,7 +770,7 @@ class PackagedIdleMemoryEvidenceTests(unittest.TestCase):
             next(index for index, line in enumerate(lines) if "stage=required-fonts-loaded " in line),
         )
 
-        with self.assertRaisesRegex(ValueError, "required-fonts-loaded startup record occurred after workspace-opened"):
+        with self.assertRaisesRegex(ValueError, "required-fonts-loaded record did not precede workspace-opened"):
             validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
 
     def test_shell_boundary_after_startup_ready_is_rejected(self) -> None:
@@ -608,7 +822,7 @@ class PackagedIdleMemoryEvidenceTests(unittest.TestCase):
         )
         events.insert(events.index(original) + 1, dict(original))
 
-        with self.assertRaisesRegex(ValueError, "duplicate theme-loaded startup boundary"):
+        with self.assertRaisesRegex(ValueError, "Inter font manifest event differs from its startup log record"):
             validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
 
     def test_unsuccessful_font_resource_boundary_is_not_evaluated(self) -> None:
@@ -617,7 +831,7 @@ class PackagedIdleMemoryEvidenceTests(unittest.TestCase):
             item
             for item in events
             if item["scenarioId"] == "empty-workspace"
-            and "resource:assets/fonts/Inter.ttc" in item["line"]
+            and "resource:assets/fonts/Inter-Regular.ttf" in item["line"]
         )
         checkpoint = json.loads(event["line"].split("=", 1)[1])
         checkpoint["outcome"] = "failed"
@@ -632,7 +846,7 @@ class PackagedIdleMemoryEvidenceTests(unittest.TestCase):
         )
         matching_sample["rawLine"] = event["line"]
 
-        with self.assertRaisesRegex(ValueError, "resource startup record is invalid"):
+        with self.assertRaisesRegex(ValueError, "did not complete successfully during startup"):
             validate_documents(manifest, metrics, events, files, source_files, boundary_metrics)
 
     def test_startup_boundary_process_identity_must_match(self) -> None:

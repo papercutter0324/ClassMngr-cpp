@@ -130,10 +130,12 @@
 #define CLASSMNGR_NEXT_PRODUCT_NAME "ClassMngrNext"
 #endif
 #include <algorithm>
+#include <array>
 #include <exception>
 #include <optional>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace ClassMngr::Next::Bootstrap
 {
@@ -876,6 +878,7 @@ struct ApplicationBootstrap::CoreServices final
     QString loadedLocale;
     std::optional<Resources::ScopedResource<Resources::ResourceTranslation>> translation;
     std::optional<Resources::ScopedResource<Resources::RegisteredFont>> interFont;
+    std::vector<Resources::ScopedResource<Resources::RegisteredFont>> additionalInterFonts;
     std::optional<Resources::ScopedResource<Resources::RegisteredFont>> pretendardFont;
     std::optional<Resources::ScopedResource<QImage>> applicationIcon;
     std::unique_ptr<Ui::ThemePresenter> themePresenter;
@@ -3803,24 +3806,42 @@ bool ApplicationBootstrap::loadRequiredFonts()
         return false;
     }
 
-    const auto interRequest = startupRequest(
-        m_coreServices->startupResourceScope,
-        QStringLiteral("resource:assets/fonts/Inter.ttc")
-        );
-    if (!interRequest)
+    const std::array<QString, 6> interResources{
+        QStringLiteral("resource:assets/fonts/Inter-Regular.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-Medium.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-SemiBold.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-Bold.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-BoldItalic.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-Black.ttf"),
+    };
+    for (const QString& resourceId : interResources)
     {
-        qCritical().noquote() << "ClassMngrNext could not identify Inter font resource:"
-                              << interRequest.error().message;
-        return false;
+        const auto request = startupRequest(
+            m_coreServices->startupResourceScope,
+            resourceId
+            );
+        if (!request)
+        {
+            qCritical().noquote() << "ClassMngrNext could not identify Inter font resource:"
+                                  << request.error().message;
+            return false;
+        }
+        auto font = m_coreServices->resourceLoader.loadFileBackedFont(*request);
+        if (!font)
+        {
+            qCritical().noquote() << "ClassMngrNext could not register Inter font resource"
+                                  << resourceId << ":" << font.error().message;
+            return false;
+        }
+        if (!m_coreServices->interFont)
+        {
+            m_coreServices->interFont.emplace(std::move(*font));
+        }
+        else
+        {
+            m_coreServices->additionalInterFonts.emplace_back(std::move(*font));
+        }
     }
-    auto interFont = m_coreServices->resourceLoader.loadFileBackedFont(*interRequest);
-    if (!interFont)
-    {
-        qCritical().noquote() << "ClassMngrNext could not register Inter font:"
-                              << interFont.error().message;
-        return false;
-    }
-    m_coreServices->interFont.emplace(std::move(*interFont));
 
     const auto pretendardRequest = startupRequest(
         m_coreServices->startupResourceScope,
@@ -6732,6 +6753,7 @@ void ApplicationBootstrap::rollbackStartupComposition() noexcept
         }
         m_coreServices->translation.reset();
         m_coreServices->pretendardFont.reset();
+        m_coreServices->additionalInterFonts.clear();
         m_coreServices->interFont.reset();
     }
 

@@ -551,3 +551,84 @@ result. P9-06V is the separate production migration slice: package the six
 verified faces, preserve required registration semantics and cleanup, then
 run the unchanged full P9-06 Release gate. The strict 262,144,000-byte limit
 and 301-sample scenarios remain unchanged.
+
+#### P9-06V exact-version Inter production migration and packaged memory pass
+
+P9-06V replaced the bundled Inter TTC in the application resource inventory
+with the six verified Inter v4.1 static TTFs. All six preserve the product's
+required Inter family/style/weight identity and exact-version parity recorded
+under P9-06U. The source-face hashes are:
+
+| Font | Bytes | SHA-256 |
+|---|---:|---|
+| Inter-Regular.ttf | 411,640 | `40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82` |
+| Inter-Medium.ttf | 417,300 | `97ad806f526e41546d46365bb3a393145f75b7b1568913db74549ad8b8dba872` |
+| Inter-SemiBold.ttf | 419,744 | `78a843fade9d4612a5567302fb595b56976eb5fcebf4fea5a5912d638bafcde3` |
+| Inter-Bold.ttf | 420,428 | `288316099b1e0a47a4716d159098005eef7c0066921f34e3200393dbdb01947f` |
+| Inter-BoldItalic.ttf | 425,296 | `948405a16cdc62701da5f4005ed068ca5f4d27061d98f7974ccfc37831d9581d` |
+| Inter-Black.ttf | 419,968 | `6342d3ea6dc088b43867f615e807d898adf100c93edb978b8e52c5eb71a264da` |
+
+The source archive is official Inter v4.1, 33,707,794 bytes, SHA-256
+`9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e`. The
+Inter OFL license is included exactly once in the generated package at
+`licenses/fonts/inter/LICENSE.txt` (4,472 bytes; SHA-256
+`b3195af0fb14368d1b3b10fb9d3fe503b7163ea083859d2ee553bc74da07c320`). The
+package has the six TTFs, no Inter TTC or TTC alias, and unchanged Pretendard
+(6,739,336 bytes; SHA-256
+`3090ccde0442bb347aa7685d9ba8b17436a60682df6e8f92a9a670de14056e22`). The
+generated catalog contains the six Inter entries plus Pretendard and has
+SHA-256 `4ce39047d72866696f9c56cbcf6079b30d9c3cb4c895db8dfea19d19e60b88c2`.
+
+The P9-06 runner and evidence validator now require each of the six catalogued
+Inter resource events exactly once, successfully, and in order before
+`required-fonts-loaded`, `workspace-opened`, and `startup-ready`. The events
+are bound to source/catalog/package identities, and a TTC alias is rejected.
+Pretendard's event, five startup boundary snapshots, fixtures, 301-sample
+cadence, and strict threshold were preserved. The focused validator suite
+passed 44/44. Phase 4 inventory tests passed 34 with one expected skip because
+the Windows account could not create the symlink required by that assertion.
+
+The first passing full Release run, before the OFL file was installed, remains
+preserved at
+artifacts/phase9/packaged-idle-memory/20261118T005314031Z-87d21774f4fd48ffa8ccc50b76a2dbf6/.
+It is not the accepted package because it lacked the license. The final,
+license-inclusive run is
+artifacts/phase9/packaged-idle-memory/20261118T014537306Z-212490675a364c8fb30d334495d2f5f3/.
+Independent Tester recomputed all 602 raw metric rows and verified both
+ordered startup logs, process identities, cadence, compile/package identity,
+license identity, and six strict working-set decisions. Evidence validated
+`valid` with `budgetResult=passed`, zero errors and zero violations.
+
+| Scenario | Startup-ready WS | External-startup WS | Five-minute WS | Max idle WS | Max idle private bytes |
+|---|---:|---:|---:|---:|---:|
+| Empty workspace | 199,716,864 | 206,819,328 | 206,180,352 | 206,839,808 | 126,337,024 |
+| Representative 96-class workspace | 200,421,376 | 207,167,488 | 206,553,088 | 207,187,968 | 126,910,464 |
+
+All six gated WS checkpoints are strictly below 262,144,000 bytes. The maximum
+idle WS was 207,187,968 bytes. Each scenario used 301 ordered samples over
+about 300 seconds, a unique x64 PID, normal exit, and sample gaps no longer
+than 1.036222 seconds. The empty and 96-class workspaces opened successfully.
+
+The final Release candidate used local Windows x64, VS 18 2026, Qt 6.12.0,
+and `/MD /O2 /Ob2 /DNDEBUG`. All 69 application compile records had `/MD`,
+`/O2`, `/Ob2`, and `/D NDEBUG`, with no `/Od`. Source fingerprint:
+`e717f47b15f8de5404ba55eac46ad37cdf88a367e147b355e9e98b3940d1ddb8`;
+cache SHA-256:
+`f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47`;
+package SHA-256:
+`e0898b2e6517d8e26989982dad6daffc977f7ecbc65a7bc8ea4b9587c6aecc16`.
+The independent Tester matched all 2,381 source-inventory entries, 1,581
+package-inventory entries, and the aggregate package hash.
+
+Five affected Debug CTests passed: `ClassMngrFontManagerTests`,
+`ClassMngrNextResourceLoaderTests`, `ClassMngrNextBootstrapTests`,
+`ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests`, and
+`ClassMngrNextNormalScheduleImportIntegrationTests`. The independent Tester
+re-ran the latter four migration/integration tests. The ResourceLoader
+symlink-escape assertion was skipped because Windows symlink creation was
+unavailable. An ordinary (non-elevated) Debug attempt also hit an access-denied
+failure in the generated Resources tree and one Normal Schedule run; the same
+target/test passed after an elevated build.
+The prior generated resource trees were retained under unique `Resources.pre-p9-06V-*`
+paths. No full Debug CTest suite has yet run on the final Phase 9 source; it
+remains required before the phase exit decision. No GitHub validation was run.

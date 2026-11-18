@@ -783,7 +783,12 @@ int main(int argc, char* argv[])
     // an offscreen host need not have any usable system fonts installed.
     std::vector<Resources::ScopedResource<Resources::RegisteredFont>> fonts;
     for (const QString& fontId : {
-             QStringLiteral("resource:assets/fonts/Inter.ttc"),
+             QStringLiteral("resource:assets/fonts/Inter-Regular.ttf"),
+             QStringLiteral("resource:assets/fonts/Inter-Medium.ttf"),
+             QStringLiteral("resource:assets/fonts/Inter-SemiBold.ttf"),
+             QStringLiteral("resource:assets/fonts/Inter-Bold.ttf"),
+             QStringLiteral("resource:assets/fonts/Inter-BoldItalic.ttf"),
+             QStringLiteral("resource:assets/fonts/Inter-Black.ttf"),
              QStringLiteral("resource:assets/fonts/PretendardVariable.ttf")
          })
     {

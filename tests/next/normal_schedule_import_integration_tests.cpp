@@ -486,7 +486,12 @@ public:
 
         for (const QString& relativePath : {
                  QStringLiteral("assets/styles/light.qss"),
-                 QStringLiteral("assets/fonts/Inter.ttc"),
+                 QStringLiteral("assets/fonts/Inter-Regular.ttf"),
+                 QStringLiteral("assets/fonts/Inter-Medium.ttf"),
+                 QStringLiteral("assets/fonts/Inter-SemiBold.ttf"),
+                 QStringLiteral("assets/fonts/Inter-Bold.ttf"),
+                 QStringLiteral("assets/fonts/Inter-BoldItalic.ttf"),
+                 QStringLiteral("assets/fonts/Inter-Black.ttf"),
                  QStringLiteral("assets/fonts/PretendardVariable.ttf"),
                  QStringLiteral("assets/documents/documents.json")
              })

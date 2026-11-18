@@ -394,6 +394,13 @@ if(CLASSMNGR_NEXT_RELEASE_PACKAGE)
         DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/fonts/inter"
         COMPONENT Runtime
     )
+    # The source-bound packaged-app gate stages this component directly, so
+    # keep the bundled Inter faces' OFL text beside the resource package too.
+    install(FILES
+        "${PROJECT_SOURCE_DIR}/licenses/fonts/inter/LICENSE.txt"
+        DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/fonts/inter"
+        COMPONENT ClassMngrNextResources
+    )
     install(FILES
         "${PROJECT_SOURCE_DIR}/licenses/fonts/pretendard/LICENSE.txt"
         DESTINATION "${CLASSMNGR_NEXT_LICENSE_INSTALL_ROOT}/fonts/pretendard"

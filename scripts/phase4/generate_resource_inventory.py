@@ -16,6 +16,16 @@ from typing import Iterable
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_PATH = Path("docs/qt-rewrite/phase-4-resource-inventory.json")
 CALENDAR_QML_ROOT = "src/features/calendar/ui/qml/"
+INTER_STATIC_FONT_FILES = frozenset(
+    {
+        "Inter-Regular.ttf",
+        "Inter-Medium.ttf",
+        "Inter-SemiBold.ttf",
+        "Inter-Bold.ttf",
+        "Inter-BoldItalic.ttf",
+        "Inter-Black.ttf",
+    }
+)
 
 
 METHODS = {
@@ -411,9 +421,33 @@ def _asset_policy(path: str) -> dict[str, str | None]:
             resident,
         )
 
+    if path == "resources/assets/fonts/Inter.ttc":
+        return {
+            "collection": "excluded_resources",
+            "kind": "superseded_inter_font_collection",
+            "category": "fonts",
+            "owner": "Shared UI typography provenance",
+            "disposition": "excluded_v2",
+            "reason": (
+                "The Inter collection includes unused Inter Display faces. "
+                "The v2 package registers the six original Inter v4.1 static "
+                "faces instead; retain this collection in source for legacy "
+                "parity and migration provenance."
+            ),
+            "startup": "replaced_by_static_inter_faces",
+            "tier": "excluded",
+            "load": "Do not load or install this superseded font collection in the v2 package.",
+            "lifetime": "No v2 runtime lifetime.",
+            "release": "Excluded from the v2 runtime package; retained in source for legacy parity and provenance.",
+            "stream": "not_applicable",
+            "stream_ref": "stream_build_only",
+            "resident_ref": "resident_build_only",
+            "installed_ref": "installed_none",
+        }
+
     if path.startswith("resources/assets/fonts/"):
         filename = Path(path).name
-        core_font = filename in {"Inter.ttc", "PretendardVariable.ttf"}
+        core_font = filename in INTER_STATIC_FONT_FILES | {"PretendardVariable.ttf"}
         return _runtime_policy(
             path,
             "required_ui_font" if core_font else "optional_decorative_font",

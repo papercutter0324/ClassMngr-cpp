@@ -1,6 +1,6 @@
 # Project Progress
 
-## Phase 9 current position — P9-06U parity and registration result — 2026-11-18
+## Phase 9 current position — P9-06V packaged memory gate passed — 2026-11-18
 
 Phase 9 remains In progress. Batch 1 is closed. The optimized local Windows
 x64 Release P9-06 run completed valid 301-sample traces for empty and
@@ -16,12 +16,15 @@ exact-version Inter v4.1 static faces against the TTC for required styles,
 Unicode coverage, glyph outlines, and horizontal metrics. Seven fresh x64
 Release processes measured median cumulative static registration at
 6,328,320 WS / 6,172,672 private bytes, versus 489,906,176 / 493,772,800 bytes
-for the TTC under DirectWrite. P9-06V is migrating production and will run the
-unchanged packaged P9-06 gate. No memory pass is claimed until that gate
-passes.
+for the TTC under DirectWrite. P9-06V migrated production to the six verified
+v4.1 faces, included the Inter OFL license in the generated package, and
+passed the unchanged packaged P9-06 gate. Both 301-sample scenarios completed
+with all six strict checkpoints between 199,380,992 and 207,187,968 bytes,
+below 262,144,000. P9-07 navigation and P9-08 lifecycle/cleanup remain open,
+as does the full Phase 9 exit gate.
 
 See the Phase 9 progress log and current slice-batch tracker for source/build
-provenance, run artifacts, and the active production slice.
+provenance, run artifacts, and the next slice.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

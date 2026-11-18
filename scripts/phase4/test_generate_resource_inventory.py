@@ -103,6 +103,46 @@ class ResourceInventoryTests(unittest.TestCase):
         self.assertIn("legacy resource-pack oracle", record["disposition_reason"])
         self.assertEqual(record["installed_size"]["method_ref"], "installed_none")
 
+    def test_static_inter_faces_are_core_and_collection_is_excluded(self) -> None:
+        inter_faces = {
+            "Inter-Regular.ttf",
+            "Inter-Medium.ttf",
+            "Inter-SemiBold.ttf",
+            "Inter-Bold.ttf",
+            "Inter-BoldItalic.ttf",
+            "Inter-Black.ttf",
+        }
+        paths = [
+            self._write(f"resources/assets/fonts/{name}", name.encode("ascii"))
+            for name in sorted(inter_faces)
+        ]
+        collection = self._write(
+            "resources/assets/fonts/Inter.ttc",
+            b"superseded collection bytes",
+        )
+
+        inventory = build_inventory(self.root, [*paths, collection])
+
+        runtime = {record["source_path"]: record for record in inventory["resources"]}
+        excluded = {
+            record["source_path"]: record
+            for record in inventory["excluded_resources"]
+        }
+        self.assertEqual(
+            {Path(record["source_path"]).name for record in runtime.values()},
+            inter_faces,
+        )
+        for record in runtime.values():
+            with self.subTest(path=record["source_path"]):
+                self.assertEqual(record["logical_id"], "resource:" + record["source_path"].removeprefix("resources/"))
+                self.assertEqual(record["resource_kind"], "required_ui_font")
+                self.assertEqual(record["package_disposition"], "runtime_packaged")
+                self.assertEqual(record["loading_tier"], "core_startup")
+        self.assertIn(collection, excluded)
+        self.assertEqual(excluded[collection]["resource_kind"], "superseded_inter_font_collection")
+        self.assertEqual(excluded[collection]["package_disposition"], "excluded_v2")
+        self.assertIn("unused Inter Display faces", excluded[collection]["disposition_reason"])
+
     def test_unclaimed_roster_files_are_excluded_with_source_provenance(self) -> None:
         contents = {
             "resources/assets/files/rosters/Class Register.odt": b"register-source",

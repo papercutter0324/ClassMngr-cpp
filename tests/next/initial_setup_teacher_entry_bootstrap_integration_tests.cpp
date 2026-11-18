@@ -360,7 +360,12 @@ public:
     {
         return addTranslation(locale)
             && addResource(QStringLiteral("assets/styles/%1.qss").arg(theme))
-            && addResource(QStringLiteral("assets/fonts/Inter.ttc"))
+            && addResource(QStringLiteral("assets/fonts/Inter-Regular.ttf"))
+            && addResource(QStringLiteral("assets/fonts/Inter-Medium.ttf"))
+            && addResource(QStringLiteral("assets/fonts/Inter-SemiBold.ttf"))
+            && addResource(QStringLiteral("assets/fonts/Inter-Bold.ttf"))
+            && addResource(QStringLiteral("assets/fonts/Inter-BoldItalic.ttf"))
+            && addResource(QStringLiteral("assets/fonts/Inter-Black.ttf"))
             && addResource(QStringLiteral("assets/fonts/PretendardVariable.ttf"))
             && addResource(QStringLiteral("assets/documents/documents.json"));
     }

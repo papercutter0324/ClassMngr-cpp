@@ -21,15 +21,23 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
 $TaskId = "P9_06_PACKAGED_STARTUP_IDLE_GATE"
-$ManifestSchema = "classmngr-phase9-packaged-idle-memory-v2"
+$ManifestSchema = "classmngr-phase9-packaged-idle-memory-v3"
 $StartupBoundaryMetricsSchema = "classmngr-phase9-startup-boundary-metrics-v1"
 $StartupBoundaryMaximumDelayMilliseconds = 2000
 $ExpectedStartupBoundaryEvents = @(
     [ordered]@{ eventId = "theme-loaded"; kind = "stage"; value = "theme-loaded" },
-    [ordered]@{ eventId = "inter-font-resource-loaded"; kind = "resource"; value = "resource:assets/fonts/Inter.ttc" },
+    [ordered]@{ eventId = "inter-font-resource-loaded"; kind = "resource"; value = "resource:assets/fonts/Inter-Regular.ttf" },
     [ordered]@{ eventId = "pretendard-font-resource-loaded"; kind = "resource"; value = "resource:assets/fonts/PretendardVariable.ttf" },
     [ordered]@{ eventId = "required-fonts-loaded"; kind = "stage"; value = "required-fonts-loaded" },
     [ordered]@{ eventId = "shell-created"; kind = "stage"; value = "shell-created" }
+)
+$ExpectedInterFontResourceIds = @(
+    "resource:assets/fonts/Inter-Regular.ttf",
+    "resource:assets/fonts/Inter-Medium.ttf",
+    "resource:assets/fonts/Inter-SemiBold.ttf",
+    "resource:assets/fonts/Inter-Bold.ttf",
+    "resource:assets/fonts/Inter-BoldItalic.ttf",
+    "resource:assets/fonts/Inter-Black.ttf"
 )
 $ThresholdBytes = [Int64]262144000
 $IdleSeconds = 300
@@ -303,6 +311,58 @@ function Get-StartupBoundaryEventId {
     return $null
 }
 
+function Get-InterFontResourceEvents {
+    param([string]$ScenarioId, [int]$StartupReadyLogIndex)
+    $events = [System.Collections.Generic.List[object]]::new()
+    foreach ($entry in $StartupEvents) {
+        if ($entry.scenarioId -ne $ScenarioId) { continue }
+        $line = [string]$entry.line
+        if ($line -notmatch 'resource:assets/fonts/Inter') { continue }
+        $match = [regex]::Match($line, '^ClassMngrNext resource checkpoint=(?<checkpoint>\{.*\})$')
+        if (-not $match.Success) { throw "An Inter font resource diagnostic was malformed for $ScenarioId." }
+        try { $checkpoint = $match.Groups["checkpoint"].Value | ConvertFrom-Json -ErrorAction Stop }
+        catch { throw "An Inter font resource diagnostic was not valid JSON for ${ScenarioId}: $($_.Exception.Message)" }
+        $resourceId = [string]$checkpoint.resource_id
+        if ($ExpectedInterFontResourceIds -cnotcontains $resourceId) {
+            throw "Unexpected Inter font resource ID '$resourceId' for $ScenarioId; the TTC collection is not accepted."
+        }
+        $requestScope = $checkpoint.request_scope
+        if ($checkpoint.event -ne "resource-load" -or $checkpoint.outcome -ne "succeeded" -or
+            $null -eq $requestScope -or $requestScope.kind -ne "startup") {
+            throw "Inter font resource $resourceId did not complete successfully during startup for $ScenarioId."
+        }
+        $events.Add([ordered]@{
+            resourceId = $resourceId
+            outcome = [string]$checkpoint.outcome
+            requestScopeKind = [string]$requestScope.kind
+            startupLogIndex = [Int64]$StartupEvents.IndexOf($entry)
+            stream = [string]$entry.stream
+            observedAtUtc = [string]$entry.observedAtUtc
+            rawLine = $line
+        })
+    }
+    if ($events.Count -ne $ExpectedInterFontResourceIds.Count) {
+        throw "Expected exactly six catalogued Inter TTF startup events for $ScenarioId; found $($events.Count)."
+    }
+    for ($index = 0; $index -lt $ExpectedInterFontResourceIds.Count; $index++) {
+        if ($events[$index].resourceId -cne $ExpectedInterFontResourceIds[$index]) {
+            throw "Catalogued Inter TTF startup events were missing, duplicated, or out of order for $ScenarioId."
+        }
+        if ([Int64]$events[$index].startupLogIndex -ge $StartupReadyLogIndex) {
+            throw "Inter TTF resource $($events[$index].resourceId) occurred after startup-ready for $ScenarioId."
+        }
+    }
+    $requiredFontsEvents = @($StartupEvents | Where-Object {
+        $_.scenarioId -eq $ScenarioId -and $_.line -match 'ClassMngrNext startup stage=required-fonts-loaded '
+    })
+    if ($requiredFontsEvents.Count -ne 1) { throw "Expected exactly one required-fonts-loaded record for $ScenarioId." }
+    $requiredFontsIndex = $StartupEvents.IndexOf($requiredFontsEvents[0])
+    if ($events[-1].startupLogIndex -ge $requiredFontsIndex) {
+        throw "All six Inter TTF resource events must precede required-fonts-loaded for $ScenarioId."
+    }
+    return @($events)
+}
+
 function Invoke-FixtureTest {
     param([string]$Executable, [string]$TestFunction, [string]$OutputEnvironmentName,
         [string]$OutputPath, [string]$QtBin)
@@ -417,6 +477,7 @@ function Invoke-Scenario {
         process = $null
         workspaceOpenedDiagnostic = $null
         startupReadyDiagnostic = $null
+        interFontResourceEvents = @()
         startupBoundarySampleCount = 0
         startupBoundaryEventIds = @()
         idleSeconds = $IdleSeconds
@@ -516,6 +577,8 @@ function Invoke-Scenario {
             Start-Sleep -Milliseconds 100
         }
         if ($null -eq $readyEvent) { throw "The packaged app did not emit startup-ready within $ReadinessTimeoutSeconds seconds." }
+        $readyLogIndex = $StartupEvents.IndexOf($readyEvent)
+        $scenario.interFontResourceEvents = @(Get-InterFontResourceEvents -ScenarioId $Definition.id -StartupReadyLogIndex $readyLogIndex)
 
         $workspaceEvents = @($StartupEvents | Where-Object {
             $_.scenarioId -eq $Definition.id -and $_.line -match 'ClassMngrNext startup stage=workspace-opened '
@@ -731,6 +794,7 @@ $Manifest = [ordered]@{
         samplesPerScenario = $ExpectedStartupBoundaryEvents.Count
         maxSampleDelayMilliseconds = $StartupBoundaryMaximumDelayMilliseconds
     }
+    requiredInterFontResourceIds = $ExpectedInterFontResourceIds
     advisoryScenarios = @([ordered]@{ id = "fresh-initial-setup"; budgetScope = "advisory"; measuredBy = "Phase 7 advisory route" })
     scenarios = @()
     failure = $null
@@ -939,6 +1003,57 @@ try {
     $resourceDirectory = Split-Path -Parent $resourceCatalogs[0].FullName
     if ([System.IO.Path]::GetFileName($resourceDirectory) -ne "resources") { throw "Installed resource catalog is not under resources." }
     $stageDirectory = [System.IO.Path]::GetFullPath((Split-Path -Parent $resourceDirectory))
+    $resourceCatalogPath = [System.IO.Path]::GetFullPath($resourceCatalogs[0].FullName)
+    $resourceCatalog = Get-Content -LiteralPath $resourceCatalogPath -Raw | ConvertFrom-Json -ErrorAction Stop
+    $interCatalogRecords = @($resourceCatalog.records | Where-Object {
+        ([string]$_.logical_id).StartsWith("resource:assets/fonts/Inter", [StringComparison]::Ordinal)
+    })
+    if ($interCatalogRecords.Count -ne $ExpectedInterFontResourceIds.Count) {
+        throw "Installed resource catalog does not contain exactly the six Inter TTF records."
+    }
+    $catalogInterEntries = [System.Collections.Generic.List[object]]::new()
+    foreach ($expectedResourceId in $ExpectedInterFontResourceIds) {
+        $matchingCatalogRecords = @($interCatalogRecords | Where-Object { $_.logical_id -ceq $expectedResourceId })
+        if ($matchingCatalogRecords.Count -ne 1) {
+            throw "Installed resource catalog is missing, duplicating, or replacing Inter resource $expectedResourceId."
+        }
+        $catalogRecord = $matchingCatalogRecords[0]
+        $packageRelativePath = [string]$catalogRecord.package_relative_path
+        $sourcePath = [string]$catalogRecord.provenance.source.path
+        $sourceBytes = [Int64]$catalogRecord.provenance.source.bytes
+        $sourceSha256 = [string]$catalogRecord.provenance.source.sha256
+        $bakedBytes = [Int64]$catalogRecord.provenance.baked.bytes
+        $bakedSha256 = [string]$catalogRecord.provenance.baked.sha256
+        $expectedPackageRelativePath = $expectedResourceId.Substring("resource:".Length)
+        if ($catalogRecord.resource_kind -ne "required_ui_font" -or
+            $catalogRecord.expected_type -ne "ttf" -or
+            $catalogRecord.location -ne "resource_file" -or
+            $packageRelativePath -cne $expectedPackageRelativePath -or
+            $sourcePath -cne ("resources/" + $expectedPackageRelativePath) -or
+            $sourceBytes -le 0 -or $bakedBytes -ne $sourceBytes -or
+            $sourceSha256 -notmatch '^[0-9a-f]{64}$' -or $bakedSha256 -cne $sourceSha256) {
+            throw "Installed catalog provenance is invalid for Inter resource $expectedResourceId."
+        }
+        $sourceFontPath = Join-Path $RepositoryRoot ($sourcePath.Replace("/", "\"))
+        $packagedFontPath = Join-Path $resourceDirectory ($packageRelativePath.Replace("/", "\"))
+        if (-not (Test-Path -LiteralPath $sourceFontPath -PathType Leaf) -or
+            -not (Test-Path -LiteralPath $packagedFontPath -PathType Leaf)) {
+            throw "Catalogued Inter font file is missing from source or package: $expectedResourceId."
+        }
+        if ((Get-Item -LiteralPath $sourceFontPath).Length -ne $sourceBytes -or
+            (Get-FileSha256 -Path $sourceFontPath) -cne $sourceSha256 -or
+            (Get-Item -LiteralPath $packagedFontPath).Length -ne $bakedBytes -or
+            (Get-FileSha256 -Path $packagedFontPath) -cne $bakedSha256) {
+            throw "Catalogued Inter font source/package identity mismatch: $expectedResourceId."
+        }
+        $catalogInterEntries.Add([ordered]@{
+            resourceId = $expectedResourceId
+            sourcePath = $sourcePath
+            packageRelativePath = $packageRelativePath
+            sizeBytes = $sourceBytes
+            sha256 = $sourceSha256
+        })
+    }
     $stageRelative = [System.IO.Path]::GetRelativePath($stageRoot, $stageDirectory)
     if ([System.IO.Path]::IsPathRooted($stageRelative) -or $stageRelative -eq ".." -or $stageRelative.StartsWith("..\", [StringComparison]::Ordinal)) {
         throw "Resource catalog resolved outside the package stage."
@@ -977,6 +1092,29 @@ try {
     $packageHash = Get-StringSha256 -Value ($packageCanonical + "`n")
     Write-JsonFile -Path $PackageFilesPath -Value ([ordered]@{ files = @($packageEntries) })
     $applicationRelative = [System.IO.Path]::GetRelativePath($stageDirectory, $applicationPath).Replace("\", "/")
+    $resourceCatalogRelativePath = [System.IO.Path]::GetRelativePath($stageDirectory, $resourceCatalogPath).Replace("\", "/")
+    $resourceCatalogPackageEntries = @($packageEntries | Where-Object { $_.path -ceq $resourceCatalogRelativePath })
+    if ($resourceCatalogRelativePath -cne "resources/resource-catalog.json" -or $resourceCatalogPackageEntries.Count -ne 1) {
+        throw "The installed resource catalog is not represented exactly once in the package inventory."
+    }
+    $interFontLicenseSourcePath = "licenses/fonts/inter/LICENSE.txt"
+    $interFontLicensePackagePath = "licenses/fonts/inter/LICENSE.txt"
+    $interFontLicenseSourceFile = Join-Path $RepositoryRoot ($interFontLicenseSourcePath.Replace("/", "\"))
+    $interFontLicenseInstalledFile = Join-Path $stageDirectory ($interFontLicensePackagePath.Replace("/", "\"))
+    if (-not (Test-Path -LiteralPath $interFontLicenseSourceFile -PathType Leaf) -or
+        -not (Test-Path -LiteralPath $interFontLicenseInstalledFile -PathType Leaf)) {
+        throw "The Inter OFL license is missing from source or the staged package."
+    }
+    $interFontLicenseSizeBytes = [Int64](Get-Item -LiteralPath $interFontLicenseSourceFile).Length
+    $interFontLicenseSha256 = Get-FileSha256 -Path $interFontLicenseSourceFile
+    $interFontLicensePackageEntries = @($packageEntries | Where-Object { $_.path -ceq $interFontLicensePackagePath })
+    if ($interFontLicensePackageEntries.Count -ne 1 -or
+        (Get-Item -LiteralPath $interFontLicenseInstalledFile).Length -ne $interFontLicenseSizeBytes -or
+        (Get-FileSha256 -Path $interFontLicenseInstalledFile) -cne $interFontLicenseSha256 -or
+        $interFontLicensePackageEntries[0].sizeBytes -ne $interFontLicenseSizeBytes -or
+        $interFontLicensePackageEntries[0].sha256 -cne $interFontLicenseSha256) {
+        throw "The packaged Inter OFL license differs from its exact source identity."
+    }
     $Manifest.application = [ordered]@{
         canonicalPath = $applicationPath
         sha256 = $applicationHash
@@ -996,6 +1134,15 @@ try {
         applicationRelativePath = $applicationRelative
         applicationSha256 = $applicationHash
         inventoryFile = "package-files.json"
+        resourceCatalogPath = $resourceCatalogRelativePath
+        resourceCatalogSha256 = $resourceCatalogPackageEntries[0].sha256
+        interFontCatalogEntries = @($catalogInterEntries)
+        interFontLicense = [ordered]@{
+            sourcePath = $interFontLicenseSourcePath
+            packagePath = $interFontLicensePackagePath
+            sizeBytes = $interFontLicenseSizeBytes
+            sha256 = $interFontLicenseSha256
+        }
     }
 
     $fixtureDirectory = Join-Path $TemporaryRoot "fixtures"

@@ -3253,7 +3253,8 @@ capturesSpeakingEvaluationReportsForEnglishKoreanLightAndDark()
         fontIds.append(fontId);
         return QFontDatabase::applicationFontFamilies(fontId).value(0);
     };
-    assets.latinFamily = loadFont(QStringLiteral("resource:assets/fonts/Inter.ttc"));
+    assets.latinFamily = loadFont(
+        QStringLiteral("resource:assets/fonts/Inter-Regular.ttf"));
     assets.koreanFamily = loadFont(
         QStringLiteral("resource:assets/fonts/PretendardVariable.ttf"));
     QVERIFY(!assets.latinFamily.isEmpty());

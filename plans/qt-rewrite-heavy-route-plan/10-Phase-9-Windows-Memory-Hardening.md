@@ -49,8 +49,11 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   TTC's 4.001 version, required styles, Unicode coverage, glyph outlines, and
   horizontal metrics; their cumulative DirectWrite registration delta was
   about 6.3 MB WS / 6.2 MB private versus about 489.9 MB / 493.8 MB for the
-  TTC. P9-06V is migrating production to the verified faces and will run the
-  unchanged packaged gate. No memory pass is claimed until that gate passes.
+  TTC. P9-06V migrated production to the six verified faces, included the OFL
+  license in the generated package, and passed the unchanged local packaged
+  gate. Both fixtures completed 301 samples; all six gated WS points were
+  199,380,992–207,187,968 bytes, below 262,144,000. P9-07 normal navigation
+  and P9-08 lifecycle/cleanup remain, followed by the full Phase 9 exit gate.
   See the Phase 9 progress log and current slice-batch tracker. The strict
   memory limit and cadence remain unchanged.
 

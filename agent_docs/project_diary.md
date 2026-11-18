@@ -1,5 +1,15 @@
 # Project Diary
 
+### Phase 9 packaged memory gate passed with static Inter faces — 2026-11-18
+
+P9-06V replaced the bundled Inter TTC with the six parity-verified v4.1
+static faces and added their OFL license to the generated Windows package.
+The unchanged, source-bound Release gate passed for empty and 96-class
+workspaces with 301 samples each. All six startup-ready/external-startup/
+five-minute working-set checkpoints were below 262,144,000 bytes; maximum idle
+working set was 207,187,968 bytes. The full Phase 9 exit gate remains open for
+normal navigation, Sub Prep lifecycle/cleanup, and final full Debug CTest.
+
 ### Phase 9 exact-version Inter face verification — 2026-11-18
 
 The six official Inter v4.1 static faces match the bundled TTC's 4.001

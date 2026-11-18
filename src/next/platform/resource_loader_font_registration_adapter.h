@@ -81,7 +81,7 @@ private:
         switch (resource)
         {
         case Core::FontResource::Inter:
-            return QStringLiteral("resource:assets/fonts/Inter.ttc");
+            return QStringLiteral("resource:assets/fonts/Inter-Regular.ttf");
         case Core::FontResource::Pretendard:
             return QStringLiteral("resource:assets/fonts/PretendardVariable.ttf");
         case Core::FontResource::JustAnotherHand:

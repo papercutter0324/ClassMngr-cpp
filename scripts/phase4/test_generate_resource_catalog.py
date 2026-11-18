@@ -243,6 +243,34 @@ class ResourceCatalogTests(unittest.TestCase):
         self.assertEqual(calendar["expected_type"], "qml_module_component")
         self.assertNotIn("baked", calendar["provenance"])
 
+    def test_superseded_inter_collection_is_verified_but_not_cataloged(self) -> None:
+        source_path = "resources/assets/fonts/Inter.ttc"
+        source_bytes = b"superseded Inter collection test fixture\n"
+        self.sources[source_path] = source_bytes
+        source_file = self.root / source_path
+        source_file.parent.mkdir(parents=True, exist_ok=True)
+        source_file.write_bytes(source_bytes)
+        self.inventory["excluded_resources"].append(
+            self._record(
+                "resource:assets/fonts/Inter.ttc",
+                source_path,
+                "superseded_inter_font_collection",
+                "excluded_v2",
+            )
+        )
+        self._save_inventory()
+        self._fresh_bake()
+
+        catalog = self._catalog()
+        baked = json.loads(self.manifest_path.read_text(encoding="utf-8"))
+        packaged_ids = {record["logical_id"] for record in catalog["records"]}
+
+        self.assertNotIn("resource:assets/fonts/Inter.ttc", packaged_ids)
+        self.assertNotIn(
+            "assets/fonts/Inter.ttc",
+            {entry["relative_path"] for entry in baked["direct_resources"]},
+        )
+
     def test_owner_may_be_omitted_only_for_excluded_resources(self) -> None:
         # The fixture's unclaimed resources omit owner_feature and still bake
         # successfully, while a runtime record must retain an explicit owner.

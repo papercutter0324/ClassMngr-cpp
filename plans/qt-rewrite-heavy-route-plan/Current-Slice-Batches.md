@@ -84,7 +84,7 @@ allocation or cleanup defect, route the fix to that feature boundary.
      diagnostic only; the product package and P9-06 gate were unchanged. Run
      IDs, hashes, and limitations are recorded in the Phase 9 progress log.
 6. **P9-06V — Register exact-version Inter static faces and rerun the gate**
-   (Production and acceptance slice in progress)
+   (Accepted; strict normal-use memory gate passed)
    - Acceptance: package the six verified Inter v4.1 static TTFs with their
      exact hashes and license; preserve the six required styles, family
      behavior, coverage, font-registration lifetime and cleanup, and leave
@@ -93,6 +93,14 @@ allocation or cleanup defect, route the fix to that feature boundary.
      P9-06 gate for both fixtures at 301 samples each. All six gated working
      set points must be strictly below 262,144,000 bytes for a pass; preserve
      all artifacts and report valid over-budget evidence as a failure.
+   - Result: the generated package contains the six verified v4.1 TTFs and
+     Inter OFL license (no TTC alias); Pretendard is unchanged. The focused
+     P9 validator suite passed 44/44, and the Phase 4 suite passed 34 tests
+     with one expected Windows symlink-privilege skip. Four affected Debug
+     CTests passed; the ResourceLoader test's symlink assertion was skipped
+     because Windows symlink creation was unavailable. The unchanged Release
+     gate completed two valid 301-sample traces and passed all six strict
+     checkpoints. Final run ID, hashes, and values are in the progress log.
 7. **P9-07 — Normal navigation and five-minute idle** (Proposed)
    - Acceptance: locally packaged Windows Release exercises repeated normal
      navigation, proves the document catalog has no loaded PDF body, and

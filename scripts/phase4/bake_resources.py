@@ -59,6 +59,7 @@ COLLECTION_RESOURCE_KINDS = {
         "office_lock_file",
         "optional_dynamic_image",
         "roster_workflow_file",
+        "superseded_inter_font_collection",
     },
     "build_inputs": {"speaking_report_art_source", "windows_packaging_template"},
     "calendar_qml_sources": {"calendar_qml_module_source"},
