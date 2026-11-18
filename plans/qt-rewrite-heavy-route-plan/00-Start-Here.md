@@ -6,23 +6,19 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-18
-- Current milestone: Phase 9 remains In progress. Batch 1 is closed. P9-06's
-  valid optimized local Windows Release run completed both 301-sample
-  scenarios, but all six normal-use working-set checkpoints exceeded
-  262,144,000 bytes. P9-06R's file-backed Inter route did not reduce memory.
-  Independent P9-06S probes identify a median about 490 MB WS / 494 MB private
-  increase synchronous with Inter TTC registration under Qt 6.12 DirectWrite.
-  P9-06T found low registration memory using six original v4.0 static TTFs or
-  the TTC under GDI, but v4.0 differs from the bundled TTC's 4.001 version tag
-  and GDI changes rendering across Qt. P9-06U verified six exact-version v4.1
-  static faces against the TTC and independently measured about 6.3 MB WS /
-  6.2 MB private cumulative registration under DirectWrite, compared with
-  about 489.9 MB / 493.8 MB for the TTC. P9-06V moved production to those six
-  faces, included the OFL license in the package, and passed the unchanged
-  local packaged gate: both fixtures completed 301 samples, and all six
-  checkpoints were 199,380,992–207,187,968 bytes against the strict
-  262,144,000-byte limit. P9-07 normal navigation and P9-08 lifecycle/cleanup
-  remain; the Phase 9 exit gate is still open. See the
+- Current milestone: Phase 9 remains In progress. Batch 1 is closed, and
+  P9-06V passed the local packaged Windows x64 Release memory gate using the
+  six verified Inter v4.1 static faces and their OFL license. Both empty and
+  representative workspaces completed 301 samples; all six gated points were
+  199,380,992–207,187,968 bytes, below 262,144,000. P9-07's final ten-cycle
+  navigation/idle gate also passed for both fixtures, with maximum gated WS
+  224,305,152 bytes. Its font-bound Calendar capture set verifies full
+  English/Korean titles, and the focused CalendarPage CTest passed. A
+  30-cycle representative-only diagnostic showed a smaller positive residual
+  trend late in the run; cause and long-term plateau remain unproven. P9-07 is
+  closed and P9-08 Sub Prep lifecycle/cleanup is active. Discovery for the
+  next batch is complete with ten queued Release-scenario candidates. The full
+  Debug CTest and final packaged Release exit gates remain open. See the
   [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
   [Phase 8a closeout](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
   [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), [Phase 9 progress

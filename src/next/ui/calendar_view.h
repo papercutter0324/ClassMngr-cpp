@@ -61,4 +61,8 @@ using CalendarViewFactory = std::function<CalendarViewCreationResult(
     const CalendarViewRequest& request
     );
 
+[[nodiscard]] CalendarViewCreationResult createWidgetCalendarView(
+    const CalendarViewRequest& request
+    );
+
 } // namespace ClassMngr::Next::Ui

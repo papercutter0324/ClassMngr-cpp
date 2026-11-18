@@ -1477,7 +1477,19 @@ Application::StartupResult ApplicationBootstrap::start()
         {
             m_pageLifecycleDiagnosticsRecorder =
                 std::make_unique<QtPageLifecycleDiagnosticsRecorder>(
-                    m_shell->pageHost());
+                    m_shell->pageHost(),
+                    std::unique_ptr<ProcessMemorySnapshotProvider>{},
+                    QtPageLifecycleDiagnosticsRecorder::RecordWriter{},
+                    [](const QWidget* page)
+                    -> std::optional<Ui::CalendarPageRuntimeMetrics> {
+                        const auto* const calendarPage =
+                            qobject_cast<const Ui::CalendarPage*>(page);
+                        if (!calendarPage)
+                        {
+                            return std::nullopt;
+                        }
+                        return calendarPage->runtimeMetrics();
+                    });
         }
         catch (...)
         {
@@ -2569,6 +2581,7 @@ Application::StartupResult ApplicationBootstrap::start()
         const auto calendarActionsFactory = [this](
             const Ui::PageContext& context) {
             Ui::CalendarPageActions actions;
+            actions.calendarViewFactory = Ui::createWidgetCalendarView;
             actions.calendarArchiveReadPort =
                 m_coreServices->archiveReadPort;
             actions.activeWorkspacePath = [this] {
@@ -3896,6 +3909,12 @@ bool ApplicationBootstrap::loadRequiredDocumentCatalog()
         return false;
     }
 
+    // The projection owns document metadata and typed references only. PDF
+    // bodies are requested later by an explicit document-viewer action.
+    qInfo().noquote().nospace()
+        << "ClassMngrNext document-catalog event=projected outcome=completed document_count="
+        << static_cast<qint64>(projection.value().documents().size())
+        << " loaded_pdf_body_count=0";
     m_applicationRuntime->retainStartupDocumentCatalogProjection(
         std::move(projection.value())
         );

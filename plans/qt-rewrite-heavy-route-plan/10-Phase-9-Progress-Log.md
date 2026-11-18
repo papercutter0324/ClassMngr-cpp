@@ -632,3 +632,137 @@ target/test passed after an elevated build.
 The prior generated resource trees were retained under unique `Resources.pre-p9-06V-*`
 paths. No full Debug CTest suite has yet run on the final Phase 9 source; it
 remains required before the phase exit decision. No GitHub validation was run.
+
+#### P9-07 repeated navigation and idle — valid over-budget result; remediation in progress
+
+The first complete P9-07 Release route is
+artifacts/phase9/packaged-idle-memory/20261118T030653547Z-22b2f496a13b4ab7a80e90e3819731e0/.
+Its evidence is valid and source-bound, but the strict budget failed. Each
+empty and representative 96-class fixture completed 12 successful page
+transitions across three cycles of Schedule → Calendar → My Classes → My
+Workspace, followed by 301 ordered idle samples over 300 seconds. The runtime
+document catalog reported 30 metadata entries and zero loaded PDF bodies; no
+PDF body load event occurred. UIA selected the exact named page row and each
+event matched the measured app PID. Independent Tester recomputed all 26
+over-budget points and matched the validator's valid/budget-failed result.
+
+| Fixture | Startup-ready WS | First Calendar WS | Post-navigation WS | Five-minute WS | Max idle WS |
+|---|---:|---:|---:|---:|---:|
+| Empty workspace | 201,129,984 | 272,875,520 | 279,908,352 | 275,947,520 | 279,908,352 |
+| Representative 96-class workspace | 201,965,568 | 274,464,768 | 280,420,352 | 276,447,232 | 280,424,448 |
+
+The 262,144,000-byte limit is unchanged. Each scenario has 13 strict-limit
+violations among 16 gated checkpoints: route steps 2–12, post-navigation,
+and the five-minute endpoint. Startup-ready, external-startup, and the first
+Schedule transition are below the limit. Return-to-Workspace WS rises across
+cycles, but three cycles do not establish a linear leak.
+
+The independent code/telemetry investigation compared P9-07 with the accepted
+P9-06V memory run. Immediately before Calendar, the empty-fixture active
+Schedule page recorded 210,407,424 WS / 126,431,232 private bytes. Calendar's
+created checkpoint was 211,107,840 / 126,754,816; its activated checkpoint
+was 251,031,552 / 202,334,208 with threads increasing 17→33. At suspension,
+the widget count fell 32→8 and the Qt item-model count 2→0. The run did not
+record Calendar QML object counts or `CalendarPageRuntimeMetrics`, so this
+does not identify the allocation stack. The `QQuickWidget`/QML activation path
+is a hypothesis, not a proven cause; the 91 campus JSON resource loads total
+434,441 source bytes and 206,661 decoded bytes and cannot explain the measured
+increase by payload size. Source review finds `CalendarPage::onSuspending()`
+destroys the view before its borrowed model/provider and releases the cache,
+but a diagnostic A/B remains necessary.
+
+The candidate source fingerprint is
+`7de09bf8c013202c005bf9362ad78e9540956f18680ebb8f6bc22b641a1e615e`; the
+Release cache hash remains
+`f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47`, and the
+package hash is
+`5795c4beab6212b13c364cba60781c22e737d43c1792dd1a6156ba42c64dfa2a`. The app
+was x64 MSVC Release with `/MD /O2 /Ob2 /DNDEBUG`, Qt 6.12.0; source/cache
+hashes were stable. The incomplete build/UIA attempts are preserved separately
+as invalid/not-evaluated runs and are not counted as budget results.
+
+At the time of this initial failure report, P9-07 remained active. Subsequent
+diagnosis, remediation, and accepted results are recorded below.
+
+#### P9-07 accepted navigation gate and Calendar view remediation — 2026-11-18
+
+The QML activation path was measured with a production-equivalent A/B through
+`CalendarViewFactory`. The full QML grid added about 34 MB WS / 37 MB private
+relative to the minimal QWidget baseline, while a product-equivalent QWidget
+grid added about 11 MB WS / 7 MB private. A lazy-event-list experiment and a
+`Label` to `Text` QML experiment did not meaningfully reduce memory and were
+discarded. The implementation migrated the production Calendar view to a
+QWidget, preserving the 35/42-day layout, academic-week columns, event colors,
+activation, navigation, keyboard access, and accessibility behavior. The QML
+factory remains available for comparison.
+
+The final accepted packaged Windows x64 Release run is
+`artifacts/phase9/packaged-idle-memory/20261118T092055381Z-e63554e873664d1eaface390ddc4ec9e/`.
+Both fixtures completed ten ordered Schedule → Calendar → My Classes → My
+Workspace cycles (40 successful selections each), then 301 process samples
+with one-second cadence through the five-minute idle endpoint. Events were
+bound to the measured process and exact UIA-selected page rows. Both document
+catalogs reported 30 metadata entries and zero loaded PDF bodies; no body-load
+event occurred. Processes exited normally.
+
+| Fixture | Startup-ready WS | External startup WS | Route max WS | Post-navigation WS | Idle max WS | Five-minute WS |
+|---|---:|---:|---:|---:|---:|---:|
+| Empty | 201,785,344 | 208,629,760 | 219,725,824 | 219,725,824 | 220,250,112 | 202,289,152 |
+| Representative, 96 classes | 201,842,688 | 208,969,728 | 223,997,952 | 223,997,952 | 224,305,152 | 205,213,696 |
+
+All gated checkpoints are strictly below the unchanged 262,144,000-byte limit.
+Independent Tester recomputed all 602 samples, 80 routes, event identities,
+cadence, PDF-body counts, compiler flags, source inventory, package inventory,
+and gate decisions. The accepted run has source fingerprint
+`13ad0c35356f964b85590caefb2a9c915b05ac012e61a46a4752646e44b92096`, cache
+SHA-256 `f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47`,
+package SHA-256 `da00e1a403bf31018a6c9f6d19df852d1d65b659830891fa5271585bad4384a0`,
+and Release executable SHA-256
+`c8fc43d556140de08bbe31d9077b35cea85498d530723da2bfb3de35ef500c7e`.
+The package used VS 18 2026, MSVC x64 Release, Qt 6.12.0, and
+`/MD /O2 /Ob2 /DNDEBUG` with MaxSpeed optimization.
+
+Two later attempts against the same package are preserved as invalid and not
+evaluated because `SendMessageTimeout` could not deliver a UIA-bound click
+before the route and idle sampling completed. They did not supersede the
+passing run. A current-source comparison against the valid gate found exactly
+one later file change: test-only `tests/next/calendar_page_tests.cpp`. The
+Release executable, cache, package inventory, and all production/runtime
+inputs are unchanged; the independent Tester confirmed the passing gate is
+reusable for P9-07 runtime-memory acceptance. The current test file compiles
+only into `ClassMngrNextCalendarPageTests`.
+
+Visual review initially found that capture fixtures lacked production font
+registration and that the title-fit manifest could disagree with pixels. The
+final capture test now registers the exact packaged Inter and Pretendard assets
+through the production ResourceLoader path, checks English and Korean glyphs,
+records build/source/font/fixture provenance and separate RGB/alpha metrics,
+and compares actual title pixels against an independently specified full-width
+localized reference. Forty suffix-removal negative controls all fail as
+expected. The final 16-image capture set is
+`artifacts/phase9/calendar-view-parity/20261118T105331504Z-280befaa-f966-4e3a-8ebc-d870d9906349/`;
+its manifest SHA-256 is
+`e72e7db988c6e68829e7c4db6100d1001322992dfb6960fe6344a962849da22c`.
+Independent visual inspection confirmed all eight QML/Widget pairs have
+complete English (`MS: Fall Wk 7`) or Korean titles, readable text, matching
+event dates/labels, and no title suffix mismatch. The focused Debug build and
+`ClassMngrNextCalendarPageTests` CTest passed 1/1.
+
+Separate 20- and 30-cycle representative-only navigation diagnostics are
+preserved under `artifacts/phase9/packaged-idle-memory/`. The corrected 20-cycle
+review validates 80 selection transitions; the original summary retains its
+initial-route counting error, while `summary-review.json` records the
+corrected, valid diagnostic. The 30-cycle run
+`20261118T083123865Z-3fb2daa3c9e546d6bb24daf99f6ab49a/` validates 120
+transitions with no idle phase or budget evaluation. Return-to-Workspace memory
+still rises, but the measured private-byte trend declines from about 269
+KB/cycle over cycles 11–20 to about 139 KB/cycle over cycles 21–30. Calendar
+view/root/session/cache counts return to zero on every suspension; other page
+widget/model counts remain stable. These observations do not identify the
+allocation owner, prove a leak, or establish a long-term plateau. The formal
+ten-cycle strict gate passes; no threshold, cadence, or PDF-body rule changed.
+
+P9-07 is complete. P9-08, the 96-class Sub Prep lifecycle and matched-cleanup
+slice, is next. Batch 2 remains active until P9-08 closes; push once after the
+batch. The full Phase 9 Debug CTest and final packaged Release exit gates are
+still required.

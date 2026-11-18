@@ -8788,6 +8788,8 @@ add_executable(ClassMngrNextCalendarPageTests
     src/next/ui/page_host.cpp
     src/next/ui/page.h
     src/next/ui/page_host.h
+    src/next/bootstrap/qt_page_lifecycle_diagnostics.cpp
+    src/next/platform/qt_font_family_availability_adapter.cpp
     $<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>
     $<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>
 )

@@ -101,12 +101,27 @@ allocation or cleanup defect, route the fix to that feature boundary.
      because Windows symlink creation was unavailable. The unchanged Release
      gate completed two valid 301-sample traces and passed all six strict
      checkpoints. Final run ID, hashes, and values are in the progress log.
-7. **P9-07 — Normal navigation and five-minute idle** (Proposed)
+7. **P9-07 — Normal navigation and five-minute idle** (Accepted; strict packaged gate passed)
    - Acceptance: locally packaged Windows Release exercises repeated normal
      navigation, proves the document catalog has no loaded PDF body, and
      enforces the same strict normal-use working-set limit after navigation
      and idle.
-8. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Proposed)
+   - Result: final accepted run `20261118T092055381Z-e63554e873664d1eaface390ddc4ec9e`
+     completed 10 exact cycles and 40 authentic page transitions per fixture,
+     followed by 301 samples over five minutes. All gated working sets were
+     below 262,144,000 B; maxima were 220,250,112 B (empty) and 224,305,152 B
+     (96-class). Both catalogs reported zero loaded PDF bodies. Independent
+     Tester verified the run, source/package/compiler identities, cadence,
+     and all gate points. The current tree differs from the passing inventory
+     only in test-only `tests/next/calendar_page_tests.cpp`; package, Release
+     executable, cache, and production inputs match. Two subsequent UIA click
+     timeouts remain invalid/not evaluated. Font-bound paired captures and
+     rendered-pixel suffix checks pass for all eight English/Korean contexts;
+     focused Debug CTest passed 1/1. The representative-only 30-cycle
+     diagnostic shows a small positive but decreasing residual trend; no
+     allocator cause or long-term plateau is claimed. Details and run IDs are
+     in the Phase 9 progress log.
+8. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Active)
    - Acceptance: the locally packaged Windows Release route covers entry,
      summary creation, first selection, refresh, package generation, leave,
      and repeated re-entry. Capture peak and settled process metrics plus
@@ -114,8 +129,55 @@ allocation or cleanup defect, route the fix to that feature boundary.
      pair. Keep it advisory until the return allowance is defined from
      current-source Windows Release runs.
 
-When P9-07 starts, begin discovery of the next batch because it will be the
-second-to-last candidate in this active batch. Each slice requires its assigned
-local Windows checks/evidence and its own commit; push once after Batch 2 closes.
-GitHub validation is not part of current acceptance. Scenario measurements do
-not replace later full-route gates.
+P9-07 is the second-to-last candidate in Batch 2, so Batch 3 discovery began
+when P9-07 started. Each slice requires its assigned local Windows
+checks/evidence and its own commit; push once after Batch 2 closes. GitHub
+validation is not part of current acceptance. Scenario measurements do not
+replace later full-route gates.
+
+## Phase 9 — Batch 3: Additional packaged Release lifecycle evidence (Discovered; queued)
+
+Discovery began when P9-07 started, as required. The Explorer and independent
+Investigator reviewed the Phase 9 measurement list, the Phase F memory
+remediation routes, and existing Phase 0 evidence routes. No numbered P9-09+
+order existed. The following ten remaining candidates are ordered by current
+feature boundary and reusable route; recheck for overlap with P9-07/P9-08
+before implementation. The full Windows Debug CTest and final packaged
+Release exit gates remain separate from these feature slices.
+
+9. **Large Schedule Import lifecycle** — Parse a large fixture, exercise
+   conflict review, cancel and apply paths, and verify return/cleanup.
+   Existing Phase 0 routes: `lifecycle-schedule-import`,
+   `lifecycle-schedule-import-apply`.
+10. **Large Calendar Import and open/close** — Measure successful import,
+    parser-error cleanup, and calendar entry/leave.
+    Existing routes: `lifecycle-calendar-import`,
+    `lifecycle-calendar-import-error`.
+11. **Class Transfer export/import lifecycle** — Cover export, import, cancel,
+    and released state. Existing route: `lifecycle-class-transfer`.
+12. **QtPdf viewer lifecycle** — Open, render, close, release, and reopen a
+    PDF; record document/page and retained-object state. Existing route:
+    `visual-pdf-viewer`.
+13. **Speaking/report generation and preview close** — Verify output and
+    cleanup, excluding any report/PDF output already accepted in P9-08.
+    Existing route: `lifecycle-speaking-evaluation`.
+14. **Staff Directory and AI batch review** — Measure staff refresh/re-entry
+    and large AI batch review. Staff route exists; AI batch coverage needs an
+    explicit route or documented route mapping.
+15. **Schedule refresh and language/theme cycles** — Repeat schedule refresh,
+    language change, and theme rebuild with bounded retained objects.
+    Existing route: `lifecycle-schedule`; locale/theme coverage must be made
+    explicit.
+16. **Repeated workspace open/close** — Verify matched before/after process
+    memory and no growth across repeated cycles.
+17. **Large roster editing** — Measure large edit operations, peak use, and
+    cleanup; no named Phase 0 memory route was found.
+18. **Campus map open/close** — Measure decoded map retention and release;
+    no named Phase 0 memory route was found.
+
+Shared acceptance for each candidate: current-source packaged Windows x64
+Release evidence, identified large fixtures, process/memory metrics, bounded
+widget/editor and model counts where relevant, and a measured return-to-baseline
+allowance. Keep transient budgets advisory until that allowance is established.
+The source review found no additional named candidates beyond these ten in the
+current Phase 9 and Phase F lists; confirm that finding when Batch 3 activates.

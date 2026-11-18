@@ -1,6 +1,55 @@
 # Latest Session Work
 
-## Phase 9 current handoff - P9-06V packaged memory gate pass - 2026-11-18
+## Phase 9 current handoff - P9-08 Sub Prep lifecycle - 2026-11-18
+
+Deployment `phase9_continue_20261118` is active on the Heavy route. Use Light
+for Git commits and pushes. P9-07 is complete; P9-08 is next. Commit each
+slice, push once after Batch 2 closes with P9-08, then continue the ten
+discovered Batch 3 candidates. All Windows validation stays local.
+
+P9-07's accepted packaged Windows x64 Release run is
+`artifacts/phase9/packaged-idle-memory/20261118T092055381Z-e63554e873664d1eaface390ddc4ec9e/`.
+Both empty and representative fixtures completed ten exact four-page cycles,
+40 route events each, and 301 one-second samples through five-minute idle.
+All gated WS points passed the strict 262,144,000-byte limit; route/idle
+maxima were 220,250,112 B and 224,305,152 B. Catalogs reported zero loaded
+PDF bodies. The independent Tester verified all 602 samples, 80 transitions,
+cadence, package/compiler identity, and clean exits. Release source fingerprint
+`13ad0c35356f964b85590caefb2a9c915b05ac012e61a46a4752646e44b92096`, cache
+`f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47`, package
+`da00e1a403bf31018a6c9f6d19df852d1d65b659830891fa5271585bad4384a0`, and app
+`c8fc43d556140de08bbe31d9077b35cea85498d530723da2bfb3de35ef500c7e` are
+recorded in the summary. Current tree differs from that gate's source inventory
+only in test-only `tests/next/calendar_page_tests.cpp`; current app/cache/package
+identities and all production/runtime inputs match. Two later UIA click-timeout
+attempts are preserved as invalid/not evaluated; do not count them as gate runs.
+
+The 30-cycle representative-only diagnostic is
+`artifacts/phase9/packaged-idle-memory/20261118T083123865Z-3fb2daa3c9e546d6bb24daf99f6ab49a/`.
+It validates 120 normal transitions with no idle/budget result. Return memory
+continued to rise, but private-byte slope declined from about 269 KB/cycle in
+cycles 11–20 to 139 KB/cycle in cycles 21–30. Calendar view/root/session/cache
+counts return to zero after suspension. Cause and long-term plateau remain
+unproven; do not call this a leak or a plateau.
+
+Final font-bound paired captures are at
+`artifacts/phase9/calendar-view-parity/20261118T105331504Z-280befaa-f966-4e3a-8ebc-d870d9906349/`.
+All 16 PNGs cover English/Korean, light/dark, standalone/embedded. The test
+registers packaged Inter/Pretendard through the production path, checks the
+full localized title against an independent full-width reference, and passes
+40 suffix-removal negative controls. Independent Tester reviewed all title
+pixels; manifest SHA-256 is
+`e72e7db988c6e68829e7c4db6100d1001322992dfb6960fe6344a962849da22c`. The
+focused Debug build and CalendarPage CTest passed 1/1.
+
+Next: start P9-08's 96-class Sub Prep lifecycle and matched-cleanup evidence.
+Keep the transient allowance advisory until measured; capture package peak,
+settled memory, bounded object counts, and the matched release pair. Full local
+Windows x64 Debug CTest and final packaged Release exit gates remain open.
+The current slice tracker includes P9-09–P9-18 candidates; recheck overlap with
+P9-07/P9-08 as Batch 3 activates.
+
+## Superseded handoff - P9-07 navigation memory failure stage - 2026-11-18
 
 Phase 9 remains In progress. Batch 1 is closed. P9-06 and P9-06R have valid
 source-bound optimized local Windows x64 Release evidence, and both fail the
@@ -15,8 +64,13 @@ coverage, outlines, and horizontal metrics. P9-06V migrated production to the
 six static faces, included the Inter OFL license in the package, and passed
 the unchanged packaged P9-06 gate. Both empty and 96-class scenarios completed
 301 samples. Their six gated WS points ranged from 199,380,992 to 207,187,968
-bytes against the strict 262,144,000-byte limit. Phase 9 remains in progress;
-P9-07 navigation and P9-08 lifecycle/cleanup remain open.
+bytes against the strict 262,144,000-byte limit. Phase 9 remains in progress.
+P9-07 completed a valid three-cycle navigation and five-minute-idle trace, but
+failed the strict limit at 26 checkpoints across two fixtures. Calendar
+activation is the largest measured step; the allocation owner is not yet
+proven and remediation is underway. P9-08 lifecycle/cleanup follows. Discovery
+for the next batch is complete with ten queued Release-scenario candidates in
+the current slice-batch tracker. The full Debug CTest exit check remains open.
 
 - Final license-inclusive run
   artifacts/phase9/packaged-idle-memory/20261118T014537306Z-212490675a364c8fb30d334495d2f5f3/
@@ -106,10 +160,13 @@ P9-07 navigation and P9-08 lifecycle/cleanup remain open.
   archive, runtime, parity, and run hashes.
 
 - The font-allocation probes do not construct the full app or idle for five
-  minutes; they only localized the synchronous allocation. The full P9-06V
-  package gate now passes. P9-07 and P9-08 remain in Batch 2; the full Debug
-  CTest exit check is still required after source work. No GitHub validation
-  is required or used.
+  minutes; they only localized the synchronous allocation. P9-06V's full
+  package gate passes. P9-07's first route is valid but over budget, with
+  26 strict-limit violations; the run proves zero loaded PDF bodies but does
+  not prove the owner of the Calendar allocation. P9-07 remediation is active;
+  P9-08 follows in Batch 2. The full Debug CTest exit check and Batch 3
+  candidate discovery are recorded in the tracker. No GitHub validation is
+  required or used.
 
 The full handoff and current sequence are in the Phase 9 progress log and
 current slice-batch tracker.

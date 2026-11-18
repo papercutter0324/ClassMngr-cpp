@@ -3,17 +3,10 @@
   "title": "Phase 4 effective resource inventory",
   "source_snapshot": {
     "tracked_source_tree_ids": {
-      "resources": "5963689a67a64b3c8d82e37160157202220b1188",
+      "resources": "1dc817b1c95217003c759579050a871fac7c3978",
       "calendar_qml": "b75d01f27817b205ad63deca347be0506e3b9796"
     },
-    "tracked_input_worktree_changes": [
-      "resources/assets/fonts/Inter-Black.ttf",
-      "resources/assets/fonts/Inter-Bold.ttf",
-      "resources/assets/fonts/Inter-BoldItalic.ttf",
-      "resources/assets/fonts/Inter-Medium.ttf",
-      "resources/assets/fonts/Inter-Regular.ttf",
-      "resources/assets/fonts/Inter-SemiBold.ttf"
-    ],
+    "tracked_input_worktree_changes": [],
     "effective_baseline": "Tracked source content at the recorded Git tree IDs plus the exact working-tree bytes recorded below. No installed resource-pack overrides were available in the checked application-owned resource-pack directory."
   },
   "scope": {

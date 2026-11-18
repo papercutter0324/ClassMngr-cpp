@@ -9,6 +9,7 @@
 #include <QDir>
 #include <QCloseEvent>
 #include <QCoreApplication>
+#include <QDebug>
 #include <QEvent>
 #include <QFontMetrics>
 #include <QHBoxLayout>
@@ -47,6 +48,25 @@ constexpr int TeacherIdRole = Qt::UserRole + 3;
 constexpr int ExternalUrlRole = Qt::UserRole + 4;
 constexpr auto DocumentCatalogRootId = "documents_catalog";
 constexpr auto KoreanTeacherGroupId = "teachers_all_korean";
+
+[[nodiscard]] const char* navigationCauseName(
+    const NavigationCause cause
+    ) noexcept
+{
+    switch (cause)
+    {
+    case NavigationCause::Initial:
+        return "initial";
+    case NavigationCause::Selection:
+        return "selection";
+    case NavigationCause::Back:
+        return "back";
+    case NavigationCause::Forward:
+        return "forward";
+    }
+
+    return "unknown";
+}
 
 class NavigationTreeItemDelegate final : public QStyledItemDelegate
 {
@@ -345,6 +365,7 @@ ApplicationShell::ApplicationShell(
     navigationLayout->addWidget(historyControls);
 
     m_navigationTree->setObjectName(QStringLiteral("classMngrNextNavigationTree"));
+    m_navigationTree->setAccessibleName(QStringLiteral("ClassMngr Next navigation"));
     m_navigationTree->setHeaderHidden(true);
     m_navigationTree->setSelectionMode(QAbstractItemView::SingleSelection);
     m_navigationTree->setFont(
@@ -933,6 +954,19 @@ bool ApplicationShell::navigateTo(
     synchronizeNavigationSelection();
     synchronizeHistoryControls();
     synchronizeTeacherImportAction();
+    const QString sourcePageId = request.source
+        ? request.source->value()
+        : QStringLiteral("none");
+    const qint64 documentCount = m_documentCatalogProjection
+        ? static_cast<qint64>(m_documentCatalogProjection->documents().size())
+        : -1;
+    qInfo().noquote().nospace()
+        << "ClassMngrNext navigation event=page-route outcome=completed cause="
+        << navigationCauseName(cause)
+        << " from=" << sourcePageId
+        << " to=" << pageId.value()
+        << " catalog_document_count=" << documentCount
+        << " loaded_pdf_body_count=0";
     return true;
 }
 

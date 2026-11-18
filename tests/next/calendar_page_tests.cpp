@@ -14,29 +14,45 @@
 #include "next/platform/application_services_calendar_first_day_of_week_preferences_port.h"
 #include "next/platform/application_services_calendar_event_save_port.h"
 #include "next/application/calendar_event_save_use_case.h"
+#include "next/bootstrap/qt_page_lifecycle_diagnostics.h"
+#include "next/platform/qt_font_family_availability_adapter.h"
 #include "next/ui/calendar_event_dialog.h"
 #include "next/ui/calendar_event_import_service.h"
 #include "next/ui/calendar_page.h"
 #include "next/ui/calendar_preferences_dialog.h"
+#include "next/ui/font_size_presenter.h"
 #include "next/ui/page_host.h"
 #include "preferences_test_ports.h"
 
 #include <QApplication>
+#include <QAccessible>
+#include <QColor>
 #include <QCheckBox>
 #include <QColorDialog>
 #include <QComboBox>
 #include <QDateEdit>
 #include <QDateTime>
+#include <QCryptographicHash>
+#include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFont>
+#include <QFontDatabase>
+#include <QFontMetricsF>
+#include <QFontInfo>
+#include <QFrame>
+#include <QGridLayout>
+#include <QHBoxLayout>
 #include <QImage>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QLabel>
+#include <QLocale>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLayout>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMessageBox>
@@ -44,17 +60,27 @@
 #include <QNetworkReply>
 #include <QNetworkRequest>
 #include <QPalette>
+#include <QPainter>
 #include <QPointer>
 #include <QSignalSpy>
 #include <QPushButton>
 #include <QQuickItem>
 #include <QQuickWidget>
+#include <QRawFont>
+#include <QScrollArea>
+#include <QScrollBar>
+#include <QSizePolicy>
+#include <QSysInfo>
 #include <QSpinBox>
 #include <QStyle>
 #include <QTemporaryDir>
 #include <QTimer>
+#include <QToolButton>
 #include <QTranslator>
+#include <QtMath>
+#include <QUuid>
 #include <QSqlQuery>
+#include <QVBoxLayout>
 #include <QtTest/QtTest>
 
 #include <cstring>
@@ -383,6 +409,34 @@ private:
     bool m_loaded = false;
 };
 
+class EmptyQuickWidgetCalendarView final : public Ui::CalendarView
+{
+public:
+    explicit EmptyQuickWidgetCalendarView(const Ui::CalendarViewRequest& request)
+        : m_widget(new QQuickWidget(request.parent))
+    {
+        m_widget->setObjectName(QStringLiteral("calendarMemoryProbeQuickWidget"));
+        m_widget->setResizeMode(QQuickWidget::SizeRootObjectToView);
+        m_widget->setMinimumHeight(500);
+        m_widget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    }
+
+    ~EmptyQuickWidgetCalendarView() override
+    {
+        delete m_widget;
+    }
+
+    QWidget* widget() const noexcept override { return m_widget; }
+    // The diagnostic needs CalendarPage to retain its models and surrounding
+    // shell while deliberately omitting the grid QML root.
+    bool isLoaded() const noexcept override { return m_widget != nullptr; }
+    void applyPalette(const QPalette&, bool) override {}
+    void setEventTypeColors(const QVariantMap&, const QVariantMap&) override {}
+
+private:
+    QQuickWidget* m_widget = nullptr;
+};
+
 class CalendarPageFixture final
 {
 public:
@@ -391,6 +445,15 @@ public:
     std::unique_ptr<QTranslator> koreanTranslator;
     std::unique_ptr<Resources::ResourceCatalog> catalog;
     std::unique_ptr<Resources::ResourceLoader> loader;
+    std::vector<Resources::ScopedResource<Resources::RegisteredFont>>
+        captureInterFonts;
+    std::optional<Resources::ScopedResource<Resources::RegisteredFont>>
+        capturePretendardFont;
+    Platform::QtFontFamilyAvailabilityAdapter captureFontAvailability;
+    std::unique_ptr<Ui::FontSizePresenter> captureFontSizePresenter;
+    QString captureInterFamily;
+    QString capturePretendardFamily;
+    QJsonArray captureFontResources;
     std::unique_ptr<Ui::PageHost> host;
     QTemporaryDir temporaryDirectory;
     QString initializationError;
@@ -403,6 +466,9 @@ public:
         makeZipArchiveReadPort()
         };
     Ui::CalendarViewFactory calendarViewFactory;
+    std::unique_ptr<Bootstrap::QtPageLifecycleDiagnosticsRecorder>
+        lifecycleDiagnosticsRecorder;
+    QVector<QJsonObject> lifecycleRecords;
     std::string holidayColorOverride;
     Ui::CalendarPage* page = nullptr;
     bool lazyBeforeActivation = false;
@@ -429,7 +495,10 @@ public:
     bool initialize(
         const bool createWorkspace,
         const bool korean = false,
-        const bool seedCalendar = false)
+        const bool seedCalendar = false,
+        const bool activateCalendar = true,
+        const bool captureLifecycle = false,
+        const bool loadProductionFonts = false)
     {
         if (createWorkspace)
         {
@@ -509,6 +578,10 @@ public:
             {
                 return false;
             }
+        }
+        if (loadProductionFonts && !loadPackagedApplicationFonts(korean))
+        {
+            return false;
         }
         host = std::make_unique<Ui::PageHost>(*loader, preferences.model);
 
@@ -689,14 +762,239 @@ public:
             initializationError = QStringLiteral("page registration failed");
             return false;
         }
+        if (captureLifecycle)
+        {
+            lifecycleDiagnosticsRecorder = std::make_unique<
+                Bootstrap::QtPageLifecycleDiagnosticsRecorder>(
+                *host,
+                std::unique_ptr<ProcessMemorySnapshotProvider>{},
+                [this](const QByteArray& record) {
+                    lifecycleRecords.push_back(
+                        QJsonDocument::fromJson(record).object());
+                },
+                [](const QWidget* page)
+                    -> std::optional<Ui::CalendarPageRuntimeMetrics> {
+                    const auto* const calendarPage =
+                        qobject_cast<const Ui::CalendarPage*>(page);
+                    if (!calendarPage)
+                    {
+                        return std::nullopt;
+                    }
+                    return calendarPage->runtimeMetrics();
+                });
+        }
         host->resize(1280, 920);
         host->show();
+        if (!activateCalendar)
+        {
+            return true;
+        }
         if (!host->activatePage(QStringLiteral("calendar")) || !page)
         {
             initializationError = QStringLiteral("calendar page activation failed");
             return false;
         }
         QApplication::processEvents();
+        return true;
+    }
+
+    void packagedFontIdentity(
+        const QString& resourceId,
+        const Resources::RegisteredFont& registration,
+        const bool fileBacked)
+    {
+        const auto id = Resources::ResourceId::fromString(resourceId);
+        if (!id)
+        {
+            initializationError = QStringLiteral(
+                "Calendar capture font resource ID is invalid: %1")
+                .arg(resourceId);
+            return;
+        }
+        const Resources::ResourceDescriptor* const descriptor =
+            catalog->find(*id);
+        if (!descriptor)
+        {
+            initializationError = QStringLiteral(
+                "Calendar capture font is missing from the package catalog: %1")
+                .arg(resourceId);
+            return;
+        }
+
+        const QString packagePath = QDir(catalog->resourceRoot()).filePath(
+            descriptor->packageRelativePath());
+        QFile packageFile(packagePath);
+        if (!packageFile.open(QIODevice::ReadOnly))
+        {
+            initializationError = QStringLiteral(
+                "Calendar capture font package file cannot be read: %1")
+                .arg(packagePath);
+            return;
+        }
+        const QByteArray packageBytes = packageFile.readAll();
+        if (packageBytes.isEmpty())
+        {
+            initializationError = QStringLiteral(
+                "Calendar capture font package file is empty: %1")
+                .arg(packagePath);
+            return;
+        }
+        const QByteArray actualSha256 = QCryptographicHash::hash(
+            packageBytes, QCryptographicHash::Sha256).toHex();
+        if (descriptor->expectedSha256()
+            && actualSha256 != descriptor->expectedSha256()->toHex())
+        {
+            initializationError = QStringLiteral(
+                "Calendar capture font package hash differs from its catalog: %1")
+                .arg(resourceId);
+            return;
+        }
+
+        QJsonArray familyNames;
+        for (const QString& family : registration.familyNames())
+        {
+            familyNames.append(family);
+        }
+        captureFontResources.append(QJsonObject{
+            {QStringLiteral("resourceId"), resourceId},
+            {QStringLiteral("registrationPath"), fileBacked
+                ? QStringLiteral("ResourceLoader::loadFileBackedFont")
+                : QStringLiteral("ResourceLoader::loadFont")},
+            {QStringLiteral("catalogLocation"),
+             descriptor->location() == Resources::ResourceLocation::PackageFile
+                ? QStringLiteral("packageFile") : QStringLiteral("qtResource")},
+            {QStringLiteral("packageRelativePath"),
+             descriptor->packageRelativePath()},
+            {QStringLiteral("packageFile"), QFileInfo(packagePath).canonicalFilePath()},
+            {QStringLiteral("packageFileBytes"), packageBytes.size()},
+            {QStringLiteral("packageFileSha256"),
+             QString::fromLatin1(actualSha256)},
+            {QStringLiteral("catalogExpectedBytes"),
+             descriptor->expectedBytes().has_value()
+                ? QJsonValue(*descriptor->expectedBytes()) : QJsonValue{}},
+            {QStringLiteral("catalogExpectedSha256"),
+             descriptor->expectedSha256().has_value()
+                ? QJsonValue(QString::fromLatin1(
+                    descriptor->expectedSha256()->toHex())) : QJsonValue{}},
+            {QStringLiteral("registeredFamilyNames"), familyNames},
+            {QStringLiteral("registeredSourceFile"),
+             registration.sourceFilePath()}
+        });
+    }
+
+    [[nodiscard]] bool loadPackagedApplicationFonts(const bool korean)
+    {
+        const auto startupScope = Resources::ResourceScope::create(
+            Resources::ResourceScopeKind::Startup,
+            QStringLiteral("application-bootstrap"));
+        if (!startupScope)
+        {
+            initializationError = QStringLiteral(
+                "Calendar capture startup font scope could not be created");
+            return false;
+        }
+
+        const std::array<QString, 6> interResources{
+            QStringLiteral("resource:assets/fonts/Inter-Regular.ttf"),
+            QStringLiteral("resource:assets/fonts/Inter-Medium.ttf"),
+            QStringLiteral("resource:assets/fonts/Inter-SemiBold.ttf"),
+            QStringLiteral("resource:assets/fonts/Inter-Bold.ttf"),
+            QStringLiteral("resource:assets/fonts/Inter-BoldItalic.ttf"),
+            QStringLiteral("resource:assets/fonts/Inter-Black.ttf")
+        };
+        for (const QString& resourceName : interResources)
+        {
+            const auto id = Resources::ResourceId::fromString(resourceName);
+            if (!id)
+            {
+                initializationError = QStringLiteral(
+                    "Calendar capture Inter font ID is invalid: %1")
+                    .arg(resourceName);
+                return false;
+            }
+            const auto request = Resources::ResourceRequest::create(
+                *id, *startupScope);
+            if (!request)
+            {
+                initializationError = QStringLiteral(
+                    "Calendar capture Inter font request is invalid: %1")
+                    .arg(resourceName);
+                return false;
+            }
+            auto font = loader->loadFileBackedFont(*request);
+            if (!font)
+            {
+                initializationError = QStringLiteral(
+                    "Calendar capture Inter font registration failed for %1: %2")
+                    .arg(resourceName, font.error().message);
+                return false;
+            }
+            if (font->get().familyNames().isEmpty())
+            {
+                initializationError = QStringLiteral(
+                    "Calendar capture Inter registration has no family: %1")
+                    .arg(resourceName);
+                return false;
+            }
+            packagedFontIdentity(
+                resourceName, font->get(), true);
+            if (!initializationError.isEmpty())
+            {
+                return false;
+            }
+            if (captureInterFamily.isEmpty())
+            {
+                captureInterFamily = font->get().familyNames().value(0);
+            }
+            captureInterFonts.emplace_back(std::move(*font));
+        }
+
+        const QString pretendardResource = QStringLiteral(
+            "resource:assets/fonts/PretendardVariable.ttf");
+        const auto pretendardId =
+            Resources::ResourceId::fromString(pretendardResource);
+        if (!pretendardId)
+        {
+            initializationError = QStringLiteral(
+                "Calendar capture Pretendard font ID is invalid");
+            return false;
+        }
+        const auto pretendardRequest = Resources::ResourceRequest::create(
+            *pretendardId, *startupScope);
+        if (!pretendardRequest)
+        {
+            initializationError = QStringLiteral(
+                "Calendar capture Pretendard font request is invalid");
+            return false;
+        }
+        auto pretendard = loader->loadFont(*pretendardRequest);
+        if (!pretendard)
+        {
+            initializationError = QStringLiteral(
+                "Calendar capture Pretendard font registration failed: %1")
+                .arg(pretendard.error().message);
+            return false;
+        }
+        if (pretendard->get().familyNames().isEmpty())
+        {
+            initializationError = QStringLiteral(
+                "Calendar capture Pretendard registration has no family");
+            return false;
+        }
+        packagedFontIdentity(pretendardResource, pretendard->get(), false);
+        if (!initializationError.isEmpty())
+        {
+            return false;
+        }
+        capturePretendardFamily = pretendard->get().familyNames().value(0);
+        capturePretendardFont.emplace(std::move(*pretendard));
+
+        captureFontSizePresenter = std::make_unique<Ui::FontSizePresenter>(
+            *qApp, captureFontAvailability);
+        captureFontSizePresenter->applyStartupPreference(
+            preferences.model.snapshot().fontSize(),
+            korean ? QStringLiteral("ko_KR") : QStringLiteral("en_US"),
+            captureInterFamily, capturePretendardFamily);
         return true;
     }
 
@@ -735,9 +1033,65 @@ QJsonObject memoryJson(const ProcessMemorySnapshot& snapshot)
          static_cast<double>(snapshot.privateUsageBytes)},
         {QStringLiteral("privateWorkingSetBytes"),
          static_cast<double>(snapshot.privateWorkingSetBytes)},
+        {QStringLiteral("handleCount"),
+         static_cast<double>(snapshot.handleCount)},
+        {QStringLiteral("threadCount"),
+         static_cast<double>(snapshot.threadCount)},
+        {QStringLiteral("workingSetBytesAvailable"),
+         snapshot.workingSetBytesAvailable},
+        {QStringLiteral("privateUsageBytesAvailable"),
+         snapshot.privateUsageBytesAvailable},
+        {QStringLiteral("threadCountAvailable"),
+         snapshot.threadCountAvailable},
         {QStringLiteral("capturedAt"),
          snapshot.capturedAt.toString(Qt::ISODateWithMs)}
     };
+}
+
+void appendCalendarQuickItems(
+    QQuickItem* parent,
+    QList<QQuickItem*>& items
+    )
+{
+    if (!parent)
+    {
+        return;
+    }
+    for (QQuickItem* const child : parent->childItems())
+    {
+        items.push_back(child);
+        appendCalendarQuickItems(child, items);
+    }
+}
+
+bool setCalendarWidgetMonth(QWidget* widget, const QDate& requestedMonth)
+{
+    if (!widget || !requestedMonth.isValid())
+    {
+        return false;
+    }
+    const QDate target(
+        requestedMonth.year(), requestedMonth.month(), 1);
+    for (int attempt = 0; attempt < 24; ++attempt)
+    {
+        const QDate current = widget->property(
+            "calendarShownMonth").toDate();
+        if (current == target)
+        {
+            return true;
+        }
+        const QString buttonName = current < target
+            ? QStringLiteral("calendarWidgetNextMonth")
+            : QStringLiteral("calendarWidgetPreviousMonth");
+        QToolButton* const button = widget->findChild<QToolButton*>(buttonName);
+        if (!button || !button->isEnabled())
+        {
+            return false;
+        }
+        QTest::mouseClick(button, Qt::LeftButton);
+        QApplication::processEvents();
+    }
+    return widget->property("calendarShownMonth").toDate() == target;
 }
 
 } // namespace
@@ -747,6 +1101,10 @@ class CalendarPageTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void calendarLifecycleDiagnosticsCaptureContentReadyAndSuspension();
+    void calendarViewMemoryProbe();
+    void calendarWidgetGridCandidatePreservesMonthAndActivation();
+    void calendarWidgetGridSupportsEmptySparseAndBusyMonths();
     void calendarContentIsLazyBoundedAndReleased();
     void injectedCalendarViewFailureReleasesProvidersAndRetriesWithState();
     void eventTypeFilterAffectsUpcomingButNotMonthGrid();
@@ -773,6 +1131,7 @@ private slots:
     void calendarImportQueryFailureIsVisibleAndWritesNothing();
     void calendarImportBatchSaveFailureRollsBackAllRows();
     void captureEnglishAndKoreanLightAndDark();
+    void calendarWidgetViewMatchesQmlCapturesAcrossContexts();
 };
 
 void CalendarPageTests::calendarContentIsLazyBoundedAndReleased()
@@ -809,6 +1168,594 @@ void CalendarPageTests::calendarContentIsLazyBoundedAndReleased()
     QCOMPARE(fixture.page->runtimeMetrics().calendarViewConstructionCount,
              constructions + 1);
     QCOMPARE(fixture.page->runtimeMetrics().calendarRootObjectCount, 1);
+}
+
+void CalendarPageTests::calendarLifecycleDiagnosticsCaptureContentReadyAndSuspension()
+{
+    CalendarPageFixture fixture;
+    QVERIFY2(fixture.initialize(false, false, false, true, true),
+             qPrintable(fixture.initializationError));
+
+    const auto findCalendarRecord = [&fixture](const QString& state)
+        -> QJsonObject
+    {
+        for (const QJsonObject& record : fixture.lifecycleRecords)
+        {
+            if (record.value(QStringLiteral("event")).toString()
+                    == QStringLiteral("page-lifecycle")
+                && record.value(QStringLiteral("page_key")).toString()
+                    == QStringLiteral("calendar")
+                && record.value(QStringLiteral("state")).toString() == state)
+            {
+                return record;
+            }
+        }
+        return {};
+    };
+
+    const QJsonObject activated = findCalendarRecord(QStringLiteral("activated"));
+    QVERIFY(!activated.isEmpty());
+    const QJsonObject activatedMetrics = activated.value(QStringLiteral("page"))
+        .toObject().value(QStringLiteral("calendar_runtime_metrics")).toObject();
+    QCOMPARE(activatedMetrics.value(QStringLiteral("observation")).toString(),
+             QStringLiteral("content-ready"));
+    QCOMPARE(activatedMetrics.value(QStringLiteral("calendar_view_count")).toInt(), 1);
+    QVERIFY(activatedMetrics.contains(QStringLiteral("cache_event_count")));
+    QVERIFY(activatedMetrics.contains(QStringLiteral("cache_loading")));
+    const QJsonObject activatedMemory = activated.value(QStringLiteral("memory"))
+        .toObject();
+    QVERIFY(activatedMemory.value(QStringLiteral("working_set_bytes")).isDouble());
+    QVERIFY(activatedMemory.value(QStringLiteral("private_usage_bytes")).isDouble());
+    QVERIFY(activatedMemory.value(QStringLiteral("thread_count")).isDouble());
+
+    QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    QApplication::processEvents();
+
+    const QJsonObject suspended = findCalendarRecord(QStringLiteral("suspended"));
+    QVERIFY(!suspended.isEmpty());
+    const QJsonObject suspendedMetrics = suspended.value(QStringLiteral("page"))
+        .toObject().value(QStringLiteral("calendar_runtime_metrics")).toObject();
+    QCOMPARE(suspendedMetrics.value(QStringLiteral("observation")).toString(),
+             QStringLiteral("post-suspension"));
+    QCOMPARE(suspendedMetrics.value(QStringLiteral("calendar_view_count")).toInt(), 0);
+    QCOMPARE(suspendedMetrics.value(QStringLiteral("calendar_root_object_count")).toInt(), 0);
+    QVERIFY(suspended.value(QStringLiteral("memory")).toObject()
+        .value(QStringLiteral("working_set_bytes")).isDouble());
+}
+
+void CalendarPageTests::calendarViewMemoryProbe()
+{
+    const QString arm = qEnvironmentVariable(
+        "CLASSMNGR_CALENDAR_VIEW_PROBE_ARM").trimmed().toLower();
+    if (arm.isEmpty())
+    {
+        QSKIP("diagnostic-only Calendar view probe arm was not selected");
+    }
+    QVERIFY(arm == QStringLiteral("qml")
+        || arm == QStringLiteral("minimal-qquick")
+        || arm == QStringLiteral("minimal-widget")
+        || arm == QStringLiteral("widget-grid"));
+
+    CalendarPageFixture fixture;
+    if (arm == QStringLiteral("minimal-widget"))
+    {
+        fixture.calendarViewFactory = [&fixture](
+            const Ui::CalendarViewRequest& request)
+        {
+            return Ui::CalendarViewCreationResult{
+                std::make_unique<FakeCalendarView>(
+                    request, fixture.calendarViewState, true),
+                QString{}
+            };
+        };
+    }
+    else if (arm == QStringLiteral("widget-grid"))
+    {
+        fixture.calendarViewFactory = [](
+            const Ui::CalendarViewRequest& request)
+        {
+            return Ui::createWidgetCalendarView(request);
+        };
+    }
+    else if (arm == QStringLiteral("minimal-qquick"))
+    {
+        fixture.calendarViewFactory = [](const Ui::CalendarViewRequest& request)
+        {
+            return Ui::CalendarViewCreationResult{
+                std::make_unique<EmptyQuickWidgetCalendarView>(request),
+                QString{}
+            };
+        };
+    }
+    QVERIFY2(fixture.initialize(true, false, true, false, true),
+             qPrintable(fixture.initializationError));
+
+    PlatformProcessMemorySnapshotProvider memoryProvider;
+    const ProcessMemorySnapshot baseline = memoryProvider.snapshot();
+    QVERIFY(baseline.isAvailable);
+    QVERIFY(fixture.host->activatePage(QStringLiteral("calendar")));
+    QApplication::processEvents();
+    const QDate probeMonth(2026, 10, 1);
+    if (arm == QStringLiteral("qml"))
+    {
+        auto* const quick = qobject_cast<QQuickWidget*>(
+            fixture.page->calendarViewWidget());
+        QVERIFY(quick);
+        QVERIFY(quick->rootObject()->setProperty(
+            "shownDate", QDateTime(probeMonth, QTime(0, 0))));
+        QTRY_VERIFY_WITH_TIMEOUT(
+            fixture.page->eventModel()->isMonthLoaded(2026, 10), 5000);
+    }
+    else if (arm == QStringLiteral("widget-grid"))
+    {
+        QWidget* const viewWidget = fixture.page->calendarViewWidget();
+        QVERIFY(viewWidget);
+        QVERIFY(setCalendarWidgetMonth(viewWidget, probeMonth));
+        QTRY_VERIFY_WITH_TIMEOUT(
+            fixture.page->eventModel()->isMonthLoaded(2026, 10), 5000);
+    }
+    QApplication::processEvents();
+    QTest::qWait(150);
+    QVERIFY(fixture.page);
+    QVERIFY(fixture.page->calendarViewWidget());
+    const ProcessMemorySnapshot contentReady = memoryProvider.snapshot();
+    QVERIFY(contentReady.isAvailable);
+    const Ui::CalendarPageRuntimeMetrics contentMetrics =
+        fixture.page->runtimeMetrics();
+
+    bool quickWidget = false;
+    bool quickRootPresent = false;
+    int gridCellCount = 0;
+    int emptyGridDayCount = 0;
+    int eventfulGridDayCount = 0;
+    int eventListViewCount = 0;
+    int widgetDayCellCount = 0;
+    int widgetEventButtonCount = 0;
+    if (auto* const quick = qobject_cast<QQuickWidget*>(
+            fixture.page->calendarViewWidget()))
+    {
+        quickWidget = true;
+        QQuickItem* const quickRoot = quick->rootObject();
+        quickRootPresent = quickRoot != nullptr;
+        QList<QQuickItem*> quickItems;
+        appendCalendarQuickItems(quickRoot, quickItems);
+        for (QQuickItem* const item : quickItems)
+        {
+            if (item->objectName()
+                == QStringLiteral("calendarEventListView"))
+            {
+                ++eventListViewCount;
+            }
+            if (item->metaObject()->indexOfProperty("dayEvents") >= 0)
+            {
+                ++gridCellCount;
+                if (item->property("dayEvents").toList().isEmpty())
+                {
+                    ++emptyGridDayCount;
+                }
+                else
+                {
+                    ++eventfulGridDayCount;
+                }
+            }
+        }
+    }
+    if (arm == QStringLiteral("widget-grid"))
+    {
+        QWidget* const viewWidget = fixture.page->calendarViewWidget();
+        QVERIFY(viewWidget);
+        widgetDayCellCount = viewWidget->findChildren<QWidget*>(
+            QStringLiteral("calendarWidgetDayCell")).size();
+        widgetEventButtonCount = viewWidget->findChildren<QPushButton*>(
+            QStringLiteral("calendarWidgetEventButton")).size();
+        QCOMPARE(widgetDayCellCount,
+            viewWidget->property("calendarDayCellCount").toInt());
+        QCOMPARE(widgetEventButtonCount,
+            viewWidget->property("calendarEventButtonCount").toInt());
+        QVERIFY(widgetDayCellCount >= 28);
+        QCOMPARE(widgetEventButtonCount, 3);
+    }
+
+    QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    QApplication::processEvents();
+    QTest::qWait(100);
+    const ProcessMemorySnapshot postSuspension = memoryProvider.snapshot();
+    QVERIFY(postSuspension.isAvailable);
+
+    QJsonObject activatedLifecycle;
+    QJsonObject suspendedLifecycle;
+    for (const QJsonObject& record : fixture.lifecycleRecords)
+    {
+        if (record.value(QStringLiteral("page_key")).toString()
+            != QStringLiteral("calendar"))
+        {
+            continue;
+        }
+        const QString state = record.value(QStringLiteral("state")).toString();
+        if (state == QStringLiteral("activated"))
+        {
+            activatedLifecycle = record;
+        }
+        else if (state == QStringLiteral("suspended"))
+        {
+            suspendedLifecycle = record;
+        }
+    }
+    QVERIFY(!activatedLifecycle.isEmpty());
+    QVERIFY(!suspendedLifecycle.isEmpty());
+
+    const QJsonObject result{
+        {QStringLiteral("schema"),
+         QStringLiteral("classmngr-phase9-calendar-view-memory-probe-v1")},
+        {QStringLiteral("arm"), arm},
+        {QStringLiteral("process_id"), QCoreApplication::applicationPid()},
+        {QStringLiteral("captured_at_utc"),
+         QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
+        {QStringLiteral("view_is_quick_widget"), quickWidget},
+        {QStringLiteral("quick_root_object_present"), quickRootPresent},
+        {QStringLiteral("grid_cell_count"), gridCellCount},
+        {QStringLiteral("empty_grid_day_count"), emptyGridDayCount},
+        {QStringLiteral("eventful_grid_day_count"), eventfulGridDayCount},
+        {QStringLiteral("event_list_view_count"), eventListViewCount},
+        {QStringLiteral("widget_day_cell_count"), widgetDayCellCount},
+        {QStringLiteral("widget_event_button_count"), widgetEventButtonCount},
+        {QStringLiteral("baseline"), memoryJson(baseline)},
+        {QStringLiteral("content_ready"), memoryJson(contentReady)},
+        {QStringLiteral("post_suspension"), memoryJson(postSuspension)},
+        {QStringLiteral("content_ready_runtime_metrics"), QJsonObject{
+            {QStringLiteral("cache_event_count"), contentMetrics.cacheEventCount},
+            {QStringLiteral("cache_date_bucket_count"), contentMetrics.cacheDateBucketCount},
+            {QStringLiteral("cache_loaded_range_count"), contentMetrics.cacheLoadedRangeCount},
+            {QStringLiteral("cache_retained_range_count"), contentMetrics.cacheRetainedRangeCount},
+            {QStringLiteral("visible_grid_day_count"), contentMetrics.visibleGridDayCount},
+            {QStringLiteral("upcoming_range_day_count"), contentMetrics.upcomingRangeDayCount},
+            {QStringLiteral("upcoming_result_count"), contentMetrics.upcomingResultCount},
+            {QStringLiteral("upcoming_result_limit"), contentMetrics.upcomingResultLimit},
+            {QStringLiteral("calendar_view_count"), contentMetrics.calendarViewCount},
+            {QStringLiteral("calendar_root_object_count"), contentMetrics.calendarRootObjectCount},
+            {QStringLiteral("calendar_view_construction_count"), contentMetrics.calendarViewConstructionCount},
+            {QStringLiteral("live_heavy_session_count"), contentMetrics.liveHeavySessionCount},
+            {QStringLiteral("peak_live_heavy_session_count"), contentMetrics.peakLiveHeavySessionCount},
+            {QStringLiteral("cache_loading"), contentMetrics.cacheLoading}
+        }},
+        {QStringLiteral("lifecycle_records"), QJsonArray{
+            activatedLifecycle, suspendedLifecycle}}
+    };
+    const QString resultPath = qEnvironmentVariable(
+        "CLASSMNGR_CALENDAR_VIEW_PROBE_OUTPUT").trimmed();
+    if (!resultPath.isEmpty())
+    {
+        const QByteArray resultBytes =
+            QJsonDocument(result).toJson(QJsonDocument::Compact);
+        QFile resultFile(resultPath);
+        QVERIFY2(resultFile.open(QIODevice::WriteOnly),
+                 qPrintable(QStringLiteral(
+                     "could not create diagnostic result file: %1")
+                     .arg(resultPath)));
+        QCOMPARE(resultFile.write(resultBytes),
+                 static_cast<qint64>(resultBytes.size()));
+    }
+    qInfo().noquote().nospace()
+        << "CALENDAR_VIEW_MEMORY_PROBE="
+        << QString::fromUtf8(QJsonDocument(result).toJson(QJsonDocument::Compact));
+}
+
+void CalendarPageTests::calendarWidgetGridCandidatePreservesMonthAndActivation()
+{
+    struct CallbackState final
+    {
+        int dayActivationCount = 0;
+        QDate activatedDate;
+        int eventActivationCount = 0;
+        QString activatedEventId;
+        QDate displayedMonth;
+    } callbackState;
+
+    CalendarPageFixture fixture;
+    fixture.calendarViewFactory = [&callbackState](
+        const Ui::CalendarViewRequest& request)
+    {
+        Ui::CalendarViewRequest instrumentedRequest = request;
+        const auto displayedMonthChanged = request.callbacks.displayedMonthChanged;
+        instrumentedRequest.callbacks.dayActivated =
+            [&callbackState](const int year, const int month, const int day)
+        {
+            ++callbackState.dayActivationCount;
+            callbackState.activatedDate = QDate(year, month, day);
+        };
+        instrumentedRequest.callbacks.eventActivated =
+            [&callbackState](const QString& eventId)
+        {
+            ++callbackState.eventActivationCount;
+            callbackState.activatedEventId = eventId;
+        };
+        instrumentedRequest.callbacks.displayedMonthChanged =
+            [&callbackState, displayedMonthChanged](
+                const int year, const int month)
+        {
+            callbackState.displayedMonth = QDate(year, month, 1);
+            if (displayedMonthChanged)
+            {
+                displayedMonthChanged(year, month);
+            }
+        };
+        return Ui::createWidgetCalendarView(instrumentedRequest);
+    };
+    QVERIFY2(fixture.initialize(true, false, true, false),
+             qPrintable(fixture.initializationError));
+    QVERIFY(fixture.host->activatePage(QStringLiteral("calendar")));
+    QWidget* const viewWidget = fixture.page->calendarViewWidget();
+    QVERIFY(viewWidget);
+    QVERIFY(setCalendarWidgetMonth(viewWidget, QDate(2026, 10, 1)));
+    QTRY_VERIFY_WITH_TIMEOUT(
+        fixture.page->eventModel()->isMonthLoaded(2026, 10), 5000);
+    QTRY_COMPARE(viewWidget->property(
+        "calendarEventButtonCount").toInt(), 3);
+    QCOMPARE(viewWidget->property(
+        "calendarShownMonth").toDate(), QDate(2026, 10, 1));
+    QCOMPARE(callbackState.displayedMonth, QDate(2026, 10, 1));
+    QCOMPARE(viewWidget->property(
+        "calendarDayCellCount").toInt(), 35);
+    QCOMPARE(viewWidget->findChildren<QWidget*>(
+        QStringLiteral("calendarWidgetDayCell")).size(), 35);
+
+    QPushButton* dateButton = nullptr;
+    for (QPushButton* const button : viewWidget->findChildren<QPushButton*>(
+             QStringLiteral("calendarWidgetDateButton")))
+    {
+        if (button->property("calendarDate").toDate() == QDate(2026, 10, 5))
+        {
+            dateButton = button;
+            break;
+        }
+    }
+    QVERIFY(dateButton);
+    QCOMPARE(dateButton->text(), QStringLiteral("5"));
+    QCOMPARE(dateButton->accessibleName(),
+             QLocale().toString(QDate(2026, 10, 5), QLocale::LongFormat));
+    QVERIFY(dateButton->focusPolicy() != Qt::NoFocus);
+    QAccessibleInterface* const dateAccessible =
+        QAccessible::queryAccessibleInterface(dateButton);
+    QVERIFY(dateAccessible);
+    QCOMPARE(dateAccessible->role(), QAccessible::Button);
+    QCOMPARE(dateAccessible->text(QAccessible::Name),
+             dateButton->accessibleName());
+    dateButton->setFocus();
+    QTest::keyClick(dateButton, Qt::Key_Space);
+    QCOMPARE(callbackState.dayActivationCount, 1);
+    QCOMPARE(callbackState.activatedDate, QDate(2026, 10, 5));
+
+    QWidget* emptyCell = nullptr;
+    for (QWidget* const cell : viewWidget->findChildren<QWidget*>(
+             QStringLiteral("calendarWidgetDayCell")))
+    {
+        if (cell->property("calendarDate").toDate() == QDate(2026, 10, 7))
+        {
+            emptyCell = cell;
+            break;
+        }
+    }
+    QVERIFY(emptyCell);
+    QTest::mouseClick(emptyCell, Qt::LeftButton);
+    QCOMPARE(callbackState.dayActivationCount, 2);
+    QCOMPARE(callbackState.activatedDate, QDate(2026, 10, 7));
+
+    const QVariantList events = fixture.page->eventModel()->eventsForDate(
+        2026, 10, 6).toList();
+    QCOMPARE(events.size(), 1);
+    const QVariantMap event = events.first().toMap();
+    const QString eventId = event.value(QStringLiteral("id")).toString();
+    const QString eventTitle = event.value(QStringLiteral("title")).toString();
+    QVERIFY(!eventId.isEmpty());
+    QPushButton* eventButton = nullptr;
+    for (QPushButton* const button : viewWidget->findChildren<QPushButton*>(
+             QStringLiteral("calendarWidgetEventButton")))
+    {
+        if (button->property("calendarEventId").toString() == eventId)
+        {
+            eventButton = button;
+            break;
+        }
+    }
+    QVERIFY(eventButton);
+    QCOMPARE(eventButton->text(), eventTitle);
+    QVERIFY(eventButton->accessibleName().contains(eventTitle));
+    QVERIFY(eventButton->focusPolicy() != Qt::NoFocus);
+    QAccessibleInterface* const eventAccessible =
+        QAccessible::queryAccessibleInterface(eventButton);
+    QVERIFY(eventAccessible);
+    QCOMPARE(eventAccessible->role(), QAccessible::Button);
+    QCOMPARE(eventAccessible->text(QAccessible::Name),
+             eventButton->accessibleName());
+    eventButton->setFocus();
+    QTest::keyClick(eventButton, Qt::Key_Space);
+    QCOMPARE(callbackState.eventActivationCount, 1);
+    QCOMPARE(callbackState.activatedEventId, eventId);
+
+    QToolButton* const nextMonth = viewWidget->findChild<QToolButton*>(
+        QStringLiteral("calendarWidgetNextMonth"));
+    QVERIFY(nextMonth);
+    QVERIFY(!nextMonth->accessibleName().isEmpty());
+    nextMonth->setFocus();
+    QTest::keyClick(nextMonth, Qt::Key_Space);
+    QCOMPARE(viewWidget->property(
+        "calendarShownMonth").toDate(), QDate(2026, 11, 1));
+    QCOMPARE(callbackState.displayedMonth, QDate(2026, 11, 1));
+    QTRY_VERIFY_WITH_TIMEOUT(
+        fixture.page->eventModel()->isMonthLoaded(2026, 11), 5000);
+    QToolButton* const previousMonth = viewWidget->findChild<QToolButton*>(
+        QStringLiteral("calendarWidgetPreviousMonth"));
+    QVERIFY(previousMonth);
+    QTest::mouseClick(previousMonth, Qt::LeftButton);
+    QCOMPARE(viewWidget->property(
+        "calendarShownMonth").toDate(), QDate(2026, 10, 1));
+    QTRY_VERIFY_WITH_TIMEOUT(
+        fixture.page->eventModel()->isMonthLoaded(2026, 10), 5000);
+
+    QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    QApplication::processEvents();
+    QVERIFY(!fixture.page->calendarViewWidget());
+    QCOMPARE(fixture.page->runtimeMetrics().calendarViewCount, 0);
+}
+
+void CalendarPageTests::calendarWidgetGridSupportsEmptySparseAndBusyMonths()
+{
+    CalendarPageFixture fixture;
+    fixture.calendarViewFactory = [](const Ui::CalendarViewRequest& request)
+    {
+        return Ui::createWidgetCalendarView(request);
+    };
+    QVERIFY2(fixture.initialize(true, false, true, false),
+             qPrintable(fixture.initializationError));
+
+    {
+        WorkspaceStore store;
+        QVERIFY(store.openExisting(fixture.path));
+        Platform::ApplicationServicesCalendarEventSavePort savePort(store);
+        for (int index = 0; index < 12; ++index)
+        {
+            const int minute = index * 5;
+            const QTime startTime(10 + minute / 60, minute % 60);
+            const QString title = index == 0
+                ? QStringLiteral(
+                    "A deliberately long workshop event title for hover scrolling")
+                : QStringLiteral("Busy day event %1").arg(index + 1);
+            const auto saved = Application::CalendarEventSaveUseCase::execute(
+                savePort,
+                Application::CalendarEventSaveInput{
+                    .title = title.toUtf8().toStdString(),
+                    .startDate = "2026-10-06",
+                    .endDate = "2026-10-06",
+                    .startTime = startTime.toString(
+                        QStringLiteral("HH:mm")).toStdString(),
+                    .endTime = startTime.addSecs(30 * 60)
+                        .toString(QStringLiteral("HH:mm")).toStdString(),
+                    .allDay = false,
+                    .eventType = "Workshop"
+                });
+            QVERIFY2(saved.hasValue(),
+                     "could not seed busy-day calendar events");
+        }
+    }
+
+    QVERIFY(fixture.host->activatePage(QStringLiteral("calendar")));
+    QWidget* const viewWidget = fixture.page->calendarViewWidget();
+    QVERIFY(viewWidget);
+
+    QVERIFY(setCalendarWidgetMonth(viewWidget, QDate(2026, 8, 1)));
+    QTRY_VERIFY_WITH_TIMEOUT(
+        fixture.page->eventModel()->isMonthLoaded(2026, 8), 5000);
+    QCOMPARE(viewWidget->property("calendarShownMonth").toDate(),
+             QDate(2026, 8, 1));
+    QCOMPARE(viewWidget->property("calendarDayCellCount").toInt(), 42);
+    QCOMPARE(viewWidget->findChildren<QWidget*>(
+        QStringLiteral("calendarWidgetDayCell")).size(), 42);
+    QCOMPARE(viewWidget->findChildren<QPushButton*>(
+        QStringLiteral("calendarWidgetDateButton")).size(), 42);
+    QCOMPARE(viewWidget->property("calendarEventButtonCount").toInt(), 0);
+
+    QVERIFY(setCalendarWidgetMonth(viewWidget, QDate(2026, 10, 1)));
+    QTRY_VERIFY_WITH_TIMEOUT(
+        fixture.page->eventModel()->isMonthLoaded(2026, 10), 5000);
+    QTRY_COMPARE(viewWidget->property(
+        "calendarEventButtonCount").toInt(), 15);
+    QCOMPARE(viewWidget->property("calendarDayCellCount").toInt(), 35);
+    QCOMPARE(viewWidget->findChildren<QWidget*>(
+        QStringLiteral("calendarWidgetAcademicWeek")).size(), 10);
+
+    int busyDayButtonCount = 0;
+    QPushButton* longEventButton = nullptr;
+    QPushButton* holidayButton = nullptr;
+    for (QPushButton* const button : viewWidget->findChildren<QPushButton*>(
+             QStringLiteral("calendarWidgetEventButton")))
+    {
+        const QDate date = button->property("calendarDate").toDate();
+        if (date == QDate(2026, 10, 6))
+        {
+            ++busyDayButtonCount;
+            if (button->text().startsWith(QStringLiteral("A deliberately long")))
+            {
+                longEventButton = button;
+            }
+        }
+        if (button->property("calendarEventId").toString()
+            == fixture.page->eventModel()->eventsForDate(2026, 10, 26)
+                   .toList().first().toMap().value(QStringLiteral("id")).toString())
+        {
+            holidayButton = button;
+        }
+    }
+    QCOMPARE(busyDayButtonCount, 13);
+    QVERIFY(longEventButton);
+    QVERIFY(holidayButton);
+    QCOMPARE(holidayButton->property(
+        "calendarEventBackground").value<QColor>(),
+        QColor(QStringLiteral("#7a5f9e")));
+    QCOMPARE(holidayButton->toolTip(), holidayButton->text());
+
+    QScrollArea* busyDayScroll = nullptr;
+    for (QScrollArea* const scroll : viewWidget->findChildren<QScrollArea*>(
+             QStringLiteral("calendarWidgetEventScrollArea")))
+    {
+        if (scroll->property("calendarDate").toDate()
+            == QDate(2026, 10, 6))
+        {
+            busyDayScroll = scroll;
+            break;
+        }
+    }
+    QVERIFY(busyDayScroll);
+    QApplication::processEvents();
+    QVERIFY(busyDayScroll->verticalScrollBar()->maximum() > 0);
+
+    QWidget* holidayCell = nullptr;
+    QWidget* weekendCell = nullptr;
+    for (QWidget* const cell : viewWidget->findChildren<QWidget*>(
+             QStringLiteral("calendarWidgetDayCell")))
+    {
+        const QDate date = cell->property("calendarDate").toDate();
+        if (date == QDate(2026, 10, 26))
+        {
+            holidayCell = cell;
+        }
+        else if (date == QDate(2026, 10, 31))
+        {
+            weekendCell = cell;
+        }
+    }
+    QVERIFY(holidayCell);
+    QVERIFY(weekendCell);
+    QVERIFY(holidayCell->property("calendarHoliday").toBool());
+    QCOMPARE(holidayCell->property("calendarBackground").value<QColor>(),
+             QColor(QStringLiteral("#f5d7d2")));
+    QVERIFY(weekendCell->property("calendarWeekend").toBool());
+    QCOMPARE(weekendCell->property("calendarBackground").value<QColor>(),
+             QColor(QStringLiteral("#e8edf1")));
+
+    const QImage beforeHover = longEventButton->grab().toImage();
+    QVERIFY(!beforeHover.isNull());
+    QTest::mouseMove(longEventButton,
+        QPoint(longEventButton->width() / 2, longEventButton->height() / 2));
+    QTest::qWait(450);
+    const QImage afterHover = longEventButton->grab().toImage();
+    QVERIFY(!afterHover.isNull());
+    int changedPixels = 0;
+    for (int y = 0; y < beforeHover.height(); ++y)
+    {
+        for (int x = 0; x < beforeHover.width(); ++x)
+        {
+            if (beforeHover.pixel(x, y) != afterHover.pixel(x, y))
+            {
+                ++changedPixels;
+            }
+        }
+    }
+    QVERIFY(changedPixels > 0);
+
+    QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    QApplication::processEvents();
+    QVERIFY(!fixture.page->calendarViewWidget());
+    QCOMPARE(fixture.page->runtimeMetrics().calendarViewCount, 0);
 }
 
 void CalendarPageTests::
@@ -2418,7 +3365,7 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
                 QStringLiteral("calendar-import-XXXXXX.xlsx"));
             fixture.calendarImportNetworkAccessManagerFactory =
                 importServer.networkAccessManagerFactory();
-            QVERIFY2(fixture.initialize(true, korean, true),
+            QVERIFY2(fixture.initialize(true, korean, true, true, false, true),
                 qPrintable(fixture.initializationError));
             QQuickWidget* const calendarView = fixture.page->findChild<QQuickWidget*>(
                 QStringLiteral("nextCalendarMonthGrid"));
@@ -2666,6 +3613,1010 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
     const QByteArray manifestBytes = QJsonDocument(QJsonObject{
         {QStringLiteral("fixture"), metadata},
         {QStringLiteral("captures"), captures}
+    }).toJson(QJsonDocument::Indented);
+    QCOMPARE(manifest.write(manifestBytes), qint64(manifestBytes.size()));
+}
+
+void CalendarPageTests::calendarWidgetViewMatchesQmlCapturesAcrossContexts()
+{
+    struct EnvironmentRestore final
+    {
+        QLocale locale;
+        QPalette palette;
+        ~EnvironmentRestore()
+        {
+            QLocale::setDefault(locale);
+            QApplication::setPalette(palette);
+        }
+    } restore{QLocale(), QApplication::palette()};
+
+    const QDateTime runStartedAtUtc = QDateTime::currentDateTimeUtc();
+    const QString runId = runStartedAtUtc.toString(
+        QStringLiteral("yyyyMMdd'T'HHmmsszzz'Z'"))
+        + QLatin1Char('-')
+        + QUuid::createUuid().toString(QUuid::WithoutBraces);
+    const QString outputDirectory = QDir::cleanPath(
+        QStringLiteral(CLASSMNGR_CALENDAR_CAPTURE_DIR)
+        + QStringLiteral("/calendar-view-parity/") + runId);
+    QVERIFY(QDir().mkpath(outputDirectory));
+
+    QJsonArray records;
+    QJsonArray fontRegistrationRecords;
+    const QDate visibleMonth(2026, 10, 1);
+    const auto renderFullTitleReference = [](
+        const QString& fullTitle,
+        const QFont& titleFont,
+        const QColor& toolbarBackground,
+        const QColor& toolbarTextColor
+        )
+    {
+        constexpr int referenceWidth = 4096;
+        constexpr int referenceHeight = 48;
+        QLabel fullTitleReference;
+        fullTitleReference.setText(fullTitle);
+        fullTitleReference.setFont(titleFont);
+        fullTitleReference.setAlignment(Qt::AlignCenter);
+        fullTitleReference.setWordWrap(false);
+        fullTitleReference.setTextFormat(Qt::PlainText);
+        QPalette referencePalette = fullTitleReference.palette();
+        referencePalette.setColor(QPalette::WindowText, toolbarTextColor);
+        referencePalette.setColor(QPalette::Text, toolbarTextColor);
+        fullTitleReference.setPalette(referencePalette);
+        fullTitleReference.resize(referenceWidth, referenceHeight);
+        fullTitleReference.ensurePolished();
+
+        QImage referenceImage(referenceWidth, referenceHeight,
+            QImage::Format_ARGB32);
+        referenceImage.fill(toolbarBackground);
+        QPainter painter(&referenceImage);
+        fullTitleReference.render(&painter, QPoint(0, 0), QRegion(),
+            QWidget::DrawChildren);
+        return referenceImage;
+    };
+    const auto renderedSuffixEvidence = [](
+        const QImage& image,
+        const QImage& referenceImage,
+        const QString& fullTitle,
+        const QString& suffix,
+        const QStringList& suffixGroups,
+        const QFont& titleFont,
+        const QColor& toolbarBackground
+        )
+    {
+        const QFontMetricsF metrics(titleFont);
+        const qreal fullAdvance = metrics.horizontalAdvance(fullTitle);
+        const qreal textStart = (image.width() - fullAdvance) / 2.0;
+        const int prefixLength = fullTitle.size() - suffix.size();
+        QJsonArray groups;
+        bool allGroupsVisible = prefixLength >= 0 && image.width() > 0
+            && referenceImage.width() >= image.width();
+        const int referenceCropX =
+            (referenceImage.width() - image.width()) / 2;
+        const int toolbarHeight = qMin(48,
+            qMin(image.height(), referenceImage.height()));
+        qint64 totalInkPixelCount = 0;
+        int searchOffset = 0;
+        for (const QString& group : suffixGroups)
+        {
+            const int groupIndex = suffix.indexOf(group, searchOffset);
+            if (groupIndex < 0)
+            {
+                allGroupsVisible = false;
+                continue;
+            }
+
+            const QString textBeforeGroup = fullTitle.left(
+                prefixLength + groupIndex);
+            const QString textThroughGroup = textBeforeGroup + group;
+            const qreal groupStart = textStart
+                + metrics.horizontalAdvance(textBeforeGroup);
+            const qreal groupEnd = textStart
+                + metrics.horizontalAdvance(textThroughGroup);
+            const int left = qMax(0, qFloor(groupStart) - 1);
+            const int right = qMin(image.width(), qCeil(groupEnd) + 1);
+            const int referenceLeft = referenceCropX + left;
+            const int referenceRight = referenceCropX + right;
+            qint64 groupInkPixelCount = 0;
+            qint64 referenceInkPixelCount = 0;
+            for (int y = 0; y < toolbarHeight; ++y)
+            {
+                for (int x = left; x < right; ++x)
+                {
+                    const QColor pixel = image.pixelColor(x, y);
+                    const int colorDistance =
+                        qAbs(pixel.red() - toolbarBackground.red())
+                        + qAbs(pixel.green() - toolbarBackground.green())
+                        + qAbs(pixel.blue() - toolbarBackground.blue());
+                    if (pixel.alpha() > 200 && colorDistance >= 80)
+                    {
+                        ++groupInkPixelCount;
+                    }
+
+                    const QColor referencePixel = referenceImage.pixelColor(
+                        referenceLeft + (x - left), y);
+                    const int referenceColorDistance =
+                        qAbs(referencePixel.red() - toolbarBackground.red())
+                        + qAbs(referencePixel.green() - toolbarBackground.green())
+                        + qAbs(referencePixel.blue() - toolbarBackground.blue());
+                    if (referencePixel.alpha() > 200
+                        && referenceColorDistance >= 80)
+                    {
+                        ++referenceInkPixelCount;
+                    }
+                }
+            }
+            const qint64 minimumRequiredInkPixelCount = qMax<qint64>(
+                1, qCeil(referenceInkPixelCount * 0.65));
+            totalInkPixelCount += groupInkPixelCount;
+            const bool groupVisible = groupInkPixelCount
+                >= minimumRequiredInkPixelCount;
+            allGroupsVisible = allGroupsVisible && groupVisible;
+            groups.append(QJsonObject{
+                {QStringLiteral("text"), group},
+                {QStringLiteral("startX"), groupStart},
+                {QStringLiteral("endX"), groupEnd},
+                {QStringLiteral("referenceInkPixelCount"),
+                 referenceInkPixelCount},
+                {QStringLiteral("renderedInkPixelCount"),
+                 groupInkPixelCount},
+                {QStringLiteral("minimumRequiredInkPixelCount"),
+                 minimumRequiredInkPixelCount},
+                {QStringLiteral("visible"), groupVisible}
+            });
+            searchOffset = groupIndex + group.size();
+        }
+
+        return QJsonObject{
+            {QStringLiteral("expectedFullTitle"), fullTitle},
+            {QStringLiteral("expectedSuffix"), suffix},
+            {QStringLiteral("suffixGroups"),
+             QJsonArray::fromStringList(suffixGroups)},
+            {QStringLiteral("referenceWidth"), referenceImage.width()},
+            {QStringLiteral("fontPixelSize"),
+             QFontInfo(titleFont).pixelSize()},
+            {QStringLiteral("imageWidth"), image.width()},
+            {QStringLiteral("toolbarHeight"), qMin(48, image.height())},
+            {QStringLiteral("expectedFullTitleAdvance"), fullAdvance},
+            {QStringLiteral("toolbarBackground"), toolbarBackground.name()},
+            {QStringLiteral("suffixGroupsEvidence"), groups},
+            {QStringLiteral("suffixInkPixelCount"), totalInkPixelCount},
+            {QStringLiteral("allSuffixGroupsVisible"), allGroupsVisible}
+        };
+    };
+    const auto eraseExpectedSuffixGroup = [](
+        const QImage& image,
+        const QString& fullTitle,
+        const QString& suffix,
+        const QString& group,
+        const QFont& titleFont,
+        const QColor& toolbarBackground
+        )
+    {
+        QImage result = image.copy();
+        const int groupIndex = suffix.indexOf(group);
+        const int prefixLength = fullTitle.size() - suffix.size();
+        if (groupIndex < 0 || prefixLength < 0 || result.isNull())
+        {
+            return result;
+        }
+
+        const QFontMetricsF metrics(titleFont);
+        const qreal textStart = (result.width()
+            - metrics.horizontalAdvance(fullTitle)) / 2.0;
+        const QString textBeforeGroup = fullTitle.left(
+            prefixLength + groupIndex);
+        const QString textThroughGroup = textBeforeGroup + group;
+        const int left = qMax(0, qFloor(textStart
+            + metrics.horizontalAdvance(textBeforeGroup)) - 2);
+        const int right = qMin(result.width(), qCeil(textStart
+            + metrics.horizontalAdvance(textThroughGroup)) + 2);
+        QPainter painter(&result);
+        painter.fillRect(QRect(left, 0, right - left,
+            qMin(48, result.height())), toolbarBackground);
+        return result;
+    };
+    for (const bool korean : {false, true})
+    {
+        QLocale::setDefault(QLocale(korean
+            ? QStringLiteral("ko_KR") : QStringLiteral("en_US")));
+        CalendarPageFixture fixture;
+        QVERIFY2(fixture.initialize(true, korean, true, true, false, true),
+                 qPrintable(fixture.initializationError));
+        QCOMPARE(fixture.captureFontResources.size(), 7);
+        const QString expectedPrimaryFamily = korean
+            ? fixture.capturePretendardFamily : fixture.captureInterFamily;
+        const QFont applicationFont = QApplication::font();
+        QCOMPARE(applicationFont.families().value(0), expectedPrimaryFamily);
+        const QFontInfo applicationFontInfo(applicationFont);
+        QCOMPARE(applicationFontInfo.family(), expectedPrimaryFamily);
+
+        QFont latinProbeFont(fixture.captureInterFamily);
+        latinProbeFont.setPointSize(12);
+        const QRawFont latinProbe = QRawFont::fromFont(latinProbeFont);
+        QVERIFY(latinProbe.isValid());
+        QVERIFY(latinProbe.supportsCharacter(static_cast<uint>('A')));
+        QFont hangulProbeFont(fixture.capturePretendardFamily);
+        hangulProbeFont.setPointSize(12);
+        const QRawFont hangulProbe = QRawFont::fromFont(hangulProbeFont);
+        QVERIFY(hangulProbe.isValid());
+        QVERIFY(hangulProbe.supportsCharacter(0xAC00));
+        const QFontMetricsF latinMetrics(latinProbeFont);
+        const QFontMetricsF hangulMetrics(hangulProbeFont);
+        QVERIFY(latinMetrics.horizontalAdvance(QStringLiteral("October 2026")) > 0);
+        QVERIFY(hangulMetrics.horizontalAdvance(QStringLiteral("달력")) > 0);
+        fontRegistrationRecords.append(QJsonObject{
+            {QStringLiteral("locale"), korean
+                ? QStringLiteral("ko") : QStringLiteral("en")},
+            {QStringLiteral("registrationScope"), QStringLiteral(
+                "Startup/application-bootstrap")},
+            {QStringLiteral("registrationSequence"), QStringLiteral(
+                "ApplicationBootstrap::loadRequiredFonts")},
+            {QStringLiteral("applicationFontFamilies"), QJsonArray::fromStringList(
+                applicationFont.families())},
+            {QStringLiteral("resolvedApplicationFamily"),
+             applicationFontInfo.family()},
+            {QStringLiteral("applicationFontPointSize"),
+             applicationFont.pointSize()},
+            {QStringLiteral("applicationFontPixelSize"),
+             applicationFontInfo.pixelSize()},
+            {QStringLiteral("englishFamily"), fixture.captureInterFamily},
+            {QStringLiteral("englishFamilyResolves"),
+             QFontInfo(latinProbeFont).family()},
+            {QStringLiteral("englishProbeText"), QStringLiteral("October 2026")},
+            {QStringLiteral("englishProbeAdvance"),
+             latinMetrics.horizontalAdvance(QStringLiteral("October 2026"))},
+            {QStringLiteral("latinGlyphAvailable"),
+             latinProbe.supportsCharacter(static_cast<uint>('A'))},
+            {QStringLiteral("koreanFamily"), fixture.capturePretendardFamily},
+            {QStringLiteral("koreanFamilyResolves"),
+             QFontInfo(hangulProbeFont).family()},
+            {QStringLiteral("koreanProbeText"), QStringLiteral("달력")},
+            {QStringLiteral("koreanProbeAdvance"),
+             hangulMetrics.horizontalAdvance(QStringLiteral("달력"))},
+            {QStringLiteral("hangulGlyphAvailable"),
+             hangulProbe.supportsCharacter(0xAC00)},
+            {QStringLiteral("packagedFontResources"),
+             fixture.captureFontResources}
+        });
+        auto* const pageQml = qobject_cast<QQuickWidget*>(
+            fixture.page->calendarViewWidget());
+        QVERIFY(pageQml);
+        QVERIFY(pageQml->rootObject()->setProperty(
+            "shownDate", QDateTime(visibleMonth, QTime(0, 0))));
+        QTRY_VERIFY_WITH_TIMEOUT(
+            fixture.page->eventModel()->isMonthLoaded(2026, 10), 5000);
+        QTRY_VERIFY_WITH_TIMEOUT(
+            !fixture.page->runtimeMetrics().cacheLoading, 5000);
+        auto* const academicProvider = fixture.page->findChild<
+            AcademicCalendarProvider*>();
+        QVERIFY(academicProvider);
+        const QString expectedTitle = korean
+            ? QStringLiteral(
+                "10\uC6D4 2026 \u2014 \uCD08\uB4F1: \uC5EC\uB984 "
+                "11\uC8FC\uCC28 \u00b7 \uC911\uB4F1: \uAC00\uC744 "
+                "7\uC8FC\uCC28")
+            : QStringLiteral(
+                "October 2026 \u2014 Elem: Summer Wk 11 "
+                "\u00b7 MS: Fall Wk 7");
+        const QString expectedTitleSuffix = korean
+            ? QStringLiteral("\uAC00\uC744 7\uC8FC\uCC28")
+            : QStringLiteral("Fall Wk 7");
+        const QStringList expectedTitleSuffixGroups = korean
+            ? QStringList{
+                QStringLiteral("\uAC00\uC744"),
+                QStringLiteral("7\uC8FC\uCC28")}
+            : QStringList{
+                QStringLiteral("Fall"),
+                QStringLiteral("Wk"),
+                QStringLiteral("7")};
+        QCOMPARE(academicProvider->monthTitle(2026, 9), expectedTitle);
+        QVERIFY(expectedTitle.endsWith(expectedTitleSuffix));
+
+        QWidget narrowWidgetContainer;
+        narrowWidgetContainer.resize(420, 120);
+        Ui::CalendarViewRequest narrowWidgetRequest;
+        narrowWidgetRequest.parent = &narrowWidgetContainer;
+        narrowWidgetRequest.eventModel = fixture.page->eventModel();
+        narrowWidgetRequest.academicProvider = academicProvider;
+        narrowWidgetRequest.shownMonth = visibleMonth;
+        const Ui::CalendarViewCreationResult narrowWidgetResult =
+            Ui::createWidgetCalendarView(narrowWidgetRequest);
+        QVERIFY2(narrowWidgetResult.view && narrowWidgetResult.error.isEmpty(),
+                 qPrintable(narrowWidgetResult.error));
+        narrowWidgetResult.view->widget()->setGeometry(
+            narrowWidgetContainer.rect());
+        narrowWidgetContainer.show();
+        narrowWidgetResult.view->widget()->show();
+        QApplication::processEvents();
+
+        auto* const narrowTitle = narrowWidgetResult.view->widget()
+            ->findChild<QLabel*>(QStringLiteral("calendarWidgetMonthTitle"));
+        QVERIFY(narrowTitle);
+        QCOMPARE(narrowTitle->text(), expectedTitle);
+        QCOMPARE(narrowTitle->accessibleName(), expectedTitle);
+        QCOMPARE(narrowTitle->toolTip(), expectedTitle);
+        QVERIFY(narrowTitle->contentsRect().width() > 0);
+        QVERIFY(narrowTitle->contentsRect().height() > 0);
+        const QRectF narrowTitleBounds = QFontMetricsF(narrowTitle->font())
+            .boundingRect(QRectF(narrowTitle->contentsRect()),
+                Qt::AlignCenter | Qt::TextWordWrap, narrowTitle->text());
+        QVERIFY(narrowTitleBounds.width()
+            <= narrowTitle->contentsRect().width() + 0.5);
+        QVERIFY(narrowTitleBounds.height()
+            <= narrowTitle->contentsRect().height() + 0.5);
+
+        const QVariantMap eventColors = pageQml->rootObject()->property(
+            "eventTypeColors").toMap();
+        const QVariantMap eventTextColors = pageQml->rootObject()->property(
+            "eventTypeTextColors").toMap();
+
+        for (const bool embedded : {false, true})
+        {
+            for (const bool dark : {false, true})
+            {
+                QPalette palette = QApplication::style()->standardPalette();
+                if (dark)
+                {
+                    palette.setColor(QPalette::Window,
+                        QColor(QStringLiteral("#20242a")));
+                    palette.setColor(QPalette::WindowText,
+                        QColor(QStringLiteral("#f3f4f6")));
+                    palette.setColor(QPalette::Base,
+                        QColor(QStringLiteral("#272c33")));
+                    palette.setColor(QPalette::AlternateBase,
+                        QColor(QStringLiteral("#343b44")));
+                    palette.setColor(QPalette::Text,
+                        QColor(QStringLiteral("#f3f4f6")));
+                    palette.setColor(QPalette::Button,
+                        QColor(QStringLiteral("#343b44")));
+                    palette.setColor(QPalette::ButtonText,
+                        QColor(QStringLiteral("#f3f4f6")));
+                    palette.setColor(QPalette::Highlight,
+                        QColor(QStringLiteral("#6487a5")));
+                    palette.setColor(QPalette::HighlightedText, Qt::white);
+                }
+
+                const QString localeTag = korean
+                    ? QStringLiteral("ko") : QStringLiteral("en");
+                const QString paletteTag = dark
+                    ? QStringLiteral("dark") : QStringLiteral("light");
+                const QString contextTag = embedded
+                    ? QStringLiteral("embedded") : QStringLiteral("standalone");
+                QWidget qmlContainer;
+                QWidget widgetContainer;
+                qmlContainer.resize(1100, embedded ? 900 : 620);
+                widgetContainer.resize(qmlContainer.size());
+                qmlContainer.setPalette(palette);
+                widgetContainer.setPalette(palette);
+
+                Ui::CalendarViewRequest qmlRequest;
+                qmlRequest.parent = &qmlContainer;
+                qmlRequest.eventModel = fixture.page->eventModel();
+                qmlRequest.academicProvider = academicProvider;
+                qmlRequest.shownMonth = visibleMonth;
+                qmlRequest.embedded = embedded;
+                const Ui::CalendarViewCreationResult qmlResult =
+                    Ui::createQmlCalendarView(qmlRequest);
+                QVERIFY2(qmlResult.view && qmlResult.error.isEmpty(),
+                         qPrintable(qmlResult.error));
+
+                Ui::CalendarViewRequest widgetRequest = qmlRequest;
+                widgetRequest.parent = &widgetContainer;
+                const Ui::CalendarViewCreationResult widgetResult =
+                    Ui::createWidgetCalendarView(widgetRequest);
+                QVERIFY2(widgetResult.view && widgetResult.error.isEmpty(),
+                         qPrintable(widgetResult.error));
+
+                qmlResult.view->applyPalette(palette, embedded);
+                widgetResult.view->applyPalette(palette, embedded);
+                qmlResult.view->setEventTypeColors(eventColors, eventTextColors);
+                widgetResult.view->setEventTypeColors(
+                    eventColors, eventTextColors);
+                qmlResult.view->widget()->setGeometry(qmlContainer.rect());
+                widgetResult.view->widget()->setGeometry(widgetContainer.rect());
+                qmlContainer.show();
+                widgetContainer.show();
+                qmlResult.view->widget()->show();
+                widgetResult.view->widget()->show();
+                QApplication::processEvents();
+                QTest::qWait(120);
+
+                auto* const qmlWidget = qobject_cast<QQuickWidget*>(
+                    qmlResult.view->widget());
+                QVERIFY(qmlWidget);
+                QVERIFY(qmlWidget->rootObject());
+                auto* const firstWidgetCell = widgetResult.view->widget()
+                    ->findChild<QWidget*>(QStringLiteral(
+                        "calendarWidgetDayCell"));
+                QVERIFY(firstWidgetCell);
+                const auto colorName = [](const QColor& color)
+                {
+                    return color.isValid() ? color.name() : QString{};
+                };
+                const QJsonObject appearanceColors{
+                    {QStringLiteral("qmlGridLine"), colorName(
+                        qmlWidget->rootObject()->property(
+                            "gridLineColor").value<QColor>())},
+                    {QStringLiteral("widgetGridLine"), colorName(
+                        firstWidgetCell->property(
+                            "calendarGridLineColor").value<QColor>())},
+                    {QStringLiteral("paletteMid"),
+                     palette.color(QPalette::Mid).name()},
+                    {QStringLiteral("qmlCalendarBackground"), colorName(
+                        qmlWidget->rootObject()->property(
+                            "calendarBackground").value<QColor>())},
+                    {QStringLiteral("widgetCalendarBackground"), colorName(
+                        widgetResult.view->widget()->property(
+                            "calendarCalendarBackground").value<QColor>())}
+                };
+                const QImage qmlImage = qmlResult.view->widget()
+                    ->grab().toImage().convertToFormat(QImage::Format_ARGB32);
+                const QImage widgetImage = widgetResult.view->widget()
+                    ->grab().toImage().convertToFormat(QImage::Format_ARGB32);
+                QVERIFY(!qmlImage.isNull());
+                QVERIFY(!widgetImage.isNull());
+                QCOMPARE(qmlImage.size(), widgetImage.size());
+
+                auto* const widgetTitle = widgetResult.view->widget()
+                    ->findChild<QLabel*>(QStringLiteral(
+                        "calendarWidgetMonthTitle"));
+                QVERIFY(widgetTitle);
+                QCOMPARE(widgetTitle->text(), expectedTitle);
+                QCOMPARE(widgetTitle->accessibleName(), expectedTitle);
+                QCOMPARE(widgetTitle->toolTip(), expectedTitle);
+
+                const QColor toolbarBackground = widgetTitle->parentWidget()
+                    ->palette().color(QPalette::Window);
+                QCOMPARE(toolbarBackground,
+                    qmlWidget->rootObject()->property("toolbarColor")
+                        .value<QColor>());
+                QFont qmlTitleFont = qmlWidget->font();
+                const qreal qmlBaseFontPixelSize = qmlWidget->rootObject()
+                    ->property("baseFontPixelSize").toDouble();
+                qmlTitleFont.setPixelSize(qMax(1,
+                    qRound(qmlBaseFontPixelSize * 1.12)));
+                const QColor toolbarTextColor = qmlWidget->rootObject()
+                    ->property("toolbarTextColor").value<QColor>();
+                QCOMPARE(toolbarTextColor,
+                    widgetTitle->palette().color(QPalette::WindowText));
+                const QImage qmlFullTitleReference =
+                    renderFullTitleReference(expectedTitle, qmlTitleFont,
+                        toolbarBackground, toolbarTextColor);
+                const QImage widgetFullTitleReference =
+                    renderFullTitleReference(expectedTitle,
+                        widgetTitle->font(), toolbarBackground,
+                        toolbarTextColor);
+                const QJsonObject qmlRenderedSuffix =
+                    renderedSuffixEvidence(qmlImage, qmlFullTitleReference,
+                        expectedTitle, expectedTitleSuffix,
+                        expectedTitleSuffixGroups, qmlTitleFont,
+                        toolbarBackground);
+                const QJsonObject widgetRenderedSuffix =
+                    renderedSuffixEvidence(widgetImage,
+                        widgetFullTitleReference, expectedTitle,
+                        expectedTitleSuffix, expectedTitleSuffixGroups,
+                        widgetTitle->font(), toolbarBackground);
+                QJsonArray qmlMissingSuffixControls;
+                for (const QString& group : expectedTitleSuffixGroups)
+                {
+                    const QImage imageWithMissingGroup =
+                        eraseExpectedSuffixGroup(qmlImage, expectedTitle,
+                            expectedTitleSuffix, group, qmlTitleFont,
+                            toolbarBackground);
+                    const QJsonObject missingGroupEvidence =
+                        renderedSuffixEvidence(imageWithMissingGroup,
+                            qmlFullTitleReference, expectedTitle,
+                            expectedTitleSuffix, expectedTitleSuffixGroups,
+                            qmlTitleFont, toolbarBackground);
+                    bool erasedGroupDetected = false;
+                    for (const QJsonValue value : missingGroupEvidence.value(
+                        QStringLiteral("suffixGroupsEvidence")).toArray())
+                    {
+                        const QJsonObject groupEvidence = value.toObject();
+                        if (groupEvidence.value(QStringLiteral("text"))
+                            .toString() == group)
+                        {
+                            erasedGroupDetected = !groupEvidence.value(
+                                QStringLiteral("visible")).toBool();
+                            break;
+                        }
+                    }
+                    QVERIFY2(erasedGroupDetected,
+                        qPrintable(QStringLiteral(
+                            "The QML pixel oracle did not reject missing "
+                            "suffix group '%1': %2")
+                            .arg(group, QString::fromUtf8(QJsonDocument(
+                                missingGroupEvidence).toJson(
+                                    QJsonDocument::Compact)))));
+                    qmlMissingSuffixControls.append(QJsonObject{
+                        {QStringLiteral("erasedSuffixGroup"), group},
+                        {QStringLiteral("missingGroupRejected"),
+                         erasedGroupDetected}
+                    });
+                }
+                QJsonArray widgetMissingSuffixControls;
+                for (const QString& group : expectedTitleSuffixGroups)
+                {
+                    const QImage imageWithMissingGroup =
+                        eraseExpectedSuffixGroup(widgetImage, expectedTitle,
+                            expectedTitleSuffix, group, widgetTitle->font(),
+                            toolbarBackground);
+                    const QJsonObject missingGroupEvidence =
+                        renderedSuffixEvidence(imageWithMissingGroup,
+                            widgetFullTitleReference, expectedTitle,
+                            expectedTitleSuffix, expectedTitleSuffixGroups,
+                            widgetTitle->font(), toolbarBackground);
+                    bool erasedGroupDetected = false;
+                    for (const QJsonValue value : missingGroupEvidence.value(
+                        QStringLiteral("suffixGroupsEvidence")).toArray())
+                    {
+                        const QJsonObject groupEvidence = value.toObject();
+                        if (groupEvidence.value(QStringLiteral("text"))
+                            .toString() == group)
+                        {
+                            erasedGroupDetected = !groupEvidence.value(
+                                QStringLiteral("visible")).toBool();
+                            break;
+                        }
+                    }
+                    QVERIFY2(erasedGroupDetected,
+                        qPrintable(QStringLiteral(
+                            "The QWidget pixel oracle did not reject missing "
+                            "suffix group '%1': %2")
+                            .arg(group, QString::fromUtf8(QJsonDocument(
+                                missingGroupEvidence).toJson(
+                                    QJsonDocument::Compact)))));
+                    widgetMissingSuffixControls.append(QJsonObject{
+                        {QStringLiteral("erasedSuffixGroup"), group},
+                        {QStringLiteral("missingGroupRejected"),
+                         erasedGroupDetected}
+                    });
+                }
+                QVERIFY2(qmlRenderedSuffix.value(
+                            QStringLiteral("allSuffixGroupsVisible")).toBool(),
+                    qPrintable(QStringLiteral(
+                        "The QML capture is missing rendered suffix groups: %1")
+                        .arg(QString::fromUtf8(QJsonDocument(
+                            qmlRenderedSuffix).toJson(
+                                QJsonDocument::Compact)))));
+                QVERIFY2(widgetRenderedSuffix.value(
+                            QStringLiteral("allSuffixGroupsVisible")).toBool(),
+                    qPrintable(QStringLiteral(
+                        "The QWidget capture is missing rendered suffix groups: %1")
+                        .arg(QString::fromUtf8(QJsonDocument(
+                            widgetRenderedSuffix).toJson(
+                                QJsonDocument::Compact)))));
+
+                const qreal widgetTitleAdvance =
+                    QFontMetricsF(widgetTitle->font())
+                        .horizontalAdvance(widgetTitle->text());
+                QVERIFY(widgetTitle->contentsRect().width() > 0);
+                const QPoint titlePosition = widgetTitle->mapTo(
+                    widgetResult.view->widget(), QPoint(0, 0));
+                const QRect titleImageRect(titlePosition,
+                    widgetTitle->size());
+                QVERIFY(widgetImage.rect().contains(titleImageRect));
+                const QImage renderedTitleImage =
+                    widgetImage.copy(titleImageRect);
+
+                const int referenceTitleWidth = qMax(
+                    4096,
+                    qCeil(widgetTitleAdvance)
+                        + widgetTitle->contentsMargins().left()
+                        + widgetTitle->contentsMargins().right() + 32);
+                QLabel fullTitleReference;
+                fullTitleReference.setText(expectedTitle);
+                fullTitleReference.setFont(widgetTitle->font());
+                fullTitleReference.setPalette(widgetTitle->palette());
+                fullTitleReference.setAlignment(widgetTitle->alignment());
+                fullTitleReference.setWordWrap(false);
+                fullTitleReference.setMargin(widgetTitle->margin());
+                fullTitleReference.setIndent(widgetTitle->indent());
+                fullTitleReference.setContentsMargins(
+                    widgetTitle->contentsMargins());
+                fullTitleReference.setTextFormat(widgetTitle->textFormat());
+                fullTitleReference.resize(
+                    referenceTitleWidth, titleImageRect.height());
+                fullTitleReference.ensurePolished();
+
+                QImage fullTitleReferenceImage(
+                    referenceTitleWidth, titleImageRect.height(),
+                    QImage::Format_ARGB32);
+                fullTitleReferenceImage.fill(toolbarBackground);
+                {
+                    QPainter painter(&fullTitleReferenceImage);
+                    fullTitleReference.render(&painter, QPoint(0, 0),
+                        QRegion(), QWidget::DrawChildren);
+                }
+                const int referenceCropX =
+                    (referenceTitleWidth - titleImageRect.width()) / 2;
+                const QImage expectedTitleImage =
+                    fullTitleReferenceImage.copy(referenceCropX, 0,
+                        titleImageRect.width(), titleImageRect.height());
+                QCOMPARE(renderedTitleImage.size(), expectedTitleImage.size());
+
+                qint64 renderedTitlePixelMismatchCount = 0;
+                qint64 renderedTitleInkPixelCount = 0;
+                qint64 expectedTitleInkPixelCount = 0;
+                for (int y = 0; y < expectedTitleImage.height(); ++y)
+                {
+                    for (int x = 0; x < expectedTitleImage.width(); ++x)
+                    {
+                        const QColor expectedPixel =
+                            expectedTitleImage.pixelColor(x, y);
+                        const QColor renderedPixel =
+                            renderedTitleImage.pixelColor(x, y);
+                        if (expectedPixel != renderedPixel)
+                        {
+                            ++renderedTitlePixelMismatchCount;
+                        }
+                        if (expectedPixel != toolbarBackground)
+                        {
+                            ++expectedTitleInkPixelCount;
+                        }
+                        if (renderedPixel != toolbarBackground)
+                        {
+                            ++renderedTitleInkPixelCount;
+                        }
+                    }
+                }
+                const bool renderedTitleMatchesExpected =
+                    renderedTitlePixelMismatchCount == 0
+                    && renderedTitleInkPixelCount
+                        == expectedTitleInkPixelCount;
+                const bool titleFitsOneLine =
+                    widgetTitleAdvance
+                        <= widgetTitle->contentsRect().width() + 0.5
+                    && renderedTitleMatchesExpected
+                    && qmlRenderedSuffix.value(QStringLiteral(
+                        "allSuffixGroupsVisible")).toBool()
+                    && widgetRenderedSuffix.value(QStringLiteral(
+                        "allSuffixGroupsVisible")).toBool();
+                QVERIFY2(renderedTitleMatchesExpected,
+                    qPrintable(QStringLiteral(
+                        "Rendered title differs from the complete reference: "
+                        "%1 pixels differ; expected ink=%2, rendered ink=%3, "
+                        "title='%4'.")
+                        .arg(renderedTitlePixelMismatchCount)
+                        .arg(expectedTitleInkPixelCount)
+                        .arg(renderedTitleInkPixelCount)
+                        .arg(expectedTitle)));
+                QVERIFY(titleFitsOneLine);
+
+                const QString baseName = QStringLiteral("calendar-%1-%2-%3")
+                    .arg(localeTag, paletteTag, contextTag);
+                const QString qmlPath = outputDirectory + QLatin1Char('/')
+                    + baseName + QStringLiteral("-qml.png");
+                const QString widgetPath = outputDirectory + QLatin1Char('/')
+                    + baseName + QStringLiteral("-widget.png");
+                QVERIFY(qmlImage.save(qmlPath));
+                QVERIFY(widgetImage.save(widgetPath));
+
+                const int width = qmlImage.width();
+                const int height = qmlImage.height();
+                const qint64 comparedPixelCount =
+                    static_cast<qint64>(width) * height;
+                qint64 changedPixels = 0;
+                qint64 rgbChangedPixels = 0;
+                qint64 alphaChangedPixels = 0;
+                qint64 rgbChannelDifference = 0;
+                qint64 alphaDifference = 0;
+                int maximumRgbChannelDelta = 0;
+                int maximumAlphaDelta = 0;
+                for (int y = 0; y < height; ++y)
+                {
+                    for (int x = 0; x < width; ++x)
+                    {
+                        const QColor qmlColor = qmlImage.pixelColor(x, y);
+                        const QColor widgetColor = widgetImage.pixelColor(x, y);
+                        const int redDelta =
+                            qAbs(qmlColor.red() - widgetColor.red());
+                        const int greenDelta =
+                            qAbs(qmlColor.green() - widgetColor.green());
+                        const int blueDelta =
+                            qAbs(qmlColor.blue() - widgetColor.blue());
+                        const int alphaDelta =
+                            qAbs(qmlColor.alpha() - widgetColor.alpha());
+                        const int rgbDelta = redDelta + greenDelta + blueDelta;
+                        if (rgbDelta != 0 || alphaDelta != 0)
+                        {
+                            ++changedPixels;
+                        }
+                        if (rgbDelta != 0)
+                        {
+                            ++rgbChangedPixels;
+                        }
+                        if (alphaDelta != 0)
+                        {
+                            ++alphaChangedPixels;
+                        }
+                        rgbChannelDifference += redDelta + greenDelta + blueDelta;
+                        alphaDifference += alphaDelta;
+                        maximumRgbChannelDelta = qMax(maximumRgbChannelDelta,
+                            qMax(redDelta, qMax(greenDelta, blueDelta)));
+                        maximumAlphaDelta = qMax(maximumAlphaDelta, alphaDelta);
+                    }
+                }
+                const auto fileSha256 = [](const QString& path)
+                {
+                    QFile file(path);
+                    if (!file.open(QIODevice::ReadOnly))
+                    {
+                        return QString{};
+                    }
+                    return QString::fromLatin1(
+                        QCryptographicHash::hash(
+                            file.readAll(), QCryptographicHash::Sha256).toHex());
+                };
+                const QString qmlResolvedFamily =
+                    QFontInfo(qmlWidget->font()).family();
+                const QString widgetResolvedFamily = QFontInfo(
+                    widgetResult.view->widget()->font()).family();
+                QCOMPARE(qmlResolvedFamily, expectedPrimaryFamily);
+                QCOMPARE(widgetResolvedFamily, expectedPrimaryFamily);
+                const QString qmlSha256 = fileSha256(qmlPath);
+                const QString widgetSha256 = fileSha256(widgetPath);
+                QVERIFY(!qmlSha256.isEmpty());
+                QVERIFY(!widgetSha256.isEmpty());
+                records.append(QJsonObject{
+                    {QStringLiteral("locale"), localeTag},
+                    {QStringLiteral("palette"), paletteTag},
+                    {QStringLiteral("context"), contextTag},
+                    {QStringLiteral("qmlImage"), QFileInfo(qmlPath).fileName()},
+                    {QStringLiteral("qmlSha256"), qmlSha256},
+                    {QStringLiteral("widgetImage"), QFileInfo(widgetPath).fileName()},
+                    {QStringLiteral("widgetSha256"), widgetSha256},
+                    {QStringLiteral("appearanceColors"), appearanceColors},
+                    {QStringLiteral("calendarTitle"), QJsonObject{
+                        {QStringLiteral("expectedFullText"), expectedTitle},
+                        {QStringLiteral("expectedSuffix"),
+                         expectedTitleSuffix},
+                        {QStringLiteral("referenceRenderWidth"),
+                         referenceTitleWidth},
+                        {QStringLiteral("text"), widgetTitle->text()},
+                        {QStringLiteral("accessibleName"),
+                         widgetTitle->accessibleName()},
+                        {QStringLiteral("toolTip"), widgetTitle->toolTip()},
+                        {QStringLiteral("fontPixelSize"),
+                         QFontInfo(widgetTitle->font()).pixelSize()},
+                        {QStringLiteral("availableWidth"),
+                         widgetTitle->contentsRect().width()},
+                        {QStringLiteral("textAdvance"),
+                         widgetTitleAdvance},
+                        {QStringLiteral("renderedPixelMatch"),
+                         renderedTitleMatchesExpected},
+                        {QStringLiteral("renderedPixelMismatchCount"),
+                         renderedTitlePixelMismatchCount},
+                        {QStringLiteral("expectedInkPixelCount"),
+                         expectedTitleInkPixelCount},
+                        {QStringLiteral("renderedInkPixelCount"),
+                         renderedTitleInkPixelCount},
+                        {QStringLiteral("qmlRenderedSuffix"),
+                         qmlRenderedSuffix},
+                        {QStringLiteral("widgetRenderedSuffix"),
+                         widgetRenderedSuffix},
+                        {QStringLiteral("qmlMissingSuffixPixelControls"),
+                         qmlMissingSuffixControls},
+                        {QStringLiteral("widgetMissingSuffixPixelControls"),
+                         widgetMissingSuffixControls},
+                        {QStringLiteral("qmlRenderedComplete"),
+                         qmlRenderedSuffix.value(QStringLiteral(
+                             "allSuffixGroupsVisible")).toBool()},
+                        {QStringLiteral("widgetRenderedComplete"),
+                         widgetRenderedSuffix.value(QStringLiteral(
+                             "allSuffixGroupsVisible")).toBool()},
+                        {QStringLiteral("fitsSingleLine"),
+                         titleFitsOneLine}
+                    }},
+                    {QStringLiteral("fontResolution"), QJsonObject{
+                        {QStringLiteral("requestedApplicationFamilies"),
+                         QJsonArray::fromStringList(QApplication::font().families())},
+                        {QStringLiteral("resolvedApplicationFamily"),
+                         QFontInfo(QApplication::font()).family()},
+                        {QStringLiteral("resolvedQmlFamily"), qmlResolvedFamily},
+                        {QStringLiteral("resolvedWidgetFamily"),
+                         widgetResolvedFamily}
+                    }},
+                    {QStringLiteral("imageSize"), QJsonArray{
+                        qmlImage.width(), qmlImage.height()}},
+                    {QStringLiteral("comparedSize"), QJsonArray{width, height}},
+                    {QStringLiteral("changedPixelCount"), changedPixels},
+                    {QStringLiteral("comparedPixelCount"), comparedPixelCount},
+                    {QStringLiteral("rgbChangedPixelCount"), rgbChangedPixels},
+                    {QStringLiteral("alphaChangedPixelCount"), alphaChangedPixels},
+                    {QStringLiteral("rgbChannelDifferenceSum"),
+                     rgbChannelDifference},
+                    {QStringLiteral("alphaDifferenceSum"), alphaDifference},
+                    {QStringLiteral("maximumAbsoluteRgbChannelDelta"),
+                     maximumRgbChannelDelta},
+                    {QStringLiteral("maximumAbsoluteAlphaDelta"),
+                     maximumAlphaDelta},
+                    {QStringLiteral("rgbMeanAbsoluteChannelDelta"),
+                     comparedPixelCount > 0
+                        ? static_cast<double>(rgbChannelDifference)
+                            / (static_cast<double>(comparedPixelCount) * 3.0)
+                        : 0.0},
+                    {QStringLiteral("alphaMeanAbsoluteDelta"),
+                     comparedPixelCount > 0
+                        ? static_cast<double>(alphaDifference)
+                            / static_cast<double>(comparedPixelCount)
+                        : 0.0},
+                    {QStringLiteral("meanAbsoluteChannelDelta"),
+                     comparedPixelCount > 0
+                        ? static_cast<double>(rgbChannelDifference
+                            + alphaDifference)
+                            / (static_cast<double>(comparedPixelCount) * 4.0)
+                        : 0.0}
+                });
+                qmlContainer.close();
+                widgetContainer.close();
+            }
+        }
+        QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    }
+
+    const auto sha256File = [](const QString& path)
+    {
+        QFile file(path);
+        if (!file.open(QIODevice::ReadOnly))
+        {
+            return QString{};
+        }
+        return QString::fromLatin1(
+            QCryptographicHash::hash(
+                file.readAll(), QCryptographicHash::Sha256).toHex());
+    };
+    const QString sourceRoot = QStringLiteral(CLASSMNGR_SOURCE_DIR);
+    const QStringList sourcePaths{
+        QStringLiteral("tests/next/calendar_page_tests.cpp"),
+        QStringLiteral("cmake/tests/next.cmake"),
+        QStringLiteral("src/next/bootstrap/application_bootstrap.cpp"),
+        QStringLiteral("src/next/platform/qt_font_family_availability_adapter.cpp"),
+        QStringLiteral("src/next/ui/font_size_presenter.h"),
+        QStringLiteral("src/next/resources/resource_loader.cpp"),
+        QStringLiteral("src/next/ui/calendar_view.cpp"),
+        QStringLiteral("src/next/ui/calendar_view.h"),
+        QStringLiteral("scripts/phase9/run_calendar_view_ab_probe.ps1"),
+        QStringLiteral("src/features/calendar/ui/qml/EventCalendar.qml"),
+        QStringLiteral("src/features/calendar/ui/qml/MonthGridDelegate.qml")
+    };
+    QJsonArray sourceFiles;
+    for (const QString& relativePath : sourcePaths)
+    {
+        const QString path = QDir(sourceRoot).filePath(relativePath);
+        QFile file(path);
+        QVERIFY2(file.open(QIODevice::ReadOnly), qPrintable(path));
+        const QByteArray bytes = file.readAll();
+        sourceFiles.append(QJsonObject{
+            {QStringLiteral("path"), relativePath},
+            {QStringLiteral("sizeBytes"), bytes.size()},
+            {QStringLiteral("sha256"), QString::fromLatin1(
+                QCryptographicHash::hash(
+                    bytes, QCryptographicHash::Sha256).toHex())}
+        });
+    }
+    const QString sourceIdentitySha256 = QString::fromLatin1(
+        QCryptographicHash::hash(
+            QJsonDocument(sourceFiles).toJson(QJsonDocument::Compact),
+            QCryptographicHash::Sha256).toHex());
+
+    const QString executablePath = QFileInfo(
+        QCoreApplication::applicationFilePath()).canonicalFilePath();
+    const QString executableSha256 = sha256File(executablePath);
+    QVERIFY(!executableSha256.isEmpty());
+    const QString buildDirectory = QFileInfo(
+        QStringLiteral(CLASSMNGR_CALENDAR_CAPTURE_DIR))
+        .absoluteDir().absolutePath();
+    const QString cmakeCachePath = QDir(buildDirectory).filePath(
+        QStringLiteral("CMakeCache.txt"));
+    const QString cmakeCacheSha256 = sha256File(cmakeCachePath);
+    QVERIFY(!cmakeCacheSha256.isEmpty());
+    const QString resourceCatalogPath = QStringLiteral(
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG);
+    const QString resourceCatalogSha256 = sha256File(resourceCatalogPath);
+    QVERIFY(!resourceCatalogSha256.isEmpty());
+
+    const QJsonObject fixtureIdentity{
+        {QStringLiteral("visibleMonth"), QStringLiteral("2026-10")},
+        {QStringLiteral("firstWeekday"), QStringLiteral("Monday")},
+        {QStringLiteral("upcomingScope"), QStringLiteral("This month")},
+        {QStringLiteral("seedEvents"), QJsonArray{
+            QJsonObject{
+                {QStringLiteral("title"), QStringLiteral("Campus meeting")},
+                {QStringLiteral("type"), QStringLiteral("Meeting")},
+                {QStringLiteral("date"), QStringLiteral("2026-10-06")}},
+            QJsonObject{
+                {QStringLiteral("title"), QStringLiteral("Term planning")},
+                {QStringLiteral("type"), QStringLiteral("Workshop")},
+                {QStringLiteral("date"), QStringLiteral("2026-10-15")}},
+            QJsonObject{
+                {QStringLiteral("title"), QStringLiteral("School holiday")},
+                {QStringLiteral("type"), QStringLiteral("Holiday")},
+                {QStringLiteral("date"), QStringLiteral("2026-10-26")},
+                {QStringLiteral("allDay"), true}}}},
+        {QStringLiteral("locales"), QJsonArray{
+            QStringLiteral("en_US"), QStringLiteral("ko_KR")}},
+        {QStringLiteral("palettes"), QJsonArray{
+            QStringLiteral("light"), QStringLiteral("dark")}},
+        {QStringLiteral("contexts"), QJsonArray{
+            QStringLiteral("standalone"), QStringLiteral("embedded")}},
+        {QStringLiteral("imageCapture"), QStringLiteral(
+            "QWidget::grab without screenshot postprocessing")}
+    };
+    const QString fixtureIdentitySha256 = QString::fromLatin1(
+        QCryptographicHash::hash(
+            QJsonDocument(fixtureIdentity).toJson(QJsonDocument::Compact),
+            QCryptographicHash::Sha256).toHex());
+
+    QFile manifest(outputDirectory + QStringLiteral("/comparison.json"));
+    QVERIFY(manifest.open(QIODevice::WriteOnly | QIODevice::NewOnly));
+    const QByteArray manifestBytes = QJsonDocument(QJsonObject{
+        {QStringLiteral("schema"), QStringLiteral(
+            "classmngr-phase9-calendar-view-font-parity-v6")},
+        {QStringLiteral("taskId"), QStringLiteral(
+            "P9_07_CALENDAR_TITLE_PARITY_FIX")},
+        {QStringLiteral("runId"), runId},
+        {QStringLiteral("status"), QStringLiteral("complete")},
+        {QStringLiteral("createdAtUtc"),
+         runStartedAtUtc.toString(Qt::ISODateWithMs)},
+        {QStringLiteral("completedAtUtc"),
+         QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
+        {QStringLiteral("captureTest"), QStringLiteral(
+            "CalendarPageTests::calendarWidgetViewMatchesQmlCapturesAcrossContexts")},
+        {QStringLiteral("repositoryRoot"), sourceRoot},
+        {QStringLiteral("applicationIdentity"), QJsonObject{
+            {QStringLiteral("executablePath"), executablePath},
+            {QStringLiteral("executableSha256"), executableSha256},
+            {QStringLiteral("qtVersion"), QStringLiteral(QT_VERSION_STR)},
+            {QStringLiteral("buildCpuArchitecture"),
+             QSysInfo::buildCpuArchitecture()},
+            {QStringLiteral("currentCpuArchitecture"),
+             QSysInfo::currentCpuArchitecture()}
+        }},
+        {QStringLiteral("buildIdentity"), QJsonObject{
+            {QStringLiteral("directory"), buildDirectory},
+            {QStringLiteral("configuration"),
+             QFileInfo(QCoreApplication::applicationFilePath())
+                .absoluteDir().dirName()},
+            {QStringLiteral("cmakeCachePath"), cmakeCachePath},
+            {QStringLiteral("cmakeCacheSha256"), cmakeCacheSha256}
+        }},
+        {QStringLiteral("sourceIdentity"), QJsonObject{
+            {QStringLiteral("sha256"), sourceIdentitySha256},
+            {QStringLiteral("files"), sourceFiles}
+        }},
+        {QStringLiteral("resourcePackageIdentity"), QJsonObject{
+            {QStringLiteral("catalogPath"), resourceCatalogPath},
+            {QStringLiteral("catalogSha256"), resourceCatalogSha256},
+            {QStringLiteral("resourceRoot"), QStringLiteral(
+                CLASSMNGR_NEXT_TEST_RESOURCE_ROOT)}
+        }},
+        {QStringLiteral("fontRegistrationRecords"), fontRegistrationRecords},
+        {QStringLiteral("fontRegistrationMechanism"), QJsonObject{
+            {QStringLiteral("bootstrapPath"), QStringLiteral(
+                "ApplicationBootstrap::loadRequiredFonts")},
+            {QStringLiteral("registrationScope"), QStringLiteral(
+                "Startup/application-bootstrap")},
+            {QStringLiteral("applicationFontPresenter"), QStringLiteral(
+                "FontSizePresenter with QtFontFamilyAvailabilityAdapter")},
+            {QStringLiteral("interRegistration"), QStringLiteral(
+                "ResourceLoader::loadFileBackedFont for all six packaged weights")},
+            {QStringLiteral("pretendardRegistration"), QStringLiteral(
+                "ResourceLoader::loadFont for packaged variable font")}
+        }},
+        {QStringLiteral("fixtureIdentity"), fixtureIdentity},
+        {QStringLiteral("fixtureIdentitySha256"), fixtureIdentitySha256},
+        {QStringLiteral("qmlFactory"), QStringLiteral("createQmlCalendarView")},
+        {QStringLiteral("widgetFactory"),
+         QStringLiteral("createWidgetCalendarView")},
+        {QStringLiteral("comparisonSemantics"), QJsonObject{
+            {QStringLiteral("rgb"), QStringLiteral(
+                "Sum absolute per-channel differences over R, G, and B; mean divides by compared pixels times three.")},
+            {QStringLiteral("alpha"), QStringLiteral(
+                "Absolute alpha differences; mean divides by compared pixels." )},
+            {QStringLiteral("acceptanceThresholdApplied"), false}
+        }},
+        {QStringLiteral("contexts"), records}
     }).toJson(QJsonDocument::Indented);
     QCOMPARE(manifest.write(manifestBytes), qint64(manifestBytes.size()));
 }

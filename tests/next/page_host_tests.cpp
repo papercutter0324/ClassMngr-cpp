@@ -775,9 +775,28 @@ void PageHostTests::lifecycleDiagnosticsSerializeSnapshotsAndUnavailableCounters
         "table_item_count")).type(), QJsonValue::Null);
     QCOMPARE(unavailablePageMetrics.value(QStringLiteral(
         "editor_control_widget_count")).type(), QJsonValue::Null);
+    QCOMPARE(unavailablePageMetrics.value(QStringLiteral(
+        "calendar_runtime_metrics")).type(), QJsonValue::Null);
 
     Bootstrap::PageLifecycleWidgetSnapshot emptyButAvailablePage;
     emptyButAvailablePage.pageInstanceAvailable = true;
+    emptyButAvailablePage.calendarRuntimeMetricsAvailable = true;
+    emptyButAvailablePage.calendarRuntimeMetrics = {
+        .cacheEventCount = 3,
+        .cacheDateBucketCount = 2,
+        .cacheLoadedRangeCount = 1,
+        .cacheRetainedRangeCount = 1,
+        .visibleGridDayCount = 35,
+        .upcomingRangeDayCount = 30,
+        .upcomingResultCount = 2,
+        .upcomingResultLimit = 10,
+        .calendarViewCount = 1,
+        .calendarRootObjectCount = 1,
+        .calendarViewConstructionCount = 1,
+        .liveHeavySessionCount = 1,
+        .peakLiveHeavySessionCount = 1,
+        .cacheLoading = false
+    };
     const QJsonObject availablePageObject = QJsonDocument::fromJson(
         Bootstrap::pageLifecycleDiagnosticRecord(
             QStringLiteral("classes"), Ui::PageLifecycleState::Activated,
@@ -791,6 +810,22 @@ void PageHostTests::lifecycleDiagnosticsSerializeSnapshotsAndUnavailableCounters
     QCOMPARE(availablePageMetrics.value(QStringLiteral(
         "editor_control_widget_count")).toInt(), 0);
     QVERIFY(availablePageMetrics.value(QStringLiteral("item_models")).isArray());
+    const QJsonObject contentReadyMetrics = availablePageMetrics.value(
+        QStringLiteral("calendar_runtime_metrics")).toObject();
+    QCOMPARE(contentReadyMetrics.value(QStringLiteral("observation")).toString(),
+             QStringLiteral("content-ready"));
+    QCOMPARE(contentReadyMetrics.value(QStringLiteral("calendar_root_object_count")).toInt(), 1);
+    QCOMPARE(contentReadyMetrics.value(QStringLiteral("cache_event_count")).toInt(), 3);
+
+    const QJsonObject suspendedPageObject = QJsonDocument::fromJson(
+        Bootstrap::pageLifecycleDiagnosticRecord(
+            QStringLiteral("calendar"), Ui::PageLifecycleState::Suspended,
+            memory, emptyButAvailablePage)).object();
+    const QJsonObject suspendedMetrics = suspendedPageObject.value(
+        QStringLiteral("page")).toObject().value(
+            QStringLiteral("calendar_runtime_metrics")).toObject();
+    QCOMPARE(suspendedMetrics.value(QStringLiteral("observation")).toString(),
+             QStringLiteral("post-suspension"));
 }
 
 void PageHostTests::lifecycleDiagnosticsBoundDetailedModelRecords()

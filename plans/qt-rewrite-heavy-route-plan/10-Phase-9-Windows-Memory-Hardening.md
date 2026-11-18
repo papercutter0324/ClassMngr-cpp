@@ -52,10 +52,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   TTC. P9-06V migrated production to the six verified faces, included the OFL
   license in the generated package, and passed the unchanged local packaged
   gate. Both fixtures completed 301 samples; all six gated WS points were
-  199,380,992–207,187,968 bytes, below 262,144,000. P9-07 normal navigation
-  and P9-08 lifecycle/cleanup remain, followed by the full Phase 9 exit gate.
-  See the Phase 9 progress log and current slice-batch tracker. The strict
-  memory limit and cadence remain unchanged.
+  199,380,992–207,187,968 bytes, below 262,144,000. P9-07 passed the local
+  packaged Windows x64 Release navigation/idle gate for both fixtures after
+  ten cycles. The maximum gated WS was 224,305,152 bytes. Its final visual
+  captures use the packaged fonts and verify the complete localized title;
+  the focused CalendarPage test passed. A 30-cycle diagnostic showed a small
+  positive but decreasing residual memory trend; its cause and long-term
+  plateau are unproven. The passing Release package/runtime inputs remain
+  unchanged after a test-only capture-oracle update; two later UIA attempts
+  are preserved as invalid/not evaluated. P9-07 is closed and P9-08 is active.
+  Discovery of ten next-batch Release-scenario candidates is complete. The
+  full Debug CTest and final packaged Release exit gates remain open. See the
+  Phase 9 progress log and current slice-batch tracker. The strict memory
+  limit and cadence remain unchanged.
 
 ### Slice batches
 

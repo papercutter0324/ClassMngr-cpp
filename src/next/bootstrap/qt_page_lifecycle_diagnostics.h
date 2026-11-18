@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/process_memory_snapshot.h"
+#include "next/ui/calendar_page.h"
 #include "next/ui/page_host.h"
 
 #include <QByteArray>
@@ -13,6 +14,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 
 namespace ClassMngr::Next::Bootstrap
 {
@@ -40,6 +42,8 @@ struct PageLifecycleWidgetSnapshot final
     int viewIndexWidgetCount = 0;
     bool viewIndexWidgetScanTruncated = false;
     int editorControlWidgetCount = 0;
+    bool calendarRuntimeMetricsAvailable = false;
+    Ui::CalendarPageRuntimeMetrics calendarRuntimeMetrics;
 };
 
 // Produces one compact, deterministic JSON record for each PageHost state
@@ -76,11 +80,14 @@ class QtPageLifecycleDiagnosticsRecorder final : public QObject
 {
 public:
     using RecordWriter = std::function<void(const QByteArray&)>;
+    using CalendarRuntimeMetricsReader = std::function<
+        std::optional<Ui::CalendarPageRuntimeMetrics>(const QWidget*)>;
 
     explicit QtPageLifecycleDiagnosticsRecorder(
         Ui::PageHost& pageHost,
         std::unique_ptr<ProcessMemorySnapshotProvider> snapshotProvider = {},
-        RecordWriter recordWriter = {}
+        RecordWriter recordWriter = {},
+        CalendarRuntimeMetricsReader calendarRuntimeMetricsReader = {}
         );
     ~QtPageLifecycleDiagnosticsRecorder() override;
 
@@ -99,6 +106,7 @@ private:
     Ui::PageHost& m_pageHost;
     std::unique_ptr<ProcessMemorySnapshotProvider> m_snapshotProvider;
     RecordWriter m_recordWriter;
+    CalendarRuntimeMetricsReader m_calendarRuntimeMetricsReader;
     QMetaObject::Connection m_connection;
     QHash<const QObject*, QMetaObject::Connection> m_destroyConnections;
 };

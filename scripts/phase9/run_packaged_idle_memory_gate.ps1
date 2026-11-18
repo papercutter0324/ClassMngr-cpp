@@ -14,14 +14,57 @@ param(
     [string]$BuildDirectory = "build\windows-x64-release",
     [string]$QtPrefix = "",
     [string]$EvidenceRoot = "artifacts\phase9\packaged-idle-memory",
-    [int]$ReadinessTimeoutSeconds = 120
+    [int]$ReadinessTimeoutSeconds = 120,
+    [ValidateSet("P9-06", "P9-07")]
+    [string]$GateMode = "P9-06",
+    [switch]$NavigationInteractionProbeOnly,
+    [switch]$NavigationPlateauDiagnosticOnly,
+    [ValidateSet(20, 30)]
+    [int]$NavigationPlateauDiagnosticCycles = 20
 )
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$TaskId = "P9_06_PACKAGED_STARTUP_IDLE_GATE"
-$ManifestSchema = "classmngr-phase9-packaged-idle-memory-v3"
+$TaskId = if ($GateMode -eq "P9-07") {
+    "P9_07_REPEATED_NORMAL_NAVIGATION_AND_IDLE_GATE"
+} else {
+    "P9_06_PACKAGED_STARTUP_IDLE_GATE"
+}
+if ($NavigationInteractionProbeOnly -and $GateMode -ne "P9-07") {
+    throw "NavigationInteractionProbeOnly is available only with GateMode P9-07."
+}
+$NavigationPlateauDiagnosticSchema = "classmngr-phase9-navigation-plateau-diagnostic-v1"
+if ($NavigationPlateauDiagnosticOnly -and $GateMode -ne "P9-07") {
+    throw "NavigationPlateauDiagnosticOnly is available only with GateMode P9-07."
+}
+if ($NavigationPlateauDiagnosticOnly -and $NavigationInteractionProbeOnly) {
+    throw "NavigationPlateauDiagnosticOnly cannot be combined with NavigationInteractionProbeOnly."
+}
+if (-not $NavigationPlateauDiagnosticOnly -and $NavigationPlateauDiagnosticCycles -ne 20) {
+    throw "NavigationPlateauDiagnosticCycles can be changed only for a plateau diagnostic."
+}
+$ManifestSchema = if ($GateMode -eq "P9-07") {
+    "classmngr-phase9-packaged-navigation-idle-memory-v3"
+} else {
+    "classmngr-phase9-packaged-idle-memory-v3"
+}
+$NavigationMetricsSchema = "classmngr-phase9-navigation-metrics-v3"
+$NavigationSelectionMethods = @(
+    "uia-verified-pointer-click",
+    "uia-verified-selection-invoke",
+    "uia-verified-window-message-click"
+)
+$StartupReadyMetricsSchema = "classmngr-phase9-startup-ready-metrics-v1"
+$NavigationCycles = 10
+$NavigationPlateauCycles = $NavigationPlateauDiagnosticCycles
+$ActiveNavigationCycles = if ($NavigationPlateauDiagnosticOnly) { $NavigationPlateauCycles } else { $NavigationCycles }
+$NavigationCycleRoute = @(
+    [ordered]@{ fromPageId = "my_workspace"; toPageId = "schedule"; targetItemName = "Schedule" },
+    [ordered]@{ fromPageId = "schedule"; toPageId = "calendar"; targetItemName = "Calendar" },
+    [ordered]@{ fromPageId = "calendar"; toPageId = "my_classes"; targetItemName = "My Classes" },
+    [ordered]@{ fromPageId = "my_classes"; toPageId = "my_workspace"; targetItemName = "My Workspace" }
+)
 $StartupBoundaryMetricsSchema = "classmngr-phase9-startup-boundary-metrics-v1"
 $StartupBoundaryMaximumDelayMilliseconds = 2000
 $ExpectedStartupBoundaryEvents = @(
@@ -65,28 +108,310 @@ $StartupLogPath = Join-Path $EvidenceDirectory "startup-log.jsonl"
 $PackageFilesPath = Join-Path $EvidenceDirectory "package-files.json"
 $SourceFilesPath = Join-Path $EvidenceDirectory "source-files.json"
 $StartupBoundaryMetricsPath = Join-Path $EvidenceDirectory "startup-boundary-metrics.jsonl"
+$NavigationMetricsPath = Join-Path $EvidenceDirectory "navigation-metrics.jsonl"
+$StartupReadyMetricsPath = Join-Path $EvidenceDirectory "startup-ready-metrics.jsonl"
 $BuildLogPath = Join-Path $EvidenceDirectory "cmake-build.log"
 $SummaryPath = Join-Path $EvidenceDirectory "summary.json"
 $ValidatorOutputPath = Join-Path $EvidenceDirectory "validator-output.txt"
 $TemporaryRoot = $null
 $StartupEvents = [System.Collections.Generic.List[object]]::new()
 $BoundaryEventCounts = @{}
+$script:NavigationContext = $null
 
 Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
+public sealed class Phase9PointerActivationResult
+{
+    public long windowHandle;
+    public uint expectedProcessId;
+    public uint windowProcessId;
+    public uint windowThreadId;
+    public uint callerThreadId;
+    public uint priorForegroundThreadId;
+    public bool allowSetForegroundWindowReturned;
+    public bool showWindowPreviouslyVisible;
+    public bool targetThreadInputAttached;
+    public bool foregroundThreadInputAttached;
+    public uint waitForInputIdleResult;
+    public bool waitForInputIdleSucceeded;
+    public bool bringWindowToTopReturned;
+    public bool setActiveWindowReturnedNonZero;
+    public bool setFocusReturnedNonZero;
+    public bool setForegroundWindowReturned;
+    public bool foregroundVerified;
+    public long foregroundWindowHandle;
+    public uint foregroundProcessId;
+    public int screenX;
+    public int screenY;
+    public uint inputEventsSent;
+}
+
+public sealed class Phase9WindowMessageActivationResult
+{
+    public long windowHandle;
+    public uint expectedProcessId;
+    public uint windowProcessId;
+    public int screenX;
+    public int screenY;
+    public int clientX;
+    public int clientY;
+    public uint waitForInputIdleResult;
+    public bool waitForInputIdleSucceeded;
+    public bool mouseMoveSent;
+    public bool leftButtonDownSent;
+    public bool leftButtonUpSent;
+    public uint messagesSent;
+}
+
 public static class Phase9NativeProcessChecks
 {
     private const ushort ImageFileMachineUnknown = 0x0000;
     private const ushort ImageFileMachineAmd64 = 0x8664;
+    private const int SwRestore = 9;
+    private const uint InputMouse = 0;
+    private const uint MouseEventLeftDown = 0x0002;
+    private const uint MouseEventLeftUp = 0x0004;
+    private const uint WmMouseMove = 0x0200;
+    private const uint WmLeftButtonDown = 0x0201;
+    private const uint WmLeftButtonUp = 0x0202;
+    private const uint MouseKeyLeftButton = 0x0001;
+    private const uint SmtoAbortIfHung = 0x0002;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Point
+    {
+        public int x;
+        public int y;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Rect
+    {
+        public int left;
+        public int top;
+        public int right;
+        public int bottom;
+    }
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern bool IsWow64Process2(IntPtr process, out ushort processMachine, out ushort nativeMachine);
 
     [DllImport("user32.dll")]
     public static extern bool IsWindowVisible(IntPtr window);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+
+    public static uint GetWindowProcessId(IntPtr window)
+    {
+        uint processId;
+        if (GetWindowThreadProcessId(window, out processId) == 0)
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "GetWindowThreadProcessId failed.");
+        return processId;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetForegroundWindow(IntPtr window);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool AllowSetForegroundWindow(uint processId);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool ShowWindow(IntPtr window, int command);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool BringWindowToTop(IntPtr window);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SetActiveWindow(IntPtr window);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern IntPtr SetFocus(IntPtr window);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool AttachThreadInput(uint attachThreadId, uint attachToThreadId, bool attach);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint WaitForInputIdle(IntPtr process, uint milliseconds);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool ScreenToClient(IntPtr window, ref Point point);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool GetClientRect(IntPtr window, out Rect rect);
+
+    [DllImport("user32.dll", EntryPoint = "SendMessageTimeoutW", SetLastError = true)]
+    private static extern IntPtr SendMessageTimeoutW(IntPtr window, uint message, UIntPtr wParam,
+        IntPtr lParam, uint flags, uint timeoutMilliseconds, out IntPtr result);
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentThreadId();
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool SetCursorPos(int x, int y);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MouseInput
+    {
+        public int dx;
+        public int dy;
+        public uint mouseData;
+        public uint flags;
+        public uint time;
+        public UIntPtr extraInfo;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Input
+    {
+        public uint type;
+        public MouseInput mouseInput;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint SendInput(uint inputCount, Input[] inputs, int inputSize);
+
+    public static Phase9PointerActivationResult ClickWindowPoint(IntPtr window, IntPtr processHandle,
+        int x, int y, uint expectedProcessId)
+    {
+        Phase9PointerActivationResult result = new Phase9PointerActivationResult();
+        result.windowHandle = window.ToInt64();
+        result.expectedProcessId = expectedProcessId;
+        uint actualProcessId = GetWindowProcessId(window);
+        result.windowProcessId = actualProcessId;
+        if (actualProcessId != expectedProcessId)
+            throw new InvalidOperationException("The sidebar HWND does not belong to the expected packaged app PID.");
+
+        result.allowSetForegroundWindowReturned = AllowSetForegroundWindow(expectedProcessId);
+        result.waitForInputIdleResult = WaitForInputIdle(processHandle, 10000);
+        result.waitForInputIdleSucceeded = result.waitForInputIdleResult == 0;
+        if (!result.waitForInputIdleSucceeded)
+            throw new InvalidOperationException("Packaged app did not reach input-idle after startup-ready before pointer activation.");
+        result.showWindowPreviouslyVisible = ShowWindow(window, SwRestore);
+        uint targetThreadId = GetWindowThreadProcessId(window, out actualProcessId);
+        if (targetThreadId == 0)
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "Could not resolve the packaged sidebar window thread.");
+        result.windowThreadId = targetThreadId;
+
+        IntPtr priorForeground = GetForegroundWindow();
+        uint ignoredProcessId;
+        uint foregroundThreadId = priorForeground == IntPtr.Zero
+            ? 0 : GetWindowThreadProcessId(priorForeground, out ignoredProcessId);
+        uint callerThreadId = GetCurrentThreadId();
+        result.priorForegroundThreadId = foregroundThreadId;
+        result.callerThreadId = callerThreadId;
+        bool attachedTarget = false;
+        bool attachedForeground = false;
+        try
+        {
+            if (targetThreadId != callerThreadId)
+                attachedTarget = AttachThreadInput(callerThreadId, targetThreadId, true);
+            if (foregroundThreadId != 0 && foregroundThreadId != callerThreadId
+                && foregroundThreadId != targetThreadId)
+                attachedForeground = AttachThreadInput(callerThreadId, foregroundThreadId, true);
+            result.targetThreadInputAttached = attachedTarget;
+            result.foregroundThreadInputAttached = attachedForeground;
+
+            result.bringWindowToTopReturned = BringWindowToTop(window);
+            result.setActiveWindowReturnedNonZero = SetActiveWindow(window) != IntPtr.Zero;
+            result.setFocusReturnedNonZero = SetFocus(window) != IntPtr.Zero;
+            result.setForegroundWindowReturned = SetForegroundWindow(window);
+            System.Threading.Thread.Sleep(100);
+            IntPtr foreground = GetForegroundWindow();
+            result.foregroundWindowHandle = foreground.ToInt64();
+            result.foregroundProcessId = foreground == IntPtr.Zero ? 0 : GetWindowProcessId(foreground);
+            result.foregroundVerified = foreground != IntPtr.Zero && result.foregroundProcessId == expectedProcessId;
+            if (!result.foregroundVerified)
+                throw new InvalidOperationException("The packaged app still does not own the foreground window after activation retries.");
+
+            if (!SetCursorPos(x, y))
+                throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "SetCursorPos failed for the packaged sidebar row.");
+            result.screenX = x;
+            result.screenY = y;
+            System.Threading.Thread.Sleep(50);
+            Input[] inputs = new Input[2];
+            inputs[0].type = InputMouse;
+            inputs[0].mouseInput.flags = MouseEventLeftDown;
+            inputs[0].mouseInput.extraInfo = UIntPtr.Zero;
+            inputs[1].type = InputMouse;
+            inputs[1].mouseInput.flags = MouseEventLeftUp;
+            inputs[1].mouseInput.extraInfo = UIntPtr.Zero;
+            uint sent = SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(Input)));
+            if (sent != (uint)inputs.Length)
+                throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "SendInput did not deliver both mouse click events.");
+            result.inputEventsSent = sent;
+            return result;
+        }
+        finally
+        {
+            if (attachedForeground)
+                AttachThreadInput(callerThreadId, foregroundThreadId, false);
+            if (attachedTarget)
+                AttachThreadInput(callerThreadId, targetThreadId, false);
+        }
+    }
+
+    private static IntPtr PackCoordinates(int x, int y)
+    {
+        int packed = unchecked((int)(((uint)(ushort)x) | ((uint)(ushort)y << 16)));
+        return new IntPtr(packed);
+    }
+
+    private static void SendVerifiedMouseMessage(IntPtr window, uint message, uint keyState,
+        IntPtr lParam, out bool sent)
+    {
+        IntPtr ignoredResult;
+        IntPtr callResult = SendMessageTimeoutW(window, message, new UIntPtr(keyState), lParam,
+            SmtoAbortIfHung, 2000, out ignoredResult);
+        sent = callResult != IntPtr.Zero;
+        if (!sent)
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(),
+                "SendMessageTimeout did not deliver the requested mouse message.");
+    }
+
+    public static Phase9WindowMessageActivationResult ClickWindowMessage(IntPtr window,
+        IntPtr processHandle, int screenX, int screenY, uint expectedProcessId)
+    {
+        Phase9WindowMessageActivationResult result = new Phase9WindowMessageActivationResult();
+        result.windowHandle = window.ToInt64();
+        result.expectedProcessId = expectedProcessId;
+        result.windowProcessId = GetWindowProcessId(window);
+        result.screenX = screenX;
+        result.screenY = screenY;
+        if (result.windowProcessId != expectedProcessId)
+            throw new InvalidOperationException("The sidebar HWND does not belong to the expected packaged app PID.");
+
+        result.waitForInputIdleResult = WaitForInputIdle(processHandle, 10000);
+        result.waitForInputIdleSucceeded = result.waitForInputIdleResult == 0;
+        if (!result.waitForInputIdleSucceeded)
+            throw new InvalidOperationException("Packaged app did not reach input-idle after startup-ready before window-message activation.");
+
+        Point clientPoint = new Point();
+        clientPoint.x = screenX;
+        clientPoint.y = screenY;
+        if (!ScreenToClient(window, ref clientPoint))
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "ScreenToClient failed for the verified sidebar row.");
+        Rect clientRect;
+        if (!GetClientRect(window, out clientRect))
+            throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "GetClientRect failed for the verified sidebar window.");
+        if (clientPoint.x < clientRect.left || clientPoint.x >= clientRect.right ||
+            clientPoint.y < clientRect.top || clientPoint.y >= clientRect.bottom)
+            throw new InvalidOperationException("The verified sidebar row point is outside the main-window client area.");
+        result.clientX = clientPoint.x;
+        result.clientY = clientPoint.y;
+        IntPtr coordinates = PackCoordinates(clientPoint.x, clientPoint.y);
+        SendVerifiedMouseMessage(window, WmMouseMove, 0, coordinates, out result.mouseMoveSent);
+        SendVerifiedMouseMessage(window, WmLeftButtonDown, MouseKeyLeftButton, coordinates, out result.leftButtonDownSent);
+        SendVerifiedMouseMessage(window, WmLeftButtonUp, 0, coordinates, out result.leftButtonUpSent);
+        result.messagesSent = 3;
+        return result;
+    }
 
     [DllImport("kernel32.dll", EntryPoint = "QueryFullProcessImageNameW", ExactSpelling = true,
         SetLastError = true, CharSet = CharSet.Unicode)]
@@ -429,6 +754,84 @@ function Receive-ProcessOutput {
                 Add-JsonLine -Path $StartupBoundaryMetricsPath -Value $sample
                 $BoundaryEventCounts[$ScenarioId][$eventId]++
             }
+            if ($GateMode -eq "P9-07" -and
+                $line -like "ClassMngrNext navigation event=page-route *") {
+                if ($null -eq $script:NavigationContext) {
+                    if ($line -notmatch ' cause=initial ' -and $line -notmatch ' cause=selection ') {
+                        throw "Unexpected navigation route diagnostic outside the measured route for $ScenarioId."
+                    }
+                    if ($line -match ' cause=selection ') {
+                        throw "A normal page selection occurred outside the measured route for $ScenarioId."
+                    }
+                } else {
+                    $routeMatch = [regex]::Match([string]$line,
+                        '^ClassMngrNext navigation event=page-route outcome=(?<outcome>[a-z-]+) cause=(?<cause>[a-z-]+) from=(?<from>[a-z0-9_-]+) to=(?<to>[a-z0-9_-]+) catalog_document_count=(?<documentCount>-?\d+) loaded_pdf_body_count=(?<bodyCount>\d+)$')
+                    if (-not $routeMatch.Success) { throw "A measured page route diagnostic was malformed for $ScenarioId." }
+                    $routeIndex = [int]$script:NavigationContext.nextIndex
+                    $expectedRoute = $script:NavigationContext.expectedRoute
+                    if ($routeIndex -ge $expectedRoute.Count) { throw "More page route events occurred than expected for $ScenarioId." }
+                    $expected = $expectedRoute[$routeIndex]
+                    if ($routeMatch.Groups["outcome"].Value -ne "completed" -or
+                        $routeMatch.Groups["cause"].Value -ne "selection" -or
+                        $routeMatch.Groups["from"].Value -cne $expected.fromPageId -or
+                        $routeMatch.Groups["to"].Value -cne $expected.toPageId -or
+                        [Int64]$routeMatch.Groups["documentCount"].Value -le 0 -or
+                        $routeMatch.Groups["bodyCount"].Value -ne "0") {
+                        throw "Page route $routeIndex failed, skipped, or changed catalog state for $ScenarioId."
+                    }
+                    $selection = $script:NavigationContext.currentSelection
+                    if ($null -eq $selection -or $selection.targetPageId -cne $expected.toPageId -or
+                        $selection.selectionActionIssued -ne $true) {
+                        throw "Page route $routeIndex was not correlated to a verified sidebar selection for $ScenarioId."
+                    }
+                    $sample = New-ProcessSample -Process $Process -ScenarioId $ScenarioId `
+                        -SampleIndex $routeIndex -Phase "navigation" `
+                        -ExpectedPath $ExpectedPath -ExpectedHash $ExpectedHash -CreatedAtUtc $CreatedAtUtc
+                    $eventAt = [DateTimeOffset]::Parse([string]$entry.observedAtUtc).ToUniversalTime()
+                    $sampleAt = [DateTimeOffset]::Parse([string]$sample.timestampUtc).ToUniversalTime()
+                    $delayMilliseconds = ($sampleAt - $eventAt).TotalMilliseconds
+                    if ($delayMilliseconds -lt 0 -or $delayMilliseconds -gt $StartupBoundaryMaximumDelayMilliseconds) {
+                        throw "Page route $routeIndex process snapshot was delayed for $ScenarioId."
+                    }
+                    $sample["routeIndex"] = $routeIndex
+                    $sample["cycle"] = [int]$expected.cycle
+                    $sample["routeStep"] = [int]$expected.routeStep
+                    $sample["fromPageId"] = [string]$expected.fromPageId
+                    $sample["toPageId"] = [string]$expected.toPageId
+                    $sample["targetPageId"] = [string]$expected.toPageId
+                    $sample["eventLogIndex"] = [Int64]$startupLogIndex
+                    $sample["eventObservedAtUtc"] = [string]$entry.observedAtUtc
+                    $sample["sampleDelayMilliseconds"] = [Math]::Round($delayMilliseconds, 3)
+                    $sample["stream"] = [string]$entry.stream
+                    $sample["rawLine"] = [string]$line
+                    $sample["selectionMethod"] = [string]$selection.selectionMethod
+                    $sample["selectionVerified"] = $true
+                    $sample["uiaWindowHandle"] = [Int64]$selection.windowHandle
+                    $sample["uiaWindowProcessId"] = [Int64]$selection.windowProcessId
+                    $sample["uiaWindowTitle"] = [string]$selection.windowTitle
+                    $sample["uiaControlAutomationId"] = [string]$selection.controlAutomationId
+                    $sample["uiaControlName"] = [string]$selection.controlName
+                    $sample["uiaItemName"] = [string]$selection.itemName
+                    $sample["uiaItemRectangle"] = $selection.itemRectangle
+                    $sample["uiaPatternName"] = [string]$selection.selectionPatternName
+                    $sample["pointerActivation"] = $selection.activation
+                    $sample["windowMessageActivation"] = $selection.windowMessageActivation
+                    $sample["milestone"] = if ($expected.toPageId -eq "my_workspace") { "return-to-normal" } else { $null }
+                    Add-JsonLine -Path $NavigationMetricsPath -Value $sample
+                    $selection.routeSample = $sample
+                    $script:NavigationContext.nextIndex++
+                    $script:NavigationContext.scenario.navigationTransitionCount = $script:NavigationContext.nextIndex
+                    if ($expected.toPageId -eq "my_workspace") {
+                        $script:NavigationContext.scenario.returnToNormalMilestones += @([ordered]@{
+                            cycle = [int]$expected.cycle
+                            pageId = "my_workspace"
+                            eventLogIndex = [Int64]$startupLogIndex
+                            timestampUtc = [string]$sample.timestampUtc
+                            currentWorkingSetBytes = [Int64]$sample.currentWorkingSetBytes
+                        })
+                    }
+                }
+            }
             $reader.ReadTask = $reader.Reader.ReadLineAsync()
         }
     }
@@ -463,6 +866,288 @@ function New-ProcessSample {
     }
 }
 
+function Get-NavigationTreeItems {
+    param([Int64]$WindowHandle)
+    Add-Type -AssemblyName UIAutomationClient
+    Add-Type -AssemblyName UIAutomationTypes
+    $deadline = [DateTimeOffset]::UtcNow.AddSeconds(5)
+    $lastError = "the navigation tree was not exposed"
+    while ([DateTimeOffset]::UtcNow -lt $deadline) {
+        try {
+            $window = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$WindowHandle)
+            if ($null -eq $window) { throw "UI Automation could not attach to the packaged app window." }
+            $automationIdCondition = [System.Windows.Automation.PropertyCondition]::new(
+                [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+                "classMngrNextNavigationTree"
+            )
+            $tree = $window.FindFirst(
+                [System.Windows.Automation.TreeScope]::Descendants,
+                $automationIdCondition
+            )
+            if ($null -eq $tree) {
+                # Qt's Windows UIA provider exposes QWidget accessibleName as Name, while
+                # objectName may be exposed as a qualified automation-id path.
+                $accessibleNameCondition = [System.Windows.Automation.PropertyCondition]::new(
+                    [System.Windows.Automation.AutomationElement]::NameProperty,
+                    "ClassMngr Next navigation"
+                )
+                $tree = $window.FindFirst(
+                    [System.Windows.Automation.TreeScope]::Descendants,
+                    $accessibleNameCondition
+                )
+            }
+            if ($null -eq $tree) { throw "UI Automation could not find the sidebar tree by its stable accessibility identity." }
+            if ($tree.Current.Name -cne "ClassMngr Next navigation" -or
+                $tree.Current.ControlType -ne [System.Windows.Automation.ControlType]::Tree) {
+                throw "UI Automation found a sidebar element with an unexpected accessibility identity or control type."
+            }
+            $itemCondition = [System.Windows.Automation.PropertyCondition]::new(
+                [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+                [System.Windows.Automation.ControlType]::TreeItem
+            )
+            $items = $tree.FindAll(
+                [System.Windows.Automation.TreeScope]::Descendants,
+                $itemCondition
+            )
+            if ($items.Count -lt 4) { throw "UI Automation found fewer than four ordinary workspace page rows." }
+            return [pscustomobject]@{
+                Tree = $tree
+                Items = $items
+                ControlAutomationId = [string]$tree.Current.AutomationId
+                ControlName = [string]$tree.Current.Name
+            }
+        } catch {
+            $lastError = $_.Exception.Message
+            Start-Sleep -Milliseconds 100
+        }
+    }
+    throw "UI Automation could not inspect the packaged sidebar tree after transient retries: $lastError"
+}
+
+function Invoke-NormalWorkspaceNavigation {
+    param([System.Collections.IDictionary]$Scenario, [System.Diagnostics.Process]$Process,
+        [string]$ApplicationPath, [string]$ApplicationHash, [string]$CreatedAtUtc,
+        [string]$ScenarioId)
+    $route = [System.Collections.Generic.List[object]]::new()
+    if ($NavigationInteractionProbeOnly) {
+        $route.Add([ordered]@{
+            fromPageId = "my_workspace"
+            toPageId = "schedule"
+            targetItemName = "Schedule"
+            cycle = 1
+            routeStep = 1
+        })
+    } else {
+    for ($cycle = 1; $cycle -le $ActiveNavigationCycles; $cycle++) {
+        $step = 0
+        foreach ($transition in $NavigationCycleRoute) {
+            $route.Add([ordered]@{
+                fromPageId = [string]$transition.fromPageId
+                toPageId = [string]$transition.toPageId
+                targetItemName = [string]$transition.targetItemName
+                cycle = $cycle
+                routeStep = $step + 1
+            })
+            $step++
+        }
+    }
+    }
+    $script:NavigationContext = [ordered]@{
+        scenario = $Scenario
+        process = $Process
+        expectedPath = $ApplicationPath
+        expectedHash = $ApplicationHash
+        createdAtUtc = $CreatedAtUtc
+        expectedRoute = @($route)
+        nextIndex = 0
+        currentSelection = $null
+    }
+    foreach ($expected in $script:NavigationContext.expectedRoute) {
+        $Process.Refresh()
+        $windowHandle = [IntPtr]$Process.MainWindowHandle
+        $windowTitle = [string]$Process.MainWindowTitle
+        if ($windowHandle -eq [IntPtr]::Zero -or
+            -not [Phase9NativeProcessChecks]::IsWindowVisible($windowHandle) -or
+            -not $windowTitle.Contains("ClassMngr Next")) {
+            throw "The packaged app's visible main window was unavailable before navigating to $($expected.toPageId)."
+        }
+        $windowProcessId = [Phase9NativeProcessChecks]::GetWindowProcessId($windowHandle)
+        if ([Int64]$windowProcessId -ne [Int64]$Process.Id) {
+            throw "The sidebar window does not belong to the exact packaged app process."
+        }
+        $Scenario.mainWindowHandle = [Int64]$windowHandle.ToInt64()
+        $Scenario.mainWindowTitle = $windowTitle
+        $navigation = Get-NavigationTreeItems -WindowHandle ([Int64]$windowHandle.ToInt64())
+        $matchingItems = [System.Collections.Generic.List[object]]::new()
+        foreach ($candidateItem in $navigation.Items) {
+            if ([string]$candidateItem.Current.Name -ceq [string]$expected.targetItemName) {
+                $matchingItems.Add($candidateItem)
+            }
+        }
+        if ($matchingItems.Count -ne 1) {
+            throw "UI Automation found $($matchingItems.Count) sidebar rows named '$($expected.targetItemName)' for $($expected.toPageId)."
+        }
+        $targetItem = $matchingItems[0]
+        $itemName = [string]$targetItem.Current.Name
+        if ([string]::IsNullOrWhiteSpace($itemName)) { throw "Sidebar row for $($expected.toPageId) has no accessible name." }
+        $script:NavigationContext.currentSelection = [ordered]@{
+            targetPageId = [string]$expected.toPageId
+            itemName = $itemName
+            windowHandle = [Int64]$windowHandle.ToInt64()
+            windowProcessId = [Int64]$windowProcessId
+            windowTitle = $windowTitle
+            controlAutomationId = $navigation.ControlAutomationId
+            controlName = $navigation.ControlName
+            itemRectangle = $null
+            selectionActionIssued = $false
+            selectionMethod = $null
+            selectionPatternName = $null
+            activation = $null
+            windowMessageActivation = $null
+            routeSample = $null
+        }
+        $targetItem.SetFocus()
+        $targetRectangle = $targetItem.Current.BoundingRectangle
+        if ($targetItem.Current.IsOffscreen -or $targetRectangle.Width -le 0 -or $targetRectangle.Height -le 0) {
+            throw "Sidebar row for $($expected.toPageId) is not visible and clickable."
+        }
+        $clickX = [int][Math]::Round($targetRectangle.X + ($targetRectangle.Width / 2))
+        $clickY = [int][Math]::Round($targetRectangle.Y + ($targetRectangle.Height / 2))
+        $script:NavigationContext.currentSelection.itemRectangle = [ordered]@{
+            x = [double]$targetRectangle.X
+            y = [double]$targetRectangle.Y
+            width = [double]$targetRectangle.Width
+            height = [double]$targetRectangle.Height
+        }
+        $selectionMethod = "uia-verified-pointer-click"
+        $patternName = "PointerClick"
+        try {
+            $activationResult = [Phase9NativeProcessChecks]::ClickWindowPoint(
+                $windowHandle, $Process.Handle, $clickX, $clickY, [uint32]$Process.Id
+            )
+            $Scenario.waitForInputIdleSucceeded = [bool]$activationResult.waitForInputIdleSucceeded
+            $script:NavigationContext.currentSelection.activation = [ordered]@{
+                sequence = @(
+                    "AllowSetForegroundWindow(pid)",
+                    "WaitForInputIdle",
+                    "ShowWindow(SW_RESTORE)",
+                    "AttachThreadInput",
+                    "BringWindowToTop",
+                    "SetActiveWindow",
+                    "SetFocus",
+                    "SetForegroundWindow",
+                    "verify-foreground-hwnd-pid",
+                    "SendInput"
+                )
+                windowHandle = [Int64]$activationResult.windowHandle
+                expectedProcessId = [Int64]$activationResult.expectedProcessId
+                windowProcessId = [Int64]$activationResult.windowProcessId
+                windowThreadId = [Int64]$activationResult.windowThreadId
+                callerThreadId = [Int64]$activationResult.callerThreadId
+                priorForegroundThreadId = [Int64]$activationResult.priorForegroundThreadId
+                allowSetForegroundWindowReturned = [bool]$activationResult.allowSetForegroundWindowReturned
+                showWindowPreviouslyVisible = [bool]$activationResult.showWindowPreviouslyVisible
+                targetThreadInputAttached = [bool]$activationResult.targetThreadInputAttached
+                foregroundThreadInputAttached = [bool]$activationResult.foregroundThreadInputAttached
+                waitForInputIdleResult = [Int64]$activationResult.waitForInputIdleResult
+                waitForInputIdleSucceeded = [bool]$activationResult.waitForInputIdleSucceeded
+                bringWindowToTopReturned = [bool]$activationResult.bringWindowToTopReturned
+                setActiveWindowReturnedNonZero = [bool]$activationResult.setActiveWindowReturnedNonZero
+                setFocusReturnedNonZero = [bool]$activationResult.setFocusReturnedNonZero
+                setForegroundWindowReturned = [bool]$activationResult.setForegroundWindowReturned
+                foregroundVerified = [bool]$activationResult.foregroundVerified
+                foregroundWindowHandle = [Int64]$activationResult.foregroundWindowHandle
+                foregroundProcessId = [Int64]$activationResult.foregroundProcessId
+                screenX = [int]$activationResult.screenX
+                screenY = [int]$activationResult.screenY
+                inputEventsSent = [Int64]$activationResult.inputEventsSent
+            }
+        } catch {
+            if ($_.Exception.Message -notmatch "does not own the foreground window") { throw }
+            $selectionMethod = "uia-verified-window-message-click"
+            $patternName = "WindowMessageClick"
+            $messageResult = [Phase9NativeProcessChecks]::ClickWindowMessage(
+                $windowHandle, $Process.Handle, $clickX, $clickY, [uint32]$Process.Id
+            )
+            $Scenario.waitForInputIdleSucceeded = [bool]$messageResult.waitForInputIdleSucceeded
+            $script:NavigationContext.currentSelection.windowMessageActivation = [ordered]@{
+                sequence = @(
+                    "WaitForInputIdle",
+                    "ScreenToClient",
+                    "GetClientRect",
+                    "WM_MOUSEMOVE",
+                    "WM_LBUTTONDOWN",
+                    "WM_LBUTTONUP"
+                )
+                windowHandle = [Int64]$messageResult.windowHandle
+                expectedProcessId = [Int64]$messageResult.expectedProcessId
+                windowProcessId = [Int64]$messageResult.windowProcessId
+                screenX = [int]$messageResult.screenX
+                screenY = [int]$messageResult.screenY
+                clientX = [int]$messageResult.clientX
+                clientY = [int]$messageResult.clientY
+                waitForInputIdleResult = [Int64]$messageResult.waitForInputIdleResult
+                waitForInputIdleSucceeded = [bool]$messageResult.waitForInputIdleSucceeded
+                mouseMoveSent = [bool]$messageResult.mouseMoveSent
+                leftButtonDownSent = [bool]$messageResult.leftButtonDownSent
+                leftButtonUpSent = [bool]$messageResult.leftButtonUpSent
+                messagesSent = [Int64]$messageResult.messagesSent
+            }
+        }
+        $script:NavigationContext.currentSelection.selectionMethod = $selectionMethod
+        $script:NavigationContext.currentSelection.selectionPatternName = $patternName
+        $script:NavigationContext.currentSelection.selectionActionIssued = $true
+        $expectedIndex = [int]$script:NavigationContext.nextIndex
+        $deadline = [DateTimeOffset]::UtcNow.AddSeconds(5)
+        while ($script:NavigationContext.nextIndex -eq $expectedIndex -and
+            [DateTimeOffset]::UtcNow -lt $deadline) {
+            Receive-ProcessOutput -Readers $script:CurrentReaders -ScenarioId $ScenarioId `
+                -Process $Process -ExpectedPath $ApplicationPath -ExpectedHash $ApplicationHash `
+                -CreatedAtUtc $CreatedAtUtc
+            if ($script:NavigationContext.nextIndex -eq $expectedIndex) {
+                Start-Sleep -Milliseconds 10
+            }
+        }
+        if ($script:NavigationContext.nextIndex -ne ($expectedIndex + 1)) {
+            $failedSelection = $script:NavigationContext.currentSelection
+            throw "Packaged app did not complete sidebar route to $($expected.toPageId) after $($failedSelection.selectionMethod) activation using $($failedSelection.selectionPatternName) of '$($failedSelection.itemName)' under '$($failedSelection.controlName)' (AutomationId='$($failedSelection.controlAutomationId)')."
+        }
+        Start-Sleep -Milliseconds 250
+    }
+    if ($script:NavigationContext.nextIndex -ne $route.Count) {
+        throw "Packaged app completed an incomplete normal navigation cycle."
+    }
+    $Scenario.navigationCompletedAtUtc = Get-UtcTimestamp
+    $Scenario.navigationTransitionCount = [int]$route.Count
+    $Scenario.navigationCycles = if ($NavigationInteractionProbeOnly) { 1 } else { $ActiveNavigationCycles }
+    $Scenario.returnToNormalMilestoneCount = @($Scenario.returnToNormalMilestones).Count
+    if (-not $NavigationInteractionProbeOnly -and
+        $Scenario.returnToNormalMilestoneCount -ne $ActiveNavigationCycles) {
+        throw "Normal navigation did not return to My Workspace after every cycle."
+    }
+    if ($NavigationInteractionProbeOnly) {
+        $Scenario.diagnosticNavigation = [ordered]@{
+            expectedTransition = [ordered]@{ fromPageId = "my_workspace"; toPageId = "schedule" }
+            successfulRouteCount = [int]$script:NavigationContext.nextIndex
+            selectionMethod = [string]$script:NavigationContext.currentSelection.selectionMethod
+            accessibleItemName = [string]$script:NavigationContext.currentSelection.itemName
+            pointerActivation = $script:NavigationContext.currentSelection.activation
+            routeEventProcessSample = $script:NavigationContext.currentSelection.routeSample
+            completedAtUtc = $Scenario.navigationCompletedAtUtc
+        }
+    } elseif ($NavigationPlateauDiagnosticOnly) {
+        $Scenario.diagnosticNavigation = [ordered]@{
+            diagnosticType = "navigation-plateau"
+            cycles = $ActiveNavigationCycles
+            transitionCount = [int]$route.Count
+            returnToNormalMilestones = @($Scenario.returnToNormalMilestones)
+            delayedPostSuspensionSample = $null
+            completedAtUtc = $Scenario.navigationCompletedAtUtc
+        }
+    }
+    $script:NavigationContext = $null
+}
+
 function Invoke-Scenario {
     param([System.Collections.IDictionary]$Definition, [string]$ApplicationPath,
         [string]$ApplicationHash, [string]$StageDirectory, [string]$FixturePath)
@@ -471,16 +1156,24 @@ function Invoke-Scenario {
     $scenario = [ordered]@{
         id = $Definition.id
         outcome = "in-progress"
-        budgetScope = "normal-use-gate"
+        budgetScope = if ($NavigationPlateauDiagnosticOnly) { "diagnostic-only" } else { "normal-use-gate" }
         startedAtUtc = Get-UtcTimestamp
         fixture = $Definition.fixture
         process = $null
         workspaceOpenedDiagnostic = $null
         startupReadyDiagnostic = $null
+        startupReadyExternalSample = $null
         interFontResourceEvents = @()
         startupBoundarySampleCount = 0
         startupBoundaryEventIds = @()
-        idleSeconds = $IdleSeconds
+        navigationTransitionCount = 0
+        navigationCycles = 0
+        navigationCompletedAtUtc = $null
+        returnToNormalMilestones = @()
+        returnToNormalMilestoneCount = 0
+        postNavigationCheckpoint = $null
+        postSuspensionCheckpoint = $null
+        idleSeconds = if ($NavigationPlateauDiagnosticOnly) { 0 } else { $IdleSeconds }
         sampleIntervalSeconds = $SampleIntervalSeconds
         userInteractionDuringIdle = $false
         idleCompletedAtUtc = $null
@@ -550,6 +1243,7 @@ function Invoke-Scenario {
             [pscustomobject]@{ Reader = $process.StandardOutput; Stream = "stdout"; ReadTask = $process.StandardOutput.ReadLineAsync() },
             [pscustomobject]@{ Reader = $process.StandardError; Stream = "stderr"; ReadTask = $process.StandardError.ReadLineAsync() }
         )
+        $script:CurrentReaders = $readers
         $deadline = [DateTimeOffset]::UtcNow.AddSeconds($ReadinessTimeoutSeconds)
         $readyEvent = $null
         $readyMatch = $null
@@ -666,8 +1360,67 @@ function Invoke-Scenario {
             mainWindowTitle = $stableTitle
         }
 
-        $sample = New-ProcessSample -Process $process -ScenarioId $Definition.id -SampleIndex 0 `
+        $startupExternalSample = New-ProcessSample -Process $process -ScenarioId $Definition.id -SampleIndex 0 `
             -Phase "startup-ready" -ExpectedPath $ApplicationPath -ExpectedHash $ApplicationHash -CreatedAtUtc $createdAtUtc
+        $scenario.startupReadyExternalSample = $startupExternalSample
+        if ($GateMode -eq "P9-07") {
+            Add-JsonLine -Path $StartupReadyMetricsPath -Value $startupExternalSample
+            Invoke-NormalWorkspaceNavigation -Scenario $scenario -Process $process `
+                -ApplicationPath $ApplicationPath -ApplicationHash $ApplicationHash `
+                -CreatedAtUtc $createdAtUtc -ScenarioId $Definition.id
+            if ($NavigationInteractionProbeOnly -or $NavigationPlateauDiagnosticOnly) {
+                $postRouteDelayMilliseconds = if ($NavigationPlateauDiagnosticOnly) { 2000 } else { 500 }
+                Start-Sleep -Milliseconds $postRouteDelayMilliseconds
+                Receive-ProcessOutput -Readers $readers -ScenarioId $Definition.id -Process $process `
+                    -ExpectedPath $ApplicationPath -ExpectedHash $ApplicationHash -CreatedAtUtc $createdAtUtc
+                $sample = New-ProcessSample -Process $process -ScenarioId $Definition.id -SampleIndex 1 `
+                    -Phase $(if ($NavigationPlateauDiagnosticOnly) { "diagnostic-post-suspension" } else { "diagnostic-post-navigation" }) `
+                    -ExpectedPath $ApplicationPath -ExpectedHash $ApplicationHash `
+                    -CreatedAtUtc $createdAtUtc
+                if ($NavigationPlateauDiagnosticOnly) {
+                    $scenario.postSuspensionCheckpoint = $sample
+                    $scenario.diagnosticNavigation.delayedPostSuspensionSample = $sample
+                } else {
+                    $scenario.postNavigationCheckpoint = $sample
+                    $scenario.diagnosticNavigation.postNavigationSample = $sample
+                }
+                Add-JsonLine -Path $MetricsPath -Value $sample
+                $scenario.closeRequestedAtUtc = Get-UtcTimestamp
+                if (-not $process.CloseMainWindow()) {
+                    $process.Refresh()
+                    if (-not $process.HasExited) { throw "CloseMainWindow was not accepted after the navigation diagnostic." }
+                }
+                if (-not $process.WaitForExit(30000)) { throw "Packaged app did not exit within 30 seconds after the navigation diagnostic." }
+                $drainDeadline = [DateTimeOffset]::UtcNow.AddSeconds(5)
+                while ([DateTimeOffset]::UtcNow -lt $drainDeadline -and
+                    @($readers | Where-Object { $null -ne $_.ReadTask }).Count -gt 0) {
+                    Receive-ProcessOutput -Readers $readers -ScenarioId $Definition.id -Process $process `
+                        -ExpectedPath $ApplicationPath -ExpectedHash $ApplicationHash -CreatedAtUtc $createdAtUtc
+                    if (@($readers | Where-Object { $null -ne $_.ReadTask -and -not $_.ReadTask.IsCompleted }).Count -gt 0) {
+                        Start-Sleep -Milliseconds 10
+                    }
+                }
+                Receive-ProcessOutput -Readers $readers -ScenarioId $Definition.id -Process $process `
+                    -ExpectedPath $ApplicationPath -ExpectedHash $ApplicationHash -CreatedAtUtc $createdAtUtc
+                $process.Refresh()
+                $scenario.exitedAtUtc = Get-UtcTimestamp
+                $scenario.exitCode = [Int64]$process.ExitCode
+                $scenario.normalExit = ($process.ExitCode -eq 0)
+                if (-not $scenario.normalExit) { throw "Packaged app exited abnormally with code $($process.ExitCode) after the navigation diagnostic." }
+                $scenario.outcome = "diagnostic-completed"
+                Write-JsonFile -Path $ManifestPath -Value $Manifest
+                return
+            }
+            Start-Sleep -Milliseconds 1000
+            Receive-ProcessOutput -Readers $readers -ScenarioId $Definition.id -Process $process `
+                -ExpectedPath $ApplicationPath -ExpectedHash $ApplicationHash -CreatedAtUtc $createdAtUtc
+            $sample = New-ProcessSample -Process $process -ScenarioId $Definition.id -SampleIndex 0 `
+                -Phase "post-navigation" -ExpectedPath $ApplicationPath -ExpectedHash $ApplicationHash `
+                -CreatedAtUtc $createdAtUtc
+            $scenario.postNavigationCheckpoint = $sample
+        } else {
+            $sample = $startupExternalSample
+        }
         Add-JsonLine -Path $MetricsPath -Value $sample
         $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
         $nextSampleMilliseconds = [Int64]1000
@@ -739,11 +1492,23 @@ function Invoke-Scenario {
 }
 
 function Invoke-Validator {
-    $output = & python $ValidatorPath --manifest $ManifestPath --metrics $MetricsPath `
-        --startup-log $StartupLogPath --startup-boundary-metrics $StartupBoundaryMetricsPath `
-        --package-files $PackageFilesPath --source-files $SourceFilesPath `
-        --build-log $BuildLogPath `
-        --summary $SummaryPath 2>&1
+    $validatorArguments = @(
+        "--manifest", $ManifestPath,
+        "--metrics", $MetricsPath,
+        "--startup-log", $StartupLogPath,
+        "--startup-boundary-metrics", $StartupBoundaryMetricsPath,
+        "--package-files", $PackageFilesPath,
+        "--source-files", $SourceFilesPath,
+        "--build-log", $BuildLogPath,
+        "--summary", $SummaryPath
+    )
+    if ($GateMode -eq "P9-07") {
+        $validatorArguments += @(
+            "--startup-ready-metrics", $StartupReadyMetricsPath,
+            "--navigation-metrics", $NavigationMetricsPath
+        )
+    }
+    $output = & python $ValidatorPath @validatorArguments 2>&1
     $exitCode = $LASTEXITCODE
     [System.IO.File]::WriteAllText($ValidatorOutputPath,
         ((@($output) -join [Environment]::NewLine) + [Environment]::NewLine),
@@ -756,11 +1521,14 @@ function Invoke-Validator {
 [System.IO.File]::WriteAllText($MetricsPath, "", [System.Text.UTF8Encoding]::new($false))
 [System.IO.File]::WriteAllText($StartupLogPath, "", [System.Text.UTF8Encoding]::new($false))
 [System.IO.File]::WriteAllText($StartupBoundaryMetricsPath, "", [System.Text.UTF8Encoding]::new($false))
+[System.IO.File]::WriteAllText($NavigationMetricsPath, "", [System.Text.UTF8Encoding]::new($false))
+[System.IO.File]::WriteAllText($StartupReadyMetricsPath, "", [System.Text.UTF8Encoding]::new($false))
 [System.IO.File]::WriteAllText($PackageFilesPath, "{`"files`":[]}" + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
 [System.IO.File]::WriteAllText($SourceFilesPath, "{`"files`":[]}" + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
 $Manifest = [ordered]@{
     schema = $ManifestSchema
     taskId = $TaskId
+    runId = $RunId
     status = "in-progress"
     startedAtUtc = Get-UtcTimestamp
     completedAtUtc = $null
@@ -785,7 +1553,7 @@ $Manifest = [ordered]@{
     qtInstallation = $null
     thresholdBytes = $ThresholdBytes
     comparison = "strictly-less-than"
-    idleSeconds = $IdleSeconds
+    idleSeconds = if ($NavigationPlateauDiagnosticOnly) { 0 } else { $IdleSeconds }
     sampleIntervalSeconds = $SampleIntervalSeconds
     startupBoundaryMetrics = [ordered]@{
         schema = $StartupBoundaryMetricsSchema
@@ -794,6 +1562,33 @@ $Manifest = [ordered]@{
         samplesPerScenario = $ExpectedStartupBoundaryEvents.Count
         maxSampleDelayMilliseconds = $StartupBoundaryMaximumDelayMilliseconds
     }
+    navigation = if ($GateMode -eq "P9-07") {
+        [ordered]@{
+            schema = if ($NavigationPlateauDiagnosticOnly) { $NavigationPlateauDiagnosticSchema } else { $NavigationMetricsSchema }
+            executionMode = if ($NavigationPlateauDiagnosticOnly) { "diagnostic-navigation-plateau" } elseif ($NavigationInteractionProbeOnly) { "diagnostic-one-transition" } else { "normal-use-gate" }
+            diagnosticOnly = [bool]($NavigationInteractionProbeOnly -or $NavigationPlateauDiagnosticOnly)
+            cycles = $ActiveNavigationCycles
+            transitionCountPerScenario = $ActiveNavigationCycles * $NavigationCycleRoute.Count
+            diagnosticTransition = if ($NavigationInteractionProbeOnly) {
+                [ordered]@{ fromPageId = "my_workspace"; toPageId = "schedule"; targetItemName = "Schedule" }
+            } else { $null }
+            route = @($NavigationCycleRoute | ForEach-Object {
+                [ordered]@{ fromPageId = $_.fromPageId; toPageId = $_.toPageId }
+            })
+            selectionMethods = @($NavigationSelectionMethods)
+            metricsFile = "navigation-metrics.jsonl"
+            startupReadyMetricsFile = "startup-ready-metrics.jsonl"
+            returnToNormalPageId = "my_workspace"
+            catalogBodyCountRequired = 0
+        }
+    } else { $null }
+    startupReadyMetrics = if ($GateMode -eq "P9-07") {
+        [ordered]@{
+            schema = $StartupReadyMetricsSchema
+            inventoryFile = "startup-ready-metrics.jsonl"
+            samplesPerScenario = 1
+        }
+    } else { $null }
     requiredInterFontResourceIds = $ExpectedInterFontResourceIds
     advisoryScenarios = @([ordered]@{ id = "fresh-initial-setup"; budgetScope = "advisory"; measuredBy = "Phase 7 advisory route" })
     scenarios = @()
@@ -1183,6 +1978,11 @@ try {
             }
         }
     )
+    if ($NavigationPlateauDiagnosticOnly) {
+        $definitions = @($definitions | Where-Object { $_.id -eq "representative-96-class-workspace" })
+    } elseif ($NavigationInteractionProbeOnly) {
+        $definitions = @($definitions | Select-Object -First 1)
+    }
     foreach ($definition in $definitions) {
         Invoke-Scenario -Definition $definition -ApplicationPath $applicationPath -ApplicationHash $applicationHash `
             -StageDirectory $stageDirectory -FixturePath $definition.fixturePath
@@ -1204,11 +2004,112 @@ try {
     $Manifest.failure = $runnerFailure
     $Manifest.completedAtUtc = Get-UtcTimestamp
     try { Write-JsonFile -Path $ManifestPath -Value $Manifest } catch { }
-    Write-Error "P9-06 package idle-memory collection failed: $runnerFailure" -ErrorAction Continue
+    Write-Error "$TaskId package navigation/idle-memory collection failed: $runnerFailure" -ErrorAction Continue
 } finally {
     if ($null -ne $TemporaryRoot -and (Test-Path -LiteralPath $TemporaryRoot)) {
         Remove-Item -LiteralPath $TemporaryRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
+}
+
+Write-Host "Evidence run: $EvidenceDirectory"
+Write-Host "Evidence manifest: $ManifestPath"
+Write-Host "Process metric trace: $MetricsPath"
+Write-Host "Startup diagnostic trace: $StartupLogPath"
+Write-Host "Gate summary: $SummaryPath"
+if ($NavigationInteractionProbeOnly) {
+    $probeRouteRows = [System.Collections.Generic.List[object]]::new()
+    if (Test-Path -LiteralPath $NavigationMetricsPath -PathType Leaf) {
+        foreach ($line in @(Get-Content -LiteralPath $NavigationMetricsPath)) {
+            if (-not [string]::IsNullOrWhiteSpace($line)) {
+                try { $probeRouteRows.Add(($line | ConvertFrom-Json -ErrorAction Stop)) }
+                catch { if ($null -eq $runnerFailure) { $runnerFailure = "Malformed diagnostic navigation metric: $($_.Exception.Message)" } }
+            }
+        }
+    }
+    if ($null -eq $runnerFailure -and $probeRouteRows.Count -ne 1) {
+        $runnerFailure = "The interaction probe completed without exactly one structured app route sample."
+    }
+    if ($null -eq $runnerFailure) {
+        $probeRow = $probeRouteRows[0]
+        $activationValid = $false
+        if ($probeRow.selectionMethod -ceq "uia-verified-pointer-click") {
+            $activationValid = $probeRow.uiaPatternName -ceq "PointerClick" -and
+                $probeRow.pointerActivation.foregroundVerified -eq $true -and
+                $probeRow.pointerActivation.foregroundProcessId -eq $probeRow.pid -and
+                $probeRow.pointerActivation.inputEventsSent -eq 2
+        } elseif ($probeRow.selectionMethod -ceq "uia-verified-window-message-click") {
+            $message = $probeRow.windowMessageActivation
+            $activationValid = $probeRow.uiaPatternName -ceq "WindowMessageClick" -and
+                $null -ne $message -and $message.windowHandle -eq $probeRow.uiaWindowHandle -and
+                $message.expectedProcessId -eq $probeRow.pid -and $message.windowProcessId -eq $probeRow.pid -and
+                $message.waitForInputIdleSucceeded -eq $true -and $message.mouseMoveSent -eq $true -and
+                $message.leftButtonDownSent -eq $true -and $message.leftButtonUpSent -eq $true -and
+                $message.messagesSent -eq 3
+        }
+        if ($probeRow.fromPageId -cne "my_workspace" -or $probeRow.toPageId -cne "schedule" -or
+            $probeRow.targetPageId -cne "schedule" -or
+            $probeRow.uiaItemName -cne "Schedule" -or $probeRow.uiaWindowProcessId -ne $probeRow.pid -or
+            -not $activationValid) {
+            $runnerFailure = "The structured route sample did not prove the expected app-owned sidebar activation."
+        }
+    }
+    if ($null -ne $runnerFailure) {
+        $Manifest.status = "failed"
+        $Manifest.failure = $runnerFailure
+        $Manifest.completedAtUtc = Get-UtcTimestamp
+        try { Write-JsonFile -Path $ManifestPath -Value $Manifest } catch { }
+    }
+    $diagnosticSummary = [ordered]@{
+        schema = "classmngr-phase9-navigation-interaction-probe-v1"
+        taskId = $TaskId
+        runId = $RunId
+        diagnosticOnly = $true
+        status = if ($null -eq $runnerFailure) { "completed" } else { "failed" }
+        validation = "not-evaluated"
+        budgetResult = "not-evaluated"
+        gateAcceptanceClaimed = $false
+        expectedRoute = [ordered]@{ fromPageId = "my_workspace"; toPageId = "schedule"; accessibleItemName = "Schedule" }
+        navigationMetricCount = $probeRouteRows.Count
+        navigationMetric = if ($probeRouteRows.Count -eq 1) { $probeRouteRows[0] } else { $null }
+        candidateSource = $Manifest.candidateSource
+        cmakeCacheSha256 = $Manifest.configuration.cmakeCacheSha256
+        cmakeCacheStableDuringRun = $Manifest.configuration.cmakeCacheStableDuringRun
+        packageSha256 = if ($null -ne $Manifest.package) { $Manifest.package.sha256 } else { $null }
+        scenarios = @($Manifest.scenarios)
+        failure = $runnerFailure
+        evidenceDirectory = $EvidenceDirectory
+        manifestPath = $ManifestPath
+        navigationMetricsPath = $NavigationMetricsPath
+        startupLogPath = $StartupLogPath
+    }
+    Write-JsonFile -Path $SummaryPath -Value $diagnosticSummary
+    if ($null -ne $runnerFailure) { throw "Navigation interaction probe failed; evidence is preserved at $EvidenceDirectory" }
+    Write-Host "Interaction probe completed; gate result is not evaluated."
+    return
+}
+
+if ($NavigationPlateauDiagnosticOnly) {
+    $diagnosticArguments = @(
+        "--manifest", $ManifestPath,
+        "--metrics", $MetricsPath,
+        "--startup-log", $StartupLogPath,
+        "--startup-boundary-metrics", $StartupBoundaryMetricsPath,
+        "--startup-ready-metrics", $StartupReadyMetricsPath,
+        "--navigation-metrics", $NavigationMetricsPath,
+        "--package-files", $PackageFilesPath,
+        "--source-files", $SourceFilesPath,
+        "--build-log", $BuildLogPath,
+        "--summary", $SummaryPath,
+        "--navigation-plateau-diagnostic"
+    )
+    $diagnosticOutput = & python $ValidatorPath @diagnosticArguments 2>&1
+    $diagnosticExitCode = $LASTEXITCODE
+    [System.IO.File]::WriteAllText($ValidatorOutputPath, (@($diagnosticOutput) -join [Environment]::NewLine) + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
+    if ($diagnosticExitCode -ne 0) {
+        throw "Navigation plateau diagnostic evidence was invalid; evidence is preserved at $EvidenceDirectory"
+    }
+    Write-Host "Navigation plateau diagnostic completed; no memory gate was evaluated."
+    return
 }
 
 try {
@@ -1219,12 +2120,7 @@ try {
     Write-Error "Unable to run P9-06 evidence validator: $($_.Exception.Message)" -ErrorAction Continue
 }
 
-Write-Host "Evidence run: $EvidenceDirectory"
-Write-Host "Evidence manifest: $ManifestPath"
-Write-Host "Process metric trace: $MetricsPath"
-Write-Host "Startup diagnostic trace: $StartupLogPath"
-Write-Host "Gate summary: $SummaryPath"
-if ($null -ne $runnerFailure) { throw "P9-06 collection did not complete; evidence is preserved at $EvidenceDirectory" }
-if ($validationExitCode -eq 1) { throw "P9-06 evidence is incomplete or invalid; gate was not evaluated. Evidence: $EvidenceDirectory" }
-if ($validationExitCode -eq 2) { throw "P9-06 measured valid evidence over budget; gate failed. Evidence: $EvidenceDirectory" }
-if ($validationExitCode -ne 0) { throw "P9-06 validator returned unexpected exit code $validationExitCode. Evidence: $EvidenceDirectory" }
+if ($null -ne $runnerFailure) { throw "$TaskId collection did not complete; evidence is preserved at $EvidenceDirectory" }
+if ($validationExitCode -eq 1) { throw "$TaskId evidence is incomplete or invalid; gate was not evaluated. Evidence: $EvidenceDirectory" }
+if ($validationExitCode -eq 2) { throw "$TaskId measured valid evidence over budget; gate failed. Evidence: $EvidenceDirectory" }
+if ($validationExitCode -ne 0) { throw "$TaskId validator returned unexpected exit code $validationExitCode. Evidence: $EvidenceDirectory" }

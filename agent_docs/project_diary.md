@@ -1,5 +1,24 @@
 # Project Diary
 
+### Phase 9 Calendar navigation and visual capture findings — 2026-11-18
+
+The first valid P9-07 navigation route exceeded the normal-use limit, with the
+largest step during Calendar activation. A controlled view-factory A/B found
+lower working-set and private-byte use for a product-equivalent QWidget grid
+than the QML grid, so production moved to QWidget while preserving the route's
+calendar behavior. The final ten-cycle packaged Release gate passed below
+262,144,000 bytes with zero loaded PDF bodies. Thirty-cycle diagnostic returns
+still showed a smaller positive memory trend, with page-owned Calendar view,
+root, session, and cache counts returning to zero; the allocator cause and
+long-term plateau remain unproven.
+
+Visual capture fixtures must use the app's real font registration path. A
+family-name, label-text, tooltip, or width check alone does not establish that
+the full title was painted. The accepted capture test uses packaged Inter and
+Pretendard, independent full-width localized title references, pixel suffix
+checks, and negative controls that remove the expected suffix. The final
+English/Korean capture pairs show complete titles and event content.
+
 ### Phase 9 packaged memory gate passed with static Inter faces — 2026-11-18
 
 P9-06V replaced the bundled Inter TTC with the six parity-verified v4.1
