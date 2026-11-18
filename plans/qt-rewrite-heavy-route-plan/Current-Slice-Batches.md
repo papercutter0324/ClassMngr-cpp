@@ -72,21 +72,33 @@ allocation or cleanup defect, route the fix to that feature boundary.
      rendering across the app and remains a fallback candidate. See the Phase
      9 progress log for run IDs and full provenance. This probe is diagnostic
      only and did not run the packaged P9-06 gate.
-5. **P9-06U — Test exact-version Inter static faces** (Proposed diagnostic slice)
+5. **P9-06U — Test exact-version Inter static faces** (Diagnostic complete)
    - Acceptance: fetch the six original static TTFs from official Inter v4.1,
-     verify archive/member SHA-256, metadata, license, and candidate source
-     version against the bundled TTC's 4.001 tag. Compare glyph coverage and
-     style/metric parity for the six product-required faces, then measure
-     repeated fresh x64 Release registration under DirectWrite. Preserve all
-     artifacts and failed attempts. This is diagnostic only; do not alter the
-     product package or claim a memory pass. If viable, follow with a separate
-     production slice and the unchanged packaged P9-06 gate.
-6. **P9-07 — Normal navigation and five-minute idle** (Proposed)
+     verify archive/member SHA-256, metadata, license, and source version
+     against the bundled TTC's 4.001 tag. The independent Tester verified the
+     six faces' required styles, Unicode coverage, glyph outlines, and
+     horizontal metrics, with only head-table checksum/timestamp differences.
+     In seven fresh x64 Release processes, median cumulative registration was
+     6,328,320 WS / 6,172,672 private bytes for the six static faces, versus
+     489,906,176 / 493,772,800 bytes for the TTC under DirectWrite. This is
+     diagnostic only; the product package and P9-06 gate were unchanged. Run
+     IDs, hashes, and limitations are recorded in the Phase 9 progress log.
+6. **P9-06V — Register exact-version Inter static faces and rerun the gate**
+   (Production and acceptance slice in progress)
+   - Acceptance: package the six verified Inter v4.1 static TTFs with their
+     exact hashes and license; preserve the six required styles, family
+     behavior, coverage, font-registration lifetime and cleanup, and leave
+     Pretendard unchanged. Build affected targets and run focused Windows x64
+     Debug tests. Then run the unchanged locally packaged Windows x64 Release
+     P9-06 gate for both fixtures at 301 samples each. All six gated working
+     set points must be strictly below 262,144,000 bytes for a pass; preserve
+     all artifacts and report valid over-budget evidence as a failure.
+7. **P9-07 — Normal navigation and five-minute idle** (Proposed)
    - Acceptance: locally packaged Windows Release exercises repeated normal
      navigation, proves the document catalog has no loaded PDF body, and
      enforces the same strict normal-use working-set limit after navigation
      and idle.
-7. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Proposed)
+8. **P9-08 — 96-class Sub Prep lifecycle and matched cleanup** (Proposed)
    - Acceptance: the locally packaged Windows Release route covers entry,
      summary creation, first selection, refresh, package generation, leave,
      and repeated re-entry. Capture peak and settled process metrics plus

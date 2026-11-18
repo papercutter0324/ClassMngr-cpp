@@ -516,3 +516,38 @@ requested style, with near-zero registration delta. It preserves the asset
 version but changes Qt's text rendering backend broadly; keep it as a fallback
 if the exact-version DirectWrite static-face candidate is unsuitable. Neither
 diagnostic alters product files or replaces the strict packaged Release gate.
+
+#### P9-06U exact-version Inter static-face parity and registration probe
+
+P9-06U compared the six original static Inter v4.1 faces with the catalogued
+Inter TTC under Qt 6.12 DirectWrite. The official archive was 33,707,794 bytes
+with SHA-256
+9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e. Its six
+static faces report version 4.001, matching the bundled TTC. The independent
+Tester re-ran the parity comparator and verified family/style/weight,
+Unicode cmap, glyph outlines by glyph ID, horizontal metrics, and selected
+OpenType tables. The only reported table differences were the `head` table's
+checksum adjustment and modified timestamp; neither source had cmap format
+14 records. The check does not compare rasterized pixels.
+
+The first seven-process-per-arm run is
+artifacts/phase9/font-allocation-probe/20261117T234749224Z-f7bad8bc995f4e78904aaa7509c30ae4/.
+The independent verification is
+artifacts/phase9/font-allocation-probe/20261117T235550694Z-3b664a639b0547628f542eb49c962036/.
+It completed 14 fresh x64 optimized Release processes, seven per arm, with
+QtRawFont reporting DirectWrite for all six faces. The Tester recomputed all
+48 CSV metric rows from raw snapshots and verified the process identities,
+Qt/runtime/package hashes, source fingerprint, and optimized `/MD /O2 /Ob2
+/DNDEBUG` compile settings. The parity report SHA-256 is
+8b1016171eb4b1ff3a711ce1681f7d3ca0e8da47b9cb1298600cb2bc3feda1b6.
+
+| Arm | Median cumulative registration WS / private usage |
+|---|---:|
+| Bundled Inter TTC, DirectWrite | 489,906,176 / 493,772,800 B |
+| Six exact-version Inter v4.1 static faces, DirectWrite | 6,328,320 / 6,172,672 B |
+
+This diagnostic does not alter the package and is not a normal-use memory
+result. P9-06V is the separate production migration slice: package the six
+verified faces, preserve required registration semantics and cleanup, then
+run the unchanged full P9-06 Release gate. The strict 262,144,000-byte limit
+and 301-sample scenarios remain unchanged.

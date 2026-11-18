@@ -1,6 +1,6 @@
 # Project Progress
 
-## Phase 9 current position — P9-06R result and diagnostic probe — 2026-11-18
+## Phase 9 current position — P9-06U parity and registration result — 2026-11-18
 
 Phase 9 remains In progress. Batch 1 is closed. The optimized local Windows
 x64 Release P9-06 run completed valid 301-sample traces for empty and
@@ -11,12 +11,17 @@ independently confirmed about 490 MB WS / 494 MB private growth synchronous
 with Inter TTC registration under Qt DirectWrite. P9-06T found the six static
 Inter v4.0 TTFs register at about 6.3 MB and the same TTC under GDI at about
 0.4 MB, but v4.0 differs from the bundled TTC's 4.001 version tag and GDI
-changes rendering across the app. The next diagnostic tests exact-version
-Inter v4.1 static files under DirectWrite. No memory pass is claimed; only the
-unchanged packaged P9-06 gate can establish one.
+changes rendering across the app. P9-06U then independently verified six
+exact-version Inter v4.1 static faces against the TTC for required styles,
+Unicode coverage, glyph outlines, and horizontal metrics. Seven fresh x64
+Release processes measured median cumulative static registration at
+6,328,320 WS / 6,172,672 private bytes, versus 489,906,176 / 493,772,800 bytes
+for the TTC under DirectWrite. P9-06V is migrating production and will run the
+unchanged packaged P9-06 gate. No memory pass is claimed until that gate
+passes.
 
 See the Phase 9 progress log and current slice-batch tracker for source/build
-provenance, run artifacts, and the next diagnostic.
+provenance, run artifacts, and the active production slice.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

@@ -1,11 +1,11 @@
 <#
 .SYNOPSIS
-Runs source-bound fresh-process Inter representation/backend probes for Windows x64 Release.
+Runs source-bound fresh-process Inter representation probes for Windows x64 Release.
 
 .DESCRIPTION
-This diagnostic compares the packaged Inter TTC under DirectWrite and GDI with
-the six official Inter v4.0 static TTFs under DirectWrite. It does not launch or
-modify the packaged application.
+This diagnostic compares the packaged Inter TTC with six official static TTFs
+under DirectWrite. Use InterSourceVersion 4.0 or 4.1 to select the release.
+It does not launch or modify the packaged application.
 #>
 [CmdletBinding()]
 param(
@@ -13,7 +13,10 @@ param(
     [string]$BuildDirectory = "build\windows-x64-release",
     [string]$PackageDirectory = "dist\ClassMngr-windows-x64",
     [Parameter(Mandatory = $true)]
-    [string]$InterV40SourceDirectory,
+    [Alias("InterV40SourceDirectory")]
+    [string]$InterSourceDirectory,
+    [ValidateSet("4.0", "4.1")]
+    [string]$InterSourceVersion = "4.0",
     [string]$QtPrefix = "",
     [string]$EvidenceRoot = "artifacts\phase9\font-allocation-probe",
     [ValidateRange(7, 7)]
@@ -25,7 +28,11 @@ param(
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$TaskId = "P9_06T_INTER_REPRESENTATION_BACKEND_PROBE"
+$TaskId = if ($InterSourceVersion -eq "4.1") {
+    "P9_06U_EXACT_VERSION_INTER_STATIC_PROBE"
+} else {
+    "P9_06T_INTER_REPRESENTATION_BACKEND_PROBE"
+}
 $Schema = "classmngr-phase9-font-allocation-probe-v2"
 $IncludedRoots = @(
     "CMakeLists.txt",
@@ -40,11 +47,11 @@ $IncludedRoots = @(
     "tests",
     "third_party"
 )
-$Scenarios = @(
-    "inter-ttc-directwrite",
-    "inter-static-directwrite",
-    "inter-ttc-gdi"
-)
+$Scenarios = if ($InterSourceVersion -eq "4.1") {
+    @("inter-ttc-directwrite", "inter-static-directwrite")
+} else {
+    @("inter-ttc-directwrite", "inter-static-directwrite", "inter-ttc-gdi")
+}
 $StaticFaceDefinitions = @(
     [ordered]@{ key = "regular"; file = "Inter-Regular.ttf"; style = "Regular"; weight = 400; italic = $false }
     [ordered]@{ key = "medium"; file = "Inter-Medium.ttf"; style = "Medium"; weight = 500; italic = $false }
@@ -64,10 +71,10 @@ $PackageDirectory = if ([System.IO.Path]::IsPathRooted($PackageDirectory)) {
 } else {
     [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot $PackageDirectory))
 }
-$InterV40SourceDirectory = if ([System.IO.Path]::IsPathRooted($InterV40SourceDirectory)) {
-    [System.IO.Path]::GetFullPath($InterV40SourceDirectory)
+$InterSourceDirectory = if ([System.IO.Path]::IsPathRooted($InterSourceDirectory)) {
+    [System.IO.Path]::GetFullPath($InterSourceDirectory)
 } else {
-    [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot $InterV40SourceDirectory))
+    [System.IO.Path]::GetFullPath((Join-Path $RepositoryRoot $InterSourceDirectory))
 }
 $EvidenceRoot = if ([System.IO.Path]::IsPathRooted($EvidenceRoot)) {
     [System.IO.Path]::GetFullPath($EvidenceRoot)
@@ -89,11 +96,14 @@ $SourceStartPath = Join-Path $EvidenceDirectory "source-files-at-start.json"
 $SourceEndPath = Join-Path $EvidenceDirectory "source-files-at-end.json"
 $ProcessSummaryPath = Join-Path $EvidenceDirectory "process-summary.jsonl"
 $MediansCsvPath = Join-Path $EvidenceDirectory "scenario-medians.csv"
+$FontParityPath = Join-Path $EvidenceDirectory "inter-static-ttc-parity.json"
+$FontParityLogPath = Join-Path $EvidenceDirectory "font-parity.log"
 $ProcessRuns = [System.Collections.Generic.List[object]]::new()
 $UniquePids = [System.Collections.Generic.HashSet[int]]::new()
 $Manifest = [ordered]@{
     schema = $Schema
     taskId = $TaskId
+    interSourceVersion = $InterSourceVersion
     runId = $RunId
     status = "running"
     createdAtUtc = [DateTimeOffset]::UtcNow.ToString("o")
@@ -107,8 +117,10 @@ $Manifest = [ordered]@{
     qtRuntime = $null
     package = $null
     upstreamRelease = $null
+    upstreamVerification = $null
     staticFontAssets = $null
     licenseIdentity = $null
+    fontParity = $null
     probe = $null
     executionOrder = [System.Collections.Generic.List[string]]::new()
     processRuns = $ProcessRuns
@@ -419,26 +431,85 @@ function Get-Sha256OfNormalizedText {
     return Get-StringSha256 -Value ($Value -replace "`r`n?", "`n")
 }
 
-function Get-InterV40Assets {
-    param([string]$SourceDirectory)
+function Get-InterVersionAssets {
+    param([string]$SourceDirectory, [string]$Version)
+    $contract = switch ($Version) {
+        "4.0" {
+            [ordered]@{
+                archiveSha256 = "ff970a5d4561a04f102a7cb781adbd6ac4e9b6c460914c7a101f15acb7f7d1a4"
+                archiveBytes = 27885132
+                fontVersionPattern = '^Version 4\.000;git-'
+                faceHashes = @{
+                    "Inter-Regular.ttf" = "64f8be6e55c37e32ef03da99714bf3aa58b8f2099bfe4f759a7578e3b8291123"
+                    "Inter-Medium.ttf" = "1bda81124d6ae26ed16a7201e2bd93766af5a3b14faf79eea14d191ebbd41146"
+                    "Inter-SemiBold.ttf" = "0dc98e8aa59585394880f25ab89e6d915ad5134522e961b046ca51fad3a18255"
+                    "Inter-Bold.ttf" = "0cb1bc1335372d9e3a0cf6f5311c7cce87af90d2a777fdeec18be605a2a70bc1"
+                    "Inter-BoldItalic.ttf" = "5e606f805a71432d4875de7dab737bf9dea1187090f0a5190da9b1bbab09f57c"
+                    "Inter-Black.ttf" = "6bdebeb76083e187c7ae59420bfc24e851edb572e1a8d97c1c37b7b2dc26148c"
+                }
+            }
+        }
+        "4.1" {
+            [ordered]@{
+                archiveSha256 = "9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e"
+                archiveBytes = 33707794
+                fontVersionPattern = '^Version 4\.001;git-9221beed3$'
+                faceHashes = @{
+                    "Inter-Regular.ttf" = "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82"
+                    "Inter-Medium.ttf" = "97ad806f526e41546d46365bb3a393145f75b7b1568913db74549ad8b8dba872"
+                    "Inter-SemiBold.ttf" = "78a843fade9d4612a5567302fb595b56976eb5fcebf4fea5a5912d638bafcde3"
+                    "Inter-Bold.ttf" = "288316099b1e0a47a4716d159098005eef7c0066921f34e3200393dbdb01947f"
+                    "Inter-BoldItalic.ttf" = "948405a16cdc62701da5f4005ed068ca5f4d27061d98f7974ccfc37831d9581d"
+                    "Inter-Black.ttf" = "6342d3ea6dc088b43867f615e807d898adf100c93edb978b8e52c5eb71a264da"
+                }
+            }
+        }
+        default { throw "Unsupported Inter source version: $Version" }
+    }
     $root = [System.IO.Path]::GetFullPath($SourceDirectory)
-    $archivePath = Join-Path $root "Inter-4.0.zip"
-    $releaseMetadataPath = Join-Path $root "github-release-v4.0.json"
+    $archiveName = "Inter-$Version.zip"
+    $archivePath = Join-Path $root $archiveName
+    $releaseMetadataPath = Join-Path $root "github-release-v$Version.json"
     $extractedRoot = Join-Path $root "extracted"
     foreach ($path in @($archivePath, $releaseMetadataPath, $extractedRoot)) {
-        if (-not (Test-Path -LiteralPath $path)) { throw "Inter v4.0 source material is missing: $path" }
+        if (-not (Test-Path -LiteralPath $path)) { throw "Inter v$Version source material is missing: $path" }
     }
     $release = Get-Content -LiteralPath $releaseMetadataPath -Raw | ConvertFrom-Json
-    $asset = @($release.assets | Where-Object { $_.name -eq "Inter-4.0.zip" })
-    $expectedUrl = "https://github.com/rsms/inter/releases/download/v4.0/Inter-4.0.zip"
-    if ($release.tag_name -ne "v4.0" -or $release.html_url -ne "https://github.com/rsms/inter/releases/tag/v4.0" -or
+    $asset = @($release.assets | Where-Object { $_.name -eq $archiveName })
+    $expectedUrl = "https://github.com/rsms/inter/releases/download/v$Version/$archiveName"
+    if ($release.tag_name -ne "v$Version" -or $release.html_url -ne "https://github.com/rsms/inter/releases/tag/v$Version" -or
         $asset.Count -ne 1 -or $asset[0].browser_download_url -ne $expectedUrl) {
-        throw "Downloaded Inter archive is not the official rsms/inter v4.0 release asset."
+        throw "Downloaded Inter archive is not the official rsms/inter v$Version release asset."
     }
     $archiveSize = (Get-Item -LiteralPath $archivePath).Length
     $archiveHash = Get-FileSha256 -Path $archivePath
-    if ($archiveSize -ne [Int64]$asset[0].size -or $archiveHash -ne "ff970a5d4561a04f102a7cb781adbd6ac4e9b6c460914c7a101f15acb7f7d1a4") {
-        throw "Inter v4.0 release archive size/SHA-256 does not match the locally verified release asset."
+    if ($archiveSize -ne [Int64]$asset[0].size -or $archiveSize -ne [Int64]$contract.archiveBytes -or
+        $archiveHash -ne $contract.archiveSha256) {
+        throw "Inter v$Version release archive size/SHA-256 does not match the locally verified release asset."
+    }
+    $verificationPath = Join-Path $root "archive-verification.json"
+    $checksumPath = Join-Path $root "$archiveName.sha256.txt"
+    foreach ($path in @($verificationPath, $checksumPath)) {
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Inter v$Version checksum verification note is missing: $path" }
+    }
+    $verification = Get-Content -LiteralPath $verificationPath -Raw | ConvertFrom-Json
+    $notedArchiveHash = if ($Version -eq "4.1") {
+        [string]$verification.officialRelease.archiveSha256ComputedLocally
+    } else {
+        [string]$verification.officialRelease.assetSha256ComputedLocally
+    }
+    $notedTag = if ($Version -eq "4.1") {
+        [string]$verification.officialRelease.releaseTag
+    } else {
+        [string]$verification.officialRelease.tag
+    }
+    if ($notedArchiveHash -ne $archiveHash -or $notedTag -ne "v$Version" -or
+        -not [bool]$verification.license.normalizedTextMatches) {
+        throw "Inter v$Version verification note does not match the official release archive or bundled license."
+    }
+    $checksumLine = [System.IO.File]::ReadAllText($checksumPath).Trim()
+    if ($checksumLine -notmatch "^(?i)$([regex]::Escape($archiveHash))\s+\*?$([regex]::Escape($archiveName))$") {
+        throw "Inter v$Version local SHA-256 checksum file does not match the archive."
     }
     $archiveLicensePath = Join-Path $extractedRoot "LICENSE.txt"
     $bundledLicensePath = Join-Path $RepositoryRoot "licenses\fonts\inter\LICENSE.txt"
@@ -449,7 +520,7 @@ function Get-InterV40Assets {
     $archiveLicenseText = [System.IO.File]::ReadAllText($archiveLicensePath)
     $bundledLicenseText = [System.IO.File]::ReadAllText($bundledLicensePath)
     if ((Get-Sha256OfNormalizedText $archiveLicenseText) -ne (Get-Sha256OfNormalizedText $bundledLicenseText)) {
-        throw "The bundled Inter license text differs from the official v4.0 release license."
+        throw "The bundled Inter license text differs from the official v$Version release license."
     }
     if ([regex]::IsMatch($bundledLicenseText, '(?im)^Reserved Font Name\s*:')) {
         throw "Bundled Inter license declares a Reserved Font Name; static-face substitution requires review."
@@ -459,14 +530,21 @@ function Get-InterV40Assets {
     $faceRoot = Join-Path $extractedRoot "extras\ttf"
     foreach ($definition in $StaticFaceDefinitions) {
         $path = Join-Path $faceRoot $definition.file
-        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Inter v4.0 static face is missing: $path" }
+        if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Inter v$Version static face is missing: $path" }
         $metadata = Get-SfntFontMetadata -Path $path
+        if ($metadata.sha256 -ne $contract.faceHashes[$definition.file]) {
+            throw "Inter v$Version static face SHA-256 differs from the locally verified archive member: $($definition.file)"
+        }
+        $notedFace = @($verification.staticFaces | Where-Object { $_.file -eq $definition.file })
+        if ($notedFace.Count -ne 1 -or [string]$notedFace[0].sha256 -ne $metadata.sha256) {
+            throw "Inter v$Version verification note does not match the extracted static face: $($definition.file)"
+        }
         if ($metadata.familyName -ne "Inter" -or
             $metadata.subfamilyName -ne $definition.style -or
-            $metadata.version -notmatch '^Version 4\.000;git-' -or
+            $metadata.version -notmatch $contract.fontVersionPattern -or
             $metadata.weight -ne $definition.weight -or
             $metadata.italic -ne $definition.italic) {
-            throw "Inter v4.0 static face metadata differs from expected family/version/style: $($definition.file)"
+            throw "Inter v$Version static face metadata differs from expected family/version/style: $($definition.file)"
         }
         $metadata.file = $definition.file
         $metadata.key = $definition.key
@@ -483,12 +561,19 @@ function Get-InterV40Assets {
             publishedAtUtc = [string]$release.published_at
             sizeBytes = [Int64]$archiveSize
             sha256 = $archiveHash
+            locallyPinnedSha256 = $contract.archiveSha256
             officialChecksumPublished = ($null -ne $asset[0].digest)
             officialDigest = $asset[0].digest
         }
         releaseMetadata = [ordered]@{
             path = [System.IO.Path]::GetFullPath($releaseMetadataPath)
             sha256 = Get-FileSha256 -Path $releaseMetadataPath
+        }
+        verification = [ordered]@{
+            path = [System.IO.Path]::GetFullPath($verificationPath)
+            sha256 = Get-FileSha256 -Path $verificationPath
+            checksumPath = [System.IO.Path]::GetFullPath($checksumPath)
+            checksumFileSha256 = Get-FileSha256 -Path $checksumPath
         }
         extractedDirectory = [System.IO.Path]::GetFullPath($faceRoot)
         faces = @($faces)
@@ -791,9 +876,9 @@ try {
     Save-Manifest
     $sourceStart = Get-CandidateSourceIdentity -Root $RepositoryRoot
     Write-JsonFile -Path $SourceStartPath -Value $sourceStart.files
-    $releaseAssets = Get-InterV40Assets -SourceDirectory $InterV40SourceDirectory
+    $releaseAssets = Get-InterVersionAssets -SourceDirectory $InterSourceDirectory -Version $InterSourceVersion
     $staticFaces = @($releaseAssets.faces)
-    if ($staticFaces.Count -ne 6) { throw "Expected exactly six verified static Inter v4.0 faces." }
+    if ($staticFaces.Count -ne 6) { throw "Expected exactly six verified static Inter v$InterSourceVersion faces." }
     $buildInfoPath = Join-Path $BuildDirectory "generated\core\build_info.h"
     $buildInfo = [System.IO.File]::ReadAllText($buildInfoPath)
     $revisionMatch = [regex]::Match($buildInfo, 'GitRevision\s*=\s*"([^"]+)"')
@@ -844,6 +929,49 @@ try {
     if (-not (Test-Path -LiteralPath $catalogPath -PathType Leaf)) { throw "Packaged resource catalog is missing: $catalogPath" }
     $catalog = Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json
     $inter = Get-PackageFontIdentity -LogicalId "resource:assets/fonts/Inter.ttc" -RelativePath "assets/fonts/Inter.ttc" -ExpectedType "ttc" -Catalog $catalog -Root (Join-Path $PackageDirectory "resources")
+    if ($InterSourceVersion -eq "4.1") {
+        $parityScriptPath = Join-Path $RepositoryRoot "scripts\phase9\compare_inter_font_parity.py"
+        if (-not (Test-Path -LiteralPath $parityScriptPath -PathType Leaf)) { throw "Font parity script is missing: $parityScriptPath" }
+        $pythonCommand = (Get-Command python -ErrorAction Stop).Source
+        $parityStartedAtUtc = Get-UtcTimestamp
+        $parityOutput = @(& $pythonCommand $parityScriptPath --ttc $inter.path --static-dir $releaseAssets.extractedDirectory --output $FontParityPath 2>&1)
+        $parityExitCode = $LASTEXITCODE
+        $parityCompletedAtUtc = Get-UtcTimestamp
+        $parityLogLines = @(
+            "command: `"$pythonCommand`" `"$parityScriptPath`" --ttc `"$($inter.path)`" --static-dir `"$($releaseAssets.extractedDirectory)`" --output `"$FontParityPath`""
+            "startedAtUtc: $parityStartedAtUtc"
+            "completedAtUtc: $parityCompletedAtUtc"
+            "exitCode: $parityExitCode"
+            "--- output ---"
+        ) + @($parityOutput | ForEach-Object { [string]$_ }) + @("--- end output ---")
+        [System.IO.File]::WriteAllLines($FontParityLogPath, $parityLogLines, [System.Text.UTF8Encoding]::new($false))
+        if ($parityExitCode -ne 0 -or -not (Test-Path -LiteralPath $FontParityPath -PathType Leaf)) {
+            throw "Inter v4.1 TTC/static parity analysis failed; see $FontParityLogPath."
+        }
+        $parityReport = Get-Content -LiteralPath $FontParityPath -Raw | ConvertFrom-Json
+        if ($parityReport.schema -ne "classmngr-phase9-inter-static-ttc-parity-v1" -or
+            $parityReport.ttc.sha256 -ne $inter.sha256 -or
+            $parityReport.faces.Count -ne 6) {
+            throw "Inter v4.1 TTC/static parity report identity does not match this package and face set."
+        }
+        $Manifest.fontParity = [ordered]@{
+            scriptPath = [System.IO.Path]::GetFullPath($parityScriptPath)
+            scriptSha256 = Get-FileSha256 -Path $parityScriptPath
+            pythonPath = $pythonCommand
+            outputPath = $FontParityPath
+            outputSha256 = Get-FileSha256 -Path $FontParityPath
+            logPath = $FontParityLogPath
+            logSha256 = Get-FileSha256 -Path $FontParityLogPath
+            startedAtUtc = $parityStartedAtUtc
+            completedAtUtc = $parityCompletedAtUtc
+            exitCode = $parityExitCode
+            allSourceVersionsMatchTtc = [bool]$parityReport.allSourceVersionsMatchTtc
+            allFamilyStyleIdentitiesMatch = [bool]$parityReport.allFamilyStyleIdentitiesMatch
+            allGlyphCoverageMatches = [bool]$parityReport.allGlyphCoverageMatches
+            allGlyphOutlinesMatchExactly = [bool]$parityReport.allGlyphOutlinesMatchExactly
+            allHorizontalMetricsMatchExactly = [bool]$parityReport.allHorizontalMetricsMatchExactly
+        }
+    }
     $appPath = Join-Path $PackageDirectory "ClassMngr.exe"
     if (-not (Test-Path -LiteralPath $appPath -PathType Leaf)) { throw "Packaged ClassMngr.exe is missing: $appPath" }
     if ((Get-PeArchitecture -Path $appPath) -ne "x64") { throw "Packaged ClassMngr.exe is not Windows x64." }
@@ -955,6 +1083,7 @@ try {
         catalogFontResourceId = "resource:assets/fonts/Inter.ttc"
     }
     $Manifest.upstreamRelease = $releaseAssets.archive
+    $Manifest.upstreamVerification = $releaseAssets.verification
     $Manifest.staticFontAssets = @($releaseAssets.faces)
     $Manifest.licenseIdentity = $releaseAssets.license
     $Manifest.probe = [ordered]@{
@@ -1026,6 +1155,7 @@ try {
         schema = $Schema
         taskId = $TaskId
         runId = $RunId
+        interSourceVersion = $InterSourceVersion
         status = "complete"
         repetitionsPerScenario = $Repetitions
         scenarioCount = $Scenarios.Count
@@ -1044,8 +1174,10 @@ try {
         qtVersion = $qtVersion
         packageFontHashes = @($inter)
         upstreamRelease = $releaseAssets.archive
+        upstreamVerification = $releaseAssets.verification
         staticFontAssets = @($releaseAssets.faces)
         licenseIdentity = $releaseAssets.license
+        fontParity = $Manifest.fontParity
         scenarios = $Scenarios
         executionOrder = @($Manifest.executionOrder)
         processes = @($ProcessRuns | ForEach-Object { $_.summary })

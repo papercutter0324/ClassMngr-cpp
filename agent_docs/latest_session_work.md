@@ -1,6 +1,6 @@
 # Latest Session Work
 
-## Phase 9 current handoff - P9-06S Inter allocation result - 2026-11-18
+## Phase 9 current handoff - P9-06U exact-version Inter parity - 2026-11-18
 
 Phase 9 remains In progress. Batch 1 is closed. P9-06 and P9-06R have valid
 source-bound optimized local Windows x64 Release evidence, and both fail the
@@ -10,8 +10,12 @@ Inter TTC under Qt 6.12 DirectWrite. P9-06T found that six static Inter v4.0
 faces register with a small memory increase, but those faces are version 4.000
 rather than the bundled TTC's 4.001. A same-TTC GDI probe also uses little
 memory, but changing Qt's global backend affects text rendering more broadly.
-P9-06U will test exact-version Inter v4.1 static faces before any production
-change. These are diagnostic results, not a Phase 9 memory pass.
+P9-06U verified exact-version v4.1 faces against the TTC for styles, Unicode
+coverage, outlines, and horizontal metrics. Independent Windows measurement
+found about 6.3 MB WS / 6.2 MB private cumulative registration for the six
+static faces, compared with about 489.9 MB / 493.8 MB for the TTC. P9-06V is
+migrating production and will run the unchanged packaged gate. These are
+diagnostic results, not a Phase 9 memory pass.
 
 - The valid P9-06 baseline run is
   artifacts/phase9/packaged-idle-memory/20261117T190410131Z-43f692fcd33b4a2a87cf12518dbf1386/.
@@ -75,15 +79,16 @@ change. These are diagnostic results, not a Phase 9 memory pass.
   GDI added 405,504 / 0 bytes. The static files report version 4.000, unlike
   the TTC's 4.001; the GDI backend changes text rendering across Qt.
 - The official Inter v4.1 release metadata reports version 4.001, matching the
-  bundled TTC tag. P9-06U will verify the six exact-version original static
-  files and repeat the DirectWrite measurement before a product change. The
-  Phase 9 log records all source, archive, runtime, and run hashes.
+  bundled TTC tag. P9-06U's independent run verified all six exact-version
+  original static files and repeated the DirectWrite measurement. P9-06V now
+  owns the product migration and full packaged memory gate. The Phase 9 log
+  records all source, archive, runtime, parity, and run hashes.
 
 - The probe does not construct the full app UI or idle for five minutes. It
   therefore localizes the synchronous allocation operation, but it does not
-  prove the full app's internal cause or pass the normal-use gate. P9-07 and
-  P9-08 remain after the memory work in Batch 2. No GitHub validation is
-  required or used.
+  prove the full app's internal cause or pass the normal-use gate. P9-06V is
+  now applying the verified static files and rerunning the full gate; P9-07
+  and P9-08 follow in Batch 2. No GitHub validation is required or used.
 
 The full handoff and current sequence are in the Phase 9 progress log and
 current slice-batch tracker.

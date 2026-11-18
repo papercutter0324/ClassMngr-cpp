@@ -14,9 +14,12 @@
   increase synchronous with Inter TTC registration under Qt 6.12 DirectWrite.
   P9-06T found low registration memory using six original v4.0 static TTFs or
   the TTC under GDI, but v4.0 differs from the bundled TTC's 4.001 version tag
-  and GDI changes rendering across Qt. P9-06U will test the exact-version v4.1
-  static faces before a product change. No Phase 9 memory budget pass is
-  claimed. See the
+  and GDI changes rendering across Qt. P9-06U verified six exact-version v4.1
+  static faces against the TTC and independently measured about 6.3 MB WS /
+  6.2 MB private cumulative registration under DirectWrite, compared with
+  about 489.9 MB / 493.8 MB for the TTC. P9-06V will migrate production to
+  those faces and run the unchanged packaged gate. No Phase 9 memory budget
+  pass is claimed yet. See the
   [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
   [Phase 8a closeout](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
   [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), [Phase 9 progress

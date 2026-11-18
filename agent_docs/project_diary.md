@@ -1,5 +1,16 @@
 # Project Diary
 
+### Phase 9 exact-version Inter face verification — 2026-11-18
+
+The six official Inter v4.1 static faces match the bundled TTC's 4.001
+version and were independently checked for the required family/styles,
+Unicode coverage, glyph outlines, and horizontal metrics. In fresh optimized
+Windows x64 processes using Qt 6.12 DirectWrite, their cumulative registration
+delta was about 6.3 MB WS / 6.2 MB private, compared with about 489.9 MB WS /
+493.8 MB private for the same faces registered from the TTC. Keep this as
+diagnostic evidence until the production package and unchanged 301-sample
+P9-06 gate verify the result in the full application.
+
 ### Phase 9 Release memory measurement lessons — 2026-11-18
 
 Do not treat a CMake Release configuration name as proof of optimized MSVC

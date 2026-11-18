@@ -45,9 +45,14 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   under Qt DirectWrite. P9-06T measured low registration deltas for six static
   v4.0 TTFs and for the TTC under GDI, but the static set's version tag is
   4.000 instead of the packaged 4.001 and GDI changes text rendering broadly.
-  P9-06U will probe exact-version v4.1 static faces under DirectWrite before a
-  production change. See the Phase 9 progress log and current slice-batch
-  tracker. The strict memory limit and cadence remain unchanged.
+  P9-06U independently verified that six Inter v4.1 static faces match the
+  TTC's 4.001 version, required styles, Unicode coverage, glyph outlines, and
+  horizontal metrics; their cumulative DirectWrite registration delta was
+  about 6.3 MB WS / 6.2 MB private versus about 489.9 MB / 493.8 MB for the
+  TTC. P9-06V is migrating production to the verified faces and will run the
+  unchanged packaged gate. No memory pass is claimed until that gate passes.
+  See the Phase 9 progress log and current slice-batch tracker. The strict
+  memory limit and cadence remain unchanged.
 
 ### Slice batches
 
