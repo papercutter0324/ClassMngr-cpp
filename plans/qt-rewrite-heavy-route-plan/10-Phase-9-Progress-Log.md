@@ -766,3 +766,85 @@ P9-07 is complete. P9-08, the 96-class Sub Prep lifecycle and matched-cleanup
 slice, is next. Batch 2 remains active until P9-08 closes; push once after the
 batch. The full Phase 9 Debug CTest and final packaged Release exit gates are
 still required.
+
+### 2026-11-19 — P9-08 Sub Prep lifecycle accepted; Batch 2 closed
+
+P9-08 completed under the Heavy route. Its final locally packaged Windows x64
+Release run is
+artifacts/phase9/packaged-next-sub-prep-lifecycle/20261118T183011729Z-2b8b67f6d9a1450393d97632a0ecadeb/.
+The current-source fingerprint was
+81c8021a8812eade50293ac67fe4832317efe7bd5217b08312d6d1a80d047055; the
+Release package hash was
+25f2248303ab5199ca40280124f3151941a401cfbbc6f6cfca29e85cb7784958; app
+3e8de4508b098aa6f1193ae8d8f7bf6d2b7034a3cb78fc18913d1053ab78357a; cache
+f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47.
+The package was x64 MSVC Release, VS 18 2026, Qt 6.12.0, /MD /O2 /Ob2
+/DNDEBUG. The route reused a Release package whose non-Phase-9 product inputs
+matched; all Phase-9 source differences were scripts and diagnostics.
+
+Three fresh processes each exercised 11 Sub Prep entry/selection/refresh/
+suspension cycles, including one package generation, then 301 one-second idle
+samples over 308.703–308.826 seconds. Each process recorded 22 authentic UIA
+navigation transitions, 11 class-96 selections, 11 refreshes, 11 suspensions,
+48 complete lifecycle snapshots, and zero loaded catalog PDF bodies. Each
+produced Sub Prep.pdf and Rosters - By Day.pdf. Parsed output contained 12
+Sub Prep pages for 30 weekday classes and five roster pages with six classes
+per weekday. The 96-class fixture contained 24 teachers and 7,200 roster
+cells; the output-ready copy retained all 66 Saturday classes. The diagnostic
+fixture and its transform hashes are bound in the per-run manifest.
+
+| Process | Startup-ready WS | Maximum page-release WS | Maximum idle WS | Idle private median |
+|---|---:|---:|---:|---:|
+| 01 | 191,496,192 | 227,352,576 | 217,669,632 | 149,852,160 |
+| 02 | 190,537,728 | 224,489,472 | 207,986,688 | 149,921,792 |
+| 03 | 191,660,032 | 226,119,680 | 223,875,072 | 150,413,312 |
+
+All strict startup, page-suspension/release, and idle working-set checkpoints
+were below the exclusive 262,144,000-byte limit. Package-generation working
+sets were 222,228,480–223,535,104 bytes; process peak at generation completion
+was 222,404,608–224,194,560 bytes, below the separate advisory
+536,870,912-byte ceiling. The independent Tester verified the raw metrics,
+UIA process/window bindings, fixture integrity, output PDFs, and gate status.
+
+After generation the page returned to its fixed shell: 103 widgets, two
+view-attached models, and seven editor controls. Suspended state cleared
+selected details, classes, teachers, active rows, and Sub Prep list rows.
+Preparation editors and the cached page shell remain present by design.
+Page suspension is not PageHost destruction; the gate measured cached-page
+suspension and reactivation. Focused Windows Debug CTest passed 4/4:
+ClassMngrSubPrepPackageServiceTests, ClassMngrNextBootstrapTests,
+ClassMngrNextPageHostTests, and ClassMngrNextSubPrepPageTests. The focused
+Phase-9 Python validator suite passed 53 tests; the repaired retention
+validator's focused tests passed 3/3 and Python compilation passed.
+PowerShell 7.7 parsing and embedded C# checks passed.
+
+Return-to-baseline allowance remains undefined, so no transient memory budget
+is claimed. The three-process run shows positive private-byte residuals across
+the repeated Sub Prep route; idle private bytes remain stable for five minutes,
+but this does not calibrate the per-cycle increase. A separate raw 30-cycle
+trace showed private bytes rising 31,141,888 bytes from cycle 1 to 30 and
+10,944,512 bytes over cycles 21–30. Independent raw review found its route,
+fixtures, package, and measurements internally consistent, but the artifact is
+invalid for current-source acceptance: its diagnostic validator changed after
+measurement. The corrected fail-closed validator preserves the original
+artifacts and leaves the formal memory gate unevaluated. No allocator cause,
+leak, or plateau is claimed. Windows Performance Recorder heap capture failed
+with Access Denied (0x80070005) under the available token; no ETW heap trace
+was produced.
+
+One later fresh diagnostic attempt emitted “Unable to commit the Sub Prep
+package” and produced no files. A single current-source packaged RouteSmokeOnly
+reproduction using a fresh output root succeeded and generated both PDFs
+(Sub Prep.pdf 62,440 bytes; Rosters - By Day.pdf 80,930 bytes). The initial
+failure did not reproduce; its direct cause is unknown. There is no independent
+output-resource release counter, so output object release is not claimed from
+that diagnostic. The accepted gate's completed output and page-content checks
+remain valid.
+
+Batch 2 is closed after the P9-08 commit; push the Batch 2 commits together. Batch 3
+is active with P9-09 Large Schedule Import lifecycle. The Next route is distinct
+from P9-07 normal navigation and P9-08 Sub Prep; the legacy Phase 0 routes
+cannot supply packaged Next evidence. Use the separate 96-candidate conflict
+workbook for parse/review/cancel and the 20-candidate applicable workbook for
+the apply path. No 96-candidate apply claim is made. The full Windows Debug
+CTest and final packaged Release exit gates remain open.

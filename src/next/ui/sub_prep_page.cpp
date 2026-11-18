@@ -29,6 +29,7 @@
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QItemSelectionModel>
+#include <QJsonArray>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
@@ -39,6 +40,7 @@
 #include <QScrollArea>
 #include <QSignalBlocker>
 #include <QTabBar>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -332,7 +334,10 @@ void SubPrepPage::buildUi()
     root->addWidget(m_status);
 
     connect(m_refreshButton, &QPushButton::clicked, this, [this] {
-        static_cast<void>(reload());
+        const bool completed = reload();
+        recordDiagnosticCheckpoint(
+            QStringLiteral("explicit-refresh"),
+            completed ? QStringLiteral("completed") : QStringLiteral("failed"));
     });
     connect(m_generateButton, &QPushButton::clicked, this, &SubPrepPage::generateSubPrep);
     connect(m_savePreferencesButton, &QPushButton::clicked, this, &SubPrepPage::savePreferences);
@@ -470,7 +475,13 @@ PageOperationResult<void> SubPrepPage::onActivating()
     }
     m_workspaceIdentity = identity;
     QString error;
-    static_cast<void>(reload(&error));
+    const bool completed = reload(&error);
+    recordDiagnosticCheckpoint(
+        QStringLiteral("summary-data-ready"),
+        completed ? QStringLiteral("completed") : QStringLiteral("failed"),
+        error.isEmpty()
+            ? QJsonObject{}
+            : QJsonObject{{QStringLiteral("error"), error}});
     return {};
 }
 
@@ -484,6 +495,30 @@ void SubPrepPage::onSuspending() noexcept
     m_informationState = {};
     m_workspaceIdentity.reset();
     clearPageData();
+    const int releaseSequence = ++m_suspensionDiagnosticSequence;
+    recordDiagnosticCheckpoint(
+        QStringLiteral("page-suspended"), QStringLiteral("completed"),
+        QJsonObject{{QStringLiteral("release_sequence"), releaseSequence}});
+    const auto recordReleasedSnapshot = [this, releaseSequence](
+        const QString& delay) {
+        if (m_active || releaseSequence != m_suspensionDiagnosticSequence)
+        {
+            return;
+        }
+        recordDiagnosticCheckpoint(
+            QStringLiteral("post-page-release-snapshot"),
+            QStringLiteral("completed"),
+            QJsonObject{
+                {QStringLiteral("release_sequence"), releaseSequence},
+                {QStringLiteral("delay"), delay}
+            });
+    };
+    QTimer::singleShot(1'000, this, [recordReleasedSnapshot] {
+        recordReleasedSnapshot(QStringLiteral("1s"));
+    });
+    QTimer::singleShot(5'000, this, [recordReleasedSnapshot] {
+        recordReleasedSnapshot(QStringLiteral("5s"));
+    });
 }
 
 bool SubPrepPage::reload(QString* error)
@@ -761,12 +796,17 @@ void SubPrepPage::handleSelectionChanged()
     {
         m_informationState = {};
         clearSelectedDetail();
+        recordDiagnosticCheckpoint(
+            QStringLiteral("class-selection"), QStringLiteral("cleared"));
         return;
     }
     auto selected = m_informationState.selectVisibleClass(*id, m_model->projection());
     if (!selected)
     {
         setStatus(operationError(selected.error()), true);
+        recordDiagnosticCheckpoint(
+            QStringLiteral("class-selection"), QStringLiteral("failed"),
+            QJsonObject{{QStringLiteral("error"), operationError(selected.error())}});
         return;
     }
     m_informationState = std::move(selected.value());
@@ -778,6 +818,11 @@ void SubPrepPage::handleSelectionChanged()
     {
         loadSelectedDetails(*id);
     }
+    recordDiagnosticCheckpoint(
+        QStringLiteral("class-selection"),
+        m_informationState.details().has_value()
+            ? QStringLiteral("details-ready")
+            : QStringLiteral("failed"));
 }
 
 void SubPrepPage::loadSelectedDetails(const Domain::ClassId& classId)
@@ -977,17 +1022,42 @@ const std::optional<Application::SubPrepClassDetails>& SubPrepPage::selectedDeta
 
 SubPrepPageVisualMetrics SubPrepPage::visualMetrics() const
 {
+    const auto& projection = m_model->projection();
     return {
         .summaryModelCount = static_cast<int>(findChildren<SubPrepClassInformationListModel*>().size()),
+        .summaryClassCount = static_cast<int>(projection.classes().size()),
+        .teacherSummaryCount = static_cast<int>(
+            projection.teachers().summaries().size()),
         .summaryRowCount = m_model->rowCount(),
         .selectedDetailPanelCount = static_cast<int>(findChildren<QGroupBox*>(QStringLiteral("subPrepSelectedDetailPanel")).size()),
+        .selectedDetailNoteEditorCount = m_detailPanel
+            ? static_cast<int>(m_detailPanel->findChildren<QPlainTextEdit*>().size())
+            : 0,
+        .preparationEditorCount = static_cast<int>(
+            (m_classMaterials != nullptr) + (m_gradingInstructions != nullptr)
+            + (m_specialInstructions != nullptr) + (m_subComments != nullptr)),
         .textEditorCount = static_cast<int>(findChildren<QPlainTextEdit*>().size()),
         .summaryReadCount = m_summaryReadCount,
         .selectedDetailReadCount = m_selectedDetailReadCount,
         .scheduleReadCount = m_scheduleReadCount,
-        .visibleSummaryCount = static_cast<int>(m_model->projection().classes().size()),
+        .visibleSummaryCount = static_cast<int>(projection.classes().size()),
+        .selectedClassId = m_informationState.selectedClassId()
+            ? fromUtf8(m_informationState.selectedClassId()->value())
+            : QString{},
         .selectedDetailsRetained = m_informationState.details().has_value()
     };
+}
+
+void SubPrepPage::recordDiagnosticCheckpoint(
+    const QString& checkpoint,
+    const QString& outcome,
+    QJsonObject details
+    ) const
+{
+    if (m_actions.diagnosticCheckpoint)
+    {
+        m_actions.diagnosticCheckpoint(checkpoint, outcome, details);
+    }
 }
 
 void SubPrepPage::changeEvent(QEvent* event)
@@ -1330,13 +1400,77 @@ void SubPrepPage::generateSubPrep()
         setStatus(pageText("The PDF generation operation is unavailable."), true);
         return;
     }
+    const int requestedClassCount = static_cast<int>(
+        packageRequest.selectedClassIds.size());
+    recordDiagnosticCheckpoint(
+        QStringLiteral("package-generation-started"),
+        QStringLiteral("started"),
+        QJsonObject{
+            {QStringLiteral("requestedClassCount"), requestedClassCount},
+            {QStringLiteral("targetRoot"), packageRequest.targetRoot},
+            {QStringLiteral("createFolder"), packageRequest.createFolder},
+            {QStringLiteral("openFolderAfterGeneration"),
+             packageRequest.openFolderAfterGeneration}
+        });
     const SubPrepPackageService::Result generated = SubPrepPackageService::generateForNext(
         *m_actions.pdfGeneration,
         std::move(packageRequest),
         m_actions.rosterOutputFonts);
+    const auto packageStatus = [status = generated.status] {
+        switch (status)
+        {
+        case SubPrepPackageService::Status::Completed:
+            return QStringLiteral("completed");
+        case SubPrepPackageService::Status::Canceled:
+            return QStringLiteral("canceled");
+        case SubPrepPackageService::Status::Failed:
+            return QStringLiteral("failed");
+        }
+        return QStringLiteral("unknown");
+    }();
+    QJsonArray generatedDocuments;
+    for (const QString& path : generated.documentPaths)
+    {
+        generatedDocuments.append(path);
+    }
+    const QJsonObject generatedDetails{
+        {QStringLiteral("outputDirectory"), generated.outputDirectory},
+        {QStringLiteral("documentPaths"), generatedDocuments},
+        {QStringLiteral("folderCreated"), generated.folderCreated},
+        {QStringLiteral("selectedClassCount"), requestedClassCount},
+        {QStringLiteral("documentCount"), generated.documentPaths.size()}
+    };
+    recordDiagnosticCheckpoint(
+        QStringLiteral("package-generation"), packageStatus,
+        generatedDetails);
     if (generated.status == SubPrepPackageService::Status::Completed)
     {
         setStatus(pageText("The package was created at:\n%1").arg(generated.outputDirectory));
+        const auto recordPostGeneration = [this, generatedDetails](
+            const QString& delay)
+        {
+            recordDiagnosticCheckpoint(
+                QStringLiteral("post-generation-snapshot"),
+                QStringLiteral("completed"),
+                QJsonObject{
+                    {QStringLiteral("delay"), delay},
+                    {QStringLiteral("outputDirectory"),
+                     generatedDetails.value(QStringLiteral(
+                         "outputDirectory"))},
+                    {QStringLiteral("documentCount"),
+                     generatedDetails.value(QStringLiteral(
+                         "documentCount"))}
+                });
+        };
+        QTimer::singleShot(0, this, [recordPostGeneration] {
+            recordPostGeneration(QStringLiteral("immediate"));
+        });
+        QTimer::singleShot(1'000, this, [recordPostGeneration] {
+            recordPostGeneration(QStringLiteral("1s"));
+        });
+        QTimer::singleShot(5'000, this, [recordPostGeneration] {
+            recordPostGeneration(QStringLiteral("5s"));
+        });
     }
     else if (generated.status == SubPrepPackageService::Status::Canceled)
     {

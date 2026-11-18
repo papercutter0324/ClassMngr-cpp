@@ -20,6 +20,7 @@
 
 #include <QString>
 #include <QUrl>
+#include <QJsonObject>
 
 #include <functional>
 #include <memory>
@@ -44,6 +45,10 @@ namespace ClassMngr::Next::Ui
 
 struct SubPrepPageActions final
 {
+    std::function<void(
+        const QString& checkpoint,
+        const QString& outcome,
+        const QJsonObject& details)> diagnosticCheckpoint;
     std::function<QString()> workspaceIdentity;
     std::function<Application::SchedulePageReadResult()> readSchedulePage;
     std::function<Application::SubPrepScheduleSummaryQueryResult(
@@ -86,13 +91,18 @@ struct SubPrepPageActions final
 struct SubPrepPageVisualMetrics final
 {
     int summaryModelCount = 0;
+    int summaryClassCount = 0;
+    int teacherSummaryCount = 0;
     int summaryRowCount = 0;
     int selectedDetailPanelCount = 0;
+    int selectedDetailNoteEditorCount = 0;
+    int preparationEditorCount = 0;
     int textEditorCount = 0;
     int summaryReadCount = 0;
     int selectedDetailReadCount = 0;
     int scheduleReadCount = 0;
     int visibleSummaryCount = 0;
+    QString selectedClassId;
     bool selectedDetailsRetained = false;
 };
 
@@ -143,9 +153,15 @@ private:
         );
     void savePreferences();
     void generateSubPrep();
+    void recordDiagnosticCheckpoint(
+        const QString& checkpoint,
+        const QString& outcome,
+        QJsonObject details = {}
+        ) const;
 
     SubPrepPageActions m_actions;
     SubPrepClassInformationListModel* m_model = nullptr;
+    int m_suspensionDiagnosticSequence = 0;
     QComboBox* m_mode = nullptr;
     QCheckBox* m_dayChecks[7]{};
     QPushButton* m_refreshButton = nullptr;

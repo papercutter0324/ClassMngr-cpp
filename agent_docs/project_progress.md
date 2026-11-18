@@ -1,31 +1,22 @@
 # Project Progress
 
-## Phase 9 current position — P9-08 Sub Prep lifecycle — 2026-11-18
+## Phase 9 current position — P9-09 Large Schedule Import — 2026-11-19
 
-Phase 9 remains In progress. Batch 1 is closed. P9-06V passed the local
-packaged Windows x64 Release memory gate after replacing the Inter TTC with
-six exact-version v4.1 static faces and including their OFL license. Both
-fixtures completed 301 samples, with all six gated WS points between
-199,380,992 and 207,187,968 bytes.
+Phase 9 remains In progress. Batches 1 and 2 are closed. P9-08 completed the
+local packaged Next Sub Prep lifecycle gate in three fresh 96-class Windows
+x64 Release processes. Each completed 11 action cycles and 301 idle samples.
+All strict working-set checkpoints passed below 262,144,000 bytes; the maximum
+page-release value was 227,352,576 bytes. Both generated PDFs were parsed and
+the focused Windows Debug CTests passed 4/4.
 
-P9-07 is complete. The final packaged Windows x64 Release route passed for
-empty and representative 96-class fixtures after ten Schedule → Calendar →
-My Classes → My Workspace cycles and five minutes of idle. All gated working
-sets were below 262,144,000 bytes; maximum route/idle WS was 224,305,152 bytes.
-Both fixtures reported zero loaded PDF bodies. The production Calendar view
-now uses a QWidget; font-bound English/Korean screenshot comparisons verify
-complete titles and event/grid behavior, and the focused CalendarPage CTest
-passed. A 30-cycle representative-only diagnostic showed small positive but
-decreasing residual memory growth; no owner, leak, or long-term plateau is
-claimed. The passing Release package/runtime inputs are unchanged by the later
-test-only image-oracle update. Two UIA capture attempts remain invalid/not
-evaluated and are recorded separately.
-
-P9-08 Sub Prep lifecycle/cleanup is next. Discovery of ten Batch 3
-Release-scenario candidates is complete in the current slice-batch tracker.
-The full Windows x64 Debug CTest and final packaged Release exit gates remain
-open. See the Phase 9 progress log and current slice-batch tracker for
-provenance, artifacts, and the active slice.
+P9-08 private bytes rose over repeated cycles, so no return allowance is
+claimed. A separate 30-cycle trace remains diagnostic only and is invalid for
+current-source acceptance because its validator changed after measurement;
+no cause, leak, or plateau is claimed. Transient memory budgets remain
+advisory. P9-09 Large Schedule Import is active with separate Next conflict/
+cancel and applicable/apply fixtures. The full Windows x64 Debug CTest and
+final packaged Release exit gates remain open; see the Phase 9 plan, progress
+log, and current slice-batch tracker.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

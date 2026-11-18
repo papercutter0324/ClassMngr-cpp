@@ -37,34 +37,26 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 4 through 8
 - Blocks: Release qualification and cutover
 - Owner: Codex
-- Last updated: 2026-11-18
-- Current note: Phase 9 remains In progress. Batch 1 is closed after local
-  Windows x64 Debug verification (620/620 CTests, no skips). P9-06 and P9-06R
-  are valid optimized packaged Windows Release budget failures. P9-06S isolated
-  a median ~490 MB WS / ~494 MB private increase during Inter TTC registration
-  under Qt DirectWrite. P9-06T measured low registration deltas for six static
-  v4.0 TTFs and for the TTC under GDI, but the static set's version tag is
-  4.000 instead of the packaged 4.001 and GDI changes text rendering broadly.
-  P9-06U independently verified that six Inter v4.1 static faces match the
-  TTC's 4.001 version, required styles, Unicode coverage, glyph outlines, and
-  horizontal metrics; their cumulative DirectWrite registration delta was
-  about 6.3 MB WS / 6.2 MB private versus about 489.9 MB / 493.8 MB for the
-  TTC. P9-06V migrated production to the six verified faces, included the OFL
-  license in the generated package, and passed the unchanged local packaged
-  gate. Both fixtures completed 301 samples; all six gated WS points were
-  199,380,992–207,187,968 bytes, below 262,144,000. P9-07 passed the local
-  packaged Windows x64 Release navigation/idle gate for both fixtures after
-  ten cycles. The maximum gated WS was 224,305,152 bytes. Its final visual
-  captures use the packaged fonts and verify the complete localized title;
-  the focused CalendarPage test passed. A 30-cycle diagnostic showed a small
-  positive but decreasing residual memory trend; its cause and long-term
-  plateau are unproven. The passing Release package/runtime inputs remain
-  unchanged after a test-only capture-oracle update; two later UIA attempts
-  are preserved as invalid/not evaluated. P9-07 is closed and P9-08 is active.
-  Discovery of ten next-batch Release-scenario candidates is complete. The
-  full Debug CTest and final packaged Release exit gates remain open. See the
-  Phase 9 progress log and current slice-batch tracker. The strict memory
-  limit and cadence remain unchanged.
+- Status: In progress
+- Default route: Heavy
+- Depends on: Phases 4 through 8
+- Blocks: Release qualification and cutover
+- Owner: Codex
+- Last updated: 2026-11-19
+- Current note: Phase 9 remains In progress. Batches 1 and 2 are closed. P9-08
+  completed its current-source packaged Next Sub Prep lifecycle route with
+  three fresh 96-class processes, repeated selection/refresh/suspension,
+  package output, and 301 idle samples per process. The strict normal-use
+  working-set checkpoints all passed below 262,144,000 bytes; package peak
+  stayed below the advisory 536,870,912-byte ceiling. The highest page-release
+  working set was 227,352,576 bytes. A positive private-byte trend was observed
+  in a separate 30-cycle diagnostic, but that artifact is invalid for current
+  source because its validator changed after measurement; no return allowance,
+  allocation cause, leak, or plateau is claimed. Transient budgets remain
+  advisory. Batch 3 P9-09 Large Schedule Import is active, using the distinct
+  Next packaged route and separate conflict/cancel and applicable/apply
+  fixtures. The full Debug CTest and final packaged Release exit gates remain
+  open. See the Phase 9 progress log and current slice-batch tracker.
 
 ### Slice batches
 

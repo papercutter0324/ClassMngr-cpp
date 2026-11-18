@@ -1,53 +1,50 @@
 # Latest Session Work
 
-## Phase 9 current handoff - P9-08 Sub Prep lifecycle - 2026-11-18
+## Phase 9 current handoff — P9-09 Large Schedule Import — 2026-11-19
 
-Deployment `phase9_continue_20261118` is active on the Heavy route. Use Light
-for Git commits and pushes. P9-07 is complete; P9-08 is next. Commit each
-slice, push once after Batch 2 closes with P9-08, then continue the ten
-discovered Batch 3 candidates. All Windows validation stays local.
+Deployment phase9_continue_20261118 remains active on the Heavy route. Use
+Light for Git commits and pushes. P9-07 is committed at
+ed2548ff3b022fa43d1982c33ca9409f29f8cc39; P9-08 is committed and
+its Batch 2 push is next. Commit each slice and push once after its batch.
+All Windows validation stays local.
 
-P9-07's accepted packaged Windows x64 Release run is
-`artifacts/phase9/packaged-idle-memory/20261118T092055381Z-e63554e873664d1eaface390ddc4ec9e/`.
-Both empty and representative fixtures completed ten exact four-page cycles,
-40 route events each, and 301 one-second samples through five-minute idle.
-All gated WS points passed the strict 262,144,000-byte limit; route/idle
-maxima were 220,250,112 B and 224,305,152 B. Catalogs reported zero loaded
-PDF bodies. The independent Tester verified all 602 samples, 80 transitions,
-cadence, package/compiler identity, and clean exits. Release source fingerprint
-`13ad0c35356f964b85590caefb2a9c915b05ac012e61a46a4752646e44b92096`, cache
-`f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47`, package
-`da00e1a403bf31018a6c9f6d19df852d1d65b659830891fa5271585bad4384a0`, and app
-`c8fc43d556140de08bbe31d9077b35cea85498d530723da2bfb3de35ef500c7e` are
-recorded in the summary. Current tree differs from that gate's source inventory
-only in test-only `tests/next/calendar_page_tests.cpp`; current app/cache/package
-identities and all production/runtime inputs match. Two later UIA click-timeout
-attempts are preserved as invalid/not evaluated; do not count them as gate runs.
+P9-08's accepted packaged Windows x64 Release run is
+artifacts/phase9/packaged-next-sub-prep-lifecycle/20261118T183011729Z-2b8b67f6d9a1450393d97632a0ecadeb/.
+Its source fingerprint is
+81c8021a8812eade50293ac67fe4832317efe7bd5217b08312d6d1a80d047055; package
+25f2248303ab5199ca40280124f3151941a401cfbbc6f6cfca29e85cb7784958; app
+3e8de4508b098aa6f1193ae8d8f7bf6d2b7034a3cb78fc18913d1053ab78357a; Release
+cache f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47.
+Three processes each completed eleven lifecycle cycles, 22 authentic navigation
+transitions, 11 class-96 selections, 11 refreshes, 11 suspensions, 48 lifecycle
+snapshots, and 301 idle samples. All strict normal-use working-set points
+passed below 262,144,000 bytes; max page-release WS was 227,352,576 bytes.
+The package generation peak stayed below the advisory 536,870,912-byte ceiling.
+Both Sub Prep and roster PDFs were generated and parsed. Four affected Windows
+Debug CTests passed. The Phase-9 Python suite passed 53 tests; the repaired
+retention-validator tests passed 3/3. See the Phase 9 progress log for process
+metrics, fixture details, output content, and limitations.
 
-The 30-cycle representative-only diagnostic is
-`artifacts/phase9/packaged-idle-memory/20261118T083123865Z-3fb2daa3c9e546d6bb24daf99f6ab49a/`.
-It validates 120 normal transitions with no idle/budget result. Return memory
-continued to rise, but private-byte slope declined from about 269 KB/cycle in
-cycles 11–20 to 139 KB/cycle in cycles 21–30. Calendar view/root/session/cache
-counts return to zero after suspension. Cause and long-term plateau remain
-unproven; do not call this a leak or a plateau.
+No private-byte return allowance is defined. A separate 30-cycle trace showed
+positive private-byte growth, but its supplemental validation status is
+invalid for current-source acceptance because its validator changed after
+measurement. Its original and corrected status files are preserved; the
+formal memory gate was not evaluated. The raw trace is not used as an accepted
+gate. WPR Heap capture failed with Access Denied under the available token.
+One diagnostic package-generation failure did not reproduce in a fresh
+RouteSmokeOnly run; no direct cause is known. No leak or plateau is claimed.
+Transient budget acceptance remains advisory, and output-resource release has
+no independent runtime counter.
 
-Final font-bound paired captures are at
-`artifacts/phase9/calendar-view-parity/20261118T105331504Z-280befaa-f966-4e3a-8ebc-d870d9906349/`.
-All 16 PNGs cover English/Korean, light/dark, standalone/embedded. The test
-registers packaged Inter/Pretendard through the production path, checks the
-full localized title against an independent full-width reference, and passes
-40 suffix-removal negative controls. Independent Tester reviewed all title
-pixels; manifest SHA-256 is
-`e72e7db988c6e68829e7c4db6100d1001322992dfb6960fe6344a962849da22c`. The
-focused Debug build and CalendarPage CTest passed 1/1.
-
-Next: start P9-08's 96-class Sub Prep lifecycle and matched-cleanup evidence.
-Keep the transient allowance advisory until measured; capture package peak,
-settled memory, bounded object counts, and the matched release pair. Full local
-Windows x64 Debug CTest and final packaged Release exit gates remain open.
-The current slice tracker includes P9-09–P9-18 candidates; recheck overlap with
-P9-07/P9-08 as Batch 3 activates.
+Batch 3 P9-09 Large Schedule Import is active and distinct from P9-07/P9-08.
+Next uses packaged Schedule Import UIA controls and two existing workbooks:
+the 96-candidate conflict fixture for parse/review/cancel, and the separate
+20-candidate applicable fixture for apply. The Phase 0 Schedule Import routes
+launch the legacy executable and cannot satisfy this evidence. Do not claim a
+96-candidate apply. Next: implement the packaged route, measure parsing/review/
+cancel and separate apply/cleanup in local Windows x64 Release, verify fixture
+and persisted row counts, then commit P9-09. Begin Batch 4 discovery when P9-17
+starts. The full Debug CTest and final packaged Release exit gates remain open.
 
 ## Superseded handoff - P9-07 navigation memory failure stage - 2026-11-18
 

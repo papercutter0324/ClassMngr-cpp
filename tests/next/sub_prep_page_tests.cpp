@@ -17,6 +17,7 @@
 #include <QtTest/QtTest>
 
 #include <memory>
+#include <algorithm>
 #include <optional>
 #include <string>
 #include <utility>
@@ -181,6 +182,7 @@ struct PageFixture final
     int preferencesReadCount = 0;
     int preferencesSaveCount = 0;
     bool preferencesReadFails = false;
+    QVector<QPair<QString, QString>> diagnosticEvents;
 
     bool initialize()
     {
@@ -202,6 +204,12 @@ struct PageFixture final
             .factory = [this](const Ui::PageContext& context)
                 -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
                 Ui::SubPrepPageActions actions;
+                actions.diagnosticCheckpoint = [this](
+                    const QString& checkpoint,
+                    const QString& outcome,
+                    const QJsonObject&) {
+                    diagnosticEvents.push_back({checkpoint, outcome});
+                };
                 actions.defaultOutputDirectoriesPort =
                     defaultOutputDirectoriesPort;
                 actions.workspaceIdentity = [] {
@@ -287,6 +295,7 @@ class SubPrepPageTests final : public QObject
 private Q_SLOTS:
     void preferencesReadFailureRetainsDraftAndBlocksWritesUntilReload();
     void defaultTargetRootUsesDocumentsThenHomeInputs();
+    void lifecycleActionCheckpointsReportSuccessfulSummaryAndRefresh();
     void outputDirectoryChooserUsesPortAndPreservesSelectionOnCancel();
 };
 
@@ -306,6 +315,30 @@ void SubPrepPageTests::defaultTargetRootUsesDocumentsThenHomeInputs()
             ),
         QStringLiteral("/injected/home/Documents/DYB/Sub_Prep")
         );
+}
+
+void SubPrepPageTests::lifecycleActionCheckpointsReportSuccessfulSummaryAndRefresh()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    QVERIFY(fixture.page());
+
+    const auto hasEvent = [&fixture](const QString& checkpoint,
+                                     const QString& outcome) {
+        return std::find(fixture.diagnosticEvents.cbegin(),
+                         fixture.diagnosticEvents.cend(),
+                         QPair<QString, QString>{checkpoint, outcome})
+            != fixture.diagnosticEvents.cend();
+    };
+    QVERIFY(hasEvent(QStringLiteral("summary-data-ready"),
+                     QStringLiteral("completed")));
+
+    QPushButton* const refresh = fixture.page()->findChild<QPushButton*>(
+        QStringLiteral("subPrepRefreshButton"));
+    QVERIFY(refresh);
+    QTest::mouseClick(refresh, Qt::LeftButton);
+    QVERIFY(hasEvent(QStringLiteral("explicit-refresh"),
+                     QStringLiteral("completed")));
 }
 
 void SubPrepPageTests::preferencesReadFailureRetainsDraftAndBlocksWritesUntilReload()

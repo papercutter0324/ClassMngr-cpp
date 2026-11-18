@@ -307,6 +307,7 @@ private slots:
     void invalidAndDuplicateDescriptorsAreRejected();
     void lifecycleStatesAreQueryableObservableAndRejectReentrantMutations();
     void lifecycleDiagnosticsSerializeSnapshotsAndUnavailableCounters();
+    void pageActionDiagnosticsPairMemoryWithSubPrepCounters();
     void lifecycleDiagnosticsBoundDetailedModelRecords();
     void lifecycleDiagnosticsObserveExplicitReleaseAndHostShutdown();
     void registrationIsLazyAndPagesSuspendReuseReleaseAndRecreate();
@@ -731,8 +732,8 @@ void PageHostTests::lifecycleDiagnosticsSerializeSnapshotsAndUnavailableCounters
     memory.isAvailable = true;
     memory.workingSetBytes = 4096;
     memory.handleCount = 0;
-    memory.capturedAt = QDateTime::fromString(
-        QStringLiteral("2026-11-17T09:30:45.123Z"), Qt::ISODateWithMs);
+    memory.capturedAt = QDateTime(
+        QDate(2026, 11, 17), QTime(9, 30, 45, 123), Qt::LocalTime);
     memory.platform = QStringLiteral("windows");
     memory.workingSetBytesAvailable = true;
     memory.handleCountAvailable = true;
@@ -755,7 +756,7 @@ void PageHostTests::lifecycleDiagnosticsSerializeSnapshotsAndUnavailableCounters
     QCOMPARE(unavailableObject.value(QStringLiteral("state")).toString(),
              QStringLiteral("created"));
     QCOMPARE(unavailableObject.value(QStringLiteral("captured_at")).toString(),
-             QStringLiteral("2026-11-17T09:30:45.123Z"));
+             memory.capturedAt.toUTC().toString(Qt::ISODateWithMs));
     QCOMPARE(unavailableObject.value(QStringLiteral("platform")).toString(),
              QStringLiteral("windows"));
     QVERIFY(!unavailableObject.value(QStringLiteral(
@@ -826,6 +827,73 @@ void PageHostTests::lifecycleDiagnosticsSerializeSnapshotsAndUnavailableCounters
             QStringLiteral("calendar_runtime_metrics")).toObject();
     QCOMPARE(suspendedMetrics.value(QStringLiteral("observation")).toString(),
              QStringLiteral("post-suspension"));
+}
+
+void PageHostTests::pageActionDiagnosticsPairMemoryWithSubPrepCounters()
+{
+    ProcessMemorySnapshot memory;
+    memory.isAvailable = true;
+    memory.platform = QStringLiteral("windows");
+    memory.capturedAt = QDateTime(
+        QDate(2026, 11, 18), QTime(1, 2, 3, 456), Qt::LocalTime);
+    memory.workingSetBytesAvailable = true;
+    memory.workingSetBytes = 123456;
+    memory.privateUsageBytesAvailable = true;
+    memory.privateUsageBytes = 98765;
+
+    Bootstrap::PageLifecycleWidgetSnapshot page;
+    page.pageInstanceAvailable = true;
+    page.subPrepRuntimeMetricsAvailable = true;
+    page.subPrepRuntimeMetrics = {
+        .summaryModelCount = 1,
+        .summaryClassCount = 96,
+        .teacherSummaryCount = 24,
+        .summaryRowCount = 12,
+        .selectedDetailPanelCount = 1,
+        .selectedDetailNoteEditorCount = 2,
+        .preparationEditorCount = 4,
+        .textEditorCount = 6,
+        .summaryReadCount = 1,
+        .selectedDetailReadCount = 1,
+        .scheduleReadCount = 1,
+        .visibleSummaryCount = 96,
+        .selectedClassId = QStringLiteral("96"),
+        .selectedDetailsRetained = true
+    };
+    const QJsonObject details{
+        {QStringLiteral("class_id"), QStringLiteral("96")},
+        {QStringLiteral("output_root"), QStringLiteral("C:/evidence/output")}
+    };
+    const QJsonObject record = QJsonDocument::fromJson(
+        Bootstrap::pageActionDiagnosticRecord(
+            QStringLiteral("sub_prep"), QStringLiteral("class-selection"),
+            QStringLiteral("details-ready"), details, memory, page)).object();
+
+    QCOMPARE(record.value(QStringLiteral("event")).toString(),
+             QStringLiteral("page-action-checkpoint"));
+    QCOMPARE(record.value(QStringLiteral("checkpoint")).toString(),
+             QStringLiteral("class-selection"));
+    QCOMPARE(record.value(QStringLiteral("outcome")).toString(),
+             QStringLiteral("details-ready"));
+    QCOMPARE(record.value(QStringLiteral("captured_at")).toString(),
+             memory.capturedAt.toUTC().toString(Qt::ISODateWithMs));
+    QCOMPARE(record.value(QStringLiteral("memory")).toObject().value(
+        QStringLiteral("working_set_bytes")).toInt(), 123456);
+    QCOMPARE(record.value(QStringLiteral("memory")).toObject().value(
+        QStringLiteral("private_usage_bytes")).toInt(), 98765);
+    QCOMPARE(record.value(QStringLiteral("details")).toObject().value(
+        QStringLiteral("class_id")).toString(), QStringLiteral("96"));
+    const QJsonObject metrics = record.value(QStringLiteral("page")).toObject()
+        .value(QStringLiteral("sub_prep_runtime_metrics")).toObject();
+    QCOMPARE(metrics.value(QStringLiteral("observation")).toString(),
+             QStringLiteral("class-selection"));
+    QCOMPARE(metrics.value(QStringLiteral("summary_class_count")).toInt(), 96);
+    QCOMPARE(metrics.value(QStringLiteral("teacher_summary_count")).toInt(), 24);
+    QCOMPARE(metrics.value(QStringLiteral("active_grade_row_count")).toInt(), 12);
+    QCOMPARE(metrics.value(QStringLiteral("selected_detail_note_editor_count")).toInt(), 2);
+    QCOMPARE(metrics.value(QStringLiteral("selected_class_id")).toString(),
+             QStringLiteral("96"));
+    QVERIFY(metrics.value(QStringLiteral("selected_details_retained")).toBool());
 }
 
 void PageHostTests::lifecycleDiagnosticsBoundDetailedModelRecords()

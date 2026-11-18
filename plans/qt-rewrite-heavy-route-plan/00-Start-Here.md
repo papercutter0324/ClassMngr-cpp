@@ -5,24 +5,21 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-11-18
-- Current milestone: Phase 9 remains In progress. Batch 1 is closed, and
-  P9-06V passed the local packaged Windows x64 Release memory gate using the
-  six verified Inter v4.1 static faces and their OFL license. Both empty and
-  representative workspaces completed 301 samples; all six gated points were
-  199,380,992–207,187,968 bytes, below 262,144,000. P9-07's final ten-cycle
-  navigation/idle gate also passed for both fixtures, with maximum gated WS
-  224,305,152 bytes. Its font-bound Calendar capture set verifies full
-  English/Korean titles, and the focused CalendarPage CTest passed. A
-  30-cycle representative-only diagnostic showed a smaller positive residual
-  trend late in the run; cause and long-term plateau remain unproven. P9-07 is
-  closed and P9-08 Sub Prep lifecycle/cleanup is active. Discovery for the
-  next batch is complete with ten queued Release-scenario candidates. The full
-  Debug CTest and final packaged Release exit gates remain open. See the
-  [Phase 8 closeout](09-Phase-8-Progress-Log.md#2026-11-17--phase-8-exit-gate-closeout-at-744e7ef1),
-  [Phase 8a closeout](09.5-Phase-8a-Progress-Log.md#2026-11-17--phase-8a-current-candidate-gate-closure),
-  [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md), [Phase 9 progress
-  log](10-Phase-9-Progress-Log.md), and [current batch tracker](Current-Slice-Batches.md).
+- Last updated: 2026-11-19
+- Current milestone: Phase 9 remains In progress. Batches 1 and 2 are closed.
+  P9-08 completed the packaged Next Sub Prep lifecycle route in three fresh
+  96-class Release processes. All strict normal-use working-set checkpoints
+  passed below 262,144,000 bytes, with a maximum page-release value of
+  227,352,576 bytes; output generation and cleanup metrics were captured.
+  Private bytes increased over repeated cycles in a separate diagnostic, but
+  that trace is invalid for current-source acceptance because its validator
+  changed after measurement. No return allowance, allocation cause, leak, or
+  plateau is claimed; transient budgets remain advisory. P9-09 Large Schedule
+  Import is now active, using separate Next conflict/cancel and applicable/
+  apply fixtures. The full Windows x64 Debug CTest and final packaged Release
+  exit gates remain open. See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
+  [Phase 9 progress log](10-Phase-9-Progress-Log.md), and
+  [current slice-batch tracker](Current-Slice-Batches.md).
 
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and

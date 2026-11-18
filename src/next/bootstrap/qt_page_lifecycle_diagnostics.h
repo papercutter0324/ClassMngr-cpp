@@ -3,6 +3,7 @@
 #include "core/process_memory_snapshot.h"
 #include "next/ui/calendar_page.h"
 #include "next/ui/page_host.h"
+#include "next/ui/sub_prep_page.h"
 
 #include <QByteArray>
 #include <QHash>
@@ -44,6 +45,8 @@ struct PageLifecycleWidgetSnapshot final
     int editorControlWidgetCount = 0;
     bool calendarRuntimeMetricsAvailable = false;
     Ui::CalendarPageRuntimeMetrics calendarRuntimeMetrics;
+    bool subPrepRuntimeMetricsAvailable = false;
+    Ui::SubPrepPageVisualMetrics subPrepRuntimeMetrics;
 };
 
 // Produces one compact, deterministic JSON record for each PageHost state
@@ -57,6 +60,22 @@ struct PageLifecycleWidgetSnapshot final
 [[nodiscard]] QByteArray pageLifecycleDiagnosticRecord(
     const QString& pageKey,
     Ui::PageLifecycleState state,
+    const ProcessMemorySnapshot& memory,
+    const PageLifecycleWidgetSnapshot& page
+    );
+[[nodiscard]] QJsonObject pageActionDiagnosticObject(
+    const QString& pageKey,
+    const QString& checkpoint,
+    const QString& outcome,
+    const QJsonObject& details,
+    const ProcessMemorySnapshot& memory,
+    const PageLifecycleWidgetSnapshot& page
+    );
+[[nodiscard]] QByteArray pageActionDiagnosticRecord(
+    const QString& pageKey,
+    const QString& checkpoint,
+    const QString& outcome,
+    const QJsonObject& details,
     const ProcessMemorySnapshot& memory,
     const PageLifecycleWidgetSnapshot& page
     );
@@ -82,13 +101,22 @@ public:
     using RecordWriter = std::function<void(const QByteArray&)>;
     using CalendarRuntimeMetricsReader = std::function<
         std::optional<Ui::CalendarPageRuntimeMetrics>(const QWidget*)>;
+    using SubPrepRuntimeMetricsReader = std::function<
+        std::optional<Ui::SubPrepPageVisualMetrics>(const QWidget*)>;
 
     explicit QtPageLifecycleDiagnosticsRecorder(
         Ui::PageHost& pageHost,
         std::unique_ptr<ProcessMemorySnapshotProvider> snapshotProvider = {},
         RecordWriter recordWriter = {},
-        CalendarRuntimeMetricsReader calendarRuntimeMetricsReader = {}
+        CalendarRuntimeMetricsReader calendarRuntimeMetricsReader = {},
+        SubPrepRuntimeMetricsReader subPrepRuntimeMetricsReader = {}
         );
+    void recordPageActionCheckpoint(
+        const QString& pageKey,
+        const QString& checkpoint,
+        const QString& outcome,
+        const QJsonObject& details = {}
+        ) noexcept;
     ~QtPageLifecycleDiagnosticsRecorder() override;
 
     QtPageLifecycleDiagnosticsRecorder(
@@ -107,6 +135,7 @@ private:
     std::unique_ptr<ProcessMemorySnapshotProvider> m_snapshotProvider;
     RecordWriter m_recordWriter;
     CalendarRuntimeMetricsReader m_calendarRuntimeMetricsReader;
+    SubPrepRuntimeMetricsReader m_subPrepRuntimeMetricsReader;
     QMetaObject::Connection m_connection;
     QHash<const QObject*, QMetaObject::Connection> m_destroyConnections;
 };

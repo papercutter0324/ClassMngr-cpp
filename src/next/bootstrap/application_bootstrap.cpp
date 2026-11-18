@@ -888,6 +888,16 @@ struct ApplicationBootstrap::CoreServices final
 Ui::SubPrepPageActions ApplicationBootstrap::subPrepPageActions()
 {
     Ui::SubPrepPageActions actions;
+    actions.diagnosticCheckpoint = [this](
+        const QString& checkpoint,
+        const QString& outcome,
+        const QJsonObject& details) {
+        if (m_pageLifecycleDiagnosticsRecorder)
+        {
+            m_pageLifecycleDiagnosticsRecorder->recordPageActionCheckpoint(
+                QStringLiteral("sub_prep"), checkpoint, outcome, details);
+        }
+    };
     actions.pdfGeneration = makeQtPdfGenerationPort();
     if (m_coreServices)
     {
@@ -1489,6 +1499,16 @@ Application::StartupResult ApplicationBootstrap::start()
                             return std::nullopt;
                         }
                         return calendarPage->runtimeMetrics();
+                    },
+                    [](const QWidget* page)
+                    -> std::optional<Ui::SubPrepPageVisualMetrics> {
+                        const auto* const subPrepPage =
+                            dynamic_cast<const Ui::SubPrepPage*>(page);
+                        if (!subPrepPage)
+                        {
+                            return std::nullopt;
+                        }
+                        return subPrepPage->visualMetrics();
                     });
         }
         catch (...)

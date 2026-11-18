@@ -135,7 +135,7 @@ QJsonValue pageCounterValue(
 
 QJsonObject pageMetrics(
     const PageLifecycleWidgetSnapshot& page,
-    const Ui::PageLifecycleState state
+    const QString& observation
     )
 {
     QJsonValue itemModelsValue(QJsonValue::Null);
@@ -158,13 +158,13 @@ QJsonObject pageMetrics(
     {
         const Ui::CalendarPageRuntimeMetrics& metrics =
             page.calendarRuntimeMetrics;
-        const QString observation = state == Ui::PageLifecycleState::Activated
+        const QString calendarObservation = observation == QStringLiteral("activated")
             ? QStringLiteral("content-ready")
-            : state == Ui::PageLifecycleState::Suspended
+            : observation == QStringLiteral("suspended")
                 ? QStringLiteral("post-suspension")
-                : QString::fromLatin1(lifecycleStateName(state));
+                : observation;
         calendarRuntimeMetricsValue = QJsonObject{
-            {QStringLiteral("observation"), observation},
+            {QStringLiteral("observation"), calendarObservation},
             {QStringLiteral("cache_event_count"), metrics.cacheEventCount},
             {QStringLiteral("cache_date_bucket_count"), metrics.cacheDateBucketCount},
             {QStringLiteral("cache_loaded_range_count"), metrics.cacheLoadedRangeCount},
@@ -179,6 +179,30 @@ QJsonObject pageMetrics(
             {QStringLiteral("live_heavy_session_count"), metrics.liveHeavySessionCount},
             {QStringLiteral("peak_live_heavy_session_count"), metrics.peakLiveHeavySessionCount},
             {QStringLiteral("cache_loading"), metrics.cacheLoading}
+        };
+    }
+
+    QJsonValue subPrepRuntimeMetricsValue(QJsonValue::Null);
+    if (page.subPrepRuntimeMetricsAvailable)
+    {
+        const Ui::SubPrepPageVisualMetrics& metrics =
+            page.subPrepRuntimeMetrics;
+        subPrepRuntimeMetricsValue = QJsonObject{
+            {QStringLiteral("observation"), observation},
+            {QStringLiteral("summary_model_count"), metrics.summaryModelCount},
+            {QStringLiteral("summary_class_count"), metrics.summaryClassCount},
+            {QStringLiteral("teacher_summary_count"), metrics.teacherSummaryCount},
+            {QStringLiteral("active_grade_row_count"), metrics.summaryRowCount},
+            {QStringLiteral("selected_detail_panel_count"), metrics.selectedDetailPanelCount},
+            {QStringLiteral("selected_detail_note_editor_count"), metrics.selectedDetailNoteEditorCount},
+            {QStringLiteral("preparation_editor_count"), metrics.preparationEditorCount},
+            {QStringLiteral("text_editor_count"), metrics.textEditorCount},
+            {QStringLiteral("summary_read_count"), metrics.summaryReadCount},
+            {QStringLiteral("selected_detail_read_count"), metrics.selectedDetailReadCount},
+            {QStringLiteral("schedule_read_count"), metrics.scheduleReadCount},
+            {QStringLiteral("visible_summary_count"), metrics.visibleSummaryCount},
+            {QStringLiteral("selected_class_id"), metrics.selectedClassId},
+            {QStringLiteral("selected_details_retained"), metrics.selectedDetailsRetained}
         };
     }
 
@@ -217,7 +241,8 @@ QJsonObject pageMetrics(
         {QStringLiteral("editor_control_widget_count"), pageCounterValue(
             page.pageInstanceAvailable,
             static_cast<quint64>(page.editorControlWidgetCount))},
-        {QStringLiteral("calendar_runtime_metrics"), calendarRuntimeMetricsValue}
+        {QStringLiteral("calendar_runtime_metrics"), calendarRuntimeMetricsValue},
+        {QStringLiteral("sub_prep_runtime_metrics"), subPrepRuntimeMetricsValue}
     };
 }
 
@@ -250,12 +275,13 @@ QJsonObject pageLifecycleDiagnosticObject(
         {QStringLiteral("event"), QStringLiteral("page-lifecycle")},
         {QStringLiteral("page_key"), pageKey},
         {QStringLiteral("state"), QString::fromLatin1(lifecycleStateName(state))},
-        {QStringLiteral("captured_at"), memory.capturedAt.toString(Qt::ISODateWithMs)},
+        {QStringLiteral("captured_at"), memory.capturedAt.toUTC().toString(Qt::ISODateWithMs)},
         {QStringLiteral("platform"), memory.platform},
         {QStringLiteral("sample_available"), memory.isAvailable},
         {QStringLiteral("memory"), memoryMetrics(memory)},
         {QStringLiteral("page_instance_available"), page.pageInstanceAvailable},
-        {QStringLiteral("page"), pageMetrics(page, state)}
+        {QStringLiteral("page"), pageMetrics(
+            page, QString::fromLatin1(lifecycleStateName(state)))}
     };
 }
 
@@ -270,6 +296,44 @@ QByteArray pageLifecycleDiagnosticRecord(
         pageKey, state, memory, page)).toJson(QJsonDocument::Compact);
 }
 
+QJsonObject pageActionDiagnosticObject(
+    const QString& pageKey,
+    const QString& checkpoint,
+    const QString& outcome,
+    const QJsonObject& details,
+    const ProcessMemorySnapshot& memory,
+    const PageLifecycleWidgetSnapshot& page
+    )
+{
+    return {
+        {QStringLiteral("event"), QStringLiteral("page-action-checkpoint")},
+        {QStringLiteral("page_key"), pageKey},
+        {QStringLiteral("checkpoint"), checkpoint},
+        {QStringLiteral("outcome"), outcome},
+        {QStringLiteral("details"), details},
+        {QStringLiteral("captured_at"), memory.capturedAt.toUTC().toString(Qt::ISODateWithMs)},
+        {QStringLiteral("platform"), memory.platform},
+        {QStringLiteral("sample_available"), memory.isAvailable},
+        {QStringLiteral("memory"), memoryMetrics(memory)},
+        {QStringLiteral("page_instance_available"), page.pageInstanceAvailable},
+        {QStringLiteral("page"), pageMetrics(page, checkpoint)}
+    };
+}
+
+QByteArray pageActionDiagnosticRecord(
+    const QString& pageKey,
+    const QString& checkpoint,
+    const QString& outcome,
+    const QJsonObject& details,
+    const ProcessMemorySnapshot& memory,
+    const PageLifecycleWidgetSnapshot& page
+    )
+{
+    return QJsonDocument(pageActionDiagnosticObject(
+        pageKey, checkpoint, outcome, details, memory, page))
+        .toJson(QJsonDocument::Compact);
+}
+
 QJsonObject pageInstanceDestroyedDiagnosticObject(
     const QString& pageKey,
     const ProcessMemorySnapshot& memory
@@ -279,13 +343,13 @@ QJsonObject pageInstanceDestroyedDiagnosticObject(
     return {
         {QStringLiteral("event"), QStringLiteral("page-instance-destroyed")},
         {QStringLiteral("page_key"), pageKey},
-        {QStringLiteral("captured_at"), memory.capturedAt.toString(Qt::ISODateWithMs)},
+        {QStringLiteral("captured_at"), memory.capturedAt.toUTC().toString(Qt::ISODateWithMs)},
         {QStringLiteral("platform"), memory.platform},
         {QStringLiteral("sample_available"), memory.isAvailable},
         {QStringLiteral("memory"), memoryMetrics(memory)},
         {QStringLiteral("page_instance_available"), false},
         {QStringLiteral("page"), pageMetrics(
-            pageUnavailable, Ui::PageLifecycleState::Released)}
+            pageUnavailable, QStringLiteral("released"))}
     };
 }
 
@@ -441,7 +505,8 @@ QtPageLifecycleDiagnosticsRecorder::QtPageLifecycleDiagnosticsRecorder(
     Ui::PageHost& pageHost,
     std::unique_ptr<ProcessMemorySnapshotProvider> snapshotProvider,
     RecordWriter recordWriter,
-    CalendarRuntimeMetricsReader calendarRuntimeMetricsReader
+    CalendarRuntimeMetricsReader calendarRuntimeMetricsReader,
+    SubPrepRuntimeMetricsReader subPrepRuntimeMetricsReader
     )
     : QObject(nullptr)
     , m_pageHost(pageHost)
@@ -453,6 +518,8 @@ QtPageLifecycleDiagnosticsRecorder::QtPageLifecycleDiagnosticsRecorder(
           : RecordWriter(writeDefaultRecord))
     , m_calendarRuntimeMetricsReader(
           std::move(calendarRuntimeMetricsReader))
+    , m_subPrepRuntimeMetricsReader(
+          std::move(subPrepRuntimeMetricsReader))
 {
     m_connection = QObject::connect(
         &m_pageHost,
@@ -462,6 +529,43 @@ QtPageLifecycleDiagnosticsRecorder::QtPageLifecycleDiagnosticsRecorder(
             record(pageKey, state);
         }
         );
+}
+
+void QtPageLifecycleDiagnosticsRecorder::recordPageActionCheckpoint(
+    const QString& pageKey,
+    const QString& checkpoint,
+    const QString& outcome,
+    const QJsonObject& details
+    ) noexcept
+{
+    try
+    {
+        const ProcessMemorySnapshot memory = m_snapshotProvider->snapshot();
+        const Ui::Page* const page = m_pageHost.pageInstance(pageKey);
+        PageLifecycleWidgetSnapshot widgets = pageLifecycleWidgetSnapshot(page);
+        if (page && m_calendarRuntimeMetricsReader)
+        {
+            if (const auto metrics = m_calendarRuntimeMetricsReader(page))
+            {
+                widgets.calendarRuntimeMetricsAvailable = true;
+                widgets.calendarRuntimeMetrics = *metrics;
+            }
+        }
+        if (page && m_subPrepRuntimeMetricsReader)
+        {
+            if (const auto metrics = m_subPrepRuntimeMetricsReader(page))
+            {
+                widgets.subPrepRuntimeMetricsAvailable = true;
+                widgets.subPrepRuntimeMetrics = *metrics;
+            }
+        }
+        m_recordWriter(pageActionDiagnosticRecord(
+            pageKey, checkpoint, outcome, details, memory, widgets));
+    }
+    catch (...)
+    {
+        qWarning("ClassMngrNext page action diagnostics failed.");
+    }
 }
 
 QtPageLifecycleDiagnosticsRecorder::~QtPageLifecycleDiagnosticsRecorder()
@@ -494,6 +598,14 @@ void QtPageLifecycleDiagnosticsRecorder::record(
             {
                 widgets.calendarRuntimeMetricsAvailable = true;
                 widgets.calendarRuntimeMetrics = *metrics;
+            }
+        }
+        if (page && m_subPrepRuntimeMetricsReader)
+        {
+            if (const auto metrics = m_subPrepRuntimeMetricsReader(page))
+            {
+                widgets.subPrepRuntimeMetricsAvailable = true;
+                widgets.subPrepRuntimeMetrics = *metrics;
             }
         }
         m_recordWriter(pageLifecycleDiagnosticRecord(

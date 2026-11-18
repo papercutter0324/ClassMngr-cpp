@@ -1,3 +1,20 @@
+### Phase 9 Sub Prep lifecycle and diagnostic integrity — 2026-11-19
+
+The packaged Next Sub Prep route passed its strict working-set gate across
+three fresh 96-class Release processes. Repeated-cycle private bytes still
+increase, so keep return allowances advisory and do not infer a leak or
+plateau. Page suspension reuses the cached PageHost instance; its delayed
+post-suspension sample is not page destruction. Treat output files, generated
+PDF object release, and the catalog's loaded-PDF-body state as separate claims.
+
+Keep diagnostic validators fail-closed. A fixture comparison must distinguish
+the master input, transformed pre-launch snapshot, and app-persisted post-exit
+copy; comparing the post-exit file with its pre-launch hash produced a false
+failure. A later “valid” sidecar that bypassed source inventory checks was
+rejected and replaced with a derived report that reports validator source drift
+and leaves the formal gate unevaluated. Raw-trace consistency can support a
+diagnostic discussion, but cannot repair a mismatched measurement-time
+validator fingerprint.
 # Project Diary
 
 ### Phase 9 Calendar navigation and visual capture findings — 2026-11-18
