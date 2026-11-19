@@ -1,40 +1,44 @@
 # Latest Session Work
 
-## Phase 9 current handoff — P9-10 Large Calendar Import — 2026-11-19
+## Phase 9 current handoff — P9-11 Class Transfer lifecycle — 2026-11-19
 
-Deployment phase9_continue_20261118 remains active on the Heavy route. Use
-Light for Git commits and pushes. P9-08 is committed at
-e139c6b597fface32d81c45c52bb85103bcdf2d9; P9-09 has passed independent review
-and its slice commit is part of this handoff. Commit each slice; push once after Batch 3
-closes with P9-18. All Windows validation stays local.
+Deployment `phase9_continue_20261118` remains active on Heavy. Use Light for
+Git commits and pushes. P9-08 is committed at
+`e139c6b597fface32d81c45c52bb85103bcdf2d9`; P9-09 is accepted and committed,
+and P9-10 is accepted and committed. Commit each slice; push once after Batch 3
+closes with P9-18. All Windows validation stays local. Preserve unrelated
+untracked `p9-09-integration-output.txt`.
 
-P9-09's final packaged Windows x64 Release run is
-artifacts/phase9/packaged-next-schedule-import/20261118T235451002Z-5c2547d52abb4e708fffc9e8af4b7942/.
-Source SHA-256 fc36448ac756d46d68a5e9fb87c47fe44ab94ad1a59610ae71b5b30888fbc5ce;
-package 8e1683b248d5dfb1690f2a06062ad67cdd10ffc9db127ebe6713addb9c365e16;
-app 26f5f9d7b7cd89932eda9f173beff6c3663b9767d34458bbf2721c244d8e4ac6;
-Release cache f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47.
-Route A canceled the 96-candidate conflict import with exact before/after
-workspace-table equality and no apply. Route B applied the separate 20-candidate
-fixture with 20 classes, five teachers, 20 class-info rows, and 30 matching
-class-teacher-time rows. The UIA snapshot and inspected screenshot show the
-actual refreshed Schedule page. Both strict startup and post-cleanup WS checks
-passed; max idle-tail WS was 244,281,344 bytes. No private return allowance is
-defined. See the Phase 9 progress log for complete provenance and the preserved
-invalid first attempt.
+P9-10 accepted evidence is in
+`artifacts/phase9/packaged-next-calendar-import-shutdown-dump/20261119T080427892Z-9ac95b83de184232b1c63824a66e3e65-corrected-evidence/`.
+Independent review passed both packaged Windows x64 Release routes. The
+success fixture (16,284 bytes, SHA-256 `25a5bee8…`) added exactly 261 2026
+weekday events (234 Workshop, 27 Holiday), skipped 104 entries, and retained
+the original 180 rows. Staging was released before apply and removed at
+terminal; one cache refresh and one Calendar suspend/re-entry completed. The
+69-byte malformed response showed the missing `xl/workbook.xml` error, parsed
+and applied zero rows, cleaned staging, performed one suspend/re-entry, and
+left all workspace rows unchanged. Both processes exited normally with code
+0. Strict WS maxima were 223,293,440 and 215,097,344 bytes, below 262,144,000;
+operation peaks were below the advisory 536,870,912 ceiling. No private-byte
+return allowance is claimed.
 
-P9-10 is distinct Calendar Import coverage, not another normal navigation
-gate. Use a local loopback server via CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL,
-the retained 16,284-byte large workbook and 69-byte malformed response, and
-two fresh packaged Next processes with identical workspace copies. Capture
-import counts, typed apply, parser failure, unchanged data on failure,
-staged-file removal, Calendar cache refresh, one post-result suspension/
-re-entry, and local process metrics. P9-07 already covers repeated Calendar
-navigation; Phase 0 legacy routes and offscreen tests are not acceptance.
-Next: implement current-source UIA diagnostics/runner, run focused Windows
-Debug CTests and Python tests, package Release and run both local routes,
-then ask the independent Tester to review. Keep transient allowance advisory.
-The full Debug CTest and final packaged Release exit gates remain open.
+The Release shutdown fix destroys the shell before resetting ThemePresenter,
+so stylesheet restoration does not repolish the live widget tree. Focused
+Windows Debug `ClassMngrNextBootstrapTests` and
+`ClassMngrNextThemePresenterTests` passed 2/2. The focused Python validator
+suite passed 10/10, and the packaged harness passed. The corrected evidence
+bundle keeps the original failed manifest/raw route logs intact and records
+the post-measurement validator revision separately from the measured
+2,398-row source inventory (`2fd4ca5c…`). See the Phase 9 progress log for
+package/hash provenance and corrected validation details.
+
+P9-11 Class Transfer export/import lifecycle is active next. Use the retained
+`lifecycle-class-transfer` route if it maps to the current Next workflow;
+verify cancel and successful apply/cleanup with separate fresh packaged
+processes and full workspace comparisons. No Phase 0 or offscreen route is
+packaged acceptance. Keep transient memory allowances advisory. The full
+Windows x64 Debug CTest and final packaged Release exit gates remain open.
 
 ## Superseded handoff - P9-07 navigation memory failure stage - 2026-11-18
 

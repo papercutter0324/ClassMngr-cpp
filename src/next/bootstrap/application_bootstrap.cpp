@@ -1,5 +1,6 @@
 #include "next/platform/workspace_store_roster_output.h"
 #include "next/bootstrap/application_bootstrap.h"
+#include "next/bootstrap/qt_shutdown_trace.h"
 #include "next/bootstrap/update_coordinator.h"
 #include "next/bootstrap/campus_edit_capability_arguments.h"
 #include "next/bootstrap/campus_edit_operation_actions.h"
@@ -1159,6 +1160,14 @@ int ApplicationBootstrap::run(int argc, char* argv[])
     QApplication application(argc, argv);
     QApplication::setApplicationName(QStringLiteral(CLASSMNGR_NEXT_PRODUCT_NAME));
     QApplication::setApplicationVersion(QStringLiteral(CLASSMNGR_NEXT_VERSION));
+    QObject::connect(
+        &application,
+        &QCoreApplication::aboutToQuit,
+        &application,
+        [] {
+            Diagnostics::writeShutdownTrace("application.about_to_quit");
+        }
+        );
 
     ApplicationBootstrap bootstrap(application);
     const Application::StartupResult startup = bootstrap.start();
@@ -1169,8 +1178,22 @@ int ApplicationBootstrap::run(int argc, char* argv[])
     }
 
     std::printf("%s launch version=%s\n", CLASSMNGR_NEXT_PRODUCT_NAME, CLASSMNGR_NEXT_VERSION);
+    Diagnostics::writeShutdownTrace("application.exec.enter");
     const int eventLoopExitCode = application.exec();
-    static_cast<void>(bootstrap.shutdown());
+    Diagnostics::writeShutdownTrace(
+        "application.exec.returned",
+        QJsonObject{
+            {QStringLiteral("exit_code"), eventLoopExitCode}
+        }
+        );
+    const Application::ShutdownResult shutdownResult = bootstrap.shutdown();
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.shutdown.after_exec",
+        QJsonObject{
+            {QStringLiteral("shutdown_requested"), shutdownResult.shutdownRequested},
+            {QStringLiteral("newly_requested"), shutdownResult.newlyRequested}
+        }
+        );
     return eventLoopExitCode;
 }
 
@@ -1208,14 +1231,15 @@ ApplicationBootstrap::~ApplicationBootstrap()
         m_startupUpdateDispatcher->cancel();
         m_startupUpdateDispatcher.reset();
     }
-    // Restore the app-wide stylesheet while the shell widgets it styled are
-    // still alive. Qt's stylesheet wrapper can otherwise touch stale widget
-    // state when the application-wide sheet is changed after shell teardown.
+    // Destroy the shell before restoring the app-wide stylesheet. Qt may
+    // repolish the application widget tree synchronously when the stylesheet
+    // changes, so keep the presenter and its resources alive until the shell
+    // has released its widgets.
+    m_shell.reset();
     if (m_coreServices)
     {
         m_coreServices->themePresenter.reset();
     }
-    m_shell.reset();
     m_pageLifecycleDiagnosticsRecorder.reset();
     static_cast<void>(releaseWorkspace());
     m_coreServices.reset();
@@ -5620,17 +5644,54 @@ void ApplicationBootstrap::closeWorkspaceFromMenu()
 
 bool ApplicationBootstrap::requestWindowClose()
 {
+    Diagnostics::writeShutdownTrace("application_bootstrap.request_window_close.enter");
     if (!m_shell)
     {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.request_window_close.no_shell"
+            );
         return false;
     }
     if (!resolveActivePageChangesBeforeLeaving("closing ClassMngr"))
     {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.request_window_close.active_page_change_rejected"
+            );
         return false;
     }
 
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.request_window_close.coordinator_request_started"
+        );
     const Application::ShutdownResult result =
         m_shutdownCoordinator.requestShutdown();
+    QString failureName;
+    if (result.failure.has_value())
+    {
+        switch (*result.failure)
+        {
+        case Application::ShutdownFailureReason::AlreadyInProgress:
+            failureName = QStringLiteral("already_in_progress");
+            break;
+        case Application::ShutdownFailureReason::SettingsFlushFailed:
+            failureName = QStringLiteral("settings_flush_failed");
+            break;
+        case Application::ShutdownFailureReason::WorkspaceCloseFailed:
+            failureName = QStringLiteral("workspace_close_failed");
+            break;
+        case Application::ShutdownFailureReason::ActionFailed:
+            failureName = QStringLiteral("action_failed");
+            break;
+        }
+    }
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.request_window_close.coordinator_request_completed",
+        QJsonObject{
+            {QStringLiteral("shutdown_requested"), result.shutdownRequested},
+            {QStringLiteral("newly_requested"), result.newlyRequested},
+            {QStringLiteral("failure"), failureName}
+        }
+        );
     if (!result.shutdownRequested)
     {
         QString message = "ClassMngr could not close safely.";
@@ -5652,6 +5713,9 @@ bool ApplicationBootstrap::requestWindowClose()
                 .severity = Application::NotificationSeverity::Error
             }
             ));
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.request_window_close.rejected"
+            );
         return false;
     }
 
@@ -5659,6 +5723,13 @@ bool ApplicationBootstrap::requestWindowClose()
     {
         scheduleShutdownFinalization();
     }
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.request_window_close.accepted",
+        QJsonObject{
+            {QStringLiteral("newly_requested"), result.newlyRequested},
+            {QStringLiteral("finalization_scheduled"), m_shutdownFinalizationScheduled}
+        }
+        );
     return true;
 }
 
@@ -6885,11 +6956,26 @@ void ApplicationBootstrap::applyApplicationIcon()
 
 Application::ShutdownResult ApplicationBootstrap::shutdown()
 {
+    Diagnostics::writeShutdownTrace("application_bootstrap.shutdown.enter");
     const Application::ShutdownResult result =
         m_shutdownCoordinator.requestShutdown();
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.shutdown.coordinator_completed",
+        QJsonObject{
+            {QStringLiteral("shutdown_requested"), result.shutdownRequested},
+            {QStringLiteral("newly_requested"), result.newlyRequested},
+            {QStringLiteral("has_failure"), result.failure.has_value()}
+        }
+        );
     if (result.shutdownRequested && !m_shutdownFinalizationScheduled)
     {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.shutdown.finalization_inline_started"
+            );
         finalizeShutdown();
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.shutdown.finalization_inline_completed"
+            );
     }
     return result;
 }
@@ -6897,6 +6983,9 @@ Application::ShutdownResult ApplicationBootstrap::shutdown()
 std::optional<Application::ShutdownFailureReason>
 ApplicationBootstrap::runShutdownSequence() noexcept
 {
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.shutdown_sequence.started"
+        );
 #ifndef NDEBUG
     qInfo() << "ClassMngrNext shutdown: flushing settings.";
 #endif
@@ -6917,6 +7006,13 @@ ApplicationBootstrap::runShutdownSequence() noexcept
     {
         settingsFlushed = false;
     }
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.shutdown_sequence.settings_flush_completed",
+        QJsonObject{
+            {QStringLiteral("succeeded"), settingsFlushed},
+            {QStringLiteral("custom_flush_seam"), static_cast<bool>(m_shutdownSeams.flushSettings)}
+        }
+        );
     if (!settingsFlushed)
     {
 #ifndef NDEBUG
@@ -6927,16 +7023,31 @@ ApplicationBootstrap::runShutdownSequence() noexcept
 
     if (m_startupUpdateDispatcher)
     {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.shutdown_sequence.update_cancel_started"
+            );
 #ifndef NDEBUG
         qInfo() << "ClassMngrNext shutdown: cancelling the startup update check.";
 #endif
         m_startupUpdateDispatcher->cancel();
         m_startupUpdateDispatcher.reset();
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.shutdown_sequence.update_cancel_completed"
+            );
+    }
+    else
+    {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.shutdown_sequence.update_cancel_skipped"
+            );
     }
 
     if (m_applicationRuntime
         && m_applicationRuntime->workspaceState().snapshot().session().has_value())
     {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.shutdown_sequence.workspace_close_started"
+            );
 #ifndef NDEBUG
         qInfo() << "ClassMngrNext shutdown: closing the workspace session.";
 #endif
@@ -6944,6 +7055,12 @@ ApplicationBootstrap::runShutdownSequence() noexcept
         {
             const Domain::Result<void> closeResult =
                 m_applicationRuntime->workspaceCoordinator().closeWorkspace();
+            Diagnostics::writeShutdownTrace(
+                "application_bootstrap.shutdown_sequence.workspace_close_completed",
+                QJsonObject{
+                    {QStringLiteral("succeeded"), static_cast<bool>(closeResult)}
+                }
+                );
             if (!closeResult)
             {
 #ifndef NDEBUG
@@ -6957,16 +7074,28 @@ ApplicationBootstrap::runShutdownSequence() noexcept
         }
         catch (...)
         {
+            Diagnostics::writeShutdownTrace(
+                "application_bootstrap.shutdown_sequence.workspace_close_threw"
+                );
 #ifndef NDEBUG
             qWarning() << "ClassMngrNext shutdown stopped because the workspace close threw.";
 #endif
             return Application::ShutdownFailureReason::WorkspaceCloseFailed;
         }
     }
+    else
+    {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.shutdown_sequence.workspace_close_skipped"
+            );
+    }
 
 #ifndef NDEBUG
     qInfo() << "ClassMngrNext shutdown: owned work and workspace are settled.";
 #endif
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.shutdown_sequence.completed"
+        );
     return std::nullopt;
 }
 
@@ -6974,25 +7103,53 @@ void ApplicationBootstrap::scheduleShutdownFinalization()
 {
     if (m_shutdownFinalized || m_shutdownFinalizationScheduled)
     {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.finalization_schedule.skipped",
+            QJsonObject{
+                {QStringLiteral("already_finalized"), m_shutdownFinalized},
+                {QStringLiteral("already_scheduled"), m_shutdownFinalizationScheduled}
+            }
+            );
         return;
     }
     m_shutdownFinalizationScheduled = true;
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.scheduled"
+        );
     const std::weak_ptr<int> lifetime(m_callbackLifetime);
     QTimer::singleShot(0, &m_application, [this, lifetime]
     {
         if (lifetime.expired())
         {
+            Diagnostics::writeShutdownTrace(
+                "application_bootstrap.finalization.callback_lifetime_expired"
+                );
             return;
         }
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.finalization.callback_started"
+            );
         m_shutdownFinalizationScheduled = false;
         finalizeShutdown();
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.finalization.callback_completed"
+            );
     });
 }
 
 void ApplicationBootstrap::finalizeShutdown()
 {
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.started",
+        QJsonObject{
+            {QStringLiteral("already_finalized"), m_shutdownFinalized}
+        }
+        );
     if (m_shutdownFinalized)
     {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.finalization.skipped_already_finalized"
+            );
         return;
     }
     m_shutdownFinalized = true;
@@ -7004,29 +7161,83 @@ void ApplicationBootstrap::finalizeShutdown()
     // CloseEvent must return before its shell can be destroyed. The accepted
     // close path queues this finalizer for the next event-loop turn; direct
     // shutdown can release it synchronously.
-    // Restore the app-wide stylesheet before destroying the shell it styled.
+    // Release the widget tree before restoring the app-wide stylesheet.
+    // QApplication can repolish widgets synchronously during stylesheet
+    // restoration, and the presenter/resources must remain alive for shell
+    // teardown.
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.shell_release_started"
+        );
+    m_shell.reset();
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.shell_release_completed"
+        );
     if (m_coreServices)
     {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.finalization.theme_release_started"
+            );
         m_coreServices->themePresenter.reset();
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.finalization.theme_release_completed"
+            );
     }
-    m_shell.reset();
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.page_lifecycle_diagnostics_release_started"
+        );
     m_pageLifecycleDiagnosticsRecorder.reset();
-    static_cast<void>(releaseWorkspace());
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.page_lifecycle_diagnostics_release_completed"
+        );
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.workspace_release_started"
+        );
+    const bool workspaceReleased = releaseWorkspace();
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.workspace_release_completed",
+        QJsonObject{
+            {QStringLiteral("succeeded"), workspaceReleased}
+        }
+        );
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.core_services_release_started"
+        );
     m_coreServices.reset();
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.core_services_release_completed"
+        );
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.startup_diagnostics_release_started"
+        );
     m_startupDiagnosticsSink.reset();
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.startup_diagnostics_release_completed"
+        );
 
     if (m_quitOnLastWindowClosedChanged)
     {
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.finalization.restore_quit_on_last_window_started"
+            );
         m_application.setQuitOnLastWindowClosed(
             m_previousQuitOnLastWindowClosed
             );
         m_quitOnLastWindowClosedChanged = false;
+        Diagnostics::writeShutdownTrace(
+            "application_bootstrap.finalization.restore_quit_on_last_window_completed"
+            );
     }
 
 #ifndef NDEBUG
     qInfo() << "ClassMngrNext shutdown: requesting application quit.";
 #endif
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.application_quit_started"
+        );
     m_application.quit();
+    Diagnostics::writeShutdownTrace(
+        "application_bootstrap.finalization.application_quit_returned"
+        );
 }
 
 bool ApplicationBootstrap::shutdownRequested() const noexcept

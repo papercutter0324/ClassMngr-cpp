@@ -1,21 +1,18 @@
 # Project Progress
 
-## Phase 9 current position — P9-10 Large Calendar Import — 2026-11-19
+## Phase 9 current position — P9-11 Class Transfer lifecycle — 2026-11-19
 
-Phase 9 remains In progress. Batches 1 and 2 are closed. P9-09 passed
-independent review for both current-source packaged Next Schedule Import
-routes. The 96-candidate conflict route cancelled with identical full
-18-table workspace snapshots and no apply; the separate applicable route
-persisted 20 classes, five teachers, and all 30 expected class-teacher-time
-associations. The measured Schedule UIA snapshot and screenshot show the
-refreshed page. Startup and post-cleanup working sets passed the strict
-262,144,000-byte limit, with a maximum of 244,281,344 bytes. No private
-return allowance is claimed.
-
-P9-10 Large Calendar Import is active with success and parser-error cleanup
-routes served from a local loopback URL. The full Windows x64 Debug CTest and
-final packaged Release exit gates remain open; see the Phase 9 plan, progress
-log, and current slice-batch tracker.
+Phase 9 remains In progress. Batches 1 and 2 are closed; Batch 3 is active.
+P9-10 Large Calendar Import passed independent review in two local packaged
+Windows x64 Release processes. The success route persisted 261 fixture-matched
+events (234 Workshop, 27 Holiday) and retained the original 180 rows. The
+malformed-workbook route applied zero events and left the full workspace
+unchanged. Both routes verified staging cleanup, cache/lifecycle state, natural
+exit, and strict working-set maxima of 223,293,440 and 215,097,344 bytes.
+No private-byte return allowance is claimed. P9-11 Class Transfer export/import
+lifecycle is next. The full Windows x64 Debug CTest and final packaged Release
+exit gates remain open; see the Phase 9 plan, progress log, and current
+slice-batch tracker.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

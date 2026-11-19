@@ -95,6 +95,47 @@ using namespace ClassMngr::Next;
 namespace
 {
 
+QStringList* capturedCalendarImportCheckpointMessages = nullptr;
+QtMessageHandler previousCalendarImportMessageHandler = nullptr;
+
+void captureCalendarImportCheckpointMessages(
+    const QtMsgType type,
+    const QMessageLogContext& context,
+    const QString& message
+    )
+{
+    if (capturedCalendarImportCheckpointMessages
+        && message.startsWith(QStringLiteral(
+            "ClassMngrNext calendar import checkpoint=")))
+    {
+        capturedCalendarImportCheckpointMessages->append(message);
+    }
+    if (previousCalendarImportMessageHandler)
+    {
+        previousCalendarImportMessageHandler(type, context, message);
+    }
+}
+
+class CalendarImportCheckpointMessageCapture final
+{
+public:
+    CalendarImportCheckpointMessageCapture()
+    {
+        capturedCalendarImportCheckpointMessages = &messages;
+        previousCalendarImportMessageHandler = qInstallMessageHandler(
+            captureCalendarImportCheckpointMessages);
+    }
+
+    ~CalendarImportCheckpointMessageCapture()
+    {
+        qInstallMessageHandler(previousCalendarImportMessageHandler);
+        previousCalendarImportMessageHandler = nullptr;
+        capturedCalendarImportCheckpointMessages = nullptr;
+    }
+
+    QStringList messages;
+};
+
 class RecordingArchiveReadPort final : public ArchiveReadPort
 {
 public:
@@ -2794,7 +2835,8 @@ void CalendarPageTests::calendarImportUsesStreamingTypedPathApplyAndRefreshesOnl
         QStringLiteral("calendar-import-XXXXXX.xlsx"));
     fixture.calendarImportNetworkAccessManagerFactory =
         server.networkAccessManagerFactory();
-    QVERIFY2(fixture.initialize(true), qPrintable(fixture.initializationError));
+    QVERIFY2(fixture.initialize(true, false, false, true, true),
+             qPrintable(fixture.initializationError));
     QTRY_VERIFY_WITH_TIMEOUT(
         !fixture.page->runtimeMetrics().cacheLoading, 5000);
 
@@ -2834,6 +2876,7 @@ void CalendarPageTests::calendarImportUsesStreamingTypedPathApplyAndRefreshesOnl
     QVERIFY(importedSpy.isValid());
     QVERIFY(failedSpy.isValid());
 
+    CalendarImportCheckpointMessageCapture checkpointCapture;
     QTest::mouseClick(importButton, Qt::LeftButton);
     QVERIFY(service->isImporting());
     QCOMPARE(importButton->isEnabled(), false);
@@ -2849,6 +2892,51 @@ void CalendarPageTests::calendarImportUsesStreamingTypedPathApplyAndRefreshesOnl
     QCOMPARE(importButton->isEnabled(), true);
     QTRY_VERIFY_WITH_TIMEOUT(!fixture.page->runtimeMetrics().cacheLoading, 5000);
     QVERIFY(cacheChangedSpy.size() >= 1);
+
+    QJsonObject terminalImportCheckpoint;
+    QJsonObject settledImportCheckpoint;
+    const QString checkpointPrefix = QStringLiteral(
+        "ClassMngrNext calendar import checkpoint=");
+    for (const QString& message : checkpointCapture.messages)
+    {
+        const QJsonDocument document = QJsonDocument::fromJson(
+            message.mid(checkpointPrefix.size()).toUtf8());
+        if (!document.isObject())
+        {
+            continue;
+        }
+        const QJsonObject record = document.object();
+        const QString observation = record.value(
+            QStringLiteral("observation")).toString();
+        if (observation == QStringLiteral("terminal"))
+        {
+            terminalImportCheckpoint = record;
+        }
+        else if (observation == QStringLiteral("cache-settled"))
+        {
+            settledImportCheckpoint = record;
+        }
+    }
+    QVERIFY(!terminalImportCheckpoint.isEmpty());
+    QVERIFY(!settledImportCheckpoint.isEmpty());
+    const QJsonObject terminalRuntimeMetrics = terminalImportCheckpoint
+        .value(QStringLiteral("calendar_runtime_metrics")).toObject();
+    const QJsonObject terminalImportMetrics = terminalRuntimeMetrics
+        .value(QStringLiteral("calendar_import")).toObject();
+    QCOMPARE(terminalImportMetrics.value(
+        QStringLiteral("terminal_status")).toString(), QStringLiteral("completed"));
+    QCOMPARE(terminalImportMetrics.value(
+        QStringLiteral("imported_event_count")).toInt(), 3);
+    QCOMPARE(terminalRuntimeMetrics.value(
+        QStringLiteral("calendar_import_cache_refresh_count")).toInt(), 1);
+    const QJsonObject settledRuntimeMetrics = settledImportCheckpoint
+        .value(QStringLiteral("calendar_runtime_metrics")).toObject();
+    QCOMPARE(settledRuntimeMetrics.value(
+        QStringLiteral("cache_loading")).toBool(), false);
+    QCOMPARE(settledRuntimeMetrics.value(
+        QStringLiteral("upcoming_range_loaded")).toBool(), true);
+    QCOMPARE(settledRuntimeMetrics.value(
+        QStringLiteral("calendar_import_cache_refresh_count")).toInt(), 1);
 
     const auto firstMetrics = service->runtimeMetrics();
     QVERIFY(firstMetrics.usedDeviceParser);
@@ -2867,6 +2955,67 @@ void CalendarPageTests::calendarImportUsesStreamingTypedPathApplyAndRefreshesOnl
     QCOMPARE(firstMetrics.largestTransferChunkBytes, qint64(64 * 1024));
     QVERIFY(QDir(stagedFiles.path()).entryList(
         QDir::Files | QDir::NoDotAndDotDot).isEmpty());
+
+    const Ui::CalendarPageRuntimeMetrics pageMetrics =
+        fixture.page->runtimeMetrics();
+    QVERIFY(pageMetrics.calendarImportMetricsAvailable);
+    QCOMPARE(pageMetrics.calendarImportMetrics.terminalStatus,
+             QStringLiteral("completed"));
+    QCOMPARE(pageMetrics.calendarImportMetrics.importedEventCount, 3);
+    QCOMPARE(pageMetrics.calendarImportMetrics.skippedEventCount, 2);
+    QCOMPARE(pageMetrics.calendarImportCacheRefreshCount, 1);
+    QCOMPARE(pageMetrics.calendarImportMetrics.candidateRowsSha256.size(), 64);
+
+    preferences.close();
+    QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    QApplication::processEvents();
+    QJsonObject suspendedCalendarMetrics;
+    for (const QJsonObject& record : fixture.lifecycleRecords)
+    {
+        if (record.value(QStringLiteral("event")).toString()
+                == QStringLiteral("page-lifecycle")
+            && record.value(QStringLiteral("page_key")).toString()
+                == QStringLiteral("calendar")
+            && record.value(QStringLiteral("state")).toString()
+                == QStringLiteral("suspended"))
+        {
+            suspendedCalendarMetrics = record.value(QStringLiteral("page"))
+                .toObject().value(QStringLiteral("calendar_runtime_metrics"))
+                .toObject();
+        }
+    }
+    QVERIFY(!suspendedCalendarMetrics.isEmpty());
+    const QJsonObject suspendedImport = suspendedCalendarMetrics
+        .value(QStringLiteral("calendar_import")).toObject();
+    QCOMPARE(suspendedImport.value(QStringLiteral("downloaded_bytes")).toInt(),
+             static_cast<int>(workbook.size()));
+    QCOMPARE(suspendedImport.value(QStringLiteral("parsed_event_count")).toInt(), 4);
+    QCOMPARE(suspendedImport.value(QStringLiteral("typed_candidate_count_at_apply")).toInt(), 4);
+    QCOMPARE(suspendedImport.value(QStringLiteral("imported_event_count")).toInt(), 3);
+    QCOMPARE(suspendedImport.value(QStringLiteral("skipped_event_count")).toInt(), 2);
+    QVERIFY(suspendedImport.value(
+        QStringLiteral("staged_workbook_released_before_apply")).toBool());
+    QVERIFY(suspendedImport.value(
+        QStringLiteral("staged_workbook_removed_at_terminal")).toBool());
+    QVERIFY(!suspendedImport.value(
+        QStringLiteral("staged_workbook_removed_on_cancel")).toBool());
+    QCOMPARE(suspendedCalendarMetrics.value(
+        QStringLiteral("calendar_import_cache_refresh_count")).toInt(), 1);
+    QVERIFY(fixture.host->activatePage(QStringLiteral("calendar")));
+    QTRY_VERIFY_WITH_TIMEOUT(!fixture.page->runtimeMetrics().cacheLoading, 5000);
+    int settledCheckpointCount = 0;
+    for (const QString& message : checkpointCapture.messages)
+    {
+        const QJsonDocument document = QJsonDocument::fromJson(
+            message.mid(checkpointPrefix.size()).toUtf8());
+        if (document.isObject()
+            && document.object().value(QStringLiteral("observation")).toString()
+                == QStringLiteral("cache-settled"))
+        {
+            ++settledCheckpointCount;
+        }
+    }
+    QCOMPARE(settledCheckpointCount, 2);
 
     cacheChangedSpy.clear();
     QTest::mouseClick(importButton, Qt::LeftButton);

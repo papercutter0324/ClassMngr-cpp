@@ -1,3 +1,17 @@
+# Project Diary
+
+### Phase 9 Calendar Import and shutdown lifecycle — 2026-11-19
+
+For packaged streaming imports, a loopback server's sent-byte count does not
+prove the app received bytes or made partial `QTemporaryFile` contents visible
+to an external observer. Use service byte/terminal metrics plus exact persisted
+rows and terminal staging cleanup; keep partial-file visibility as a separate
+diagnostic. During application shutdown, restoring the application stylesheet
+can repolish live widgets. Release the shell and its widget tree before
+resetting ThemePresenter, while its resource dependencies remain alive. Keep
+the strict normal-exit check; a successful import and memory sample do not
+make a forced process termination acceptable.
+
 ### Phase 9 packaged Schedule Import evidence — 2026-11-19
 
 P9-09 required separate packaged Next routes for conflict cancellation and
@@ -25,7 +39,6 @@ rejected and replaced with a derived report that reports validator source drift
 and leaves the formal gate unevaluated. Raw-trace consistency can support a
 diagnostic discussion, but cannot repair a mismatched measurement-time
 validator fingerprint.
-# Project Diary
 
 ### Phase 9 Calendar navigation and visual capture findings — 2026-11-18
 

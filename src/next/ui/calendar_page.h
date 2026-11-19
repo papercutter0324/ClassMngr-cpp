@@ -15,6 +15,7 @@
 #include "next/application/calendar_event_type_color_preferences.h"
 #include "next/application/calendar_page_campus_directory_query_port.h"
 #include "next/application/current_campus_preferences.h"
+#include "next/ui/calendar_event_import_service.h"
 #include "next/ui/calendar_view.h"
 #include "next/ui/page.h"
 
@@ -44,8 +45,6 @@ class ArchiveReadPort;
 
 namespace ClassMngr::Next::Ui
 {
-
-class NextCalendarEventImportService;
 
 struct CalendarPageActions final
 {
@@ -108,6 +107,9 @@ struct CalendarPageRuntimeMetrics final
     int calendarViewConstructionCount = 0;
     int liveHeavySessionCount = 0;
     int peakLiveHeavySessionCount = 0;
+    int calendarImportCacheRefreshCount = 0;
+    CalendarEventImportRuntimeMetrics calendarImportMetrics;
+    bool calendarImportMetricsAvailable = false;
     bool cacheLoading = false;
 };
 
@@ -161,6 +163,8 @@ private:
     void updateCampusFilter();
     void updateEventTypeFilter();
     void refreshUpcoming();
+    void writeCalendarImportCheckpoint(const QString& observation) const;
+    void writeCalendarCacheSettledCheckpointIfReady();
     void renderCalendarColors();
     void renderEventTypeFilterStyles();
     void applyCalendarPalette();
@@ -201,7 +205,9 @@ private:
     QDate m_visibleMonth;
     int m_upcomingResultCount = 0;
     int m_calendarViewConstructionCount = 0;
+    int m_calendarImportCacheRefreshCount = 0;
     int m_upcomingScopeSelection = 0;
+    bool m_calendarImportCacheSettledCheckpointEmitted = false;
     std::array<bool, 6> m_eventTypeFilterEnabled{true, true, true, true, true, true};
     bool m_embedded = false;
     bool m_pageActive = false;

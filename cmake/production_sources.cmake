@@ -835,6 +835,7 @@ set(CLASSMNGR_MAIN_SOURCE "src/main.cpp")
 set(CLASSMNGR_NEXT_MAIN_SOURCE "src/next/main.cpp")
 set(CLASSMNGR_NEXT_BOOTSTRAP_SOURCES
     "src/next/bootstrap/application_bootstrap.cpp"
+    "src/next/bootstrap/qt_shutdown_trace.h"
     "src/next/platform/qt_font_family_availability_adapter.cpp"
     "src/next/platform/qt_speaking_evaluation_powerpoint_presentation_adapter.h"
     "src/next/platform/qt_default_output_directories_adapter.cpp"

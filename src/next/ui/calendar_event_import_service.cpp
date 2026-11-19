@@ -5,10 +5,14 @@
 #include "next/application/calendar_event_import_save_port.h"
 #include "next/application/calendar_event_import_use_case.h"
 #include "next/platform/calendar_event_time_status_adapter.h"
+#include "next/domain/calendar_event_timing.h"
 #include "next/platform/workspace_store_calendar_import_actions.h"
 
+#include <QCryptographicHash>
 #include <QFileInfo>
 #include <QCoreApplication>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -65,6 +69,41 @@ CalendarEventSaveInput saveInputFor(const CalendarEvent& event)
             .toStdString();
     }
     return input;
+}
+
+QString candidateRowsSha256(const QList<CalendarEvent>& events)
+{
+    QList<QByteArray> rows;
+    rows.reserve(events.size());
+    for (const CalendarEvent& event : events)
+    {
+        const QString persistedTimeStatus = event.allDay
+            ? QStringLiteral("Timed")
+            : normalizedCalendarEventTimeStatus(event.timeStatus);
+        const QJsonArray row{
+            event.title.simplified(),
+            normalizedCalendarEventType(event.eventType),
+            persistedTimeStatus,
+            QString{},
+            event.allDay ? QStringLiteral("1") : QStringLiteral("0"),
+            event.startDate.toString(Qt::ISODate),
+            event.startTime.toString(QStringLiteral("HH:mm")),
+            event.endDate.toString(Qt::ISODate),
+            event.endTime.toString(QStringLiteral("HH:mm"))
+        };
+        rows.append(QJsonDocument(row).toJson(QJsonDocument::Compact));
+    }
+    std::sort(rows.begin(), rows.end());
+
+    QByteArray canonicalRows;
+    for (const QByteArray& row : std::as_const(rows))
+    {
+        canonicalRows.append(row);
+        canonicalRows.append('\n');
+    }
+    return QString::fromLatin1(
+        QCryptographicHash::hash(
+            canonicalRows, QCryptographicHash::Sha256).toHex());
 }
 
 QString sourceUrlFromEnvironment()
@@ -155,6 +194,8 @@ void NextCalendarEventImportService::start(const QString& databasePath)
     }
 
     m_metrics = {};
+    m_metrics.phase = QStringLiteral("staging");
+    m_metrics.terminalStatus = QStringLiteral("in-progress");
     m_cancelRequested = false;
     m_stagingError.clear();
     m_stagedWorkbookPath.clear();
@@ -196,6 +237,7 @@ void NextCalendarEventImportService::start(const QString& databasePath)
     request.setAttribute(
         QNetworkRequest::RedirectPolicyAttribute,
         QNetworkRequest::NoLessSafeRedirectPolicy);
+    m_metrics.phase = QStringLiteral("downloading");
     setImporting(true);
     m_reply = m_network->get(request);
     connect(m_reply, &QNetworkReply::readyRead, this, [this]
@@ -331,6 +373,7 @@ void NextCalendarEventImportService::handleFinished(QNetworkReply* reply)
         return;
     }
 
+    m_metrics.phase = QStringLiteral("parsing");
     QString parseError;
     CalendarImport::CalendarWorkbookReadCounts readCounts;
     m_metrics.usedDeviceParser = true;
@@ -403,6 +446,8 @@ void NextCalendarEventImportService::handleFinished(QNetworkReply* reply)
         }
     }
 
+    m_metrics.candidateRowsSha256 = candidateRowsSha256(parsed.events);
+
     const int skippedCount = request.initiallySkippedCount.rawValue();
     {
         QList<CalendarEvent> discardedParserEvents;
@@ -414,6 +459,10 @@ void NextCalendarEventImportService::handleFinished(QNetworkReply* reply)
 
     if (request.candidates.empty())
     {
+        m_metrics.phase = QStringLiteral("completed");
+        m_metrics.terminalStatus = QStringLiteral("completed");
+        m_metrics.importedEventCount = 0;
+        m_metrics.skippedEventCount = skippedCount;
         setImporting(false);
         m_metrics.stagedWorkbookRemovedAtTerminal =
             m_metrics.stagedWorkbookReleasedBeforeApply;
@@ -421,6 +470,7 @@ void NextCalendarEventImportService::handleFinished(QNetworkReply* reply)
         return;
     }
 
+    m_metrics.phase = QStringLiteral("applying");
     const auto imported = Platform::applyCalendarEventImportAtPath(
         m_databasePath,
         request,
@@ -439,6 +489,11 @@ void NextCalendarEventImportService::handleFinished(QNetworkReply* reply)
         return;
     }
 
+    m_metrics.phase = QStringLiteral("completed");
+    m_metrics.terminalStatus = QStringLiteral("completed");
+    m_metrics.importedEventCount =
+        imported.value().importedCount.rawValue();
+    m_metrics.skippedEventCount = imported.value().skippedCount.rawValue();
     setImporting(false);
     emit importFinished(
         imported.value().importedCount.rawValue(),
@@ -467,10 +522,13 @@ void NextCalendarEventImportService::fail(const QString& message)
     {
         m_metrics.stagedWorkbookRemovedAtTerminal = true;
     }
-    setImporting(false);
-    emit importFailed(message.isEmpty()
+    m_metrics.phase = QStringLiteral("failed");
+    m_metrics.terminalStatus = QStringLiteral("failed");
+    m_metrics.failureMessage = message.isEmpty()
         ? importText("Calendar import could not be completed.")
-        : message);
+        : message;
+    setImporting(false);
+    emit importFailed(m_metrics.failureMessage);
 }
 
 void NextCalendarEventImportService::canceled()
@@ -481,6 +539,8 @@ void NextCalendarEventImportService::canceled()
         m_metrics.stagedWorkbookRemovedAtTerminal =
             !QFileInfo::exists(m_stagedWorkbookPath);
     }
+    m_metrics.phase = QStringLiteral("canceled");
+    m_metrics.terminalStatus = QStringLiteral("canceled");
     m_cancelRequested = false;
     setImporting(false);
     emit importCanceled();

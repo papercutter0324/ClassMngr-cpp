@@ -1,5 +1,6 @@
 #include "next/ui/application_shell.h"
 
+#include "next/bootstrap/qt_shutdown_trace.h"
 #include "next/ui/document_catalog_navigation.h"
 #include "next/ui/page_host.h"
 #include "next/ui/navigation_font_policy.h"
@@ -1698,21 +1699,61 @@ void ApplicationShell::refreshRecentWorkspaceMenu()
 
 void ApplicationShell::closeEvent(QCloseEvent* event)
 {
+    Bootstrap::Diagnostics::writeShutdownTrace(
+        "application_shell.close_event.enter",
+        QJsonObject{
+            {QStringLiteral("accepted_at_entry"), event->isAccepted()},
+            {QStringLiteral("has_close_handler"),
+             static_cast<bool>(m_closeHandler)},
+            {QStringLiteral("spontaneous"), event->spontaneous()}
+        }
+        );
     QMainWindow::closeEvent(event);
+    Bootstrap::Diagnostics::writeShutdownTrace(
+        "application_shell.close_event.base_returned",
+        QJsonObject{
+            {QStringLiteral("accepted"), event->isAccepted()}
+        }
+        );
     if (event->isAccepted() && m_closeHandler)
     {
-        if (!m_closeHandler())
+        Bootstrap::Diagnostics::writeShutdownTrace(
+            "application_shell.close_handler.started"
+            );
+        const bool closeAllowed = m_closeHandler();
+        Bootstrap::Diagnostics::writeShutdownTrace(
+            "application_shell.close_handler.returned",
+            QJsonObject{
+                {QStringLiteral("close_allowed"), closeAllowed}
+            }
+            );
+        if (!closeAllowed)
         {
             event->ignore();
         }
     }
+    Bootstrap::Diagnostics::writeShutdownTrace(
+        "application_shell.close_event.acceptance",
+        QJsonObject{
+            {QStringLiteral("accepted"), event->isAccepted()}
+        }
+        );
     if (event->isAccepted() && m_windowGeometryPort)
     {
+        Bootstrap::Diagnostics::writeShutdownTrace(
+            "application_shell.geometry_persist.started"
+            );
         const QByteArray geometry = saveGeometry();
         m_windowGeometryPort->write(std::string_view(
             geometry.constData(),
             static_cast<std::size_t>(geometry.size())
             ));
+        Bootstrap::Diagnostics::writeShutdownTrace(
+            "application_shell.geometry_persist.completed",
+            QJsonObject{
+                {QStringLiteral("geometry_bytes"), geometry.size()}
+            }
+            );
     }
 }
 

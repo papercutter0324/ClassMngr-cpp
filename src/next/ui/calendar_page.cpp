@@ -21,10 +21,13 @@
 #include <QFrame>
 #include <QIcon>
 #include <QHBoxLayout>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QListWidget>
 #include <QListWidgetItem>
 #include <QLocale>
+#include <QLoggingCategory>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QPixmap>
@@ -174,6 +177,10 @@ CalendarPage::CalendarPage(
         this,
         [this](const bool importing)
         {
+            if (importing)
+            {
+                m_calendarImportCacheSettledCheckpointEmitted = false;
+            }
             if (importing && m_status)
             {
                 m_status->setText(QCoreApplication::translate(
@@ -186,6 +193,7 @@ CalendarPage::CalendarPage(
         this,
         [this](const int importedCount, const int skippedCount)
         {
+            m_calendarImportCacheSettledCheckpointEmitted = false;
             if (m_status)
             {
                 m_status->setText(QCoreApplication::translate(
@@ -198,8 +206,11 @@ CalendarPage::CalendarPage(
             if (importedCount > 0 && m_cache)
             {
                 m_cache->invalidate();
+                ++m_calendarImportCacheRefreshCount;
                 updateRetentionAndQueries();
             }
+            writeCalendarImportCheckpoint(QStringLiteral("terminal"));
+            writeCalendarCacheSettledCheckpointIfReady();
         });
     connect(m_calendarImportService,
         &NextCalendarEventImportService::importFailed,
@@ -213,6 +224,9 @@ CalendarPage::CalendarPage(
                     .arg(message));
                 m_status->show();
             }
+            m_calendarImportCacheSettledCheckpointEmitted = false;
+            writeCalendarImportCheckpoint(QStringLiteral("terminal"));
+            writeCalendarCacheSettledCheckpointIfReady();
         });
     connect(m_calendarImportService,
         &NextCalendarEventImportService::importCanceled,
@@ -225,6 +239,9 @@ CalendarPage::CalendarPage(
                     "CalendarPreferencesDialog", "Calendar import was canceled."));
                 m_status->show();
             }
+            m_calendarImportCacheSettledCheckpointEmitted = false;
+            writeCalendarImportCheckpoint(QStringLiteral("terminal"));
+            writeCalendarCacheSettledCheckpointIfReady();
         });
 }
 
@@ -374,10 +391,28 @@ bool CalendarPage::ensureCalendarContent()
         m_embedded ? 20 : 0);
     cardLayout->setSpacing(12);
 
+    m_calendarImportCacheSettledCheckpointEmitted = false;
     m_cache = new CalendarEventCache(this);
     m_model = new CalendarEventModel(m_cache, this);
     connect(m_cache, &CalendarEventCache::cacheChanged, this,
         &CalendarPage::refreshUpcoming);
+    connect(m_cache, &CalendarEventCache::loadingChanged, this,
+        [this]
+        {
+            refreshUpcoming();
+            if (m_calendarImportService)
+            {
+                const QString terminalStatus = m_calendarImportService
+                    ->runtimeMetrics().terminalStatus;
+                if (terminalStatus == QStringLiteral("completed")
+                    || terminalStatus == QStringLiteral("failed")
+                    || terminalStatus == QStringLiteral("canceled"))
+                {
+                    writeCalendarImportCheckpoint(QStringLiteral("cache-state"));
+                }
+            }
+            writeCalendarCacheSettledCheckpointIfReady();
+        });
 
     if (!m_visibleMonth.isValid())
     {
@@ -1318,7 +1353,106 @@ CalendarPageRuntimeMetrics CalendarPage::runtimeMetrics() const
     metrics.calendarViewConstructionCount = m_calendarViewConstructionCount;
     metrics.liveHeavySessionCount = liveHeavyCalendarSessions;
     metrics.peakLiveHeavySessionCount = peakHeavyCalendarSessions;
+    metrics.calendarImportCacheRefreshCount =
+        m_calendarImportCacheRefreshCount;
+    if (m_calendarImportService)
+    {
+        metrics.calendarImportMetricsAvailable = true;
+        metrics.calendarImportMetrics =
+            m_calendarImportService->runtimeMetrics();
+    }
     return metrics;
+}
+
+void CalendarPage::writeCalendarImportCheckpoint(
+    const QString& observation
+    ) const
+{
+    const CalendarPageRuntimeMetrics metrics = runtimeMetrics();
+    const CalendarEventImportRuntimeMetrics& import =
+        metrics.calendarImportMetrics;
+    const CalendarEventCache::DateRange upcoming = upcomingRange();
+    const bool upcomingRangeLoaded = m_cache
+        && upcoming.startDate.isValid()
+        && upcoming.endDate.isValid()
+        && m_cache->isRangeLoaded(upcoming.startDate, upcoming.endDate);
+    const QJsonObject importMetrics{
+        {QStringLiteral("phase"), import.phase},
+        {QStringLiteral("terminal_status"), import.terminalStatus},
+        {QStringLiteral("failure_message"), import.failureMessage},
+        {QStringLiteral("downloaded_bytes"), import.downloadedBytes},
+        {QStringLiteral("largest_transfer_chunk_bytes"),
+            import.largestTransferChunkBytes},
+        {QStringLiteral("transfer_chunk_count"), import.transferChunkCount},
+        {QStringLiteral("streamed_worksheet_cell_count"),
+            import.streamedWorksheetCellCount},
+        {QStringLiteral("materialized_worksheet_cell_count"),
+            import.materializedWorksheetCellCount},
+        {QStringLiteral("parsed_event_count"), import.parsedEventCount},
+        {QStringLiteral("typed_candidate_count_at_apply"),
+            import.typedCandidateCountAtApply},
+        {QStringLiteral("legacy_event_count_at_apply"),
+            import.legacyEventCountAtApply},
+        {QStringLiteral("imported_event_count"), import.importedEventCount},
+        {QStringLiteral("skipped_event_count"), import.skippedEventCount},
+        {QStringLiteral("candidate_rows_sha256"), import.candidateRowsSha256},
+        {QStringLiteral("used_device_parser"), import.usedDeviceParser},
+        {QStringLiteral("staged_workbook_released_before_apply"),
+            import.stagedWorkbookReleasedBeforeApply},
+        {QStringLiteral("staged_workbook_removed_on_cancel"),
+            import.stagedWorkbookRemovedOnCancel},
+        {QStringLiteral("staged_workbook_removed_at_terminal"),
+            import.stagedWorkbookRemovedAtTerminal}
+    };
+    const QJsonObject calendarMetrics{
+        {QStringLiteral("cache_event_count"), metrics.cacheEventCount},
+        {QStringLiteral("cache_loading"), metrics.cacheLoading},
+        {QStringLiteral("upcoming_range_loaded"), upcomingRangeLoaded},
+        {QStringLiteral("upcoming_result_count"), metrics.upcomingResultCount},
+        {QStringLiteral("calendar_import_cache_refresh_count"),
+            metrics.calendarImportCacheRefreshCount},
+        {QStringLiteral("calendar_import"), importMetrics}
+    };
+    const QJsonObject record{
+        {QStringLiteral("event"), QStringLiteral("calendar-import-checkpoint")},
+        {QStringLiteral("page_key"), QStringLiteral("calendar")},
+        {QStringLiteral("observation"), observation},
+        {QStringLiteral("captured_at"), QDateTime::currentDateTimeUtc()
+            .toString(Qt::ISODateWithMs)},
+        {QStringLiteral("calendar_runtime_metrics"), calendarMetrics}
+    };
+    qInfo().noquote().nospace()
+        << "ClassMngrNext calendar import checkpoint="
+        << QJsonDocument(record).toJson(QJsonDocument::Compact);
+}
+
+void CalendarPage::writeCalendarCacheSettledCheckpointIfReady()
+{
+    if (m_calendarImportCacheSettledCheckpointEmitted || !m_cache
+        || !m_calendarImportService)
+    {
+        return;
+    }
+
+    const CalendarEventImportRuntimeMetrics import =
+        m_calendarImportService->runtimeMetrics();
+    if (import.terminalStatus != QStringLiteral("completed")
+        && import.terminalStatus != QStringLiteral("failed")
+        && import.terminalStatus != QStringLiteral("canceled"))
+    {
+        return;
+    }
+
+    const CalendarEventCache::DateRange upcoming = upcomingRange();
+    if (m_cache->isLoading() || !upcoming.startDate.isValid()
+        || !upcoming.endDate.isValid()
+        || !m_cache->isRangeLoaded(upcoming.startDate, upcoming.endDate))
+    {
+        return;
+    }
+
+    m_calendarImportCacheSettledCheckpointEmitted = true;
+    writeCalendarImportCheckpoint(QStringLiteral("cache-settled"));
 }
 
 CalendarEventModel* CalendarPage::eventModel() const noexcept

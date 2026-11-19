@@ -903,3 +903,43 @@ success, parser-error cleanup, staged-file removal, and one post-result
 suspension/re-entry rather than repeating the navigation loop. Use the local
 URL override and retained large/malformed responses. No Phase 0 or offscreen
 Next route is packaged acceptance.
+
+### 2026-11-19 — P9-10 Large Calendar Import accepted
+
+The final corrected evidence bundle is
+[packaged-next-calendar-import-shutdown-dump](../../artifacts/phase9/packaged-next-calendar-import-shutdown-dump/20261119T080427892Z-9ac95b83de184232b1c63824a66e3e65-corrected-evidence/).
+Its manifest, summary, and final-checks SHA-256 prefixes are `9d2bc95f`,
+`401f851d`, and `74d2c1d0`; validator revision `ced16a2f` and finalization
+helper `7e9a3302` are recorded. The measured source fingerprint `2fd4ca5c`
+covers 2,398 rows; resource inventory `5d5c7731`, package fingerprint
+`2c678cd`, and executable SHA-256 `3f73505c` identify the packaged inputs.
+The independent Tester passed. The corrected bundle changes declared metadata
+only; raw route logs and process measurements are unchanged, and the original
+evidence remains preserved. The original run manifest omitted the source
+inventory SHA and expected `about_to_quit` ordering; corrected validation
+passed without changing route or process measurements.
+
+Two separate fresh packaged local Windows x64 Release processes naturally
+exited 0. The 16,284-byte success fixture (SHA-256 prefix `25a5bee8`) imported
+261 dated events (234 Workshop and 27 Holiday in 2026), skipped 104, grew the
+Calendar from 180 to 441 events, and preserved exact existing rows. Staging
+was released before apply and removed at terminal state; the route performed
+one cache refresh, cache settle, and suspension/re-entry. The 69-byte error
+fixture (SHA-256 prefix `35cda6bf`) visibly reported missing
+`xl/workbook.xml`, parsed/applied/imported/skipped zero rows, preserved the
+180-event workspace, removed staging, performed no cache refresh, and had one
+suspension/re-entry.
+
+Strict working-set maxima were 223,293,440 and 215,097,344 bytes, below
+262,144,000; operation peaks were below the advisory 536,870,912-byte ceiling.
+No private-byte return allowance is claimed. Focused Debug Bootstrap and
+ThemePresenter CTests passed 2/2, focused Python validator tests passed 10/10,
+and the harness passed. A crash was traced to ThemePresenter stylesheet
+restoration while shell widgets were alive. The finalizer now destroys the
+shell before ThemePresenter; final traces confirm shell release precedes theme
+release. This verifies the teardown-order fix without identifying an invalid
+widget as the crash origin. The full Windows x64 Debug CTest and final packaged
+Release exit gates remain open.
+
+P9-10 is complete; P9-11 Class Transfer export/import lifecycle is active.
+Batch 3 remains active through P9-18; push after Batch 3 closes.

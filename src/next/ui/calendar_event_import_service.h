@@ -18,6 +18,9 @@ namespace ClassMngr::Next::Ui
 
 struct CalendarEventImportRuntimeMetrics final
 {
+    QString phase;
+    QString terminalStatus;
+    QString failureMessage;
     qint64 downloadedBytes = 0;
     qint64 largestTransferChunkBytes = 0;
     int transferChunkCount = 0;
@@ -26,6 +29,9 @@ struct CalendarEventImportRuntimeMetrics final
     int parsedEventCount = 0;
     int typedCandidateCountAtApply = 0;
     int legacyEventCountAtApply = 0;
+    int importedEventCount = 0;
+    int skippedEventCount = 0;
+    QString candidateRowsSha256;
     bool usedDeviceParser = false;
     bool stagedWorkbookReleasedBeforeApply = false;
     bool stagedWorkbookRemovedOnCancel = false;

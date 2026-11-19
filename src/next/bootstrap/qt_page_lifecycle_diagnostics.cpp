@@ -163,6 +163,42 @@ QJsonObject pageMetrics(
             : observation == QStringLiteral("suspended")
                 ? QStringLiteral("post-suspension")
                 : observation;
+        const Ui::CalendarEventImportRuntimeMetrics& importMetrics =
+            metrics.calendarImportMetrics;
+        const QJsonObject calendarImportMetrics{
+            {QStringLiteral("phase"), importMetrics.phase},
+            {QStringLiteral("terminal_status"), importMetrics.terminalStatus},
+            {QStringLiteral("failure_message"), importMetrics.failureMessage},
+            {QStringLiteral("downloaded_bytes"), importMetrics.downloadedBytes},
+            {QStringLiteral("largest_transfer_chunk_bytes"),
+                importMetrics.largestTransferChunkBytes},
+            {QStringLiteral("transfer_chunk_count"),
+                importMetrics.transferChunkCount},
+            {QStringLiteral("streamed_worksheet_cell_count"),
+                importMetrics.streamedWorksheetCellCount},
+            {QStringLiteral("materialized_worksheet_cell_count"),
+                importMetrics.materializedWorksheetCellCount},
+            {QStringLiteral("parsed_event_count"),
+                importMetrics.parsedEventCount},
+            {QStringLiteral("typed_candidate_count_at_apply"),
+                importMetrics.typedCandidateCountAtApply},
+            {QStringLiteral("legacy_event_count_at_apply"),
+                importMetrics.legacyEventCountAtApply},
+            {QStringLiteral("imported_event_count"),
+                importMetrics.importedEventCount},
+            {QStringLiteral("skipped_event_count"),
+                importMetrics.skippedEventCount},
+            {QStringLiteral("candidate_rows_sha256"),
+                importMetrics.candidateRowsSha256},
+            {QStringLiteral("used_device_parser"),
+                importMetrics.usedDeviceParser},
+            {QStringLiteral("staged_workbook_released_before_apply"),
+                importMetrics.stagedWorkbookReleasedBeforeApply},
+            {QStringLiteral("staged_workbook_removed_on_cancel"),
+                importMetrics.stagedWorkbookRemovedOnCancel},
+            {QStringLiteral("staged_workbook_removed_at_terminal"),
+                importMetrics.stagedWorkbookRemovedAtTerminal}
+        };
         calendarRuntimeMetricsValue = QJsonObject{
             {QStringLiteral("observation"), calendarObservation},
             {QStringLiteral("cache_event_count"), metrics.cacheEventCount},
@@ -178,6 +214,9 @@ QJsonObject pageMetrics(
             {QStringLiteral("calendar_view_construction_count"), metrics.calendarViewConstructionCount},
             {QStringLiteral("live_heavy_session_count"), metrics.liveHeavySessionCount},
             {QStringLiteral("peak_live_heavy_session_count"), metrics.peakLiveHeavySessionCount},
+            {QStringLiteral("calendar_import_cache_refresh_count"),
+                metrics.calendarImportCacheRefreshCount},
+            {QStringLiteral("calendar_import"), calendarImportMetrics},
             {QStringLiteral("cache_loading"), metrics.cacheLoading}
         };
     }

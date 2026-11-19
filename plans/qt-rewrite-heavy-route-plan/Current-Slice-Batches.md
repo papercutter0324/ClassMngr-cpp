@@ -4,29 +4,9 @@
 
 Batch goal: measure the remaining large or repeated Next workflows in current-source packaged Windows x64 Release processes. Use authentic UIA-bound actions, complete lifecycle snapshots, identified fixtures, and local validation. Keep transient budgets advisory until a return-to-baseline allowance is supported by current-source measurements. Commit each slice; push once after Batch 3 closes. GitHub validation is not acceptance.
 
-10. **P9-10 — Large Calendar Import and cleanup** (Active)
-    - Acceptance: run large Calendar import success and parser-error cleanup in
-      separate current-source packaged Next Release processes. Serve the
-      retained fixture data from a local loopback source via
-      CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL. Record startup/settled Calendar
-      baseline, downloaded/staged bytes, parse complete/error, typed apply or
-      unchanged database, imported/skipped rows, cache refresh, staged-file
-      removal, dialog/service state, process metrics, and bounded Calendar
-      view/model/cache counts.
-    - Success fixture: docs/qt-rewrite/visual-baseline/release/
-      large-calendar-import-boundary/generated-large-calendar-import.xlsx
-      (16,284 bytes; documented expectation 261 imported events and 104
-      skipped weekend entries). Error fixture:
-      docs/qt-rewrite/visual-baseline/release/
-      large-calendar-import-error-boundary/
-      malformed-calendar-import-response.bin (69 bytes; missing
-      xl/workbook.xml). Verify counts against the actual Next package route and
-      fixture bytes. Use separate copies of the same seeded workspace.
-    - One Calendar suspension/re-entry after each result checks cleanup; P9-07
-      already covers repeated normal Calendar navigation. Phase 0 lifecycle
-      runs and offscreen Next tests are supporting evidence only, not packaged
-      Windows acceptance. Capture actual current-process UIA and memory data.
-11. **P9-11 — Class Transfer export/import lifecycle** (Queued)
+10. **P9-10 — Large Calendar Import and cleanup** (Complete)
+    Accepted 2026-11-19; see the [Phase 9 progress log](10-Phase-9-Progress-Log.md).
+11. **P9-11 — Class Transfer export/import lifecycle** (Active)
     Cover export, import, cancel, and released state. Existing route:
     lifecycle-class-transfer.
 12. **P9-12 — QtPdf viewer lifecycle** (Queued)
@@ -53,7 +33,6 @@ Batch goal: measure the remaining large or repeated Next workflows in current-so
     Measure decoded map retention and release; no named Phase 0 memory route
     was found.
 
-P9-10 is distinct from P9-07 normal Calendar navigation and P9-08 Sub Prep.
 No additional candidates were found in the earlier Phase 9 and Phase F list
 review; confirm when Batch 4 discovery starts. Shared acceptance for each
 candidate is current-source packaged Windows x64 Release evidence, identified
