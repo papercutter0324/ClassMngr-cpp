@@ -943,3 +943,53 @@ Release exit gates remain open.
 
 P9-10 is complete; P9-11 Class Transfer export/import lifecycle is active.
 Batch 3 remains active through P9-18; push after Batch 3 closes.
+
+### 2026-11-20 — P9-11 Class Transfer lifecycle accepted
+
+The final evidence bundle is
+[packaged-next-class-transfer](../../artifacts/phase9/packaged-next-class-transfer/20261119T160942280Z-4b1cf3bb7da340e1920cb4bcbc7c4ccc/manifest.json);
+its manifest passed. Independent review confirmed three fresh UIA-bound
+packaged Windows x64 Release processes, each naturally exiting 0, for export,
+apply, and explicit review-cancel. Route 1 exported 48 classes and 24 teachers
+without changing the source workspace. The 1,149,692-byte JSON has SHA-256
+`85d4aa69a9345765214176a61c69e6be208b11667b4f8adca3085a153801cdd8`.
+
+Apply and Cancel consumed that same hash. Apply reviewed all 48 classes and 24
+teachers with Apply enabled, then imported once: 48 class rows, 24 teacher
+rows, 48 class-info relations, 16 regular and 24 intensive schedule rows,
+3,600 roster cells, and 20 evaluations with 6,600 nonempty values and 2,000
+fixed-schema evaluation rows. Unrelated rows were preserved; validation
+accounts for three Classes navigator defaults materialized during navigation.
+The only `TeacherValidator` normalization was `Teacher-A..X` to
+`Teacher-a..x`. Cancel from the same review-ready state changed status to
+`Package review cancelled`, counted one cancellation, disabled Apply, cleared
+the package and preview, and preserved all workspace table contents.
+
+Route maximum working sets were Export 234,950,656 B, Apply 241,602,560 B, and
+Cancel 233,230,336 B, all below the strict `<262,144,000 B` cap; highest
+process peak was 242,483,200 B. Private bytes remain diagnostic and no return
+allowance is defined. Preparation changed only five teacher profile columns
+for IDs 1–24 and three `class_info` detail columns for class IDs 1–48 in cloned
+workspaces; checks preserved IDs, relations, schedule/roster/evaluation rows,
+and unrelated columns. Production validation behavior did not change.
+Preparation Python tests passed 6/6, validator tests 21/21, PowerShell parsing
+and Python compilation passed, and focused Windows Debug Class Transfer CTests
+passed 18/18. The [saved final validator report](../../artifacts/phase9/packaged-next-class-transfer/20261119T160942280Z-4b1cf3bb7da340e1920cb4bcbc7c4ccc/logs/validator-output.txt)
+is in the evidence bundle.
+
+The preserved successful x64 Release executable SHA-256 is
+`e9e26536a61d510412e7b8976417fea649ad3655996cce7e75a08a94f786ff86`; staged
+resource inventory SHA-256 begins `5d5c7731`. The [derivation receipt](../../artifacts/phase9/packaged-next-class-transfer/20261119T160942280Z-4b1cf3bb7da340e1920cb4bcbc7c4ccc/build-derivation/derived-receipt.json)
+shows product sources match the current tree after excluding five allowed
+harness-only scripts. This establishes script-only product-source equivalence,
+not a successful build from the exact full current tree: the fresh build failed
+because access to the generated `Resources` directory was denied. Earlier UIA
+assumptions, invalid fixture profiles, a natural-shutdown timeout, and a
+validator mismatch remain in the preserved attempt evidence; this accepted run
+resolves the route checks. The independent review did not require a
+conflict-error route.
+
+P9-11 is complete. P9-12 QtPdf open/render/close/release/reopen lifecycle is
+active; Batch 3 continues through P9-18, with one push after Batch 3 closes.
+The full Windows x64 Debug CTest and final packaged Release exit gates remain
+open.

@@ -37,15 +37,18 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 4 through 8
 - Blocks: Release qualification and cutover
 - Owner: Codex
-- Last updated: 2026-11-19
+- Last updated: 2026-11-20
 - Current note: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 remains active through P9-18, then push once. P9-10 Large Calendar
-  Import passed independent review; P9-11 Class Transfer export/import
-  lifecycle is active. The corrected P9-10 evidence bundle passed validation,
-  and both packaged routes stayed below the strict working-set limit. No
-  private return allowance is defined. The full Windows x64 Debug CTest and
-  final packaged Release exit gates remain open. See the Phase 9 progress log
-  and current slice-batch tracker.
+  Batch 3 remains active through P9-18, then push once. P9-11 Class Transfer
+  passed independent review across three fresh UIA-bound packaged x64 Release
+  processes, all naturally exiting 0;
+  P9-12 QtPdf viewer lifecycle is active. The accepted P9-11 working-set
+  maxima stayed below the strict cap. Its product sources match the current
+  tree after excluding five allowed harness-only scripts; a successful
+  exact-tree Release build was not established. No private return allowance
+  is defined. The full Windows x64 Debug CTest and final packaged Release exit
+  gates remain open. See the Phase 9 progress log and current slice-batch
+  tracker.
 
 ### Slice batches
 

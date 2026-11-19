@@ -1,18 +1,20 @@
 # Project Progress
 
-## Phase 9 current position — P9-11 Class Transfer lifecycle — 2026-11-19
+## Phase 9 current position — P9-12 QtPdf viewer lifecycle — 2026-11-20
 
-Phase 9 remains In progress. Batches 1 and 2 are closed; Batch 3 is active.
-P9-10 Large Calendar Import passed independent review in two local packaged
-Windows x64 Release processes. The success route persisted 261 fixture-matched
-events (234 Workshop, 27 Holiday) and retained the original 180 rows. The
-malformed-workbook route applied zero events and left the full workspace
-unchanged. Both routes verified staging cleanup, cache/lifecycle state, natural
-exit, and strict working-set maxima of 223,293,440 and 215,097,344 bytes.
-No private-byte return allowance is claimed. P9-11 Class Transfer export/import
-lifecycle is next. The full Windows x64 Debug CTest and final packaged Release
-exit gates remain open; see the Phase 9 plan, progress log, and current
-slice-batch tracker.
+Phase 9 remains In progress. Batches 1 and 2 are closed; Batch 3 is active
+through P9-18. P9-11 Class Transfer passed independent review in three fresh,
+local packaged Windows x64 Release processes: Next export, apply of the exact
+exported JSON, and explicit review cancellation. All exited naturally, had one
+Calendar suspend/re-entry, and stayed below the strict 262,144,000-byte
+working-set cap. Maximum route working sets were 234,950,656, 241,602,560, and
+233,230,336 bytes. The evidence establishes script-only product-source
+equivalence for the preserved Release package, not a successful build from the
+exact current full tree. No private-byte return allowance is claimed.
+
+P9-12 QtPdf viewer lifecycle is active. The full Windows x64 Debug CTest and
+final packaged Release exit gates remain open; see the Phase 9 plan, progress
+log, and current slice-batch tracker.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

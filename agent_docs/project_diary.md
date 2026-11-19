@@ -1,5 +1,22 @@
 # Project Diary
 
+### Phase 9 Class Transfer validation and lifecycle evidence — 2026-11-20
+
+Large synthetic workspaces may contain profile values that are storage-valid
+but fail current package validation. Normalize only the prepared fixture clone,
+derive the values from current validators/catalogs, and assert that identities,
+relationships, schedules, rosters, evaluations, and unrelated fields remain
+unchanged. Compare imported values after documented validator normalization;
+the preferred romanization is case-normalized on apply.
+
+Review cancellation is a separate lifecycle route: begin with the package in
+review and Apply enabled, explicitly cancel, then verify full workspace
+equality and cleared package/review models. A shutdown timeout without a trace
+does not establish a product defect; add the existing shutdown trace and keep
+natural process exit as a hard gate. When only harness scripts change after a
+verified Release package, preserve the distinction between product-source
+equivalence and an exact-current-tree build.
+
 ### Phase 9 Calendar Import and shutdown lifecycle — 2026-11-19
 
 For packaged streaming imports, a loopback server's sent-byte count does not

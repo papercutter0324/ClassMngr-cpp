@@ -11,10 +11,15 @@
 #include <QAbstractTableModel>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QDir>
+#include <QDebug>
+#include <QFile>
 #include <QFileInfo>
 #include <QHeaderView>
 #include <QHBoxLayout>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QListView>
 #include <QPushButton>
@@ -526,6 +531,7 @@ ClassTransferWorkflowPage::ClassTransferWorkflowPage(
     , m_classReviewModel(new ReviewModel(ReviewModel::Kind::Classes, this))
     , m_teacherReviewModel(new ReviewModel(ReviewModel::Kind::Teachers, this))
 {
+    setObjectName(QStringLiteral("nextClassTransferPage"));
     buildUi();
     retranslateUi();
     m_splitterStatePersistence.restoreAfterConfiguration(
@@ -596,6 +602,37 @@ bool ClassTransferWorkflowPage::hasRetainedPackage() const noexcept
 QString ClassTransferWorkflowPage::reviewedWorkspacePath() const
 {
     return m_reviewWorkspacePath.value_or(QString{});
+}
+
+ClassTransferWorkflowPageRuntimeMetrics
+ClassTransferWorkflowPage::runtimeMetrics() const noexcept
+{
+    ClassTransferWorkflowPageRuntimeMetrics metrics;
+    metrics.pageInstanceToken = reinterpret_cast<quintptr>(this);
+    metrics.exportClassRowCount = m_classSelectionModel
+        ? m_classSelectionModel->rowCount() : 0;
+    metrics.exportSelectedClassCount = m_classSelectionModel
+        ? m_classSelectionModel->checkedCount() : 0;
+    metrics.classReviewRowCount = m_classReviewModel
+        ? m_classReviewModel->rowCount() : 0;
+    metrics.teacherReviewRowCount = m_teacherReviewModel
+        ? m_teacherReviewModel->rowCount() : 0;
+    metrics.packageClassCount = m_package
+        ? static_cast<int>(m_package->classes.size()) : 0;
+    metrics.packageTeacherCount = m_package
+        ? static_cast<int>(m_package->teachers.size()) : 0;
+    metrics.matchingClassCandidateCount = m_classReviewModel
+        ? m_classReviewModel->matchCountTotal() : 0;
+    metrics.matchingTeacherCandidateCount = m_teacherReviewModel
+        ? m_teacherReviewModel->matchCountTotal() : 0;
+    metrics.exportsCompleted = m_exportsCompleted;
+    metrics.packagesReviewed = m_packagesReviewed;
+    metrics.importsApplied = m_importsApplied;
+    metrics.reviewsCancelled = m_reviewsCancelled;
+    metrics.packageRetained = static_cast<bool>(m_package);
+    metrics.previewRetained = m_preview.has_value();
+    metrics.applyEnabled = m_applyButton && m_applyButton->isEnabled();
+    return metrics;
 }
 
 void ClassTransferWorkflowPage::buildUi()
@@ -751,6 +788,8 @@ PageOperationResult<void> ClassTransferWorkflowPage::onActivating()
     {
         clearForClosedWorkspace();
         setStatus(transferText("Open a workspace to use Class Transfer."), false);
+        recordDiagnosticCheckpoint(QStringLiteral("activated"),
+            QStringLiteral("no-workspace"));
         return {};
     }
     if (m_loadedWorkspacePath != path)
@@ -759,6 +798,8 @@ PageOperationResult<void> ClassTransferWorkflowPage::onActivating()
         m_loadedWorkspacePath = path;
         if (!refreshClasses())
         {
+            recordDiagnosticCheckpoint(QStringLiteral("activated"),
+                QStringLiteral("class-refresh-failed"));
             return {};
         }
     }
@@ -767,12 +808,14 @@ PageOperationResult<void> ClassTransferWorkflowPage::onActivating()
         clearReview();
         setStatus(transferText("The workspace changed. Load the package again to review it."), true);
     }
+    recordDiagnosticCheckpoint(QStringLiteral("activated"));
     return {};
 }
 
 void ClassTransferWorkflowPage::onSuspending() noexcept
 {
     m_splitterStatePersistence.save();
+    recordDiagnosticCheckpoint(QStringLiteral("suspended"));
 }
 
 bool ClassTransferWorkflowPage::refreshClasses()
@@ -896,6 +939,8 @@ bool ClassTransferWorkflowPage::exportSelectedTo(const QString& outputPath)
     setStatus(transferText("Exported %1 class(es) to %2.")
         .arg(QString::number(static_cast<qulonglong>(selected.size())),
             QDir::toNativeSeparators(QFileInfo(normalizedPath).absoluteFilePath())), false);
+    ++m_exportsCompleted;
+    recordDiagnosticCheckpoint(QStringLiteral("export-completed"));
     return true;
 }
 
@@ -906,6 +951,8 @@ bool ClassTransferWorkflowPage::loadImportFile(const QString& inputPath)
     if (!path)
     {
         setStatus(transferText("The active workspace is unavailable."), true);
+        recordDiagnosticCheckpoint(QStringLiteral("review-load"),
+            QStringLiteral("no-workspace"));
         return false;
     }
     if (m_loadedWorkspacePath != path)
@@ -921,12 +968,24 @@ bool ClassTransferWorkflowPage::loadImportFile(const QString& inputPath)
         {
             clearReview();
             setStatus(legacy.error(), true);
+            recordDiagnosticCheckpoint(QStringLiteral("review-load"),
+                QStringLiteral("package-load-failed"));
             return false;
         }
         m_package = std::make_shared<const Application::ClassTransferPortablePackage>(
             Data::Legacy::toPortableClassTransferPackage(std::move(*legacy)));
     }
     refreshPreview();
+    if (m_preview.has_value())
+    {
+        ++m_packagesReviewed;
+        recordDiagnosticCheckpoint(QStringLiteral("review-ready"));
+    }
+    else
+    {
+        recordDiagnosticCheckpoint(QStringLiteral("review-load"),
+            QStringLiteral("preview-failed"));
+    }
     return m_preview.has_value();
 }
 
@@ -1149,6 +1208,8 @@ bool ClassTransferWorkflowPage::applyImport()
     static_cast<void>(refreshClasses());
     setStatus(transferText("Import complete: %1 created, %2 replaced, %3 skipped.")
         .arg(created).arg(replaced).arg(skipped), false);
+    ++m_importsApplied;
+    recordDiagnosticCheckpoint(QStringLiteral("apply-completed"));
     if (firstAffected && m_actions.selectImportedClass)
     {
         m_actions.selectImportedClass(*firstAffected);
@@ -1160,6 +1221,85 @@ void ClassTransferWorkflowPage::cancelImportReview()
 {
     clearReview();
     setStatus(transferText("Package review cancelled."), false);
+    ++m_reviewsCancelled;
+    recordDiagnosticCheckpoint(QStringLiteral("review-cancelled"));
+}
+
+void ClassTransferWorkflowPage::recordDiagnosticCheckpoint(
+    const QString& checkpoint,
+    const QString& outcome
+    ) noexcept
+{
+    const QString path = qEnvironmentVariable(
+        "CLASSMNGR_CLASS_TRANSFER_DIAGNOSTICS_PATH").trimmed();
+    if (path.isEmpty())
+    {
+        return;
+    }
+
+    try
+    {
+        const ClassTransferWorkflowPageRuntimeMetrics metrics = runtimeMetrics();
+        const QJsonObject metricObject{
+            {QStringLiteral("page_instance_token"),
+                QString::number(metrics.pageInstanceToken, 16)},
+            {QStringLiteral("export_class_row_count"), metrics.exportClassRowCount},
+            {QStringLiteral("export_selected_class_count"),
+                metrics.exportSelectedClassCount},
+            {QStringLiteral("class_review_row_count"), metrics.classReviewRowCount},
+            {QStringLiteral("teacher_review_row_count"), metrics.teacherReviewRowCount},
+            {QStringLiteral("package_class_count"), metrics.packageClassCount},
+            {QStringLiteral("package_teacher_count"), metrics.packageTeacherCount},
+            {QStringLiteral("matching_class_candidate_count"),
+                metrics.matchingClassCandidateCount},
+            {QStringLiteral("matching_teacher_candidate_count"),
+                metrics.matchingTeacherCandidateCount},
+            {QStringLiteral("exports_completed"),
+                static_cast<qint64>(metrics.exportsCompleted)},
+            {QStringLiteral("packages_reviewed"),
+                static_cast<qint64>(metrics.packagesReviewed)},
+            {QStringLiteral("imports_applied"),
+                static_cast<qint64>(metrics.importsApplied)},
+            {QStringLiteral("reviews_cancelled"),
+                static_cast<qint64>(metrics.reviewsCancelled)},
+            {QStringLiteral("package_retained"), metrics.packageRetained},
+            {QStringLiteral("preview_retained"), metrics.previewRetained},
+            {QStringLiteral("apply_enabled"), metrics.applyEnabled}
+        };
+        const QJsonObject record{
+            {QStringLiteral("schema"), QStringLiteral(
+                "classmngr-next-class-transfer-checkpoint-v1")},
+            {QStringLiteral("event"), QStringLiteral("class-transfer-checkpoint")},
+            {QStringLiteral("page_key"), resourceContext().pageKey()},
+            {QStringLiteral("checkpoint"), checkpoint},
+            {QStringLiteral("outcome"), outcome},
+            {QStringLiteral("sequence"),
+                static_cast<qint64>(++m_diagnosticSequence)},
+            {QStringLiteral("process_id"), QCoreApplication::applicationPid()},
+            {QStringLiteral("captured_at_utc"),
+                QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
+            {QStringLiteral("metrics"), metricObject}
+        };
+
+        QFile file(path);
+        if (!file.open(QIODevice::WriteOnly | QIODevice::Append))
+        {
+            qWarning().noquote() << "ClassMngrNext class transfer diagnostic open failed"
+                                 << file.errorString();
+            return;
+        }
+        const QByteArray line = QJsonDocument(record).toJson(
+            QJsonDocument::Compact) + '\n';
+        if (file.write(line) != line.size() || !file.flush())
+        {
+            qWarning().noquote() << "ClassMngrNext class transfer diagnostic write failed"
+                                 << file.errorString();
+        }
+    }
+    catch (...)
+    {
+        qWarning() << "ClassMngrNext class transfer diagnostic checkpoint failed";
+    }
 }
 
 void ClassTransferWorkflowPage::clearReview()

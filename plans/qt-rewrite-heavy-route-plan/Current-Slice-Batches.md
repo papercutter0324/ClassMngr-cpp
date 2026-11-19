@@ -6,10 +6,16 @@ Batch goal: measure the remaining large or repeated Next workflows in current-so
 
 10. **P9-10 — Large Calendar Import and cleanup** (Complete)
     Accepted 2026-11-19; see the [Phase 9 progress log](10-Phase-9-Progress-Log.md).
-11. **P9-11 — Class Transfer export/import lifecycle** (Active)
-    Cover export, import, cancel, and released state. Existing route:
-    lifecycle-class-transfer.
-12. **P9-12 — QtPdf viewer lifecycle** (Queued)
+11. **P9-11 — Class Transfer export/import lifecycle** (Complete)
+    Accepted 2026-11-20 after independent review of three fresh UIA-bound
+    packaged Windows x64 Release processes for export, apply, and explicit
+    review-cancel; see the [Phase 9 progress log](10-Phase-9-Progress-Log.md).
+    The contract required exact package/workspace checks and release; no
+    conflict-error route was required. Product-source equivalence excludes
+    five allowed harness-only scripts; exact-tree build provenance is limited
+    as documented in the progress log. The legacy
+    `lifecycle-class-transfer` route remains scale/reference evidence only.
+12. **P9-12 — QtPdf viewer lifecycle** (Active)
     Open, render, close, release, and reopen a PDF; record document/page and
     retained-object state. Existing route: visual-pdf-viewer.
 13. **P9-13 — Speaking/report generation and preview close** (Queued)

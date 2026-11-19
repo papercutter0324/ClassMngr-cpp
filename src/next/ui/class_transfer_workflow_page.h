@@ -10,6 +10,7 @@
 
 #include <QString>
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -41,6 +42,26 @@ struct ClassTransferWorkflowPageActions final
     std::function<void(const Domain::ClassId&)> selectImportedClass;
 };
 
+struct ClassTransferWorkflowPageRuntimeMetrics final
+{
+    quintptr pageInstanceToken = 0;
+    int exportClassRowCount = 0;
+    int exportSelectedClassCount = 0;
+    int classReviewRowCount = 0;
+    int teacherReviewRowCount = 0;
+    int packageClassCount = 0;
+    int packageTeacherCount = 0;
+    int matchingClassCandidateCount = 0;
+    int matchingTeacherCandidateCount = 0;
+    std::uint64_t exportsCompleted = 0;
+    std::uint64_t packagesReviewed = 0;
+    std::uint64_t importsApplied = 0;
+    std::uint64_t reviewsCancelled = 0;
+    bool packageRetained = false;
+    bool previewRetained = false;
+    bool applyEnabled = false;
+};
+
 class ClassTransferWorkflowPage final : public Page
 {
 public:
@@ -63,6 +84,7 @@ public:
     [[nodiscard]] int exportedClassChoiceCount() const noexcept;
     [[nodiscard]] bool hasRetainedPackage() const noexcept;
     [[nodiscard]] QString reviewedWorkspacePath() const;
+    [[nodiscard]] ClassTransferWorkflowPageRuntimeMetrics runtimeMetrics() const noexcept;
 
     [[nodiscard]] bool refreshClasses();
     [[nodiscard]] bool exportSelectedTo(const QString& outputPath);
@@ -86,6 +108,8 @@ private:
     void refreshReviewChoices();
     void refreshApplyState();
     void refreshPreview();
+    void recordDiagnosticCheckpoint(const QString& checkpoint,
+        const QString& outcome = QStringLiteral("completed")) noexcept;
     void clearReview();
     void setStatus(const QString& message, bool error);
     [[nodiscard]] std::optional<QString> activePath() const;
@@ -115,6 +139,11 @@ private:
     std::optional<Application::ClassTransferPreviewResult> m_preview;
     std::optional<QString> m_loadedWorkspacePath;
     std::optional<QString> m_reviewWorkspacePath;
+    std::uint64_t m_exportsCompleted = 0;
+    std::uint64_t m_packagesReviewed = 0;
+    std::uint64_t m_importsApplied = 0;
+    std::uint64_t m_reviewsCancelled = 0;
+    std::uint64_t m_diagnosticSequence = 0;
     bool m_loading = false;
 };
 

@@ -341,6 +341,7 @@ private Q_SLOTS:
     void workspaceStoreTransferRoundTripsFullPackageAndRemapsTeacherId();
     void splitterStateSavesOnSuspensionWithoutResettingRetainedPage();
     void visiblePageExportsReviewsAppliesAndClearsOnWorkspaceChange();
+    void runtimeMetricsAndDiagnosticCheckpointsTrackReviewRelease();
     void applyFailureKeepsReviewAndDestinationTransactionRollsBack();
     void failedApplyCancellationReleasesPackage();
     void importRejectsMalformedUnsupportedAndUnreadableFiles();
@@ -622,6 +623,160 @@ void ClassTransferWorkflowTests::visiblePageExportsReviewsAppliesAndClearsOnWork
     page->clearForClosedWorkspace();
     QVERIFY(!page->hasRetainedPackage());
     QCOMPARE(page->exportClassList()->model()->rowCount(), 0);
+}
+
+void ClassTransferWorkflowTests::
+runtimeMetricsAndDiagnosticCheckpointsTrackReviewRelease()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    const QString sourcePath = directory.filePath(QStringLiteral("metrics-source.tps"));
+    const QString destinationPath = directory.filePath(
+        QStringLiteral("metrics-destination.tps"));
+    {
+        WorkspaceStore source;
+        QVERIFY(source.open(sourcePath));
+        QVERIFY(createCompleteSourceClass(source) > 0);
+    }
+    {
+        WorkspaceStore destination;
+        QVERIFY(destination.open(destinationPath));
+    }
+
+    const QByteArray diagnosticPath = QFile::encodeName(
+        directory.filePath(QStringLiteral("class-transfer-checkpoints.jsonl")));
+    struct ScopedDiagnosticEnvironment final
+    {
+        QByteArray previous;
+        bool existed = false;
+        ~ScopedDiagnosticEnvironment()
+        {
+            if (existed)
+            {
+                qputenv("CLASSMNGR_CLASS_TRANSFER_DIAGNOSTICS_PATH", previous);
+            }
+            else
+            {
+                qunsetenv("CLASSMNGR_CLASS_TRANSFER_DIAGNOSTICS_PATH");
+            }
+        }
+    } environmentRestore;
+    const QByteArray previousDiagnosticPath = qgetenv(
+        "CLASSMNGR_CLASS_TRANSFER_DIAGNOSTICS_PATH");
+    const bool hadDiagnosticPath = qEnvironmentVariableIsSet(
+        "CLASSMNGR_CLASS_TRANSFER_DIAGNOSTICS_PATH");
+    environmentRestore.previous = previousDiagnosticPath;
+    environmentRestore.existed = hadDiagnosticPath;
+    QVERIFY(qputenv("CLASSMNGR_CLASS_TRANSFER_DIAGNOSTICS_PATH",
+        diagnosticPath));
+
+    PageHarness harness;
+    harness.path = sourcePath;
+    QVERIFY(harness.initialize());
+    QVERIFY(harness.activate());
+    Ui::ClassTransferWorkflowPage* const page = harness.page();
+    QVERIFY(page);
+    QCOMPARE(page->objectName(), QStringLiteral("nextClassTransferPage"));
+    const quintptr instanceToken = page->runtimeMetrics().pageInstanceToken;
+    QVERIFY(instanceToken != 0);
+
+    const QString packagePath = directory.filePath(
+        QStringLiteral("metrics-package.json"));
+    QVERIFY(page->exportClassList()->model()->setData(
+        page->exportClassList()->model()->index(0, 0), Qt::Checked,
+        Qt::CheckStateRole));
+    QVERIFY(page->exportSelectedTo(packagePath));
+    auto metrics = page->runtimeMetrics();
+    QCOMPARE(metrics.exportsCompleted, std::uint64_t(1));
+    QCOMPARE(metrics.exportSelectedClassCount, 1);
+    QVERIFY(!metrics.packageRetained);
+    QVERIFY(!metrics.previewRetained);
+
+    harness.path = destinationPath;
+    QVERIFY(page->loadImportFile(packagePath));
+    metrics = page->runtimeMetrics();
+    QCOMPARE(metrics.packagesReviewed, std::uint64_t(1));
+    QCOMPARE(metrics.packageClassCount, 1);
+    QCOMPARE(metrics.packageTeacherCount, 1);
+    QCOMPARE(metrics.classReviewRowCount, 1);
+    QCOMPARE(metrics.teacherReviewRowCount, 1);
+    QVERIFY(metrics.packageRetained);
+    QVERIFY(metrics.previewRetained);
+    QVERIFY(metrics.applyEnabled);
+
+    page->cancelImportReview();
+    metrics = page->runtimeMetrics();
+    QCOMPARE(metrics.reviewsCancelled, std::uint64_t(1));
+    QVERIFY(!metrics.packageRetained);
+    QVERIFY(!metrics.previewRetained);
+    QCOMPARE(metrics.packageClassCount, 0);
+    QCOMPARE(metrics.packageTeacherCount, 0);
+    QCOMPARE(metrics.classReviewRowCount, 0);
+    QCOMPARE(metrics.teacherReviewRowCount, 0);
+    QVERIFY(!metrics.applyEnabled);
+
+    QVERIFY(harness.host->activatePage(QStringLiteral("other")));
+    QVERIFY(harness.host->activatePage(QStringLiteral("class_transfer")));
+    QCOMPARE(harness.page(), page);
+    QCOMPARE(page->runtimeMetrics().pageInstanceToken, instanceToken);
+    metrics = page->runtimeMetrics();
+    QVERIFY(!metrics.packageRetained);
+    QVERIFY(!metrics.previewRetained);
+    QVERIFY(!metrics.applyEnabled);
+    QCOMPARE(metrics.packagesReviewed, std::uint64_t(1));
+    QCOMPARE(metrics.reviewsCancelled, std::uint64_t(1));
+
+    QFile checkpointFile(QFile::decodeName(diagnosticPath));
+    QVERIFY(checkpointFile.open(QIODevice::ReadOnly | QIODevice::Text));
+    const QList<QByteArray> lines = checkpointFile.readAll().split('\n');
+    QList<QJsonObject> records;
+    for (const QByteArray& line : lines)
+    {
+        if (line.trimmed().isEmpty())
+        {
+            continue;
+        }
+        const QJsonDocument document = QJsonDocument::fromJson(line);
+        QVERIFY(document.isObject());
+        records.push_back(document.object());
+    }
+    const auto recordFor = [&records](const QString& checkpoint)
+        -> std::optional<QJsonObject>
+    {
+        for (auto it = records.crbegin(); it != records.crend(); ++it)
+        {
+            if (it->value(QStringLiteral("checkpoint")).toString() == checkpoint)
+            {
+                return *it;
+            }
+        }
+        return std::nullopt;
+    };
+    const auto reviewRecord = recordFor(QStringLiteral("review-ready"));
+    const auto cancelRecord = recordFor(QStringLiteral("review-cancelled"));
+    const auto suspendedRecord = recordFor(QStringLiteral("suspended"));
+    const auto reenteredRecord = recordFor(QStringLiteral("activated"));
+    QVERIFY(reviewRecord.has_value());
+    QVERIFY(cancelRecord.has_value());
+    QVERIFY(suspendedRecord.has_value());
+    QVERIFY(reenteredRecord.has_value());
+    const QJsonObject reviewed = reviewRecord->value(
+        QStringLiteral("metrics")).toObject();
+    QVERIFY(reviewed.value(QStringLiteral("package_retained")).toBool());
+    QCOMPARE(reviewed.value(QStringLiteral("class_review_row_count")).toInt(), 1);
+    QCOMPARE(reviewed.value(QStringLiteral("teacher_review_row_count")).toInt(), 1);
+    QVERIFY(reviewed.value(QStringLiteral("apply_enabled")).toBool());
+    const QJsonObject cancelled = cancelRecord->value(
+        QStringLiteral("metrics")).toObject();
+    QVERIFY(!cancelled.value(QStringLiteral("package_retained")).toBool());
+    QCOMPARE(cancelled.value(QStringLiteral("class_review_row_count")).toInt(), 0);
+    QCOMPARE(cancelled.value(QStringLiteral("teacher_review_row_count")).toInt(), 0);
+    QVERIFY(!cancelled.value(QStringLiteral("apply_enabled")).toBool());
+    QCOMPARE(suspendedRecord->value(QStringLiteral("metrics")).toObject()
+            .value(QStringLiteral("page_instance_token")).toString(),
+        reenteredRecord->value(QStringLiteral("metrics")).toObject()
+            .value(QStringLiteral("page_instance_token")).toString());
+
 }
 
 void ClassTransferWorkflowTests::applyFailureKeepsReviewAndDestinationTransactionRollsBack()

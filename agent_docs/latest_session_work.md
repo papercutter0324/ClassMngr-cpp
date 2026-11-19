@@ -1,6 +1,6 @@
 # Latest Session Work
 
-## Phase 9 current handoff — P9-11 Class Transfer lifecycle — 2026-11-19
+## Phase 9 current handoff — P9-12 QtPdf viewer lifecycle — 2026-11-20
 
 Deployment `phase9_continue_20261118` remains active on Heavy. Use Light for
 Git commits and pushes. P9-08 is committed at
@@ -33,12 +33,33 @@ the post-measurement validator revision separately from the measured
 2,398-row source inventory (`2fd4ca5c…`). See the Phase 9 progress log for
 package/hash provenance and corrected validation details.
 
-P9-11 Class Transfer export/import lifecycle is active next. Use the retained
-`lifecycle-class-transfer` route if it maps to the current Next workflow;
-verify cancel and successful apply/cleanup with separate fresh packaged
-processes and full workspace comparisons. No Phase 0 or offscreen route is
-packaged acceptance. Keep transient memory allowances advisory. The full
-Windows x64 Debug CTest and final packaged Release exit gates remain open.
+P9-11 Class Transfer export/import lifecycle is accepted. Evidence is in
+`artifacts/phase9/packaged-next-class-transfer/20261119T160942280Z-4b1cf3bb7da340e1920cb4bcbc7c4ccc/`.
+Three fresh UIA-bound packaged Windows x64 Release processes covered Next
+export, apply of the exact exported JSON, and explicit cancel from a review
+with Apply enabled. All exited naturally with code 0, no forced cleanup, and
+one Calendar suspend/re-entry. The package was 1,149,692 bytes, SHA-256
+`85d4aa69a9345765214176a61c69e6be208b11667b4f8adca3085a153801cdd8`. The
+source workspace and cancel workspace were unchanged. Apply imported 48
+classes, 24 teachers, 48 class-info relations, 16 regular and 24 intensive
+schedules, 3,600 roster cells, and 20 evaluations. Maximum route working sets
+were 234,950,656, 241,602,560, and 233,230,336 bytes, all below 262,144,000.
+Focused Class Transfer CTests passed 18/18; preparation and validator tests
+passed 6/6 and 21/21. The Release package is product-source-equivalent to the
+current product source after excluding five harness-only scripts; it is not a
+successful build from the exact full current tree. No private-byte return
+allowance is claimed. See the Phase 9 progress log for exact row and
+provenance details.
+
+P9-12 QtPdf viewer lifecycle is active. The retained
+`lifecycle-class-transfer` route launches Legacy `ClassMngr` from `src/main.cpp`
+under offscreen Qt, so it remains only a Legacy reference. Use the existing
+`visual-pdf-viewer` route as discovery input; acceptance must be current-source
+packaged Windows evidence for opening, rendering, closing, releasing, and
+reopening the QtPdf document, with document/page and retained-object state.
+Batch 3 remains active through P9-18; commit each slice and push once after
+P9-18. Keep all Windows validation local. The full Windows x64 Debug CTest and
+final packaged Release exit gates remain open.
 
 ## Superseded handoff - P9-07 navigation memory failure stage - 2026-11-18
 
