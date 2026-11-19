@@ -4,23 +4,28 @@
 
 Batch goal: measure the remaining large or repeated Next workflows in current-source packaged Windows x64 Release processes. Use authentic UIA-bound actions, complete lifecycle snapshots, identified fixtures, and local validation. Keep transient budgets advisory until a return-to-baseline allowance is supported by current-source measurements. Commit each slice; push once after Batch 3 closes. GitHub validation is not acceptance.
 
-9. **P9-09 — Large Schedule Import lifecycle** (Active)
-   - Acceptance: use the locally packaged Next app for a large import parse,
-     conflict review, cancel/cleanup, and a separate applicable import/apply.
-     Capture startup-ready and settled Schedule-page memory, parse complete,
-     review counts, cancel or apply, Schedule refresh, dialog cleanup, process
-     metrics, bounded model/widget counts, and persisted row counts. Use the
-     96-candidate five-block conflict workbook for parse/review/cancel and the
-     separate applicable workbook for successful apply (20 candidates and
-     30 schedule rows). Do not claim a 96-candidate apply.
-   - Existing Next integration tests are supporting coverage, not packaged
-     Windows evidence. Phase 0 lifecycle routes launch the legacy executable
-     and do not satisfy this slice.
-
-10. **P9-10 — Large Calendar Import and open/close** (Queued)
-    Measure successful import, parser-error cleanup, and Calendar entry/leave.
-    Existing routes: lifecycle-calendar-import and
-    lifecycle-calendar-import-error.
+10. **P9-10 — Large Calendar Import and cleanup** (Active)
+    - Acceptance: run large Calendar import success and parser-error cleanup in
+      separate current-source packaged Next Release processes. Serve the
+      retained fixture data from a local loopback source via
+      CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL. Record startup/settled Calendar
+      baseline, downloaded/staged bytes, parse complete/error, typed apply or
+      unchanged database, imported/skipped rows, cache refresh, staged-file
+      removal, dialog/service state, process metrics, and bounded Calendar
+      view/model/cache counts.
+    - Success fixture: docs/qt-rewrite/visual-baseline/release/
+      large-calendar-import-boundary/generated-large-calendar-import.xlsx
+      (16,284 bytes; documented expectation 261 imported events and 104
+      skipped weekend entries). Error fixture:
+      docs/qt-rewrite/visual-baseline/release/
+      large-calendar-import-error-boundary/
+      malformed-calendar-import-response.bin (69 bytes; missing
+      xl/workbook.xml). Verify counts against the actual Next package route and
+      fixture bytes. Use separate copies of the same seeded workspace.
+    - One Calendar suspension/re-entry after each result checks cleanup; P9-07
+      already covers repeated normal Calendar navigation. Phase 0 lifecycle
+      runs and offscreen Next tests are supporting evidence only, not packaged
+      Windows acceptance. Capture actual current-process UIA and memory data.
 11. **P9-11 — Class Transfer export/import lifecycle** (Queued)
     Cover export, import, cancel, and released state. Existing route:
     lifecycle-class-transfer.
@@ -48,9 +53,9 @@ Batch goal: measure the remaining large or repeated Next workflows in current-so
     Measure decoded map retention and release; no named Phase 0 memory route
     was found.
 
-Recheck overlap with P9-07/P9-08 when this batch activates. No further named
-candidates were found in the prior Phase 9 and Phase F list review; confirm
-that finding again when Batch 4 discovery starts. Shared acceptance for each
+P9-10 is distinct from P9-07 normal Calendar navigation and P9-08 Sub Prep.
+No additional candidates were found in the earlier Phase 9 and Phase F list
+review; confirm when Batch 4 discovery starts. Shared acceptance for each
 candidate is current-source packaged Windows x64 Release evidence, identified
 fixtures, process/memory metrics, bounded widget/editor and model counts where
 relevant, and a measured return-to-baseline allowance. Keep transient budgets

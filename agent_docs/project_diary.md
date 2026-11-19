@@ -1,3 +1,13 @@
+### Phase 9 packaged Schedule Import evidence — 2026-11-19
+
+P9-09 required separate packaged Next routes for conflict cancellation and
+applicable import. A UIA Cancel plus classes==0 was not enough; all workspace
+table contents had to match before/after. Successful apply was checked against
+the exact class, teacher, day, and time associations, not just row totals. The
+manifest must preserve Unicode from the raw UTF-8 trace. A Schedule screenshot
+must show the measured app window and imported data; a wallpaper capture cannot
+be inferred from a success message or API return. Keep the 20-candidate apply
+claim distinct from the 96-candidate conflict-review fixture.
 ### Phase 9 Sub Prep lifecycle and diagnostic integrity — 2026-11-19
 
 The packaged Next Sub Prep route passed its strict working-set gate across

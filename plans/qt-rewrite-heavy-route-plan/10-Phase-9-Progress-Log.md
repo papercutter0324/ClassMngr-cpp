@@ -848,3 +848,58 @@ cannot supply packaged Next evidence. Use the separate 96-candidate conflict
 workbook for parse/review/cancel and the 20-candidate applicable workbook for
 the apply path. No 96-candidate apply claim is made. The full Windows Debug
 CTest and final packaged Release exit gates remain open.
+### 2026-11-19 — P9-09 packaged Next Schedule Import accepted
+
+The final locally packaged Windows x64 Release run is
+artifacts/phase9/packaged-next-schedule-import/20261118T235451002Z-5c2547d52abb4e708fffc9e8af4b7942/.
+Its source SHA-256 is
+fc36448ac756d46d68a5e9fb87c47fe44ab94ad1a59610ae71b5b30888fbc5ce; package
+8e1683b248d5dfb1690f2a06062ad67cdd10ffc9db127ebe6713addb9c365e16; app
+26f5f9d7b7cd89932eda9f173beff6c3663b9767d34458bbf2721c244d8e4ac6. The
+Release cache stayed at
+f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47.
+The independent Tester recomputed the inventories, validated the two-route
+manifest, checked UIA-to-process/window identities, and visually inspected the
+Schedule screenshot.
+
+Route A used the 96-candidate, five-block conflict workbook. Its selected
+block showed 20 class rows and 20 preview rows, a conflict warning, and
+disabled Apply; UIA Cancel produced no apply request. All 18 SQLite table
+snapshots and the workspace-file hash were identical before and after, with
+table-content SHA-256
+b873a73892852d95edab937ac474cec70c04419a5ce5acc3f5939eecacbc6eef2.
+Route B used a distinct process and fresh workspace. Its request imported 20
+classes, five teachers, 20 class_info rows, and 30 class_times rows. The
+persisted class/teacher/day/time association multiset matched exactly with
+SHA-256 8d5e5090ef59fb0167dc42a98c4fa0887ea303357f9df6e2cfaeea20fcd08e6b.
+The manifest’s Korean strings matched the raw UTF-8 apply trace. The refreshed
+Schedule UIA snapshot bound to the measured PID/HWND and recorded 54 visible
+items; its inspected screenshot showed imported schedule data, not wallpaper.
+
+| Route | Startup-ready WS | Settled WS | Post-cleanup WS | Idle-tail maximum WS |
+|---|---:|---:|---:|---:|
+| A | 199,532,544 | 206,471,168 | 244,277,248 | 244,281,344 |
+| B | 196,943,872 | 203,583,488 | 242,491,392 | 242,495,488 |
+
+Every startup-ready and post-cleanup working-set checkpoint was strictly below
+262,144,000 bytes. Both routes had ten idle samples at 1.000–1.011-second
+cadence. The highest operation peak was 244,658,176 bytes, below the advisory
+536,870,912-byte ceiling. Post-cleanup private bytes were 144,785,408 (A) and
+145,022,976 (B); no numerical private-byte return allowance was defined.
+Workspaces and settings files were removed. The prior invalid attempt with
+path-separator and Unicode manifest issues and the wallpaper screenshot remains
+preserved; only the final rerun is accepted.
+
+The focused Python suite passed 8/8, Python compilation and PowerShell parsing
+passed, Release packaging succeeded, and the affected Windows Debug CTests
+passed 2/2 before the script-only follow-up. The final current-source evidence
+validator passed both routes. The full Debug CTest and final packaged Release
+exit gates remain open. No 96-candidate apply claim or private return allowance
+is made.
+
+Batch 3 continues with P9-10 Large Calendar Import. Discovery confirms that
+P9-07 already covers normal Calendar navigation, so this slice measures import
+success, parser-error cleanup, staged-file removal, and one post-result
+suspension/re-entry rather than repeating the navigation loop. Use the local
+URL override and retained large/malformed responses. No Phase 0 or offscreen
+Next route is packaged acceptance.

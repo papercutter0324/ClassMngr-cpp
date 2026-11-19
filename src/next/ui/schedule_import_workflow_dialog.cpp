@@ -16,6 +16,9 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
@@ -271,6 +274,13 @@ ScheduleImportWorkflowDialog::ScheduleImportWorkflowDialog(
     setFixedSize(SourceAndSelectionDialogSize);
     buildUi();
     retranslateUi();
+    m_diagnosticTracePath = qEnvironmentVariable(
+        "CLASSMNGR_NEXT_SCHEDULE_IMPORT_TRACE_PATH").trimmed();
+    recordDiagnostic(QStringLiteral("dialog-opened"), QJsonObject{
+        {QStringLiteral("workspacePath"), m_expectedWorkspacePath},
+        {QStringLiteral("workspaceIdentity"), m_expectedWorkspaceIdentity},
+        {QStringLiteral("widgetCount"), reviewWidgetCount()}
+    });
 }
 
 ScheduleImportWorkflowDialog::~ScheduleImportWorkflowDialog()
@@ -984,6 +994,32 @@ void ScheduleImportWorkflowDialog::handleParseFinished(
     m_backButton->setVisible(true);
     m_primaryButton->setText(workflowText("Review selected schedule"));
     m_primaryButton->setEnabled(m_user->currentIndex() >= 0);
+
+    int visibleSheetCount = 0;
+    int scheduleBlockCount = 0;
+    int candidateCount = 0;
+    for (const ScheduleImportSheet& sheet : m_workbook->sheets)
+    {
+        if (!sheet.visible)
+        {
+            continue;
+        }
+        ++visibleSheetCount;
+        scheduleBlockCount += sheet.users.size();
+        for (const ScheduleImportUserBlock& user : sheet.users)
+        {
+            candidateCount += user.classes.size();
+        }
+    }
+    recordDiagnostic(QStringLiteral("parse-completed"), QJsonObject{
+        {QStringLiteral("sourcePath"), m_sourcePath->text()},
+        {QStringLiteral("visibleSheetCount"), visibleSheetCount},
+        {QStringLiteral("scheduleBlockCount"), scheduleBlockCount},
+        {QStringLiteral("candidateCount"), candidateCount},
+        {QStringLiteral("selectedSheet"), m_sheet->currentText()},
+        {QStringLiteral("selectedBlock"), m_user->currentText()},
+        {QStringLiteral("status"), m_status->text()}
+    });
 }
 
 void ScheduleImportWorkflowDialog::populateSheets()
@@ -1160,6 +1196,17 @@ void ScheduleImportWorkflowDialog::continueToReview()
     m_classTable->resizeColumnsToContents();
     m_previewTable->resizeColumnsToContents();
     updateReviewState();
+    recordDiagnostic(QStringLiteral("review-ready"), QJsonObject{
+        {QStringLiteral("sourcePath"), m_sourcePath->text()},
+        {QStringLiteral("selectedSheet"), m_sheet->currentText()},
+        {QStringLiteral("selectedBlock"), m_user->currentText()},
+        {QStringLiteral("candidateRows"), m_classModel->rowCount()},
+        {QStringLiteral("teacherRows"), m_teacherModel->rowCount()},
+        {QStringLiteral("previewRows"), m_previewModel->rowCount()},
+        {QStringLiteral("reviewWidgetCount"), reviewWidgetCount()},
+        {QStringLiteral("applyEnabled"), m_primaryButton->isEnabled()},
+        {QStringLiteral("conflictStatus"), m_reviewStatus->text()}
+    });
 }
 
 void ScheduleImportWorkflowDialog::updateReviewState()
@@ -1195,6 +1242,13 @@ void ScheduleImportWorkflowDialog::updateReviewState()
             "Acknowledge the workbook diagnostics before applying."));
     }
     updateReviewSummary(decisions);
+    recordDiagnostic(QStringLiteral("review-state"), QJsonObject{
+        {QStringLiteral("candidateRows"), m_classModel->rowCount()},
+        {QStringLiteral("teacherRows"), m_teacherModel->rowCount()},
+        {QStringLiteral("previewRows"), m_previewModel->rowCount()},
+        {QStringLiteral("applyEnabled"), m_primaryButton->isEnabled()},
+        {QStringLiteral("conflictStatus"), m_reviewStatus->text()}
+    });
 }
 
 void ScheduleImportWorkflowDialog::updateReviewSummary(
@@ -1292,6 +1346,74 @@ void ScheduleImportWorkflowDialog::applyImport()
         return;
     }
 
+    recordDiagnostic(QStringLiteral("apply-request"), QJsonObject{
+        {QStringLiteral("selectedBlock"), m_user->currentText()},
+        {QStringLiteral("candidateCount"), static_cast<int>(request.candidates.size())},
+        {QStringLiteral("teacherDecisionCount"), static_cast<int>(request.teachers.size())},
+        {QStringLiteral("classDecisionCount"), static_cast<int>(request.classes.size())},
+        {QStringLiteral("createdTeacherCount"), static_cast<int>(std::count_if(
+            request.teachers.cbegin(), request.teachers.cend(), [](const auto& row) {
+                return row.action == Application::ScheduleImportReviewTeacherAction::Create;
+            }))},
+        {QStringLiteral("createdClassCount"), static_cast<int>(std::count_if(
+            request.classes.cbegin(), request.classes.cend(), [](const auto& row) {
+                return row.action == Application::ScheduleImportReviewClassAction::CreateNew;
+            }))},
+        {QStringLiteral("candidates"), [&request] {
+            QJsonArray candidates;
+            for (const auto& candidate : request.candidates)
+            {
+                QJsonArray times;
+                for (const auto& time : candidate.times)
+                {
+                    times.append(QJsonObject{
+                        {QStringLiteral("day"), QString::fromStdU16String(time.day)},
+                        {QStringLiteral("startTime"), QString::fromStdU16String(time.startTime)},
+                        {QStringLiteral("endTime"), QString::fromStdU16String(time.endTime)}
+                    });
+                }
+                candidates.append(QJsonObject{
+                    {QStringLiteral("teacherKey"), QString::fromStdU16String(candidate.teacherKey.value())},
+                    {QStringLiteral("teacherName"), QString::fromStdU16String(candidate.teacherName)},
+                    {QStringLiteral("grade"), QString::fromStdU16String(candidate.grade)},
+                    {QStringLiteral("level"), QString::fromStdU16String(candidate.level)},
+                    {QStringLiteral("times"), times}
+                });
+            }
+            return candidates;
+        }()},
+        {QStringLiteral("teacherDecisions"), [&request] {
+            QJsonArray decisions;
+            for (const auto& decision : request.teachers)
+            {
+                decisions.append(QJsonObject{
+                    {QStringLiteral("teacherKey"), QString::fromStdU16String(decision.teacherKey.value())},
+                    {QStringLiteral("action"), static_cast<int>(decision.action)},
+                    {QStringLiteral("actionName"), decision.action
+                        == Application::ScheduleImportReviewTeacherAction::Create
+                        ? QStringLiteral("create")
+                        : QString::number(static_cast<int>(decision.action))}
+                });
+            }
+            return decisions;
+        }()},
+        {QStringLiteral("classDecisions"), [&request] {
+            QJsonArray decisions;
+            for (const auto& decision : request.classes)
+            {
+                decisions.append(QJsonObject{
+                    {QStringLiteral("candidateIndex"), decision.candidateIndex.rawValue()},
+                    {QStringLiteral("action"), static_cast<int>(decision.action)},
+                    {QStringLiteral("actionName"), decision.action
+                        == Application::ScheduleImportReviewClassAction::CreateNew
+                        ? QStringLiteral("create-new")
+                        : QString::number(static_cast<int>(decision.action))}
+                });
+            }
+            return decisions;
+        }()}
+    });
+
     m_primaryButton->setEnabled(false);
     m_reviewStatus->setProperty("error", false);
     m_reviewStatus->setText(workflowText("Applying schedule…"));
@@ -1320,6 +1442,16 @@ void ScheduleImportWorkflowDialog::applyImport()
         return;
     }
     const Application::ScheduleImportApplySummary summary = applied.value();
+    m_diagnosticOutcome = QStringLiteral("applied");
+    recordDiagnostic(QStringLiteral("apply-succeeded"), QJsonObject{
+        {QStringLiteral("teachersCreated"), summary.teachersCreated.rawValue()},
+        {QStringLiteral("teachersUpdated"), summary.teachersUpdated.rawValue()},
+        {QStringLiteral("classesCreated"), summary.classesCreated.rawValue()},
+        {QStringLiteral("classesUpdated"), summary.classesUpdated.rawValue()},
+        {QStringLiteral("classesSkipped"), summary.classesSkipped.rawValue()},
+        {QStringLiteral("schedulesCleared"), summary.schedulesCleared.rawValue()},
+        {QStringLiteral("ignoredCells"), summary.ignoredCells.rawValue()}
+    });
     if (m_actions.importApplied)
     {
         try
@@ -1370,6 +1502,7 @@ void ScheduleImportWorkflowDialog::releaseRetainedData()
         return;
     }
     m_releasing = true;
+    const QJsonObject before = retainedDataSnapshot();
     ++m_loadRequestId;
     if (m_parseCancellation)
     {
@@ -1389,6 +1522,63 @@ void ScheduleImportWorkflowDialog::releaseRetainedData()
     m_sourcePath->clear();
     m_sheet->clear();
     m_user->clear();
+    recordDiagnostic(QStringLiteral("retained-data-released"), QJsonObject{
+        {QStringLiteral("outcome"), m_diagnosticOutcome},
+        {QStringLiteral("before"), before},
+        {QStringLiteral("after"), retainedDataSnapshot()}
+    });
+}
+
+QJsonObject ScheduleImportWorkflowDialog::retainedDataSnapshot() const
+{
+    return QJsonObject{
+        {QStringLiteral("sourceSelection"), m_sourcePath ? m_sourcePath->text() : QString{}},
+        {QStringLiteral("sourceFilePath"), m_sourceFilePath},
+        {QStringLiteral("sheetCount"), m_sheet ? m_sheet->count() : 0},
+        {QStringLiteral("blockCount"), m_user ? m_user->count() : 0},
+        {QStringLiteral("selectedSheet"), m_sheet ? m_sheet->currentText() : QString{}},
+        {QStringLiteral("selectedBlock"), m_user ? m_user->currentText() : QString{}},
+        {QStringLiteral("candidateRows"), m_classModel ? m_classModel->rowCount() : 0},
+        {QStringLiteral("teacherRows"), m_teacherModel ? m_teacherModel->rowCount() : 0},
+        {QStringLiteral("previewRows"), m_previewModel ? m_previewModel->rowCount() : 0},
+        {QStringLiteral("reviewWidgetCount"), reviewWidgetCount()}
+    };
+}
+
+void ScheduleImportWorkflowDialog::recordDiagnostic(
+    const QString& event,
+    QJsonObject details
+    ) const
+{
+    if (m_diagnosticTracePath.isEmpty())
+    {
+        return;
+    }
+    QJsonObject record{
+        {QStringLiteral("schema"), QStringLiteral("classmngr-schedule-import-diagnostic-v1")},
+        {QStringLiteral("event"), event},
+        {QStringLiteral("timestampUtc"), QDateTime::currentDateTimeUtc().toString(Qt::ISODateWithMs)},
+        {QStringLiteral("processId"), QCoreApplication::applicationPid()},
+        {QStringLiteral("workspacePath"), m_expectedWorkspacePath}
+    };
+    for (auto it = details.constBegin(); it != details.constEnd(); ++it)
+    {
+        record.insert(it.key(), it.value());
+    }
+    QFile trace(m_diagnosticTracePath);
+    if (!trace.open(QIODevice::WriteOnly | QIODevice::Append))
+    {
+        qWarning().noquote() << "Schedule import diagnostic trace could not be written:"
+                             << trace.errorString();
+        return;
+    }
+    QByteArray line = QJsonDocument(record).toJson(QJsonDocument::Compact);
+    line.append('\n');
+    if (trace.write(line) != line.size())
+    {
+        qWarning().noquote() << "Schedule import diagnostic trace was incomplete:"
+                             << trace.errorString();
+    }
 }
 
 bool ScheduleImportWorkflowDialog::workspaceIsCurrent(QString* error) const

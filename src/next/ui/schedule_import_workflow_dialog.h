@@ -6,6 +6,7 @@
 #include "next/ui/schedule_import_request_mapper.h"
 
 #include <QDialog>
+#include <QJsonObject>
 #include <QString>
 
 #include <functional>
@@ -111,6 +112,8 @@ private:
     void showReviewError(const QString& message);
     void clearReviewData();
     void releaseRetainedData();
+    void recordDiagnostic(const QString& event, QJsonObject details = {}) const;
+    [[nodiscard]] QJsonObject retainedDataSnapshot() const;
     [[nodiscard]] bool workspaceIsCurrent(QString* error = nullptr) const;
     [[nodiscard]] bool sourceIsCurrent(QString* error = nullptr) const;
     [[nodiscard]] int selectedSheetIndex() const;
@@ -159,6 +162,8 @@ private:
     std::optional<FileMetadata> m_sourceMetadata;
     QString m_sourceFilePath;
     QString m_lastError;
+    QString m_diagnosticTracePath;
+    QString m_diagnosticOutcome = QStringLiteral("cancelled");
     std::uint64_t m_loadRequestId = 0;
     bool m_releasing = false;
 };

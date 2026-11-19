@@ -1,20 +1,19 @@
 # Project Progress
 
-## Phase 9 current position — P9-09 Large Schedule Import — 2026-11-19
+## Phase 9 current position — P9-10 Large Calendar Import — 2026-11-19
 
-Phase 9 remains In progress. Batches 1 and 2 are closed. P9-08 completed the
-local packaged Next Sub Prep lifecycle gate in three fresh 96-class Windows
-x64 Release processes. Each completed 11 action cycles and 301 idle samples.
-All strict working-set checkpoints passed below 262,144,000 bytes; the maximum
-page-release value was 227,352,576 bytes. Both generated PDFs were parsed and
-the focused Windows Debug CTests passed 4/4.
+Phase 9 remains In progress. Batches 1 and 2 are closed. P9-09 passed
+independent review for both current-source packaged Next Schedule Import
+routes. The 96-candidate conflict route cancelled with identical full
+18-table workspace snapshots and no apply; the separate applicable route
+persisted 20 classes, five teachers, and all 30 expected class-teacher-time
+associations. The measured Schedule UIA snapshot and screenshot show the
+refreshed page. Startup and post-cleanup working sets passed the strict
+262,144,000-byte limit, with a maximum of 244,281,344 bytes. No private
+return allowance is claimed.
 
-P9-08 private bytes rose over repeated cycles, so no return allowance is
-claimed. A separate 30-cycle trace remains diagnostic only and is invalid for
-current-source acceptance because its validator changed after measurement;
-no cause, leak, or plateau is claimed. Transient memory budgets remain
-advisory. P9-09 Large Schedule Import is active with separate Next conflict/
-cancel and applicable/apply fixtures. The full Windows x64 Debug CTest and
+P9-10 Large Calendar Import is active with success and parser-error cleanup
+routes served from a local loopback URL. The full Windows x64 Debug CTest and
 final packaged Release exit gates remain open; see the Phase 9 plan, progress
 log, and current slice-batch tracker.
 

@@ -1,50 +1,40 @@
 # Latest Session Work
 
-## Phase 9 current handoff — P9-09 Large Schedule Import — 2026-11-19
+## Phase 9 current handoff — P9-10 Large Calendar Import — 2026-11-19
 
 Deployment phase9_continue_20261118 remains active on the Heavy route. Use
-Light for Git commits and pushes. P9-07 is committed at
-ed2548ff3b022fa43d1982c33ca9409f29f8cc39; P9-08 is committed and
-its Batch 2 push is next. Commit each slice and push once after its batch.
-All Windows validation stays local.
+Light for Git commits and pushes. P9-08 is committed at
+e139c6b597fface32d81c45c52bb85103bcdf2d9; P9-09 has passed independent review
+and its slice commit is part of this handoff. Commit each slice; push once after Batch 3
+closes with P9-18. All Windows validation stays local.
 
-P9-08's accepted packaged Windows x64 Release run is
-artifacts/phase9/packaged-next-sub-prep-lifecycle/20261118T183011729Z-2b8b67f6d9a1450393d97632a0ecadeb/.
-Its source fingerprint is
-81c8021a8812eade50293ac67fe4832317efe7bd5217b08312d6d1a80d047055; package
-25f2248303ab5199ca40280124f3151941a401cfbbc6f6cfca29e85cb7784958; app
-3e8de4508b098aa6f1193ae8d8f7bf6d2b7034a3cb78fc18913d1053ab78357a; Release
-cache f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47.
-Three processes each completed eleven lifecycle cycles, 22 authentic navigation
-transitions, 11 class-96 selections, 11 refreshes, 11 suspensions, 48 lifecycle
-snapshots, and 301 idle samples. All strict normal-use working-set points
-passed below 262,144,000 bytes; max page-release WS was 227,352,576 bytes.
-The package generation peak stayed below the advisory 536,870,912-byte ceiling.
-Both Sub Prep and roster PDFs were generated and parsed. Four affected Windows
-Debug CTests passed. The Phase-9 Python suite passed 53 tests; the repaired
-retention-validator tests passed 3/3. See the Phase 9 progress log for process
-metrics, fixture details, output content, and limitations.
+P9-09's final packaged Windows x64 Release run is
+artifacts/phase9/packaged-next-schedule-import/20261118T235451002Z-5c2547d52abb4e708fffc9e8af4b7942/.
+Source SHA-256 fc36448ac756d46d68a5e9fb87c47fe44ab94ad1a59610ae71b5b30888fbc5ce;
+package 8e1683b248d5dfb1690f2a06062ad67cdd10ffc9db127ebe6713addb9c365e16;
+app 26f5f9d7b7cd89932eda9f173beff6c3663b9767d34458bbf2721c244d8e4ac6;
+Release cache f71bc0c48c5bc5b5fab72c089ef2f4b7640a42e305e49161dace835523979e47.
+Route A canceled the 96-candidate conflict import with exact before/after
+workspace-table equality and no apply. Route B applied the separate 20-candidate
+fixture with 20 classes, five teachers, 20 class-info rows, and 30 matching
+class-teacher-time rows. The UIA snapshot and inspected screenshot show the
+actual refreshed Schedule page. Both strict startup and post-cleanup WS checks
+passed; max idle-tail WS was 244,281,344 bytes. No private return allowance is
+defined. See the Phase 9 progress log for complete provenance and the preserved
+invalid first attempt.
 
-No private-byte return allowance is defined. A separate 30-cycle trace showed
-positive private-byte growth, but its supplemental validation status is
-invalid for current-source acceptance because its validator changed after
-measurement. Its original and corrected status files are preserved; the
-formal memory gate was not evaluated. The raw trace is not used as an accepted
-gate. WPR Heap capture failed with Access Denied under the available token.
-One diagnostic package-generation failure did not reproduce in a fresh
-RouteSmokeOnly run; no direct cause is known. No leak or plateau is claimed.
-Transient budget acceptance remains advisory, and output-resource release has
-no independent runtime counter.
-
-Batch 3 P9-09 Large Schedule Import is active and distinct from P9-07/P9-08.
-Next uses packaged Schedule Import UIA controls and two existing workbooks:
-the 96-candidate conflict fixture for parse/review/cancel, and the separate
-20-candidate applicable fixture for apply. The Phase 0 Schedule Import routes
-launch the legacy executable and cannot satisfy this evidence. Do not claim a
-96-candidate apply. Next: implement the packaged route, measure parsing/review/
-cancel and separate apply/cleanup in local Windows x64 Release, verify fixture
-and persisted row counts, then commit P9-09. Begin Batch 4 discovery when P9-17
-starts. The full Debug CTest and final packaged Release exit gates remain open.
+P9-10 is distinct Calendar Import coverage, not another normal navigation
+gate. Use a local loopback server via CLASSMNGR_STARTUP_CALENDAR_IMPORT_URL,
+the retained 16,284-byte large workbook and 69-byte malformed response, and
+two fresh packaged Next processes with identical workspace copies. Capture
+import counts, typed apply, parser failure, unchanged data on failure,
+staged-file removal, Calendar cache refresh, one post-result suspension/
+re-entry, and local process metrics. P9-07 already covers repeated Calendar
+navigation; Phase 0 legacy routes and offscreen tests are not acceptance.
+Next: implement current-source UIA diagnostics/runner, run focused Windows
+Debug CTests and Python tests, package Release and run both local routes,
+then ask the independent Tester to review. Keep transient allowance advisory.
+The full Debug CTest and final packaged Release exit gates remain open.
 
 ## Superseded handoff - P9-07 navigation memory failure stage - 2026-11-18
 

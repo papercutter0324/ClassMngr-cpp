@@ -42,21 +42,26 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 4 through 8
 - Blocks: Release qualification and cutover
 - Owner: Codex
+- Status: In progress
+- Default route: Heavy
+- Depends on: Phases 4 through 8
+- Blocks: Release qualification and cutover
+- Owner: Codex
 - Last updated: 2026-11-19
-- Current note: Phase 9 remains In progress. Batches 1 and 2 are closed. P9-08
-  completed its current-source packaged Next Sub Prep lifecycle route with
-  three fresh 96-class processes, repeated selection/refresh/suspension,
-  package output, and 301 idle samples per process. The strict normal-use
-  working-set checkpoints all passed below 262,144,000 bytes; package peak
-  stayed below the advisory 536,870,912-byte ceiling. The highest page-release
-  working set was 227,352,576 bytes. A positive private-byte trend was observed
-  in a separate 30-cycle diagnostic, but that artifact is invalid for current
-  source because its validator changed after measurement; no return allowance,
-  allocation cause, leak, or plateau is claimed. Transient budgets remain
-  advisory. Batch 3 P9-09 Large Schedule Import is active, using the distinct
-  Next packaged route and separate conflict/cancel and applicable/apply
-  fixtures. The full Debug CTest and final packaged Release exit gates remain
-  open. See the Phase 9 progress log and current slice-batch tracker.
+- Current note: Phase 9 remains In progress. Batches 1 and 2 are closed. P9-09
+  completed two current-source packaged Next Schedule Import routes. The 96-
+  candidate conflict fixture completed parse/review/cancel with full 18-table
+  workspace equality and no apply. A separate applicable fixture applied 20
+  candidates to 20 classes, five teachers, and 30 exact class-time rows; the
+  refreshed Schedule UIA snapshot and screenshot were independently verified.
+  Both routes stayed below the strict 262,144,000-byte normal-use working-set
+  limit at startup and post-cleanup; maximum post-cleanup WS was 244,281,344.
+  Transient peaks remained below 536,870,912 bytes, but no private return
+  allowance is defined. P9-10 Large Calendar Import is active with distinct
+  success, parser-error, staged-file cleanup, and one Calendar suspend/re-enter
+  check, using a local loopback response. The full Debug CTest and final
+  packaged Release exit gates remain open. See the Phase 9 progress log and
+  current slice-batch tracker.
 
 ### Slice batches
 

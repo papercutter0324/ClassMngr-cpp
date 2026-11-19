@@ -7,17 +7,18 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-19
 - Current milestone: Phase 9 remains In progress. Batches 1 and 2 are closed.
-  P9-08 completed the packaged Next Sub Prep lifecycle route in three fresh
-  96-class Release processes. All strict normal-use working-set checkpoints
-  passed below 262,144,000 bytes, with a maximum page-release value of
-  227,352,576 bytes; output generation and cleanup metrics were captured.
-  Private bytes increased over repeated cycles in a separate diagnostic, but
-  that trace is invalid for current-source acceptance because its validator
-  changed after measurement. No return allowance, allocation cause, leak, or
-  plateau is claimed; transient budgets remain advisory. P9-09 Large Schedule
-  Import is now active, using separate Next conflict/cancel and applicable/
-  apply fixtures. The full Windows x64 Debug CTest and final packaged Release
-  exit gates remain open. See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
+  P9-09 passed independent review for the packaged Next Schedule Import cancel
+  and apply workflows. The 96-candidate conflict route preserved all 18
+  workspace tables on cancel; the separate 20-candidate route persisted 20
+  classes, five teachers, and all 30 expected class-teacher-time associations.
+  Its measured Schedule UIA snapshot and screenshot show the refreshed page.
+  Startup and post-cleanup working sets stayed below the strict 262,144,000-
+  byte limit; the maximum was 244,281,344 bytes. The operation peak stayed
+  below the advisory 536,870,912-byte ceiling. No private return allowance is
+  claimed. P9-10 Large Calendar Import is active: success and parser-error
+  cleanup will use current-source packaged Next processes and a local loopback
+  source. The full Windows x64 Debug CTest and final packaged Release exit
+  gates remain open. See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
   [Phase 9 progress log](10-Phase-9-Progress-Log.md), and
   [current slice-batch tracker](Current-Slice-Batches.md).
 
