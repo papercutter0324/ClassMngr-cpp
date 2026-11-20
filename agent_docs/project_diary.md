@@ -1,5 +1,27 @@
 # Project Diary
 
+### Phase 9 Staff and AI batch lifecycle — 2026-11-21
+
+The Next Staff page reused one `SharedStaffDirectoryPage` for Native English
+and GS Team. Verify the entire 96-row table against the identified fixture on
+activation and re-entry, including column counts, headers, and displayed
+names; model lifecycle counts alone do not prove visible content. Qt's UIA
+TreeItem bounds excluded the disclosure glyph, so a row-center click was
+ineffective. A fresh PrintWindow capture plus the parent navigation Tree's
+measured bounds supported a bounded click on the visible glyph, followed by
+checks for the Expanded state and both child pages. Treat concatenated
+widget-path strings as one exact AutomationId unless the runtime UIA tree
+proves otherwise; the `pageTitle` leaf name and route-specific table names
+provided the stable selectors.
+
+The AI batch route reads its row maximum from the isolated preference profile.
+Set that preference to 100 for a 100-candidate fixture while preserving the
+default, then check the exact 25 selected and parsed comments through review,
+apply, save, and reopen. Verify the persisted changed cells and preservation of
+all remaining rows and cells. The deterministic local response proves the
+review/apply workflow, not live provider connectivity. Reused Release binaries
+establish product-source equivalence only, not a new exact-tree build.
+
 ### Phase 9 Speaking report lifecycle — 2026-11-20
 
 The packaged Next Speaking Evaluation export used the default `All Students

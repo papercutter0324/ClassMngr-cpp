@@ -25,10 +25,12 @@ Batch goal: measure the remaining large or repeated Next workflows in current-so
     log](10-Phase-9-Progress-Log.md). The reused P9-12 package establishes
     product-source equivalence, not a fresh exact-tree build. Internal report
     asset-session counters are not exposed by packaged visibility.
-14. **P9-14 — Staff Directory and AI batch review** (Active)
-    Measure staff refresh/re-entry and large AI batch review. Staff route
-    exists; AI batch coverage needs an explicit route or documented mapping.
-15. **P9-15 — Schedule refresh and language/theme cycles** (Queued)
+14. **P9-14 — Staff Directory and AI batch review** (Complete)
+    Accepted 2026-11-21 after independent review of both packaged Windows x64
+    Release routes; see the [Phase 9 progress log](10-Phase-9-Progress-Log.md).
+    Both reused the P9-12/P9-13 package and establish product-source
+    equivalence, not a fresh exact-tree build.
+15. **P9-15 — Schedule refresh and language/theme cycles** (Active)
     Repeat schedule refresh, language change, and theme rebuild with bounded
     retained objects. Existing route: lifecycle-schedule; locale/theme coverage
     must be made explicit.

@@ -1,27 +1,23 @@
 # Project Progress
 
-## Phase 9 current position — P9-14 Staff/AI review lifecycle — 2026-11-20
+## Phase 9 current position — P9-15 Schedule/locale/theme lifecycle — 2026-11-21
 
 Phase 9 remains In progress. Batches 1 and 2 are closed; Batch 3 is active
-through P9-18. P9-13 Speaking/report lifecycle passed independent review in a
-local packaged Next Windows x64 Release process. The route rendered and closed
-both previews, exported the default 25-report batch, validated all one-page
-PDF members and expected text, recorded 25 writer releases and staging
-deletion, navigated back to My Workspace, and exited naturally with code 0.
-All stable app working-set checkpoints stayed below 262,144,000 bytes; the
-maximum was 214,372,352 bytes. Operation peak was 368,545,792 bytes and is
-reported separately below the advisory cap. The evidence reuses the P9-12
-Release package and establishes product-source equivalence, not a fresh
+through P9-18. P9-14 Staff Directory and Speaking Evaluation AI batch lifecycle
+passed independent review in two packaged Next Windows x64 Release processes.
+Staff verified both 96-row tables on activation and re-entry; its maximum
+working set was 208,056,320 bytes. AI reviewed 100 candidates, applied 25
+comments, preserved the other 75 rows and all other cells, and peaked at
+214,089,728 bytes. Both processes exited naturally with code 0. Focused
+validator tests passed 16/16. The routes reused the accepted P9-12/P9-13
+Release package, establishing product-source equivalence but not a fresh
 exact-tree build.
 
-P9-13's Python validator tests passed 23/23, the evidence validator passed,
-and PowerShell parsing passed. Packaged visibility does not expose the internal
-report asset-session counters; writer, temporary staging, preview, and page
-lifecycle are the measured cleanup signals. The separate full Windows x64
-Debug CTest gate remains open because the standard generated Resources subtree
-denies access. P9-14 Staff Directory and AI batch review is active; the final
-packaged Release exit gate remains open. See the Phase 9 plan, progress log,
-and current slice-batch tracker.
+The separate full Windows x64 Debug CTest gate remains open because the
+standard generated Resources subtree denies access. P9-15 Schedule refresh
+and language/theme cycles is active; the final packaged Release exit gate also
+remains open. See the Phase 9 plan, progress log, and current slice-batch
+tracker.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

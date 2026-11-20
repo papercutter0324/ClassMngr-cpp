@@ -6940,3 +6940,28 @@ Windows x64 Debug CTest gate remains open because generated
 `ClassMngrNext/Resources` access was denied; no ACL changes were made. The
 final packaged Release exit gate also remains open. Preserve untracked
 `p9-09-integration-output.txt` and do not stage it.
+
+## Current continuation — 2026-11-21 — Phase 9 P9-14 accepted
+
+Active deployment ID: `phase9_continue_20261118`; route: Heavy. P9-14 passed
+independent review in two packaged Next Windows x64 Release processes. The
+Staff route opened the Campus Staff disclosure using a screenshot-derived
+point inside the measured navigation Tree and main window, then verified both
+96-row tables against the pinned fixture on activation and re-entry. It
+checked exact headers, table dimensions, row identities/names, route and
+lifecycle events, and screenshots. The AI route used an isolated
+`maximumRosterRows=100` preference, parsed and applied 25 comments from 100
+candidates, then verified only rows 0–24 in `col_9` changed. The other 75
+candidate rows and all other cells were preserved.
+
+Both processes exited naturally with code 0. Staff stable working set peaked
+at 208,056,320 bytes; AI peaked at 214,089,728 bytes; focused validator tests
+passed 16/16 and independent validation passed both bundles. Both routes use
+the same final 2,407-entry harness inventory and reused the accepted P9-12/
+P9-13 Release package. This establishes product-source equivalence, not a
+fresh exact-tree build. P9-15 Schedule refresh and language/theme cycles is
+next. Batch 3 remains active through P9-18; commit each slice and push only
+after Batch 3 closes. The full Windows x64 Debug CTest gate remains open due
+to generated `ClassMngrNext/Resources` access denial; no ACL changes were
+made. The final packaged Release exit gate also remains open. Preserve
+untracked `p9-09-integration-output.txt` and do not stage it.

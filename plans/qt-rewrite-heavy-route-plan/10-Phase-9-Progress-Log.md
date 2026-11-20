@@ -1072,3 +1072,31 @@ and CTest used cached binaries. The final packaged Release exit gate also
 remains open. P9-13 is complete; P9-14 Staff Directory refresh/re-entry and
 AI batch review is active, with an explicit AI route or mapping still needed.
 Batch 3 continues through P9-18, with one push after it closes.
+
+### 2026-11-21 — P9-14 Staff Directory and AI batch review accepted
+
+The [Staff Directory bundle](../../artifacts/phase9/packaged-next-p9-14-staff-directory/20261120T210244662Z-e03ad18018b742949cd997ccdc9ef8c1/manifest.json)
+and [AI batch review bundle](../../artifacts/phase9/packaged-next-p9-14-ai-batch-review/20261120T210342158Z-6cbd34b02cc7460faee0e67361fefd6c/manifest.json)
+passed independent review. Both ran packaged Next Windows x64 Release
+processes and naturally exited 0. They bind the same 2,407-entry harness
+inventory (`343ff4c1…27834b`) and current-source SHA
+`664fbc71…3656c6c`. Both reuse the P9-12/P9-13 package (SHA
+`043312b7…16da0b`, executable SHA `e9e26536…f786ff86`), establishing
+product-source equivalence only, not a fresh exact-tree build.
+
+The pinned Staff Directory workspace (`d6017672…e8ee7363`) retained exactly
+96 rows in each table. Verification covered the 6/5-column layouts, headers,
+identities and names, activation/re-entry lifecycle events, and PID-bound
+screenshots. Its maximum stable working set was 208,056,320 B and operation
+peak 208,056,320 B. The AI run used isolated `maximumRosterRows=100` settings
+without changing the global default. Of 100 candidates, 25 valid responses
+were parsed and applied; only `col_9` for rows 0–24 changed, preserving the
+other 75 rows and all other cells. Its stable working set and operation peak
+were both 214,089,728 B, below the strict 262,144,000 B cap. Focused
+validator tests passed 16/16, both bundle validators passed, and the
+independent Tester passed both bundles. No C++ production change was made; no
+return-to-baseline allowance is defined.
+
+P9-14 is complete. P9-15 Schedule refresh and language/theme cycles is active.
+Batch 3 continues through P9-18, with one push after it closes. The separate
+full Windows x64 Debug CTest and final packaged Release exit gates remain open.

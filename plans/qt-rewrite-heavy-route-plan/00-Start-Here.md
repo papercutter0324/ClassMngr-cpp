@@ -5,22 +5,18 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-11-20
+- Last updated: 2026-11-21
 - Current milestone: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 remains active through P9-18, with one push after it closes. P9-12
-  QtPdf viewer lifecycle passed independent review in one fresh packaged
-  Windows x64 Release process, naturally exiting 0, with all working-set
-  checkpoints below the strict cap. It reused the P9-11 executable, so this
-  establishes product-source equivalence only, not a new exact-tree build.
-  P9-13 Speaking/report generation and preview close passed independent
-  review in one packaged x64 Release process, naturally exiting 0 with a
-  maximum stable working set of 214,372,352 B. It reused the P9-12 package,
-  so this establishes product-source equivalence only, not a fresh exact-tree
-  build. P9-14 Staff Directory refresh/re-entry and AI batch review is active;
-  the AI route or mapping remains to be made explicit. The separate full
-  Windows x64 Debug gate remains open: the rebuild could not access generated
-  `ClassMngrNext/Resources`, and CTest used cached binaries. The final
-  packaged Release exit gate remains open.
+  Batch 3 remains active through P9-18, with one push after it closes. P9-14
+  Staff Directory and AI batch review passed independent review in two
+  packaged Windows x64 Release processes, naturally exiting 0. Maximum stable
+  working set and operation peak were 214,089,728 B, below the strict cap.
+  Both routes reused the P9-12/P9-13 package, so this establishes product-
+  source equivalence only, not a fresh exact-tree build. P9-15 Schedule refresh
+  and language/theme cycles is active. The separate full Windows x64 Debug
+  gate remains open: access to generated `ClassMngrNext/Resources` was denied
+  and CTest used cached binaries. The final packaged Release exit gate remains
+  open.
   See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
   [Phase 9 progress log](10-Phase-9-Progress-Log.md), and
   [current slice-batch tracker](Current-Slice-Batches.md).
