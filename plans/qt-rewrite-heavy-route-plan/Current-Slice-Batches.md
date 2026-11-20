@@ -15,10 +15,12 @@ Batch goal: measure the remaining large or repeated Next workflows in current-so
     five allowed harness-only scripts; exact-tree build provenance is limited
     as documented in the progress log. The legacy
     `lifecycle-class-transfer` route remains scale/reference evidence only.
-12. **P9-12 — QtPdf viewer lifecycle** (Active)
-    Open, render, close, release, and reopen a PDF; record document/page and
-    retained-object state. Existing route: visual-pdf-viewer.
-13. **P9-13 — Speaking/report generation and preview close** (Queued)
+12. **P9-12 — QtPdf viewer lifecycle** (Complete)
+    Accepted 2026-11-20 after independent review of packaged viewer open,
+    close, release, reopen, suspension, and re-entry; see the [Phase 9
+    progress log](10-Phase-9-Progress-Log.md). The internal render-completion
+    hook remains unavailable; screenshots and viewport samples verify content.
+13. **P9-13 — Speaking/report generation and preview close** (Active)
     Verify output and cleanup, excluding Sub Prep output generation measured
     in P9-08. Existing route: lifecycle-speaking-evaluation.
 14. **P9-14 — Staff Directory and AI batch review** (Queued)

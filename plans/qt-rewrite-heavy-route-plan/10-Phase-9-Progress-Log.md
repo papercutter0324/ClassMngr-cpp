@@ -993,3 +993,49 @@ P9-11 is complete. P9-12 QtPdf open/render/close/release/reopen lifecycle is
 active; Batch 3 continues through P9-18, with one push after Batch 3 closes.
 The full Windows x64 Debug CTest and final packaged Release exit gates remain
 open.
+
+### 2026-11-20 — P9-12 QtPdf viewer lifecycle accepted
+
+The [accepted evidence bundle](../../artifacts/phase9/packaged-next-pdf-viewer/20261120T064939281Z-be6b922092554021b6bcc80ecb008d6b/manifest.json)
+passed independent review. One fresh packaged Windows x64 Release process
+opened, closed, reopened, suspended, and re-entered the Next PDF viewer; it
+naturally exited 0 without forced termination. At catalog-ready, all 30
+documents were metadata-only, with no QtPdf events or viewer page. Opening
+`document_guides_lesson_planning` loaded the 3,533,707-byte packaged PDF
+(SHA-256 `295accab548b41f0b4f56e6ab89958ad5c3347646904c155b16a56ebe926caec`)
+in Ready/status 2 with error 0: 38 pages, index 0, 540×780 pt, and an active
+stream.
+
+Close released the stream and reset page count/rows to zero; the expected
+empty `QPdfDocument`/`QPdfView` wrapper pair and cached page remained. Reopen
+restored the 38-page document. Navigating to My Workspace suspended the viewer
+and released the stream while retaining the same session; re-entry and reopen
+restored the PDF. The trace records three loads, stream opens, and releases,
+12 retired-document destruction records, and one final view destruction. The
+internal `QPdfView` render-completion hook is unavailable. Five screenshots
+and UIA snapshots bound to PID 5452/HWND 10292150, with viewport samples, show
+the PDF at first open/reopen/re-entry, a blank closed viewer, and My Workspace
+during suspension.
+
+All eight working-set checkpoints were below the strict `<262,144,000 B` cap;
+maximum working set was 222,203,904 B and process peak was 223,891,456 B.
+Focused Python tests passed 9/9, PowerShell parsing passed, and the [final
+evidence validator](../../artifacts/phase9/packaged-next-pdf-viewer/20261120T064939281Z-be6b922092554021b6bcc80ecb008d6b/logs/validator-output.json)
+passed. P9-12 reused the accepted P9-11 executable
+(`e9e26536…f786ff86`), package inventory (`043312b7…16da0b`), and resources
+(`5d5c7731…94b35f`). Its product-source fingerprint (`fcf0d919…d41fe8`)
+matches P9-11 under the same exclusion of five allowed harness-only scripts.
+This establishes script-only product-source equivalence, not a fresh build
+from the exact full tree.
+
+The separate full Windows Debug gate remains open. The targeted rebuild in
+`build/windows-x64-debug` stopped at `ZERO_CHECK` with MSB4018/
+`UnauthorizedAccessException` because access to generated
+`ClassMngrNext/Resources` was denied. CTest then used cached binaries and all
+four targets failed; the bounded ACL reset was also denied and changed no
+permissions. This is not a P9-12 route defect. See the [Debug recheck evidence](../../artifacts/phase9/packaged-next-pdf-viewer/20261120T070658533Z-p9-12-access-ctest-recheck-3f55e798/result.txt).
+
+P9-12 is complete; P9-13 Speaking/report generation and preview close is
+active. Batch 3 continues through P9-18, with one push after Batch 3 closes.
+The full Windows x64 Debug CTest and final packaged Release exit gates remain
+open.

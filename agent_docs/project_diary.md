@@ -1,5 +1,20 @@
 # Project Diary
 
+### Phase 9 packaged QtPdf lifecycle — 2026-11-20
+
+The packaged Next viewer starts with catalog metadata but no PDF body. A normal
+close replaces the active `QPdfDocument` with an empty wrapper and retains the
+`QPdfView` with the page; suspension releases the stream and hides the cached
+page while the same session can reopen the document. Record body/stream state
+separately from wrapper and page counts. The Next offscreen visual harness and
+Legacy `visual-pdf-viewer` are references, not packaged acceptance.
+
+Keep the accepted evidence claim tied to the preserved executable and resource
+fingerprints: this run is product-source-equivalent, not a fresh exact-tree
+build. The normal Release route passed, but the separate Debug test rebuild
+could not access the generated Resources subtree. Do not treat failed cached
+binaries or the inaccessible build output as passing Debug CTest evidence.
+
 ### Phase 9 Class Transfer validation and lifecycle evidence — 2026-11-20
 
 Large synthetic workspaces may contain profile values that are storage-valid

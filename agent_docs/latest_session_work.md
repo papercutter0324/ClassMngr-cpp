@@ -1,6 +1,6 @@
 # Latest Session Work
 
-## Phase 9 current handoff — P9-12 QtPdf viewer lifecycle — 2026-11-20
+## Phase 9 current handoff — P9-13 Speaking/report lifecycle — 2026-11-20
 
 Deployment `phase9_continue_20261118` remains active on Heavy. Use Light for
 Git commits and pushes. P9-08 is committed at
@@ -51,15 +51,29 @@ successful build from the exact full current tree. No private-byte return
 allowance is claimed. See the Phase 9 progress log for exact row and
 provenance details.
 
-P9-12 QtPdf viewer lifecycle is active. The retained
-`lifecycle-class-transfer` route launches Legacy `ClassMngr` from `src/main.cpp`
-under offscreen Qt, so it remains only a Legacy reference. Use the existing
-`visual-pdf-viewer` route as discovery input; acceptance must be current-source
-packaged Windows evidence for opening, rendering, closing, releasing, and
-reopening the QtPdf document, with document/page and retained-object state.
-Batch 3 remains active through P9-18; commit each slice and push once after
-P9-18. Keep all Windows validation local. The full Windows x64 Debug CTest and
-final packaged Release exit gates remain open.
+P9-12 QtPdf viewer lifecycle is accepted. Evidence is in
+`artifacts/phase9/packaged-next-pdf-viewer/20261120T064939281Z-be6b922092554021b6bcc80ecb008d6b/`.
+Catalog-ready state contained 30 documents with no PDF body, QtPdf events, or
+viewer page. The packaged Next UI opened the 3,533,707-byte
+`document_guides_lesson_planning` PDF (SHA-256 `295accab…26caec`), rendered
+38 pages at 540 × 780 points, closed it, reopened it, suspended the viewer,
+released the active stream, then reopened after re-entry. The empty
+QPdfDocument/QPdfView wrapper pair and cached page are expected while closed;
+do not claim zero QtPdf objects. Five screenshots and UIA snapshots bind to
+PID 5452/HWND 10292150. All eight strict WS samples stayed below
+262,144,000 bytes; maximum was 222,203,904. The process exited naturally with
+code 0 and no forced cleanup. Python tests passed 9/9 and independent evidence
+validation passed. The run reused the P9-11 Release package and establishes
+product-source equivalence, not an exact-tree rebuild.
+
+The separate Debug CTest gate remains open: rebuild stopped at `ZERO_CHECK`
+because `build/windows-x64-debug/generated/ClassMngrNext/Resources` denied
+access, and CTest could only use cached binaries, which failed. No ACL change
+was made. P9-13 Speaking/report lifecycle is active; use the current Next
+workflow and existing `lifecycle-speaking-evaluation` only as discovery input,
+excluding Sub Prep output already measured in P9-08. Batch 3 remains active
+through P9-18; commit each slice and push once after P9-18. Keep Windows
+validation local. The final packaged Release exit gate also remains open.
 
 ## Superseded handoff - P9-07 navigation memory failure stage - 2026-11-18
 

@@ -7,14 +7,15 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-20
 - Current milestone: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 remains active through P9-18, with one push after it closes. P9-11
-  Class Transfer passed independent review across three fresh UIA-bound
-  packaged Windows x64 Release processes, all naturally exiting 0, for export,
-  apply, and explicit review-cancel; route working sets stayed below the
-  strict cap. Its product sources match the current tree after excluding five
-  allowed harness-only scripts; a successful exact-tree Release build was not
-  established. P9-12 QtPdf viewer lifecycle is active. The full Windows x64
-  Debug CTest and final packaged Release exit gates remain open.
+  Batch 3 remains active through P9-18, with one push after it closes. P9-12
+  QtPdf viewer lifecycle passed independent review in one fresh packaged
+  Windows x64 Release process, naturally exiting 0, with all working-set
+  checkpoints below the strict cap. It reused the P9-11 executable, so this
+  establishes product-source equivalence only, not a new exact-tree build.
+  P9-13 Speaking/report generation and preview close is active. The separate
+  full Windows x64 Debug gate remains open: the rebuild could not access
+  generated `ClassMngrNext/Resources`, and CTest used cached binaries. The
+  final packaged Release exit gate remains open.
   See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
   [Phase 9 progress log](10-Phase-9-Progress-Log.md), and
   [current slice-batch tracker](Current-Slice-Batches.md).

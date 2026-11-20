@@ -39,16 +39,15 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Codex
 - Last updated: 2026-11-20
 - Current note: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 remains active through P9-18, then push once. P9-11 Class Transfer
-  passed independent review across three fresh UIA-bound packaged x64 Release
-  processes, all naturally exiting 0;
-  P9-12 QtPdf viewer lifecycle is active. The accepted P9-11 working-set
-  maxima stayed below the strict cap. Its product sources match the current
-  tree after excluding five allowed harness-only scripts; a successful
-  exact-tree Release build was not established. No private return allowance
-  is defined. The full Windows x64 Debug CTest and final packaged Release exit
-  gates remain open. See the Phase 9 progress log and current slice-batch
-  tracker.
+  Batch 3 remains active through P9-18, then push once. P9-12 QtPdf viewer
+  lifecycle passed independent review in one fresh packaged x64 Release
+  process, naturally exiting 0; all working-set checkpoints stayed below the
+  strict cap. The route reused the P9-11 executable and establishes product-
+  source equivalence only, not a new exact-tree build. P9-13 Speaking/report
+  lifecycle is active. The separate full Windows x64 Debug gate remains open:
+  its rebuild was denied access to generated `ClassMngrNext/Resources`, and
+  CTest used cached binaries. The final packaged Release exit gate also
+  remains open. See the Phase 9 progress log and current slice-batch tracker.
 
 ### Slice batches
 
