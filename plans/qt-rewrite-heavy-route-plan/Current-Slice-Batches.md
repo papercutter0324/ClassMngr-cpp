@@ -20,10 +20,12 @@ Batch goal: measure the remaining large or repeated Next workflows in current-so
     close, release, reopen, suspension, and re-entry; see the [Phase 9
     progress log](10-Phase-9-Progress-Log.md). The internal render-completion
     hook remains unavailable; screenshots and viewport samples verify content.
-13. **P9-13 — Speaking/report generation and preview close** (Active)
-    Verify output and cleanup, excluding Sub Prep output generation measured
-    in P9-08. Existing route: lifecycle-speaking-evaluation.
-14. **P9-14 — Staff Directory and AI batch review** (Queued)
+13. **P9-13 — Speaking/report generation and preview close** (Complete)
+    Accepted 2026-11-20 after independent review; see the [Phase 9 progress
+    log](10-Phase-9-Progress-Log.md). The reused P9-12 package establishes
+    product-source equivalence, not a fresh exact-tree build. Internal report
+    asset-session counters are not exposed by packaged visibility.
+14. **P9-14 — Staff Directory and AI batch review** (Active)
     Measure staff refresh/re-entry and large AI batch review. Staff route
     exists; AI batch coverage needs an explicit route or documented mapping.
 15. **P9-15 — Schedule refresh and language/theme cycles** (Queued)

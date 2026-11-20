@@ -6917,3 +6917,26 @@ branch, draft PR, workflow run, or remote ref changed. Next: obtain explicit
 authorization to upload `f6b258f` to public
 `papercutter0324/ClassMngr-cpp` and open a draft PR against `Qt-Rewrite`; then
 run and review Linux/Windows workflow results. Keep both phase gates open.
+
+## Current continuation — 2026-11-20 — Phase 9 P9-13 accepted
+
+Active deployment ID: `phase9_continue_20261118`; route: Heavy. P9-13 Speaking
+Evaluation is accepted after independent review. The packaged Next process
+opened and closed both report previews, exported the default 25-report ZIP
+from a 30-row prepared evaluation, verified the 25 one-page PDFs and expected
+content, released all writers, deleted temporary staging, navigated back to
+My Workspace, and exited naturally with code 0. Maximum stable app working
+set was 214,372,352 bytes. The separate operation peak was 368,545,792 bytes.
+Focused validator tests passed 23/23 and independent evidence validation
+passed. This reused the P9-12 Release package, so evidence establishes
+product-source equivalence, not a fresh exact-tree build. Internal report
+asset-session counters are not visible through packaged UIA and are not
+claimed.
+
+P9-14 Staff Directory refresh/re-entry and AI batch review is next. Its
+discovery must make the AI batch route explicit. Batch 3 remains active
+through P9-18; commit each slice and push only after Batch 3 closes. The full
+Windows x64 Debug CTest gate remains open because generated
+`ClassMngrNext/Resources` access was denied; no ACL changes were made. The
+final packaged Release exit gate also remains open. Preserve untracked
+`p9-09-integration-output.txt` and do not stage it.

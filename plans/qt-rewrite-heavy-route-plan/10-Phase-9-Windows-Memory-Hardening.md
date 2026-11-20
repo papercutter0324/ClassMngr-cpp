@@ -44,10 +44,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
   process, naturally exiting 0; all working-set checkpoints stayed below the
   strict cap. The route reused the P9-11 executable and establishes product-
   source equivalence only, not a new exact-tree build. P9-13 Speaking/report
-  lifecycle is active. The separate full Windows x64 Debug gate remains open:
-  its rebuild was denied access to generated `ClassMngrNext/Resources`, and
-  CTest used cached binaries. The final packaged Release exit gate also
-  remains open. See the Phase 9 progress log and current slice-batch tracker.
+  lifecycle passed independent review; its reused P9-12 package also provides
+  product-source equivalence only. P9-14 Staff Directory refresh/re-entry and
+  AI batch review is active; AI route/mapping is still needed. The separate
+  full Windows x64 Debug gate remains open: its rebuild was denied access to
+  generated `ClassMngrNext/Resources`, and CTest used cached binaries. The
+  final packaged Release exit gate also remains open. See the Phase 9 progress
+  log and current slice-batch tracker.
 
 ### Slice batches
 

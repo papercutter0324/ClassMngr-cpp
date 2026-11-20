@@ -12,10 +12,15 @@
   Windows x64 Release process, naturally exiting 0, with all working-set
   checkpoints below the strict cap. It reused the P9-11 executable, so this
   establishes product-source equivalence only, not a new exact-tree build.
-  P9-13 Speaking/report generation and preview close is active. The separate
-  full Windows x64 Debug gate remains open: the rebuild could not access
-  generated `ClassMngrNext/Resources`, and CTest used cached binaries. The
-  final packaged Release exit gate remains open.
+  P9-13 Speaking/report generation and preview close passed independent
+  review in one packaged x64 Release process, naturally exiting 0 with a
+  maximum stable working set of 214,372,352 B. It reused the P9-12 package,
+  so this establishes product-source equivalence only, not a fresh exact-tree
+  build. P9-14 Staff Directory refresh/re-entry and AI batch review is active;
+  the AI route or mapping remains to be made explicit. The separate full
+  Windows x64 Debug gate remains open: the rebuild could not access generated
+  `ClassMngrNext/Resources`, and CTest used cached binaries. The final
+  packaged Release exit gate remains open.
   See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
   [Phase 9 progress log](10-Phase-9-Progress-Log.md), and
   [current slice-batch tracker](Current-Slice-Batches.md).

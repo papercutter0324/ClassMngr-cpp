@@ -1039,3 +1039,36 @@ P9-12 is complete; P9-13 Speaking/report generation and preview close is
 active. Batch 3 continues through P9-18, with one push after Batch 3 closes.
 The full Windows x64 Debug CTest and final packaged Release exit gates remain
 open.
+
+### 2026-11-20 — P9-13 Speaking/report lifecycle accepted
+
+The [accepted evidence bundle](../../artifacts/phase9/packaged-next-speaking-evaluation/20261120T133615659Z-4a085b90bf3842319599ca4f1c24bff5/manifest.json)
+passed independent review. The [normal validator report](../../artifacts/phase9/p913-final-validation/20261120T133615659Z-4a085b90bf3842319599ca4f1c24bff5/normal-validator.json)
+and [pre-run source freeze](../../artifacts/phase9/p913-final-run-freeze/freeze-20261120T133608274Z-5f4058f6a7524f1f8e6194c9de994e14/source-freeze.json)
+are preserved separately. One packaged Windows x64 Release process (PID
+38292, main HWND 11863712) naturally exited 0 without forced termination.
+UIA-bound navigation visited Speaking Evaluation and My Workspace. Direct and
+batch report previews each opened and closed; screenshots show custom report
+preview content. The prepared workspace preserved 30 evaluation rows. Default
+All Students (25) generated 25 one-page PDFs with expected text in a
+50,740,224-byte ZIP (SHA-256
+`222980970850b6be54dd5c2f00d530d3f48aadb62365482bfcf59498fea85a14`).
+
+The trace records 25 writer creates and release-before/release-after events;
+the staging directory was created, deleted, and absent after completion. The
+six stable normal-use checkpoints peaked at 214,372,352 B, below the strict
+262,144,000 B cap; the separate operation peak was 368,545,792 B. Focused
+Python validator tests passed 23/23, PowerShell AST parsing and Python
+compilation passed, and the normal validator passed. Packaged visibility does
+not expose internal report asset-session counters; cleanup evidence is limited
+to writer, staging, preview, and page lifecycle signals. No production C++
+change was made.
+
+The run reused the P9-12 executable/package and establishes product-source
+equivalence only, not a fresh exact-tree build. The separate full Windows x64
+Debug CTest gate remains open because generated
+`build/windows-x64-debug/generated/ClassMngrNext/Resources` access was denied
+and CTest used cached binaries. The final packaged Release exit gate also
+remains open. P9-13 is complete; P9-14 Staff Directory refresh/re-entry and
+AI batch review is active, with an explicit AI route or mapping still needed.
+Batch 3 continues through P9-18, with one push after it closes.

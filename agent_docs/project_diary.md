@@ -1,5 +1,24 @@
 # Project Diary
 
+### Phase 9 Speaking report lifecycle — 2026-11-20
+
+The packaged Next Speaking Evaluation export used the default `All Students
+(25)` scope even though the prepared evaluation retained 30 rows. Validate
+each ZIP member for page count and expected text, and verify each report writer
+releases before and after use plus deletion of the temporary staging directory.
+The direct and batch report previews are custom widgets, separate from QtPdf;
+record them as their own open/close lifecycle. Packaged UI does not expose the
+internal report asset-session counters, so do not claim those counters were
+measured.
+
+The accepted route used PID-bound `PrintWindow` captures after an earlier
+`CopyFromScreen` attempt was quarantined. The successful rerun does not prove
+the earlier detection was a false positive or independently establish
+Defender runtime state. As with P9-11 and P9-12, reused Release binaries prove
+product-source equivalence only, not a fresh exact-tree build. Keep stable
+working-set checkpoints separate from operation peak; the latter can exceed
+the normal-use cap without changing the acceptance rule.
+
 ### Phase 9 packaged QtPdf lifecycle — 2026-11-20
 
 The packaged Next viewer starts with catalog metadata but no PDF body. A normal

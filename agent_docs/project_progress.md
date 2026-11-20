@@ -1,23 +1,27 @@
 # Project Progress
 
-## Phase 9 current position — P9-13 Speaking/report lifecycle — 2026-11-20
+## Phase 9 current position — P9-14 Staff/AI review lifecycle — 2026-11-20
 
 Phase 9 remains In progress. Batches 1 and 2 are closed; Batch 3 is active
-through P9-18. P9-12 QtPdf viewer lifecycle passed independent review in one
-local packaged Next Windows x64 Release process. Catalog-ready state had 30
-documents and no loaded PDF body; the route opened, rendered, closed, reopened,
-suspended, released active content, and reopened again. All eight strict
-working-set samples stayed below 262,144,000 bytes; the maximum was
-222,203,904 bytes. The app exited naturally with code 0 and used no forced
-termination. The evidence reuses the P9-11 Release product package and
-establishes product-source equivalence, not a fresh exact-tree build.
+through P9-18. P9-13 Speaking/report lifecycle passed independent review in a
+local packaged Next Windows x64 Release process. The route rendered and closed
+both previews, exported the default 25-report batch, validated all one-page
+PDF members and expected text, recorded 25 writer releases and staging
+deletion, navigated back to My Workspace, and exited naturally with code 0.
+All stable app working-set checkpoints stayed below 262,144,000 bytes; the
+maximum was 214,372,352 bytes. Operation peak was 368,545,792 bytes and is
+reported separately below the advisory cap. The evidence reuses the P9-12
+Release package and establishes product-source equivalence, not a fresh
+exact-tree build.
 
-P9-12's focused Python validator suite passed 9/9, PowerShell parsing passed,
-and independent evidence validation passed. A focused Debug test rebuild
-remains unresolved because the generated Resources subtree denies access; the
-separate full Windows x64 Debug CTest gate remains open. P9-13 Speaking/report
-lifecycle is active. The final packaged Release exit gate remains open; see the
-Phase 9 plan, progress log, and current slice-batch tracker.
+P9-13's Python validator tests passed 23/23, the evidence validator passed,
+and PowerShell parsing passed. Packaged visibility does not expose the internal
+report asset-session counters; writer, temporary staging, preview, and page
+lifecycle are the measured cleanup signals. The separate full Windows x64
+Debug CTest gate remains open because the standard generated Resources subtree
+denies access. P9-14 Staff Directory and AI batch review is active; the final
+packaged Release exit gate remains open. See the Phase 9 plan, progress log,
+and current slice-batch tracker.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 
