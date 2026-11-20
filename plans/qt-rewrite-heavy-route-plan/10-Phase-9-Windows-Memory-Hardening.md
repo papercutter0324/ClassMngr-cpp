@@ -39,12 +39,13 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Codex
 - Last updated: 2026-11-21
 - Current note: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 remains active through P9-18, then push once. P9-14 Staff Directory
-  and AI batch review passed independent review in two packaged x64 Release
-  processes; maximum stable working set and operation peak were 214,089,728 B.
-  Both reused the P9-12/P9-13 package, establishing product-source equivalence
-  only, not a fresh exact-tree build; no return-to-baseline allowance is
-  defined. P9-15 Schedule refresh and language/theme cycles is active. The
+  Batch 3 remains active through P9-18, then push once. P9-15 Schedule refresh
+  and language/theme cycles passed independent review in one packaged x64
+  Release process; stable working-set maximum was 221,945,856 B and operation
+  peak was 223,498,240 B. It reused the accepted P9-14 package, establishing
+  product-source equivalence only, not a fresh exact-tree build. No return-to-
+  baseline allowance is defined, and generic lifecycle counters are not
+  Schedule metrics. P9-16 repeated workspace open/close is active. The
   separate full Windows x64 Debug gate remains open: access to generated
   `ClassMngrNext/Resources` was denied and CTest used cached binaries. The
   final packaged Release exit gate also remains open. See the Phase 9 progress

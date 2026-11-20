@@ -7,16 +7,17 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-21
 - Current milestone: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 remains active through P9-18, with one push after it closes. P9-14
-  Staff Directory and AI batch review passed independent review in two
-  packaged Windows x64 Release processes, naturally exiting 0. Maximum stable
-  working set and operation peak were 214,089,728 B, below the strict cap.
-  Both routes reused the P9-12/P9-13 package, so this establishes product-
-  source equivalence only, not a fresh exact-tree build. P9-15 Schedule refresh
-  and language/theme cycles is active. The separate full Windows x64 Debug
-  gate remains open: access to generated `ClassMngrNext/Resources` was denied
-  and CTest used cached binaries. The final packaged Release exit gate remains
-  open.
+  Batch 3 remains active through P9-18, with one push after it closes. P9-15
+  Schedule refresh and language/theme cycles passed independent review in one
+  packaged Windows x64 Release process, naturally exiting 0. Its stable
+  working-set maximum was 221,945,856 B and operation peak was 223,498,240 B,
+  both below their limits. It reused the accepted P9-14 package, establishing
+  product-source equivalence only, not a fresh exact-tree build. No
+  return-to-baseline allowance is defined; generic lifecycle counters are not
+  Schedule metrics. P9-16 repeated workspace open/close is active. The
+  separate full Windows x64 Debug gate remains open: access to generated
+  `ClassMngrNext/Resources` was denied and CTest used cached binaries. The
+  final packaged Release exit gate remains open.
   See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
   [Phase 9 progress log](10-Phase-9-Progress-Log.md), and
   [current slice-batch tracker](Current-Slice-Batches.md).

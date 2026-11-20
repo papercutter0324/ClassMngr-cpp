@@ -30,11 +30,12 @@ Batch goal: measure the remaining large or repeated Next workflows in current-so
     Release routes; see the [Phase 9 progress log](10-Phase-9-Progress-Log.md).
     Both reused the P9-12/P9-13 package and establish product-source
     equivalence, not a fresh exact-tree build.
-15. **P9-15 — Schedule refresh and language/theme cycles** (Active)
-    Repeat schedule refresh, language change, and theme rebuild with bounded
-    retained objects. Existing route: lifecycle-schedule; locale/theme coverage
-    must be made explicit.
-16. **P9-16 — Repeated workspace open/close** (Queued)
+15. **P9-15 — Schedule refresh and language/theme cycles** (Complete)
+    Accepted 2026-11-21 after independent review; see the [Phase 9 progress
+    log](10-Phase-9-Progress-Log.md). The reused P9-14 package establishes
+    product-source equivalence only, not a fresh exact-tree build. No return-
+    to-baseline allowance is defined.
+16. **P9-16 — Repeated workspace open/close** (Active)
     Verify matched before/after process memory and no growth across repeated
     cycles.
 17. **P9-17 — Large roster editing** (Queued)

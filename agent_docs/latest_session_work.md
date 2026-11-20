@@ -6965,3 +6965,24 @@ after Batch 3 closes. The full Windows x64 Debug CTest gate remains open due
 to generated `ClassMngrNext/Resources` access denial; no ACL changes were
 made. The final packaged Release exit gate also remains open. Preserve
 untracked `p9-09-integration-output.txt` and do not stage it.
+
+## Current continuation — 2026-11-21 — Phase 9 P9-15 accepted
+
+Active deployment ID: `phase9_continue_20261118`; route: Heavy. P9-15 Schedule
+refresh and language/theme lifecycle passed independent review in one packaged
+Next Windows x64 Release process. The isolated profile traversed English/Light
+→ Korean/Light → Korean/Dark → English/Dark → English/Light, then performed
+two Schedule leave/re-entry refreshes. Seven UIA snapshots and screenshots
+showed a 7×8 grid; each matched all 768 schedule entries in the identified
+96-class fixture. Before/after snapshots preserved all 17 user tables, with
+SQLite integrity and foreign-key checks passing. The process exited naturally
+with code 0; maximum stable working set was 221,945,856 bytes and separate
+operation peak was 223,498,240 bytes. Focused tests passed 8/8.
+
+The route reused the accepted P9-14 package; product-source equivalence is
+established, not a fresh exact-tree build. P9-16 repeated workspace open/close
+is next. Batch 3 remains active through P9-18; commit each slice and push only
+after Batch 3 closes. The full Windows x64 Debug CTest gate remains open due
+to generated `ClassMngrNext/Resources` access denial; no ACL changes were
+made. The final packaged Release exit gate also remains open. Preserve
+untracked `p9-09-integration-output.txt` and do not stage it.

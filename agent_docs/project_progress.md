@@ -1,23 +1,22 @@
 # Project Progress
 
-## Phase 9 current position — P9-15 Schedule/locale/theme lifecycle — 2026-11-21
+## Phase 9 current position — P9-16 repeated workspace open/close — 2026-11-21
 
 Phase 9 remains In progress. Batches 1 and 2 are closed; Batch 3 is active
-through P9-18. P9-14 Staff Directory and Speaking Evaluation AI batch lifecycle
-passed independent review in two packaged Next Windows x64 Release processes.
-Staff verified both 96-row tables on activation and re-entry; its maximum
-working set was 208,056,320 bytes. AI reviewed 100 candidates, applied 25
-comments, preserved the other 75 rows and all other cells, and peaked at
-214,089,728 bytes. Both processes exited naturally with code 0. Focused
-validator tests passed 16/16. The routes reused the accepted P9-12/P9-13
-Release package, establishing product-source equivalence but not a fresh
-exact-tree build.
+through P9-18. P9-15 Schedule refresh and language/theme lifecycle passed
+independent review in one packaged Next Windows x64 Release process. Seven
+captured states covered English/Korean and Light/Dark settings plus two
+Schedule re-entries. Each rendered 7×8 schedule view matched all 768 fixture
+entries. Before/after snapshots preserved all 17 user tables. The process
+exited naturally with code 0; maximum stable working set was 221,945,856 bytes
+and operation peak was 223,498,240 bytes. Focused validator tests passed 8/8.
+The route reused the accepted P9-14 Release package and establishes product-
+source equivalence, not a fresh exact-tree build.
 
 The separate full Windows x64 Debug CTest gate remains open because the
-standard generated Resources subtree denies access. P9-15 Schedule refresh
-and language/theme cycles is active; the final packaged Release exit gate also
-remains open. See the Phase 9 plan, progress log, and current slice-batch
-tracker.
+standard generated Resources subtree denies access. P9-16 repeated workspace
+open/close is active; the final packaged Release exit gate also remains open.
+See the Phase 9 plan, progress log, and current slice-batch tracker.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

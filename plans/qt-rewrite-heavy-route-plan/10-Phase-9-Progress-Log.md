@@ -1100,3 +1100,30 @@ return-to-baseline allowance is defined.
 P9-14 is complete. P9-15 Schedule refresh and language/theme cycles is active.
 Batch 3 continues through P9-18, with one push after it closes. The separate
 full Windows x64 Debug CTest and final packaged Release exit gates remain open.
+
+### 2026-11-21 — P9-15 Schedule refresh and language/theme accepted
+
+The [accepted packaged evidence bundle](../../artifacts/phase9/packaged-next-p9-15-schedule-locale-theme/20261120T225845019Z-f75caa8036d44ba18c2c41ce06dbc621/manifest.json)
+passed independent review. One packaged Next Windows x64 Release process
+(PID 32152, main HWND 4129970) reused the accepted P9-14 package and naturally
+exited 0 without forced termination. Its source fingerprint is
+`fcf0d919d105b44d52eaca319eef5a42e222c3721e8b022ea970127d41d41fe8`; this
+establishes product-source equivalence only, not a fresh exact-tree build.
+
+Using isolated settings, the route traversed English/Light → Korean/Light →
+Korean/Dark → English/Dark → English/Light, then left and re-entered Schedule
+for two refreshes. Seven UIA and screenshot states show each rendered 7×8 grid
+(56 cells, 8 headers) matching all 768 schedule entries in the 96-class
+fixture. Before/after snapshots preserved all 17 user tables; SQLite integrity
+and foreign-key checks passed.
+
+The stable working-set maximum was 221,945,856 B, below 262,144,000 B; the
+separate operation peak was 223,498,240 B, below 536,870,912 B. Focused
+validator tests passed 8/8, the normal validator and independent review passed,
+and PowerShell parsing passed. Generic lifecycle counters are not claimed as
+Schedule metrics, and no return-to-baseline allowance is defined. No
+production C++ change was made.
+
+P9-15 is complete; P9-16 repeated workspace open/close is active. Batch 3
+continues through P9-18, with one push after it closes. The separate full
+Windows x64 Debug CTest and final packaged Release exit gates remain open.

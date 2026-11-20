@@ -1,5 +1,19 @@
 # Project Diary
 
+### Phase 9 Schedule locale/theme and refresh lifecycle — 2026-11-21
+
+The packaged Schedule page reloads when activated; suspension clears retained
+schedule state while the cached page instance remains. Measure a real refresh
+by navigating away and back, not by treating suspension as destruction.
+Language and theme changes through Preferences retranslate and restyle the
+existing page but do not themselves reload the schedule model. Use an isolated
+settings root with explicit English/Light defaults, then exercise the supported
+English/Korean × Light/Dark states and verify each rendered grid against the
+same fixture projection. The packaged lifecycle recorder exposes generic
+widget/model counts, not the page's full Schedule metrics; verify visible data
+and the exact workspace snapshots instead, without inferring entries from
+generic root-row counts.
+
 ### Phase 9 Staff and AI batch lifecycle — 2026-11-21
 
 The Next Staff page reused one `SharedStaffDirectoryPage` for Native English
