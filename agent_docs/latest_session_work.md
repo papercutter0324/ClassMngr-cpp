@@ -7002,9 +7002,25 @@ the maximum settled Working Set was 235,921,408 bytes. Focused tests passed
 Private Bytes increased about 10.8 MB open and 11.2 MB closed and remains an
 unresolved secondary trend. Separate Recent Files and tiny/large A/B runs
 reproduced it without identifying a leak or owner; no product code changed.
-P9-17 large roster editing is next and is the second-to-last Batch 3
-candidate, so Batch 4 discovery starts now. Batch 3 remains active through
-P9-18; push only after it closes. The full Windows x64 Debug CTest gate remains
-open because generated `ClassMngrNext/Resources` access was denied; no ACL
-changes were made. The final packaged Release exit gate also remains open.
-Preserve untracked `p9-09-integration-output.txt` and do not stage it.
+P9-17 large roster editing is active. Its packaged route has not yet completed;
+previous attempts reached fixture preparation and Classes UIA selection, then
+stopped before edit/save/re-entry and therefore provide no accepted memory or
+persistence evidence. The current route uses the accepted P9-16 package with
+explicit product-source equivalence checks; it does not claim an exact-tree
+build. Batch 4 discovery is complete: P9-19 Classes navigation/editor
+lifecycle, conditional P9-20 larger successful Schedule Import apply, and
+P9-21 Private Bytes diagnostic follow-up. Batch 3 remains active through
+P9-18; commit each slice and push only after it closes.
+
+The full Windows x64 Debug CTest gate now passes. An incremental build in the
+standard Debug folder succeeded under elevated execution, nine focused visual
+capture registrations passed, and full unfiltered CTest passed 620/620 with
+zero failures or timeouts. The capture harnesses now use the packaged static
+`Inter-Regular.ttf` instead of excluded `Inter.ttc`; the Sub Prep test fixture
+keeps its diagnostic vector alive through host teardown. These were test-only
+changes, with no ACL changes. See `artifacts/phase9/phase9-debug-build-final-20261121.log`,
+`artifacts/phase9/phase9-debug-ctest-elevated-20261121.log`, and the focused
+logs under `build/windows-x64-debug/phase9-diagnostics/`.
+
+The final packaged Release exit gate remains open. Preserve untracked
+`p9-09-integration-output.txt` and do not stage it.

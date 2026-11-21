@@ -7,17 +7,16 @@
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-21
 - Current milestone: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 remains active through P9-18, with one push after it closes. P9-16
-  repeated workspace open/close passed independent review in one packaged
-  Windows x64 Release process, naturally exiting 0. Maximum settled working
-  set was 235,921,408 B; operation peak was 237,862,912 B. The run reused the
-  P9-15 package, establishing product-source equivalence, not a fresh exact-
-  tree build. Private Bytes rose about 10.8 MB open and 11.2 MB closed; this
-  remains unresolved without an identified leak or owner. P9-17 large roster
-  editing is active. The full Windows x64 Debug CTest and final packaged
-  Release exit gates remain open; generated `ClassMngrNext/Resources` access
-  was denied, CTest used cached binaries, and no ACL changes were made.
-  See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
+  Batch 3 remains active through P9-18, with one push after it closes. P9-17
+  large roster editing is active. The local Windows x64 Debug gate passed in
+  the standard build folder: incremental build, focused visual CTest 9/9, and
+  elevated full unfiltered CTest 620/620 with 0 failures and 0 timeouts. The
+  test-only capture fix loads packaged `Inter-Regular.ttf` rather than excluded
+  `Inter.ttc`; the Sub Prep fixture-order fix keeps diagnostics alive through
+  teardown. Normal execution still cannot enumerate generated
+  `ClassMngrNext/Resources`; no ACL changes were made. The final packaged
+  Release exit gate remains open. See the
+  [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
   [Phase 9 progress log](10-Phase-9-Progress-Log.md), and
   [current slice-batch tracker](Current-Slice-Batches.md).
 

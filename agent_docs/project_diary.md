@@ -1,5 +1,17 @@
 # Project Diary
 
+### Phase 9 local Debug CTest recovery — 2026-11-21
+
+The nine visual captures requested `Inter.ttc`, which the current resource
+inventory excludes; use packaged `Inter-Regular.ttf` for the test's existing
+Inter family and preserve the visual checks. The Sub Prep teardown callback
+must not outlive its captured diagnostic vector; declare the vector before its
+host so reverse destruction keeps it alive through suspension. After these
+test-only corrections, focused captures passed 9/9 and the full local Debug
+suite passed 620/620. Ordinary access to generated Resources remains denied,
+so the incremental build and CTest needed elevated execution; no ACL change
+was made.
+
 ### Phase 9 workspace open/close memory lifecycle — 2026-11-21
 
 For P9-16, compare repeated cycles using the Phase 9 primary metric, Windows

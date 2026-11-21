@@ -1155,3 +1155,67 @@ continues through P9-18, with one push after it closes. The separate full
 Windows x64 Debug CTest and final packaged Release exit gates remain open:
 access to generated `ClassMngrNext/Resources` was denied, CTest used cached
 binaries, and no ACL changes were made.
+
+### 2026-11-21 — Initial Windows x64 Debug gate attempt (superseded)
+
+An incremental full Windows x64 Debug build in the standard
+`build/windows-x64-debug` folder succeeded under elevated execution. The
+normal attempt failed at `ZERO_CHECK`/FileTracker with Access Denied. An
+elevated, unfiltered CTest run reported 610/620 passed, 10 failed, and 0
+timeouts; this is a failed suite, not a pass. The build and CTest logs are
+[here](../../artifacts/phase9/phase9-debug-build-final-20261121.log) and
+[here](../../artifacts/phase9/phase9-debug-ctest-elevated-20261121.log).
+Normal execution still cannot enumerate generated `ClassMngrNext/Resources`;
+no ACL changes were made.
+
+One failure,
+`ClassMngrNextSubPrepPageTests::lifecycleActionCheckpointsReportSuccessfulSummaryAndRefresh`,
+was traced to test-fixture destruction order: `diagnosticEvents` was destroyed
+before the host teardown callback. The member declaration order alone was
+corrected in commit `415bf2a58a9a47a68e728eef1555d7d3316edc8f`; production code
+and assertions were unchanged. The focused Sub Prep CTest rerun passed 1/1.
+Command: `ctest --test-dir build/windows-x64-debug -C Debug -R ClassMngrNextSubPrepPageTests --output-on-failure`.
+The full suite has not been rerun after this fix, and the other nine failures
+from the original run remain unresolved.
+
+Nine visual capture invocations (shared staff five registered variants,
+including one duplicate; teacher two; birthdays two) exited in 0.03–0.07
+seconds with empty output and no refreshed PNG or manifest. Existing outputs
+are stale from 2026-11-18. Three direct reproductions outside CTest (shared
+staff native en_US/light, teacher ko_KR/dark, birthdays en_US/light) each
+failed with exit 1 in both normal and elevated contexts, again without output
+or files. Their indexes are [elevated](../../artifacts/phase9/debug-direct-visual-repro-elevated-20261121_20261121_132807/logs/index.json)
+and [normal](../../artifacts/phase9/debug-direct-visual-repro-20261121_20261121_132559/logs/index.json).
+At this attempt the visual cause was unknown; the no-output failures did not
+establish a CTest defect or a visual parity result. The later same-day recovery
+entry below identifies the font-path cause and records the passing Debug gate.
+P9-17 remains active through Batch 3/P9-18; the final packaged Release gate
+remains open.
+
+### 2026-11-21 — Local Windows x64 Debug gate passed
+
+The earlier 610/620 CTest result was superseded after the visual capture
+startup cause was identified: all three harness families requested `Inter.ttc`,
+which the current resource inventory excludes as superseded. The packaged
+`Inter-Regular.ttf` static face is present. A four-string substitution across
+the three test harnesses now loads it while retaining UI family `Inter`;
+assertions, baselines, resource files, and CMake registrations are unchanged.
+The Sub Prep fixture member-order correction remains test-only and is committed
+as `415bf2a58a9a47a68e728eef1555d7d3316edc8f`.
+
+The standard `build/windows-x64-debug` tree was built incrementally under
+elevated execution: the earlier full build and the affected three-target
+rebuild both succeeded. Focused CTest passed 9/9 visual capture registrations;
+the elevated, unfiltered local Debug CTest passed 620/620 with 0 failures and 0
+timeouts. The [incremental full build](../../artifacts/phase9/phase9-debug-build-final-20261121.log),
+[affected-target rebuild](../../build/windows-x64-debug/phase9-diagnostics/visual-capture-resource-alignment-20261121_135359/debug-target-build-elevated.log),
+[focused CTest](../../build/windows-x64-debug/phase9-diagnostics/visual-capture-resource-alignment-20261121_135359/focused-visual-ctest-elevated.log),
+and [full CTest](../../build/windows-x64-debug/phase9-diagnostics/visual-capture-resource-alignment-20261121_135359/full-debug-ctest-elevated.log)
+are preserved. Independent Tester review passed. Before capture regeneration,
+24 prior files were preserved and SHA-256 verified; see the [diagnostic README](../../build/windows-x64-debug/phase9-diagnostics/visual-capture-resource-alignment-20261121_135359/README.txt)
+and [capture manifest](../../build/windows-x64-debug/phase9-diagnostics/visual-capture-resource-alignment-20261121_135359/capture-manifest.csv).
+
+The full local Debug build/CTest gate is passed. Normal execution still cannot
+enumerate generated `ClassMngrNext/Resources`; no ACL changes were made. The
+final packaged Release gate remains open. P9-17 large roster editing remains
+active through Batch 3/P9-18, with one push after Batch 3 closes.

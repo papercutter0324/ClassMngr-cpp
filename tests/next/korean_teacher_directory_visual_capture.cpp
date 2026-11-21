@@ -882,7 +882,7 @@ int main(int argc, char* argv[])
     QString interFamily;
     QString pretendardFamily;
     for (const QString& font : {
-             QStringLiteral("Inter.ttc"),
+             QStringLiteral("Inter-Regular.ttf"),
              QStringLiteral("PretendardVariable.ttf")
          })
     {
@@ -899,7 +899,7 @@ int main(int argc, char* argv[])
             qCritical().noquote() << "Could not register capture font:" << fontPath;
             return 1;
         }
-        if (font == QStringLiteral("Inter.ttc"))
+        if (font == QStringLiteral("Inter-Regular.ttf"))
         {
             interFamily = families.front();
         }

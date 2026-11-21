@@ -378,7 +378,7 @@ int main(int argc, char* argv[])
 
     const bool korean = locale.startsWith(QStringLiteral("ko"));
     for (const auto& [name, family] : {
-             std::pair{QStringLiteral("Inter.ttc"), QStringLiteral("Inter")},
+             std::pair{QStringLiteral("Inter-Regular.ttf"), QStringLiteral("Inter")},
              std::pair{QStringLiteral("PretendardVariable.ttf"), QStringLiteral("Pretendard")}
          })
     {

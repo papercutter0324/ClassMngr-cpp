@@ -17,11 +17,21 @@ Files and tiny/large fixture diagnostics reproduced Private Bytes growth but
 did not identify a leak or owner. The accepted run reused the P9-15 Release
 package, establishing product-source equivalence, not a fresh exact-tree build.
 
-The separate full Windows x64 Debug CTest gate remains open because the
-standard generated Resources subtree denies access. P9-17 large roster
-editing is active; Batch 4 candidate discovery starts with this second-to-last
-Batch 3 candidate. The final packaged Release exit gate remains open. See the
-Phase 9 plan, progress log, and current slice-batch tracker.
+The standard local Windows x64 Debug build succeeded incrementally under
+elevated execution. The nine visual capture failures came from test harnesses
+requesting excluded `Inter.ttc`; they now load the packaged static
+`Inter-Regular.ttf` while retaining the `Inter` family and all assertions.
+The Sub Prep test failure came from fixture member destruction order; its
+diagnostics vector now outlives host teardown. Focused visual CTest passed
+9/9, the Sub Prep rerun passed 1/1, and independent review confirmed the full
+unfiltered suite passed 620/620 with no timeouts. The full Debug CTest gate is
+passed. No ACL changes were made.
+
+P9-17 large roster editing is active. Batch 4 discovery found P9-19 Classes
+navigation/editor lifecycle, conditional P9-20 larger successful Schedule
+Import apply, and P9-21 Private Bytes diagnostic follow-up. The final packaged
+Release exit gate remains open. See the Phase 9 plan, progress log, and
+current slice-batch tracker.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

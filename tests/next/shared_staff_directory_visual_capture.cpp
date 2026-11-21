@@ -695,7 +695,7 @@ int main(int argc, char* argv[])
     QString englishFontFamily;
     QString koreanFontFamily;
     for (const auto& font : {
-             std::pair{QStringLiteral("Inter.ttc"), &englishFontFamily},
+             std::pair{QStringLiteral("Inter-Regular.ttf"), &englishFontFamily},
              std::pair{QStringLiteral("PretendardVariable.ttf"), &koreanFontFamily}
          })
     {
