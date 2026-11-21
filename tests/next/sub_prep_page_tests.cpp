@@ -169,6 +169,7 @@ struct PageFixture final
     Test::MemoryPreferences preferences;
     std::unique_ptr<Resources::ResourceCatalog> catalog;
     std::unique_ptr<Resources::ResourceLoader> loader;
+    QVector<QPair<QString, QString>> diagnosticEvents;
     std::unique_ptr<Ui::PageHost> host;
     Application::SubPrepPreferences storedPreferences = savedPreferences(
         "stored materials", "stored grading", "stored special", "stored notes");
@@ -182,7 +183,6 @@ struct PageFixture final
     int preferencesReadCount = 0;
     int preferencesSaveCount = 0;
     bool preferencesReadFails = false;
-    QVector<QPair<QString, QString>> diagnosticEvents;
 
     bool initialize()
     {
