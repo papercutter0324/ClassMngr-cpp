@@ -6986,3 +6986,25 @@ after Batch 3 closes. The full Windows x64 Debug CTest gate remains open due
 to generated `ClassMngrNext/Resources` access denial; no ACL changes were
 made. The final packaged Release exit gate also remains open. Preserve
 untracked `p9-09-integration-output.txt` and do not stage it.
+
+## Current continuation — 2026-11-21 — Phase 9 P9-16 accepted
+
+Active deployment ID: `phase9_continue_20261118`; route: Heavy. P9-16 passed
+independent review for the Phase 9 primary Working Set metric. One packaged
+Next x64 Release process performed one warm-up plus 10 measured workspace
+close/reopen cycles using the same 96-class/768-schedule fixture. Twelve
+dialog opens and 11 closes kept the PID/HWND constant; before/after workspace
+rows and schema matched and SQLite integrity passed. The process exited
+naturally with code 0. Open and closed Working Set trends were negative, and
+the maximum settled Working Set was 235,921,408 bytes. Focused tests passed
+25/25 and the final validator passed independently.
+
+Private Bytes increased about 10.8 MB open and 11.2 MB closed and remains an
+unresolved secondary trend. Separate Recent Files and tiny/large A/B runs
+reproduced it without identifying a leak or owner; no product code changed.
+P9-17 large roster editing is next and is the second-to-last Batch 3
+candidate, so Batch 4 discovery starts now. Batch 3 remains active through
+P9-18; push only after it closes. The full Windows x64 Debug CTest gate remains
+open because generated `ClassMngrNext/Resources` access was denied; no ACL
+changes were made. The final packaged Release exit gate also remains open.
+Preserve untracked `p9-09-integration-output.txt` and do not stage it.

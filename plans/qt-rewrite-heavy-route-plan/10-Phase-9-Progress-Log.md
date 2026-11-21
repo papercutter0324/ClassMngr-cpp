@@ -1127,3 +1127,31 @@ production C++ change was made.
 P9-15 is complete; P9-16 repeated workspace open/close is active. Batch 3
 continues through P9-18, with one push after it closes. The separate full
 Windows x64 Debug CTest and final packaged Release exit gates remain open.
+
+### 2026-11-21 — P9-16 repeated workspace open/close accepted
+
+The [accepted evidence bundle](../../artifacts/phase9/packaged-next-p9-16-repeated-workspace/20261121T023320451Z-9b576dcbfdc84dd0996f279db5ef67e9/manifest.json)
+passed independent review. One packaged Next Windows x64 Release process
+performed one warm-up and ten measured same-process File > Open/Close cycles
+on the unchanged 96-class/768-schedule workspace. The route recorded 12 opens,
+11 closes, and a stable PID/HWND, then naturally exited 0. Before/after rows
+and schema matched, and SQLite integrity passed. The maximum settled Working
+Set was 235,921,408 B, below 262,144,000 B; operation peak was 237,862,912 B,
+below the 536,870,912 B advisory limit.
+
+For open checkpoints, Working Set baseline was 231,993,344 B, envelope 0,
+final median 180,146,176 B, and fitted trend -63,794,828 B. For closed
+checkpoints, baseline was 230,440,960 B, envelope 8,192 B, final median
+178,118,656 B, and fitted trend -69,570,634 B. Private Bytes increased about
+10.8 MB open and 11.2 MB closed. Separate Recent Files and tiny/large A/B runs
+reproduced that secondary signal but did not identify a leak or owner; no
+zero-growth or root-cause claim is made. The focused tests passed 25/25 and
+the final validator independently passed.
+
+The run reused the accepted P9-15 package, establishing product-source
+equivalence only, not a fresh exact-tree build. No production C++ change was
+made. P9-16 is complete; P9-17 large roster editing is active. Batch 3
+continues through P9-18, with one push after it closes. The separate full
+Windows x64 Debug CTest and final packaged Release exit gates remain open:
+access to generated `ClassMngrNext/Resources` was denied, CTest used cached
+binaries, and no ACL changes were made.

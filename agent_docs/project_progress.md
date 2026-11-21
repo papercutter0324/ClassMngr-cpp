@@ -1,22 +1,27 @@
 # Project Progress
 
-## Phase 9 current position — P9-16 repeated workspace open/close — 2026-11-21
+## Phase 9 current position — P9-17 large roster editing — 2026-11-21
 
 Phase 9 remains In progress. Batches 1 and 2 are closed; Batch 3 is active
-through P9-18. P9-15 Schedule refresh and language/theme lifecycle passed
-independent review in one packaged Next Windows x64 Release process. Seven
-captured states covered English/Korean and Light/Dark settings plus two
-Schedule re-entries. Each rendered 7×8 schedule view matched all 768 fixture
-entries. Before/after snapshots preserved all 17 user tables. The process
-exited naturally with code 0; maximum stable working set was 221,945,856 bytes
-and operation peak was 223,498,240 bytes. Focused validator tests passed 8/8.
-The route reused the accepted P9-14 Release package and establishes product-
-source equivalence, not a fresh exact-tree build.
+through P9-18. P9-16 repeated workspace open/close passed independent review
+in one packaged Next Windows x64 Release process with one warm-up and 10
+measured same-process cycles. The 96-class/768-schedule workspace remained
+unchanged; 12 opens and 11 closes exited naturally with code 0. Primary
+Working Set no-growth checks passed: open and closed cycle medians ended below
+their baselines with negative trends, and maximum settled working set was
+235,921,408 bytes (<262,144,000). Focused validator tests passed 25/25.
+
+Private Bytes remains an unresolved secondary diagnostic: its open and
+closed fitted trends increased about 10.8 MB and 11.2 MB. Separate Recent
+Files and tiny/large fixture diagnostics reproduced Private Bytes growth but
+did not identify a leak or owner. The accepted run reused the P9-15 Release
+package, establishing product-source equivalence, not a fresh exact-tree build.
 
 The separate full Windows x64 Debug CTest gate remains open because the
-standard generated Resources subtree denies access. P9-16 repeated workspace
-open/close is active; the final packaged Release exit gate also remains open.
-See the Phase 9 plan, progress log, and current slice-batch tracker.
+standard generated Resources subtree denies access. P9-17 large roster
+editing is active; Batch 4 candidate discovery starts with this second-to-last
+Batch 3 candidate. The final packaged Release exit gate remains open. See the
+Phase 9 plan, progress log, and current slice-batch tracker.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

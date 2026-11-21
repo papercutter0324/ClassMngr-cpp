@@ -39,17 +39,19 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Codex
 - Last updated: 2026-11-21
 - Current note: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 remains active through P9-18, then push once. P9-15 Schedule refresh
-  and language/theme cycles passed independent review in one packaged x64
-  Release process; stable working-set maximum was 221,945,856 B and operation
-  peak was 223,498,240 B. It reused the accepted P9-14 package, establishing
-  product-source equivalence only, not a fresh exact-tree build. No return-to-
-  baseline allowance is defined, and generic lifecycle counters are not
-  Schedule metrics. P9-16 repeated workspace open/close is active. The
-  separate full Windows x64 Debug gate remains open: access to generated
-  `ClassMngrNext/Resources` was denied and CTest used cached binaries. The
-  final packaged Release exit gate also remains open. See the Phase 9 progress
-  log and current slice-batch tracker.
+  Batch 3 remains active through P9-18, then push once. P9-16 repeated
+  workspace open/close passed independent review in one packaged Windows x64
+  Release process, naturally exiting 0. Maximum settled working set was
+  235,921,408 B and operation peak was 237,862,912 B. It reused the P9-15
+  package, establishing product-source equivalence, not a fresh exact-tree
+  build. Repeated-cycle Working Set medians and fitted trends fell, while
+  Private Bytes rose about 10.8 MB open and 11.2 MB closed; this secondary
+  diagnostic remains unresolved, with no leak or owner identified. P9-17
+  large roster editing is active. The full Windows x64 Debug CTest and final
+  packaged Release exit gates remain open: generated
+  `ClassMngrNext/Resources` access was denied, CTest used cached binaries, and
+  no ACL changes were made. See the Phase 9 progress log and current slice-
+  batch tracker.
 
 ### Slice batches
 

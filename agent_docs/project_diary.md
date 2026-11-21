@@ -1,5 +1,19 @@
 # Project Diary
 
+### Phase 9 workspace open/close memory lifecycle — 2026-11-21
+
+For P9-16, compare repeated cycles using the Phase 9 primary metric, Windows
+Working Set, with same-state baseline windows and a one-sided cumulative
+growth check. A substantial drop in Working Set is not a growth failure even
+if early cycle windows rise temporarily; retain those values and apply the
+strict cap to every settled checkpoint. Private Bytes remains a secondary
+diagnostic and can show a positive trend independently; report it without
+claiming a leak or zero growth. A File-dialog run and a Recent Files run both
+showed Private Bytes increases, so dialog construction alone does not explain
+that trend. A tiny/large fixture A/B showed growth on the empty profile too,
+but did not identify its owner. Workspace/table equality and lifecycle counts
+do not prove allocator or hidden-object release.
+
 ### Phase 9 Schedule locale/theme and refresh lifecycle — 2026-11-21
 
 The packaged Schedule page reloads when activated; suspension clears retained
