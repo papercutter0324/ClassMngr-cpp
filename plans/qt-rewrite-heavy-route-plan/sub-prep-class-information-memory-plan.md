@@ -10,8 +10,8 @@
   packaged Release measurement harness
 - Blocks: Large-workspace Sub Prep acceptance and the Phase 9 memory gate
 - Owner: Unassigned
-- Last updated: 2026-10-11
-- Current memory gate: F624 verified that all recorded `workingSetBytes` values in the source-bound F622 96-class packaged Release route remain below 262,144,000 bytes (250 MiB), but full lifecycle acceptance remains open pending matched return-to-baseline evidence, stronger repeated-cycle growth coverage, and a five-minute idle sample. See [F624](03-Phase-2-Progress-Log.md#f624-reassess-the-96-class-sub-prep-lifecycle-memory-gate).
+- Last updated: 2026-11-21
+- Current Phase 9 memory-policy reference: the packaged Release lifecycle target is below 268,435,456 B (256 MiB), with an acceptable ceiling of 314,572,800 B (300 MiB); see the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md). F624's 96-class route remains historical evidence assessed under its then-current strict 262,144,000 B (250 MiB) limit. Its measurements are unchanged, and full lifecycle acceptance remains open pending matched return-to-baseline evidence, stronger repeated-cycle growth coverage, and a five-minute idle sample. See [F624](03-Phase-2-Progress-Log.md#f624-reassess-the-96-class-sub-prep-lifecycle-memory-gate).
 
 ## Current Sub Prep contract boundary - 2026-09-24
 

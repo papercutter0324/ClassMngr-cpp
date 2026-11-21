@@ -7002,15 +7002,25 @@ the maximum settled Working Set was 235,921,408 bytes. Focused tests passed
 Private Bytes increased about 10.8 MB open and 11.2 MB closed and remains an
 unresolved secondary trend. Separate Recent Files and tiny/large A/B runs
 reproduced it without identifying a leak or owner; no product code changed.
-P9-17 large roster editing is active. Its packaged route has not yet completed;
-previous attempts reached fixture preparation and Classes UIA selection, then
-stopped before edit/save/re-entry and therefore provide no accepted memory or
-persistence evidence. The current route uses the accepted P9-16 package with
-explicit product-source equivalence checks; it does not claim an exact-tree
-build. Batch 4 discovery is complete: P9-19 Classes navigation/editor
-lifecycle, conditional P9-20 larger successful Schedule Import apply, and
-P9-21 Private Bytes diagnostic follow-up. Batch 3 remains active through
-P9-18; commit each slice and push only after it closes.
+P9-17 large roster editing is active and remains unaccepted. The latest
+packaged route completed UIA edits, save, leave/clear, re-entry, persistence
+checks, and natural exit 0 on a 100×156 fixture. Snapshot and SQLite checks
+passed after the validator was narrowed to ignore only regenerated target
+`roster_columns.id` surrogate keys while comparing ordered descriptors; all
+other tables remained exact. Memory failed: the matched Class Details
+baseline was 237,592,576 B, the post-clear median was 260,894,720 B (+23.3 MB),
+and re-entry was 265,035,776 B, above the strict cap. Private Bytes rose
+23.7 MB after clear and 28.5 MB on re-entry. This reused the accepted P9-16
+package and established product-source equivalence only, not an exact-tree
+build. A WPR heap trace could not start because Windows returned
+`0xD0000061` (required privilege); no heap owner or leak is claimed. Source
+review found a full-roster snapshot and copy on each cell revalidation; a
+behavior-preserving move optimization is in progress.
+
+Batch 4 discovery is complete: P9-19 Classes navigation/editor lifecycle,
+conditional P9-20 larger successful Schedule Import apply, and P9-21 Private
+Bytes diagnostic follow-up. Batch 3 remains active through P9-18; commit each
+slice and push only after it closes.
 
 The full Windows x64 Debug CTest gate now passes. An incremental build in the
 standard Debug folder succeeded under elevated execution, nine focused visual
@@ -7023,4 +7033,40 @@ changes, with no ACL changes. See `artifacts/phase9/phase9-debug-build-final-202
 logs under `build/windows-x64-debug/phase9-diagnostics/`.
 
 The final packaged Release exit gate remains open. Preserve untracked
+`p9-09-integration-output.txt` and do not stage it.
+
+## Current continuation — 2026-11-21 — P9-17 rerun and revised memory policy
+
+Active deployment `phase9_continue_20261118`; route: Heavy. The user revised
+the normal-use Windows Working Set policy: target below 268,435,456 bytes
+(256 MiB), with an acceptable ceiling of 314,572,800 bytes (300 MiB). A
+settled checkpoint above target and at or below the ceiling is acceptable and
+must be reported as a target miss; above the ceiling fails. Operation peaks
+remain separate. Historical results keep their original threshold context;
+accepted slices are not retroactively reevaluated.
+
+P9-17 was rebuilt in the standard Windows x64 Release folder from the exact
+current source inventory and routed through the packaged app. The 100×156
+fixture preserved its three named edits, passed workspace/SQLite snapshot
+checks, and exited naturally with code 0. Baseline Working Set was 246,779,904
+bytes; post-clear median 270,020,608; re-entry median 274,874,368; operation
+peak 277,614,592. Settled windows remained within 300 MiB but exceeded the
+256 MiB target after save, clear, suspension, and re-entry. The matched-state
+cleanup allowance was baseline median plus its observed baseline range
+(246,779,904 bytes); post-clear exceeded it by 23,240,704 bytes. P9-17 remains
+open on cleanup, not the former 250 MiB limit. The copy-reduction source edit
+has no demonstrated memory improvement. WPR heap tracing remains unavailable
+due to a required privilege.
+
+After the product source edit, the incremental standard Debug build succeeded
+under elevated execution and local unfiltered CTest passed 620/620 with zero
+failures or timeouts. The ordinary token still cannot access generated
+Resources; no ACL changes were made. Evidence: `artifacts/phase9/p9-17-exact-release-builds/20261121T081605519Z-8b5e8d49f44a43d9b691e9d0bf2ef14c/release-build-receipt.json`, the route manifest under `artifacts/phase9/packaged-next-p9-17-large-roster/20261121T081632035Z-6b75db8f7b0a404a9a0d36fe037f332c/`, and Debug logs `build/windows-x64-debug/artifacts/p9-17-full-debug-gate-20261121-build-elevated.log` and `build/windows-x64-debug/artifacts/p9-17-full-debug-gate-20261121-ctest-elevated.log`.
+
+Next: resolve or justify the P9-17 cleanup delta with source-backed evidence
+and local packaged reruns; do not claim a leak without attribution. P9-18
+Campus Maps is queued. Its route can use the always-available Maps navigation
+and Bundang's two bounded images. Define repeated same-process cycles and an
+empirical return allowance before implementation. Batch 3 remains open
+through P9-18. The final packaged Release gate remains open. Preserve
 `p9-09-integration-output.txt` and do not stage it.

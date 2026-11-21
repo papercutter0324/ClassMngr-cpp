@@ -2,6 +2,12 @@
 
 ## Phase 9 current position — P9-17 large roster editing — 2026-11-21
 
+The current normal-use Windows Working Set policy is a target below
+268,435,456 bytes (256 MiB) and an acceptable ceiling of 314,572,800 bytes
+(300 MiB). Values above target and at or below the ceiling are acceptable
+target misses; values above the ceiling fail. Operation peaks remain separate.
+Historical results keep their original threshold context.
+
 Phase 9 remains In progress. Batches 1 and 2 are closed; Batch 3 is active
 through P9-18. P9-16 repeated workspace open/close passed independent review
 in one packaged Next Windows x64 Release process with one warm-up and 10
@@ -27,11 +33,29 @@ diagnostics vector now outlives host teardown. Focused visual CTest passed
 unfiltered suite passed 620/620 with no timeouts. The full Debug CTest gate is
 passed. No ACL changes were made.
 
-P9-17 large roster editing is active. Batch 4 discovery found P9-19 Classes
-navigation/editor lifecycle, conditional P9-20 larger successful Schedule
-Import apply, and P9-21 Private Bytes diagnostic follow-up. The final packaged
-Release exit gate remains open. See the Phase 9 plan, progress log, and
-current slice-batch tracker.
+P9-17 large roster editing remains active. The first package-equivalent route
+completed three UIA edits, save, clear, re-entry, persistence checks, and
+natural exit; workspace and SQLite checks passed. Its re-entry working set
+exceeded the former 250 MiB limit. A later exact-current-source Release build
+and route also completed the UIA and database checks, then naturally exited 0.
+Its baseline Working Set was 246,779,904 bytes, post-clear median 270,020,608,
+and re-entry median 274,874,368; all settled windows were at or below the
+revised 300 MiB ceiling, but missed the 256 MiB target after save/clear/
+suspension/re-entry. The baseline-derived cleanup allowance was 246,779,904
+bytes, so post-clear exceeded it by 23,240,704 bytes and P9-17 remains
+unaccepted. Private Bytes increased 23.7 MB after clear and 28.6 MB on
+re-entry. WPR heap attribution remains blocked by a Windows privilege; no leak
+owner is identified. The by-value snapshot optimization remains under
+evaluation and has no demonstrated memory benefit.
+
+Batch 4 discovery found P9-19 Classes navigation/editor lifecycle, conditional
+P9-20 larger successful Schedule Import apply, and P9-21 Private Bytes
+diagnostic follow-up. The final packaged Release exit gate remains open. See
+the Phase 9 plan, progress log, and current slice-batch tracker. After the
+latest roster source change, the standard local Windows x64 Debug build
+succeeded incrementally under elevated execution and unfiltered CTest passed
+620/620 with zero failures or timeouts. The ordinary token could not access
+generated resources; no ACL changes were made.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 

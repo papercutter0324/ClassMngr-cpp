@@ -1,5 +1,19 @@
 # Project Diary
 
+### Phase 9 large roster memory gate — 2026-11-21
+
+For P9-17, compare cleanup in the same selected-class page state used before
+opening Roster. The initial matched 100×156 package-equivalent route preserved
+saved data and column descriptors, but its re-entry Working Set exceeded the
+then-current 250 MiB limit. The user later revised the active policy to target
+below 256 MiB with a 300 MiB acceptable ceiling. The exact-current-source
+rerun stayed under that ceiling but exceeded its baseline-derived cleanup
+allowance, so the slice remains open. Do not relabel this as a leak without
+allocation ownership evidence. WPR heap snapshots were blocked by a Windows
+privilege; source review identified a full snapshot and copy in synchronous
+per-cell revalidation. The by-value move removes a redundant copy while
+preserving immediate validation, but has no demonstrated memory benefit.
+
 ### Phase 9 local Debug CTest recovery — 2026-11-21
 
 The nine visual captures requested `Inter.ttc`, which the current resource

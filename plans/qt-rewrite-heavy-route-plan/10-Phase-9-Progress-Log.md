@@ -1219,3 +1219,66 @@ The full local Debug build/CTest gate is passed. Normal execution still cannot
 enumerate generated `ClassMngrNext/Resources`; no ACL changes were made. The
 final packaged Release gate remains open. P9-17 large roster editing remains
 active through Batch 3/P9-18, with one push after Batch 3 closes.
+
+### 2026-11-21 — P9-17 first complete large-roster route; memory gate failed
+
+The [route bundle](../../artifacts/phase9/packaged-next-p9-17-large-roster/20261121T064739565Z-988878b92fd04acca6386b80760296cd/)
+records a complete run on the reused P9-16 Windows x64 Release package. Its
+normalized product-source fingerprint is
+`c00a0b241c00811d03457fcd9f010139efda5054af1783ffaa636763342d5c7e`; this
+establishes product-source equivalence, not a fresh exact-tree build. The
+fixture contained 100 rows by 156 displayed columns (6 fixed, 150 custom) and
+15,200 nonempty cells. Three deterministic edits with valid English/Korean
+names were saved and read back after re-entry; other workspace values and
+columns were logically preserved. All 17 tables remained present, SQLite
+integrity and foreign-key checks were clean, and the process naturally exited
+0. The snapshot validator now narrowly normalizes surrogate IDs in
+`roster_columns.id` and uses semantic descriptors; prior-bundle database
+comparisons pass.
+
+Memory acceptance failed in the matched Class Details state. Ten baseline
+Working Set samples were each 237,592,576 B (range 0); after Roster clear and
+post-suspension, ten samples were each 260,894,720 B (+23,302,144 B). On
+re-entry, ten samples were each 265,035,776 B, 2,891,776 B above the strict
+262,144,000 B cap. Private Bytes rose 23,711,744 B after clear and 28,508,160 B
+after re-entry. Operation peak was 268,402,688 B, below the 536,870,912 B
+advisory limit. Route completion, natural exit, and database correctness do
+not override this memory failure; P9-17 is not accepted.
+
+Heap attribution remains unavailable: PID-scoped WPR HeapSnapshot could not
+start and returned privilege `0xD0000061` even in reviewed elevated execution;
+no ETL or heap stacks were produced. The WPA exporter also could not run because
+a dependency is missing. No ACL or registry changes were made. Source review
+shows each `RosterTableModel::setData` synchronously calls full-table
+`revalidate()`; `snapshot()` converts every cell to owned strings, then
+`prepareRosterSaveText` deep-copies the snapshot. This is a source-supported
+allocation hotspot, not a proven heap origin. A narrow production fix is in
+progress: pass `RosterSnapshot` by value and move it into preparation while
+preserving validation. Acceptance remains open pending a rerun. P9-18 remains
+the last slice in Batch 3; push once after Batch 3 closes.
+
+### 2026-11-21 — Current lifecycle policy and P9-17 exact-source result
+
+The active Phase 9 packaged Release normal-use/startup/settled lifecycle gate
+now has a desired Working Set target below 268,435,456 B (256 MiB) and an
+acceptable ceiling of 314,572,800 B (300 MiB). Values from 268,435,456 B up to
+and including the ceiling are acceptable when explicitly reported as target
+misses; values above the ceiling fail. Operation peaks remain separate under the existing Phase 9
+rules. Preserve return-to-baseline and cleanup allowances, repeated-cycle
+checks, source/package equivalence, and database/UI correctness. Historical
+measurements and gate decisions remain under their then-current thresholds;
+they are not rewritten or retroactively invalidated.
+
+The latest exact-source P9-17 run had baseline Working Set 246,779,904 B (10
+samples, range 0), post-clear median 270,020,608 B, re-entry median
+274,874,368 B, and operation peak 277,614,592 B. All settled windows were at
+or below the 300 MiB ceiling, but post-save, post-clear, suspended, and re-entry
+missed the 256 MiB target. The post-clear result exceeded the empirical cleanup
+allowance of 246,779,904 B by 23,240,704 B, so cleanup acceptance failed and
+P9-17 remains open. The by-value move fix is still under acceptance; this run
+does not establish a memory improvement.
+
+The latest full local Windows x64 Debug build and elevated unfiltered CTest
+passed 620/620 with 0 failures and 0 timeouts. Logs: [full CTest](../../build/windows-x64-debug/artifacts/p9-17-full-debug-gate-20261121-ctest-elevated.log)
+and its sibling build log. This Debug gate does not close the packaged Release
+memory gate. Batch 3 remains active through P9-18, with one push after it closes.

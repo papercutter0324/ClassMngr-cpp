@@ -8,14 +8,18 @@
 - Last updated: 2026-11-21
 - Current milestone: Phase 9 remains In progress. Batches 1 and 2 are closed;
   Batch 3 remains active through P9-18, with one push after it closes. P9-17
-  large roster editing is active. The local Windows x64 Debug gate passed in
-  the standard build folder: incremental build, focused visual CTest 9/9, and
-  elevated full unfiltered CTest 620/620 with 0 failures and 0 timeouts. The
-  test-only capture fix loads packaged `Inter-Regular.ttf` rather than excluded
-  `Inter.ttc`; the Sub Prep fixture-order fix keeps diagnostics alive through
-  teardown. Normal execution still cannot enumerate generated
-  `ClassMngrNext/Resources`; no ACL changes were made. The final packaged
-  Release exit gate remains open. See the
+  large roster editing remains active. Its latest exact-source route preserved
+  edits and database correctness and stayed within the 300 MiB acceptance
+  ceiling, but missed the 256 MiB target at settled checkpoints and failed its
+  empirical cleanup allowance. Current settled lifecycle policy: target
+  <268,435,456 B (256 MiB); values from that threshold through the
+  <=314,572,800 B (300 MiB) ceiling are accepted target misses, higher values
+  fail, and operation peaks remain separate. The by-value move fix remains
+  under acceptance; no memory improvement is claimed. See the
+  [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md) for the full gate.
+  The local Windows x64 Debug gate remains passed: full build, focused
+  visual CTest 9/9, and elevated full unfiltered CTest 620/620 with 0 failures
+  and 0 timeouts. The final packaged Release exit gate remains open. See the
   [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
   [Phase 9 progress log](10-Phase-9-Progress-Log.md), and
   [current slice-batch tracker](Current-Slice-Batches.md).
@@ -28,7 +32,8 @@
   [progress log](02-Phase-1-Progress-Log.md) for gate and run evidence.
 - Release target: ClassMngr v2 with feature parity, no splash screen, no
   external/legacy packs mounted or downloaded (with F1467 Calendar QML
-  resources compiled in), and Windows startup memory below 250 MiB
+  resources compiled in), and compliance with the current Phase 9 Windows
+  packaged Release memory policy
 
 ### Phase status
 
@@ -182,7 +187,7 @@ The rewrite must:
 2. Discard the splash screen rather than replacing it with another full-screen startup screen.
 3. Add a new typed resource loader for startup and on-demand resources.
 4. Preserve the current appearance, layout, typography, themes, language support, navigation, shortcuts, dialogs, and output formats.
-5. Reduce normal Windows memory use below 250 MiB.
+5. Meet the current Phase 9 Windows packaged Release memory policy.
 6. Remove resource packs and their separate automatic update path.
 7. Keep application updates, with resources delivered as part of the application release.
 8. Preserve .tps files, legacy .db import behavior, class-transfer behavior, exports, backups, and generated outputs.

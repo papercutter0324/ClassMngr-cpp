@@ -40,17 +40,17 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Last updated: 2026-11-21
 - Current note: Phase 9 remains In progress. Batches 1 and 2 are closed;
   Batch 3 remains active through P9-18, then push once. P9-17 large roster
-  editing is active. The local Windows x64 Debug gate passed in the standard
-  build folder: the initial full build and affected-target rebuild were
-  incremental, focused visual CTest passed 9/9, and elevated unfiltered CTest
-  passed 620/620 with 0 failures and 0 timeouts. Test-only fixes use packaged
-  `Inter-Regular.ttf` instead of excluded `Inter.ttc` in the capture harnesses
-  and keep Sub Prep diagnostics alive through host teardown. Independent
-  review confirmed 24 prior capture files were preserved with SHA-256 hashes.
-  Normal execution still cannot enumerate generated
-  `ClassMngrNext/Resources`; no ACL changes were made. The final packaged
-  Release exit gate remains open. See the Phase 9 progress log and current
-  slice-batch tracker.
+  editing remains active. Its latest exact-source route preserved edits and
+  database correctness; all settled windows stayed within the 300 MiB
+  acceptance ceiling but missed the 256 MiB target at post-save, post-clear,
+  suspended, and re-entry checkpoints. Re-entry median was 274,874,368 B. The
+  route exceeded its 246,779,904 B empirical cleanup allowance by 23,240,704 B,
+  so cleanup acceptance remains open. The by-value move fix is under
+  acceptance; no memory improvement is claimed. The local Windows x64 Debug
+  gate is passed: full standard-folder build, focused visual CTest 9/9,
+  and elevated unfiltered CTest 620/620 with 0 failures and 0 timeouts. The
+  final packaged Release exit gate remains open. See the Phase 9 progress log
+  and current slice-batch tracker.
 
 ### Slice batches
 
@@ -117,7 +117,20 @@ Measure:
 - Repeated workspace open and close.
 - Repeated language and theme changes.
 
-The final normal-use gate is less than 250 MiB working set at startup-ready and after normal navigation and idle. Heavy export operations may have a separate transient budget, but they must return toward the baseline after completion.
+For the current packaged Release normal-use, startup, and settled lifecycle
+gate, the desired Windows Working Set target is strictly below 268,435,456 B
+(256 MiB), and the acceptable ceiling is at or below 314,572,800 B (300 MiB).
+Apply both thresholds to startup-ready, normal-navigation, idle, and other
+gated settled lifecycle windows. A value at or above 268,435,456 B and at or
+below the ceiling is acceptable but must be reported as a target miss; values
+below target meet the target, and values above the ceiling fail. Keep operation
+peaks separate under the existing Phase 9 operation-budget rules. Preserve
+return-to-baseline and cleanup allowances,
+repeated-cycle growth checks, source/package equivalence, and database/UI
+correctness requirements. Historical runs and gate decisions remain recorded
+under the thresholds in force at the time; do not rewrite their measurements
+or retroactively invalidate accepted slices. Heavy operations must still
+return toward the measured baseline after completion.
 
 ## Main allocation sources to investigate
 
@@ -249,7 +262,13 @@ Each repeated test must specify:
 
 ## Exit gate
 
-Windows packaged Release startup-ready memory is below 250 MiB working set for both the empty and representative workspaces.
+For both empty and representative workspaces, every gated settled startup and
+normal-use Working Set sample is at or below 314,572,800 B (300 MiB), with
+values below target meeting the target and values from 268,435,456 B (256 MiB)
+through the ceiling reported as target misses. Values above the ceiling fail.
+Operation peaks meet their separate existing budgets. Repeated cycles remain
+bounded, and large features meet their measured return-to-baseline and cleanup
+allowances.
 
 Normal feature navigation does not create unbounded growth; startup has no
 loaded catalog PDF, and large features release their resources after leaving,
