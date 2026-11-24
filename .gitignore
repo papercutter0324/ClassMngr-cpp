@@ -78,3 +78,4 @@ artifacts/
 /CMakeFiles/
 /CMakeCache.txt
 /cmake_install.cmake
+ClassMngr-cpp.code-workspace
