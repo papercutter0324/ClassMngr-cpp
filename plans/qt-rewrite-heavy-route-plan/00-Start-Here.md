@@ -6,18 +6,17 @@
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
 - Last updated: 2026-11-24
-- Current milestone: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 is active through P9-18, with one push after it closes. P9-17 is
-  Deferred by user direction and remains unaccepted because plateau cleanup
-  failed. The completed filled-versus-compact-text diagnostic found
-  little effect from text length and did not identify a leak owner. Heap
-  attribution and any confirmed fixes are deferred to Phase 14; P9-18 is the
-  active next slice. All memory gates are unchanged. See the [Phase 9
-  plan](10-Phase-9-Windows-Memory-Hardening.md), [progress
-  log](10-Phase-9-Progress-Log.md), [current slice-batch
+- Current milestone: Phase 9 remains In progress. Batches 1–3 are closed for
+  slice scheduling; Batch 4 is active, with P9-19 next. Phase 9 may close only
+  after its remaining slices and final gates pass. By user direction, P9-17
+  plateau cleanup and P9-18 cold cleanup are the only gates deferred to Phase
+  14; both remain failed and unaccepted. Preserve current Maps page retention.
+  Phase 14 remains Not started until Phase 13 and owns attribution and
+  unchanged-gate revalidation of both deferrals. No threshold or formula
+  changed. See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
+  [progress log](10-Phase-9-Progress-Log.md), [current slice-batch
   tracker](Current-Slice-Batches.md), and [Phase 14
-  plan](15-Phase-14-Windows-Memory-Leak-Attribution.md). The final packaged
-  Release exit gate remains open.
+  plan](15-Phase-14-Windows-Memory-Leak-Attribution.md).
 
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
@@ -146,8 +145,10 @@ The audit of large-data and widget-heavy paths is tracked in the
 It is an execution plan across the numbered phases, not a new phase. Phase 0
 owns the measurements, Phases 2–8 own the data and lifecycle fixes, Phase 9
 owns the packaged Release memory gate, Phase 14 owns the deferred P9-17 leak
-attribution and any confirmed fixes, and Phases 11–13 own permanent regression
-coverage and removal of temporary paths.
+attribution, the P9-17 plateau and P9-18 cold cleanup revalidations under their
+unchanged gates, and any confirmed fixes. Phases 11–13 own permanent regression
+coverage and removal of temporary paths. The user-directed deferrals remain
+failed and unaccepted until Phase 14 revalidation passes.
 
 ## Commit message convention
 

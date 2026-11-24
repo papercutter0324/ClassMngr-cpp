@@ -38,18 +38,17 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Release qualification and cutover
 - Owner: Codex
 - Last updated: 2026-11-24
-- Current note: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 is active through P9-18, with one push after it closes. P9-17 is
-  Deferred by user direction and unaccepted because plateau cleanup
-  failed. Its completed filled-versus-compact-text diagnostic found little
-  effect from text length but did not identify an owner; runtime heap tracing
-  did not start. Attribution and any confirmed fixes move to [Phase
-  14](15-Phase-14-Windows-Memory-Leak-Attribution.md). P9-18 is the active
-  next slice; see the [current batch tracker](Current-Slice-Batches.md).
-  The strict 268,435,456 B (256 MiB) Working Set target, inclusive
-  471,859,200 B (450 MiB) ceiling, separate 536,870,912 B (512 MiB) advisory
-  operation peak, and cold/plateau cleanup gates remain unchanged. P9-17's
-  cleanup requirement stays unresolved until revalidated under that gate.
+- Current note: Phase 9 remains In progress. Batches 1–3 are closed for slice
+  scheduling; Batch 4 is active, with P9-19 next. By user direction, the
+  failed P9-17 plateau cleanup and P9-18 cold cleanup gates are Deferred and
+  unaccepted to [Phase 14](15-Phase-14-Windows-Memory-Leak-Attribution.md).
+  Preserve the current Maps page retention. Phase 14 remains scheduled after
+  Phase 13. Phase 9 may close after its remaining slices and final gates pass,
+  with exactly those two cleanup gates deferred and not accepted. The strict
+  268,435,456 B (256 MiB) Working Set target, inclusive 471,859,200 B
+  (450 MiB) ceiling, separate 536,870,912 B (512 MiB) advisory operation
+  peak, and all cleanup formulas remain unchanged. See the [current batch
+  tracker](Current-Slice-Batches.md).
 
 ### Slice batches
 
@@ -273,6 +272,13 @@ Normal feature navigation does not create unbounded growth; startup has no
 loaded catalog PDF, and large features release their resources after leaving,
 including the active QtPdf document.
 
+After all remaining Phase 9 slices, the full Windows x64 Debug CTest, and the
+final packaged Release gates pass, Phase 9 may close with exactly the
+user-approved P9-17 plateau cleanup and P9-18 cold cleanup gates explicitly
+deferred and unaccepted to Phase 14. Their failed results do not count as
+passes. Phase 14 must revalidate both under their unchanged original gates;
+no memory threshold, formula, or other Phase 9 gate is waived.
+
 ## Heavy-route requirements
 
 - For every Phase 9 slice, use the heavy route: fix the owning lifecycle or
@@ -282,4 +288,6 @@ including the active QtPdf document.
 - Do not meet the target by reducing required visual assets or font quality.
 - Do not use only binary size as a memory proxy.
 - Do not accept a single successful launch as proof.
-- Do not defer memory cleanup to a future release.
+- Keep memory cleanup in Phase 9 except for the user-approved Phase 14 handoff
+  of P9-17 plateau cleanup and P9-18 cold cleanup; both remain failed and
+  unaccepted until they pass their original gates.

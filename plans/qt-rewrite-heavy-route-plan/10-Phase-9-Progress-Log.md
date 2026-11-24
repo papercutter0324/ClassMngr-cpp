@@ -2392,3 +2392,80 @@ benefit. This diagnostic is not P9-18 acceptance and supports neither a
 production lifecycle change nor leak attribution. The earlier diagnostic is
 unchanged; P9-18 remains Active and unaccepted after [route attempt #5](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T072603004Z-6e550a50e1d24deaa3abae409d1e3bfe/manifest.json)
 cleanup failure. Memory gates are unchanged.
+
+### 2026-11-24 - P9-18 call-phase attempt #6 and targeted-UIA attempt #7
+
+Exact-source full-observer [attempt #6](../../artifacts/phase9/p9-18-call-phase-diagnostic-current-source/20261124T104545279Z-c4023c8a7fc543328b19e81db00a7914/manifest.json)
+joined and recomputed 85 call-phase records against process, window, and
+evidence records. The no-action UIA calls had positive Working Set deltas in
+5/5 calls (median 151,552 B) and zero screenshot delta in 5/5; deltas across
+all calls were mixed. All gates except cold and plateau cleanup passed. Cold
+uplift was 11,075,584 B; plateau drift was +778,240 B against a 405,504 B
+envelope, with return exceedances in cycles 1–5, 7, and 8. No owner was
+identified. See the [call-phase receipt](../../artifacts/phase9/p9-18-call-phase-diagnostic-current-source/20261124T104545279Z-c4023c8a7fc543328b19e81db00a7914/call-phase-diagnostic-receipt.json)
+and its [validation](../../artifacts/phase9/p9-18-call-phase-diagnostic-current-source/20261124T104545279Z-c4023c8a7fc543328b19e81db00a7914/validation.json).
+
+Independently reviewed exact-source targeted-UIA [attempt #7](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T122412350Z-d59e56771be74f66ad00b21cbaad38e5/manifest.json)
+used source SHA-256 `dfd5750e269ac2cd3c66020e2a0af0e4b424878774ecb065e46e2bfd4edd407a`,
+harness SHA-256 `1de37275288317eb3f85cb43ea80f524e730fc06dbfa929ce6055b94426ff809`, and packaged executable SHA-256
+`5b8f4fdfb12cfc01311f22b53838984ce6c95505bc5752733a6a679d75e83ccd` (VS2022
+x64/v143; [build receipt](../../artifacts/phase9/p9-18-exact-release-builds/20261124T120937000Z-TARGETED3/release-build-receipt.json)).
+Its 28 UIA captures showed two visible cards/images in 11 Maps captures and
+none in 17 Information captures; 85 trace records were retained. Four gates
+passed and only cold cleanup failed: baseline median/max 203,001,856 B, first
+return median 213,811,200 B (uplift 10,809,344 B). Plateau passed with center
+213,815,296 B, 2,891,776 B envelope, 216,707,072 B upper bound, and no return
+exceedances. See the [route validation](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T122412350Z-d59e56771be74f66ad00b21cbaad38e5/validation.json)
+and [call-phase receipt](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T122412350Z-d59e56771be74f66ad00b21cbaad38e5/call-phase-diagnostic-receipt.json).
+
+Read-only lifecycle review places the first-use increase during Map activation
+and image setup: after both Bundang images loaded (9,867,100 B decoded payload),
+the activated checkpoint was 223,444,992 B Working Set / 151,404,544 B
+PrivateUsage, versus 203,001,856 / 130,965,504 B at baseline. After suspension
+and clear it was 213,778,432 / 141,701,120 B; later cycles add no further
+~10 MB. This supports first-use retention but identifies no owner. Attempts #6
+and #7 used different executable hashes, so their difference is suggestive,
+not a controlled comparison. The Executor reported 30 Python tests passed, but
+no retained Python log was available for independent verification; CTest 5/5
+was independently verified; the PowerShell parse log is absent although the
+route ran. At the time of attempt #7, P9-18 remained Active and unaccepted
+because cold cleanup failed; its gates and thresholds were unchanged.
+
+### 2026-11-24 - User deferral decision and Phase 9 continuation
+
+By explicit user direction, preserve the current Maps page retention and defer
+the P9-18 cold-cleanup gate to Phase 14. The failed P9-17 plateau-cleanup gate
+is also Deferred to Phase 14. Both remain unaccepted failures, not passing
+results. Phase 9 remains In progress and may close only after Batch 4's
+remaining slices and the final Windows x64 Debug CTest and packaged Release
+gates pass, with exactly these two cleanup gates explicitly deferred and
+unaccepted. P9-19 is next; P9-20 remains conditional on a suitable fixture and
+P9-21 remains the follow-up candidate. Phase 14 remains Not started until
+Phase 13 and must use fresh exact-source Release evidence to revalidate both
+gates under their unchanged contracts. No memory threshold or formula changed.
+See the [P9-18 attempt #6 manifest](../../artifacts/phase9/p9-18-call-phase-diagnostic-current-source/20261124T104545279Z-c4023c8a7fc543328b19e81db00a7914/manifest.json),
+[attempt #7 manifest](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T122412350Z-d59e56771be74f66ad00b21cbaad38e5/manifest.json),
+and [Phase 14 plan](15-Phase-14-Windows-Memory-Leak-Attribution.md).
+
+### 2026-11-24 - P9-18 MAPSTAGE diagnostic stopped before route
+
+At the user's direction to defer P9-18 cold-cleanup attribution to Phase 14
+and preserve current PageHost retention, the in-progress stage probe was
+stopped. Its source, test, and parser changes were removed; the app and Campus
+Directory test source have no diff against HEAD. No diagnostic route or stage
+JSONL was produced.
+
+The source-bound VS2022 x64/v143 Release build on the instrumented tree
+succeeded, and its five prescribed focused CTests passed. The extra
+`ClassMngrNextCampusDirectoryTests` target built, but its CTest failed after
+19.22 seconds without output; direct verbose execution exited 1 without
+output. The CTest log SHA-256 is
+`73CD1860CD063EB61F9F7A7CF4D1B8F4EFCF94FED31FD95F4744CECF7B40EEAD`.
+Pre-stop Python/parse checks passed on the instrumented tree but were not
+rerun after rollback. The [MAPSTAGE build receipt](../../artifacts/phase9/p9-18-exact-release-builds/20261124T133334000Z-MAPSTAGE/release-build-receipt.json)
+has SHA-256 `2D4825A809D266B1356EAD0DFDCE895E16945B6B9BC15D05A7974B6D456CA1EB`
+and source fingerprint `44ca245fbc85de8e955025b7dd099f15b405d3750d2a4d1e129a1ccf8fef5812`;
+it is stale after rollback. This attempt produced no heap or image-stage
+attribution and changes no acceptance status. After Phase 13, Phase 14 needs a
+fresh diagnostic implementation and build on current source before route
+evidence can be collected.

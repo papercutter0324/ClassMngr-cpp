@@ -8,18 +8,29 @@ and phase sequence.
 - Status: Not started
 - Default route: Heavy
 - Depends on: Phase 13; uses Phase 9 evidence
-- Blocks: Resolution of the deferred P9-17 cleanup requirement
+- Blocks: Resolution of the deferred P9-17 plateau and P9-18 cold cleanup
+  requirements
 - Owner: Unassigned
 - Last updated: 2026-11-24
-- Current note: This phase follows Phase 13. P9-17 is Deferred and unaccepted
-  after its plateau cleanup gate failed; Phase 9 remains In progress and P9-18
-  may proceed. WPR capture did not start, so there are no allocation stacks,
-  snapshots, or ETL. The full-versus-3-row comparator contract passed five
-  independent focused tests, but no live arms ran, so there is no cardinality
-  result or leak claim. P9-18 build #7 succeeded, but its packaged route has
-  not run while the Executor waits for the user-requested root `build/` cleanup
-  at UAC; no memory samples or gate result exist. See the [Phase 9 progress
-  log](10-Phase-9-Progress-Log.md).
+- Current note: This phase remains Not started until Phase 13 is complete.
+  P9-17 plateau cleanup and P9-18 cold cleanup are Deferred and unaccepted by
+  user direction; Phase 9 remains In progress through Batch 4 and its final
+  gates. P9-18 attempt #7 passed all non-memory gates and plateau cleanup but
+  failed cold cleanup by 10,809,344 B. Preserve the current Maps page
+  retention. UIA and image-lifecycle evidence support first-use retention
+  during Map activation/setup but identify no owner. P9-17's plateau gate also
+  remains failed. WPR capture did not start, and the full-versus-3-row
+  comparator has no live result, so neither identifies an owner. Revalidate
+  both deferred gates here under their unchanged contracts; no result is
+  accepted by deferral. The stopped MAPSTAGE probe has no attribution result:
+  its diagnostic changes were removed, no route or stage JSONL was produced,
+  and its receipt is stale after rollback. Five prescribed focused CTests
+  passed, but the extra Campus Directory CTest failed after 19.22 seconds with
+  no output; prior Python/parse checks were not rerun after rollback. After
+  Phase 13, use a fresh diagnostic implementation and build on current source.
+  See the [P9-18 route validation](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T122412350Z-d59e56771be74f66ad00b21cbaad38e5/validation.json),
+  [MAPSTAGE build receipt](../../artifacts/phase9/p9-18-exact-release-builds/20261124T133334000Z-MAPSTAGE/release-build-receipt.json),
+  and [Phase 9 progress log](10-Phase-9-Progress-Log.md).
 
 ## Progress log location
 
@@ -29,17 +40,29 @@ current status and contracts here.
 
 ## Objective
 
-Attribute the PrivateUsage growth and cleanup failure observed in the P9-17
-large-roster route. Distinguish surviving application allocations from
-allocator retention, Qt or resource-cache growth, and roster model or data
-cardinality. Fix every confirmed leak in its owning module.
+Attribute the PrivateUsage growth and cleanup failures observed in the P9-17
+large-roster and P9-18 campus-map routes. Distinguish surviving application
+allocations from allocator retention, Qt or resource-cache growth, and route-
+specific lifecycle effects. Preserve current Maps page retention. Fix every
+confirmed leak in its owning module.
 
 ## Sequence and scope
 
-Phase 14 is scheduled after Phase 13 and uses the recorded Phase 9/P9-17
-evidence. It does not accept P9-17 or close its cleanup requirement by
-diagnosis alone. After any confirmed leak is fixed, revalidate the P9-17
-cleanup requirement under its unchanged gate before claiming it resolved.
+Phase 14 is scheduled after Phase 13 and uses recorded Phase 9 evidence. It
+owns revalidation of the user-deferred P9-17 plateau cleanup and P9-18 cold
+cleanup gates; both remain failed and unaccepted until they pass their original
+contracts. Diagnosis alone does not resolve either requirement. Preserve the
+current Maps page retention while investigating P9-18. After any confirmed
+leak is fixed, use fresh exact-source packaged Release evidence to revalidate
+both routes under their unchanged gates before claiming either requirement
+resolved.
+
+The stopped P9-18 MAPSTAGE probe is not reusable diagnostic evidence: its
+instrumented changes were removed, the build receipt binds the reverted stage
+source, and no route or stage JSONL exists. After Phase 13, implement and
+verify a fresh diagnostic on current source, build it with a source-bound
+receipt, and capture a route with stage records before drawing ownership
+conclusions. Preserve current PageHost/Maps retention throughout.
 
 Use an exact-source packaged Windows x64 Release build and repeatable lifecycle
 evidence. Establish that heap tracing or equivalent ownership capture is
@@ -77,6 +100,10 @@ or cleanup criteria.
 - A fresh exact-source P9-17 packaged Release route passes the existing cold
   and plateau cleanup gates under the unchanged contract before the cleanup
   requirement is declared resolved. A failure leaves that requirement open.
+- A fresh exact-source P9-18 packaged Release route passes its existing cold
+  cleanup gate and all other applicable route gates under the unchanged
+  contract while preserving current Maps page retention. A failure leaves the
+  deferred requirement open.
 
 ## Heavy-route requirements
 
