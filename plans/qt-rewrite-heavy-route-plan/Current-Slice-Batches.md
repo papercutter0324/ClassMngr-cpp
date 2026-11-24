@@ -16,12 +16,18 @@ Batch goal: measure the remaining large or repeated Next workflows in current-so
     had a maximum sampled Working Set of 227,966,976 B, PrivateUsage of
     352,763,904 B, and operation peak of 223,801,344 B. All Working Set samples
     met the strict 256 MiB target and cold cleanup passed, but plateau cleanup
-    failed. The slice is closed as active work and deferred by user direction;
-    its cleanup requirement remains unaccepted and unresolved. The completed
+    failed. The slice is Deferred by user direction; its cleanup requirement
+    remains unaccepted and unresolved. The completed
     full-observer filled-versus-compact-text diagnostic found little effect
     from text length but did not isolate row count or identify a leak owner.
-    Runtime WPR tracing produced no snapshots or ETL. See the [Phase 9 progress
-    log](10-Phase-9-Progress-Log.md) for evidence and [Phase
+    Independent review of a separate full-versus-3-row comparator contract
+    passed five focused tests, but no live arms ran, so it provides no
+    cardinality result or leak claim. The P9-17 validator still requires both
+    cleanup gates. Isolated exact-source Release build #4 passed all five
+    focused P9-17 CTests and was independently accepted for the code/harness
+    scope; it does not pass the plateau cleanup gate. See the [Phase 9 progress
+    log](10-Phase-9-Progress-Log.md) for build identity and evidence. Runtime
+    WPR tracing produced no snapshots or ETL. See [Phase
     14](15-Phase-14-Windows-Memory-Leak-Attribution.md) for deferred
     attribution and revalidation.
 18. **P9-18 — Campus map open/close** (Active next slice; last in Batch 3)
@@ -36,7 +42,17 @@ Batch goal: measure the remaining large or repeated Next workflows in current-so
     baseline and retain the 256/450/512 MiB policy. Exclude Phase 7 campus
     evidence because it is macOS offscreen. P9-18 is active while the separate
     P9-17 cleanup requirement remains unresolved; push once after P9-18 closes
-    Batch 3.
+    Batch 3. Fresh isolated exact-source Release build #7 succeeded at
+    `artifacts/phase9/p9-18-exact-release-builds/20261124T044000000Z-RETRY7/`
+    under VS17 2022 x64/v143. Product source, harness, and executable SHA-256s
+    are recorded in the [Phase 9 progress log](10-Phase-9-Progress-Log.md).
+    Fourteen focused Python tests, both PowerShell parsers, and all five
+    focused CTests passed; no reserved `$PID` was found. The runner validates
+    `campus_map/created -> campus_information/suspended -> campus_map/activated`
+    first, then exact lowercase transitions. The packaged route has not run:
+    the Executor is paused before route execution while the user-requested
+    root `build/` cleanup waits on UAC. No P9-18 memory samples or gate result
+    exist yet.
 
 ## Phase 9 — Batch 4 discovery (Complete; ordered after Batch 3)
 

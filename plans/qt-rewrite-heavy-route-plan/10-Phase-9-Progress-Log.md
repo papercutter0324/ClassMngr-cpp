@@ -2182,8 +2182,8 @@ variable. Return slopes were nearly equal in both arms: about 11.8 MiB/cycle
 Working Set and 17.0 MiB/cycle PrivateUsage. Both peaked around 357 MiB sampled
 Working Set and 341 MiB PrivateUsage at final re-entry. Text length therefore
 has little measured effect; this comparison does not isolate row count or
-identify a leak owner. A separate full-versus-3-row harness is unreviewed and
-unrouted, so it is not verified evidence.
+identify a leak owner. At that point the separate full-versus-3-row harness
+had not been independently reviewed and had no live-arm result.
 
 WPR heap snapshot hooks were implemented and statically reviewed, but runtime
 tracing did not start. Local `Start-Process -Verb RunAs` failed with
@@ -2193,3 +2193,62 @@ Medium non-admin token. No allocation stacks were captured. Defer leak
 attribution and any confirmed fixes to [Phase 14](15-Phase-14-Windows-Memory-Leak-Attribution.md).
 The 256 MiB target, inclusive 450 MiB ceiling, separate 512 MiB operation
 advisory, and cold/plateau cleanup contract remain unchanged.
+
+### 2026-11-24 - Comparator review and focused CTest follow-up
+
+The full-versus-3-row comparator/harness contract received independent focused
+review; five focused tests passed. No live full or reduced arms were run, so it
+has no cardinality result and supports no leak claim. The P9-17 validator still
+requires both cleanup gates.
+
+A local current-source P9-17/P9-18 build attempt passed four available focused
+CTest cases. `ClassMngrNextPlatformApplicationServicesRosterSavePortTests`
+hit C1083 while opening its generated `.moc`. A read-only audit found the
+Q_OBJECT declaration, include, CMake registration, and autogen information
+correct, and the generated `.moc` exists. The cause was unproven and appeared
+possibly transient; no source change was indicated. The planned focused retry
+and its outcome are recorded below.
+
+P9-17 remains Deferred and unaccepted because plateau cleanup failed; P9-18
+remains Active and Phase 9 remains In progress. The 256 MiB target, inclusive
+450 MiB ceiling, separate 512 MiB operation advisory, and both cleanup gates
+remain unchanged.
+
+### 2026-11-24 - Isolated exact-source Release build #4 accepted
+
+Isolated exact-source Release build #4 at
+`artifacts/phase9/p9-18-exact-release-builds/20261124T034500000Z-RETRY4`
+succeeded under VS17/v143. Its abbreviated SHA-256 values are product source
+`573d962a…efbc5a`, harness `8ac84ae3…cf3dc5`, and executable
+`b8925534…931cab`. The signed redist reports Microsoft Valid. All five focused
+P9-17 CTests passed (5/5), including
+`ClassMngrNextPlatformApplicationServicesRosterSavePortTests`. The earlier
+generated-`.moc` C1083 was transient and resolved on this fresh build with no
+source or CMake edit; retain the earlier failed log as historical evidence.
+
+An independent Tester accepted this build evidence and judged the P9-17
+code/harness scope safe for a separate commit. This does not pass P9-17's
+plateau cleanup gate: P9-17 remains Deferred and unaccepted. P9-18 remains
+Active. The 256 MiB target, inclusive 450 MiB ceiling, separate 512 MiB
+operation advisory, and both cleanup gates remain unchanged.
+
+### 2026-11-24 - P9-18 exact-source Release build #7 complete
+
+Fresh isolated exact-source Release build #7 at
+`artifacts/phase9/p9-18-exact-release-builds/20261124T044000000Z-RETRY7/`
+succeeded with VS17 2022 x64/v143. Product source SHA-256 is
+`573d962afa6757f6ffb108c267c38efa3119485a10df7241641a132eeeafbc5a`, harness
+SHA-256 is `380ec9dc4603fe7d3c2562ea77d52bca253969049474a09209cf0a57350a16ea`,
+and executable SHA-256 is
+`95250da05aa2c32ecb9129ec8213bd32a53ba794aeabefb84776ba02581ce224`.
+Fourteen focused Python tests, both PowerShell parsers, and all five focused
+CTest cases passed; no reserved `$PID` was found.
+
+The runner validates the initial lifecycle order
+`campus_map/created -> campus_information/suspended -> campus_map/activated`,
+then exact lowercase transitions. The packaged P9-18 route has not run. The
+Executor is paused before route execution while the user-requested root
+`build/` cleanup waits on UAC. There are no P9-18 memory samples or gate result.
+P9-17 remains Deferred and unaccepted after plateau cleanup failed; Phase 9
+remains In progress. The 256 MiB target, inclusive 450 MiB ceiling, separate
+512 MiB operation advisory, and cold/plateau cleanup formulas remain unchanged.

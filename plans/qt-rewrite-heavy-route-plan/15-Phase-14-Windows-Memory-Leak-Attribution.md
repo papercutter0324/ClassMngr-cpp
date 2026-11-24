@@ -14,8 +14,11 @@ and phase sequence.
 - Current note: This phase follows Phase 13. P9-17 is Deferred and unaccepted
   after its plateau cleanup gate failed; Phase 9 remains In progress and P9-18
   may proceed. WPR capture did not start, so there are no allocation stacks,
-  snapshots, or ETL. The separate full-versus-3-row harness is unreviewed and
-  unrouted and is not verified evidence. See the [Phase 9 progress
+  snapshots, or ETL. The full-versus-3-row comparator contract passed five
+  independent focused tests, but no live arms ran, so there is no cardinality
+  result or leak claim. P9-18 build #7 succeeded, but its packaged route has
+  not run while the Executor waits for the user-requested root `build/` cleanup
+  at UAC; no memory samples or gate result exist. See the [Phase 9 progress
   log](10-Phase-9-Progress-Log.md).
 
 ## Progress log location
@@ -50,8 +53,10 @@ row/model/snapshot cardinality, and allocation/release behavior at matching
 lifecycle points. Use controlled cases that keep geometry, names, probes, and
 actions fixed when isolating one variable. The filled-versus-compact-text
 diagnostic indicates text length has little effect but does not isolate row
-count or prove leak ownership. Do not treat the unreviewed, unrouted
-full-versus-3-row harness as verified evidence.
+count or prove leak ownership. The full-versus-3-row comparator contract
+received independent focused review and passed five focused tests, but its live
+arms have not run; it has no cardinality result and does not support a leak
+claim. Run matched live arms before using that comparison's results.
 
 Keep the Phase 9 policy unchanged: strict 268,435,456 B (256 MiB) Working Set
 target, inclusive 471,859,200 B (450 MiB) ceiling, separate 536,870,912 B

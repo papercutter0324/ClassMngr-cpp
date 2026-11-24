@@ -7,15 +7,18 @@ local Windows validation; use Light for Git. Phase 9 remains In Progress.
 P9-17 is deferred as active work by user direction, not accepted: the latest
 exact-source VS2022/v143 route peaked at 227,966,976 B Working Set and
 352,763,904 B PrivateUsage at final re-entry; cold cleanup passed and plateau
-cleanup failed. No leak owner is established. P9-18 campus-map open/close is
-the active next slice. Phase 14 is planned after Phase 13 for allocation
-attribution and any confirmed fixes. Keep the strict 268,435,456 B (256 MiB)
-Working Set target, inclusive 471,859,200 B (450 MiB) ceiling, separate
-536,870,912 B (512 MiB) operation advisory, and cold/plateau gates unchanged.
+cleanup failed. Its reviewed code/test/harness slice is committed locally as
+`2c2eb161`, not yet pushed; no leak owner is established. P9-18 campus-map
+open/close remains the active next slice. Phase 14 is planned after Phase 13
+for allocation attribution and any confirmed fixes. Keep the strict
+268,435,456 B (256 MiB) Working Set target, inclusive 471,859,200 B (450 MiB)
+ceiling, separate 536,870,912 B (512 MiB) operation advisory, and cold/plateau
+gates unchanged.
 
 The completed filled-versus-compact-text diagnostic found little effect from
 text length and did not identify a leak owner. The separate full-versus-three-
-row harness is unreviewed and unrouted; do not use it as verified evidence.
+row harness received independent contract review and five focused tests passed,
+but no live arms ran; it provides no row-cardinality result or leak attribution.
 WPR hooks were statically reviewed, but RunAs failed with `0xc0000142` before
 an elevated worker; there is no WPR session, snapshot, or ETL. No UAC or
 registry settings were changed.
@@ -26,21 +29,47 @@ retry reached configure but CMake exited with `0xC0000409` before generation.
 The VS17 2022/x64/v143 Release tree remains intact. No CMake preset or user
 environment change has been made.
 
-First commit and push the six Phase 9/14 plan documents plus these three
-deployment handoff documents as a documentation-only change. Continue P9-18
-with an isolated Bundang fixture (`bundang_map.png`, `bundang_building.png`),
-one warm-up, five no-action return-baseline windows, then ten measured
-open/suspend cycles and ten 100 ms samples per confirmed settled window. Bind
-UIA actions, process identity, PID/HWND-bound screenshots, image/resource
-evidence, and read-only app-data snapshots; derive cold/plateau gates from the
-matched baseline. Run Windows validation locally; no GitHub validation.
+The Phase 9/14 plan and handoff documents were committed as `f207ccb2` and
+pushed to `origin/Qt-Rewrite`. P9-17 fixture and validator checks passed 8/8
+and 86/86, plus Python compilation and PowerShell parsing. Its current-source
+Release build #4 at
+`artifacts/phase9/p9-18-exact-release-builds/20261124T034500000Z-RETRY4/`
+passed all five focused CTests (5/5); the independent Tester verified the
+receipt, all P9-17 source/test hashes, and CTest log. An earlier one-job build
+had C1083 for the generated platform save-port `.moc`, but the expected file
+was generated and the clean retry passed without source/CMake edits. Preserve
+the failed log as historical. The P9-17 code/harness change set is safe for a
+separate local commit as Deferred/unaccepted; its plateau cleanup gate still
+fails.
 
-Preserve the existing P9-17 source changes and build tree while the review and
-next slice proceed. Do not stage the unreviewed P9-17 full-versus-three-row
-harness. Also preserve `$testLog`, `debug.log`, `p9-09-integration-output.txt`,
-and unrelated PID 35864.
+P9-18 is active. Exact-source Release build #7 succeeded at
+`artifacts/phase9/p9-18-exact-release-builds/20261124T044000000Z-RETRY7/`.
+It binds product source SHA
+`573d962afa6757f6ffb108c267c38efa3119485a10df7241641a132eeeafbc5a`, harness
+SHA `380ec9dc4603fe7d3c2562ea77d52bca253969049474a09209cf0a57350a16ea`,
+executable SHA `95250da05aa2c32ecb9129ec8213bd32a53ba794aeabefb84776ba02581ce224`,
+VS17 2022/x64/v143, compiler 19.44.35230.0, SDK 10.0.26100.0, and a locally
+verified Microsoft-signed redistributable. All five focused CTests and 14
+P9-18 Python tests passed; both PowerShell parsers passed. The harness verifies
+the first lifecycle ordering `campus_map/created`,
+`campus_information/suspended`, `campus_map/activated`, then uses exact
+lowercase lifecycle states for later switches.
 
-## Phase 9 current handoff -- P9-17 plateau remediation -- 2026-11-24
+The packaged UIA route has not started. The user requested emptying only the
+repository `build/` folder after build #7. Its resolved target is exactly
+`C:\Git\ClassMngr-cpp\build`; the active RETRY7 tree is under `artifacts/`.
+Standard and sandbox-elevated scans stopped on ACL-protected generated
+resources before deleting anything. A path-guarded PowerShell cleanup script
+is waiting on actual Windows UAC approval; `Consent.exe` is active, but no
+approval/result has arrived and 17 top-level build entries remain. The
+Computer Use skill prohibits accepting Windows security prompts, so the user
+must approve if the prompt is visible. After approval, empty only `build/`,
+verify it is empty, then resume the packaged route from RETRY7. Preserve all
+failed P9-18 attempts and unrelated `$testLog`, `debug.log`,
+`p9-09-integration-output.txt`, and PID 35864. The full-versus-three-row
+harness remains diagnostic-only until matched live arms actually run.
+
+## Historical P9-17 handoff -- plateau remediation -- 2026-11-24
 
 Deployment ID: phase9-windows-memory-hardening. Heavy for implementation and
 local Windows validation; Light for Git. P9-17 remains open and uncommitted.
