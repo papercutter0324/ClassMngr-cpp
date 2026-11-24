@@ -1,19 +1,211 @@
 # Project Diary
 
-### Phase 9 large roster memory gate — 2026-11-21
+### User-directed P9-17 deferral and Phase 14 -- 2026-11-24
 
-For P9-17, compare cleanup in the same selected-class page state used before
-opening Roster. The initial matched 100×156 package-equivalent route preserved
-saved data and column descriptors, but its re-entry Working Set exceeded the
-then-current 250 MiB limit. The user later revised the active policy to target
-below 256 MiB with a 300 MiB acceptable ceiling. The exact-current-source
-rerun stayed under that ceiling but exceeded its baseline-derived cleanup
-allowance, so the slice remains open. Do not relabel this as a leak without
-allocation ownership evidence. WPR heap snapshots were blocked by a Windows
-privilege; source review identified a full snapshot and copy in synchronous
-per-cell revalidation. The by-value move removes a redundant copy while
-preserving immediate validation, but has no demonstrated memory benefit.
+End P9-17 as active work when directed, but preserve the failed plateau cleanup
+gate as unaccepted. The latest normal route passed cold cleanup and the strict
+256 MiB Working Set target, yet plateau cleanup failed; rising PrivateUsage
+does not name a live allocation owner. Continue Phase 9 with P9-18. Defer leak
+attribution and any confirmed fixes to Phase 14 after Phase 13, and require a
+fresh P9-17 route to pass the unchanged cleanup contract before resolving its
+gate. Keep the 256/450/512 MiB policy unchanged.
 
+### P9-17 corrected v143 route and plateau failure -- 2026-11-24
+
+The timestamp-corrected exact-source v143 route passed UI, database/readback,
+natural-exit, file cleanup, target, ceiling, operation peak, and cold cleanup.
+It failed only the required post-priming plateau gate. All 460 settled WS
+samples stayed below 268,435,456 B; max was 227,966,976 B. Cycle 1 return was
+14,618,624 B above the 143,765,504 B allowance; cycles 2–10 were below. Five
+baseline windows drifted −2,598,502.4 B against a 2,039,808 B envelope. The
+run’s diagnostic PrivateUsage rose from 198,451,200 B at cycle 1 return to
+348,467,200 B at cycle 10 and 352,763,904 B at final re-entry while WS fell.
+That shows retained commitment, not its live owner; no leak is established.
+
+Font registrations and resource requests occurred at startup, with no
+per-cycle resource loads. A prior full/reduced UIA comparison showed similar
+growth. Model-to-snapshot copies, custom payload, Qt accessibility-provider
+allocations, and allocator retention remain hypotheses. The next diagnostic
+compares a filled roster with an in-place sparse payload while preserving the
+100x156 geometry, row counts, names, three probe cells, and identical UIA
+actions. Keep cleanup gates unchanged; this is diagnostic, not acceptance.
+
+### Earlier P9-17 v143 build and chronology handoff -- 2026-11-24
+
+The missing VS2022 C++ tools registration is repaired. The exact-source
+VS17 2022/x64/v143 Release build completed in the active standard console
+session at Medium integrity without elevation. Its receipt is
+`artifacts/phase9/p9-17-exact-release-builds/20261123T161233365Z-vs17-v143-current-source-release-retry01/release-build-receipt.json`;
+the independent Tester accepted the source inventory, compiler, SDK, and
+executable. The v3 receipt binds 2,422 files with SHA-256
+`78a38f908b8b45a9b52a7ab0cf1f66f30af628eacfbdb05bd99bfc1bc6217077`.
+
+The chronology validator requires screenshot-aware checkpoint bounds, exact
+memory-window start/sample equality, ordered non-overlapping actions, and the
+cycle-10 return before final re-entry. Its 63 tests and independent review
+passed. The fresh v143 route completed ten cycles, but validation stopped at
+the final close action because it lacked `completedAtUtc`; it contains
+`closeReturnedAtUtc` and natural process-exit evidence. The measured workflow
+completion is intentionally earlier than process close. Independent raw-sample
+analysis confirms cold and plateau cleanup both fail. The route helper and
+dependency inventory are being corrected before a fresh exact-source build and
+rerun. Keep all memory limits/gates unchanged; no allocation owner is known.
+
+The independent resource/observer review found font registrations at startup
+and no repeated resource loads during the cycles; an earlier full/reduced UIA
+comparison had similar return-growth slopes. Roster model-to-snapshot copies
+and text payload remain plausible contributors, while accessibility-provider
+allocations, allocator retention, and a leak are unproven. If the corrected
+normal route still fails cleanup, compare filled and sparse payloads at
+identical 100x156 geometry and UIA actions before claiming a cause.
+
+### Superseded P9-17 row-stream and UIA diagnostic handoff -- 2026-11-23
+
+Row-wise snapshot-to-repository streaming is implemented through
+`RosterRepository::WindowSaveRowSource`. Current-source focused checks passed
+5/5 CTest targets, the renamed Qt save test, the 58-test P9-17 Python suite,
+and PowerShell 5.1 parsing. The exact-source VS18/v145 Release receipt is
+supplemental; it does not satisfy the Phase 1 VS2022/v143 shipping-toolchain
+contract. VS2022 Build Tools 17.14.37906.3 is now installed with v143 toolset
+14.44.35207, x64 compiler 19.44.35230, and SDK 10.0.26100. The previous
+wrapper session returned 5002 even though Visual Studio setup logs report
+successful installation.
+
+Before building, an acceptance-integrity audit found that the P9-17 builder,
+runner, and validator accepted a generic Visual Studio generator and did not
+record the toolset. The current source inventory is 2,422 files with SHA
+`fb4391a04bcbf6ac2f18c453ac6eb6a5f764e43a14131d07597d46e4224405fa` before
+this contract repair. Update all receipt consumers and tests to require exact
+VS17 2022/v143; do not treat v145 or ambiguous receipts as acceptance.
+
+Two v145 route attempts stopped before roster cycles at `Open Teacher Profile`.
+Independent diagnosis found the native hit test returned a foreign-process
+window and the runner discarded its HWND/PID before failing closed. The harness
+now records raw HWND, PID, visibility, bounds, screen point, and root geometry
+before the unchanged guards, and attempts a failure-time screenshot. Its
+focused suite passed 55/55; PowerShell parsing and C# geometry compilation
+passed. Independent review confirmed the current PID, visibility, containment,
+stability, and click guards remain. Actual screenshot capture on a live failure
+is still unverified.
+
+The previous normal ten-cycle route remains the latest memory result: maximum
+Working Set 380,026,880 B and operation peak 380,030,976 B, within the 450/512
+MiB limits; 380/460 samples missed the strict 256 MiB target. Cold cleanup
+failed by 23,412,736 B and all ten cycle returns exceeded the plateau bound.
+No root cause or leak is established. Keep all memory and cleanup gates
+unchanged. The user authorized an elevation request; the VS2022/v143 installer
+is waiting on the Windows consent prompt. P9-17 stays open until an eligible
+exact-source Windows acceptance route passes.
+
+### Prior P9-17 current-source acceptance and heap comparison -- 2026-11-23
+
+The exact-source Windows x64 Release build and four-arm heap diagnostic are
+valid for source SHA `494774b15999c3930437822f644996cb677c1a128fdb4d76a5` and
+Release executable SHA `c740d87cc456b3e176d168a753c1625518e44a40230777ae8c4db3ea40650ebf`.
+The successful diagnostic is counterbalanced and exact-parity checked. At
+measured cycle 5, full UIA observation leaves about 16 MiB more default-heap
+allocation than reduced observation in both arm orders. Reduced observation
+still grows about 41 MiB. Each post-delete checkpoint returns about 4.2 MiB,
+while committed/reserved values stay high. This separates some observer cost
+but does not identify a retained allocation owner or equate heap bytes with
+Working Set.
+
+The new normal ten-cycle Release acceptance route completed naturally on the
+100x156 fixture, verified SQLite integrity and all three edited cells, and left
+no workspace sidecars or isolated temporary files. The inclusive 450 MiB
+ceiling and 512 MiB operation budget passed; the strict 256 MiB target was
+missed in 370/460 samples. Cold cleanup failed by 23,060,480 B. The validator
+short-circuited before plateau analysis; reproducing the unchanged formula from
+the raw windows shows all ten returns above the plateau envelope and an
+87,881,541.8 B fitted increase. Both cleanup gates remain unsatisfied, so P9-17
+stays open.
+
+The next implementation hypothesis is repeated SQL preparation: each non-empty
+roster cell currently prepares its own `roster_data` INSERT. Reuse one prepared
+query and bind each cell, then measure with a new exact-source Release route.
+The proposed change is only a hypothesis until Working Set and cleanup gates
+are reverified. WPR stack capture was not available: the visible RunAs
+preflight was canceled before elevation, and no trace or registry change was
+made.
+
+### Phase 9 large roster memory gate -- 2026-11-22
+
+P9-16's 235,921,408-byte maximum came from repeated workspace open/close on a
+96-class, 768-schedule fixture. P9-17 is a different, much larger workload: a
+100x156 roster (15,600 cells), three edits and a save per cycle, clear, and
+re-entry. Do not treat the P9-16 and P9-17 values as a regression comparison.
+
+The user accepted a strict 256 MiB Working Set target with an inclusive
+450 MiB (471,859,200 B) ceiling; cleanup and operation budgets remain separate.
+The latest complete ten-cycle P9-17 route peaked at 435,896,320 B settled
+Working Set and 435,953,664 B operation peak. It missed the strict target in
+370/460 samples, failed cold cleanup by 22,261,760 B, and all ten cycle returns
+exceeded the post-primer envelope. The measured maximum is under the current
+ceiling by reclassification only; it does not pass P9-17.
+
+A current-source, counterbalanced five-cycle UIA observer diagnostic now
+provides a stronger comparison. Both full/reduced orderings used identical
+product, package, and fixture hashes. Each arm stayed below 450 MiB and the
+512 MiB operation budget, but all four missed the target in 25/31 windows and
+failed cold and repeated-return cleanup. Full-observer arms had about 13.4–15.3
+MiB more fitted Private Bytes growth than reduced arms over five cycles; reduced
+arms still grew about 52 MiB. Working Set contrast reversed with arm order, so
+that comparison is inconclusive. The observer may contribute to Private Bytes
+growth, but neither the comparison nor sampled process counters prove a leak or
+allocation owner.
+
+The cold baseline predates the first Roster visit and lacks the later cleared-
+model checkpoint and two-second settle. Preserve the cold gate while making
+future checkpoints comparable; do not invent a new allowance. Plateau-baseline
+drift was within its noise envelope in the diagnostic, but every cycle return
+exceeded the center-plus-envelope check and fitted-growth bound. Keep operation
+peaks separate.
+
+The exact-source build succeeded in the standard Release folder under the
+active-console identity `FELT-DESKTOP\wf...`, Medium integrity, non-admin,
+interactive Session 1. The default `CodexSandboxOffline` standard token could
+not list the protected generated Resources subtree, but a read-only tool-level
+workspace route under the logged-in standard identity could; no Windows
+elevation or ACL change was used. Preserve the helper's token/session checks.
+
+The request move removes one full copy; source review shows the save path still
+holds the model, prepared UTF-16 snapshot, and converted legacy Qt roster during
+save. A guarded model-edit fast path is implemented, but its packaged impact is
+not measured. The latest source-bound client-GC comparison found that forced
+PowerShell collection releases client-managed memory but leaves the app’s
+cycle-return Working Set and Private Bytes growth unchanged (paired differences
+under 0.7 MiB). Retained client UIA handles are therefore unlikely to explain
+the app’s repeated growth. Qt 6.12’s table accessibility code caches queried
+cell/header interfaces and expects to clear the cache on model reset or view
+destruction; the full-observer Private Bytes difference suggests it may
+contribute, but does not prove a leak or owner.
+
+The fixture’s raw cell/header text is about 0.717 MiB per copy and three
+simultaneous raw representations are about 2.15 MiB. The four-arm
+`GetProcessHeap`/`HeapSummary` diagnostic recorded 40 app events per arm;
+cycles 1–5 allocated bytes rose about 41.5 MiB with reduced UIA observation and
+54.7–54.9 MiB with full observation. Reserved and committed values rose too.
+This distinguishes heap allocation growth from Working Set alone, but does not
+identify whether Qt, CRT, app objects, or another component owns the blocks.
+The old release checkpoint ran before the widget's child destruction completed.
+The new opt-in checkpoint after owner `delete` returns has a QPointer ordering
+test and fail-closed runner checks. The full P9-17 Python suite passed 56/56;
+focused Debug build and CTest passed 2/2 under the expected Medium, non-admin
+SID. An independent Tester audited the saved build and CTest logs and verified
+the widget/child QPointer assertions. A new exact-source Release build and
+matched after-delete heap diagnostic are underway; no result or memory
+acceptance is yet available. Keep the 256 MiB target, 450 MiB ceiling,
+operation budgets, and both cleanup gates unchanged.
+
+The user reports lower memory on Linux/macOS than Windows, but there is no
+matched numeric cross-platform comparison yet. Platform private-memory fields
+are not directly comparable (Windows PrivateUsage, macOS phys_footprint, Linux
+PSS). Treat that report as a reason to prioritize Windows-specific Qt
+accessibility/platform behavior, not as proof that Windows is the cause. Core
+fonts are loaded once at startup; static resources fit a baseline/first-use
+cost better than repeated per-cycle growth. Keep UIA physical-DPI
+reconciliation, host correlation, complete rectangle containment, and
+no-click-on-invalid guards.
 ### Phase 9 local Debug CTest recovery — 2026-11-21
 
 The nine visual captures requested `Inter.ttc`, which the current resource

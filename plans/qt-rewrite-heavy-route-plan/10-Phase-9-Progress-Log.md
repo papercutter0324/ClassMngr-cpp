@@ -1257,10 +1257,10 @@ progress: pass `RosterSnapshot` by value and move it into preparation while
 preserving validation. Acceptance remains open pending a rerun. P9-18 remains
 the last slice in Batch 3; push once after Batch 3 closes.
 
-### 2026-11-21 — Current lifecycle policy and P9-17 exact-source result
+### 2026-11-21 — Prior 300 MiB policy and P9-17 exact-source result
 
-The active Phase 9 packaged Release normal-use/startup/settled lifecycle gate
-now has a desired Working Set target below 268,435,456 B (256 MiB) and an
+At that time, the Phase 9 packaged Release normal-use/startup/settled lifecycle
+gate had a desired Working Set target below 268,435,456 B (256 MiB) and an
 acceptable ceiling of 314,572,800 B (300 MiB). Values from 268,435,456 B up to
 and including the ceiling are acceptable when explicitly reported as target
 misses; values above the ceiling fail. Operation peaks remain separate under the existing Phase 9
@@ -1282,3 +1282,914 @@ The latest full local Windows x64 Debug build and elevated unfiltered CTest
 passed 620/620 with 0 failures and 0 timeouts. Logs: [full CTest](../../build/windows-x64-debug/artifacts/p9-17-full-debug-gate-20261121-ctest-elevated.log)
 and its sibling build log. This Debug gate does not close the packaged Release
 memory gate. Batch 3 remains active through P9-18, with one push after it closes.
+
+### 2026-11-21 — Phase 9 execution paused during P9-17 Release attempt
+
+The current-source Windows x64 Debug full build and elevated unfiltered CTest
+passed 620/620 with 0 failures or timeouts. Focused P9-17 validator tests passed
+20/20. Independent review verified coordinate/final-contract binding and the
+cold-cleanup gate. The by-value move optimization has no new Release memory
+result; the exact-source cleanup failure and the 256 MiB target / inclusive
+300 MiB ceiling remain as recorded above. Preserve the five-baseline/ten-cycle
+repeated-cycle checks on resume.
+
+A standard-token PowerShell 7.7 Release attempt was started after read-only
+review found no administrator requirement in the plan, route, or validator.
+The session was `FELT-DESKTOP\wfelt`, Low Mandatory Level, with Administrator
+role false; it could enumerate six entries under
+`build/windows-x64-release/generated/ClassMngrNext/Resources/assets`. The user
+then explicitly paused execution, and the worker was interrupted before
+returning its checkpoint. Whether CMake ran is unknown; no build or route
+result is claimed. Administrator token is not a Phase 9 acceptance requirement;
+it was only a guard in the archived exact-build helper.
+
+The frozen pre-pause source inventory was 2,421 files, SHA-256
+`fd37daebc8284ee695ad4dc1232dc7eb5f55c11fd8c41f8bb8f36fe3c3b5a7ff`. Preserve
+the prior blocker bundle at
+`../../artifacts/phase9/p9-17-exact-release-builds/20261121T120455136Z-00e258f92ce5444aa1396a438ebb1ae4/`
+and untracked `p9-09-integration-output.txt`. The attempted run made no ACL,
+policy, registry, commit, branch, or push changes. On resume, inspect the latest
+run-specific artifacts under
+`../../artifacts/phase9/p9-17-exact-release-builds/`, verify no process remains,
+and recalculate the source inventory after this documentation handoff. P9-17
+remains active/open; P9-18 is queued next, Batch 3 remains active with one push
+after P9-18, and the final packaged Release exit gate remains open.
+
+### 2026-11-22 — Prior P9-17 route under the 300 MiB policy
+
+At that time, the packaged Release settled lifecycle gate used a strict target
+below 268,435,456 B (256 MiB). Samples at or above target through inclusive
+367,001,600 B (350 MiB) are acceptable target misses; values above 350 MiB
+fail. Operation peaks remain under their separate budgets, and cleanup,
+return-to-baseline, repeated-cycle, source/package, and database/UI checks
+remain required. Historical results keep the threshold in force when measured;
+accepted slices are not retroactively reevaluated.
+
+The prior P9-17 route bundle is under
+`../../artifacts/phase9/packaged-next-p9-17-large-roster/20261121T161636026Z-e4c97b8587a94fb8bbed1f7e754a01dd/`.
+It ran under the then-current 300 MiB ceiling; build, package, and source
+checks passed. Post-save Working Set reached 480,989,184 B, and recorded cycle
+windows from cycle 4 onward exceeded the then-active 350 MiB ceiling. Nine cycles
+read back edits; cycle 10 closed before final snapshots. Cold return exceeded
+its allowance, and no final database/integrity validator ran. The route is
+failed/incomplete and P9-17 remains open; do not claim acceptance or a leak.
+The no-op vs platform-save diagnostic remains under independent review and is
+not accepted evidence. P9-18 remains queued next in active Batch 3.
+
+### 2026-11-22 — Earlier failed-geometry P9-17 observer diagnostic
+
+The unchanged generated exact-source helper completed Windows x64 Release
+preflight and build as `FELT-DESKTOP\wfelt`, Medium integrity, non-admin, in
+interactive Session 1. The source-bound receipt is
+[here](../../artifacts/phase9/p9-17-exact-release-builds/20261121T200415219Z-0b472b3be96c4ee7b899d4e201879569/release-build-receipt.json).
+The source inventory tree SHA-256 is
+`df26492c8d242786a73640935dad55d510a0294398af7136dd8e28bd1a80ae99`; the
+product executable SHA-256 is
+`0c90e96b3bc7cd96688aa2a203b04a76f4302a13c2c0f41f41ddbb11541a07cf`. The
+local unsigned helper required process-scoped `RemoteSigned` because the
+actual user's CurrentUser execution policy is `Restricted`; persistent policy
+scopes stayed unchanged. Tool-level filesystem access was used; no UAC/admin
+token or ACL change occurred.
+
+The UIA observer diagnostic bundle is
+[here](../../artifacts/phase9/p9-17-uia-observer-diagnostic/20261121T200712794Z-3ffc903700bc4ab4b6eb975ea2be9e9c/).
+Its full arm failed before measured cycles because target and owner-window
+geometry did not intersect. The reduced arm completed five diagnostic cycles:
+return medians rose from 272.26 to 316.48 MiB Working Set, maximum Working Set
+was 318.34 MiB, and operation peak was 318.58 MiB. No sample exceeded 350 MiB;
+2,515/3,408 samples were at or above the 256 MiB target. App slopes were
++29.45 MiB/min Working Set and +29.57 MiB/min Private Bytes; client slopes
+were +5.50 and +5.47 MiB/min. The arms are not a valid pair, and an earlier
+full arm used different executable/package hashes. These measurements are
+diagnostic only; no leak owner is identified.
+
+At that time, the lifecycle policy was Working Set below 268,435,456 B
+(256 MiB), with values through inclusive 367,001,600 B (350 MiB) accepted as
+target misses; operation peaks remain separate. Independent review found the
+inherited `stableCheckpointLimitBytesExclusive=262144000` field is stale
+P9-14 metadata, not P9-17 policy. A harness-only reconcile/label is in
+progress. Fail-closed stable UIA geometry diagnostics and owner identity
+verification were being implemented; a fresh receipt and valid pair were still
+required then. The later matched pair is recorded below. P9-17 remains open,
+P9-18 is queued, Batch 3 remains active
+with one push after P9-18 closes, and the final packaged Release exit gate
+remains open.
+
+### 2026-11-22 — Earlier five-cycle matched UIA diagnostic pair
+
+A first standard-user Release build attempt stopped at resource-bake with
+WinError 5. An unchanged retry completed successfully; only the successful
+source-bound receipt below is associated with this pair. It ran as
+`FELT-DESKTOP\wfelt`, Medium integrity, non-admin, interactive Session 1.
+The local helper used process-scoped `RemoteSigned`; persistent policy scopes
+and ACLs stayed unchanged. No UAC or admin token was used. The receipt is
+[here](../../artifacts/phase9/p9-17-exact-release-builds/20261121T210644993Z-ff2ceae5b5e4443c89882ba295fcb5d9/release-build-receipt.json).
+Its 2,421-file source-tree SHA-256 is
+`ecbf35a6ee0be93e627d67291570a4f93e7bee12eb04a840aac76d5495949517`; product
+executable SHA-256 is
+`57566c720e8a6e53b1443aa1a7fee4d8997c3bfb283883c9e9162b6f3e5add0c`.
+
+The matched diagnostic bundle is
+[here](../../artifacts/phase9/p9-17-uia-observer-diagnostic/20261121T210856196Z-c5b15bd0879a401eb3ace14d79aee5ee/).
+The Tester independently verified matching current source, executable,
+product source, package tree, fixture, and client logs; five complete cycles
+per arm; all 31/31 windows; final readbacks; app exits; and SQLite integrity
+and foreign keys. Full-arm Working Set return medians (cycles 1-5): 273.71, 265.27, 277.57,
+259.08, and 274.83 MiB (maximum 281.81 MiB). Reduced-arm medians: 272.57,
+283.05, 297.37, 310.00, and 308.62 MiB (maximum 314.96 MiB). Every cycle median missed the strict 256 MiB target; no sample
+exceeded the inclusive 350 MiB ceiling. Both cold-return cleanup allowances
+failed by about 21.4 MiB.
+
+OLS Working Set slopes were +13.179 MiB/min full and +28.504 reduced; Private
+Bytes slopes were +34.302 and +29.502 MiB/min. Both arms used the same
+sequential PowerShell client PID, so client slopes are not independent. The
+mixed diagnostic results establish neither observer causality nor a leak
+owner; they were diagnostic-only. At that time no ten-cycle acceptance run
+had occurred; the later normal route is recorded below.
+
+The P9-14 `stableCheckpointLimitBytesExclusive=262144000` field is labeled as
+historical P9-14 metadata; P9-17 target/ceiling metadata is coherent at
+268,435,456 B and 367,001,600 B. A read-only source/lifecycle and
+cleanup-baseline comparability investigation is underway. P9-17 remains
+Active/open, P9-18 is queued, Batch 3 remains active with one push after P9-18
+closes, and the final packaged Release exit gate remains open.
+
+
+### 2026-11-22 — Prior full-observer route before request move
+
+The prior exact-current-source incremental Windows x64 Release build receipt was
+[here](../../artifacts/phase9/p9-17-exact-release-builds/20261121T230224377Z-1216f791bf594971b78c99a17724f871/release-build-receipt.json).
+This is an incremental build, not a fresh-tree build. Source tree SHA-256 is
+`2531b12fe3f7ce7324962a0332f52684655dbc6bd2b49a9a583535e6dd7eca50`;
+product source SHA-256 is
+`1f6bbe444b509971d0617c44d1790c7495a97d85589f8f5f8eefd569d2b54f22`;
+executable SHA-256 is
+`2ee93301417152e0f1a42b09616d637a2c0edc6be36b707a78b6291114b2eb7a`; packaged
+tree SHA-256 is
+`6f737c40e545a9fc8fe6d6407efbd6fe85e2afff6488bf774e36c917b1f8e5f8`.
+Validation was local Windows only under a standard non-admin account.
+
+The prior normal full-observer route bundle is
+[here](../../artifacts/phase9/packaged-next-p9-17-large-roster/20261121T230418099Z-7c29622dcaa947648dfac485dd430960/).
+Ten measured cycles and 46 windows/460 samples completed without sampling
+error. Every window remained below 367,001,600 B (350 MiB), but 34/46
+exceeded the 268,435,456 B (256 MiB) target. Cold baseline median was
+242,049,024 B (zero range); first return was 265,310,208 B, exceeding the
+empirical allowance by 23,261,184 B (22.184 MiB). Five post-primer baseline
+windows centered on 270,368,768 B with upper envelope 270,528,512 B; 9/10 cycle
+returns exceeded that envelope. Cycle-return OLS slope was +6.878 MiB/cycle.
+
+All ten 100-by-156 grids and 156 headers were verified; 90 readbacks and the
+final three values matched. The route recorded 33 SetValue edits and 11 saves.
+SQLite integrity passed with zero foreign-key failures; all 17 tables and the
+schema were unchanged, with only the three intended `roster_data` changes. The
+app closed naturally with exit code 0. Working Set slope was +16.612 MiB/min
+with a 328.41 MiB peak; diagnostic Private Bytes slope was +36.616 MiB/min
+with a 337.84 MiB peak. Separate operation peak was 344,358,912 B, below the
+536,870,912 B allowance.
+
+That route stayed below the 350 MiB ceiling and had a lower Working Set peak
+and slope than the preceding full route (413.64 MiB and +34.819 MiB/min), but sequential
+runs used different source, so the difference does not establish cause. Private
+Bytes growth remained high. The cold-return and plateau cleanup failures meant
+P9-17 failed acceptance under the then-active ceiling; no cleanup allowance
+changed at measurement time. The later policy decision is recorded below. No causal
+credit is assigned to any individual code change. Preserve unrelated
+`p9-09-integration-output.txt` and PID 35864. P9-17 remains open; P9-18 is
+queued behind it, and the Batch 3 push waits until P9-18 closes. The final
+packaged Release exit gate remains open.
+
+
+### 2026-11-22 — Prior P9-17 gate comparability and move-through hypothesis
+
+Both cold and plateau return gates fail on current samples, but their evidence
+is different. Cold baseline and first return use the same PID/HWND and matched-
+state string. The initial baseline precedes any Roster visit; its checkpoint
+lacks the explicit cleared 100x6 model used later and has no two-second settle
+delay. Subsequent windows include the clear checkpoint and settle. The current cold
+allowance remains median plus within-window range from one short window (zero
+range here), which does not measure between-window variability. Its failure is
+valid under the current formula, but the comparison is confounded by process
+history/checkpoint. Preserve the gate and correct checkpoint comparability in
+new evidence; do not invent a new allowance.
+
+The plateau baseline has five separate settled windows centered on
+270,368,768 B with an upper envelope of 270,528,512 B. Nine of ten return
+medians exceed that envelope; the fitted nine-interval increase is 64,909,908 B
+versus the 159,744 B envelope. This was a repeated-return failure under the then-active acceptance evidence,
+independent of the cold comparison. No window breached the 350 MiB ceiling. At
+that time, the 256 MiB target, ceiling, and cleanup allowances were unchanged.
+
+Current-source review confirms roster data clears to a blank 100x6 model on
+tab leave/page suspension and one widget/model is reused; no accumulating
+row/widget owner is evident. The bounded transient-churn hypothesis is full
+request copying: model snapshot to widget-owned `RosterSaveRequest`, then
+callback and platform adapter const-reference use, followed by a by-value
+use-case copy; legacy Roster conversion adds another full representation. A
+move-through ownership implementation is in progress. This is a copy-churn
+hypothesis, not leak attribution. No reviewable code change, test result, or
+route result for this hypothesis exists yet.
+
+Next: make cold baseline and return checkpoints comparable while preserving the
+current gate, complete focused local validation of the move-through change, and
+obtain a new independently reviewed full route before acceptance. P9-17 remains
+open; P9-18 is queued behind it, and Batch 3 push waits until P9-18 closes.
+
+
+### 2026-11-22 — P9-17 post-move route under prior 350 MiB ceiling
+
+Before the route, independent current-source Windows Debug verification passed
+`ClassMngrNextRosterEditorTests` and
+`ClassMngrNextApplicationRosterSaveUseCaseTests` (2/2 targets; full editor
+class 27 cases); Python preparer passed 4/4 and validator 37/37. All 15 exact
+source pins matched.
+
+The exact-current-source incremental Release receipt is
+[here](../../artifacts/phase9/p9-17-exact-release-builds/20261122T003619020Z-a6407b5dd3bd4449b28664967b4447df/release-build-receipt.json);
+it is incremental, not a fresh-tree build. The source tree has 2,421 files,
+SHA-256 `fdedf1ada8c2fbc18d4bae7112aa46fcd2bc21b26530fa54e30c654ce7dc938e`;
+product SHA-256 is
+`9c3345b498592a5b084a655433776aa9a957877db58e3e88a9bb29fa91f8353b`, app SHA-256
+`37ff83db2fbf732a56e55dbc8c9c288e3b478b0d4a946a9244d536a7c59bb998`, and package
+tree SHA-256
+`60841d81229690a28653d3305348512a225a6729f491b72dd67ea418063455b0`.
+
+The normal full-observer route is
+[here](../../artifacts/phase9/packaged-next-p9-17-large-roster/20261122T003844525Z-2926be181b50481ea5138ae812655cf4/).
+One primer, five post-primer baseline windows, ten measured cycles, and 46
+windows/460 samples completed without sampling error; the app exited naturally
+with code 0 and was not force-terminated. The validator exited 1 at
+cycle06-post-save Working Set 371,568,640 B, 4,567,040 B above the inclusive
+367,001,600 B (350 MiB) ceiling. Final re-entry was 435,896,320 B; 370/460
+samples met or exceeded the 268,435,456 B (256 MiB) target. Operation peak was
+435,953,664 B, below its separate 536,870,912 B advisory budget.
+
+Cold baseline was 242,626,560 B with zero range; first return was 264,888,320 B,
+22,261,760 B above it. Plateau center was 270,389,248 B, envelope 409,600 B,
+and upper bound 270,798,848 B. Sample recomputation shows all ten cycle returns
+exceeded the plateau envelope; the validator stopped at the ceiling before
+evaluating that gate. Both cleanup gates therefore fail on available evidence.
+No threshold or allowance changed.
+
+UI/DB/function checks passed: all 100x156 grids and 156 headers; 33 SetValue
+edits and 11 saves; all 90 cycle readbacks and final three values matched;
+SQLite integrity passed with zero foreign-key failures, 17 tables, unchanged
+schema, and only the three intended `roster_data` values changed. The unrelated
+PID 35864 was untouched. P9-17 remains unaccepted and independent route review
+is pending.
+
+Compared with the prior sequential route (328.41 MiB Working Set maximum), this
+run reached 415.57 MiB. Source and harness differ, so the comparison does not
+establish that the request move caused the increase or that it saved memory.
+Source review confirms one full request copy was removed at the platform-to-use-
+case boundary; legacy UTF-16-to-Qt Roster conversion remains. Full `revalidate()`
+still scans visible cells and builds duplicate-name structures after edits;
+load/re-entry converts the full Qt Roster to a snapshot and then model rows.
+Clear still returns to a blank 100x6 model and reuses one editor/model, with no
+accumulating page/widget evidence. These are churn leads, not leak attribution.
+Heap diagnostics lack a post-save checkpoint and WPR privilege is unavailable.
+
+At that time, next review was the repeated full revalidation and remaining
+legacy conversion, followed by focused local validation and independent
+full-route review. The then-active 268,435,456 B target, inclusive
+367,001,600 B ceiling, operation peak budget, and cleanup gates applied; the
+later policy decision is recorded below. P9-18 remains
+queued behind P9-17; Batch 3 push waits until P9-18 closes. Local Windows
+validation used a standard non-admin account only.
+
+
+### 2026-11-22 — User-selected 450 MiB policy and P9-17 reclassification
+
+The active packaged Release normal-use Working Set policy is now a strict
+268,435,456 B (256 MiB) target, with values through 471,859,200 B (450 MiB)
+inclusive accepted as target misses and values above failing. Operation peaks
+remain under their separate existing budgets. The 256 MiB target, cold and
+post-primer cleanup formulas/gates, operation budgets, and historical run
+measurements remain unchanged; historical entries retain the threshold in
+force when measured.
+
+The latest P9-17 route ran with the prior 367,001,600 B (350 MiB) ceiling;
+its validator exited at cycle 6 above that ceiling. Its
+maximum settled Working Set, 435,896,320 B, is below the active 471,859,200 B
+ceiling by sample-based reclassification. No route rerun or 450 MiB validator
+was performed, so this is not a validated pass. 370/460 samples remain at or
+above the 256 MiB target. Operation peak 435,953,664 B remains below the
+separate 536,870,912 B budget.
+
+The cold-return gate still fails: first return was 22,261,760 B above its
+zero-range baseline. All ten cycle returns exceeded the independently
+recomputed plateau upper envelope of 270,798,848 B (center 270,389,248 B;
+envelope 409,600 B). Both cleanup gates therefore remain failed; P9-17 is not
+accepted. The user changed only the normal-use ceiling: no target, cleanup
+gate/allowance, or operation budget changed. P9-18 remains queued behind P9-17,
+and Batch 3 push waits until P9-18 closes.
+
+
+### 2026-11-22 — P9-17 full-observer attempt stopped at UIA geometry guard
+
+After the 450 MiB policy selection and validation-neutral custom-cell fast
+path, independent tests and exact source pins passed. The standard non-admin
+exact-source Release build succeeded; receipt:
+[here](../../artifacts/phase9/p9-17-exact-release-builds/20261122T015622000Z-independent-d7e1352175bb44de8ec5b429e8c45a32/release-build-receipt.json).
+Source-tree SHA-256 is
+`8cf6007d4f27464115a3f4999cdc46fdcdeb02b7236b3f6e05ee99741ed6ab9a`.
+
+Full-observer route attempt
+`20261122T015800770Z-95c59e99c12d48c08652c738585e3b49` stopped before
+workspace open after eight retries at the fail-closed UIA geometry guard. The
+target rectangle `(5761,1921,616,41)` (HWND 0) lay 121 px outside the measured
+same-process owner `(4600,1441,1040,759)`. Owner DPI was 96; system DPI was 120.
+Geometry evidence is
+[here](../../artifacts/phase9/packaged-next-p9-17-large-roster/20261122T015800770Z-95c59e99c12d48c08652c738585e3b49/uia/open-teacher-profile-click-geometry-failure.json).
+No workspace opened, and no roster cycles, memory windows, DB snapshots, or
+memory acceptance evidence were collected. This is a route-incomplete geometry
+stop, not a memory result. Fail-closed harness geometry repair is in progress.
+
+The last completed full-observer route remains the 2026-11-22 post-move run
+recorded above. Under the user's active 471,859,200 B (450 MiB) ceiling, its
+maximum settled sample of 435,896,320 B passes by sample-based reclassification
+only; that validator was run under the prior 367,001,600 B (350 MiB) ceiling,
+and no 450 MiB rerun occurred. 370/460 samples remain target misses. Cold and
+plateau cleanup gates still fail, so P9-17 remains unaccepted. The 256 MiB
+target, inclusive 450 MiB ceiling, cleanup gates/allowances, and separate
+operation peak budget remain unchanged since the policy selection. P9-18 stays
+queued behind P9-17; Batch 3 push waits until P9-18 closes.
+
+### 2026-11-22 — UIA DPI semantics and P9-17 geometry handoff
+
+UI Automation `BoundingRectangle` uses physical screen coordinates ([UIA
+screen-scaling guidance](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-screenscaling),
+[property identifiers](https://learn.microsoft.com/en-us/windows/win32/winauto/uiauto-automation-element-propids)).
+`GetWindowRect` is DPI-virtualized, and DPI-sensitive API results may reflect
+the calling thread's awareness context ([GetWindowRect](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowrect),
+[high-DPI thread guidance](https://learn.microsoft.com/en-us/windows/win32/hidpi/high-dpi-desktop-application-development-on-windows)).
+Immediately before `GetWindowRect`, record the caller thread ID and exact
+context returned by [`GetThreadDpiAwarenessContext`](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getthreaddpiawarenesscontext)
+on that same thread; obtain the ID with
+[`GetCurrentThreadId`](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getcurrentthreadid).
+Record the actual host HWND passed to the call; query that window's context with
+[`GetWindowDpiAwarenessContext`](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowdpiawarenesscontext)
+and verify its creator thread/process with
+[`GetWindowThreadProcessId`](https://learn.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-getwindowthreadprocessid).
+Reconcile the rectangles into a verified common coordinate space using a
+documented conversion appropriate to that context; never apply blind 120/96
+scaling. `NativeWindowHandle` is zero when an element has no window handle;
+zero alone does not prove that it is contained by the host root
+([NativeWindowHandle property](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.automationelement.automationelementinformation.nativewindowhandle?view=windowsdesktop-10.0)).
+Keep geometry refusal fail-closed until both coordinate-space reconciliation
+and correlation to the actual host HWND and root are verified.
+
+These API semantics inform the geometry guard but do not change route
+acceptance. The latest full-observer attempt remains stopped before workspace
+open, with no memory samples, database snapshots, or memory acceptance
+evidence. P9-17 remains open; the 256 MiB target, inclusive 450 MiB ceiling,
+cleanup gates, and route status are unchanged.
+
+### 2026-11-22 — P9-17 standard-token helper refused identity mismatch
+
+The exact-source helper launch for the UIA DPI repair was refused by its
+identity guard before CMake. The [refusal record](../../artifacts/phase9/p9-17-exact-release-builds/20261122T025721240Z-uia-dpi-repair/standard-token-launch-refusal.json)
+and [launch output](../../artifacts/phase9/p9-17-exact-release-builds/20261122T025721240Z-uia-dpi-repair/standard-token-launch-output.txt)
+show the observed token `Felt-Desktop\CodexSandboxOffline`, SID suffix
+`-1003`, Medium integrity, non-admin, Session 1. The helper requires the
+standard non-admin desktop identity `FELT-DESKTOP\wfelt`; prior receipts use
+SID suffix `-1001`. CMake was not invoked, and no Release receipt or packaged
+route was produced.
+
+This is an identity mismatch, not an elevation blocker. Elevated relaunch is
+explicitly not a valid path. Resume the documented helper route when the
+expected standard-user identity is available; no alternative documented P9-17
+receipt route exists. This attempt adds no build or route result and no memory
+samples. P9-17 remains open; the 256 MiB target, inclusive 450 MiB ceiling,
+cold/plateau cleanup gates, operation budget, and P9-18 queue position are
+unchanged.
+
+### 2026-11-22 — P9-17 v2 helper stopped at resource inventory access
+
+The tracked `scripts/phase9/p9_17_build_current_source_release.ps1` helper
+(receipt v2) correctly verified a standard non-admin, Medium-integrity,
+interactive Session 1 context. Its account-name gate is resolved; the actual
+identity remains `Felt-Desktop\CodexSandboxOffline`. Attempt
+`20261122T042948942Z-f752a6df2de74ea98db790e95370fc9c`
+([attempt artifacts](../../artifacts/phase9/p9-17-exact-release-builds/20261122T042948942Z-f752a6df2de74ea98db790e95370fc9c/))
+then failed before CMake while recursively inventorying
+`build/windows-x64-release/generated/ClassMngrNext/Resources/assets` with
+Access Denied. Read-only diagnosis found `Resources` metadata readable, but
+directory listing and DACL access were denied; `assets` was inaccessible. The
+blocked DACL and owner could not be identified. Parent `ClassMngrNext` is
+accessible and grants `CodexSandboxUsers` Modify.
+`cmake/next_resources.cmake` fixes the resource
+output at `${CMAKE_CURRENT_BINARY_DIR}/generated/ClassMngrNext/Resources`, with
+no documented override in the standard build tree.
+
+No ACL changes or elevation occurred. CMake was not invoked; no Release
+receipt, package, route, or memory samples resulted. Harness evidence only:
+the executor reported 49 combined tests, the independent validator passed
+45/45, and AST plus 12 route cases passed. These checks do not verify the live
+route or memory acceptance. Resume when a standard non-admin execution context
+can read the existing Resources subtree or owner-provided standard access is
+available. Do not elevate or use an undocumented alternate build tree. P9-17
+remains open, P9-18 remains queued, and the 256 MiB target, inclusive 450 MiB
+ceiling, cleanup gates, and operation budget are unchanged.
+
+### 2026-11-22 — P9-17 exact build and UIA observer diagnostic
+
+The default `FELT-DESKTOP\CodexSandboxOffline` Medium, non-admin Session 1
+could not enumerate the existing Release Resources subtree. A read-only check
+through tool-level workspace access under the active-console standard identity
+(SID suffix `-1001`, Medium, non-admin, Session 1) could enumerate that same
+subtree, confirming the access failure is context-specific. The exact-source
+helper then completed an incremental x64 Release build in the standard
+`build/windows-x64-release` folder from 2,422 source files (SHA-256
+`5ea5a1d3289dd95c3da82e717e0b76c12d1114d969ecc6d9880b2cdd77f5ffcc`); see the
+[build receipt](../../artifacts/phase9/p9-17-exact-release-builds/20261122T075749059Z-7b63add16f814305bdff113312984be3/release-build-receipt.json).
+The focused suite passed 47/47.
+
+Two five-cycle comparisons used the same app, executable, package, product
+source, and fixture, with counterbalanced full/reduced UIA observer order:
+[FullThenReduced](../../artifacts/phase9/p9-17-uia-observer-diagnostic/20261122T075945818Z-0421654cae824f49bfa5a69852b6b143/comparison-manifest.json)
+and
+[ReducedThenFull](../../artifacts/phase9/p9-17-uia-observer-diagnostic/20261122T080450007Z-5dc33824c6874fe4aade7739aae825b7/comparison-manifest.json).
+Both are diagnostic-only and excluded from acceptance. All four arms remained
+below the inclusive 450 MiB ceiling and 512 MiB operation budget, but each
+missed the strict 256 MiB target in 25/31 windows. Cold return failed in every
+arm by 21.973–22.316 MiB; every cycle return exceeded the plateau noise
+envelope, with fitted return growth 40.487–64.436 MiB versus 0.039–0.164 MiB
+envelopes. Full-minus-reduced Private Bytes fitted growth was +15.305 MiB
+(FullThenReduced) and +13.439 MiB (ReducedThenFull), while reduced arms grew
+about 52.1–52.6 MiB. This suggests possible observer contribution, not
+causality or a leak. Working Set contrast changed sign by order (20.294 MiB
+paired order effect), so attribution is inconclusive.
+
+P9-17 remains open: these diagnostic routes supply no normal acceptance
+result, and cold/plateau cleanup gates still fail. No acceptance, waiver,
+commit, or push was made; the 256 MiB target, inclusive 450 MiB ceiling,
+cleanup gates, and 512 MiB operation budget are unchanged. P9-18 remains
+queued; Batch 3 push waits until it closes.
+
+### 2026-11-22 — P9-17 client-GC reference diagnostic
+
+The active-console standard identity completed the exact-source incremental
+x64 Release build in `build/windows-x64-release`; receipt source-tree SHA-256
+is `005121d59d6d4e8796a590475a43839cf806591b66596f7cfe3fce709059b816`.
+The [receipt](../../artifacts/phase9/p9-17-exact-release-builds/20261122T093754300Z-0ef971a592ad454880c49d9d431eb32e/release-build-receipt.json)
+confirms 2,422 files, standard non-admin Medium integrity, and interactive
+Session 1. The earlier resource-inventory denial was specific to
+`CodexSandboxOffline`; it is not the current build blocker.
+
+The matched [NoGcThenGc](../../artifacts/phase9/p9-17-client-gc-reference-diagnostic/20261122T093947724Z-fafc6706ae024e309beee5800cb22317/comparison-manifest.json)
+and [GcThenNoGc](../../artifacts/phase9/p9-17-client-gc-reference-diagnostic/20261122T094950781Z-378a4777b30a45178d52b5197b184c05/comparison-manifest.json)
+comparisons are diagnostic-only. Independent audit confirmed matching
+product, executable, package, fixture, action signatures, and hashes; all four
+five-cycle arms completed. Client-GC arms each recorded five forced
+collections after roster-absence proof, with generation deltas (2,2,2); client
+estimated memory fell 39.75–57.02 MiB per boundary. No-GC arms recorded only
+no-op events and zero collections.
+
+Across cycles 1–5, application Working Set rose 64.273–64.824 MiB and Private
+Bytes 65.777–66.559 MiB. Paired GC/no-GC differences were at most 0.609 MiB
+Working Set and 0.684 MiB Private Bytes, so no application effect was
+distinguishable. Working Set peaks were 345.36–346.83 MiB, below the inclusive
+450 MiB ceiling; each arm had 220–230 of 310 windows missing the strict
+256 MiB target.
+Cold return failed by 22.04–22.36 MiB. Plateau acceptance analysis was null in
+this diagnostic; the prior full/reduced observer evidence above found every
+cycle return beyond its plateau gate. The app exited naturally in all arms;
+no sidecars or temporary files remained.
+
+The fixture payload audit found about 0.717 MiB per roster text copy (about
+2.15 MiB across three simultaneous representations), insufficient by itself
+to explain the fitted growth; container overhead and churn remain unmeasured.
+No leak or allocation owner is proven. No normal 10-cycle acceptance route ran
+and no gate was waived. P9-17 remains open, P9-18 queued, and Batch 3 push waits
+for P9-18. The strict 256 MiB target, inclusive 450 MiB ceiling, cleanup gates,
+and 512 MiB operation budget are unchanged.
+
+### 2026-11-22 — P9-17 default-heap diagnostic and post-delete checkpoint
+
+The exact-current-source x64 Release receipt SHA-256 is
+`1651a64458eff31820b8682bfa443de03aae30897181b00bdbe984be387b1ac4`. The
+four-arm diagnostic manifest is
+[here](../../artifacts/p9/20261122T123519219Z-a2f5358d58e04aa6a1b56eecc6483803/comparison-manifest.json).
+Each arm has 40 validated application heap events. Maximum settled Working Set
+ranges from 327.7 to 349.5 MiB, below the inclusive 450 MiB ceiling; operation
+peaks stay below the separate 512 MiB budget. Across cycles 1–5, default-heap
+`cbAllocated` grows about 41.5 MiB in reduced arms and 54.7–54.9 MiB in full
+arms, alongside larger committed/reserved growth. These arms are diagnostic
+only and establish neither an allocation owner nor a leak.
+
+The diagnostic release checkpoint was captured inside the derived
+`RosterEditorWidget` destructor before `delete editor` returned. The executor
+added `roster-widget-after-delete-returned-after-child-destruction` after that
+call, with a focused QPointer-order test and runner checks. Independent static
+review confirms the checkpoint contains no text. The complete Python P9-17
+suite passed 56/56 and the PowerShell 5.1 parser check passed. C++ build/CTest
+did not run on this updated source: the standard non-admin
+`CodexSandboxOffline` token cannot enumerate
+`build/windows-x64-debug/generated/ClassMngrNext/Resources/assets`. No
+elevation or ACL change was made; the older 2/2 CTest result is not current-
+source evidence. WPR HeapSnapshot requires a privilege unavailable in the
+standard context.
+
+Cleanup checks show post-primer baseline drift passes, cold return fails by
+22.26 MiB, and all ten cycle returns exceed the 0.4 MiB plateau envelope.
+Process exit and sidecar/temp cleanup passed. The last complete normal route's
+435.9 MiB maximum is below the current ceiling only by sample reclassification;
+it is not current-source 450 MiB acceptance. The user reports higher memory on
+Windows than on Linux/macOS, but this remains an unquantified observation, not
+matched evidence. `PrivateUsage` represents Windows PrivateUsage, macOS
+`phys_footprint`, and Linux PSS; matched WS/RSS routes are needed before
+cross-platform attribution. P9-17 remains open, P9-18 queued, and Batch 3 push
+waits until P9-18 closes. The 256 MiB target, inclusive 450 MiB ceiling,
+cleanup gates, and operation budget are unchanged.
+
+### 2026-11-23 — P9-17 focused Debug verification
+
+The post-delete checkpoint source built the `ClassMngrNextPageHostTests` and
+`ClassMngrNextRosterEditorTests` targets in the existing
+`build/windows-x64-debug` folder, Debug configuration. Focused CTest passed
+2/2 under non-Administrator Medium-integrity Session 1, SID
+`S-1-5-21-445605264-701173606-3743913551-1001`. The independent Tester audited
+the saved logs and QPointer assertions; this was not a second test execution.
+The CMake target includes `selected_class_editor.cpp` and
+`selected_class_analytics_model.cpp`. The initial link failure and correction
+are recorded in the historical build entry. Logs:
+[focused Debug build and CTest](../../artifacts/phase9/p9-17-exact-release-builds/20261122T161434055Z-post-teardown-focused-debug-link-fix/logs/).
+
+A current-source Release build and matched five-cycle full/reduced after-delete
+heap diagnostic have completed; see the next dated entry. The focused Debug
+verification does not establish Release memory acceptance. P9-17 remains open,
+P9-18 queued, and Batch 3 push waits for P9-18. The strict 256 MiB Working Set
+target, inclusive 450 MiB ceiling, separate 512 MiB advisory operation peak,
+and cold/plateau cleanup gates are unchanged.
+
+### 2026-11-23 — P9-17 current-source Release route and post-delete heap comparison
+
+The current-source incremental x64 Release build succeeded in the standard
+`build/windows-x64-release` folder from 2,422 files. Receipt tree SHA-256 is
+`494774b15999c3930437822f644996cb677c1a128fdb4d76a5bd586bd10e0450`; the
+packaged executable SHA-256 is
+`c740d87cc456b3e176d168a753c1625518e44a40230777ae8c4db3ea40650ebf`. The
+[build receipt](../../artifacts/phase9/p9-17-exact-release-builds/20261122T180453000Z-p9-17-ps51-indexof-fix/release-build-receipt.json)
+records 192 resources and a standard non-admin Medium-integrity Session 1
+token (SID ending `-1001`). The updated P9-17 suite passed 57/57; PowerShell
+5.1 parsing and positive/negative ordinal-`IndexOf` runtime checks passed.
+
+The [10-cycle packaged Release route](../../artifacts/p9a/20261122T182512489Z-ac354e0c5a4e4903a5658c033fbbbf0c/manifest.json)
+completed naturally (exit 0) with 100×156 roster data, SQLite integrity/FK
+checks, three target-row changes, and zero sidecar or temporary files. It
+recorded 460 Working Set samples: 370 samples across 37 windows missed the
+strict 268,435,456 B (256 MiB) target. The inclusive 471,859,200 B (450 MiB)
+ceiling passed every sample (maximum 382,664,704 B), and the separate
+536,870,912 B (512 MiB) advisory operation-peak budget passed at 388,730,880 B.
+The cold cleanup gate failed: matched baseline median/range were
+242,814,976/0 B, first return was 265,875,456 B, exceeding the allowance by
+23,060,480 B. The validator stopped before its plateau calculation. Recomputing
+from raw samples gives a plateau center of 271,589,376 B, a 270,336 B envelope,
+and upper bound of 271,859,712 B; all ten cycle-return medians exceed that
+bound, with a fitted trend of 87,881,541.8 B. Thus the normal route completed,
+but P9-17 failed its cold and plateau cleanup gates and remains open.
+
+The [counterbalanced four-arm default-process-heap diagnostic](../../artifacts/p9h/20261122T180803249Z-af39be17f4094fb7ac18a6084bbb394a/comparison-manifest.json)
+uses the same exact source, product, executable, package, fixture/preparer,
+actions/readbacks, and checkpoint coordinates in both orders; every comparison
+check passed. Each five-cycle arm completed naturally with 47 validated heap
+events. The result suggests about 16 MiB additional default-heap allocation
+from full UIA by cycle 5; reduced-observer allocation still grows about 41 MiB
+by cycle 5.
+`cbAllocated` falls about 4.2 MiB between each observed inside-destructor and
+after-delete checkpoint. These are default-process-heap diagnostics, not
+Working Set measurements; they identify neither an allocation owner nor a
+leak.
+
+Two earlier reruns produced no application-memory evidence: one failed the
+runner's classic `MAX_PATH` guard on 285–288 character fixture paths; the
+shallow-root rerun then hit a PowerShell 5.1 `String.Contains` overload. The
+runner now uses ordinal `IndexOf`, and the successful receipt/run above is for
+that exact source. A WPR administrator preflight ended with UAC operation
+cancelled; the tool remained Medium-integrity/non-admin, no trace was collected,
+and no registry or ACL state changed. The prepared-SQL-reuse investigation is
+recorded in the following entry. No cleanup allowance was waived and
+no commit or push was made. P9-18 remains queued; push after it closes Batch 3.
+The <268,435,456 B target, inclusive 471,859,200 B ceiling, separate advisory
+536,870,912 B peak, and cold/plateau cleanup gates remain unchanged.
+
+### 2026-11-23 — P9-17 SQL-reuse Release route
+
+The [exact-source 10-cycle Release route](../../artifacts/p9a/r20261122T192719Z/20261122T192720300Z-55cda0046ba144b189be428145c79ecf/manifest.json)
+used source tree SHA-256
+`f72d3ba6fee1ecf823953592954df0d2625256118d7070f89f092a8d8061f458` (2,422
+files) and executable SHA-256
+`fcbea7749a037153fa2e0e241b311bcc152eabacb7e8208e7fdb439dda76e390`. The
+[Release receipt](../../artifacts/phase9/p9-17-exact-release-builds/20261122T192116446Z-roster-write-retry/release-build-receipt.json)
+records the standard Windows identity (SID ending `-1001`), Medium integrity,
+non-admin Session 1. The app completed ten cycles and exited naturally; DB/UI/
+readback/file cleanup checks passed.
+
+Of 460 Working Set samples, 380 missed the strict 268,435,456 B (256 MiB)
+target; no sample exceeded the inclusive 471,859,200 B (450 MiB) ceiling
+(maximum 380,026,880 B). The separate advisory operation peak was 380,030,976 B,
+below 536,870,912 B (512 MiB). Cold cleanup failed: first return exceeded the
+baseline median by 23,412,736 B. The validator short-circuited before plateau
+analysis; independent raw-sample recomputation found center 273,403,904 B,
+envelope 270,336 B, upper bound 273,674,240 B, and all ten return medians beyond
+that bound, with fitted cycle trend 62,506,151.6 B. Compared with the previous route, cold
+excess worsened by 352,256 B and 10 more samples missed the target. Reusing the
+prepared SQL INSERT showed no detectable cleanup benefit; no root cause or leak
+is established.
+
+The previous [four-arm heap diagnostic](../../artifacts/p9h/20261122T180803249Z-af39be17f4094fb7ac18a6084bbb394a/comparison-manifest.json)
+remains diagnostic-only: full UIA adds about 16 MiB of default-heap allocation
+by cycle 5, while reduced-observer heap growth remains. The heap metric is not
+Working Set and does not identify an owner. The save-stage diagnostic is
+recorded in the following entry. UAC/RunAs attempts were cancelled; no WPR
+trace or registry, ACL, or machine-state change occurred. No allowance was
+waived, and no commit or push was made. P9-17 remains open, P9-18 remains queued,
+and the Batch 3 push waits until P9-18 closes. Policy remains the strict
+268,435,456 B target, inclusive 471,859,200 B ceiling, separate advisory
+536,870,912 B operation peak, and required cold/plateau cleanup gates.
+
+### 2026-11-23 — P9-17 save-stage diagnostic and row-streaming candidate
+
+The [four-arm save-stage diagnostic evidence](../../artifacts/phase9/p9-17-save-stage-diagnostic-retry/20261122T205732627Z-b5a5828f258942ee808f2db9bae18bda/)
+was built from source SHA prefix `1ed38ce2…` and executable SHA prefix
+`c24c5b20…`; the [Release receipt](../../artifacts/phase9/p9-17-exact-release-builds/20261123T070000-save-stage-diagnostic/release-build-receipt.json)
+records 2,422 files and the standard SID ending `-1003`, Medium integrity,
+non-admin Session 1. Toolchain was VS2026/v145 with Qt 6.12. The comparison
+manifest SHA-256 is
+`a4b50e33447c7f4d8bc19334c19e27fb7c0bd5a89a258410ddad784e24a4e50d`. Four
+five-cycle arms passed per-arm validation with 89 events each, including 42
+save-stage events. The top-level full/reduced comparison remains failed:
+action signatures were 50 vs 48 because full mode includes two scroll actions.
+Each within-mode pair matched and every other comparison check passed. This is
+diagnostic-only, not acceptance evidence; cross-mode deltas cannot be attributed
+to the UIA observer.
+
+An independent text-free join of process metrics, UIA action timestamps, and
+app checkpoints reported pooled per-save PrivateUsage medians of +1.754 MiB
+snapshot, +1.027 MiB preparation, +1.555 MiB legacy conversion, and +0.762 MiB
+repository save in full mode; reduced medians were similar (+1.682, +1.094,
++1.588, and +0.760 MiB). Before-snapshot PrivateUsage growth from cycles 1–5
+was 65.395/64.133 MiB in the full arms and 49.719/48.949 MiB in the reduced
+arms; cross-mode comparison is invalid. Full-mode phase summaries showed
+roster-open +3.76/+4.06 MiB; three edit action brackets of about +0.7–1.3 MiB
+each (about +2.9 MiB combined versus +6.2 MiB for the broader edit phase); an
+internal save-stage increase of about +5.0 MiB versus +0.4 MiB in the save
+action bracket; near-zero post-save change; and +3.2–4.0 MiB on return.
+Scroll-action deltas were near zero. These are descriptive phase observations,
+not allocation ownership. UIA timestamps mark invocation bounds, not
+asynchronous app completion.
+
+The next bounded production candidate is row-wise snapshot-to-repository
+streaming to avoid materializing a second complete Qt `Roster`. The candidate
+targets the measured legacy-conversion stage (+1.555 MiB PrivateUsage), but that
+stage is not presumed to be the root cause. Row streaming was not yet
+implemented when this candidate was recorded. P9-17 remains open after the
+preceding SQL-
+reuse route's cold and plateau failures; P9-18 remains queued and Batch 3 push
+waits until it closes. No waiver, commit, or push was made. The 256 MiB target,
+inclusive 450 MiB ceiling, separate 512 MiB advisory peak, and cleanup gates
+remain unchanged.
+
+### 2026-11-23 — P9-17 row-streaming implementation and focused validation
+
+Row-wise snapshot-to-repository streaming is implemented in
+`RosterRepository::WindowSaveRowSource`. The [current-source focused validation
+bundle](../../artifacts/phase9/p9-17-stream-roster-save-verification/20261123T034100Z-validation/)
+records a 2,422-file source inventory with SHA-256
+`36786ead8015db222ac82607c892c359d5f1e4084020a985885cb132a8535a79`.
+Focused CTest passed 5/5, the renamed direct Qt test passed, the P9-17 Python
+suite passed 58/58, and PowerShell 5.1 parsing passed.
+
+The matching [exact-source Release receipt](../../artifacts/phase9/p9-17-exact-release-builds/20261123T035800Z-current-367/release-build-receipt.json)
+was built with VS18/v145 under the standard account SID ending -1001. This is
+supplemental build evidence, not acceptance. The VS2022/v143 route remained
+outstanding at that earlier handoff; later installation and remaining
+receipt/build gates are recorded below.
+
+Two UIA route attempts (p9g and p9i) could not stabilize the UIA action
+"Open Teacher Profile" before roster cycles, so they provide no
+memory-gate results.
+P9-17 remains open; P9-18 remains queued and the Batch 3 push waits for it.
+The strict 268,435,456 B (256 MiB) target, inclusive 471,859,200 B (450 MiB)
+ceiling, separate 536,870,912 B (512 MiB) advisory operation peak, and cold/
+plateau cleanup gates remain unchanged.
+
+### 2026-11-23 - P9-17 UIA hit-test diagnostic and pre-install status (superseded)
+
+The [p9g route](../../artifacts/p9g/20261123T040028898Z-3dd65beacd3442be82d66961e4fb7f86/)
+and [p9i route](../../artifacts/p9i/20261123T040252820Z-4ad50a10cb1c455480d732fd5f4e1e0d/)
+stopped before roster cycles. A read-only investigation traced each
+WindowFromPoint result to a foreign-process HWND; the runner threw before
+persisting the raw HWND/PID. The p9g target was outside app-root geometry and
+the p9i target was inside. Existing geometry artifacts lack screenshots and
+raw HWND/PID, so coordinate/DPI/occlusion cause remains unresolved. The prior
+successful p9a action resolved to a same-process popup.
+
+The executor added failure diagnostics that capture raw HWND/PID, visibility,
+physical bounds, screen point, and app-root geometry before the existing
+fail-closed guards, plus a failure-time screenshot attempt. The guards were
+not changed. The [executor logs](../../artifacts/phase9/p9-17-uia-hit-test-diagnostic-checks/)
+record its focused checks. An independent Tester ran 55 Python tests, parsed
+the PowerShell AST, compiled the C# geometry check, and confirmed current PID,
+visibility, containment, stability, and click guards remain. It could not
+compare a committed baseline because the runner and tests are untracked. Live
+screenshot behavior remains unverified; Tester logs were saved under `%TEMP%`
+as identified in its report.
+
+At this handoff, the official VS2022 Build Tools bootstrapper had been
+downloaded, signature-checked, and invoked for a side-by-side installation
+with v143 and SDK 10.0.26100. Setup was incomplete at that point; this state
+was superseded by the successful installation recorded below. No v143 build
+was claimed at that earlier handoff.
+
+P9-17 remains open; P9-18 remains queued and the Batch 3 push waits for it.
+These UIA attempts yielded no memory-route data. The strict 268,435,456 B
+(256 MiB) Working Set target, inclusive 471,859,200 B (450 MiB) ceiling,
+separate 536,870,912 B (512 MiB) advisory operation peak, and cold/plateau
+cleanup gates remain unchanged.
+
+### 2026-11-23 - Initial v143 installation and pre-repair audit (superseded)
+
+VS2022 Build Tools 17.14.37906.3 is registered at
+`C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools`.
+The installed v143 toolset is 14.44.35207, x64 `cl.exe` is 19.44.35230, and
+Windows SDK 10.0.26100 is installed. Setup logs report successful installation
+with no reboot required. The prior launcher's exit 5002 was not the VS Installer
+outcome. This confirms toolchain installation only: there is no exact-source
+VS2022/v143 receipt or acceptance route yet.
+
+At that earlier checkpoint, the 2,422-file inventory before contract edits
+had SHA-256
+`fb4391a04bcbf6ac2f18c453ac6eb6a5f764e43a14131d07597d46e4224405fa`. The
+initial audit found that the builder, runner, and validator accepted generic
+Visual Studio generators and did not bind the compiler toolset in receipts. The
+cleanup validator lacked chronology checks between windows and route lifecycle
+checkpoints; fail-fast cold-cleanup handling also suppressed the plateau-gate
+result. For p9a, the validator explicitly failed cold cleanup and short-
+circuited before plateau; independent raw-sample analysis also indicated the
+plateau gate failed.
+
+At that checkpoint, the Executor had taken ownership of all three script
+consumers and their direct tests and was preparing the receipt-binding and
+cleanup changes recorded in the next entry. No exact-source receipt, acceptance
+route, or memory acceptance existed then. P9-17 remained open; P9-18 was queued.
+The 256 MiB Working Set target, inclusive 450 MiB ceiling, separate 512 MiB
+advisory peak, and cold/plateau cleanup gates were unchanged.
+
+### 2026-11-24 - P9-17 receipt contract repair and VS17 generator blocker (superseded)
+
+The builder, runner, and validator now use a v3 receipt contract requiring
+Visual Studio 17 2022/x64/v143, compiler 19.44.35230.0, and SDK 10.0.26100.0.
+The validator binds the CMake cache, generated projects, compiler hash, and
+build log; checks cleanup-window chronology; and reports cold and plateau
+outcomes independently. Gate formulas and thresholds did not change. Executor
+self-checks passed: validator suite 58, fixture preparation 4, Python
+compilation, and PowerShell parsing.
+
+The current source inventory contains 2,422 files with SHA-256
+`a6035d39034f2ea45b0d69babe915829b55b4b960ae33d0b95e129a2909cab1e`. VS2022
+Build Tools 17.14.37906.3 is registered at
+`C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools`, with
+v143 14.44.35207, x64 `cl.exe` 19.44.35230, and SDK 10.0.26100. Setup completed
+successfully without reboot. The prior launcher session's exit 5002 was not
+the VS Installer outcome.
+
+CMake 4.4.2 still cannot select `Visual Studio 17 2022`. `vswhere -requires
+Microsoft.VisualStudio.Component.VC.Tools.x86.x64` finds only VS18, indicating
+the generic VC tools component is not registered in VS17. The Executor stopped
+before build: there is no receipt, EXE, or route. The standard Release folder
+is empty; the prior VS18 tree is preserved. A read-only Explorer is identifying
+the minimal setup modification. Exact-source v143 build and independent Tester
+review are required before another route.
+
+The latest p9a validator explicitly failed cold cleanup and short-circuited
+before plateau; independent raw-sample analysis also indicates the plateau
+gate failed. P9-17 remains open and P9-18 remains queued. The strict 256 MiB
+Working Set target, inclusive 450 MiB ceiling, separate 512 MiB advisory peak,
+and cold/plateau cleanup gates remain unchanged. No v143 acceptance is claimed.
+
+### 2026-11-24 - P9-17 accepted v143 build and route launch
+
+The [exact-source Release receipt](../../artifacts/phase9/p9-17-exact-release-builds/20261123T161233365Z-vs17-v143-current-source-release-retry01/release-build-receipt.json)
+(schema `classmngr-phase9-p9-17-exact-release-build-v3`) was independently
+accepted. It binds 2,422 files, source SHA-256
+`78a38f908b8b45a9b52a7ab0cf1f66f30af628eacfbdb05bd99bfc1bc6217077`, and
+executable
+`build/windows-x64-release/next-package-build/Release/ClassMngr.exe`, SHA-256
+`b8278b445dfbd54c6cc7dc743349537c36f5a6a9968258e122bd5219c6302de7`. The
+receipt records VS2022 Build Tools 17.14.37906.3 at
+`C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools`, generator
+`Visual Studio 17 2022`/x64/v143, toolset 14.44.35207, compiler 19.44.35230.0,
+and SDK 10.0.26100.0. The incremental Release build succeeded for `ClassMngrNext`,
+`ClassMngrNextResourcePackage`, and `ClassMngrPhase7NextBlankFixtureTests` with
+zero warnings and errors; it ran in active console Session 1 at Medium
+integrity as a non-admin, without elevation. See the sibling
+[build log](../../artifacts/phase9/p9-17-exact-release-builds/20261123T161233365Z-vs17-v143-current-source-release-retry01/logs/current-source-release-build.log).
+
+The P9-17 chronology validator passed 63 tests and independent Tester review.
+A new local ten-cycle P9-17 route launched against this build; its outcome and
+remaining acceptance issues are recorded below. P9-17 remains open.
+
+The prior completed normal route used VS18/v145 and remains failed historical
+evidence: maximum settled Working Set was 380,026,880 B, the separate operation
+peak was 380,030,976 B, and 380/460 samples missed the strict 268,435,456 B
+target. Cold cleanup exceeded its allowance by 23,412,736 B. Its validator
+stopped before plateau analysis; raw-sample recomputation put all ten returns
+above the plateau upper bound. No root cause is established, and none of these
+measurements describes the new route.
+
+The strict 268,435,456 B (256 MiB) Working Set target, inclusive 471,859,200 B
+(450 MiB) ceiling, separate 536,870,912 B (512 MiB) operation advisory, and
+cold/plateau cleanup gates remain unchanged. P9-18 remains queued after P9-17;
+Batch 3 stays active through P9-18, with one push after it closes.
+
+### 2026-11-24 - P9-17 ten-cycle route completed; unaccepted (superseded)
+
+The [route manifest](../../artifacts/phase9/packaged-next-p9-17-large-roster/20261123T162707040Z-d2a0dfa31bf44023ac03b55baa8845f5/manifest.json)
+records ten completed cycles, UI/database/readback checks, natural exit code 0,
+and no sidecars or temporary files. The run is unaccepted. The validator exits
+1 because the final `close-main-window-naturally` action lacks `completedAtUtc`
+even though its finalized route record has `closeReturnedAtUtc` and successful
+normal process-exit evidence. `route.workflowCompletedAtUtc` precedes that
+close action intentionally; top-level `manifest.completedAtUtc` follows it.
+Independent review identifies a validator schema gap, not an application
+shutdown failure. The route-local six-file harness inventory also omits the
+dot-sourced `scripts/phase9/p9_14_packaged_lifecycle_common.ps1`. Preserve this
+run as-is; do not repair or rewrite its evidence.
+
+Independent raw calculations show 100/460 samples missed the strict
+268,435,456 B (256 MiB) target. Maximum settled Working Set was 309,858,304 B;
+operation peak was 310,480,896 B, below the inclusive 471,859,200 B (450 MiB)
+ceiling and separate 536,870,912 B (512 MiB) operation advisory. Cold cleanup
+failed: the 240,717,824 B allowance was exceeded by the 263,516,160 B return,
+an excess of 22,798,336 B. Plateau center was 153,554,944 B, with a
+16,236,544 B envelope and 169,791,488 B upper allowance; cycles 2–10 exceeded
+it. Fitted return change was +142,282,528.6 B and baseline drift was
+−22,908,108.8 B. Both cleanup gates fail independently of the validator gap.
+
+P9-17 remains open. The Executor is correcting canonical completion capture
+and finalized JSONL and pinning the shared helper; a fresh exact-source build
+and route are required after those changes. The 256/450/512 MiB policy and
+cold/plateau cleanup requirements remain unchanged. P9-18 stays queued after
+P9-17; Batch 3 remains active through P9-18, with one push after it closes.
+
+### 2026-11-24 - P9-17 corrected ten-cycle route; plateau cleanup failed
+
+The [corrected ten-cycle route](../../artifacts/phase9/packaged-next-p9-17-large-roster/20261123T172727262Z-c5489fce11ad4b8d898dcd935aa4b8b8/manifest.json)
+passed source receipt review, route/readback/database checks, natural exit, and
+file cleanup. The route is still unaccepted because its plateau cleanup gate
+failed; P9-17 remains open. All 460 Working Set samples were below the strict
+268,435,456 B (256 MiB) target, with maximum 227,966,976 B. Operation peak was
+223,801,344 B, below the separate 536,870,912 B (512 MiB) advisory. Cold
+cleanup passed with matched baseline median/range
+227,966,976/0 B and first return 142,843,904 B.
+
+Plateau cleanup failed: center 141,725,696 B, envelope 2,039,808 B, upper
+bound 143,765,504 B. Cycle 1 returned at 158,384,128 B, exceeding the bound
+by 14,618,624 B; cycles 2–10 were below it. Baseline drift was −2,598,502.4 B,
+slightly outside the envelope. Diagnostic PrivateUsage increased from about
+198.45 MB at cycle-1 return to 348.47 MB at cycle-10 return and 352.76 MB at
+final re-entry while Working Set fell. This does not identify a leak owner.
+
+Independent resource review found no per-cycle font/resource loads. Model-to-
+snapshot copying and cell payload remain hypotheses; prior full/reduced UIA
+routes showed similar growth. Investigate a diagnostic-only filled-versus-
+sparse payload comparison while preserving 100x156 geometry, names, row counts,
+three probe values, and identical UIA actions. No threshold or gate changes.
+The verified VS17 Release tree remains separate from the VS18 Debug CMake
+reopen failure. Keep the previous close-timestamp-schema route artifact
+unchanged. P9-18 remains queued after P9-17; Batch 3 stays active through
+P9-18, with one push after it closes.
+
+### 2026-11-24 - P9-17 deferred; leak attribution moved to Phase 14
+
+The latest valid normal [P9-17 route](../../artifacts/phase9/packaged-next-p9-17-large-roster/20261123T172727262Z-c5489fce11ad4b8d898dcd935aa4b8b8/manifest.json)
+remains unaccepted: maximum sampled Working Set was 227,966,976 B, maximum
+PrivateUsage was 352,763,904 B, and operation peak was 223,801,344 B. All
+Working Set samples were below 268,435,456 B (256 MiB); cold cleanup passed,
+but plateau cleanup failed. By user direction P9-17 is Deferred as an active
+slice, with its cleanup requirement unresolved and unaccepted. Phase 9 remains
+In progress. P9-18 is the active next slice and may proceed while that separate
+cleanup gate remains unresolved; Batch 3 still pushes once after P9-18 closes.
+
+The latest valid full-observer [filled-versus-compact-text diagnostic](../../artifacts/p9-17-payload-diagnostic/20261123T213336129Z-9d79b9ba0fe44ea3a7ffcd6df0c2c2db/comparison-manifest.json)
+is diagnostic-only/unaccepted; all 10 comparison checks passed. Both arms used
+15,000 custom rows, 15,200 target rows, 100 English and 100 Korean names, 768
+schedules, identical 100x156 UI geometry, probes, and actions. Sparse used
+exactly 14,997 one-character `x` values; text length was the only changed
+variable. Return slopes were nearly equal in both arms: about 11.8 MiB/cycle
+Working Set and 17.0 MiB/cycle PrivateUsage. Both peaked around 357 MiB sampled
+Working Set and 341 MiB PrivateUsage at final re-entry. Text length therefore
+has little measured effect; this comparison does not isolate row count or
+identify a leak owner. A separate full-versus-3-row harness is unreviewed and
+unrouted, so it is not verified evidence.
+
+WPR heap snapshot hooks were implemented and statically reviewed, but runtime
+tracing did not start. Local `Start-Process -Verb RunAs` failed with
+`0xc0000142` before a usable elevated worker; no UAC prompt was observed and no
+WPR snapshots or ETL exist. A platform escalation probe still returned a
+Medium non-admin token. No allocation stacks were captured. Defer leak
+attribution and any confirmed fixes to [Phase 14](15-Phase-14-Windows-Memory-Leak-Attribution.md).
+The 256 MiB target, inclusive 450 MiB ceiling, separate 512 MiB operation
+advisory, and cold/plateau cleanup contract remain unchanged.

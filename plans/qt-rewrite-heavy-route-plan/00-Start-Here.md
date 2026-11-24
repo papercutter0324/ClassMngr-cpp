@@ -5,24 +5,19 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-11-21
+- Last updated: 2026-11-24
 - Current milestone: Phase 9 remains In progress. Batches 1 and 2 are closed;
-  Batch 3 remains active through P9-18, with one push after it closes. P9-17
-  large roster editing remains active. Its latest exact-source route preserved
-  edits and database correctness and stayed within the 300 MiB acceptance
-  ceiling, but missed the 256 MiB target at settled checkpoints and failed its
-  empirical cleanup allowance. Current settled lifecycle policy: target
-  <268,435,456 B (256 MiB); values from that threshold through the
-  <=314,572,800 B (300 MiB) ceiling are accepted target misses, higher values
-  fail, and operation peaks remain separate. The by-value move fix remains
-  under acceptance; no memory improvement is claimed. See the
-  [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md) for the full gate.
-  The local Windows x64 Debug gate remains passed: full build, focused
-  visual CTest 9/9, and elevated full unfiltered CTest 620/620 with 0 failures
-  and 0 timeouts. The final packaged Release exit gate remains open. See the
-  [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
-  [Phase 9 progress log](10-Phase-9-Progress-Log.md), and
-  [current slice-batch tracker](Current-Slice-Batches.md).
+  Batch 3 is active through P9-18, with one push after it closes. P9-17 is
+  Deferred by user direction and remains unaccepted because plateau cleanup
+  failed. The completed filled-versus-compact-text diagnostic found
+  little effect from text length and did not identify a leak owner. Heap
+  attribution and any confirmed fixes are deferred to Phase 14; P9-18 is the
+  active next slice. All memory gates are unchanged. See the [Phase 9
+  plan](10-Phase-9-Windows-Memory-Hardening.md), [progress
+  log](10-Phase-9-Progress-Log.md), [current slice-batch
+  tracker](Current-Slice-Batches.md), and [Phase 14
+  plan](15-Phase-14-Windows-Memory-Leak-Attribution.md). The final packaged
+  Release exit gate remains open.
 
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
   post-F629 source-bound Windows x64 requalification remains outstanding and
@@ -55,6 +50,7 @@
 | 11 | 12-Phase-11-Test-Restructuring-and-Release-Gates.md | Not started | Heavy | 0–10 |
 | 12 | 13-Phase-12-Beta-Cutover-and-Legacy-Removal.md | Not started | Heavy | 10, 11 |
 | 13 | 14-Phase-13-Post-Release-Maintenance.md | Not started | Heavy | 12 |
+| 14 | 15-Phase-14-Windows-Memory-Leak-Attribution.md | Not started | Heavy | 13 (uses Phase 9 evidence) |
 
 Statuses are intentionally conservative. A phase is not In progress until its work has started in the repository, and it is not Complete until its exit gate has passed.
 
@@ -149,8 +145,9 @@ The audit of large-data and widget-heavy paths is tracked in the
 [Qt Rewrite Memory Hotspot Remediation Plan](memory-hotspot-remediation-plan.md).
 It is an execution plan across the numbered phases, not a new phase. Phase 0
 owns the measurements, Phases 2–8 own the data and lifecycle fixes, Phase 9
-owns the packaged Release memory gate, and Phases 11–13 own permanent
-regression coverage and removal of temporary paths.
+owns the packaged Release memory gate, Phase 14 owns the deferred P9-17 leak
+attribution and any confirmed fixes, and Phases 11–13 own permanent regression
+coverage and removal of temporary paths.
 
 ## Commit message convention
 

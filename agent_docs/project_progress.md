@@ -1,62 +1,230 @@
 # Project Progress
 
-## Phase 9 current position — P9-17 large roster editing — 2026-11-21
+## Phase 9 current position -- P9-18 active -- 2026-11-24
 
-The current normal-use Windows Working Set policy is a target below
-268,435,456 bytes (256 MiB) and an acceptable ceiling of 314,572,800 bytes
-(300 MiB). Values above target and at or below the ceiling are acceptable
+### Current P9-17 corrected v143 route outcome -- 2026-11-24
+
+The current-source VS17 2022/x64/v143 Release receipt
+`artifacts/phase9/p9-17-exact-release-builds/20261123T171216444Z-10ad8ff10faf4280bee7aab5041897ff/release-build-receipt.json`
+was independently accepted. It binds 2,422 files at SHA-256
+`eedc28b3b50a9296267d37351757b628936be4779e567080cbdaade8bf088143` and the
+Release executable at SHA-256
+`d8ea15ec884f8e615bbe902da739d8fe4582750d0e7ce232e97cd4fa40c698ad`. The
+receipt includes the corrected natural-close evidence and the shared
+P9-14 lifecycle helper in the P9-17 harness inventory. The 69-test validator
+suite, four fixture tests, and PowerShell 5.1 parsing passed independent review.
+
+The fresh route
+`artifacts/phase9/packaged-next-p9-17-large-roster/20261123T172727262Z-c5489fce11ad4b8d898dcd935aa4b8b8/`
+completed all ten cycles, UI/database/readback checks, natural exit, and file
+cleanup. The validator correctly reports cold cleanup **passed** and plateau
+cleanup **failed**. All 460 Working Set samples stayed below the strict
+268,435,456 B target; maximum was 227,966,976 B. Operation peak was
+223,801,344 B. Cold baseline median/range was 227,966,976/0 B; first return
+median was 142,843,904 B. Plateau center/envelope/upper bound were
+141,725,696/2,039,808/143,765,504 B. Cycle 1 returned at 158,384,128 B,
+14,618,624 B above the upper bound; cycles 2–10 were below it. Baseline drift
+was −2,598,502.4 B, slightly outside the envelope. Diagnostic PrivateUsage
+rose from 198,451,200 B at cycle 1 return to 348,467,200 B at cycle 10 while
+Working Set fell; this does not identify live retained objects or a leak.
+
+By user direction, P9-17 is deferred as active work but remains unaccepted
+because its required plateau cleanup gate fails. Phase 9 remains In Progress;
+P9-18 campus-map open/close is the active next slice. Phase 14 is planned after
+Phase 13 to attribute the unresolved PrivateUsage growth and revalidate P9-17
+cleanup if a confirmed owner is fixed. Keep the strict 256 MiB Working Set
+target, inclusive 450 MiB ceiling, separate 512 MiB operation advisory limit,
+and cold/plateau formulas unchanged.
+
+### Superseded P9-17 outcome and next step -- 2026-11-23
+
+The latest normal 10-cycle Release route is
+`artifacts/p9a/r20261122T192719Z/20261122T192720300Z-55cda0046ba144b189be428145c79ecf/manifest.json`.
+Its exact-source receipt records 2,422 files and source SHA-256
+`f72d3ba6fee1ecf823953592954df0d2625256118d7070f89f092a8d8061f458`; executable
+SHA-256 is `fcbea7749a037153fa2e0e241b311bcc152eabacb7e8208e7fdb439dda76e390`.
+The route completed naturally with UI/database checks and sidecar/temp cleanup
+passing. Of 460 Working Set samples, 380 missed the strict 256 MiB target; the
+maximum was 380,026,880 B under the inclusive 450 MiB ceiling. The operation
+peak was 380,030,976 B under 512 MiB. Cold cleanup failed by 23,412,736 B.
+Independent raw-sample plateau calculation gives center 273,403,904 B,
+envelope 270,336 B, upper bound 273,674,240 B; all ten returns exceed it and
+the fitted cycle trend is 62,506,151.6 B. P9-17 remains open.
+
+The prepared-INSERT reuse did not demonstrate cleanup benefit. The opt-in
+save-stage diagnostic at
+`artifacts/phase9/p9-17-save-stage-diagnostic-retry/20261122T205732627Z-b5a5828f258942ee808f2db9bae18bda/`
+ran four five-cycle arms. Each arm passed its own event/heap/readback checks;
+the top-level full/reduced comparison remains failed because action signatures
+differ (50 vs 48; the full mode includes two class-list scroll actions). The
+VS2026/v145 + Qt 6.12 diagnostic is not acceptance evidence. Independent
+analysis found full-mode per-save PrivateUsage medians of +1.754 MiB at
+snapshot, +1.027 MiB in preparation, +1.555 MiB in legacy conversion, and
++0.762 MiB in repository save. Process growth also occurs during roster open,
+edit, and return; these measurements identify no allocation owner or leak.
+
+Row-wise snapshot-to-repository streaming is implemented in
+`RosterRepository::WindowSaveRowSource`. Focused current-source checks passed
+5/5 CTest targets, the renamed Qt save test, the 58-test P9-17 Python suite,
+and PowerShell 5.1 parsing. The matching Release receipt is VS18/v145 and
+supplemental only. VS2022 Build Tools 17.14.37906.3 is now verified with v143
+14.44.35207, x64 compiler 19.44.35230, and SDK 10.0.26100. The current
+2,422-file inventory before receipt-contract edits has SHA
+`fb4391a04bcbf6ac2f18c453ac6eb6a5f764e43a14131d07597d46e4224405fa`. Two
+v145 route attempts stopped before roster
+cycles at `Open Teacher Profile`; neither gives memory-gate results. The
+harness now preserves raw hit-test evidence before the existing fail-closed
+guards; focused checks passed 55/55, and an independent Tester confirmed the
+PID, visibility, containment, stability, and click guards remain. A live
+failure screenshot is not yet verified. A new audit found the builder, runner,
+and validator receipt chain did not bind the generator/toolset. The v3 chain
+now requires VS17 2022/v143. The exact-source build succeeded and its receipt,
+inventory, compiler, SDK, and executable were independently accepted. The
+chronology validator passed 63 tests and an independent review. Fresh v143
+route `20261123T162707040Z-d2a0dfa31bf44023ac03b55baa8845f5` completed ten
+cycles, but remains unaccepted. Route/readback and natural-exit checks passed;
+the validator stopped at the final close action because its record omitted
+`completedAtUtc` despite containing `closeReturnedAtUtc` and successful
+process-exit evidence. Independent raw-sample review confirms cold cleanup
+fails by 22,798,336 B and plateau cleanup fails, with cycles 2–10 above the
+169,791,488 B allowance and a 142,282,528.6 B fitted rise. Settled max was
+309,858,304 B (below 450 MiB); 100/460 samples missed the strict 256 MiB
+target; operation peak was 310,480,896 B (below the 512 MiB advisory limit).
+The timestamp/schema and route-local helper inventory are being corrected;
+the artifact remains immutable. A fresh exact-source build and route are
+required after the source fix. Cleanup gates and memory limits remain unchanged.
+
+Keep the <268,435,456 B target, inclusive 471,859,200 B ceiling, separate
+536,870,912 B operation budget, and cold/plateau cleanup gates unchanged. P9-17
+remains open pending the current route. P9-18 remains queued; its proposed
+contract is one warm-up, five matched baseline windows, and ten measured
+Bundang campus-map open/suspend cycles with process-bound UIA, image, and
+screenshot evidence. Start it after P9-17 closes; push Batch 3 after P9-18
+closes. Preserve `p9-09-integration-output.txt`, `$testLog`, and PID 35864.
+
+### Superseded P9-17 result before prepared-INSERT reuse -- 2026-11-23
+
+The current exact-source Release build used 2,422 files, tree SHA-256
+`494774b15999c3930437822f644996cb677c1a128fdb4d76a5bd586bd10e0450`, and
+executable SHA-256 `c740d87cc456b3e176d168a753c1625518e44a40230777ae8c4db3ea40650ebf`.
+The guarded build and route ran as SID ending `-1001`, Medium integrity,
+non-admin, Session 1, with all 192 resources readable.
+
+The fresh ten-cycle 100x156 Release route completed naturally and its SQLite
+integrity, foreign-key, and three edited-cell snapshot checks passed. Across 460
+Working Set samples, the inclusive 450 MiB ceiling passed with a maximum of
+382,664,704 B; the 512 MiB operation peak passed at 388,730,880 B. The strict
+256 MiB target was missed in 370 samples across 37 windows. Cold cleanup failed:
+baseline median/range was 242,814,976/0 B and the first return was 265,875,456 B,
+23,060,480 B above its unchanged empirical allowance. The validator stopped at
+that failure. Recomputing the unchanged plateau formula from raw samples gives a
+271,589,376 B center, 270,336 B envelope, and 271,859,712 B upper bound; all ten
+cycle returns exceed it, with an 87,881,541.8 B fitted change. P9-17 therefore
+remains open; neither cleanup gate passes.
+
+The successful counterbalanced default-process-heap diagnostic is
+`artifacts/p9h/20261122T180803249Z-af39be17f4094fb7ac18a6084bbb394a/comparison-manifest.json`.
+All comparison checks passed for four arms with the same source, executable,
+package, fixture, actions, readbacks, and checkpoint order. Full UIA observation
+added about 16 MiB by measured cycle 5 in both run orders; reduced observation
+still grew about 41 MiB. Deleting the roster widget returned about 4.2 MiB to
+the default process heap each cycle, but the heap summaries do not identify an
+allocation owner or measure Working Set.
+
+P9-17's PowerShell 5.1 runner now uses ordinal `IndexOf` instead of the
+unsupported two-argument `String.Contains` overload. The P9-17 Python suite
+passed 57/57, the runner/build/shared helpers parsed in PowerShell 5.1, and the
+positive/negative `IndexOf` checks passed. Two earlier diagnostic attempts are
+preserved: a deep output path hit classic MAX_PATH before app launch, then the
+shallow-root run exposed the `Contains` compatibility bug. The fixed shallow-
+root diagnostic succeeded. A RunAs WPR preflight was canceled before elevation;
+no WPR trace, IFEO entry, or registry change was made.
+
+The next bounded production candidate reuses the `roster_data` INSERT statement
+in `RosterRepository::writeRoster` instead of preparing it for every non-empty
+cell. This is a memory-churn hypothesis, not an assumed fix. P9-17 source and
+docs remain uncommitted until the acceptance slice closes; P9-18 is queued and
+Batch 3 push waits until P9-18 closes. Preserve untracked
+`p9-09-integration-output.txt` and unrelated PID 35864.
+
+### Historical measurements through 2026-11-22
+
+The active normal-use Windows Working Set target is below 268,435,456 bytes
+(256 MiB). Values through 471,859,200 bytes (450 MiB) inclusive are accepted
 target misses; values above the ceiling fail. Operation peaks remain separate.
-Historical results keep their original threshold context.
+Cold and post-primer cleanup gates remain unchanged. Historical runs retain the
+threshold in force when they were measured.
 
-Phase 9 remains In progress. Batches 1 and 2 are closed; Batch 3 is active
-through P9-18. P9-16 repeated workspace open/close passed independent review
-in one packaged Next Windows x64 Release process with one warm-up and 10
-measured same-process cycles. The 96-class/768-schedule workspace remained
-unchanged; 12 opens and 11 closes exited naturally with code 0. Primary
-Working Set no-growth checks passed: open and closed cycle medians ended below
-their baselines with negative trends, and maximum settled working set was
-235,921,408 bytes (<262,144,000). Focused validator tests passed 25/25.
+Phase 9 remains in progress. Batches 1 and 2 are closed; Batch 3 covers P9-17
+and P9-18. P9-16 repeated workspace open/close passed independent review with
+10 measured cycles and a maximum settled Working Set of 235,921,408 bytes.
+Its Private Bytes trend remains unresolved and does not establish a leak.
 
-Private Bytes remains an unresolved secondary diagnostic: its open and
-closed fitted trends increased about 10.8 MB and 11.2 MB. Separate Recent
-Files and tiny/large fixture diagnostics reproduced Private Bytes growth but
-did not identify a leak or owner. The accepted run reused the P9-15 Release
-package, establishing product-source equivalence, not a fresh exact-tree build.
+P9-17 remains open. The latest complete normal full-observer route reached
+435,896,320 bytes settled Working Set under the prior 350 MiB ceiling; its
+operation peak was 435,953,664 bytes. Under the current 450 MiB policy these
+values are below the ceiling by sample reclassification only. The run missed
+the 256 MiB target in 370/460 samples, failed cold cleanup by 22,261,760 bytes,
+and all ten cycle returns exceeded the post-primer envelope. It does not pass
+P9-17.
 
-The standard local Windows x64 Debug build succeeded incrementally under
-elevated execution. The nine visual capture failures came from test harnesses
-requesting excluded `Inter.ttc`; they now load the packaged static
-`Inter-Regular.ttf` while retaining the `Inter` family and all assertions.
-The Sub Prep test failure came from fixture member destruction order; its
-diagnostics vector now outlives host teardown. Focused visual CTest passed
-9/9, the Sub Prep rerun passed 1/1, and independent review confirmed the full
-unfiltered suite passed 620/620 with no timeouts. The full Debug CTest gate is
-passed. No ACL changes were made.
+The latest exact-source Release build is recorded in
+`artifacts/phase9/p9-17-exact-release-builds/20261122T093754300Z-0ef971a592ad454880c49d9d431eb32/`
+(2,422 files; tree SHA-256
+`005121d59d6d4e8796a590475a43839cf806591b66596f7cfe3fce709059b816`). The
+helper verified an active-console standard identity at Medium integrity,
+non-admin, in interactive Session 1. The default CodexSandboxOffline token
+could not enumerate generated Release Resources, while the active-console
+identity could; no Windows elevation or ACL change was used.
 
-P9-17 large roster editing remains active. The first package-equivalent route
-completed three UIA edits, save, clear, re-entry, persistence checks, and
-natural exit; workspace and SQLite checks passed. Its re-entry working set
-exceeded the former 250 MiB limit. A later exact-current-source Release build
-and route also completed the UIA and database checks, then naturally exited 0.
-Its baseline Working Set was 246,779,904 bytes, post-clear median 270,020,608,
-and re-entry median 274,874,368; all settled windows were at or below the
-revised 300 MiB ceiling, but missed the 256 MiB target after save/clear/
-suspension/re-entry. The baseline-derived cleanup allowance was 246,779,904
-bytes, so post-clear exceeded it by 23,240,704 bytes and P9-17 remains
-unaccepted. Private Bytes increased 23.7 MB after clear and 28.6 MB on
-re-entry. WPR heap attribution remains blocked by a Windows privilege; no leak
-owner is identified. The by-value snapshot optimization remains under
-evaluation and has no demonstrated memory benefit.
+The earlier five-cycle full/reduced UIA comparison is diagnostic-only. It
+recorded 13.439–15.305 MiB more fitted Private Bytes growth in full-observer
+arms, while reduced arms still grew 52.1–52.6 MiB; Working Set attribution was
+order-dependent. A newer client-GC comparison used the same full observer and
+route actions with and without forced collection in the PowerShell client.
+The app’s cycle-1-to-5 return growth stayed effectively unchanged across arms:
+64.273–64.824 MiB Working Set and 65.777–66.559 MiB Private Bytes. Client GC
+released an estimated 39.75–57.02 MiB of client-managed memory per boundary but
+did not measurably improve app memory. Each arm remained below the 450 MiB
+ceiling, missed the 256 MiB target in 220–230/310 samples, and failed cold
+return by 22.04–22.36 MiB. The diagnostic did not evaluate plateau acceptance;
+the earlier full/reduced arms failed repeated-return cleanup. App exits were
+natural and no sidecars or isolated temp files remained. Independent review
+passed 54 focused preparer/validator tests and verified artifact identities and
+sample counts.
 
-Batch 4 discovery found P9-19 Classes navigation/editor lifecycle, conditional
-P9-20 larger successful Schedule Import apply, and P9-21 Private Bytes
-diagnostic follow-up. The final packaged Release exit gate remains open. See
-the Phase 9 plan, progress log, and current slice-batch tracker. After the
-latest roster source change, the standard local Windows x64 Debug build
-succeeded incrementally under elevated execution and unfiltered CTest passed
-620/620 with zero failures or timeouts. The ordinary token could not access
-generated resources; no ACL changes were made.
+The fixture’s raw roster/header text is 0.717 MiB per copy; three simultaneous
+raw representations are about 2.15 MiB. The current-source default-process-
+heap diagnostic is recorded in `artifacts/p9/20261122T123519219Z-a2f5358d58e04aa6a1b56eecc6483803/`.
+Four diagnostic arms recorded 40 app heap checkpoints each; cycles 1–5
+`cbAllocated` rose about 41.5 MiB with the reduced observer and 54.7–54.9 MiB
+with the full observer. These are default-heap totals without allocation-owner
+or stack data, and the release event was sampled inside the widget destructor,
+before its owner finished deletion. A new opt-in checkpoint fires after
+`delete editor` returns; the ordered runner and QPointer test are added. The
+target now includes the required SelectedClassEditor implementations. The
+current-source Debug build and focused CTest passed 2/2 under the expected
+standard SID at Medium integrity in Session 1; the independent Tester audited
+the build/CTest logs and the QPointer assertions. The complete P9-17 Python
+suite passes 56/56 and PowerShell 5.1 parser checks pass. A new exact-source
+Release build and matched after-delete diagnostic route are in progress. These
+checks do not establish memory acceptance or an allocation owner. P9-17 still
+needs a normal ten-cycle route that passes cold and plateau cleanup.
 
+The user reports that this high memory use is Windows-specific and that Linux
+and macOS use less RAM. No matched numeric cross-platform route is available;
+private-memory fields differ by platform, so this is a hypothesis lead rather
+than verified attribution. Windows UIA/accessibility or platform caches remain
+possible contributors, while the raw roster text and one-time startup fonts do
+not explain repeated growth by themselves.
+
+The user-requested memory-policy commit `c3409dfe` was pushed to
+`origin/Qt-Rewrite`. P9-18 Campus Maps remains queued until P9-17 is accepted;
+then close Batch 3 and push that batch. Preserve untracked
+`p9-09-integration-output.txt` and do not stage it. Batch 4 discovery found no
+additional slices beyond P9-19 Classes navigation/editor lifecycle, conditional
+P9-20 larger Schedule Import apply, and P9-21 Private Bytes follow-up. The final
+packaged Release exit gate remains open.
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 
 Deployment `phase8_gate_close_20261117` completed on Heavy; Light was used for

@@ -2,25 +2,41 @@
 
 ## Phase 9 — Batch 3: Additional packaged Release lifecycle evidence (Active)
 
-Batch goal: measure the remaining large or repeated Next workflows in current-source packaged Windows x64 Release processes. Use authentic UIA-bound actions, complete lifecycle snapshots, identified fixtures, and local validation. For each gated settled startup/normal-use lifecycle window, target Working Set below 268,435,456 B (256 MiB); values from that target through 314,572,800 B (300 MiB) are acceptable but reported as target misses, and values above the ceiling fail. Keep operation peaks separate under existing Phase 9 budgets. Preserve source/package equivalence, database/UI correctness, cleanup and return-to-baseline allowances, and repeated-cycle checks. Keep transient budgets advisory until a return-to-baseline allowance is supported by current-source measurements. Commit each slice; push once after P9-18 closes Batch 3. GitHub validation is not acceptance.
+Batch goal: measure the remaining large or repeated Next workflows in current-source packaged Windows x64 Release processes. Use authentic UIA-bound actions, complete lifecycle snapshots, identified fixtures, and local validation. For each gated settled startup/normal-use lifecycle window, target Working Set below 268,435,456 B (256 MiB); values from that target through 471,859,200 B (450 MiB) inclusive are acceptable but reported as target misses, and values above the ceiling fail. Keep operation peaks separate under existing Phase 9 budgets. Preserve source/package equivalence, database/UI correctness, cleanup and return-to-baseline allowances, and repeated-cycle checks. Keep transient budgets advisory until a return-to-baseline allowance is supported by current-source measurements. Commit each slice; push once after P9-18 closes Batch 3. GitHub validation is not acceptance.
 
 16. **P9-16 — Repeated workspace open/close** (Complete)
     Accepted on the primary Working Set after one warm-up and 10 same-process
     reopen cycles. Maximum settled Working Set was 235,921,408 B. Private Bytes
     increased 10.8 MB open and 11.2 MB closed; this secondary diagnostic is
     unresolved and does not establish a leak. See the [accepted run evidence](../../artifacts/phase9/packaged-next-p9-16-repeated-workspace/20261121T023320451Z-9b576dcbfdc84dd0996f279db5ef67e9/manifest.json).
-17. **P9-17 — Large roster editing** (Active)
-    Latest exact-source route preserved edits and database correctness. Baseline
-    Working Set was 246,779,904 B (10 samples, range 0); post-clear and re-entry
-    medians were 270,020,608 B and 274,874,368 B. All settled windows were at
-    or below 300 MiB, but post-save, post-clear, suspended, and re-entry missed
-    the 256 MiB target. Operation peak was 277,614,592 B. Cleanup exceeded the
-    empirical 246,779,904 B allowance by 23,240,704 B, so the slice remains
-    open. The by-value move fix is under acceptance; do not claim memory
-    improvement. No named Phase 0 memory route was found.
-18. **P9-18 — Campus map open/close** (Queued; last in Batch 3)
-    Measure decoded map retention and release; no named Phase 0 memory route
-    was found. Push once after this slice closes Batch 3.
+17. **P9-17 — Large roster editing** (Deferred by user direction; unaccepted)
+    Row-wise snapshot-to-repository streaming and focused validation are
+    complete; the exact-source VS2022/v143 Release receipt is accepted. The
+    latest [ten-cycle route](../../artifacts/phase9/packaged-next-p9-17-large-roster/20261123T172727262Z-c5489fce11ad4b8d898dcd935aa4b8b8/manifest.json)
+    had a maximum sampled Working Set of 227,966,976 B, PrivateUsage of
+    352,763,904 B, and operation peak of 223,801,344 B. All Working Set samples
+    met the strict 256 MiB target and cold cleanup passed, but plateau cleanup
+    failed. The slice is closed as active work and deferred by user direction;
+    its cleanup requirement remains unaccepted and unresolved. The completed
+    full-observer filled-versus-compact-text diagnostic found little effect
+    from text length but did not isolate row count or identify a leak owner.
+    Runtime WPR tracing produced no snapshots or ETL. See the [Phase 9 progress
+    log](10-Phase-9-Progress-Log.md) for evidence and [Phase
+    14](15-Phase-14-Windows-Memory-Leak-Attribution.md) for deferred
+    attribution and revalidation.
+18. **P9-18 — Campus map open/close** (Active next slice; last in Batch 3)
+    Use the `campus_map` / Maps page with the isolated Bundang fixture
+    (`bundang_map.png`, `bundang_building.png`). Both images lazy-load on
+    activation and clear on suspension. Run one warm-up, five no-action return
+    baseline windows, then ten measured open/suspend cycles. After UIA and
+    lifecycle state are confirmed for each settled window, collect ten samples
+    at 100 ms intervals. Bind actions, process identity, PID/HWND-bound
+    screenshots, image/resource evidence, and read-only app-data snapshots
+    together. Derive cold and plateau return gates from the current matched
+    baseline and retain the 256/450/512 MiB policy. Exclude Phase 7 campus
+    evidence because it is macOS offscreen. P9-18 is active while the separate
+    P9-17 cleanup requirement remains unresolved; push once after P9-18 closes
+    Batch 3.
 
 ## Phase 9 — Batch 4 discovery (Complete; ordered after Batch 3)
 
