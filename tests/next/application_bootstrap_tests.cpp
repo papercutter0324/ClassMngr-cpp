@@ -116,6 +116,7 @@
 #include <QScrollBar>
 #include <QSettings>
 #include <QSignalSpy>
+#include <QStringList>
 #include <QStatusBar>
 #include <QSpinBox>
 #include <QTabWidget>
@@ -210,6 +211,7 @@ private slots:
     void speakingEvaluationAiCompositionUsesWorkspaceAndPreferences();
     void classesNavigatorClearsAndReloadsWhenWorkspaceIsReplacedWhileActive();
     void classesNavigatorClearsWhenWorkspaceIsClosedWhileActive();
+    void p919ClassSelectionCheckpointIsWiredThroughBootstrap();
     void calendarRoutesFollowWorkspaceReplacementAndCloseFlows();
     void scheduleSelectionOpensClassDetailsAndRefreshesAfterSave();
     void subPrepRouteUsesTheActiveGatewayAndReleasesAcrossLifecycle();
@@ -247,6 +249,57 @@ private:
 
 namespace
 {
+
+QStringList* p919CapturedQtMessages = nullptr;
+
+void captureP919QtMessage(
+    QtMsgType,
+    const QMessageLogContext&,
+    const QString& message
+    )
+{
+    if (p919CapturedQtMessages)
+    {
+        p919CapturedQtMessages->push_back(message);
+    }
+}
+
+class P919DiagnosticCapture final
+{
+public:
+    P919DiagnosticCapture()
+        : m_hadPreviousValue(qEnvironmentVariableIsSet(
+              "CLASSMNGR_P9_19_CLASS_SELECTION_DIAGNOSTICS"))
+        , m_previousValue(qgetenv(
+              "CLASSMNGR_P9_19_CLASS_SELECTION_DIAGNOSTICS"))
+    {
+        qputenv("CLASSMNGR_P9_19_CLASS_SELECTION_DIAGNOSTICS", "1");
+        p919CapturedQtMessages = &messages;
+        m_previousMessageHandler = qInstallMessageHandler(captureP919QtMessage);
+    }
+
+    ~P919DiagnosticCapture()
+    {
+        qInstallMessageHandler(m_previousMessageHandler);
+        p919CapturedQtMessages = nullptr;
+        if (m_hadPreviousValue)
+        {
+            qputenv("CLASSMNGR_P9_19_CLASS_SELECTION_DIAGNOSTICS",
+                m_previousValue);
+        }
+        else
+        {
+            qunsetenv("CLASSMNGR_P9_19_CLASS_SELECTION_DIAGNOSTICS");
+        }
+    }
+
+    QStringList messages;
+
+private:
+    bool m_hadPreviousValue = false;
+    QByteArray m_previousValue;
+    QtMessageHandler m_previousMessageHandler = nullptr;
+};
 
 class SilentStartupDiagnosticsSink final : public Bootstrap::StartupDiagnosticsSink
 {
@@ -8352,6 +8405,101 @@ classesNavigatorClearsWhenWorkspaceIsClosedWhileActive()
     QCOMPARE(page->findChild<QLabel*>(QStringLiteral("classesNavigatorStatus"))
                  ->text(),
         QStringLiteral("No Teacher Profile is open."));
+
+    QVERIFY(bootstrap.shutdown().shutdownRequested);
+    application.setStyleSheet(previousStyleSheet);
+}
+
+void ApplicationBootstrapTests::
+p919ClassSelectionCheckpointIsWiredThroughBootstrap()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+    const QString workspacePath = temporaryDirectory.filePath(
+        QStringLiteral("p9-19-large-startup.tps"));
+    const QString recoveryJournalPath = temporaryDirectory.filePath(
+        QStringLiteral("initial-setup-recovery.json"));
+    QString fixtureError;
+    QVERIFY2(createWorkspaceWithFixture(
+                 workspacePath, QStringLiteral("large_startup.sql"),
+                 &fixtureError), qPrintable(fixtureError));
+
+    P919DiagnosticCapture diagnosticCapture;
+    Bootstrap::ApplicationBootstrap::StartupWorkspaceSeams seams;
+    seams.commandLineArguments = QStringList{
+        QStringLiteral("test-app"), workspacePath};
+    seams.recentAutoOpenEnabled = false;
+    seams.initialSetupRecoveryJournalPath = recoveryJournalPath;
+    seams.workspaceGatewayFactory = [] {
+        return std::make_unique<Platform::WorkspaceStoreGateway>();
+    };
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot()),
+        std::nullopt,
+        std::move(seams)
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    QVERIFY(bootstrap.shell()->pageHost().activatePage(
+        QStringLiteral("classes")));
+    auto* const page = dynamic_cast<Ui::ClassesNavigatorPage*>(
+        bootstrap.shell()->pageHost().pageInstance(QStringLiteral("classes")));
+    QVERIFY(page);
+    QCOMPARE(page->model()->classCount(), 96);
+    for (int row = 1; row < 96; ++row)
+    {
+        page->classList()->setCurrentIndex(page->model()->index(row, 0));
+    }
+
+    QJsonArray checkpoints;
+    const QString prefix = QStringLiteral(
+        "ClassMngrNext page lifecycle checkpoint=");
+    for (const QString& message : diagnosticCapture.messages)
+    {
+        if (!message.startsWith(prefix))
+        {
+            continue;
+        }
+        const QByteArray bytes = message.mid(prefix.size()).toUtf8();
+        const QJsonObject record = QJsonDocument::fromJson(bytes).object();
+        if (record.value(QStringLiteral("event")).toString()
+                == QStringLiteral("page-action-checkpoint")
+            && record.value(QStringLiteral("page_key")).toString()
+                == QStringLiteral("classes")
+            && record.value(QStringLiteral("checkpoint")).toString()
+                == QStringLiteral("p9-19-class-selection-sweep"))
+        {
+            checkpoints.append(record);
+        }
+    }
+    QCOMPARE(checkpoints.size(), 1);
+    const QJsonObject record = checkpoints[0].toObject();
+    QCOMPARE(record.value(QStringLiteral("outcome")).toString(),
+             QStringLiteral("completed"));
+    const QJsonObject details = record.value(QStringLiteral("details")).toObject();
+    QCOMPARE(details.value(QStringLiteral("schema")).toString(),
+             QStringLiteral("classmngr-phase9-p9-19-class-selection-sweep-v1"));
+    QCOMPARE(details.value(QStringLiteral("selected_unique_class_count")).toInt(), 96);
+    QCOMPARE(details.value(QStringLiteral("selected_class_editor_count_minimum")).toInt(), 1);
+    QCOMPARE(details.value(QStringLiteral("selected_class_editor_count_maximum")).toInt(), 1);
+    QVERIFY(details.value(QStringLiteral("selected_class_editor_stable_within_sweep")).toBool());
+    QVERIFY(details.value(QStringLiteral("selected_class_editor_stable_across_sweeps")).toBool());
+    QVERIFY(details.value(QStringLiteral("non_roster_widget_count_maximum")).toInt() < 250);
+    QCOMPARE(details.value(QStringLiteral("class_id_child_widget_count_maximum")).toInt(), 0);
 
     QVERIFY(bootstrap.shutdown().shutdownRequested);
     application.setStyleSheet(previousStyleSheet);

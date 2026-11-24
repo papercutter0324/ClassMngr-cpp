@@ -10,6 +10,7 @@
 #include <QFont>
 #include <QHBoxLayout>
 #include <QItemSelectionModel>
+#include <QJsonObject>
 #include <QLabel>
 #include <QListView>
 #include <QMessageBox>
@@ -57,6 +58,41 @@ bool containsId(
 {
     return std::any_of(classes.classes.cbegin(), classes.classes.cend(),
         [&classId](const auto& classroom) { return classroom.classId == classId; });
+}
+
+int widgetCountExcluding(const QWidget* root, const QWidget* excluded)
+{
+    if (!root)
+    {
+        return 0;
+    }
+    int count = 1;
+    for (QWidget* const child : root->findChildren<QWidget*>())
+    {
+        if (!excluded
+            || (child != excluded && !excluded->isAncestorOf(child)))
+        {
+            ++count;
+        }
+    }
+    return count;
+}
+
+int classIdWidgetCount(const QWidget* root)
+{
+    if (!root)
+    {
+        return 0;
+    }
+    int count = 0;
+    for (QWidget* const widget : root->findChildren<QWidget*>())
+    {
+        if (widget->property("class_id").isValid())
+        {
+            ++count;
+        }
+    }
+    return count;
 }
 
 bool hasWeekend(
@@ -207,12 +243,16 @@ SelectedClassEditor* ClassesNavigatorPage::selectedClassEditor() const noexcept
 PageOperationResult<void> ClassesNavigatorPage::onActivating()
 {
     m_active = true;
-    static_cast<void>(refreshFromStore());
+    if (refreshFromStore())
+    {
+        beginP919ClassSelectionSweep();
+    }
     return {};
 }
 
 void ClassesNavigatorPage::onSuspending() noexcept
 {
+    m_p919ClassSelectionSweep.active = false;
     m_splitterStatePersistence.save();
 
     if (const auto path = activePath(); path && m_actions.readPreferences)
@@ -613,6 +653,7 @@ void ClassesNavigatorPage::clearForWorkspaceChange()
     m_lastError.clear();
     m_status = Status::WorkspaceChanged;
     m_model->clear();
+    m_p919ClassSelectionSweep.active = false;
     updateStatus();
     updateControls();
 }
@@ -634,6 +675,7 @@ void ClassesNavigatorPage::clearForClosedWorkspace()
     m_lastError.clear();
     m_status = Status::NoWorkspace;
     m_model->clear();
+    m_p919ClassSelectionSweep.active = false;
     updateStatus();
     updateControls();
 }
@@ -1036,6 +1078,150 @@ void ClassesNavigatorPage::selectClass(const Domain::ClassId& classId)
         index,
         QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows
         );
+    observeP919ClassSelection(classId);
+}
+
+void ClassesNavigatorPage::beginP919ClassSelectionSweep()
+{
+    m_p919ClassSelectionSweep = {};
+    if (!m_actions.diagnosticCheckpoint
+        || m_model->classCount() != 96
+        || m_model->visibleClassCount() != 96)
+    {
+        return;
+    }
+    m_p919ClassSelectionSweep.active = true;
+    m_p919ClassSelectionSweep.selectedRows.resize(96, false);
+    if (m_selectedClassId)
+    {
+        observeP919ClassSelection(*m_selectedClassId);
+    }
+}
+
+void ClassesNavigatorPage::observeP919ClassSelection(
+    const Domain::ClassId& classId
+    )
+{
+    P919ClassSelectionSweep& sweep = m_p919ClassSelectionSweep;
+    if (!sweep.active)
+    {
+        return;
+    }
+    const QModelIndex index = m_model->indexForClassId(classId);
+    if (!index.isValid() || index.row() < 0
+        || index.row() >= static_cast<int>(sweep.selectedRows.size()))
+    {
+        sweep.active = false;
+        return;
+    }
+    const std::size_t row = static_cast<std::size_t>(index.row());
+    if (sweep.selectedRows[row])
+    {
+        return;
+    }
+    sweep.selectedRows[row] = true;
+    ++sweep.selectionObservationCount;
+
+    const int editorCount = findChildren<QWidget*>(
+        QStringLiteral("selectedClassEditor")).size();
+    const QWidget* excludedRosterTab = m_selectedClassEditor
+        && m_selectedClassEditor->sections()
+        && m_selectedClassEditor->sections()->count() > 4
+        ? m_selectedClassEditor->sections()->widget(4)
+        : nullptr;
+    const int nonRosterWidgetCount = widgetCountExcluding(
+        this, excludedRosterTab);
+    const int classWidgets = classIdWidgetCount(this);
+    if (sweep.selectionObservationCount == 1)
+    {
+        sweep.selectedEditorCountMinimum = editorCount;
+        sweep.selectedEditorCountMaximum = editorCount;
+        sweep.nonRosterWidgetCountMaximum = nonRosterWidgetCount;
+        sweep.classIdChildWidgetCountMaximum = classWidgets;
+        sweep.editor = m_selectedClassEditor;
+    }
+    else
+    {
+        sweep.selectedEditorCountMinimum = std::min(
+            sweep.selectedEditorCountMinimum, editorCount);
+        sweep.selectedEditorCountMaximum = std::max(
+            sweep.selectedEditorCountMaximum, editorCount);
+        sweep.nonRosterWidgetCountMaximum = std::max(
+            sweep.nonRosterWidgetCountMaximum, nonRosterWidgetCount);
+        sweep.classIdChildWidgetCountMaximum = std::max(
+            sweep.classIdChildWidgetCountMaximum, classWidgets);
+        sweep.editorInstanceStableWithinSweep =
+            sweep.editorInstanceStableWithinSweep
+            && !sweep.editor.isNull()
+            && sweep.editor.data() == m_selectedClassEditor;
+    }
+
+    if (sweep.selectionObservationCount
+        == static_cast<int>(sweep.selectedRows.size()))
+    {
+        recordP919ClassSelectionSweep();
+    }
+}
+
+void ClassesNavigatorPage::recordP919ClassSelectionSweep()
+{
+    P919ClassSelectionSweep& sweep = m_p919ClassSelectionSweep;
+    if (!sweep.active || !m_actions.diagnosticCheckpoint)
+    {
+        return;
+    }
+    const bool firstSweep = m_p919CompletedSweepCount == 0;
+    const bool stableAcrossSweeps = firstSweep
+        || (!m_p919PreviousSelectedClassEditor.isNull()
+            && m_p919PreviousSelectedClassEditor.data()
+                == m_selectedClassEditor);
+    if (firstSweep)
+    {
+        m_p919EditorInstanceGeneration = 1;
+    }
+    else if (!stableAcrossSweeps)
+    {
+        ++m_p919EditorInstanceGeneration;
+    }
+    m_p919PreviousSelectedClassEditor = m_selectedClassEditor;
+    ++m_p919CompletedSweepCount;
+
+    const QJsonObject details{
+        {QStringLiteral("schema"), QStringLiteral(
+            "classmngr-phase9-p9-19-class-selection-sweep-v1")},
+        {QStringLiteral("sweep_number"), m_p919CompletedSweepCount},
+        {QStringLiteral("class_count"), m_model->classCount()},
+        {QStringLiteral("visible_class_count"), m_model->visibleClassCount()},
+        {QStringLiteral("selected_unique_class_count"),
+            sweep.selectionObservationCount},
+        {QStringLiteral("selection_observation_count"),
+            sweep.selectionObservationCount},
+        {QStringLiteral("selected_class_editor_count_minimum"),
+            sweep.selectedEditorCountMinimum},
+        {QStringLiteral("selected_class_editor_count_maximum"),
+            sweep.selectedEditorCountMaximum},
+        {QStringLiteral("selected_class_editor_instance_generation"),
+            m_p919EditorInstanceGeneration},
+        {QStringLiteral("selected_class_editor_stable_within_sweep"),
+            sweep.editorInstanceStableWithinSweep},
+        {QStringLiteral("selected_class_editor_stable_across_sweeps"),
+            stableAcrossSweeps},
+        {QStringLiteral("non_roster_widget_count_maximum"),
+            sweep.nonRosterWidgetCountMaximum},
+        {QStringLiteral("class_id_child_widget_count_maximum"),
+            sweep.classIdChildWidgetCountMaximum}
+    };
+    sweep.active = false;
+    try
+    {
+        m_actions.diagnosticCheckpoint(
+            QStringLiteral("p9-19-class-selection-sweep"),
+            QStringLiteral("completed"), details);
+    }
+    catch (...)
+    {
+        // Diagnostics never change the committed class selection.
+    }
 }
 
 bool ClassesNavigatorPage::prepareForSelectionChange(const QString& reason)

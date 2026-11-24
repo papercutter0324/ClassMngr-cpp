@@ -11,6 +11,7 @@
 #include <QApplication>
 #include <QComboBox>
 #include <QItemSelectionModel>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
@@ -138,6 +139,7 @@ struct ReadState final
     QString identity = QStringLiteral("workspace-a");
     QString path = QStringLiteral("workspace-a.tps");
     bool workspaceOpen = true;
+    bool captureP919Diagnostics = false;
     bool failFirstListRead = false;
     bool failEveryListRead = false;
     bool failFirstNavigationRead = false;
@@ -194,6 +196,7 @@ struct ReadState final
     std::vector<Domain::ClassId> analyticsClassIds;
     std::vector<Application::ClassAnalyticsPageReadRequest> analyticsRequests;
     std::vector<Application::ClassesNavigationSnapshotQuery> navigationQueries;
+    std::vector<QJsonObject> diagnosticCheckpoints;
 };
 
 struct PageFixture final
@@ -670,6 +673,19 @@ struct PageFixture final
                         return state.confirmDelete;
                     };
                 }
+                if (state.captureP919Diagnostics)
+                {
+                    actions.diagnosticCheckpoint = [this](
+                        const QString& checkpoint,
+                        const QString& outcome,
+                        const QJsonObject& details) {
+                        state.diagnosticCheckpoints.push_back(QJsonObject{
+                            {QStringLiteral("checkpoint"), checkpoint},
+                            {QStringLiteral("outcome"), outcome},
+                            {QStringLiteral("details"), details}
+                        });
+                    };
+                }
                 return std::unique_ptr<Ui::Page>(
                     std::make_unique<Ui::ClassesNavigatorPage>(
                         context,
@@ -794,6 +810,7 @@ private slots:
     void rosterSectionExitResolvesDraftBeforeClearingAndReloads();
     void ninetySixClassesUseOneCompactModelWithoutClassWidgets();
     void oneSelectedEditorServesNinetySixClassRows();
+    void p919SelectionSweepCheckpointStaysCompactAcrossActivations();
     void dirtyChoicesGuardClassSwitchAndRetainFailedDrafts();
     void detailsReadFailureHasVisibleRetryPath();
     void detailsAutosaveDebouncesAndRetainsFailedDrafts();
@@ -1661,6 +1678,84 @@ void ClassesNavigatorPageTests::oneSelectedEditorServesNinetySixClassRows()
     {
         QVERIFY(!widget->property("class_id").isValid());
     }
+}
+
+void ClassesNavigatorPageTests::
+p919SelectionSweepCheckpointStaysCompactAcrossActivations()
+{
+    PageFixture fixture;
+    QVERIFY(fixture.initialize());
+    fixture.state.captureP919Diagnostics = true;
+    std::vector<std::pair<int, QString>> classes;
+    std::vector<Application::ClassesNavigationEntry> summaries;
+    for (int index = 0; index < 96; ++index)
+    {
+        const int id = 3'000 + index;
+        const QString name = QStringLiteral("Sweep Class %1")
+            .arg(index + 1);
+        classes.emplace_back(id, name);
+        summaries.push_back(navigationEntry(
+            id, name, QStringLiteral("E4"), QStringLiteral("Theseus"),
+            QStringLiteral("Monday"), QStringLiteral("9:00 AM")));
+    }
+    fixture.state.classes = classList(classes);
+    fixture.state.navigation = navigation(std::move(summaries));
+    QVERIFY(fixture.activate());
+
+    Ui::ClassesNavigatorPage* const page = fixture.page();
+    QVERIFY(page);
+    Ui::SelectedClassEditor* const editor = page->selectedClassEditor();
+    QVERIFY(editor);
+    QCOMPARE(page->classList()->model()->rowCount(), 96);
+    for (int row = 1; row < 96; ++row)
+    {
+        page->classList()->setCurrentIndex(page->model()->index(row, 0));
+    }
+
+    QCOMPARE(fixture.state.diagnosticCheckpoints.size(), std::size_t(1));
+    const QJsonObject first = fixture.state.diagnosticCheckpoints[0]
+        .value(QStringLiteral("details")).toObject();
+    QCOMPARE(fixture.state.diagnosticCheckpoints[0]
+                 .value(QStringLiteral("checkpoint")).toString(),
+             QStringLiteral("p9-19-class-selection-sweep"));
+    QCOMPARE(fixture.state.diagnosticCheckpoints[0]
+                 .value(QStringLiteral("outcome")).toString(),
+             QStringLiteral("completed"));
+    QCOMPARE(first.value(QStringLiteral("schema")).toString(),
+             QStringLiteral("classmngr-phase9-p9-19-class-selection-sweep-v1"));
+    QCOMPARE(first.value(QStringLiteral("class_count")).toInt(), 96);
+    QCOMPARE(first.value(QStringLiteral("visible_class_count")).toInt(), 96);
+    QCOMPARE(first.value(QStringLiteral("selected_unique_class_count")).toInt(), 96);
+    QCOMPARE(first.value(QStringLiteral("selection_observation_count")).toInt(), 96);
+    QCOMPARE(first.value(QStringLiteral("selected_class_editor_count_minimum")).toInt(), 1);
+    QCOMPARE(first.value(QStringLiteral("selected_class_editor_count_maximum")).toInt(), 1);
+    QCOMPARE(first.value(QStringLiteral("selected_class_editor_instance_generation")).toInt(), 1);
+    QVERIFY(first.value(QStringLiteral("selected_class_editor_stable_within_sweep")).toBool());
+    QVERIFY(first.value(QStringLiteral("selected_class_editor_stable_across_sweeps")).toBool());
+    QVERIFY(first.value(QStringLiteral("non_roster_widget_count_maximum")).toInt() < 250);
+    QCOMPARE(first.value(QStringLiteral("class_id_child_widget_count_maximum")).toInt(), 0);
+    QCOMPARE(page->findChildren<QWidget*>(QStringLiteral("selectedClassEditor")).size(), 1);
+    QCOMPARE(page->selectedClassEditor(), editor);
+
+    QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
+    QVERIFY(fixture.host->activatePage(QStringLiteral("classes")));
+    QCOMPARE(page->selectedClassId()->value(), std::string("3095"));
+    for (int row = 0; row < 95; ++row)
+    {
+        page->classList()->setCurrentIndex(page->model()->index(row, 0));
+    }
+
+    QCOMPARE(fixture.state.diagnosticCheckpoints.size(), std::size_t(2));
+    const QJsonObject second = fixture.state.diagnosticCheckpoints[1]
+        .value(QStringLiteral("details")).toObject();
+    QCOMPARE(second.value(QStringLiteral("sweep_number")).toInt(), 2);
+    QCOMPARE(second.value(QStringLiteral("selected_unique_class_count")).toInt(), 96);
+    QCOMPARE(second.value(QStringLiteral("selected_class_editor_count_minimum")).toInt(), 1);
+    QCOMPARE(second.value(QStringLiteral("selected_class_editor_count_maximum")).toInt(), 1);
+    QCOMPARE(second.value(QStringLiteral("selected_class_editor_instance_generation")).toInt(), 1);
+    QVERIFY(second.value(QStringLiteral("selected_class_editor_stable_within_sweep")).toBool());
+    QVERIFY(second.value(QStringLiteral("selected_class_editor_stable_across_sweeps")).toBool());
+    QCOMPARE(page->selectedClassEditor(), editor);
 }
 
 void ClassesNavigatorPageTests::dirtyChoicesGuardClassSwitchAndRetainFailedDrafts()

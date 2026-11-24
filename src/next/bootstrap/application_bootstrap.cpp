@@ -1838,6 +1838,23 @@ Application::StartupResult ApplicationBootstrap::start()
                 m_shell->pageHost().registerPage(classesNavigatorPageDescriptor(
                     [this] {
                     Ui::ClassesNavigatorPageActions actions;
+                    if (qEnvironmentVariable(
+                            "CLASSMNGR_P9_19_CLASS_SELECTION_DIAGNOSTICS")
+                        == QStringLiteral("1"))
+                    {
+                        actions.diagnosticCheckpoint = [this](
+                            const QString& checkpoint,
+                            const QString& outcome,
+                            const QJsonObject& details) {
+                            if (m_pageLifecycleDiagnosticsRecorder)
+                            {
+                                m_pageLifecycleDiagnosticsRecorder
+                                    ->recordPageActionCheckpoint(
+                                        QStringLiteral("classes"), checkpoint,
+                                        outcome, details);
+                            }
+                        };
+                    }
                     actions.saveMode =
                         Platform::SettingsManagerSaveModePreferencesPort().read();
                     actions.splitterStatePort = std::make_shared<

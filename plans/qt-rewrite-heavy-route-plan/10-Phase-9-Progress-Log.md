@@ -2469,3 +2469,45 @@ it is stale after rollback. This attempt produced no heap or image-stage
 attribution and changes no acceptance status. After Phase 13, Phase 14 needs a
 fresh diagnostic implementation and build on current source before route
 evidence can be collected.
+
+### 2026-11-25 - P9-19 implementation/build verified; required base missing
+
+The P9-19 [Classes Navigator page](../../src/next/ui/classes_navigator_page.cpp),
+[visual checkpoint](../../tests/next/classes_navigator_visual_capture.cpp),
+[fixture preparer](../../scripts/phase9/prepare_p9_19_large_startup_fixture.py),
+[runner](../../scripts/phase9/run_packaged_next_p9_19_classes_lifecycle.ps1),
+[validator](../../scripts/phase9/validate_packaged_next_p9_19_classes_lifecycle.py),
+and [Release builder](../../scripts/phase9/p9_19_build_current_source_release.ps1)
+are present. The harness keeps its fixed limits and formulas, cold baseline before
+warm-up, five no-action baselines, ten cycles, PID/HWND-bound route actions, and
+required Classes checkpoint. The independent Tester confirmed 11 Python tests,
+Python syntax, and PowerShell parsing passed in the [local validation
+artifacts](../../artifacts/phase9/p9-19-local-validation/20261125T150000Z-a650bb58ce44499b9fc060d2e651c0aa/);
+its Python test log SHA-256 is
+38148501e590a0780ef664022516807391dc782035a424211ce014e50662415d.
+
+The independently verified [exact-source Release receipt](../../artifacts/phase9/p9-19-exact-release-builds/20261125T143000Z-c4bba9118a744672987d805fe88e79b1/release-build-receipt.json)
+records VS2022/v143 x64 Release, source SHA-256
+b97dd838b3831f0cb65802391f5cd15d6cf7ee57c5c7edc27bd0e4b410bf3b82, and
+executable SHA-256
+633e4f05c8cfca3d2e60b1ddb34a6861d8fab69388f1f5769a1ad4461fccf9e1.
+The source inventory matched 2,377 files; 101 CRLF/LF checkout differences
+were normalized only where LF bytes matched the pins. The receipt's focused
+CTest log records Bootstrap, PageHost, ClassesNavigatorPage, and Classes visual
+capture passing. The Tester verified that receipt, but its direct C++ rerun did
+not complete, so no independent direct-rerun success is claimed.
+
+The required master-blank.tps is absent from the configured P9-16 artifact
+path and inspected C:/D: locations; its pinned SHA-256 remains
+85c23437621fe67361b38157bb53acdb19e78573ebaa0297fad769b71ad0c9e9. It was
+not substituted or rebaselined. The canonical Git fixture SQL pin remains
+1b2f09be03cce809e239112b3f7b4f2af405bad83a420db0c6ffe5ef0eb597e3; the D:
+working copy is CRLF under core.autocrlf, and the preparer verifies canonical-LF
+bytes. No P9-19 route root exists and the route was not run. P9-19 remains
+Active and unaccepted pending user direction to restore the exact base artifact
+or authorize a new reproducible base hash; implementation/build verification is
+not slice acceptance.
+
+The P9-17 plateau and P9-18 cold-cleanup failures remain Deferred and unaccepted
+for Phase 14; Maps retention, Phase 9 Batch 4, and final gates are unchanged.
+See the [Phase 14 plan](15-Phase-14-Windows-Memory-Leak-Attribution.md).

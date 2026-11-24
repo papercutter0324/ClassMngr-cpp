@@ -12,6 +12,8 @@
 #include "next/ui/page.h"
 #include "next/ui/splitter_state_persistence.h"
 
+#include <QJsonObject>
+#include <QPointer>
 #include <QString>
 
 #include <functional>
@@ -19,6 +21,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 class QLabel;
 class QListView;
@@ -79,6 +82,8 @@ struct ClassesNavigatorPageActions final
         const QString&, const Application::ClassDeleteRequest&)> deleteClass;
     std::function<UnsavedChangesChoice(const QString&)> resolveUnsavedChanges;
     std::function<bool(const QString&)> confirmDeleteClass;
+    std::function<void(const QString&, const QString&, const QJsonObject&)>
+        diagnosticCheckpoint;
 };
 
 class ClassesNavigatorPage final : public Page
@@ -156,6 +161,9 @@ private:
     void rememberSelectedClass();
     void discardSelectionState();
     void discardDayFilterState();
+    void beginP919ClassSelectionSweep();
+    void observeP919ClassSelection(const Domain::ClassId& classId);
+    void recordP919ClassSelectionSweep();
     [[nodiscard]] Application::ClassDayFilterPolicy dayFilterPolicy() const;
     [[nodiscard]] std::optional<QString> activePath() const;
     [[nodiscard]] bool validateListSnapshot(
@@ -204,6 +212,22 @@ private:
     bool m_rebuilding = false;
     bool m_retranslating = false;
     bool m_editorChangesResolved = false;
+    struct P919ClassSelectionSweep final
+    {
+        bool active = false;
+        std::vector<bool> selectedRows;
+        int selectionObservationCount = 0;
+        int selectedEditorCountMinimum = 0;
+        int selectedEditorCountMaximum = 0;
+        int nonRosterWidgetCountMaximum = 0;
+        int classIdChildWidgetCountMaximum = 0;
+        QPointer<SelectedClassEditor> editor;
+        bool editorInstanceStableWithinSweep = true;
+    };
+    P919ClassSelectionSweep m_p919ClassSelectionSweep;
+    QPointer<SelectedClassEditor> m_p919PreviousSelectedClassEditor;
+    int m_p919EditorInstanceGeneration = 0;
+    int m_p919CompletedSweepCount = 0;
 };
 
 } // namespace ClassMngr::Next::Ui

@@ -264,6 +264,7 @@ bool captureCase(
 
     Ui::PageHost host(loader, preferences);
     std::vector<QJsonObject> lifecycleTrace;
+    QJsonArray p919SelectionSweepCheckpoints;
     Bootstrap::QtPageLifecycleDiagnosticsRecorder lifecycleRecorder(
         host, {}, [&lifecycleTrace](const QByteArray& record) {
             lifecycleTrace.push_back(QJsonDocument::fromJson(record).object());
@@ -272,11 +273,19 @@ bool captureCase(
         .id = *Ui::PageId::fromString(QStringLiteral("classes")),
         .label = QStringLiteral("Classes"),
         .factory = [&classes, &navigation, &listReads, &navigationReads,
-                    &navigationQueryClassCount, &classesFactoryCalls](
+                    &navigationQueryClassCount, &classesFactoryCalls,
+                    &lifecycleRecorder](
             const Ui::PageContext& context)
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             ++classesFactoryCalls;
             Ui::ClassesNavigatorPageActions actions;
+            actions.diagnosticCheckpoint = [&lifecycleRecorder](
+                const QString& checkpoint,
+                const QString& outcome,
+                const QJsonObject& details) {
+                lifecycleRecorder.recordPageActionCheckpoint(
+                    QStringLiteral("classes"), checkpoint, outcome, details);
+            };
             actions.splitterStatePort = std::make_shared<
                 Test::MemorySplitterStatePort>();
             actions.workspaceIdentity = [] { return QStringLiteral("capture-workspace"); };
@@ -357,6 +366,55 @@ bool captureCase(
     QApplication::processEvents();
     if (QWidget* const focused = QApplication::focusWidget()) focused->clearFocus();
     QApplication::processEvents();
+
+    bool p919SelectionSweepSummaryMatches = classCount != 96;
+    if (classCount == 96)
+    {
+        for (int row = 1; row < 96; ++row)
+        {
+            page->classList()->setCurrentIndex(page->model()->index(row, 0));
+        }
+        for (const QJsonObject& event : lifecycleTrace)
+        {
+            if (event.value(QStringLiteral("event")).toString()
+                    != QStringLiteral("page-action-checkpoint")
+                || event.value(QStringLiteral("page_key")).toString()
+                    != QStringLiteral("classes")
+                || event.value(QStringLiteral("checkpoint")).toString()
+                    != QStringLiteral("p9-19-class-selection-sweep"))
+            {
+                continue;
+            }
+            const QJsonObject details = event.value(
+                QStringLiteral("details")).toObject();
+            p919SelectionSweepCheckpoints.append(details);
+            p919SelectionSweepSummaryMatches =
+                details.value(QStringLiteral("schema")).toString()
+                    == QStringLiteral(
+                        "classmngr-phase9-p9-19-class-selection-sweep-v1")
+                && details.value(QStringLiteral("class_count")).toInt() == 96
+                && details.value(QStringLiteral("visible_class_count")).toInt()
+                    == 96
+                && details.value(QStringLiteral(
+                    "selected_unique_class_count")).toInt() == 96
+                && details.value(QStringLiteral(
+                    "selection_observation_count")).toInt() == 96
+                && details.value(QStringLiteral(
+                    "selected_class_editor_count_minimum")).toInt() == 1
+                && details.value(QStringLiteral(
+                    "selected_class_editor_count_maximum")).toInt() == 1
+                && details.value(QStringLiteral(
+                    "selected_class_editor_stable_within_sweep")).toBool()
+                && details.value(QStringLiteral(
+                    "selected_class_editor_stable_across_sweeps")).toBool()
+                && details.value(QStringLiteral(
+                    "non_roster_widget_count_maximum")).toInt() < 250
+                && details.value(QStringLiteral(
+                    "class_id_child_widget_count_maximum")).toInt() == 0;
+        }
+        p919SelectionSweepSummaryMatches = p919SelectionSweepSummaryMatches
+            && p919SelectionSweepCheckpoints.size() == 1;
+    }
 
     const ProcessMemorySnapshot activeMemory = memoryProvider.snapshot();
     const QImage image = host.grab().toImage();
@@ -576,6 +634,10 @@ bool captureCase(
             {QStringLiteral("perClassWidgetCount"), perClassWidgetCount},
             {QStringLiteral("detailEditorCount"), editors},
             {QStringLiteral("classIdWidgetPropertyCount"), perClassWidgetCount},
+            {QStringLiteral("p919SelectionSweepSummaryMatches"),
+             p919SelectionSweepSummaryMatches},
+            {QStringLiteral("p919SelectionSweepCheckpoints"),
+             p919SelectionSweepCheckpoints},
             {QStringLiteral("modelClearedOnSuspension"), clearedOnSuspension},
             {QStringLiteral("widgetCountAfterSuspension"),
              widgetCountAfterSuspension},
@@ -653,6 +715,7 @@ bool captureCase(
         && recreatedStateCleared
         && recreatedPageDestroyed
         && lifecycleTraceMatches
+        && p919SelectionSweepSummaryMatches
         && destructionTraceMatches
         && modelCount == 1
         && listViewCount == 1 && perClassWidgetCount == 0 && editors == 1

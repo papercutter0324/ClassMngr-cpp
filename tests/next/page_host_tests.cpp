@@ -872,7 +872,16 @@ void PageHostTests::pageActionDiagnosticsPairMemoryWithSubPrepCounters()
     };
     const QJsonObject details{
         {QStringLiteral("class_id"), QStringLiteral("96")},
-        {QStringLiteral("output_root"), QStringLiteral("C:/evidence/output")}
+        {QStringLiteral("output_root"), QStringLiteral("C:/evidence/output")},
+        {QStringLiteral("class_selection_sweep"), QJsonObject{
+            {QStringLiteral("schema"), QStringLiteral(
+                "classmngr-phase9-p9-19-class-selection-sweep-v1")},
+            {QStringLiteral("class_count"), 96},
+            {QStringLiteral("selected_unique_class_count"), 96},
+            {QStringLiteral("selected_class_editor_count_maximum"), 1},
+            {QStringLiteral("non_roster_widget_count_maximum"), 212},
+            {QStringLiteral("class_id_child_widget_count_maximum"), 0}
+        }}
     };
     const QJsonObject record = QJsonDocument::fromJson(
         Bootstrap::pageActionDiagnosticRecord(
@@ -893,6 +902,15 @@ void PageHostTests::pageActionDiagnosticsPairMemoryWithSubPrepCounters()
         QStringLiteral("private_usage_bytes")).toInt(), 98765);
     QCOMPARE(record.value(QStringLiteral("details")).toObject().value(
         QStringLiteral("class_id")).toString(), QStringLiteral("96"));
+    const QJsonObject selectionSweep = record.value(QStringLiteral("details"))
+        .toObject().value(QStringLiteral("class_selection_sweep")).toObject();
+    QCOMPARE(selectionSweep.value(QStringLiteral("schema")).toString(),
+             QStringLiteral("classmngr-phase9-p9-19-class-selection-sweep-v1"));
+    QCOMPARE(selectionSweep.value(QStringLiteral("class_count")).toInt(), 96);
+    QCOMPARE(selectionSweep.value(QStringLiteral("selected_unique_class_count")).toInt(), 96);
+    QCOMPARE(selectionSweep.value(QStringLiteral("selected_class_editor_count_maximum")).toInt(), 1);
+    QCOMPARE(selectionSweep.value(QStringLiteral("non_roster_widget_count_maximum")).toInt(), 212);
+    QCOMPARE(selectionSweep.value(QStringLiteral("class_id_child_widget_count_maximum")).toInt(), 0);
     const QJsonObject metrics = record.value(QStringLiteral("page")).toObject()
         .value(QStringLiteral("sub_prep_runtime_metrics")).toObject();
     QCOMPARE(metrics.value(QStringLiteral("observation")).toString(),
