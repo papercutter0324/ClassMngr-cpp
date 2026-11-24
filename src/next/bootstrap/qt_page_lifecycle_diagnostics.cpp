@@ -18,6 +18,7 @@
 #include <QWidget>
 
 #include <algorithm>
+#include <exception>
 #include <utility>
 
 namespace ClassMngr::Next::Bootstrap
@@ -43,6 +44,42 @@ const char* lifecycleStateName(const Ui::PageLifecycleState state) noexcept
         return "suspended";
     case Ui::PageLifecycleState::Released:
         return "released";
+    }
+    return "unknown";
+}
+
+const char* rosterSaveDiagnosticStageName(
+    const Application::RosterSaveDiagnosticStage stage
+    ) noexcept
+{
+    using Stage = Application::RosterSaveDiagnosticStage;
+    switch (stage)
+    {
+    case Stage::BeforeSnapshot: return "before-snapshot";
+    case Stage::AfterSnapshot: return "after-snapshot";
+    case Stage::AfterPreparation: return "after-preparation";
+    case Stage::BeforeRowSourceSetup:
+        return "before-row-source-setup";
+    case Stage::AfterRowSourceSetup:
+        return "after-row-source-setup";
+    case Stage::BeforeRowWiseRepositoryWrite:
+        return "before-row-wise-repository-write";
+    case Stage::AfterRowWiseRepositoryWrite:
+        return "after-row-wise-repository-write";
+    }
+    return "unknown";
+}
+
+const char* rosterSaveDiagnosticOutcomeName(
+    const Application::RosterSaveDiagnosticOutcome outcome
+    ) noexcept
+{
+    using Outcome = Application::RosterSaveDiagnosticOutcome;
+    switch (outcome)
+    {
+    case Outcome::Observed: return "observed";
+    case Outcome::Success: return "success";
+    case Outcome::Failure: return "failure";
     }
     return "unknown";
 }
@@ -401,6 +438,96 @@ QByteArray pageInstanceDestroyedDiagnosticRecord(
         pageKey, memory)).toJson(QJsonDocument::Compact);
 }
 
+QJsonObject defaultProcessHeapSnapshotObject(
+    const DefaultProcessHeapSnapshot& snapshot
+    )
+{
+    const auto optionalCounter = [](const std::optional<quint64>& value) {
+        return value.has_value()
+            ? QJsonValue(static_cast<qint64>(*value))
+            : QJsonValue(QJsonValue::Null);
+    };
+    return {
+        {QStringLiteral("scope"), snapshot.scope},
+        {QStringLiteral("available"), snapshot.isAvailable},
+        {QStringLiteral("error"), snapshot.error.isEmpty()
+            ? QJsonValue(QJsonValue::Null)
+            : QJsonValue(snapshot.error)},
+        {QStringLiteral("cbAllocated"), optionalCounter(snapshot.cbAllocated)},
+        {QStringLiteral("cbCommitted"), optionalCounter(snapshot.cbCommitted)},
+        {QStringLiteral("cbReserved"), optionalCounter(snapshot.cbReserved)},
+        {QStringLiteral("cbMaxReserve"), optionalCounter(snapshot.cbMaxReserve)},
+        {QStringLiteral("callDurationNanoseconds"),
+            optionalCounter(snapshot.callDurationNanoseconds)}
+    };
+}
+
+QByteArray defaultProcessHeapRosterCheckpointRecord(
+    const QString& checkpoint,
+    const QString& outcome,
+    const quint64 eventSequence,
+    const std::optional<quint64> rosterWidgetInstanceId,
+    const std::optional<int> row,
+    const std::optional<int> column,
+    const DefaultProcessHeapSnapshot& snapshot
+    )
+{
+    return QJsonDocument(QJsonObject{
+        {QStringLiteral("event"),
+            QStringLiteral("default-process-heap-roster-checkpoint")},
+        {QStringLiteral("schema"),
+            QStringLiteral("classmngr-default-process-heap-diagnostic-v1")},
+        {QStringLiteral("checkpoint"), checkpoint},
+        {QStringLiteral("outcome"), outcome},
+        {QStringLiteral("event_sequence"),
+            static_cast<qint64>(eventSequence)},
+        {QStringLiteral("roster_widget_instance_id"),
+            rosterWidgetInstanceId.has_value()
+                ? QJsonValue(static_cast<qint64>(*rosterWidgetInstanceId))
+                : QJsonValue(QJsonValue::Null)},
+        {QStringLiteral("row"), row.has_value()
+            ? QJsonValue(*row) : QJsonValue(QJsonValue::Null)},
+        {QStringLiteral("column"), column.has_value()
+            ? QJsonValue(*column) : QJsonValue(QJsonValue::Null)},
+        {QStringLiteral("default_process_heap"),
+            defaultProcessHeapSnapshotObject(snapshot)}
+    }).toJson(QJsonDocument::Compact);
+}
+
+QByteArray rosterSaveStageDiagnosticRecord(
+    const Application::RosterSaveDiagnosticStage stage,
+    const Application::RosterSaveDiagnosticOutcome outcome,
+    const quint64 eventSequence,
+    const quint64 rosterWidgetInstanceId,
+    const quint64 saveSequence,
+    const ProcessMemorySnapshot& memory,
+    const DefaultProcessHeapSnapshot& heap
+    )
+{
+    return QJsonDocument(QJsonObject{
+        {QStringLiteral("event"), QStringLiteral("roster-save-stage-checkpoint")},
+        {QStringLiteral("schema"),
+            QStringLiteral("classmngr-roster-save-stage-diagnostic-v1")},
+        {QStringLiteral("stage"), QString::fromLatin1(
+            rosterSaveDiagnosticStageName(stage))},
+        {QStringLiteral("outcome"), QString::fromLatin1(
+            rosterSaveDiagnosticOutcomeName(outcome))},
+        {QStringLiteral("event_sequence"),
+            static_cast<qint64>(eventSequence)},
+        {QStringLiteral("roster_widget_instance_id"),
+            static_cast<qint64>(rosterWidgetInstanceId)},
+        {QStringLiteral("save_sequence"),
+            static_cast<qint64>(saveSequence)},
+        {QStringLiteral("captured_at"),
+            memory.capturedAt.toUTC().toString(Qt::ISODateWithMs)},
+        {QStringLiteral("platform"), memory.platform},
+        {QStringLiteral("sample_available"), memory.isAvailable},
+        {QStringLiteral("memory"), memoryMetrics(memory)},
+        {QStringLiteral("default_process_heap"),
+            defaultProcessHeapSnapshotObject(heap)}
+    }).toJson(QJsonDocument::Compact);
+}
+
 PageLifecycleWidgetSnapshot pageLifecycleWidgetSnapshot(const QWidget* page)
 {
     PageLifecycleWidgetSnapshot snapshot;
@@ -545,7 +672,9 @@ QtPageLifecycleDiagnosticsRecorder::QtPageLifecycleDiagnosticsRecorder(
     std::unique_ptr<ProcessMemorySnapshotProvider> snapshotProvider,
     RecordWriter recordWriter,
     CalendarRuntimeMetricsReader calendarRuntimeMetricsReader,
-    SubPrepRuntimeMetricsReader subPrepRuntimeMetricsReader
+    SubPrepRuntimeMetricsReader subPrepRuntimeMetricsReader,
+    const bool defaultProcessHeapDiagnosticsEnabled,
+    DefaultProcessHeapSnapshotReader defaultProcessHeapSnapshotReader
     )
     : QObject(nullptr)
     , m_pageHost(pageHost)
@@ -559,6 +688,13 @@ QtPageLifecycleDiagnosticsRecorder::QtPageLifecycleDiagnosticsRecorder(
           std::move(calendarRuntimeMetricsReader))
     , m_subPrepRuntimeMetricsReader(
           std::move(subPrepRuntimeMetricsReader))
+    , m_defaultProcessHeapDiagnosticsEnabled(
+          defaultProcessHeapDiagnosticsEnabled)
+    , m_defaultProcessHeapSnapshotReader(
+          defaultProcessHeapSnapshotReader
+              ? std::move(defaultProcessHeapSnapshotReader)
+              : DefaultProcessHeapSnapshotReader(
+                    defaultProcessHeapSnapshot))
 {
     m_connection = QObject::connect(
         &m_pageHost,
@@ -607,6 +743,80 @@ void QtPageLifecycleDiagnosticsRecorder::recordPageActionCheckpoint(
     }
 }
 
+void QtPageLifecycleDiagnosticsRecorder::recordRosterDefaultHeapCheckpoint(
+    const quint64 rosterWidgetInstanceId,
+    const QString& checkpoint,
+    const QString& outcome,
+    const std::optional<int> row,
+    const std::optional<int> column
+    ) noexcept
+{
+    if (!m_defaultProcessHeapDiagnosticsEnabled)
+    {
+        return;
+    }
+    recordDefaultHeapCheckpoint(
+        checkpoint, outcome, rosterWidgetInstanceId, row, column);
+}
+
+void QtPageLifecycleDiagnosticsRecorder::recordRosterSaveStageCheckpoint(
+    const quint64 rosterWidgetInstanceId,
+    const quint64 saveSequence,
+    const Application::RosterSaveDiagnosticStage stage,
+    const Application::RosterSaveDiagnosticOutcome outcome
+    ) noexcept
+{
+    if (!m_defaultProcessHeapDiagnosticsEnabled
+        || rosterWidgetInstanceId == 0 || saveSequence == 0)
+    {
+        return;
+    }
+    try
+    {
+        ProcessMemorySnapshot memory;
+        try
+        {
+            memory = m_snapshotProvider->snapshot();
+        }
+        catch (...)
+        {
+            memory.isAvailable = false;
+        }
+
+        DefaultProcessHeapSnapshot heap;
+        try
+        {
+            heap = m_defaultProcessHeapSnapshotReader();
+        }
+        catch (const std::exception& error)
+        {
+            heap.error = QStringLiteral(
+                "Default process heap snapshot failed: %1")
+                .arg(QString::fromUtf8(error.what()));
+        }
+        catch (...)
+        {
+            heap.error = QStringLiteral(
+                "Default process heap snapshot failed with an unknown error.");
+        }
+
+        const quint64 sequence = m_nextDefaultHeapEventSequence++;
+        m_recordWriter(rosterSaveStageDiagnosticRecord(
+            stage, outcome, sequence, rosterWidgetInstanceId, saveSequence,
+            memory, heap));
+    }
+    catch (...)
+    {
+        qWarning("ClassMngrNext roster save-stage diagnostics failed.");
+    }
+}
+
+bool QtPageLifecycleDiagnosticsRecorder::defaultProcessHeapDiagnosticsEnabled()
+    const noexcept
+{
+    return m_defaultProcessHeapDiagnosticsEnabled;
+}
+
 QtPageLifecycleDiagnosticsRecorder::~QtPageLifecycleDiagnosticsRecorder()
 {
     QObject::disconnect(m_connection);
@@ -624,6 +834,17 @@ void QtPageLifecycleDiagnosticsRecorder::record(
 {
     try
     {
+        if (m_defaultProcessHeapDiagnosticsEnabled
+            && !m_defaultHeapBaselineRecorded
+            && pageKey == QStringLiteral("classes")
+            && state == Ui::PageLifecycleState::Activated)
+        {
+            m_defaultHeapBaselineRecorded = true;
+            recordDefaultHeapCheckpoint(
+                QStringLiteral("classes-page-baseline-before-roster"),
+                QStringLiteral("observed"), std::nullopt,
+                std::nullopt, std::nullopt);
+        }
         if (state == Ui::PageLifecycleState::Activated)
         {
             observeActivatedPage(pageKey);
@@ -653,6 +874,43 @@ void QtPageLifecycleDiagnosticsRecorder::record(
     catch (...)
     {
         qWarning("ClassMngrNext page lifecycle diagnostics failed.");
+    }
+}
+
+void QtPageLifecycleDiagnosticsRecorder::recordDefaultHeapCheckpoint(
+    const QString& checkpoint,
+    const QString& outcome,
+    const std::optional<quint64> rosterWidgetInstanceId,
+    const std::optional<int> row,
+    const std::optional<int> column
+    ) noexcept
+{
+    try
+    {
+        DefaultProcessHeapSnapshot snapshot;
+        try
+        {
+            snapshot = m_defaultProcessHeapSnapshotReader();
+        }
+        catch (const std::exception& error)
+        {
+            snapshot.error = QStringLiteral(
+                "Default process heap snapshot failed: %1")
+                .arg(QString::fromUtf8(error.what()));
+        }
+        catch (...)
+        {
+            snapshot.error = QStringLiteral(
+                "Default process heap snapshot failed with an unknown error.");
+        }
+        const quint64 sequence = m_nextDefaultHeapEventSequence++;
+        m_recordWriter(defaultProcessHeapRosterCheckpointRecord(
+            checkpoint, outcome, sequence, rosterWidgetInstanceId,
+            row, column, snapshot));
+    }
+    catch (...)
+    {
+        qWarning("ClassMngrNext default process heap diagnostics failed.");
     }
 }
 

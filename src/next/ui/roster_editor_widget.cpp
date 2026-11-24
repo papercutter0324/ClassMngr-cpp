@@ -14,6 +14,7 @@
 #include <QAbstractItemView>
 #include <QApplication>
 #include <QCoreApplication>
+#include <QDebug>
 #include <QEvent>
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -33,6 +34,7 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <string>
 #include <vector>
@@ -42,6 +44,14 @@ namespace ClassMngr::Next::Ui
 {
 namespace
 {
+
+std::atomic<quint64> NextRosterWidgetDiagnosticInstanceId{1};
+
+quint64 allocateRosterWidgetDiagnosticInstanceId() noexcept
+{
+    return NextRosterWidgetDiagnosticInstanceId.fetch_add(
+        1, std::memory_order_relaxed);
+}
 
 constexpr std::array<std::pair<const char*, const char*>, 4>
     RosterEvaluationMappings{{
@@ -404,6 +414,7 @@ RosterEditorWidget::RosterEditorWidget(
     )
     : QWidget(parent)
     , m_actions(std::move(actions))
+    , m_diagnosticInstanceId(allocateRosterWidgetDiagnosticInstanceId())
     , m_model(new RosterTableModel(this))
     , m_delegate(new RosterCellDelegate(this))
     , m_autosaveTimer(new QTimer(this))
@@ -420,6 +431,82 @@ RosterEditorWidget::RosterEditorWidget(
             m_autosaveTimer->start();
         }
     });
+}
+
+RosterEditorWidget::~RosterEditorWidget()
+{
+    if (m_destroyAfterSuccessfulLeave)
+    {
+        recordDiagnosticCheckpoint(
+            QStringLiteral("roster-widget-destroyed-after-successful-leave"),
+            QStringLiteral("success"));
+    }
+}
+
+void RosterEditorWidget::markSuccessfulLeave() noexcept
+{
+    m_destroyAfterSuccessfulLeave = true;
+}
+
+std::function<void()>
+RosterEditorWidget::postDestructionDiagnosticCheckpoint() const
+{
+    if (!m_destroyAfterSuccessfulLeave || !m_actions.diagnosticCheckpoint)
+    {
+        return {};
+    }
+
+    const auto diagnosticCheckpoint = m_actions.diagnosticCheckpoint;
+    const quint64 instanceId = m_diagnosticInstanceId;
+    return [diagnosticCheckpoint, instanceId] {
+        try
+        {
+            diagnosticCheckpoint(
+                instanceId,
+                QStringLiteral(
+                    "roster-widget-after-delete-returned-after-child-destruction"),
+                QStringLiteral("success"), std::nullopt, std::nullopt);
+        }
+        catch (...)
+        {
+            qWarning("ClassMngrNext post-destruction diagnostics failed.");
+        }
+    };
+}
+
+void RosterEditorWidget::recordDiagnosticCheckpoint(
+    const QString& checkpoint,
+    const QString& outcome,
+    const std::optional<int> row,
+    const std::optional<int> column
+    ) const
+{
+    if (m_actions.diagnosticCheckpoint)
+    {
+        m_actions.diagnosticCheckpoint(
+            m_diagnosticInstanceId, checkpoint, outcome, row, column);
+    }
+}
+
+void RosterEditorWidget::recordSaveStageDiagnosticCheckpoint(
+    const quint64 saveSequence,
+    const Application::RosterSaveDiagnosticStage stage,
+    const Application::RosterSaveDiagnosticOutcome outcome
+    ) const noexcept
+{
+    if (!m_actions.saveStageDiagnosticCheckpoint)
+    {
+        return;
+    }
+    try
+    {
+        m_actions.saveStageDiagnosticCheckpoint(
+            m_diagnosticInstanceId, saveSequence, stage, outcome);
+    }
+    catch (...)
+    {
+        qWarning("ClassMngrNext roster save-stage diagnostics failed.");
+    }
 }
 
 RosterTableModel* RosterEditorWidget::model() const noexcept
@@ -528,19 +615,20 @@ bool RosterEditorWidget::saveChanges(const bool showValidationFeedback)
     }
 
     m_table->clearFocus();
-    const Application::RosterSnapshot draft = m_model->snapshot();
-    auto prepared = Application::prepareRosterSaveText(
-        draft, false, qtCaseInsensitiveEquals);
+    const auto& issues = m_model->validationIssues();
+    const bool hasErrors = std::any_of(
+        issues.cbegin(), issues.cend(), [](const Application::RosterSaveIssue& issue)
+        {
+            return issue.severity == Application::RosterSaveIssueSeverity::Error;
+        });
     bool allowQuestionableLengths = false;
-    if (prepared.hasErrors())
+    if (hasErrors)
     {
-        if (Application::hasOnlyQuestionableKoreanNameLengthErrors(prepared)
+        if (Application::hasOnlyQuestionableKoreanNameLengthErrors(issues)
             && showValidationFeedback
             && confirmQuestionableKoreanLengths())
         {
             allowQuestionableLengths = true;
-            prepared = Application::prepareRosterSaveText(
-                draft, true, qtCaseInsensitiveEquals);
         }
         else
         {
@@ -558,19 +646,49 @@ bool RosterEditorWidget::saveChanges(const bool showValidationFeedback)
         }
     }
 
-    const Application::RosterSaveRequest request{
+    const bool saveStageDiagnosticsEnabled =
+        static_cast<bool>(m_actions.saveStageDiagnosticCheckpoint)
+        && static_cast<bool>(m_actions.saveRosterWithDiagnostics);
+    const quint64 saveSequence = saveStageDiagnosticsEnabled
+        ? m_nextSaveDiagnosticSequence++
+        : 0;
+    Application::RosterSaveDiagnosticObserver saveStageObserver;
+    if (saveStageDiagnosticsEnabled)
+    {
+        saveStageObserver = [this, saveSequence](
+            const Application::RosterSaveDiagnosticStage stage,
+            const Application::RosterSaveDiagnosticOutcome outcome) {
+            recordSaveStageDiagnosticCheckpoint(saveSequence, stage, outcome);
+        };
+        Application::reportRosterSaveDiagnostic(
+            saveStageObserver,
+            Application::RosterSaveDiagnosticStage::BeforeSnapshot,
+            Application::RosterSaveDiagnosticOutcome::Observed);
+    }
+    Application::RosterSnapshot draft = m_model->snapshot();
+    if (saveStageDiagnosticsEnabled)
+    {
+        Application::reportRosterSaveDiagnostic(
+            saveStageObserver,
+            Application::RosterSaveDiagnosticStage::AfterSnapshot,
+            Application::RosterSaveDiagnosticOutcome::Success);
+    }
+    Application::RosterSaveRequest request{
         .classId = *m_classId,
-        .roster = draft,
+        .roster = std::move(draft),
         .allowQuestionableKoreanNameLengths = allowQuestionableLengths,
         .removedCustomColumns = m_removedCustomColumns
     };
-    const Domain::Result<void> saved = m_actions.saveRoster
-        ? m_actions.saveRoster(*m_databasePath, request)
-        : Domain::Result<void>::failure({
+    const Domain::Result<void> saved = saveStageDiagnosticsEnabled
+        ? m_actions.saveRosterWithDiagnostics(
+            *m_databasePath, std::move(request), std::move(saveStageObserver))
+        : m_actions.saveRoster
+            ? m_actions.saveRoster(*m_databasePath, std::move(request))
+            : Domain::Result<void>::failure({
             .code = Domain::ErrorCode::NotFound,
             .message = "The roster save action is unavailable.",
             .recoverable = true
-        });
+            });
     if (!saved)
     {
         m_saveFailed = true;
@@ -580,6 +698,9 @@ bool RosterEditorWidget::saveChanges(const bool showValidationFeedback)
         return false;
     }
 
+    recordDiagnosticCheckpoint(
+        QStringLiteral("roster-save-returned-successfully"),
+        QStringLiteral("success"));
     m_model->clearDirty();
     m_hasSourceEnglishColumn = true;
     m_hasSourceKoreanColumn = true;
@@ -741,8 +862,20 @@ void RosterEditorWidget::buildUi()
     connect(m_keyboardButton, &QPushButton::clicked, this,
         [this] { showKeyboard(); });
     connect(m_model, &QAbstractItemModel::dataChanged, this,
-        [this] {
+        [this](const QModelIndex& topLeft,
+               const QModelIndex& bottomRight,
+               const QList<int>& roles) {
             updateActions();
+            const bool changesCellValue = roles.contains(Qt::DisplayRole)
+                || roles.contains(Qt::EditRole);
+            if (!m_loading && m_loaded && changesCellValue
+                && topLeft.isValid() && topLeft == bottomRight)
+            {
+                recordDiagnosticCheckpoint(
+                    QStringLiteral("roster-cell-data-changed"),
+                    QStringLiteral("success"), topLeft.row(),
+                    topLeft.column());
+            }
             if (!m_loading
                 && m_actions.saveMode == Application::SaveMode::Automatic
                 && hasUnsavedChanges())
@@ -943,6 +1076,8 @@ bool RosterEditorWidget::reload()
     {
         m_dirtyChanged(false);
     }
+    recordDiagnosticCheckpoint(
+        QStringLiteral("roster-model-loaded"), QStringLiteral("success"));
     return true;
 }
 
@@ -967,12 +1102,7 @@ void RosterEditorWidget::updateActions()
     if (hasCurrent && current.row() >= 0
         && current.row() < m_model->rowCount())
     {
-        const Application::RosterSnapshot snapshot = m_model->snapshot();
-        if (static_cast<std::size_t>(current.row()) < snapshot.rows.size())
-        {
-            currentRowHasData = Application::rosterRowHasData(
-                snapshot.rows[static_cast<std::size_t>(current.row())]);
-        }
+        currentRowHasData = m_model->rowHasData(current.row());
     }
     m_transferButton->setEnabled(editable && currentRowHasData
         && static_cast<bool>(m_actions.readTransferTargets)
@@ -1541,8 +1671,7 @@ void RosterEditorWidget::focusFirstValidationIssue()
 bool RosterEditorWidget::hasQuestionableKoreanLengthErrors() const
 {
     return Application::hasOnlyQuestionableKoreanNameLengthErrors(
-        Application::prepareRosterSaveText(
-            m_model->snapshot(), false, qtCaseInsensitiveEquals));
+        m_model->validationIssues());
 }
 
 bool RosterEditorWidget::confirmQuestionableKoreanLengths() const

@@ -18,7 +18,12 @@ namespace ClassMngr::Next::Platform
 
 [[nodiscard]] Domain::Result<void> saveRosterAtPath(
     const QString& databasePath,
-    const Application::RosterSaveRequest& request
+    Application::RosterSaveRequest request
+    );
+[[nodiscard]] Domain::Result<void> saveRosterWithDiagnosticsAtPath(
+    const QString& databasePath,
+    Application::RosterSaveRequest request,
+    Application::RosterSaveDiagnosticObserver diagnosticObserver
     );
 
 [[nodiscard]] Domain::Result<bool> rosterColumnHasTailDataAtPath(

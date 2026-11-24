@@ -39,18 +39,26 @@ class FixedProcessMemorySnapshotProvider final
     : public ProcessMemorySnapshotProvider
 {
 public:
-    explicit FixedProcessMemorySnapshotProvider(ProcessMemorySnapshot value)
+    explicit FixedProcessMemorySnapshotProvider(
+        ProcessMemorySnapshot value,
+        int* snapshotCount = nullptr)
         : m_value(std::move(value))
+        , m_snapshotCount(snapshotCount)
     {
     }
 
     [[nodiscard]] ProcessMemorySnapshot snapshot() const override
     {
+        if (m_snapshotCount)
+        {
+            ++*m_snapshotCount;
+        }
         return m_value;
     }
 
 private:
     ProcessMemorySnapshot m_value;
+    int* m_snapshotCount = nullptr;
 };
 
 class ProbePage;
@@ -307,6 +315,8 @@ private slots:
     void invalidAndDuplicateDescriptorsAreRejected();
     void lifecycleStatesAreQueryableObservableAndRejectReentrantMutations();
     void lifecycleDiagnosticsSerializeSnapshotsAndUnavailableCounters();
+    void defaultProcessHeapDiagnosticsAreOptInOrderedAndPreserveUnavailableValues();
+    void rosterSaveStageDiagnosticsAreOptInOrderedAndTextFree();
     void pageActionDiagnosticsPairMemoryWithSubPrepCounters();
     void lifecycleDiagnosticsBoundDetailedModelRecords();
     void lifecycleDiagnosticsObserveExplicitReleaseAndHostShutdown();
@@ -894,6 +904,274 @@ void PageHostTests::pageActionDiagnosticsPairMemoryWithSubPrepCounters()
     QCOMPARE(metrics.value(QStringLiteral("selected_class_id")).toString(),
              QStringLiteral("96"));
     QVERIFY(metrics.value(QStringLiteral("selected_details_retained")).toBool());
+}
+
+void PageHostTests::defaultProcessHeapDiagnosticsAreOptInOrderedAndPreserveUnavailableValues()
+{
+    DefaultProcessHeapSnapshot unavailableHeap;
+    unavailableHeap.error = QStringLiteral("HeapSummary unavailable");
+    const QJsonObject unavailableObject =
+        Bootstrap::defaultProcessHeapSnapshotObject(unavailableHeap);
+    QCOMPARE(unavailableObject.value(QStringLiteral("scope")).toString(),
+             QStringLiteral("default-process-heap"));
+    QVERIFY(!unavailableObject.value(QStringLiteral("available")).toBool());
+    QCOMPARE(unavailableObject.value(QStringLiteral("error")).toString(),
+             QStringLiteral("HeapSummary unavailable"));
+    for (const QString& key : {QStringLiteral("cbAllocated"),
+             QStringLiteral("cbCommitted"), QStringLiteral("cbReserved"),
+             QStringLiteral("cbMaxReserve"),
+             QStringLiteral("callDurationNanoseconds")})
+    {
+        QCOMPARE(unavailableObject.value(key).type(), QJsonValue::Null);
+    }
+
+    ProcessMemorySnapshot memory;
+    memory.platform = QStringLiteral("windows");
+    QVector<QJsonObject> optInRecords;
+    int heapReads = 0;
+    PageProbe classes;
+    classes.key = QStringLiteral("classes");
+    classes.name = QStringLiteral("classes");
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    auto pageRecorder =
+        std::make_unique<Bootstrap::QtPageLifecycleDiagnosticsRecorder>(
+            host,
+            std::make_unique<FixedProcessMemorySnapshotProvider>(memory),
+            [&optInRecords](const QByteArray& bytes) {
+                optInRecords.push_back(QJsonDocument::fromJson(bytes).object());
+            },
+            Bootstrap::QtPageLifecycleDiagnosticsRecorder::CalendarRuntimeMetricsReader{},
+            Bootstrap::QtPageLifecycleDiagnosticsRecorder::SubPrepRuntimeMetricsReader{},
+            true,
+            [&heapReads] {
+                ++heapReads;
+                DefaultProcessHeapSnapshot snapshot;
+                snapshot.isAvailable = true;
+                snapshot.cbAllocated = 12;
+                snapshot.cbCommitted = 24;
+                snapshot.cbReserved = 36;
+                snapshot.cbMaxReserve = 48;
+                snapshot.callDurationNanoseconds = 60;
+                return snapshot;
+            });
+    QVERIFY(host.registerPage(descriptorFor(classes.key, factoryFor(classes))));
+    QVERIFY(host.activatePage(classes.key));
+    pageRecorder->recordRosterDefaultHeapCheckpoint(
+        17, QStringLiteral("roster-model-loaded"),
+        QStringLiteral("success"));
+    pageRecorder->recordRosterDefaultHeapCheckpoint(
+        17, QStringLiteral("roster-cell-data-changed"),
+        QStringLiteral("success"), 4, 9);
+    pageRecorder->recordRosterDefaultHeapCheckpoint(
+        17,
+        QStringLiteral(
+            "roster-widget-after-delete-returned-after-child-destruction"),
+        QStringLiteral("success"));
+
+    QVector<QJsonObject> heapRecords;
+    for (const QJsonObject& record : optInRecords)
+    {
+        if (record.value(QStringLiteral("event")).toString()
+            == QStringLiteral("default-process-heap-roster-checkpoint"))
+        {
+            heapRecords.push_back(record);
+        }
+        else
+        {
+            QVERIFY(!record.contains(QStringLiteral("default_process_heap")));
+        }
+    }
+    QCOMPARE(heapReads, 4);
+    QCOMPARE(heapRecords.size(), 4);
+    QCOMPARE(heapRecords[0].value(QStringLiteral("checkpoint")).toString(),
+             QStringLiteral("classes-page-baseline-before-roster"));
+    QCOMPARE(heapRecords[0].value(QStringLiteral("event_sequence")).toInt(), 1);
+    QCOMPARE(heapRecords[0].value(QStringLiteral("roster_widget_instance_id")).type(),
+             QJsonValue::Null);
+    QCOMPARE(heapRecords[1].value(QStringLiteral("event_sequence")).toInt(), 2);
+    QCOMPARE(heapRecords[1].value(QStringLiteral("roster_widget_instance_id")).toInt(), 17);
+    QCOMPARE(heapRecords[2].value(QStringLiteral("event_sequence")).toInt(), 3);
+    QCOMPARE(heapRecords[2].value(QStringLiteral("roster_widget_instance_id")).toInt(), 17);
+    QCOMPARE(heapRecords[2].value(QStringLiteral("row")).toInt(), 4);
+    QCOMPARE(heapRecords[2].value(QStringLiteral("column")).toInt(), 9);
+    QCOMPARE(heapRecords[3].value(QStringLiteral("event_sequence")).toInt(), 4);
+    QCOMPARE(heapRecords[3].value(QStringLiteral("checkpoint")).toString(),
+             QStringLiteral(
+                 "roster-widget-after-delete-returned-after-child-destruction"));
+    QCOMPARE(heapRecords[3].value(QStringLiteral(
+                 "roster_widget_instance_id")).toInt(), 17);
+    const QJsonObject availableHeap = heapRecords[2].value(
+        QStringLiteral("default_process_heap")).toObject();
+    QVERIFY(availableHeap.value(QStringLiteral("available")).toBool());
+    QCOMPARE(availableHeap.value(QStringLiteral("cbAllocated")).toInt(), 12);
+    QCOMPARE(availableHeap.value(QStringLiteral("cbCommitted")).toInt(), 24);
+    QCOMPARE(availableHeap.value(QStringLiteral("cbReserved")).toInt(), 36);
+    QCOMPARE(availableHeap.value(QStringLiteral("cbMaxReserve")).toInt(), 48);
+    QCOMPARE(availableHeap.value(QStringLiteral("callDurationNanoseconds")).toInt(), 60);
+    QVERIFY(host.releasePage(classes.key));
+
+    QVector<QJsonObject> normalRecords;
+    int normalHeapReads = 0;
+    PageProbe normalClasses;
+    normalClasses.key = QStringLiteral("classes");
+    normalClasses.name = QStringLiteral("normal-classes");
+    Ui::PageHost normalHost(*m_loader, m_preferences.model);
+    auto normalRecorder =
+        std::make_unique<Bootstrap::QtPageLifecycleDiagnosticsRecorder>(
+            normalHost,
+            std::make_unique<FixedProcessMemorySnapshotProvider>(memory),
+            [&normalRecords](const QByteArray& bytes) {
+                normalRecords.push_back(QJsonDocument::fromJson(bytes).object());
+            },
+            Bootstrap::QtPageLifecycleDiagnosticsRecorder::CalendarRuntimeMetricsReader{},
+            Bootstrap::QtPageLifecycleDiagnosticsRecorder::SubPrepRuntimeMetricsReader{},
+            false,
+            [&normalHeapReads] {
+                ++normalHeapReads;
+                return DefaultProcessHeapSnapshot{};
+            });
+    QVERIFY(normalHost.registerPage(
+        descriptorFor(normalClasses.key, factoryFor(normalClasses))));
+    QVERIFY(normalHost.activatePage(normalClasses.key));
+    normalRecorder->recordRosterDefaultHeapCheckpoint(
+        18, QStringLiteral("roster-model-loaded"), QStringLiteral("success"));
+    QCOMPARE(normalHeapReads, 0);
+    QVERIFY(!normalRecords.isEmpty());
+    for (const QJsonObject& record : normalRecords)
+    {
+        QVERIFY(record.value(QStringLiteral("event")).toString()
+            != QStringLiteral("default-process-heap-roster-checkpoint"));
+        QVERIFY(!record.contains(QStringLiteral("default_process_heap")));
+    }
+    QVERIFY(normalHost.releasePage(normalClasses.key));
+}
+
+void PageHostTests::rosterSaveStageDiagnosticsAreOptInOrderedAndTextFree()
+{
+    ProcessMemorySnapshot memory;
+    memory.isAvailable = true;
+    memory.platform = QStringLiteral("windows");
+    memory.capturedAt = QDateTime::fromString(
+        QStringLiteral("2026-11-23T04:05:06.007Z"), Qt::ISODateWithMs);
+    memory.workingSetBytesAvailable = true;
+    memory.workingSetBytes = 123456;
+    memory.privateUsageBytesAvailable = true;
+    memory.privateUsageBytes = 654321;
+
+    QVector<QJsonObject> records;
+    int processSnapshotReads = 0;
+    int heapSnapshotReads = 0;
+    Ui::PageHost host(*m_loader, m_preferences.model);
+    Bootstrap::QtPageLifecycleDiagnosticsRecorder recorder(
+        host,
+        std::make_unique<FixedProcessMemorySnapshotProvider>(
+            memory, &processSnapshotReads),
+        [&records](const QByteArray& bytes) {
+            records.push_back(QJsonDocument::fromJson(bytes).object());
+        },
+        Bootstrap::QtPageLifecycleDiagnosticsRecorder::CalendarRuntimeMetricsReader{},
+        Bootstrap::QtPageLifecycleDiagnosticsRecorder::SubPrepRuntimeMetricsReader{},
+        true,
+        [&heapSnapshotReads] {
+            ++heapSnapshotReads;
+            DefaultProcessHeapSnapshot snapshot;
+            snapshot.isAvailable = true;
+            snapshot.cbAllocated = 11;
+            snapshot.cbCommitted = 22;
+            snapshot.cbReserved = 33;
+            snapshot.cbMaxReserve = 44;
+            snapshot.callDurationNanoseconds = 55;
+            return snapshot;
+        });
+
+    using Stage = Application::RosterSaveDiagnosticStage;
+    using Outcome = Application::RosterSaveDiagnosticOutcome;
+    const QVector<std::pair<Stage, Outcome>> expected{
+        {Stage::BeforeSnapshot, Outcome::Observed},
+        {Stage::AfterSnapshot, Outcome::Success},
+        {Stage::AfterPreparation, Outcome::Success},
+        {Stage::BeforeRowSourceSetup, Outcome::Observed},
+        {Stage::AfterRowSourceSetup, Outcome::Success},
+        {Stage::BeforeRowWiseRepositoryWrite, Outcome::Observed},
+        {Stage::AfterRowWiseRepositoryWrite, Outcome::Success}
+    };
+    for (const auto& [stage, outcome] : expected)
+    {
+        recorder.recordRosterSaveStageCheckpoint(73, 2, stage, outcome);
+    }
+
+    QCOMPARE(records.size(), expected.size());
+    QCOMPARE(processSnapshotReads, expected.size());
+    QCOMPARE(heapSnapshotReads, expected.size());
+    const QStringList expectedStages{
+        QStringLiteral("before-snapshot"),
+        QStringLiteral("after-snapshot"),
+        QStringLiteral("after-preparation"),
+        QStringLiteral("before-row-source-setup"),
+        QStringLiteral("after-row-source-setup"),
+        QStringLiteral("before-row-wise-repository-write"),
+        QStringLiteral("after-row-wise-repository-write")
+    };
+    for (qsizetype index = 0; index < records.size(); ++index)
+    {
+        const QJsonObject& record = records.at(index);
+        QCOMPARE(record.value(QStringLiteral("event")).toString(),
+                 QStringLiteral("roster-save-stage-checkpoint"));
+        QCOMPARE(record.value(QStringLiteral("schema")).toString(),
+                 QStringLiteral("classmngr-roster-save-stage-diagnostic-v1"));
+        QCOMPARE(record.value(QStringLiteral("stage")).toString(),
+                 expectedStages.at(index));
+        QCOMPARE(record.value(QStringLiteral("event_sequence")).toInt(),
+                 static_cast<int>(index + 1));
+        QCOMPARE(record.value(QStringLiteral("roster_widget_instance_id")).toInt(),
+                 73);
+        QCOMPARE(record.value(QStringLiteral("save_sequence")).toInt(), 2);
+        QCOMPARE(record.value(QStringLiteral("platform")).toString(),
+                 QStringLiteral("windows"));
+        QVERIFY(record.value(QStringLiteral("sample_available")).toBool());
+        QCOMPARE(record.value(QStringLiteral("captured_at")).toString(),
+                 memory.capturedAt.toUTC().toString(Qt::ISODateWithMs));
+        const QJsonObject metrics = record.value(QStringLiteral("memory")).toObject();
+        QCOMPARE(metrics.value(QStringLiteral("working_set_bytes")).toInt(), 123456);
+        QCOMPARE(metrics.value(QStringLiteral("private_usage_bytes")).toInt(), 654321);
+        const QJsonObject heap = record.value(
+            QStringLiteral("default_process_heap")).toObject();
+        QCOMPARE(heap.value(QStringLiteral("cbAllocated")).toInt(), 11);
+        QCOMPARE(heap.value(QStringLiteral("cbCommitted")).toInt(), 22);
+        QCOMPARE(heap.value(QStringLiteral("cbReserved")).toInt(), 33);
+        QCOMPARE(heap.value(QStringLiteral("cbMaxReserve")).toInt(), 44);
+        QVERIFY(!record.contains(QStringLiteral("details")));
+        QVERIFY(!record.contains(QStringLiteral("text")));
+        QVERIFY(!record.contains(QStringLiteral("cellText")));
+        const QByteArray serialized = QJsonDocument(record).toJson();
+        QVERIFY(!serialized.contains("Private Student"));
+        QVERIFY(!serialized.contains("Private Header"));
+        QVERIFY(!serialized.contains("Private Roster Cell"));
+    }
+
+    QVector<QJsonObject> normalRecords;
+    int normalProcessSnapshotReads = 0;
+    int normalHeapSnapshotReads = 0;
+    Ui::PageHost normalHost(*m_loader, m_preferences.model);
+    Bootstrap::QtPageLifecycleDiagnosticsRecorder normalRecorder(
+        normalHost,
+        std::make_unique<FixedProcessMemorySnapshotProvider>(
+            memory, &normalProcessSnapshotReads),
+        [&normalRecords](const QByteArray& bytes) {
+            normalRecords.push_back(QJsonDocument::fromJson(bytes).object());
+        },
+        Bootstrap::QtPageLifecycleDiagnosticsRecorder::CalendarRuntimeMetricsReader{},
+        Bootstrap::QtPageLifecycleDiagnosticsRecorder::SubPrepRuntimeMetricsReader{},
+        false,
+        [&normalHeapSnapshotReads] {
+            ++normalHeapSnapshotReads;
+            return DefaultProcessHeapSnapshot{};
+        });
+    normalRecorder.recordRosterSaveStageCheckpoint(
+        74, 1, Stage::BeforeSnapshot, Outcome::Observed);
+    QCOMPARE(normalProcessSnapshotReads, 0);
+    QCOMPARE(normalHeapSnapshotReads, 0);
+    QVERIFY(normalRecords.isEmpty());
 }
 
 void PageHostTests::lifecycleDiagnosticsBoundDetailedModelRecords()

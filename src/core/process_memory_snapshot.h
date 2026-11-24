@@ -3,6 +3,8 @@
 #include <QDateTime>
 #include <QString>
 
+#include <optional>
+
 // A small, platform-specific process-memory sample. On Windows the values map
 // directly to PROCESS_MEMORY_COUNTERS_EX fields; unsupported platforms return
 // an unavailable sample instead of guessing at equivalent metrics.
@@ -66,3 +68,19 @@ private:
     QString m_procRoot;
 #endif
 };
+
+// Opt-in summary of the current process's default Windows heap. The values
+// remain absent when the platform, API, or call cannot provide a sample.
+struct DefaultProcessHeapSnapshot final
+{
+    QString scope = QStringLiteral("default-process-heap");
+    bool isAvailable = false;
+    QString error;
+    std::optional<quint64> cbAllocated;
+    std::optional<quint64> cbCommitted;
+    std::optional<quint64> cbReserved;
+    std::optional<quint64> cbMaxReserve;
+    std::optional<quint64> callDurationNanoseconds;
+};
+
+[[nodiscard]] DefaultProcessHeapSnapshot defaultProcessHeapSnapshot();

@@ -238,6 +238,27 @@ public:
         const Application::PreparedRosterSaveRequest& request
         ) const override
     {
+        return savePreparedRoster(request, {});
+    }
+
+    [[nodiscard]] Domain::Result<void> saveRosterWithDiagnostics(
+        const Application::PreparedRosterSaveRequest& request,
+        const Application::RosterSaveDiagnosticObserver& diagnosticObserver
+        ) const override
+    {
+        if (!diagnosticObserver)
+        {
+            return saveRoster(request);
+        }
+        return savePreparedRoster(request, diagnosticObserver);
+    }
+
+private:
+    [[nodiscard]] Domain::Result<void> savePreparedRoster(
+        const Application::PreparedRosterSaveRequest& request,
+        const Application::RosterSaveDiagnosticObserver& diagnosticObserver
+        ) const
+    {
         const auto classId = legacyClassId(request.classId);
         if (!classId)
         {
@@ -254,17 +275,99 @@ public:
 
         try
         {
-            QStringList removedColumns;
-            for (const std::u16string& column : request.removedCustomColumns)
+            if (diagnosticObserver)
             {
-                removedColumns.append(legacyText(column));
+                Application::reportRosterSaveDiagnostic(
+                    diagnosticObserver,
+                    Application::RosterSaveDiagnosticStage::BeforeRowSourceSetup,
+                    Application::RosterSaveDiagnosticOutcome::Observed);
+            }
+            auto source = [&]() {
+                try
+                {
+                    QStringList values;
+                    for (const std::u16string& column : request.removedCustomColumns)
+                    {
+                        values.append(legacyText(column));
+                    }
+                    const Application::RosterSnapshot& roster = request.roster;
+                    return RosterRepository::WindowSaveRowSource{
+                        .classId = *classId,
+                        .columnCount = roster.columns.size(),
+                        .columnWidthCount = roster.columnWidths.size(),
+                        .rowCount = roster.rows.size(),
+                        .removedCustomColumns = std::move(values),
+                        .columnNameAt = [&request](const std::size_t column)
+                        {
+                            return legacyText(request.roster.columns.at(column));
+                        },
+                        .columnWidthAt = [&request](const std::size_t column)
+                        {
+                            return request.roster.columnWidths.at(column).rawValue();
+                        },
+                        .rowCellCountAt = [&request](const std::size_t row)
+                        {
+                            return request.roster.rows.at(row).size();
+                        },
+                        .cellAt = [&request](const std::size_t row,
+                                             const std::size_t column)
+                        {
+                            return legacyText(request.roster.rows.at(row).at(column));
+                        }
+                    };
+                }
+                catch (...)
+                {
+                    if (diagnosticObserver)
+                    {
+                        Application::reportRosterSaveDiagnostic(
+                            diagnosticObserver,
+                            Application::RosterSaveDiagnosticStage::AfterRowSourceSetup,
+                            Application::RosterSaveDiagnosticOutcome::Failure);
+                    }
+                    throw;
+                }
+            }();
+            if (diagnosticObserver)
+            {
+                Application::reportRosterSaveDiagnostic(
+                    diagnosticObserver,
+                    Application::RosterSaveDiagnosticStage::AfterRowSourceSetup,
+                    Application::RosterSaveDiagnosticOutcome::Success);
+                Application::reportRosterSaveDiagnostic(
+                    diagnosticObserver,
+                    Application::RosterSaveDiagnosticStage::BeforeRowWiseRepositoryWrite,
+                    Application::RosterSaveDiagnosticOutcome::Observed);
             }
             const RepositoryStatus saved =
-                m_repository->saveRosterWindowsWithParentCheck({{
-                    .classId = *classId,
-                    .roster = legacyRoster(request.roster),
-                    .removedCustomColumns = std::move(removedColumns)
-                }});
+                [&]() {
+                    try
+                    {
+                        const RepositoryStatus result =
+                            m_repository->saveRosterWindowWithParentCheck(source);
+                        if (diagnosticObserver)
+                        {
+                            Application::reportRosterSaveDiagnostic(
+                                diagnosticObserver,
+                                Application::RosterSaveDiagnosticStage::AfterRowWiseRepositoryWrite,
+                                result
+                                    ? Application::RosterSaveDiagnosticOutcome::Success
+                                    : Application::RosterSaveDiagnosticOutcome::Failure);
+                        }
+                        return result;
+                    }
+                    catch (...)
+                    {
+                        if (diagnosticObserver)
+                        {
+                            Application::reportRosterSaveDiagnostic(
+                                diagnosticObserver,
+                                Application::RosterSaveDiagnosticStage::AfterRowWiseRepositoryWrite,
+                                Application::RosterSaveDiagnosticOutcome::Failure);
+                        }
+                        throw;
+                    }
+                }();
             if (!saved)
             {
                 return Domain::Result<void>::failure(repositoryError(
@@ -459,7 +562,16 @@ Application::RosterWindowReadResult readRosterWindowAtPath(
 
 Domain::Result<void> saveRosterAtPath(
     const QString& databasePath,
-    const Application::RosterSaveRequest& request
+    Application::RosterSaveRequest request
+    )
+{
+    return saveRosterWithDiagnosticsAtPath(databasePath, std::move(request), {});
+}
+
+Domain::Result<void> saveRosterWithDiagnosticsAtPath(
+    const QString& databasePath,
+    Application::RosterSaveRequest request,
+    Application::RosterSaveDiagnosticObserver diagnosticObserver
     )
 {
     const auto legacyId = legacyClassId(request.classId);
@@ -478,7 +590,7 @@ Domain::Result<void> saveRosterAtPath(
     }
     WorkspaceStoreRosterSavePort port(store.rosterRepository());
     return Application::RosterSaveUseCase::execute(
-        request, port, caseInsensitiveEquals);
+        std::move(request), port, caseInsensitiveEquals, diagnosticObserver);
 }
 
 Domain::Result<bool> rosterColumnHasTailDataAtPath(

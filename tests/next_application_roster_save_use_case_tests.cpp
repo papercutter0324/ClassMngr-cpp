@@ -128,6 +128,30 @@ Application::RosterSaveRequest request(std::string classId)
     };
 }
 
+Application::RosterSaveTextReader textReader(
+    const Application::RosterSnapshot& snapshot)
+{
+    return {
+        .columnCount = snapshot.columns.size(),
+        .columnWidthCount = snapshot.columnWidths.size(),
+        .rowCount = snapshot.rows.size(),
+        .copyColumnText = [&snapshot](const std::size_t column,
+                                      std::u16string& destination)
+        {
+            destination = snapshot.columns.at(column);
+        },
+        .rowCellCount = [&snapshot](const std::size_t row)
+        {
+            return snapshot.rows.at(row).size();
+        },
+        .copyCellText = [&snapshot](const std::size_t row, const std::size_t column,
+                                    std::u16string& destination)
+        {
+            destination = snapshot.rows.at(row).at(column);
+        }
+    };
+}
+
 class RecordingRosterSavePort final : public Application::RosterSavePort
 {
 public:
@@ -160,6 +184,9 @@ private slots:
     void invalidRosterDoesNotReachPortAndIdTakesPriority();
     void preparesNormalizedSnapshotBeforePort();
     void directPreparationPreservesStructureAndIssueOrder();
+    void issueOnlyTextReaderMatchesPreparationOracle();
+    void customCellWhitespaceBufferMatchesSimplifier();
+    void invalidCellLengthKeepsExactDiagnostic();
     void preparationPreservesSignedWidthBoundaries();
     void duplicateNamePairDiagnosticsKeepTypedRowsAndIssueOrder();
     void rawBomConversionDoesNotMutateRequestOrAddSentinels();
@@ -186,7 +213,8 @@ manualSaveEligibilityAllowsOnlyQuestionableLengthErrors()
                 .severity = severity
             });
         }
-        return Application::hasOnlyQuestionableKoreanNameLengthErrors(prepared);
+        return Application::hasOnlyQuestionableKoreanNameLengthErrors(prepared)
+            && Application::hasOnlyQuestionableKoreanNameLengthErrors(prepared.issues);
     };
 
     QVERIFY(eligible({{Code::StudentNameKoreanTooShort, Severity::Error}}));
@@ -438,6 +466,183 @@ void NextApplicationRosterSaveUseCaseTests::directPreparationPreservesStructureA
 }
 
 void NextApplicationRosterSaveUseCaseTests::
+issueOnlyTextReaderMatchesPreparationOracle()
+{
+    std::vector<Application::RosterSnapshot> cases;
+
+    Application::RosterSnapshot shape;
+    shape.columns = {u" English ", u"ENGLISH", u" ", std::u16string(65, u'X')};
+    shape.columnWidths = snapshotWidths({-1, 0, 9, 10, 11, 12});
+    shape.rows.resize(Application::RosterSaveMaximumRows + 1);
+    shape.rows[0] = {u" A2 ", u"", u"", u"", std::u16string(10001, u'z')};
+    shape.rows[Application::RosterSaveMaximumRows] = {u"   "};
+    cases.push_back(std::move(shape));
+
+    Application::RosterSnapshot names;
+    names.columns = {
+        u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall"
+    };
+    names.rows.resize(8);
+    names.rows[0] = {u"  Anne -- Marie  ", u"  \uAE40\uD6C8(b)  "};
+    names.rows[1] = {u"Bad! Name \U0001F4DA", u"\uAE40-1"};
+    names.rows[2] = {u"Short", u"\uAE40"};
+    names.rows[3] = {u"Long", u"\uAC00\uB098\uB2E4\uB77C\uB9C8"};
+    names.rows[4] = {u"Unusual", u"\uAC00\uB098"};
+    names.rows[5] = {u"Missing Korean", u"", u"grade"};
+    names.rows[7] = {u"   ", u"\u3000"};
+    cases.push_back(std::move(names));
+
+    Application::RosterSnapshot duplicates;
+    duplicates.columns = {
+        u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall"
+    };
+    duplicates.rows.resize(7);
+    duplicates.rows[0] = {u"Alice", u"\uAE40\uBBFC\uC9C0"};
+    duplicates.rows[1] = {u"Bob", u"\uBC15\uC9C0\uBBFC"};
+    duplicates.rows[3] = {u" Alice ", u"\uAE40\uBBFC\uC9C0"};
+    duplicates.rows[4] = {u"Bob", u"\uBC15\uC9C0\uBBFC"};
+    duplicates.rows[5] = {u"Alice", u"\uAE40\uBBFC\uC9C0"};
+    duplicates.rows[6] = {u"Bob", u"\uBC15\uC9C0\uBBFC"};
+    cases.push_back(std::move(duplicates));
+
+    Application::RosterSnapshot utf16;
+    std::u16string supplementaryColumn;
+    for (int index = 0; index < 32; ++index)
+        supplementaryColumn += u"\U0001F4DA";
+    utf16.columns = {
+        u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall",
+        std::move(supplementaryColumn)
+    };
+    utf16.rows.resize(2);
+    utf16.rows[0].resize(7);
+    utf16.rows[0][0] = std::u16string(19, u'A') + u"\U0001F4DA";
+    utf16.rows[0][1] = u"\uAE40\uBBFC\uC9C0";
+    utf16.rows[0][6] = std::u16string(9998, u'x') + u"\U0001F4DA";
+    utf16.rows[1].resize(7);
+    utf16.rows[1][0] = std::u16string{u'A', static_cast<char16_t>(0xD800)};
+    utf16.rows[1][1] = u"\uAC00\uB098\uB2E4\uB77C\uB9C8\uBC14";
+    utf16.rows[1][6] = std::u16string(10001, u'x');
+    cases.push_back(std::move(utf16));
+
+    for (const auto& snapshot : cases)
+    {
+        for (const bool allowQuestionableLengths : {false, true})
+        {
+            const auto expected = Application::prepareRosterSaveText(
+                snapshot, allowQuestionableLengths, equals);
+            const auto actual = Application::validateRosterSaveTextIssues(
+                textReader(snapshot), allowQuestionableLengths, equals);
+            QVERIFY(actual == expected.issues);
+        }
+    }
+
+    const auto hasCode = [](const std::vector<Application::RosterSaveIssue>& issues,
+                            const Application::RosterSaveIssueCode code)
+    {
+        return std::any_of(issues.cbegin(), issues.cend(), [code](const auto& issue)
+        {
+            return issue.code == code;
+        });
+    };
+    const auto shapeIssues = Application::validateRosterSaveTextIssues(
+        textReader(cases[0]), false, equals);
+    QVERIFY(hasCode(shapeIssues, Application::RosterSaveIssueCode::RosterColumnRequired));
+    QVERIFY(hasCode(shapeIssues, Application::RosterSaveIssueCode::RosterColumnDuplicate));
+    QVERIFY(hasCode(shapeIssues, Application::RosterSaveIssueCode::ValidationLengthOutOfBounds));
+    QVERIFY(hasCode(shapeIssues, Application::RosterSaveIssueCode::RosterColumnWidthsInvalidCount));
+    QVERIFY(hasCode(shapeIssues, Application::RosterSaveIssueCode::RosterRowsTooMany));
+    QVERIFY(hasCode(shapeIssues, Application::RosterSaveIssueCode::RosterRowTooManyCells));
+
+    const auto nameIssues = Application::validateRosterSaveTextIssues(
+        textReader(cases[1]), false, equals);
+    QVERIFY(hasCode(nameIssues, Application::RosterSaveIssueCode::StudentNameEnglishNonAscii));
+    QVERIFY(hasCode(nameIssues, Application::RosterSaveIssueCode::StudentNameEnglishInvalidCharacters));
+    QVERIFY(hasCode(nameIssues, Application::RosterSaveIssueCode::StudentNameKoreanInvalidCharacters));
+    QVERIFY(hasCode(nameIssues, Application::RosterSaveIssueCode::StudentNameKoreanTooShort));
+    QVERIFY(hasCode(nameIssues, Application::RosterSaveIssueCode::StudentNameKoreanTooLong));
+    QVERIFY(hasCode(nameIssues, Application::RosterSaveIssueCode::StudentNameKoreanUnusualLength));
+    QVERIFY(hasCode(nameIssues, Application::RosterSaveIssueCode::RosterStudentNameRequired));
+
+    const auto duplicateIssues = Application::validateRosterSaveTextIssues(
+        textReader(cases[2]), false, equals);
+    QVERIFY(hasCode(duplicateIssues, Application::RosterSaveIssueCode::StudentNameDuplicatePair));
+
+    const auto utf16Issues = Application::validateRosterSaveTextIssues(
+        textReader(cases[3]), false, equals);
+    QVERIFY(hasCode(utf16Issues, Application::RosterSaveIssueCode::StudentNameEnglishTooLong));
+    QVERIFY(hasCode(utf16Issues, Application::RosterSaveIssueCode::ValidationLengthOutOfBounds));
+}
+
+void NextApplicationRosterSaveUseCaseTests::
+customCellWhitespaceBufferMatchesSimplifier()
+{
+    std::vector<std::u16string> inputs{
+        u"",
+        u" \t\r\n\u00a0\u3000\u2028",
+        u"\u00a0 \tAlpha\u3000\u2003",
+        u"Alpha \t\u3000Beta\n\nGamma",
+        u"A\u0085\u2028B",
+        u"\u202f Ends \u00a0"
+    };
+    std::u16string largeInput = u"\u3000 ";
+    largeInput.append(128, u'x');
+    largeInput += u"\u00a0";
+    inputs.push_back(std::move(largeInput));
+
+    std::u16string destination = u"stale output";
+    destination.reserve(16);
+    for (const auto& input : inputs)
+    {
+        Application::RosterSavePreparationDetail::simplifyCustomCellWhitespaceInto(
+            input, destination);
+        QVERIFY(destination == Application::simplifyQtWhitespace(input));
+    }
+    QVERIFY(destination.capacity() >= 128);
+}
+
+void NextApplicationRosterSaveUseCaseTests::
+invalidCellLengthKeepsExactDiagnostic()
+{
+    Application::RosterSnapshot snapshot;
+    snapshot.columns = {
+        u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall", u"Notes"
+    };
+    snapshot.rows.resize(1);
+    std::u16string tooLongCustomCell = u"\u3000\t";
+    tooLongCustomCell.append(Application::RosterSaveMaximumCellLength + 1, u'x');
+    tooLongCustomCell += u"\u00a0\r";
+    snapshot.rows[0] = {
+        u"Alice", u"\uAE40\uBBFC\uC9C0", u"", u"", u"", u"",
+        std::move(tooLongCustomCell)
+    };
+
+    const auto prepared = Application::prepareRosterSave(snapshot, false, equals);
+    const auto issueOnly = Application::validateRosterSaveTextIssues(
+        textReader(snapshot), false, equals);
+    const std::vector<Application::RosterSaveIssue> expected{
+        {
+            .code = Application::RosterSaveIssueCode::ValidationLengthOutOfBounds,
+            .field = u"rows[0].Notes",
+            .row = Application::RosterSaveIssueRowIndex{0},
+            .column = Application::RosterSaveIssueColumnIndex{6},
+            .severity = Application::RosterSaveIssueSeverity::Error,
+            .arguments = {
+                {"length", std::int64_t{10001}},
+                {"minimum", std::int64_t{0}},
+                {"maximum", std::int64_t{10000}}
+            }
+        }
+    };
+
+    QVERIFY(prepared.issues == expected);
+    QVERIFY(issueOnly == expected);
+    QCOMPARE(
+        prepared.roster.rows[0][6],
+        std::u16string(Application::RosterSaveMaximumCellLength + 1, u'x')
+        );
+}
+
+void NextApplicationRosterSaveUseCaseTests::
 preparationPreservesSignedWidthBoundaries()
 {
     Application::RosterSnapshot snapshot = request("42").roster;
@@ -554,6 +759,11 @@ void NextApplicationRosterSaveUseCaseTests::rawBomConversionDoesNotMutateRequest
     QCOMPARE(port.lastRequest->roster.columns[0], std::u16string(u"English"));
     QCOMPARE(port.lastRequest->roster.rows[0][0], std::u16string(u"Alice"));
     QCOMPARE(port.lastRequest->roster.rows[0][6], std::u16string(u"\ufeffNotes"));
+    const auto decoded = Application::prepareRosterSave(value.roster, true, equals);
+    QCOMPARE(decoded.roster.columns[0], std::u16string(u"English"));
+    QCOMPARE(decoded.roster.rows[0][0], std::u16string(u"Alice"));
+    QCOMPARE(decoded.roster.rows[0][6], std::u16string(u"\ufeffNotes"));
+    QVERIFY(value == original);
     const auto feedback = Application::prepareRosterSaveText(value.roster, true, equals);
     QVERIFY(feedback.hasErrors());
     QCOMPARE(feedback.roster.rows[0][0], std::u16string(u"\ufeffAlice"));

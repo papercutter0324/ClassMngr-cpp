@@ -143,6 +143,13 @@ namespace ClassMngr::Next::Bootstrap
 namespace
 {
 
+[[nodiscard]] bool isDefaultProcessHeapDiagnosticEnabled()
+{
+    return qEnvironmentVariable(
+        "CLASSMNGR_P9_17_DEFAULT_PROCESS_HEAP_DIAGNOSTIC")
+        == QStringLiteral("1");
+}
+
 [[nodiscard]] Resources::ResourceResult<Resources::ResourceRequest> startupRequest(
     const Resources::ResourceScope& scope,
     const QString& logicalId
@@ -1533,7 +1540,8 @@ Application::StartupResult ApplicationBootstrap::start()
                             return std::nullopt;
                         }
                         return subPrepPage->visualMetrics();
-                    });
+                    },
+                    isDefaultProcessHeapDiagnosticEnabled());
         }
         catch (...)
         {
@@ -2043,10 +2051,50 @@ Application::StartupResult ApplicationBootstrap::start()
                     };
                     actions.rosterEditor.saveRoster = [](
                         const QString& databasePath,
-                        const Application::RosterSaveRequest& request
+                        Application::RosterSaveRequest request
                         ) {
-                        return Platform::saveRosterAtPath(databasePath, request);
+                        return Platform::saveRosterAtPath(
+                            databasePath, std::move(request));
                     };
+                    if (m_pageLifecycleDiagnosticsRecorder
+                        && m_pageLifecycleDiagnosticsRecorder
+                            ->defaultProcessHeapDiagnosticsEnabled())
+                    {
+                        actions.rosterEditor.saveRosterWithDiagnostics = [](
+                            const QString& databasePath,
+                            Application::RosterSaveRequest request,
+                            Application::RosterSaveDiagnosticObserver observer
+                            ) {
+                            return Platform::saveRosterWithDiagnosticsAtPath(
+                                databasePath, std::move(request), std::move(observer));
+                        };
+                        actions.rosterEditor.diagnosticCheckpoint = [this](
+                            const quint64 instanceId,
+                            const QString& checkpoint,
+                            const QString& outcome,
+                            const std::optional<int> row,
+                            const std::optional<int> column) {
+                            if (m_pageLifecycleDiagnosticsRecorder)
+                            {
+                                m_pageLifecycleDiagnosticsRecorder
+                                    ->recordRosterDefaultHeapCheckpoint(
+                                        instanceId, checkpoint, outcome,
+                                        row, column);
+                            }
+                        };
+                        actions.rosterEditor.saveStageDiagnosticCheckpoint = [this](
+                            const quint64 instanceId,
+                            const quint64 saveSequence,
+                            const Application::RosterSaveDiagnosticStage stage,
+                            const Application::RosterSaveDiagnosticOutcome outcome) {
+                            if (m_pageLifecycleDiagnosticsRecorder)
+                            {
+                                m_pageLifecycleDiagnosticsRecorder
+                                    ->recordRosterSaveStageCheckpoint(
+                                        instanceId, saveSequence, stage, outcome);
+                            }
+                        };
+                    }
                     actions.rosterEditor.columnHasTailData = [](
                         const QString& databasePath,
                         const Domain::ClassId& classId,
@@ -2356,9 +2404,48 @@ Application::StartupResult ApplicationBootstrap::start()
                         };
                         actions.rosterEditor.saveRoster = [](
                             const QString& databasePath,
-                            const Application::RosterSaveRequest& request) {
-                            return Platform::saveRosterAtPath(databasePath, request);
+                            Application::RosterSaveRequest request) {
+                            return Platform::saveRosterAtPath(
+                                databasePath, std::move(request));
                         };
+                        if (m_pageLifecycleDiagnosticsRecorder
+                            && m_pageLifecycleDiagnosticsRecorder
+                                ->defaultProcessHeapDiagnosticsEnabled())
+                        {
+                            actions.rosterEditor.saveRosterWithDiagnostics = [](
+                                const QString& databasePath,
+                                Application::RosterSaveRequest request,
+                                Application::RosterSaveDiagnosticObserver observer) {
+                                return Platform::saveRosterWithDiagnosticsAtPath(
+                                    databasePath, std::move(request), std::move(observer));
+                            };
+                            actions.rosterEditor.diagnosticCheckpoint = [this](
+                                const quint64 instanceId,
+                                const QString& checkpoint,
+                                const QString& outcome,
+                                const std::optional<int> row,
+                                const std::optional<int> column) {
+                                if (m_pageLifecycleDiagnosticsRecorder)
+                                {
+                                    m_pageLifecycleDiagnosticsRecorder
+                                        ->recordRosterDefaultHeapCheckpoint(
+                                            instanceId, checkpoint, outcome,
+                                            row, column);
+                                }
+                            };
+                            actions.rosterEditor.saveStageDiagnosticCheckpoint = [this](
+                                const quint64 instanceId,
+                                const quint64 saveSequence,
+                                const Application::RosterSaveDiagnosticStage stage,
+                                const Application::RosterSaveDiagnosticOutcome outcome) {
+                                if (m_pageLifecycleDiagnosticsRecorder)
+                                {
+                                    m_pageLifecycleDiagnosticsRecorder
+                                        ->recordRosterSaveStageCheckpoint(
+                                            instanceId, saveSequence, stage, outcome);
+                                }
+                            };
+                        }
                         actions.rosterEditor.columnHasTailData = [](
                             const QString& databasePath,
                             const Domain::ClassId& classId,

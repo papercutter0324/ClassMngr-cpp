@@ -4398,8 +4398,10 @@ set_tests_properties(ClassMngrNextTestingClassesManagerTests
 add_executable(ClassMngrNextRosterEditorTests
     tests/next/roster_editor_tests.cpp
     src/next/platform/workspace_store_roster_actions.cpp
+    src/next/ui/selected_class_editor.cpp
     src/next/ui/roster_editor_widget.cpp
     src/next/ui/roster_table_model.cpp
+    src/next/ui/selected_class_analytics_model.cpp
     $<TARGET_OBJECTS:ClassMngrOnScreenKeyboard>
 )
 target_compile_features(ClassMngrNextRosterEditorTests

@@ -693,9 +693,131 @@ RepositoryStatus RosterRepository::saveRosterWindowsWithParentCheck(
     return {};
 }
 
+RepositoryStatus RosterRepository::saveRosterWindowWithParentCheck(
+    const WindowSaveRowSource& source)
+{
+    const auto invalid = [](const QString& diagnostic) -> RepositoryStatus
+    {
+        return std::unexpected(RepositoryError{RepositoryErrorCode::InvalidInput, diagnostic});
+    };
+    constexpr std::size_t maximumRows = static_cast<std::size_t>(
+        ClassMngr::Next::Application::RosterMaximumRowCount);
+    if (source.classId <= 0 || source.columnCount == 0
+        || source.columnCount > static_cast<std::size_t>(std::numeric_limits<int>::max())
+        || source.columnWidthCount != source.columnCount
+        || source.rowCount > maximumRows
+        || !source.columnNameAt || !source.columnWidthAt
+        || !source.rowCellCountAt || !source.cellAt)
+    {
+        return invalid(QObject::tr("Invalid roster window save request."));
+    }
+    try
+    {
+        for (std::size_t row = 0; row < source.rowCount; ++row)
+        {
+            if (source.rowCellCountAt(row) > source.columnCount)
+            {
+                return invalid(QObject::tr("Roster window row exceeds its column count."));
+            }
+        }
+    }
+    catch (...)
+    {
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical,
+            QObject::tr("Roster window row source callback failed.")});
+    }
+
+    const QString identity = QObject::tr("class id %1").arg(source.classId);
+    DatabaseTransaction transaction(m_database, DatabaseTransaction::Mode::Immediate);
+    if (!transaction.started())
+    {
+        return std::unexpected(RepositoryError{RepositoryErrorCode::Technical,
+            transaction.startError()});
+    }
+    const auto fail = [&](RepositoryError error)
+    {
+        return rollbackRosterFailure(transaction, m_database, std::move(error),
+            QObject::tr("Rolling back roster window save failed for %1").arg(identity));
+    };
+
+    QSqlQuery parent(m_database);
+    parent.prepare(QStringLiteral("SELECT 1 FROM classes WHERE id=?"));
+    parent.addBindValue(source.classId);
+    if (!parent.exec())
+    {
+        return fail(RepositoryError{RepositoryErrorCode::Technical,
+            parent.lastError().text()});
+    }
+    const bool found = parent.next();
+    const auto fetchError = parent.lastError();
+    parent.finish();
+    if (fetchError.isValid())
+    {
+        return fail(RepositoryError{RepositoryErrorCode::Technical,
+            fetchError.text()});
+    }
+    if (!found)
+    {
+        return fail(RepositoryError{RepositoryErrorCode::NotFound,
+            QObject::tr("Roster parent class %1 was not found.").arg(source.classId)});
+    }
+
+    RepositoryStatus saved;
+    try
+    {
+        saved = writeRosterWindow(source);
+    }
+    catch (...)
+    {
+        return fail(RepositoryError{RepositoryErrorCode::Technical,
+            QObject::tr("Roster window row source callback failed.")});
+    }
+    if (!saved)
+    {
+        return fail(saved.error());
+    }
+    if (!transaction.commit())
+    {
+        return fail(RepositoryError{RepositoryErrorCode::Technical,
+            m_database.lastError().text()});
+    }
+    return {};
+}
+
 RepositoryStatus RosterRepository::writeRosterWindow(const WindowSaveRequest& window)
 {
-    const int preservedTailStart = static_cast<int>(window.roster.rows.size());
+    const Roster& roster = window.roster;
+    return writeRosterWindow(WindowSaveRowSource{
+        .classId = window.classId,
+        .columnCount = static_cast<std::size_t>(roster.columns.size()),
+        .columnWidthCount = static_cast<std::size_t>(roster.columnWidths.size()),
+        .rowCount = static_cast<std::size_t>(roster.rows.size()),
+        .removedCustomColumns = window.removedCustomColumns,
+        .columnNameAt = [&roster](const std::size_t column)
+        {
+            return roster.columns.at(static_cast<qsizetype>(column));
+        },
+        .columnWidthAt = [&roster](const std::size_t column)
+        {
+            return roster.columnWidths.at(static_cast<qsizetype>(column));
+        },
+        .rowCellCountAt = [&roster](const std::size_t row)
+        {
+            return static_cast<std::size_t>(
+                roster.rows.at(static_cast<qsizetype>(row)).size());
+        },
+        .cellAt = [&roster](const std::size_t row, const std::size_t column)
+        {
+            return roster.rows.at(static_cast<qsizetype>(row)).at(
+                static_cast<qsizetype>(column));
+        }
+    });
+}
+
+RepositoryStatus RosterRepository::writeRosterWindow(
+    const WindowSaveRowSource& window)
+{
+    const int preservedTailStart = static_cast<int>(window.rowCount);
     const auto equals = [](std::u16string_view left, std::u16string_view right)
     {
         return QStringView(left.data(), static_cast<qsizetype>(left.size())).compare(
@@ -722,9 +844,9 @@ RepositoryStatus RosterRepository::writeRosterWindow(const WindowSaveRequest& wi
     };
 
     QStringList targetNames;
-    for (const auto& name : window.roster.columns)
+    for (std::size_t column = 0; column < window.columnCount; ++column)
     {
-        const auto normalized = identity(name);
+        const auto normalized = identity(window.columnNameAt(column));
         if (normalized.isEmpty() || targetNames.contains(normalized, Qt::CaseInsensitive))
             return invalidMapping(RepositoryErrorCode::InvalidInput);
         targetNames.append(normalized);
@@ -840,7 +962,7 @@ RepositoryStatus RosterRepository::writeRosterWindow(const WindowSaveRequest& wi
 
     // The staging table includes every retained tail cell, with only its column
     // ordinal changed. In particular row 25 never fills a removed visible row.
-    result = writeRoster(window.classId, window.roster);
+    result = writeRosterWindowRows(window);
     if (!result)
         return result;
     query.prepare(QStringLiteral(
@@ -853,6 +975,90 @@ RepositoryStatus RosterRepository::writeRosterWindow(const WindowSaveRequest& wi
     if (!result)
         return result;
     return exec(QStringLiteral("DROP TABLE %1").arg(mapTable));
+}
+
+RepositoryStatus RosterRepository::writeRosterWindowRows(
+    const WindowSaveRowSource& source)
+{
+    QSqlQuery query(m_database);
+    const QString identity = QObject::tr("class id %1").arg(source.classId);
+    auto execute = [&](const QString& action) -> RepositoryStatus
+    {
+        const auto result = SqlQueryUtils::executePrepared(query, action, identity);
+        return result
+            ? RepositoryStatus{}
+            : RepositoryStatus(std::unexpected(
+                SqlQueryUtils::repositoryErrorFor(result.error())));
+    };
+
+    query.prepare("DELETE FROM roster_columns WHERE class_id=?");
+    query.addBindValue(source.classId);
+    RepositoryStatus statement = execute(QObject::tr("Deleting roster columns"));
+    if (!statement)
+    {
+        return statement;
+    }
+
+    query.prepare("DELETE FROM roster_data WHERE class_id=?");
+    query.addBindValue(source.classId);
+    statement = execute(QObject::tr("Deleting roster data"));
+    if (!statement)
+    {
+        return statement;
+    }
+
+    for (std::size_t column = 0; column < source.columnCount; ++column)
+    {
+        query.prepare(R"(
+            INSERT INTO roster_columns (class_id, name, position, width)
+            VALUES (?, ?, ?, ?)
+        )");
+        query.addBindValue(source.classId);
+        query.addBindValue(source.columnNameAt(column));
+        query.addBindValue(static_cast<int>(column));
+        query.addBindValue(source.columnWidthAt(column));
+        statement = execute(QObject::tr("Inserting roster column"));
+        if (!statement)
+        {
+            return statement;
+        }
+    }
+
+    const QString insertRosterDataSql = QStringLiteral(R"(
+        INSERT INTO roster_data (class_id, row_index, col_index, value)
+        VALUES (?, ?, ?, ?)
+    )");
+    bool rosterDataInsertPrepared = false;
+    for (std::size_t row = 0; row < source.rowCount; ++row)
+    {
+        const std::size_t rowCellCount = source.rowCellCountAt(row);
+        for (std::size_t column = 0; column < source.columnCount; ++column)
+        {
+            const QString value = column < rowCellCount
+                ? source.cellAt(row, column)
+                : QString{};
+            if (value.isEmpty())
+            {
+                continue;
+            }
+
+            if (!rosterDataInsertPrepared)
+            {
+                query.prepare(insertRosterDataSql);
+                rosterDataInsertPrepared = true;
+            }
+            query.bindValue(0, source.classId);
+            query.bindValue(1, static_cast<int>(row));
+            query.bindValue(2, static_cast<int>(column));
+            query.bindValue(3, value);
+            statement = execute(QObject::tr("Inserting roster data"));
+            if (!statement)
+            {
+                return statement;
+            }
+        }
+    }
+    return {};
 }
 
 RepositoryStatus RosterRepository::writeRoster(
@@ -931,6 +1137,17 @@ RepositoryStatus RosterRepository::writeRoster(
         }
     }
 
+    const QString insertRosterDataSql = QStringLiteral(R"(
+        INSERT INTO roster_data (
+            class_id,
+            row_index,
+            col_index,
+            value
+        )
+        VALUES (?, ?, ?, ?)
+    )");
+    bool rosterDataInsertPrepared = false;
+
     for (int row = 0; row < roster.rows.size(); ++row)
     {
         const QStringList& rowValues =
@@ -948,20 +1165,16 @@ RepositoryStatus RosterRepository::writeRoster(
                 continue;
             }
 
-            query.prepare(R"(
-                INSERT INTO roster_data (
-                    class_id,
-                    row_index,
-                    col_index,
-                    value
-                )
-                VALUES (?, ?, ?, ?)
-            )");
+            if (!rosterDataInsertPrepared)
+            {
+                query.prepare(insertRosterDataSql);
+                rosterDataInsertPrepared = true;
+            }
 
-            query.addBindValue(classId);
-            query.addBindValue(row);
-            query.addBindValue(column);
-            query.addBindValue(value);
+            query.bindValue(0, classId);
+            query.bindValue(1, row);
+            query.bindValue(2, column);
+            query.bindValue(3, value);
 
             statement = execute(QObject::tr("Inserting roster data"));
             if (!statement)

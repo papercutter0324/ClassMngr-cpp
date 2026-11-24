@@ -263,18 +263,14 @@ void SelectedClassEditor::ensureUi()
     m_rosterTab->setObjectName(QStringLiteral("selectedClassRosterTab"));
     auto* const rosterLayout = new QVBoxLayout(m_rosterTab);
     rosterLayout->setContentsMargins(0, 0, 0, 0);
-    auto* const rosterScrollArea = new QScrollArea(m_rosterTab);
-    rosterScrollArea->setObjectName(
+    m_rosterScrollArea = new QScrollArea(m_rosterTab);
+    m_rosterScrollArea->setObjectName(
         QStringLiteral("selectedClassRosterScrollArea"));
-    rosterScrollArea->setWidgetResizable(true);
-    rosterScrollArea->setFrameShape(QFrame::NoFrame);
-    rosterScrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustIgnored);
-    m_rosterEditor = new RosterEditorWidget(m_actions.rosterEditor);
-    rosterScrollArea->setWidget(m_rosterEditor);
-    rosterLayout->addWidget(rosterScrollArea);
-    m_rosterEditor->setDirtyChangedCallback([this](const bool) {
-        updateDirtyState();
-    });
+    m_rosterScrollArea->setWidgetResizable(true);
+    m_rosterScrollArea->setFrameShape(QFrame::NoFrame);
+    m_rosterScrollArea->setSizeAdjustPolicy(QAbstractScrollArea::AdjustIgnored);
+    rosterLayout->addWidget(m_rosterScrollArea);
+    ensureRosterEditor();
     m_sections->addTab(m_detailsTab, translated("Class Details and Times"));
     m_sections->addTab(m_coTeacherTab, translated("Co-Teacher"));
     m_sections->addTab(m_notesTab, translated("Notes"));
@@ -303,7 +299,7 @@ void SelectedClassEditor::ensureUi()
         }
         if (previousIndex == 4 && index != 4 && m_rosterEditor)
         {
-            m_rosterEditor->clear();
+            releaseRosterEditor(true);
         }
         m_previousSectionIndex = index;
         if (previousIndex == 3 && index != 3)
@@ -330,6 +326,46 @@ void SelectedClassEditor::ensureUi()
         }
     });
     retranslateUi();
+}
+
+void SelectedClassEditor::ensureRosterEditor()
+{
+    if (m_rosterEditor || !m_rosterScrollArea)
+    {
+        return;
+    }
+    m_rosterEditor = new RosterEditorWidget(m_actions.rosterEditor);
+    m_rosterEditor->setSaveMode(m_saveMode);
+    m_rosterScrollArea->setWidget(m_rosterEditor);
+    m_rosterEditor->setDirtyChangedCallback([this](const bool) {
+        updateDirtyState();
+    });
+}
+
+void SelectedClassEditor::releaseRosterEditor(const bool successfulLeave)
+{
+    if (!m_rosterEditor)
+    {
+        return;
+    }
+    RosterEditorWidget* const editor = m_rosterEditor;
+    m_rosterEditor = nullptr;
+    if (m_rosterScrollArea && m_rosterScrollArea->widget() == editor)
+    {
+        static_cast<void>(m_rosterScrollArea->takeWidget());
+    }
+    if (successfulLeave)
+    {
+        editor->markSuccessfulLeave();
+    }
+    const std::function<void()> postDestructionCheckpoint =
+        editor->postDestructionDiagnosticCheckpoint();
+    delete editor;
+    if (postDestructionCheckpoint)
+    {
+        postDestructionCheckpoint();
+    }
+    updateDirtyState();
 }
 
 void SelectedClassEditor::ensureAnalyticsUi()
@@ -781,6 +817,11 @@ void SelectedClassEditor::loadClass(
     {
         return;
     }
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->finishEditing();
+        releaseRosterEditor();
+    }
     m_detailsAutosave->stop();
     m_notesAutosave->stop();
     m_classId = classId;
@@ -833,10 +874,6 @@ void SelectedClassEditor::loadClass(
     m_emptyState->hide();
     m_sections->show();
     m_loading = false;
-    if (m_rosterEditor)
-    {
-        m_rosterEditor->clear();
-    }
     clearNotesDisplay();
     clearAnalyticsDisplay();
     readClassDetails();
@@ -845,6 +882,11 @@ void SelectedClassEditor::loadClass(
 
 void SelectedClassEditor::clear()
 {
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->finishEditing();
+        releaseRosterEditor();
+    }
     m_detailsAutosave->stop();
     m_notesAutosave->stop();
     m_classId.reset();
@@ -871,10 +913,6 @@ void SelectedClassEditor::clear()
     m_savedNotes.clear();
     m_savedTimeFillerActivities.clear();
     m_notesSubtitle.clear();
-    if (m_rosterEditor)
-    {
-        m_rosterEditor->clear();
-    }
     if (m_sections)
     {
         m_loading = true;
@@ -945,6 +983,10 @@ void SelectedClassEditor::setSaveMode(const Application::SaveMode mode)
 
 bool SelectedClassEditor::resolveUnsavedChanges(const QString& reason)
 {
+    if (m_rosterEditor)
+    {
+        m_rosterEditor->finishEditing();
+    }
     if (!hasUnsavedChanges())
     {
         return true;
@@ -1238,8 +1280,13 @@ bool SelectedClassEditor::loadNotesIfNeeded()
 
 void SelectedClassEditor::loadRosterIfNeeded()
 {
-    if (m_rosterEditor && m_databasePath && m_classId)
+    if (m_databasePath && m_classId)
     {
+        ensureRosterEditor();
+        if (!m_rosterEditor)
+        {
+            return;
+        }
         m_rosterEditor->enterClassSection(*m_databasePath, *m_classId);
     }
 }

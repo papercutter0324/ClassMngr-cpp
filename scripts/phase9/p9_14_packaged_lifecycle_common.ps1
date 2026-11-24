@@ -853,10 +853,21 @@ function Invoke-P914NaturalClose([object]$Context, [object]$Manifest, [string]$E
     if ($null -eq $root) { throw 'Natural close could not resolve the measured main window.' }
     $snapshot = Get-P914ControlSnapshot $Context $root
     $closeAction = [ordered]@{ actionKind = 'close-main-window-naturally'; method = 'WindowPattern.Close'; issuedAtUtc = Get-P914Utc; target = $snapshot; forcedTermination = $false }
-    $Manifest.route.actions.Add($closeAction); Add-P914JsonLine (Join-Path $EvidenceDirectory 'uia-actions.jsonl') $closeAction
-    $pattern = [System.Windows.Automation.WindowPattern]$root.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern); $pattern.Close(); $closeAction.closeReturnedAtUtc = Get-P914Utc
-    $exit = Wait-P914ProcessExit $Context $EvidenceDirectory $TimeoutSeconds
-    $closeAction.processExitEvidence = $exit; $Context.closeAction = $closeAction; $Context.processExit = $exit
+    $Manifest.route.actions.Add($closeAction)
+    try {
+        $pattern = [System.Windows.Automation.WindowPattern]$root.GetCurrentPattern([System.Windows.Automation.WindowPattern]::Pattern)
+        $pattern.Close()
+        $closeAction.closeReturnedAtUtc = Get-P914Utc
+        $closeAction.completedAtUtc = $closeAction.closeReturnedAtUtc
+        $exit = Wait-P914ProcessExit $Context $EvidenceDirectory $TimeoutSeconds
+        $closeAction.processExitEvidence = $exit
+        $Context.closeAction = $closeAction; $Context.processExit = $exit
+    } catch {
+        $Context.closeAction = $closeAction
+        Add-P914JsonLine (Join-Path $EvidenceDirectory 'uia-actions.jsonl') $closeAction
+        throw
+    }
+    Add-P914JsonLine (Join-Path $EvidenceDirectory 'uia-actions.jsonl') $closeAction
     if (-not [bool]$exit.normalExit -or $null -eq $exit.exitCode -or [int]$exit.exitCode -ne 0) { throw 'Packaged app did not exit naturally with code 0 after WindowPattern.Close.' }
     return $exit
 }

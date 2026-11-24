@@ -166,11 +166,11 @@ struct RosterSavePreparation final
 };
 
 [[nodiscard]] inline bool hasOnlyQuestionableKoreanNameLengthErrors(
-    const RosterSavePreparation& prepared
+    const std::vector<RosterSaveIssue>& issues
     )
 {
     return ManualSaveEligibilityDetail::hasOnlyQuestionableKoreanNameLengthErrors(
-        prepared.issues,
+        issues,
         [](const RosterSaveIssue& issue)
         {
             return issue.severity == RosterSaveIssueSeverity::Error;
@@ -183,12 +183,32 @@ struct RosterSavePreparation final
         );
 }
 
+[[nodiscard]] inline bool hasOnlyQuestionableKoreanNameLengthErrors(
+    const RosterSavePreparation& prepared
+    )
+{
+    return hasOnlyQuestionableKoreanNameLengthErrors(prepared.issues);
+}
+
 inline constexpr std::size_t RosterSaveMaximumRows = RosterMaximumRowCount;
 inline constexpr std::size_t RosterSaveMaximumColumnNameLength =
     RosterMaximumColumnNameLength;
 inline constexpr std::size_t RosterSaveMaximumCellLength = 10000;
 inline constexpr std::array<std::u16string_view, 6> RosterSaveRequiredColumns{
     u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall"
+};
+
+// The reader copies each requested value into caller-owned scratch storage.
+// Adapters can expose text from other string types without aliasing their
+// storage or creating a full owning RosterSnapshot for issue-only validation.
+struct RosterSaveTextReader final
+{
+    std::size_t columnCount = 0;
+    std::size_t columnWidthCount = 0;
+    std::size_t rowCount = 0;
+    std::function<void(std::size_t, std::u16string&)> copyColumnText;
+    std::function<std::size_t(std::size_t)> rowCellCount;
+    std::function<void(std::size_t, std::size_t, std::u16string&)> copyCellText;
 };
 
 namespace RosterSavePreparationDetail
@@ -270,13 +290,91 @@ inline int columnIndex(const std::vector<std::u16string>& columns,
     return -1;
 }
 
-inline void lengthIssue(RosterSavePreparation& result, const std::u16string_view value,
+inline std::u16string normalizeColumnName(
+    const std::u16string_view value,
+    const RosterSaveCaseInsensitiveEquals& equals)
+{
+    std::u16string normalized = normalizeRosterCustomColumnName(value, equals);
+    for (const auto required : RosterSaveRequiredColumns)
+    {
+        if (equals(normalized, required))
+        {
+            normalized = required;
+            break;
+        }
+    }
+    return normalized;
+}
+
+inline void simplifyCustomCellWhitespaceInto(
+    const std::u16string_view value,
+    std::u16string& destination)
+{
+    destination.clear();
+    destination.reserve(value.size());
+
+    bool hasContent = false;
+    bool pendingSpace = false;
+    for (const char16_t character : value)
+    {
+        if (isQtWhitespace(character))
+        {
+            pendingSpace = hasContent;
+            continue;
+        }
+
+        if (pendingSpace)
+            destination.push_back(u' ');
+        destination.push_back(character);
+        hasContent = true;
+        pendingSpace = false;
+    }
+}
+
+inline void normalizeCellText(
+    const std::u16string_view value,
+    const int column,
+    const int english,
+    const int korean,
+    std::u16string& destination)
+{
+    if (column == english)
+    {
+        auto normalized = Names::normalizeEnglishName(value);
+        if (normalized.size() > destination.capacity())
+            destination = std::move(normalized);
+        else
+            destination.assign(normalized);
+        return;
+    }
+    if (column == korean)
+    {
+        auto normalized = normalizeKoreanName(value);
+        if (normalized.size() > destination.capacity())
+            destination = std::move(normalized);
+        else
+            destination.assign(normalized);
+        return;
+    }
+    simplifyCustomCellWhitespaceInto(value, destination);
+}
+
+inline bool containsNonWhitespace(const std::u16string_view value) noexcept
+{
+    return std::ranges::any_of(value, [](const char16_t character)
+    {
+        return !isQtWhitespace(character);
+    });
+}
+
+inline void lengthIssue(std::vector<RosterSaveIssue>& issues,
+                        const std::u16string_view value,
                         const std::size_t minimum, const std::size_t maximum,
                         const std::u16string& field, const int row, const int column)
 {
     if (value.size() < minimum || value.size() > maximum)
     {
-        result.issues.push_back({
+        issues.push_back({
             .code = RosterSaveIssueCode::ValidationLengthOutOfBounds, .field = field,
             .row = RosterSaveIssueRowIndex{row},
             .column = RosterSaveIssueColumnIndex{column},
@@ -287,7 +385,8 @@ inline void lengthIssue(RosterSavePreparation& result, const std::u16string_view
     }
 }
 
-inline void nameIssues(RosterSavePreparation& result, const std::u16string_view value,
+inline void nameIssues(std::vector<RosterSaveIssue>& issues,
+                       const std::u16string_view value,
                        const std::u16string& field, const int row, const int column,
                        const bool korean, const bool allowQuestionableLengths)
 {
@@ -295,7 +394,7 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
                             const RosterSaveIssueSeverity severity = RosterSaveIssueSeverity::Error,
                             std::map<std::string, RosterSaveIssueArgument> arguments = {})
     {
-        result.issues.push_back({
+        issues.push_back({
             code,
             field,
             RosterSaveIssueRowIndex{row},
@@ -332,135 +431,147 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
         append(RosterSaveIssueCode::StudentNameKoreanUnusualLength,
                RosterSaveIssueSeverity::Warning);
 }
-} // namespace RosterSavePreparationDetail
 
-// Prepares logical text (the UI's existing QString values). The comparator
-// preserves Unicode case rules without Qt. Shapes and malformed values survive.
-[[nodiscard]] inline RosterSavePreparation prepareRosterSaveText(
-    const RosterSnapshot& snapshot,
+inline std::vector<RosterSaveIssue> collectIssues(
+    const RosterSaveTextReader& source,
     const bool allowQuestionableKoreanNameLengths,
-    const RosterSaveCaseInsensitiveEquals& equals)
+    const RosterSaveCaseInsensitiveEquals& equals,
+    RosterSnapshot* const normalizedRoster)
 {
-    using namespace RosterSavePreparationDetail;
-    RosterSavePreparation result{.roster = snapshot};
-    auto& roster = result.roster;
-    for (auto& column : roster.columns)
+    std::vector<RosterSaveIssue> issues;
+    std::vector<std::u16string> columns;
+    columns.reserve(source.columnCount);
+    std::u16string scratch;
+    for (std::size_t column = 0; column < source.columnCount; ++column)
     {
-        column = normalizeRosterCustomColumnName(column, equals);
-        for (const auto required : RosterSaveRequiredColumns)
-        {
-            if (equals(column, required))
-            {
-                column = required;
-                break;
-            }
-        }
+        source.copyColumnText(column, scratch);
+        columns.push_back(normalizeColumnName(scratch, equals));
+        if (normalizedRoster && column < normalizedRoster->columns.size())
+            normalizedRoster->columns[column] = columns.back();
     }
-    const int english = columnIndex(roster.columns, u"English", equals);
-    const int korean = columnIndex(roster.columns, u"Korean", equals);
-    for (auto& row : roster.rows)
-    {
-        for (std::size_t column = 0; column < row.size(); ++column)
-        {
-            const auto& value = row[column];
-            row[column] = static_cast<int>(column) == english
-                ? Names::normalizeEnglishName(value)
-                : static_cast<int>(column) == korean
-                    ? normalizeKoreanName(value)
-                    : simplifyQtWhitespace(value);
-        }
-    }
+
+    const int english = columnIndex(columns, u"English", equals);
+    const int korean = columnIndex(columns, u"Korean", equals);
     for (const auto required : RosterSaveRequiredColumns)
     {
-        if (columnIndex(roster.columns, required, equals) < 0)
+        if (columnIndex(columns, required, equals) < 0)
         {
-            result.issues.push_back({.code = RosterSaveIssueCode::RosterColumnRequired,
-                                    .field = u"columns",
-                                    .arguments = {{"column", std::u16string(required)}}});
+            issues.push_back({.code = RosterSaveIssueCode::RosterColumnRequired,
+                .field = u"columns",
+                .arguments = {{"column", std::u16string(required)}}});
         }
     }
-    for (std::size_t column = 0; column < roster.columns.size(); ++column)
+    for (std::size_t column = 0; column < columns.size(); ++column)
     {
         const auto field = u"columns[" + number(column) + u"]";
-        lengthIssue(result, roster.columns[column], 1, RosterSaveMaximumColumnNameLength,
+        lengthIssue(issues, columns[column], 1, RosterSaveMaximumColumnNameLength,
                     field, -1, static_cast<int>(column));
         for (std::size_t previous = 0; previous < column; ++previous)
         {
-            if (equals(roster.columns[column], roster.columns[previous]))
+            if (equals(columns[column], columns[previous]))
             {
-                result.issues.push_back({.code = RosterSaveIssueCode::RosterColumnDuplicate,
+                issues.push_back({.code = RosterSaveIssueCode::RosterColumnDuplicate,
                     .field = field,
-                    .column = RosterSaveIssueColumnIndex{
-                        static_cast<int>(column)
-                        },
+                    .column = RosterSaveIssueColumnIndex{static_cast<int>(column)},
                     .arguments = {{"duplicateColumn", static_cast<std::int64_t>(previous)}}});
                 break;
             }
         }
     }
-    if (roster.columnWidths.size() > roster.columns.size())
+    if (source.columnWidthCount > source.columnCount)
     {
-        result.issues.push_back({.code = RosterSaveIssueCode::RosterColumnWidthsInvalidCount,
+        issues.push_back({.code = RosterSaveIssueCode::RosterColumnWidthsInvalidCount,
             .field = u"columnWidths",
-            .arguments = {{"widthCount", static_cast<std::int64_t>(roster.columnWidths.size())},
-                          {"columnCount", static_cast<std::int64_t>(roster.columns.size())}}});
+            .arguments = {{"widthCount", static_cast<std::int64_t>(source.columnWidthCount)},
+                          {"columnCount", static_cast<std::int64_t>(source.columnCount)}}});
     }
-    if (roster.rows.size() > RosterSaveMaximumRows)
+    if (source.rowCount > RosterSaveMaximumRows)
     {
-        result.issues.push_back({.code = RosterSaveIssueCode::RosterRowsTooMany, .field = u"rows",
+        issues.push_back({.code = RosterSaveIssueCode::RosterRowsTooMany, .field = u"rows",
             .arguments = {{"maximumRows", static_cast<std::int64_t>(RosterSaveMaximumRows)},
-                          {"rowCount", static_cast<std::int64_t>(roster.rows.size())}}});
+                          {"rowCount", static_cast<std::int64_t>(source.rowCount)}}});
     }
-    for (std::size_t rowIndex = 0; rowIndex < roster.rows.size(); ++rowIndex)
+
+    std::vector<std::optional<Domain::StudentNamePair>> pairs;
+    if (english >= 0 && korean >= 0)
+        pairs.reserve(source.rowCount);
+    std::u16string rawCell;
+    std::u16string normalizedCell;
+    for (std::size_t rowIndex = 0; rowIndex < source.rowCount; ++rowIndex)
     {
-        const auto& row = roster.rows[rowIndex];
-        const int r = static_cast<int>(rowIndex);
+        const std::size_t cellCount = source.rowCellCount(rowIndex);
+        const int row = static_cast<int>(rowIndex);
         const auto rowField = u"rows[" + number(rowIndex) + u"]";
-        if (row.size() > roster.columns.size())
+        if (cellCount > source.columnCount)
         {
-            result.issues.push_back({.code = RosterSaveIssueCode::RosterRowTooManyCells,
+            issues.push_back({.code = RosterSaveIssueCode::RosterRowTooManyCells,
                 .field = rowField,
-                .row = RosterSaveIssueRowIndex{r},
-                .arguments = {{"cellCount", static_cast<std::int64_t>(row.size())},
-                              {"columnCount", static_cast<std::int64_t>(roster.columns.size())}}});
+                .row = RosterSaveIssueRowIndex{row},
+                .arguments = {{"cellCount", static_cast<std::int64_t>(cellCount)},
+                              {"columnCount", static_cast<std::int64_t>(source.columnCount)}}});
         }
-        for (std::size_t column = 0; column < row.size(); ++column)
+
+        bool rowHasData = false;
+        std::u16string englishText;
+        std::u16string koreanText;
+        for (std::size_t column = 0; column < cellCount; ++column)
         {
-            const auto field = column < roster.columns.size()
-                ? rowField + u"." + roster.columns[column]
-                : rowField + u".cells[" + number(column) + u"]";
-            lengthIssue(result, row[column], 0, RosterSaveMaximumCellLength,
-                        field, r, static_cast<int>(column));
-        }
-        if (!rosterRowHasData(row))
-            continue;
-        for (const auto& [column, name] : std::array<std::pair<int, std::u16string_view>, 2>{
-                 {{english, u"English"}, {korean, u"Korean"}}})
-        {
-            const auto field = rowField + u"." + std::u16string(name);
-            if (trimQtWhitespace(Names::cell(row, column)).empty())
+            source.copyCellText(rowIndex, column, rawCell);
+            normalizeCellText(
+                rawCell, static_cast<int>(column), english, korean, normalizedCell);
+            if (normalizedCell.size() > RosterSaveMaximumCellLength)
             {
-                result.issues.push_back({.code = RosterSaveIssueCode::RosterStudentNameRequired,
-                    .field = field,
-                    .row = RosterSaveIssueRowIndex{r},
-                    .column = RosterSaveIssueColumnIndex{column},
-                    .arguments = {{"field", field}}});
+                const auto field = column < columns.size()
+                    ? rowField + u"." + columns[column]
+                    : rowField + u".cells[" + number(column) + u"]";
+                lengthIssue(issues, normalizedCell, 0, RosterSaveMaximumCellLength,
+                            field, row, static_cast<int>(column));
+            }
+            rowHasData = rowHasData || containsNonWhitespace(normalizedCell);
+            if (static_cast<int>(column) == english)
+                englishText = normalizedCell;
+            if (static_cast<int>(column) == korean)
+                koreanText = normalizedCell;
+            if (normalizedRoster && rowIndex < normalizedRoster->rows.size()
+                && column < normalizedRoster->rows[rowIndex].size())
+            {
+                normalizedRoster->rows[rowIndex][column] = normalizedCell;
             }
         }
-        if (!trimQtWhitespace(Names::cell(row, english)).empty())
-            nameIssues(result, Names::cell(row, english), rowField + u".English", r, english, false, false);
-        if (!trimQtWhitespace(Names::cell(row, korean)).empty())
-            nameIssues(result, Names::cell(row, korean), rowField + u".Korean", r, korean, true,
-                       allowQuestionableKoreanNameLengths);
-    }
-    if (english >= 0 && korean >= 0)
-    {
-        std::vector<std::optional<Domain::StudentNamePair>> pairs;
-        for (const auto& row : roster.rows)
+
+        if (rowHasData)
+        {
+            for (const auto& [column, name] :
+                 std::array<std::pair<int, std::u16string_view>, 2>{
+                     {{english, u"English"}, {korean, u"Korean"}}})
+            {
+                const auto field = rowField + u"." + std::u16string(name);
+                const std::u16string& value = column == english ? englishText : koreanText;
+                if (!containsNonWhitespace(value))
+                {
+                    issues.push_back({.code = RosterSaveIssueCode::RosterStudentNameRequired,
+                        .field = field,
+                        .row = RosterSaveIssueRowIndex{row},
+                        .column = RosterSaveIssueColumnIndex{column},
+                        .arguments = {{"field", field}}});
+                }
+            }
+            if (containsNonWhitespace(englishText))
+                nameIssues(issues, englishText, rowField + u".English", row, english,
+                           false, false);
+            if (containsNonWhitespace(koreanText))
+                nameIssues(issues, koreanText, rowField + u".Korean", row, korean,
+                           true, allowQuestionableKoreanNameLengths);
+        }
+        if (english >= 0 && korean >= 0)
         {
             pairs.push_back(Domain::StudentNamePair::fromNames(
-                trimQtWhitespace(Names::cell(row, english)), trimQtWhitespace(Names::cell(row, korean))));
+                trimQtWhitespace(englishText), trimQtWhitespace(koreanText)));
         }
+    }
+
+    if (english >= 0 && korean >= 0)
+    {
         for (const auto& duplicate : Domain::duplicateStudentNamePairGroups(pairs))
         {
             std::vector<Domain::DuplicateStudentNamePairRowIndex> rows;
@@ -469,12 +580,12 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
             for (const auto rowIndex : rows)
             {
                 const int row = static_cast<int>(rowIndex.rawValue());
-                result.issues.push_back({.code = RosterSaveIssueCode::StudentNameDuplicatePair,
+                issues.push_back({.code = RosterSaveIssueCode::StudentNameDuplicatePair,
                     .field = u"English",
                     .row = RosterSaveIssueRowIndex{row},
                     .column = RosterSaveIssueColumnIndex{english},
                     .arguments = {{"duplicateRows", rows}}});
-                result.issues.push_back({.code = RosterSaveIssueCode::StudentNameDuplicatePair,
+                issues.push_back({.code = RosterSaveIssueCode::StudentNameDuplicatePair,
                     .field = u"Korean",
                     .row = RosterSaveIssueRowIndex{row},
                     .column = RosterSaveIssueColumnIndex{korean},
@@ -482,23 +593,68 @@ inline void nameIssues(RosterSavePreparation& result, const std::u16string_view 
             }
         }
     }
+    return issues;
+}
+} // namespace RosterSavePreparationDetail
+
+// Validates a borrowed text source without materializing its complete roster.
+// Column and cell values are copied into reusable caller-owned scratch strings.
+[[nodiscard]] inline std::vector<RosterSaveIssue> validateRosterSaveTextIssues(
+    const RosterSaveTextReader& source,
+    const bool allowQuestionableKoreanNameLengths,
+    const RosterSaveCaseInsensitiveEquals& equals)
+{
+    return RosterSavePreparationDetail::collectIssues(
+        source, allowQuestionableKoreanNameLengths, equals, nullptr);
+}
+
+// Prepares logical text (the UI's existing QString values). The comparator
+// preserves Unicode case rules without Qt. Shapes and malformed values survive.
+[[nodiscard]] inline RosterSavePreparation prepareRosterSaveText(
+    RosterSnapshot snapshot,
+    const bool allowQuestionableKoreanNameLengths,
+    const RosterSaveCaseInsensitiveEquals& equals)
+{
+    using namespace RosterSavePreparationDetail;
+    RosterSavePreparation result{.roster = std::move(snapshot)};
+    auto& roster = result.roster;
+    RosterSaveTextReader source{
+        .columnCount = roster.columns.size(),
+        .columnWidthCount = roster.columnWidths.size(),
+        .rowCount = roster.rows.size(),
+        .copyColumnText = [&roster](const std::size_t column, std::u16string& destination)
+        {
+            destination = roster.columns.at(column);
+        },
+        .rowCellCount = [&roster](const std::size_t row)
+        {
+            return roster.rows.at(row).size();
+        },
+        .copyCellText = [&roster](const std::size_t row, const std::size_t column,
+                                  std::u16string& destination)
+        {
+            destination = roster.rows.at(row).at(column);
+        }
+    };
+    result.issues = collectIssues(
+        source, allowQuestionableKoreanNameLengths, equals, &roster);
     return result;
 }
 
 // Raw save snapshots preserve the old Platform fromUtf16 conversion boundary.
 // The UI calls prepareRosterSaveText for feedback without changing its request.
 [[nodiscard]] inline RosterSavePreparation prepareRosterSave(
-    const RosterSnapshot& snapshot,
+    RosterSnapshot snapshot,
     const bool allowQuestionableKoreanNameLengths,
     const RosterSaveCaseInsensitiveEquals& equals)
 {
-    RosterSnapshot decoded = snapshot;
-    for (auto& column : decoded.columns)
+    for (auto& column : snapshot.columns)
         column = RosterSavePreparationDetail::snapshotText(column);
-    for (auto& row : decoded.rows)
+    for (auto& row : snapshot.rows)
         for (auto& cell : row)
             cell = RosterSavePreparationDetail::snapshotText(cell);
-    return prepareRosterSaveText(decoded, allowQuestionableKoreanNameLengths, equals);
+    return prepareRosterSaveText(
+        std::move(snapshot), allowQuestionableKoreanNameLengths, equals);
 }
 
 } // namespace ClassMngr::Next::Application

@@ -55,6 +55,7 @@ public:
     void retranslate();
     void setColumnWidth(int column, int width);
     [[nodiscard]] Application::RosterSnapshot snapshot() const;
+    [[nodiscard]] bool rowHasData(int row) const;
     [[nodiscard]] const std::vector<Application::RosterSaveIssue>&
         validationIssues() const noexcept;
     [[nodiscard]] std::optional<QModelIndex> firstErrorIndex() const;
@@ -82,6 +83,7 @@ private:
     [[nodiscard]] int calculateVisibleRows() const;
     void refreshVisibleRows();
     void setDirty(bool dirty);
+    [[nodiscard]] bool rowHasValidationData(int row) const;
     [[nodiscard]] bool isNameColumn(int column, const QString& name) const;
 
     QVector<QString> m_columns;

@@ -7,7 +7,9 @@
 #include "next/application/roster_save_preparation.h"
 
 #include <cstdint>
+#include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace ClassMngr::Next::Application
@@ -41,6 +43,48 @@ struct PreparedRosterSaveRequest final
         ) = default;
 };
 
+enum class RosterSaveDiagnosticStage
+{
+    BeforeSnapshot,
+    AfterSnapshot,
+    AfterPreparation,
+    BeforeRowSourceSetup,
+    AfterRowSourceSetup,
+    BeforeRowWiseRepositoryWrite,
+    AfterRowWiseRepositoryWrite
+};
+
+enum class RosterSaveDiagnosticOutcome
+{
+    Observed,
+    Success,
+    Failure
+};
+
+using RosterSaveDiagnosticObserver = std::function<void(
+    RosterSaveDiagnosticStage,
+    RosterSaveDiagnosticOutcome)>;
+
+inline void reportRosterSaveDiagnostic(
+    const RosterSaveDiagnosticObserver& observer,
+    const RosterSaveDiagnosticStage stage,
+    const RosterSaveDiagnosticOutcome outcome
+    ) noexcept
+{
+    if (!observer)
+    {
+        return;
+    }
+    try
+    {
+        observer(stage, outcome);
+    }
+    catch (...)
+    {
+        // Diagnostic callbacks must not change roster save behavior.
+    }
+}
+
 class RosterSavePort
 {
 public:
@@ -51,15 +95,27 @@ public:
     [[nodiscard]] virtual Domain::Result<void> saveRoster(
         const PreparedRosterSaveRequest& request
         ) const = 0;
+
+    // Existing ports can ignore diagnostics. Platform ports that perform
+    // legacy conversion and repository I/O can override this boundary.
+    [[nodiscard]] virtual Domain::Result<void> saveRosterWithDiagnostics(
+        const PreparedRosterSaveRequest& request,
+        const RosterSaveDiagnosticObserver& observer
+        ) const
+    {
+        static_cast<void>(observer);
+        return saveRoster(request);
+    }
 };
 
 class RosterSaveUseCase final
 {
 public:
     [[nodiscard]] static Domain::Result<void> execute(
-        const RosterSaveRequest& request,
+        RosterSaveRequest request,
         const RosterSavePort& port,
-        const RosterSaveCaseInsensitiveEquals& caseInsensitiveEquals
+        const RosterSaveCaseInsensitiveEquals& caseInsensitiveEquals,
+        const RosterSaveDiagnosticObserver& diagnosticObserver = {}
         )
     {
         if (!isCanonicalPositiveDecimalId(request.classId.value()))
@@ -71,9 +127,18 @@ public:
             });
         }
 
-        const auto prepared = prepareRosterSave(
-            request.roster, request.allowQuestionableKoreanNameLengths,
+        auto prepared = prepareRosterSave(
+            std::move(request.roster), request.allowQuestionableKoreanNameLengths,
             caseInsensitiveEquals);
+        if (diagnosticObserver)
+        {
+            reportRosterSaveDiagnostic(
+                diagnosticObserver,
+                RosterSaveDiagnosticStage::AfterPreparation,
+                prepared.hasErrors()
+                    ? RosterSaveDiagnosticOutcome::Failure
+                    : RosterSaveDiagnosticOutcome::Success);
+        }
         if (prepared.hasErrors())
         {
             return Domain::Result<void>::failure({
@@ -82,12 +147,15 @@ public:
                 .recoverable = false
             });
         }
-        return port.saveRoster({
+        const PreparedRosterSaveRequest preparedRequest{
             .classId = request.classId,
-            .roster = prepared.roster,
+            .roster = std::move(prepared.roster),
             .allowQuestionableKoreanNameLengths = request.allowQuestionableKoreanNameLengths,
-            .removedCustomColumns = request.removedCustomColumns
-        });
+            .removedCustomColumns = std::move(request.removedCustomColumns)
+        };
+        return diagnosticObserver
+            ? port.saveRosterWithDiagnostics(preparedRequest, diagnosticObserver)
+            : port.saveRoster(preparedRequest);
     }
 
 private:

@@ -20,8 +20,10 @@
 #include <QtTest/QtTest>
 
 #include <string>
+#include <stdexcept>
 #include <vector>
 #include <initializer_list>
+#include <array>
 
 using namespace ClassMngr::Next;
 
@@ -166,6 +168,8 @@ private slots:
     void invalidRosterPrecedesUnavailableSessionAndWritesNothing();
     void rawBomSnapshotPersistsDecodedTextExactlyOnce();
     void savesCompleteRosterSnapshotToOpenSession();
+    void savesSparseLargeRosterWithRowStreamedRepositoryWrite();
+    void repositoryRowSourceCallbackFailureMapsTechnicalAndRollsBack();
     void missingParentClassReturnsNotFoundWithoutWrites();
     void forwardsQuestionableKoreanNameDecision();
     void repositoryFailureMapsTechnicalAndRollsBack();
@@ -304,6 +308,190 @@ savesCompleteRosterSnapshotToOpenSession()
     QCOMPARE(persisted->rows.at(0).at(6), QStringLiteral("수업 \U0001F4DA"));
     QCOMPARE(persisted->rows.at(24).at(0), QStringLiteral("Student Y"));
     QCOMPARE(persisted->rows.at(24).at(2), QStringLiteral("A+"));
+}
+
+void NextPlatformApplicationServicesRosterSavePortTests::
+savesSparseLargeRosterWithRowStreamedRepositoryWrite()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Sparse Large Roster Save Test")
+        );
+    QVERIFY(createdClass);
+
+    constexpr int rowCount = 100;
+    constexpr int columnCount = 156;
+    Application::RosterSaveRequest saveRequest = request(*createdClass);
+    Application::RosterSnapshot& roster = saveRequest.roster;
+    roster.columns.clear();
+    roster.columnWidths.clear();
+    const std::array<std::u16string, 6> baseColumns{
+        u"English", u"Korean", u"Winter", u"Speech Contest", u"Summer", u"Fall"
+    };
+    roster.columns.reserve(columnCount);
+    roster.columnWidths.reserve(columnCount);
+    QStringList expectedColumns;
+    QVector<int> expectedWidths;
+    expectedColumns.reserve(columnCount);
+    expectedWidths.reserve(columnCount);
+    for (int column = 0; column < columnCount; ++column)
+    {
+        const std::u16string name = column < static_cast<int>(baseColumns.size())
+            ? baseColumns[static_cast<std::size_t>(column)]
+            : QStringLiteral("Dynamic %1").arg(column - 6).toStdU16String();
+        roster.columns.push_back(name);
+        roster.columnWidths.emplace_back(80 + column % 40);
+        expectedColumns.append(QString::fromStdU16String(name));
+        expectedWidths.append(80 + column % 40);
+    }
+
+    const auto studentName = [](const int row)
+    {
+        std::u16string value = u"Student ";
+        value.push_back(static_cast<char16_t>(u'A' + row / 26));
+        value.push_back(static_cast<char16_t>(u'a' + row % 26));
+        return value;
+    };
+    roster.rows.clear();
+    roster.rows.resize(rowCount);
+    for (int row = 0; row < rowCount; ++row)
+    {
+        auto& values = roster.rows[static_cast<std::size_t>(row)];
+        values.resize(columnCount);
+        values[0] = studentName(row);
+        values[1] = u"\uAE40\uBBFC\uC9C0";
+        const int populatedColumn = 6 + (row * 37) % (columnCount - 6);
+        values[static_cast<std::size_t>(populatedColumn)] =
+            QStringLiteral("sparse-%1-%2").arg(row).arg(populatedColumn)
+                .toStdU16String();
+    }
+
+    const std::u16string largeCell(10'000, u'N');
+    roster.rows[49][columnCount - 1] = largeCell;
+
+    int expectedNonEmptyCellCount = 0;
+    for (const auto& row : roster.rows)
+    {
+        for (const std::u16string& value : row)
+        {
+            if (!value.empty())
+                ++expectedNonEmptyCellCount;
+        }
+    }
+
+    RosterRepository* const repository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(repository);
+    Platform::ApplicationServicesRosterSavePort port(services);
+    const auto saved = Application::RosterSaveUseCase::execute(
+        std::move(saveRequest), port, Platform::rosterSaveCaseInsensitiveEquals);
+    QVERIFY2(saved, saved ? "" : saved.error().message.c_str());
+
+    const auto persisted = repository->loadRoster(*createdClass);
+    QVERIFY(persisted);
+    QCOMPARE(persisted->columns, expectedColumns);
+    QCOMPARE(persisted->columnWidths, expectedWidths);
+    QCOMPARE(persisted->rows.size(), rowCount);
+    for (int row = 0; row < rowCount; ++row)
+    {
+        const QStringList& actual = persisted->rows.at(row);
+        QCOMPARE(actual.size(), columnCount);
+        const int populatedColumn = 6 + (row * 37) % (columnCount - 6);
+        for (int column = 0; column < columnCount; ++column)
+        {
+            QString expected;
+            if (column == 0)
+                expected = QString::fromStdU16String(studentName(row));
+            else if (column == 1)
+                expected = QString::fromStdU16String(u"\uAE40\uBBFC\uC9C0");
+            else if (row == 49 && column == columnCount - 1)
+                expected = QString::fromStdU16String(largeCell);
+            else if (column == populatedColumn)
+                expected = QStringLiteral("sparse-%1-%2").arg(row).arg(column);
+            QCOMPARE(actual.at(column), expected);
+        }
+    }
+    QCOMPARE(persisted->rows.at(49).at(columnCount - 1),
+        QString::fromStdU16String(largeCell));
+
+    QSqlQuery storedCellCount(services.databaseSession()->database());
+    storedCellCount.prepare(QStringLiteral(
+        "SELECT COUNT(*) FROM roster_data WHERE class_id=?"));
+    storedCellCount.addBindValue(*createdClass);
+    QVERIFY2(storedCellCount.exec(),
+        qPrintable(storedCellCount.lastError().text()));
+    QVERIFY(storedCellCount.next());
+    QCOMPARE(storedCellCount.value(0).toInt(), expectedNonEmptyCellCount);
+}
+
+void NextPlatformApplicationServicesRosterSavePortTests::
+repositoryRowSourceCallbackFailureMapsTechnicalAndRollsBack()
+{
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+    ApplicationServices services;
+    QVERIFY(services.openDatabase(databasePath(directory)));
+
+    const auto createdClass = services.classService()->create(
+        QStringLiteral("Row Source Rollback Test"));
+    QVERIFY(createdClass);
+    Platform::ApplicationServicesRosterSavePort port(services);
+    auto initial = request(*createdClass);
+    QVERIFY(port.saveRoster({.classId = initial.classId,
+        .roster = initial.roster}));
+
+    RosterRepository* const repository =
+        services.databaseSession()->rosterRepository();
+    QVERIFY(repository);
+    const auto before = repository->loadRoster(*createdClass);
+    QVERIFY(before);
+
+    bool injectedFailureReached = false;
+    RosterRepository::WindowSaveRowSource source{
+        .classId = *createdClass,
+        .columnCount = static_cast<std::size_t>(before->columns.size()),
+        .columnWidthCount = static_cast<std::size_t>(before->columnWidths.size()),
+        .rowCount = 1,
+        .columnNameAt = [&before](const std::size_t column)
+        {
+            return before->columns.at(static_cast<qsizetype>(column));
+        },
+        .columnWidthAt = [&before](const std::size_t column)
+        {
+            return before->columnWidths.at(static_cast<qsizetype>(column));
+        },
+        .rowCellCountAt = [](const std::size_t)
+        {
+            return std::size_t{3};
+        },
+        .cellAt = [&injectedFailureReached](const std::size_t row,
+                                            const std::size_t column) -> QString
+        {
+            if (row == 0 && column == 2)
+            {
+                injectedFailureReached = true;
+                throw std::runtime_error("injected row source failure");
+            }
+            return QStringLiteral("replacement-%1").arg(column);
+        }
+    };
+
+    const auto saved = repository->saveRosterWindowWithParentCheck(source);
+    QVERIFY(injectedFailureReached);
+    QVERIFY(!saved);
+    QCOMPARE(saved.error().code, RepositoryErrorCode::Technical);
+    QCOMPARE(saved.error().diagnostic,
+        QStringLiteral("Roster window row source callback failed."));
+
+    const auto after = repository->loadRoster(*createdClass);
+    QVERIFY(after);
+    QCOMPARE(after->columns, before->columns);
+    QCOMPARE(after->columnWidths, before->columnWidths);
+    QCOMPARE(after->rows, before->rows);
 }
 
 void NextPlatformApplicationServicesRosterSavePortTests::

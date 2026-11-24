@@ -27,6 +27,7 @@ class QPushButton;
 class QTableWidget;
 class QTableView;
 class QTabWidget;
+class QScrollArea;
 class QTextEdit;
 class QTimer;
 class QWidget;
@@ -109,6 +110,8 @@ public:
 
 private:
     void ensureUi();
+    void ensureRosterEditor();
+    void releaseRosterEditor(bool successfulLeave = false);
     void ensureAnalyticsUi();
     QWidget* buildDetailsTab();
     QWidget* buildCoTeacherTab();
@@ -171,6 +174,7 @@ private:
     QWidget* m_notesTab = nullptr;
     QWidget* m_analyticsTab = nullptr;
     QWidget* m_rosterTab = nullptr;
+    QScrollArea* m_rosterScrollArea = nullptr;
     RosterEditorWidget* m_rosterEditor = nullptr;
     QLabel* m_emptyState = nullptr;
     QLabel* m_detailsStatus = nullptr;

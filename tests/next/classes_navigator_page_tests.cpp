@@ -16,6 +16,8 @@
 #include <QListView>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QPointer>
+#include <QScrollArea>
 #include <QSplitter>
 #include <QTimer>
 #include <QTabBar>
@@ -1322,15 +1324,58 @@ void ClassesNavigatorPageTests::rosterSectionSuspensionReleasesModel()
             QStringLiteral("Theseus"), QStringLiteral("Monday"),
             QStringLiteral("9:00 AM"))
     });
+    fixture.state.rosterSnapshots.emplace("1",
+        rosterSnapshot(QStringLiteral("Persisted")));
     QVERIFY(fixture.activate());
     auto* const editor = fixture.page()->selectedClassEditor();
     editor->sections()->setCurrentIndex(4);
-    QVERIFY(editor->rosterEditor()->isLoaded());
+    Ui::RosterEditorWidget* const firstRoster = editor->rosterEditor();
+    QVERIFY(firstRoster);
+    QPointer<Ui::RosterEditorWidget> firstRosterLifetime(firstRoster);
+    QPointer<QTableView> firstTableLifetime(firstRoster->tableView());
+    QPointer<Ui::RosterTableModel> firstModelLifetime(firstRoster->model());
+    QScrollArea* const rosterScrollArea = editor->findChild<QScrollArea*>(
+        QStringLiteral("selectedClassRosterScrollArea"));
+    QVERIFY(rosterScrollArea);
+    QVERIFY(firstRoster->isLoaded());
+    QCOMPARE(firstRoster->tableView()->objectName(),
+        QStringLiteral("nextRosterTable"));
+    QCOMPARE(firstRoster->model()->data(firstRoster->model()->index(0, 0)).toString(),
+        QStringLiteral("Persisted"));
+    editor->setSaveMode(Application::SaveMode::Manual);
 
     editor->sections()->setCurrentIndex(0);
-    QVERIFY(!editor->rosterEditor()->isLoaded());
-    QCOMPARE(editor->rosterEditor()->model()->rowCount(), 25);
-    QCOMPARE(editor->rosterEditor()->model()->columnCount(), 6);
+    QVERIFY(firstRosterLifetime.isNull());
+    QVERIFY(firstTableLifetime.isNull());
+    QVERIFY(firstModelLifetime.isNull());
+    QVERIFY(!editor->rosterEditor());
+    QCOMPARE(editor->findChild<QScrollArea*>(
+        QStringLiteral("selectedClassRosterScrollArea")), rosterScrollArea);
+
+    editor->sections()->setCurrentIndex(4);
+    Ui::RosterEditorWidget* const reloadedRoster = editor->rosterEditor();
+    QVERIFY(reloadedRoster);
+    QVERIFY(reloadedRoster->tableView());
+    QVERIFY(reloadedRoster->model());
+    QVERIFY(reloadedRoster->isLoaded());
+    QCOMPARE(editor->findChild<QScrollArea*>(
+        QStringLiteral("selectedClassRosterScrollArea")), rosterScrollArea);
+    QCOMPARE(reloadedRoster->tableView()->objectName(),
+        QStringLiteral("nextRosterTable"));
+    QCOMPARE(reloadedRoster->model()->rowCount(), 25);
+    QCOMPARE(reloadedRoster->model()->columnCount(), 6);
+    QCOMPARE(reloadedRoster->model()->data(
+        reloadedRoster->model()->index(0, 0)).toString(),
+        QStringLiteral("Persisted"));
+    QCOMPARE(fixture.state.rosterReadCount, 2);
+    QPushButton* const saveButton = reloadedRoster->findChild<QPushButton*>(
+        QStringLiteral("nextRosterSave"));
+    QVERIFY(saveButton);
+    QVERIFY(!saveButton->isHidden());
+    editor->setSaveMode(Application::SaveMode::Automatic);
+    QVERIFY(saveButton->isHidden());
+    editor->setSaveMode(Application::SaveMode::Manual);
+    QVERIFY(!saveButton->isHidden());
 }
 
 void ClassesNavigatorPageTests::rosterSelectionAndPageChangesReleaseLoadedModel()
@@ -1351,21 +1396,41 @@ void ClassesNavigatorPageTests::rosterSelectionAndPageChangesReleaseLoadedModel(
     QVERIFY(fixture.activate());
     auto* const page = fixture.page();
     auto* const editor = page->selectedClassEditor();
+    QScrollArea* const rosterScrollArea = editor->findChild<QScrollArea*>(
+        QStringLiteral("selectedClassRosterScrollArea"));
+    QVERIFY(rosterScrollArea);
+    fixture.state.rosterSnapshots.emplace("1",
+        rosterSnapshot(QStringLiteral("First persisted")));
+    fixture.state.rosterSnapshots.emplace("2",
+        rosterSnapshot(QStringLiteral("Second persisted")));
     editor->sections()->setCurrentIndex(4);
-    QVERIFY(editor->rosterEditor()->isLoaded());
+    Ui::RosterEditorWidget* const firstRoster = editor->rosterEditor();
+    QVERIFY(firstRoster->isLoaded());
+    QPointer<Ui::RosterEditorWidget> firstRosterLifetime(firstRoster);
     QCOMPARE(fixture.state.rosterReadCount, 1);
 
     page->classList()->setCurrentIndex(
         page->model()->indexForClassId(classId(2)));
     QCOMPARE(page->selectedClassId()->value(), std::string("2"));
-    QVERIFY(!editor->rosterEditor()->isLoaded());
-    QCOMPARE(editor->rosterEditor()->model()->columnCount(), 6);
+    QVERIFY(firstRosterLifetime.isNull());
+    QVERIFY(!editor->rosterEditor());
+    QCOMPARE(editor->findChild<QScrollArea*>(
+        QStringLiteral("selectedClassRosterScrollArea")), rosterScrollArea);
 
     editor->sections()->setCurrentIndex(4);
+    Ui::RosterEditorWidget* const secondRoster = editor->rosterEditor();
+    QVERIFY(secondRoster);
     QCOMPARE(fixture.state.rosterReadCount, 2);
-    QVERIFY(editor->rosterEditor()->isLoaded());
+    QVERIFY(secondRoster->isLoaded());
+    QCOMPARE(secondRoster->model()->data(
+        secondRoster->model()->index(0, 0)).toString(),
+        QStringLiteral("Second persisted"));
+    QPointer<Ui::RosterEditorWidget> secondRosterLifetime(secondRoster);
     QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
-    QVERIFY(!editor->rosterEditor()->isLoaded());
+    QVERIFY(secondRosterLifetime.isNull());
+    QVERIFY(!editor->rosterEditor());
+    QCOMPARE(editor->findChild<QScrollArea*>(
+        QStringLiteral("selectedClassRosterScrollArea")), rosterScrollArea);
 }
 
 void ClassesNavigatorPageTests::rosterSectionExitResolvesDraftBeforeClearingAndReloads()
@@ -1392,16 +1457,33 @@ void ClassesNavigatorPageTests::rosterSectionExitResolvesDraftBeforeClearingAndR
     editor->sections()->setCurrentIndex(4);
     Ui::RosterEditorWidget* const roster = editor->rosterEditor();
     QVERIFY(roster->isLoaded());
+    QPointer<Ui::RosterEditorWidget> rosterLifetime(roster);
+    QPointer<QTableView> tableLifetime(roster->tableView());
+    QPointer<Ui::RosterTableModel> modelLifetime(roster->model());
+    QScrollArea* const rosterScrollArea = editor->findChild<QScrollArea*>(
+        QStringLiteral("selectedClassRosterScrollArea"));
+    QVERIFY(rosterScrollArea);
+    const QString rosterTableObjectName = roster->tableView()->objectName();
     QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
         QStringLiteral("Saved"));
 
-    const auto setDraft = [roster](const QString& value) {
-        return roster->model()->setData(roster->model()->index(0, 0), value);
+    const auto setDraft = [](Ui::RosterEditorWidget* target, const QString& value) {
+        if (!target)
+        {
+            return false;
+        }
+        return target->model()->setData(target->model()->index(0, 0), value);
     };
-    QVERIFY(setDraft(QStringLiteral("Cancelled draft")));
+    QVERIFY(setDraft(roster, QStringLiteral("Cancelled draft")));
     fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Cancel;
     editor->sections()->setCurrentIndex(0);
     QCOMPARE(editor->sections()->currentIndex(), 4);
+    QCOMPARE(editor->rosterEditor(), roster);
+    QVERIFY(!rosterLifetime.isNull());
+    QVERIFY(!tableLifetime.isNull());
+    QVERIFY(!modelLifetime.isNull());
+    QCOMPARE(editor->findChild<QScrollArea*>(
+        QStringLiteral("selectedClassRosterScrollArea")), rosterScrollArea);
     QVERIFY(roster->isLoaded());
     QVERIFY(roster->hasUnsavedChanges());
     QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
@@ -1411,6 +1493,10 @@ void ClassesNavigatorPageTests::rosterSectionExitResolvesDraftBeforeClearingAndR
     fixture.state.failRosterSave = true;
     editor->sections()->setCurrentIndex(0);
     QCOMPARE(editor->sections()->currentIndex(), 4);
+    QCOMPARE(editor->rosterEditor(), roster);
+    QVERIFY(!rosterLifetime.isNull());
+    QVERIFY(!tableLifetime.isNull());
+    QVERIFY(!modelLifetime.isNull());
     QVERIFY(roster->isLoaded());
     QVERIFY(roster->hasUnsavedChanges());
     QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
@@ -1419,24 +1505,78 @@ void ClassesNavigatorPageTests::rosterSectionExitResolvesDraftBeforeClearingAndR
     fixture.state.failRosterSave = false;
     editor->sections()->setCurrentIndex(0);
     QCOMPARE(editor->sections()->currentIndex(), 0);
-    QVERIFY(!roster->isLoaded());
+    QVERIFY(rosterLifetime.isNull());
+    QVERIFY(tableLifetime.isNull());
+    QVERIFY(modelLifetime.isNull());
+    QVERIFY(!editor->rosterEditor());
+    QCOMPARE(editor->findChild<QScrollArea*>(
+        QStringLiteral("selectedClassRosterScrollArea")), rosterScrollArea);
     QCOMPARE(fixture.state.rosterSaveCount, 2);
-    editor->sections()->setCurrentIndex(4);
-    QVERIFY(roster->isLoaded());
-    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
-        QStringLiteral("Cancelled Draft"));
 
-    QVERIFY(setDraft(QStringLiteral("Discarded draft")));
+    editor->sections()->setCurrentIndex(4);
+    Ui::RosterEditorWidget* const afterSave = editor->rosterEditor();
+    QVERIFY(afterSave);
+    QVERIFY(afterSave->tableView());
+    QVERIFY(afterSave->model());
+    QVERIFY(afterSave->isLoaded());
+    QCOMPARE(editor->findChild<QScrollArea*>(
+        QStringLiteral("selectedClassRosterScrollArea")), rosterScrollArea);
+    QCOMPARE(afterSave->tableView()->objectName(), rosterTableObjectName);
+    QCOMPARE(afterSave->model()->data(afterSave->model()->index(0, 0)).toString(),
+        QStringLiteral("Cancelled Draft"));
+    QCOMPARE(fixture.state.rosterReadCount, 2);
+
+    QPointer<Ui::RosterEditorWidget> afterSaveLifetime(afterSave);
+    QPointer<QTableView> afterSaveTableLifetime(afterSave->tableView());
+    QPointer<Ui::RosterTableModel> afterSaveModelLifetime(afterSave->model());
+    QPushButton* const saveButton = afterSave->findChild<QPushButton*>(
+        QStringLiteral("nextRosterSave"));
+    QVERIFY(saveButton);
+    QVERIFY(!saveButton->isHidden());
+    QVERIFY(setDraft(afterSave, QStringLiteral("Saved Again")));
+    QVERIFY(editor->hasUnsavedChanges());
+    QVERIFY(editor->property("dirty").toBool());
+    QCOMPARE(fixture.state.rosterSaveCount, 2);
+    fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Save;
+    editor->sections()->setCurrentIndex(0);
+    QCOMPARE(editor->sections()->currentIndex(), 0);
+    QVERIFY(afterSaveLifetime.isNull());
+    QVERIFY(afterSaveTableLifetime.isNull());
+    QVERIFY(afterSaveModelLifetime.isNull());
+    QVERIFY(!editor->rosterEditor());
+    QCOMPARE(fixture.state.rosterSaveCount, 3);
+
+    editor->sections()->setCurrentIndex(4);
+    Ui::RosterEditorWidget* const afterSecondSave = editor->rosterEditor();
+    QVERIFY(afterSecondSave);
+    QVERIFY(afterSecondSave->isLoaded());
+    QCOMPARE(afterSecondSave->tableView()->objectName(), rosterTableObjectName);
+    QCOMPARE(afterSecondSave->model()->data(
+        afterSecondSave->model()->index(0, 0)).toString(),
+        QStringLiteral("Saved Again"));
+    QCOMPARE(fixture.state.rosterReadCount, 3);
+
+    QPointer<Ui::RosterEditorWidget> afterSecondSaveLifetime(afterSecondSave);
+    QVERIFY(setDraft(afterSecondSave, QStringLiteral("Discarded draft")));
     fixture.state.unsavedChoice = Ui::UnsavedChangesChoice::Discard;
     editor->sections()->setCurrentIndex(0);
     QCOMPARE(editor->sections()->currentIndex(), 0);
-    QVERIFY(!roster->isLoaded());
-    QCOMPARE(fixture.state.rosterSaveCount, 2);
+    QVERIFY(afterSecondSaveLifetime.isNull());
+    QVERIFY(!editor->rosterEditor());
+    QCOMPARE(fixture.state.rosterSaveCount, 3);
+    QCOMPARE(fixture.state.rosterReadCount, 4);
+
     editor->sections()->setCurrentIndex(4);
-    QVERIFY(roster->isLoaded());
-    QCOMPARE(roster->model()->data(roster->model()->index(0, 0)).toString(),
-        QStringLiteral("Cancelled Draft"));
-    QVERIFY(!roster->hasUnsavedChanges());
+    Ui::RosterEditorWidget* const afterDiscard = editor->rosterEditor();
+    QVERIFY(afterDiscard);
+    QVERIFY(afterDiscard->isLoaded());
+    QCOMPARE(afterDiscard->tableView()->objectName(), rosterTableObjectName);
+    QCOMPARE(afterDiscard->model()->data(
+        afterDiscard->model()->index(0, 0)).toString(),
+        QStringLiteral("Saved Again"));
+    QVERIFY(!afterDiscard->hasUnsavedChanges());
+    QVERIFY(!editor->property("dirty").toBool());
+    QCOMPARE(fixture.state.rosterReadCount, 5);
 }
 
 void ClassesNavigatorPageTests::
@@ -2144,7 +2284,12 @@ analyticsLoadsOnlySelectedClassAndUsesOneRankingModel()
     QVERIFY(editor->sections());
     QCOMPARE(editor->sections()->count(), 5);
     editor->sections()->setCurrentIndex(3);
-    const int reusableEditorWidgetCount = widgetCount(editor);
+    Ui::RosterEditorWidget* const rosterBeforeClassChange =
+        editor->rosterEditor();
+    QVERIFY(rosterBeforeClassChange);
+    QPointer<Ui::RosterEditorWidget> rosterLifetime(rosterBeforeClassChange);
+    const int reusableEditorWidgetCount =
+        widgetCountExcludingSection(editor, rosterBeforeClassChange);
     QCOMPARE(fixture.state.analyticsReadCount, 1);
     QCOMPARE(fixture.state.analyticsClassIds.size(), std::size_t(1));
     QCOMPARE(fixture.state.analyticsClassIds.front().value(), std::string("1"));
@@ -2184,6 +2329,8 @@ analyticsLoadsOnlySelectedClassAndUsesOneRankingModel()
     page->classList()->setCurrentIndex(page->model()->indexForClassId(classId(2)));
     QCOMPARE(editor->classId()->value(), std::string("2"));
     QCOMPARE(ranking->model()->rowCount(), 0);
+    QVERIFY(rosterLifetime.isNull());
+    QVERIFY(!editor->rosterEditor());
     QCOMPARE(widgetCount(editor), reusableEditorWidgetCount);
     editor->sections()->setCurrentIndex(3);
     QCOMPARE(fixture.state.analyticsReadCount, 5);

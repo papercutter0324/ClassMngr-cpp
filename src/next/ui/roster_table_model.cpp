@@ -59,6 +59,19 @@ bool caseInsensitiveEquals(
         Qt::CaseInsensitive) == 0;
 }
 
+void copyQStringText(const QString& source, std::u16string& destination)
+{
+    const auto length = static_cast<std::size_t>(source.size());
+    destination.resize(length);
+    for (std::size_t index = 0; index < length; ++index)
+    {
+        // Copy UTF-16 code units through QChar's value API. Do not reinterpret
+        // QString storage as char16_t: Qt does not promise that aliasing.
+        destination[index] = static_cast<char16_t>(
+            source.at(static_cast<qsizetype>(index)).unicode());
+    }
+}
+
 QString issueMessage(const Application::RosterSaveIssue& issue)
 {
     using Code = Application::RosterSaveIssueCode;
@@ -250,10 +263,28 @@ bool RosterTableModel::setData(
         return false;
     }
 
+    const bool customColumn =
+        !isNameColumn(index.column(), QStringLiteral("English"))
+        && !isNameColumn(index.column(), QStringLiteral("Korean"))
+        && !isEvaluationColumn(index.column());
+    const QString& oldValue = m_rows.at(index.row()).at(index.column());
+    const bool oldValueWithinValidationLimit =
+        static_cast<std::size_t>(oldValue.size())
+            <= Application::RosterSaveMaximumCellLength;
+    const bool rowWasPopulated = customColumn && oldValueWithinValidationLimit
+        && rowHasValidationData(index.row());
+
     m_rows[index.row()][index.column()] = normalized;
     setDirty(true);
     refreshVisibleRows();
-    revalidate();
+    const bool canSkipFullRevalidation = rowWasPopulated
+        && static_cast<std::size_t>(normalized.size())
+            <= Application::RosterSaveMaximumCellLength
+        && rowHasValidationData(index.row());
+    if (!canSkipFullRevalidation)
+    {
+        revalidate();
+    }
     if (index.row() < rowCount())
     {
         emit dataChanged(index, index, {
@@ -448,6 +479,19 @@ Application::RosterSnapshot RosterTableModel::snapshot() const
         result.rows.push_back(std::move(row));
     }
     return result;
+}
+
+bool RosterTableModel::rowHasData(const int row) const
+{
+    if (row < 0 || row >= rowCount() || row >= m_rows.size())
+    {
+        return false;
+    }
+
+    const QStringList& values = m_rows.at(row);
+    return std::any_of(values.cbegin(), values.cend(), [](const QString& value) {
+        return !value.trimmed().isEmpty();
+    });
 }
 
 const std::vector<Application::RosterSaveIssue>&
@@ -707,13 +751,63 @@ void RosterTableModel::refreshVisibleRows()
     }
 }
 
+bool RosterTableModel::rowHasValidationData(const int row) const
+{
+    if (row < 0 || row >= m_rows.size())
+    {
+        return false;
+    }
+
+    const QStringList& values = m_rows.at(row);
+    for (qsizetype column = 0; column < values.size(); ++column)
+    {
+        const QString& value = values.at(column);
+        if (column < m_columns.size()
+            && (isNameColumn(static_cast<int>(column), QStringLiteral("English"))
+                || isNameColumn(static_cast<int>(column), QStringLiteral("Korean"))))
+        {
+            if (!normalizedEditedText(value, m_columns.at(column)).trimmed().isEmpty())
+            {
+                return true;
+            }
+        }
+        else if (!value.trimmed().isEmpty())
+        {
+            // Custom-cell normalization only removes or compresses Qt whitespace,
+            // so this matches the validator's populated-row check.
+            return true;
+        }
+    }
+    return false;
+}
+
 void RosterTableModel::revalidate()
 {
     m_cellErrors.clear();
     m_cellWarnings.clear();
-    const Application::RosterSavePreparation prepared =
-        Application::prepareRosterSaveText(snapshot(), false, caseInsensitiveEquals);
-    m_issues = prepared.issues;
+    Application::RosterSaveTextReader source{
+        .columnCount = static_cast<std::size_t>(m_columns.size()),
+        .columnWidthCount = static_cast<std::size_t>(m_widths.size()),
+        .rowCount = static_cast<std::size_t>(m_visibleRows),
+        .copyColumnText = [this](const std::size_t column, std::u16string& destination)
+        {
+            copyQStringText(m_columns.at(static_cast<qsizetype>(column)), destination);
+        },
+        .rowCellCount = [this](const std::size_t row)
+        {
+            return static_cast<std::size_t>(
+                m_rows.at(static_cast<qsizetype>(row)).size());
+        },
+        .copyCellText = [this](const std::size_t row, const std::size_t column,
+                               std::u16string& destination)
+        {
+            copyQStringText(
+                m_rows.at(static_cast<qsizetype>(row)).at(static_cast<qsizetype>(column)),
+                destination);
+        }
+    };
+    m_issues = Application::validateRosterSaveTextIssues(
+        source, false, caseInsensitiveEquals);
     for (const Application::RosterSaveIssue& issue : m_issues)
     {
         if (issue.row.rawValue() < 0 || issue.column.rawValue() < 0

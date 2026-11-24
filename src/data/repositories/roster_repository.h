@@ -46,8 +46,29 @@ public:
         QStringList removedCustomColumns;
     };
 
+    // A bounded source for replacing a visible window without materializing
+    // a second complete Roster. Text accessors return one owning QString at a
+    // time; tail data remains in SQLite while the source is consumed. Accessors
+    // are consumed synchronously during the save call and must remain valid
+    // through its return. Callback exceptions map to Technical; an active
+    // transaction is rolled back.
+    struct WindowSaveRowSource final
+    {
+        int classId = 0;
+        std::size_t columnCount = 0;
+        std::size_t columnWidthCount = 0;
+        std::size_t rowCount = 0;
+        QStringList removedCustomColumns;
+        std::function<QString(std::size_t)> columnNameAt;
+        std::function<int(std::size_t)> columnWidthAt;
+        std::function<std::size_t(std::size_t)> rowCellCountAt;
+        std::function<QString(std::size_t, std::size_t)> cellAt;
+    };
+
     [[nodiscard]] RepositoryStatus saveRosterWindowsWithParentCheck(
         const QList<WindowSaveRequest>& windows);
+    [[nodiscard]] RepositoryStatus saveRosterWindowWithParentCheck(
+        const WindowSaveRowSource& source);
 
 
     struct ColumnNamesForClass final
@@ -293,6 +314,10 @@ public:
 
 private:
     [[nodiscard]] RepositoryStatus writeRosterWindow(const WindowSaveRequest& window);
+    [[nodiscard]] RepositoryStatus writeRosterWindow(
+        const WindowSaveRowSource& source);
+    [[nodiscard]] RepositoryStatus writeRosterWindowRows(
+        const WindowSaveRowSource& source);
     [[nodiscard]] RepositoryStatus writeRoster(
         int classId,
         const Roster& roster

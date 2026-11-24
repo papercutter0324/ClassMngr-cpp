@@ -1,8 +1,20 @@
+#include <QtGlobal>
+
+#if defined(Q_OS_WIN)
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef PSAPI_VERSION
+#define PSAPI_VERSION 2
+#endif
+#endif
+
 #include "data/database/workspace_store.h"
 #include "data/repositories/class_repository.h"
 #include "data/repositories/roster_repository.h"
 #include "data/repositories/speaking_eval_repository.h"
 #include "data/repositories/teacher_repository.h"
+#include "core/settingsmanager.h"
 #include "core/utils/sidebar_node_naming.h"
 #include "domain/models/roster.h"
 #include "domain/models/speaking_evaluation.h"
@@ -11,9 +23,11 @@
 #include "next/application/roster_transfer_target_display_name.h"
 #include "next/platform/workspace_store_roster_actions.h"
 #include "next/ui/roster_editor_widget.h"
+#include "next/ui/selected_class_editor.h"
 #include "next/ui/roster_table_model.h"
 
 #include <QApplication>
+#include <QBrush>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -26,8 +40,10 @@
 #include <QMenu>
 #include <QPalette>
 #include <QPushButton>
+#include <QPointer>
 #include <QSqlError>
 #include <QSqlQuery>
+#include <QTabWidget>
 #include <QTableView>
 #include <QTemporaryDir>
 #include <QTimer>
@@ -35,7 +51,13 @@
 #include <QTranslator>
 #include <QtTest/QtTest>
 
+#if defined(Q_OS_WIN)
+#include <windows.h>
+#include <psapi.h>
+#endif
+
 #include <algorithm>
+#include <array>
 #include <optional>
 #include <string>
 #include <utility>
@@ -103,6 +125,38 @@ namespace
         std::fill(row.begin(), row.end(), std::u16string{});
     }
     return snapshot;
+}
+
+[[nodiscard]] std::vector<Application::RosterSaveIssue>
+canonicalRosterValidationIssues(const Application::RosterSnapshot& roster)
+{
+    Application::RosterSaveTextReader source{
+        .columnCount = roster.columns.size(),
+        .columnWidthCount = roster.columnWidths.size(),
+        .rowCount = roster.rows.size(),
+        .copyColumnText = [&roster](const std::size_t column, std::u16string& destination)
+        {
+            destination = roster.columns.at(column);
+        },
+        .rowCellCount = [&roster](const std::size_t row)
+        {
+            return roster.rows.at(row).size();
+        },
+        .copyCellText = [&roster](const std::size_t row, const std::size_t column,
+                                  std::u16string& destination)
+        {
+            destination = roster.rows.at(row).at(column);
+        }
+    };
+    return Application::validateRosterSaveTextIssues(
+        source, false,
+        [](const std::u16string_view left, const std::u16string_view right)
+        {
+            return QString::compare(
+                QString::fromStdU16String(std::u16string(left)),
+                QString::fromStdU16String(std::u16string(right)),
+                Qt::CaseInsensitive) == 0;
+        });
 }
 
 struct ActionProbe final
@@ -181,11 +235,11 @@ struct ActionProbe final
     };
     actions.saveRoster = [&probe](
         const QString& path,
-        const Application::RosterSaveRequest& request)
+        Application::RosterSaveRequest request)
     {
         ++probe.saveCount;
         probe.lastSavePath = path;
-        probe.lastSave = request;
+        probe.lastSave = std::move(request);
         if (probe.failSaveCount > 0)
         {
             --probe.failSaveCount;
@@ -538,6 +592,86 @@ struct TransferWorkspaceIds final
     return true;
 }
 
+[[nodiscard]] QString diagnosticEnglishName(const int row)
+{
+    QString suffix;
+    for (int value = row + 1; value > 0; value = (value - 1) / 26)
+    {
+        suffix.prepend(QChar::fromLatin1(static_cast<char>(
+            'A' + ((value - 1) % 26))));
+    }
+    return QStringLiteral("Student %1").arg(suffix);
+}
+
+[[nodiscard]] Roster fullyPopulatedDiagnosticRoster(
+    const QStringList& customColumns
+    )
+{
+    Roster roster = rawRoster(customColumns);
+    roster.rows.clear();
+    roster.rows.reserve(100);
+    for (int row = 0; row < 100; ++row)
+    {
+        QStringList cells(roster.columns.size(), QString{});
+        cells[0] = diagnosticEnglishName(row);
+        cells[1] = QStringLiteral("\uAE40\uBBFC\uC9C0");
+        for (int column = 2; column < roster.columns.size(); ++column)
+        {
+            cells[column] = QStringLiteral("Row%1Column%2")
+                .arg(row + 1, 3, 10, QChar(u'0'))
+                .arg(column + 1, 3, 10, QChar(u'0'));
+        }
+        roster.rows.push_back(std::move(cells));
+    }
+    return roster;
+}
+
+[[nodiscard]] bool seedFullDiagnosticWorkspace(
+    const QString& path,
+    const QString& className,
+    const QStringList& customColumns,
+    int* classId,
+    QString* error
+    )
+{
+    int seededClassId = 0;
+    if (!seedWorkspace(
+            path,
+            className,
+            customColumns,
+            -1,
+            -1,
+            {},
+            &seededClassId,
+            error))
+    {
+        return false;
+    }
+
+    WorkspaceStore store;
+    const RepositoryStatus opened = store.openExisting(path);
+    if (!opened)
+    {
+        if (error) *error = opened.error().diagnostic;
+        return false;
+    }
+    const RepositoryStatus saved = store.rosterRepository()
+        ->saveRosterWindowsWithParentCheck({{
+            {
+                .classId = seededClassId,
+                .roster = fullyPopulatedDiagnosticRoster(customColumns),
+                .removedCustomColumns = {}
+            }
+        }});
+    if (!saved)
+    {
+        if (error) *error = saved.error().diagnostic;
+        return false;
+    }
+    if (classId) *classId = seededClassId;
+    return true;
+}
+
 [[nodiscard]] std::optional<QString> storedCell(
     const QString& path,
     const int classId,
@@ -729,6 +863,344 @@ void observeActiveTransferMenu(
     });
 }
 
+#if defined(Q_OS_WIN)
+class ScopedRosterRowPreferencesRestore final
+{
+public:
+    explicit ScopedRosterRowPreferencesRestore(SettingsManager& settings)
+        : m_settings(settings)
+        , m_maximumRows(settings.maximumRosterRows())
+        , m_displayMode(settings.rosterRowDisplayMode())
+    {
+    }
+
+    ~ScopedRosterRowPreferencesRestore()
+    {
+        if (!restore())
+        {
+            qWarning() << "Could not restore roster row preferences after the P9-17 diagnostic.";
+        }
+    }
+
+    [[nodiscard]] bool restore()
+    {
+        if (m_restored)
+        {
+            return true;
+        }
+
+        const bool maximumRowsRestored =
+            m_settings.writeMaximumRosterRowsPreference(m_maximumRows);
+        const bool displayModeRestored =
+            m_settings.writeRosterRowDisplayModePreference(m_displayMode);
+        m_restored = maximumRowsRestored && displayModeRestored;
+        return m_restored;
+    }
+
+private:
+    SettingsManager& m_settings;
+    int m_maximumRows = 0;
+    int m_displayMode = 0;
+    bool m_restored = false;
+};
+
+struct DiagnosticProcessMemorySample final
+{
+    bool available = false;
+    DWORD errorCode = ERROR_SUCCESS;
+    quint64 workingSetBytes = 0;
+    quint64 privateBytes = 0;
+};
+
+[[nodiscard]] DiagnosticProcessMemorySample sampleCurrentProcessMemory()
+{
+    PROCESS_MEMORY_COUNTERS_EX counters{};
+    counters.cb = sizeof(counters);
+    if (!GetProcessMemoryInfo(
+            GetCurrentProcess(),
+            reinterpret_cast<PROCESS_MEMORY_COUNTERS*>(&counters),
+            sizeof(counters)))
+    {
+        return {
+            .available = false,
+            .errorCode = GetLastError()
+        };
+    }
+    return {
+        .available = true,
+        .errorCode = ERROR_SUCCESS,
+        .workingSetBytes = static_cast<quint64>(counters.WorkingSetSize),
+        .privateBytes = static_cast<quint64>(counters.PrivateUsage)
+    };
+}
+
+void settleBeforeMemorySample()
+{
+    QApplication::processEvents();
+    QTest::qWait(100);
+    QApplication::processEvents();
+}
+
+[[nodiscard]] bool emitMemorySample(
+    const QString& mode,
+    const int cycle,
+    const QString& stage,
+    const DiagnosticProcessMemorySample* const baseline,
+    DiagnosticProcessMemorySample* const output
+    )
+{
+    if (!output)
+    {
+        return false;
+    }
+    settleBeforeMemorySample();
+    *output = sampleCurrentProcessMemory();
+    if (!output->available)
+    {
+        return false;
+    }
+
+    const qint64 workingSetDelta = baseline
+        ? static_cast<qint64>(output->workingSetBytes)
+            - static_cast<qint64>(baseline->workingSetBytes)
+        : 0;
+    const qint64 privateDelta = baseline
+        ? static_cast<qint64>(output->privateBytes)
+            - static_cast<qint64>(baseline->privateBytes)
+        : 0;
+    qInfo().noquote() << QStringLiteral(
+        "P9_17_AB,mode=%1,cycle=%2,stage=%3,working_set_bytes=%4,"
+        "working_set_delta_bytes=%5,private_bytes=%6,private_delta_bytes=%7")
+        .arg(mode)
+        .arg(cycle)
+        .arg(stage)
+        .arg(output->workingSetBytes)
+        .arg(workingSetDelta)
+        .arg(output->privateBytes)
+        .arg(privateDelta);
+    return true;
+}
+
+void runSavePathMemoryDiagnostic(const bool usePlatformPersistence)
+{
+    SettingsManager& settings = SettingsManager::instance();
+    ScopedRosterRowPreferencesRestore restorePreferences(settings);
+    QVERIFY(settings.writeMaximumRosterRowsPreference(100));
+    QVERIFY(settings.writeRosterRowDisplayModePreference(
+        static_cast<int>(Application::RosterRowDisplayMode::AllRows)));
+    QCOMPARE(settings.maximumRosterRows(), 100);
+
+    QTemporaryDir directory;
+    QVERIFY(directory.isValid());
+
+    QStringList customColumns;
+    customColumns.reserve(150);
+    for (int index = 1; index <= 150; ++index)
+    {
+        customColumns.push_back(QStringLiteral("Custom %1").arg(index));
+    }
+
+    const QString path = directory.filePath(QStringLiteral("save-ab.tps"));
+    int classId = 0;
+    QString error;
+    QVERIFY2(seedFullDiagnosticWorkspace(
+            path,
+            QStringLiteral("P9-17 save A/B diagnostic"),
+            customColumns,
+            &classId,
+            &error),
+        qPrintable(error));
+
+    int noOpSaveCount = 0;
+    bool noOpRequestShapeCorrect = false;
+    std::array<std::u16string, 3> lastNoOpSavedCells;
+    const std::array<std::pair<int, int>, 3> pinnedTargets{{
+        {0, 6}, {49, 77}, {99, 155}
+    }};
+    Ui::RosterEditorActions actions;
+    actions.saveMode = Application::SaveMode::Manual;
+    actions.readRoster = Platform::readRosterWindowAtPath;
+    actions.columnHasTailData = Platform::rosterColumnHasTailDataAtPath;
+    if (usePlatformPersistence)
+    {
+        actions.saveRoster = Platform::saveRosterAtPath;
+    }
+    else
+    {
+        actions.saveRoster = [
+            &noOpSaveCount,
+            &noOpRequestShapeCorrect,
+            &lastNoOpSavedCells,
+            &pinnedTargets](
+            const QString&,
+            const Application::RosterSaveRequest& request)
+        {
+            ++noOpSaveCount;
+            noOpRequestShapeCorrect = request.roster.rows.size() == 100
+                && request.roster.columns.size() == 156
+                && std::all_of(
+                    request.roster.rows.cbegin(),
+                    request.roster.rows.cend(),
+                    [](const std::vector<std::u16string>& row) {
+                        return row.size() == 156;
+                    });
+            if (noOpRequestShapeCorrect)
+            {
+                for (std::size_t index = 0;
+                     index < pinnedTargets.size();
+                     ++index)
+                {
+                    const auto [row, column] = pinnedTargets[index];
+                    lastNoOpSavedCells[index] = request.roster.rows[
+                        static_cast<std::size_t>(row)][
+                            static_cast<std::size_t>(column)];
+                }
+            }
+            return Domain::Result<void>::success();
+        };
+    }
+
+    Ui::RosterEditorWidget editor(std::move(actions));
+    const Domain::ClassId diagnosticClassId = typedClassId(classId);
+    editor.enterClassSection(path, diagnosticClassId);
+    QVERIFY(editor.isLoaded());
+    editor.model()->setRowPreferences(
+        100,
+        static_cast<int>(Application::RosterRowDisplayMode::AllRows));
+    QCOMPARE(editor.model()->rowCount(), 100);
+    QCOMPARE(editor.model()->columnCount(), 156);
+
+    bool fullyPopulated = true;
+    for (int row = 0; row < 100 && fullyPopulated; ++row)
+    {
+        if (!editor.model()->rowHasData(row))
+        {
+            fullyPopulated = false;
+            break;
+        }
+        for (int column = 0; column < 156; ++column)
+        {
+            if (editor.model()->data(editor.model()->index(row, column))
+                    .toString().isEmpty())
+            {
+                fullyPopulated = false;
+                break;
+            }
+        }
+    }
+    QVERIFY(fullyPopulated);
+
+    std::array<QString, 3> initialPinnedValues;
+    for (std::size_t index = 0; index < pinnedTargets.size(); ++index)
+    {
+        const auto [row, column] = pinnedTargets[index];
+        initialPinnedValues[index] = editor.model()->data(
+            editor.model()->index(row, column)).toString();
+        QVERIFY(!initialPinnedValues[index].isEmpty());
+    }
+
+    const QString mode = usePlatformPersistence
+        ? QStringLiteral("platform") : QStringLiteral("no-op");
+    for (int cycle = 1; cycle <= 5; ++cycle)
+    {
+        QVERIFY(editor.isLoaded());
+        QCOMPARE(editor.model()->rowCount(), 100);
+        QCOMPARE(editor.model()->columnCount(), 156);
+        DiagnosticProcessMemorySample loadSample;
+        QVERIFY2(emitMemorySample(
+                mode,
+                cycle,
+                QStringLiteral("load"),
+                nullptr,
+                &loadSample),
+            "GetProcessMemoryInfo failed at load.");
+
+        const std::array<QString, 3> editedValues{
+            QStringLiteral("P9-17 cycle %1 first").arg(cycle),
+            QStringLiteral("P9-17 cycle %1 middle").arg(cycle),
+            QStringLiteral("P9-17 cycle %1 last").arg(cycle)
+        };
+        for (std::size_t index = 0; index < pinnedTargets.size(); ++index)
+        {
+            const auto [row, column] = pinnedTargets[index];
+            QVERIFY(editor.model()->setData(
+                editor.model()->index(row, column), editedValues[index]));
+        }
+        QVERIFY(editor.hasUnsavedChanges());
+        DiagnosticProcessMemorySample postEditSample;
+        QVERIFY2(emitMemorySample(
+                mode,
+                cycle,
+                QStringLiteral("post-edit"),
+                &loadSample,
+                &postEditSample),
+            "GetProcessMemoryInfo failed after edit.");
+
+        QVERIFY2(editor.saveChanges(false),
+            "Roster save should pass validation and the selected save callback.");
+        QVERIFY(!editor.hasUnsavedChanges());
+        if (!usePlatformPersistence)
+        {
+            QCOMPARE(noOpSaveCount, cycle);
+            QVERIFY(noOpRequestShapeCorrect);
+            for (std::size_t index = 0; index < pinnedTargets.size(); ++index)
+            {
+                QCOMPARE(
+                    QString::fromStdU16String(lastNoOpSavedCells[index]),
+                    editedValues[index]);
+            }
+        }
+        DiagnosticProcessMemorySample postSaveSample;
+        QVERIFY2(emitMemorySample(
+                mode,
+                cycle,
+                QStringLiteral("post-save"),
+                &loadSample,
+                &postSaveSample),
+            "GetProcessMemoryInfo failed after save.");
+
+        editor.clear();
+        QVERIFY(!editor.isLoaded());
+        QCOMPARE(editor.model()->rowCount(), 100);
+        QCOMPARE(editor.model()->columnCount(), 6);
+        DiagnosticProcessMemorySample postClearSample;
+        QVERIFY2(emitMemorySample(
+                mode,
+                cycle,
+                QStringLiteral("post-clear"),
+                &loadSample,
+                &postClearSample),
+            "GetProcessMemoryInfo failed after clear.");
+
+        editor.enterClassSection(path, diagnosticClassId);
+        QVERIFY(editor.isLoaded());
+        editor.model()->setRowPreferences(
+            100,
+            static_cast<int>(Application::RosterRowDisplayMode::AllRows));
+        QCOMPARE(editor.model()->rowCount(), 100);
+        QCOMPARE(editor.model()->columnCount(), 156);
+        for (std::size_t index = 0; index < pinnedTargets.size(); ++index)
+        {
+            const auto [row, column] = pinnedTargets[index];
+            const QString expectedReentryValue = usePlatformPersistence
+                ? editedValues[index] : initialPinnedValues[index];
+            QCOMPARE(editor.model()->data(
+                editor.model()->index(row, column)).toString(),
+                expectedReentryValue);
+        }
+        DiagnosticProcessMemorySample reentrySample;
+        QVERIFY2(emitMemorySample(
+                mode,
+                cycle,
+                QStringLiteral("re-entry"),
+                &loadSample,
+                &reentrySample),
+            "GetProcessMemoryInfo failed after re-entry.");
+    }
+    QVERIFY(restorePreferences.restore());
+}
+#endif
+
 } // namespace
 
 class NextRosterEditorTests final : public QObject
@@ -736,8 +1208,19 @@ class NextRosterEditorTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
     void editorLoadsOnDemandAndUsesOnlyActiveCellEditors();
+    void defaultHeapDiagnosticEventsCoverLoadedCellSaveAndSuccessfulLeave();
+    void saveStageDiagnosticsBracketSnapshotAndFollowSaveBoundaries();
+    void defaultHeapAfterDeleteCheckpointFollowsWidgetAndChildDestruction();
+    void p9_17NoOpSaveMemoryDiagnostic();
+    void p9_17PlatformSaveMemoryDiagnostic();
     void modelDisplayModeShowsExtraRowsAndExtendsOnEdit();
+    void safeCustomCellEditSkipsFullValidationAndMatchesCanonicalIssues();
+    void customCellLengthBoundaryCrossingsRevalidate();
+    void emptyRowTransitionsAndImportedGradesRevalidate();
+    void rowHasDataMatchesTrimmedCellContent();
+    void transferActionTracksCurrentRowContent();
     void emptyRosterAndReadFailureHaveDifferentStatesAndNoFailureWrite();
     void automaticManualAndFailedSaveRetryRetainLatestDraft();
     void discardReloadsVisibleWindowAndClearsDraft();
@@ -757,7 +1240,19 @@ private slots:
     void transferTargetNamesMatchLegacyFormattingAndFallbacks();
     void capturesEnglishAndKoreanLightAndDarkRosterStates();
     void capturesImportAndTransferStatesAcrossLocalesAndThemes();
+
+private:
+    QTemporaryDir m_settingsDirectory;
 };
+
+void NextRosterEditorTests::initTestCase()
+{
+    QVERIFY(m_settingsDirectory.isValid());
+    const QByteArray isolatedSettingsRoot = QDir(m_settingsDirectory.path())
+        .filePath(QStringLiteral("settings"))
+        .toLocal8Bit();
+    QVERIFY(qputenv("CLASSMNGR_SETTINGS_ROOT", isolatedSettingsRoot));
+}
 
 void NextRosterEditorTests::editorLoadsOnDemandAndUsesOnlyActiveCellEditors()
 {
@@ -839,6 +1334,240 @@ void NextRosterEditorTests::editorLoadsOnDemandAndUsesOnlyActiveCellEditors()
     QVERIFY(editor.model()->data(editor.model()->index(0, 0)).toString().isEmpty());
 }
 
+void NextRosterEditorTests::defaultHeapDiagnosticEventsCoverLoadedCellSaveAndSuccessfulLeave()
+{
+    struct Event final
+    {
+        quint64 instanceId = 0;
+        QString checkpoint;
+        QString outcome;
+        std::optional<int> row;
+        std::optional<int> column;
+    };
+    QVector<Event> events;
+    quint64 instanceId = 0;
+    {
+        ActionProbe probe;
+        Ui::RosterEditorActions actions = fakeActions(probe);
+        actions.diagnosticCheckpoint = [&events](
+            const quint64 id,
+            const QString& checkpoint,
+            const QString& outcome,
+            const std::optional<int> row,
+            const std::optional<int> column) {
+            events.push_back({id, checkpoint, outcome, row, column});
+        };
+        Ui::RosterEditorWidget editor(std::move(actions));
+        editor.enterClassSection(QStringLiteral("diagnostic.tps"),
+            typedClassId(51));
+        QCOMPARE(events.size(), 1);
+        QCOMPARE(events[0].checkpoint, QStringLiteral("roster-model-loaded"));
+        QCOMPARE(events[0].outcome, QStringLiteral("success"));
+        QVERIFY(events[0].instanceId > 0);
+        QVERIFY(!events[0].row.has_value());
+        QVERIFY(!events[0].column.has_value());
+        instanceId = events[0].instanceId;
+
+        QVERIFY(editor.model()->setData(editor.model()->index(0, 0),
+            QStringLiteral("Student C")));
+        QCOMPARE(events.size(), 2);
+        QCOMPARE(events[1].checkpoint,
+                 QStringLiteral("roster-cell-data-changed"));
+        QCOMPARE(events[1].instanceId, instanceId);
+        QCOMPARE(events[1].row, std::optional<int>(0));
+        QCOMPARE(events[1].column, std::optional<int>(0));
+        QVERIFY(editor.saveChanges(false));
+        QCOMPARE(events.size(), 3);
+        QCOMPARE(events[2].checkpoint,
+                 QStringLiteral("roster-save-returned-successfully"));
+        QCOMPARE(events[2].instanceId, instanceId);
+        QVERIFY(!events[2].row.has_value());
+        QVERIFY(!events[2].column.has_value());
+
+        editor.markSuccessfulLeave();
+    }
+    QCOMPARE(events.size(), 4);
+    QCOMPARE(events[3].checkpoint,
+             QStringLiteral("roster-widget-destroyed-after-successful-leave"));
+    QCOMPARE(events[3].outcome, QStringLiteral("success"));
+    QCOMPARE(events[3].instanceId, instanceId);
+    QVERIFY(!events[3].row.has_value());
+    QVERIFY(!events[3].column.has_value());
+}
+
+void NextRosterEditorTests::saveStageDiagnosticsBracketSnapshotAndFollowSaveBoundaries()
+{
+    struct Event final
+    {
+        quint64 widgetId = 0;
+        quint64 saveSequence = 0;
+        Application::RosterSaveDiagnosticStage stage =
+            Application::RosterSaveDiagnosticStage::BeforeSnapshot;
+        Application::RosterSaveDiagnosticOutcome outcome =
+            Application::RosterSaveDiagnosticOutcome::Observed;
+    };
+    QVector<Event> events;
+    ActionProbe probe;
+    Ui::RosterEditorActions actions = fakeActions(probe);
+    actions.saveStageDiagnosticCheckpoint = [&events](
+        const quint64 widgetId,
+        const quint64 saveSequence,
+        const Application::RosterSaveDiagnosticStage stage,
+        const Application::RosterSaveDiagnosticOutcome outcome) {
+        events.push_back({widgetId, saveSequence, stage, outcome});
+    };
+    actions.saveRosterWithDiagnostics = [](
+        const QString&,
+        Application::RosterSaveRequest,
+        Application::RosterSaveDiagnosticObserver observer) {
+        Application::reportRosterSaveDiagnostic(
+            observer,
+            Application::RosterSaveDiagnosticStage::AfterPreparation,
+            Application::RosterSaveDiagnosticOutcome::Success);
+        Application::reportRosterSaveDiagnostic(
+            observer,
+            Application::RosterSaveDiagnosticStage::BeforeRowSourceSetup,
+            Application::RosterSaveDiagnosticOutcome::Observed);
+        Application::reportRosterSaveDiagnostic(
+            observer,
+            Application::RosterSaveDiagnosticStage::AfterRowSourceSetup,
+            Application::RosterSaveDiagnosticOutcome::Success);
+        Application::reportRosterSaveDiagnostic(
+            observer,
+            Application::RosterSaveDiagnosticStage::BeforeRowWiseRepositoryWrite,
+            Application::RosterSaveDiagnosticOutcome::Observed);
+        Application::reportRosterSaveDiagnostic(
+            observer,
+            Application::RosterSaveDiagnosticStage::AfterRowWiseRepositoryWrite,
+            Application::RosterSaveDiagnosticOutcome::Success);
+        return Domain::Result<void>::success();
+    };
+
+    Ui::RosterEditorWidget editor(std::move(actions));
+    editor.enterClassSection(QStringLiteral("diagnostic.tps"), typedClassId(53));
+    QVERIFY(editor.model()->setData(editor.model()->index(0, 0),
+        QStringLiteral("Private Student Name")));
+    QVERIFY(editor.saveChanges(false));
+
+    using Stage = Application::RosterSaveDiagnosticStage;
+    using Outcome = Application::RosterSaveDiagnosticOutcome;
+    const QVector<Stage> expectedStages{
+        Stage::BeforeSnapshot,
+        Stage::AfterSnapshot,
+        Stage::AfterPreparation,
+        Stage::BeforeRowSourceSetup,
+        Stage::AfterRowSourceSetup,
+        Stage::BeforeRowWiseRepositoryWrite,
+        Stage::AfterRowWiseRepositoryWrite
+    };
+    const QVector<Outcome> expectedOutcomes{
+        Outcome::Observed,
+        Outcome::Success,
+        Outcome::Success,
+        Outcome::Observed,
+        Outcome::Success,
+        Outcome::Observed,
+        Outcome::Success
+    };
+    QCOMPARE(events.size(), expectedStages.size());
+    const quint64 widgetId = events.front().widgetId;
+    QVERIFY(widgetId > 0);
+    for (qsizetype index = 0; index < events.size(); ++index)
+    {
+        QCOMPARE(events.at(index).widgetId, widgetId);
+        QCOMPARE(events.at(index).saveSequence, quint64(1));
+        QCOMPARE(events.at(index).stage, expectedStages.at(index));
+        QCOMPARE(events.at(index).outcome, expectedOutcomes.at(index));
+    }
+
+    QVector<Event> normalEvents;
+    ActionProbe normalProbe;
+    Ui::RosterEditorWidget normalEditor(fakeActions(normalProbe));
+    normalEditor.enterClassSection(QStringLiteral("normal.tps"), typedClassId(54));
+    QVERIFY(normalEditor.model()->setData(normalEditor.model()->index(0, 0),
+        QStringLiteral("Private Student Name")));
+    QVERIFY(normalEditor.saveChanges(false));
+    QVERIFY(normalEvents.isEmpty());
+    QCOMPARE(normalProbe.saveCount, 1);
+}
+
+void NextRosterEditorTests::defaultHeapAfterDeleteCheckpointFollowsWidgetAndChildDestruction()
+{
+    ActionProbe probe;
+    QVector<QString> checkpoints;
+    quint64 instanceId = 0;
+    QPointer<Ui::RosterEditorWidget> rosterGuard;
+    QPointer<QObject> childGuard;
+    bool widgetNullAtAfterDelete = false;
+    bool childNullAtAfterDelete = false;
+
+    Ui::SelectedClassEditorActions actions;
+    actions.rosterEditor = fakeActions(probe);
+    actions.rosterEditor.diagnosticCheckpoint = [&] (
+        const quint64 id,
+        const QString& checkpoint,
+        const QString& outcome,
+        const std::optional<int> row,
+        const std::optional<int> column) {
+        QCOMPARE(outcome, QStringLiteral("success"));
+        QVERIFY(!row.has_value());
+        QVERIFY(!column.has_value());
+        if (instanceId == 0)
+        {
+            instanceId = id;
+        }
+        QCOMPARE(id, instanceId);
+        checkpoints.push_back(checkpoint);
+        if (checkpoint == QStringLiteral(
+                "roster-widget-after-delete-returned-after-child-destruction"))
+        {
+            widgetNullAtAfterDelete = rosterGuard.isNull();
+            childNullAtAfterDelete = childGuard.isNull();
+        }
+    };
+
+    Ui::SelectedClassEditor owner(std::move(actions));
+    owner.loadClass(QStringLiteral("diagnostic-owner.tps"), typedClassId(52));
+    QVERIFY(owner.sections());
+    owner.sections()->setCurrentIndex(4);
+    Ui::RosterEditorWidget* const roster = owner.rosterEditor();
+    QVERIFY(roster);
+    rosterGuard = roster;
+    auto* const child = new QObject(roster);
+    childGuard = child;
+
+    owner.sections()->setCurrentIndex(0);
+
+    QVERIFY(rosterGuard.isNull());
+    QVERIFY(childGuard.isNull());
+    QVERIFY(widgetNullAtAfterDelete);
+    QVERIFY(childNullAtAfterDelete);
+    QCOMPARE(checkpoints, QVector<QString>({
+        QStringLiteral("roster-model-loaded"),
+        QStringLiteral("roster-widget-destroyed-after-successful-leave"),
+        QStringLiteral(
+            "roster-widget-after-delete-returned-after-child-destruction")
+    }));
+}
+
+void NextRosterEditorTests::p9_17NoOpSaveMemoryDiagnostic()
+{
+#if defined(Q_OS_WIN)
+    runSavePathMemoryDiagnostic(false);
+#else
+    QSKIP("The P9-17 save-path diagnostic uses Windows process counters.");
+#endif
+}
+
+void NextRosterEditorTests::p9_17PlatformSaveMemoryDiagnostic()
+{
+#if defined(Q_OS_WIN)
+    runSavePathMemoryDiagnostic(true);
+#else
+    QSKIP("The P9-17 save-path diagnostic uses Windows process counters.");
+#endif
+}
+
 void NextRosterEditorTests::modelDisplayModeShowsExtraRowsAndExtendsOnEdit()
 {
     Ui::RosterTableModel model;
@@ -852,6 +1581,191 @@ void NextRosterEditorTests::modelDisplayModeShowsExtraRowsAndExtendsOnEdit()
     QCOMPARE(model.rowCount(), 10);
     QVERIFY(model.setData(model.index(9, 0), QStringLiteral("Student B")));
     QCOMPARE(model.rowCount(), 15);
+}
+
+void NextRosterEditorTests::
+safeCustomCellEditSkipsFullValidationAndMatchesCanonicalIssues()
+{
+    Ui::RosterTableModel model;
+    model.setRoster(ordinarySnapshot(1));
+    QVERIFY(model.setData(model.index(0, 0), QStringLiteral("Student!")));
+    const std::vector<Application::RosterSaveIssue> existingIssues =
+        model.validationIssues();
+    QVERIFY(!existingIssues.empty());
+    QVERIFY(std::any_of(existingIssues.cbegin(), existingIssues.cend(), [](const auto& issue)
+    {
+        return issue.code
+            == Application::RosterSaveIssueCode::StudentNameEnglishInvalidCharacters;
+    }));
+
+    model.clearDirty();
+    QVERIFY(!model.isDirty());
+    const QModelIndex customCell = model.index(0, 6);
+    QSignalSpy dataChangedSpy(&model, &QAbstractItemModel::dataChanged);
+    QVERIFY(dataChangedSpy.isValid());
+
+    QVERIFY(model.setData(customCell, QStringLiteral("\tNew\tcustom value  ")));
+    QCOMPARE(model.data(customCell).toString(), QStringLiteral("New custom value"));
+    QCOMPARE(dataChangedSpy.count(), 1);
+    const QList<QVariant> dataChanged = dataChangedSpy.takeFirst();
+    QCOMPARE(qvariant_cast<QModelIndex>(dataChanged.at(0)), customCell);
+    QCOMPARE(qvariant_cast<QModelIndex>(dataChanged.at(1)), customCell);
+    const QList<int> roles = qvariant_cast<QList<int>>(dataChanged.at(2));
+    QVERIFY(roles.contains(Qt::DisplayRole));
+    QVERIFY(roles.contains(Qt::EditRole));
+    QVERIFY(roles.contains(Qt::ToolTipRole));
+    QVERIFY(roles.contains(Qt::BackgroundRole));
+    QVERIFY(model.validationIssues() == existingIssues);
+    QVERIFY(model.validationIssues() == canonicalRosterValidationIssues(model.snapshot()));
+    QVERIFY(model.isDirty());
+}
+
+void NextRosterEditorTests::customCellLengthBoundaryCrossingsRevalidate()
+{
+    Ui::RosterTableModel model;
+    model.setRoster(ordinarySnapshot(1));
+    const QModelIndex customCell = model.index(0, 6);
+    QSignalSpy dataChangedSpy(&model, &QAbstractItemModel::dataChanged);
+    QVERIFY(dataChangedSpy.isValid());
+
+    const QString overLimit(
+        static_cast<qsizetype>(Application::RosterSaveMaximumCellLength + 1), QChar(u'x'));
+    QVERIFY(model.setData(customCell, overLimit));
+    QCOMPARE(dataChangedSpy.count(), 2);
+    const QList<QVariant> fullValidationChange = dataChangedSpy.at(0);
+    QCOMPARE(qvariant_cast<QModelIndex>(fullValidationChange.at(0)), model.index(0, 0));
+    QCOMPARE(qvariant_cast<QModelIndex>(fullValidationChange.at(1)),
+        model.index(model.rowCount() - 1, model.columnCount() - 1));
+    QVERIFY(model.validationIssues() == canonicalRosterValidationIssues(model.snapshot()));
+    const auto lengthIssue = std::find_if(
+        model.validationIssues().cbegin(), model.validationIssues().cend(), [](const auto& issue)
+        {
+            return issue.code == Application::RosterSaveIssueCode::ValidationLengthOutOfBounds
+                && issue.row.rawValue() == 0 && issue.column.rawValue() == 6;
+        });
+    QVERIFY(lengthIssue != model.validationIssues().cend());
+    QCOMPARE(std::get<std::int64_t>(lengthIssue->arguments.at("length")),
+        static_cast<std::int64_t>(Application::RosterSaveMaximumCellLength + 1));
+    QCOMPARE(std::get<std::int64_t>(lengthIssue->arguments.at("maximum")),
+        static_cast<std::int64_t>(Application::RosterSaveMaximumCellLength));
+    dataChangedSpy.clear();
+
+    const QString atLimit(
+        static_cast<qsizetype>(Application::RosterSaveMaximumCellLength), QChar(u'x'));
+    QVERIFY(model.setData(customCell, atLimit));
+    QCOMPARE(dataChangedSpy.count(), 2);
+    QVERIFY(model.validationIssues() == canonicalRosterValidationIssues(model.snapshot()));
+    QVERIFY(std::none_of(model.validationIssues().cbegin(), model.validationIssues().cend(),
+        [](const auto& issue)
+        {
+            return issue.code == Application::RosterSaveIssueCode::ValidationLengthOutOfBounds
+                && issue.row.rawValue() == 0 && issue.column.rawValue() == 6;
+        }));
+    dataChangedSpy.clear();
+
+    const QString anotherAtLimit(
+        static_cast<qsizetype>(Application::RosterSaveMaximumCellLength), QChar(u'y'));
+    QVERIFY(model.setData(customCell, anotherAtLimit));
+    QCOMPARE(dataChangedSpy.count(), 1);
+    QVERIFY(model.validationIssues() == canonicalRosterValidationIssues(model.snapshot()));
+}
+
+void NextRosterEditorTests::emptyRowTransitionsAndImportedGradesRevalidate()
+{
+    Application::RosterSnapshot extraRowSnapshot = emptyRosterSnapshot(1);
+    extraRowSnapshot.rows[4][6] = u"Last content";
+    Ui::RosterTableModel extraRowModel;
+    extraRowModel.setRowPreferences(
+        30, static_cast<int>(Application::RosterRowDisplayMode::Extra5));
+    extraRowModel.setRoster(extraRowSnapshot);
+    QCOMPARE(extraRowModel.rowCount(), 10);
+    const QModelIndex lastContent = extraRowModel.index(4, 6);
+    QSignalSpy removalChanges(&extraRowModel, &QAbstractItemModel::dataChanged);
+    QVERIFY(removalChanges.isValid());
+    QVERIFY(extraRowModel.setData(lastContent, QString{}));
+    QCOMPARE(extraRowModel.rowCount(), 5);
+    QCOMPARE(removalChanges.count(), 2);
+    const QList<QVariant> removalValidationChange = removalChanges.at(0);
+    QCOMPARE(qvariant_cast<QModelIndex>(removalValidationChange.at(0)),
+        extraRowModel.index(0, 0));
+    QCOMPARE(qvariant_cast<QModelIndex>(removalValidationChange.at(1)),
+        extraRowModel.index(extraRowModel.rowCount() - 1,
+            extraRowModel.columnCount() - 1));
+    QVERIFY(extraRowModel.validationIssues()
+        == canonicalRosterValidationIssues(extraRowModel.snapshot()));
+    QVERIFY(extraRowModel.validationIssues().empty());
+
+    Ui::RosterTableModel importedGradeModel;
+    importedGradeModel.setRowPreferences(
+        30, static_cast<int>(Application::RosterRowDisplayMode::Extra5));
+    importedGradeModel.setRoster(emptyRosterSnapshot());
+    QCOMPARE(importedGradeModel.rowCount(), 5);
+    QSignalSpy importedGradeChanges(
+        &importedGradeModel, &QAbstractItemModel::dataChanged);
+    QVERIFY(importedGradeChanges.isValid());
+    QVERIFY(importedGradeModel.setImportedEvaluationGrade(4, 2, QStringLiteral("A+")));
+    QCOMPARE(importedGradeModel.rowCount(), 10);
+    QCOMPARE(importedGradeChanges.count(), 2);
+    const QList<QVariant> importedValidationChange = importedGradeChanges.at(0);
+    QCOMPARE(qvariant_cast<QModelIndex>(importedValidationChange.at(0)),
+        importedGradeModel.index(0, 0));
+    QCOMPARE(qvariant_cast<QModelIndex>(importedValidationChange.at(1)),
+        importedGradeModel.index(importedGradeModel.rowCount() - 1,
+            importedGradeModel.columnCount() - 1));
+    QVERIFY(importedGradeModel.validationIssues()
+        == canonicalRosterValidationIssues(importedGradeModel.snapshot()));
+    const auto missingNames = std::count_if(
+        importedGradeModel.validationIssues().cbegin(),
+        importedGradeModel.validationIssues().cend(), [](const auto& issue)
+        {
+            return issue.code == Application::RosterSaveIssueCode::RosterStudentNameRequired
+                && issue.row.rawValue() == 4;
+        });
+    QCOMPARE(missingNames, 2);
+}
+
+void NextRosterEditorTests::rowHasDataMatchesTrimmedCellContent()
+{
+    Application::RosterSnapshot snapshot = emptyRosterSnapshot();
+    snapshot.rows[2][0] = u" \t\u00a0\u3000\r\n";
+    snapshot.rows[3][5] = u" \u3000Fall value\t";
+
+    Ui::RosterTableModel model;
+    model.setRoster(snapshot);
+
+    QVERIFY(!model.rowHasData(0));
+    QVERIFY(!model.rowHasData(2));
+    QVERIFY(model.rowHasData(3));
+    QVERIFY(!model.rowHasData(-1));
+    QVERIFY(!model.rowHasData(model.rowCount()));
+}
+
+void NextRosterEditorTests::transferActionTracksCurrentRowContent()
+{
+    ActionProbe probe;
+    probe.snapshot = emptyRosterSnapshot();
+    probe.snapshot.rows[2][2] = u" \t\u00a0";
+    Ui::RosterEditorWidget editor(fakeActions(probe));
+    editor.enterClassSection(QStringLiteral("transfer-row-content.tps"),
+        typedClassId(12));
+
+    auto* const transferButton = editor.findChild<QPushButton*>(
+        QStringLiteral("nextRosterTransferStudent"));
+    QVERIFY(transferButton);
+    editor.tableView()->setCurrentIndex(editor.model()->index(1, 0));
+    QVERIFY(!transferButton->isEnabled());
+
+    editor.tableView()->setCurrentIndex(editor.model()->index(2, 0));
+    QVERIFY(!transferButton->isEnabled());
+
+    const QModelIndex populatedRow = editor.model()->index(3, 0);
+    editor.tableView()->setCurrentIndex(populatedRow);
+    QVERIFY(!transferButton->isEnabled());
+    QVERIFY(editor.model()->setData(populatedRow, QStringLiteral("Student C")));
+    QVERIFY(transferButton->isEnabled());
+
+    editor.tableView()->setCurrentIndex(editor.model()->index(1, 0));
+    QVERIFY(!transferButton->isEnabled());
 }
 
 void NextRosterEditorTests::emptyRosterAndReadFailureHaveDifferentStatesAndNoFailureWrite()
@@ -895,11 +1809,18 @@ void NextRosterEditorTests::automaticManualAndFailedSaveRetryRetainLatestDraft()
     manual.enterClassSection(QStringLiteral("manual.tps"), typedClassId(2));
     QVERIFY(manual.model()->setData(manual.model()->index(0, 0),
         QStringLiteral("Manual Edit")));
+    const Application::RosterSnapshot expectedManualSave = manual.model()->snapshot();
     QTest::qWait(900);
     QCOMPARE(manualProbe.saveCount, 0);
     QVERIFY(manual.hasUnsavedChanges());
     QVERIFY(manual.saveChanges(true));
     QCOMPARE(manualProbe.saveCount, 1);
+    QVERIFY(manualProbe.lastSave.has_value());
+    QCOMPARE(manualProbe.lastSavePath, QStringLiteral("manual.tps"));
+    QVERIFY(manualProbe.lastSave->classId == typedClassId(2));
+    QVERIFY(manualProbe.lastSave->roster == expectedManualSave);
+    QVERIFY(!manualProbe.lastSave->allowQuestionableKoreanNameLengths);
+    QVERIFY(manualProbe.lastSave->removedCustomColumns.empty());
     QVERIFY(!manual.hasUnsavedChanges());
 
     ActionProbe failedProbe;
@@ -909,24 +1830,27 @@ void NextRosterEditorTests::automaticManualAndFailedSaveRetryRetainLatestDraft()
     failed.enterClassSection(QStringLiteral("retry.tps"), typedClassId(3));
     QVERIFY(failed.model()->setData(failed.model()->index(0, 0),
         QStringLiteral("First Draft")));
+    const Application::RosterSnapshot expectedFailedSave = failed.model()->snapshot();
     QTRY_COMPARE(failedProbe.saveCount, 1);
     QVERIFY(failed.hasUnsavedChanges());
+    QVERIFY(failedProbe.lastSave.has_value());
+    QVERIFY(failedProbe.lastSave->classId == typedClassId(3));
+    QVERIFY(failedProbe.lastSave->roster == expectedFailedSave);
     auto* const retry = failed.findChild<QPushButton*>(
         QStringLiteral("nextRosterRetry"));
     QVERIFY(retry);
     QVERIFY(!retry->isHidden());
     QVERIFY(failed.model()->setData(failed.model()->index(0, 0),
         QStringLiteral("Latest Draft")));
+    const Application::RosterSnapshot expectedLatestSave = failed.model()->snapshot();
     QTRY_COMPARE(failedProbe.saveCount, 2);
     QVERIFY(failed.hasUnsavedChanges());
-    QCOMPARE(QString::fromStdU16String(
-        failedProbe.lastSave->roster.rows[0][0]), QStringLiteral("Latest Draft"));
+    QVERIFY(failedProbe.lastSave->roster == expectedLatestSave);
 
     QTest::mouseClick(retry, Qt::LeftButton);
     QTRY_COMPARE(failedProbe.saveCount, 3);
     QVERIFY(failedProbe.lastSave.has_value());
-    QCOMPARE(QString::fromStdU16String(
-        failedProbe.lastSave->roster.rows[0][0]), QStringLiteral("Latest Draft"));
+    QVERIFY(failedProbe.lastSave->roster == expectedLatestSave);
     QVERIFY(!failed.hasUnsavedChanges());
     QVERIFY(retry->isHidden());
 }
@@ -965,7 +1889,12 @@ void NextRosterEditorTests::structuredCellIssuesLocalizeAndQuestionableKoreanReq
     }));
     QVERIFY(editor.model()->data(english, Qt::ToolTipRole).toString()
         .contains(QStringLiteral("unsupported character")));
+    const QVariant englishBackground = editor.model()->data(english, Qt::BackgroundRole);
+    QVERIFY(englishBackground.canConvert<QBrush>());
+    const QBrush errorBrush = englishBackground.value<QBrush>();
+    QVERIFY(errorBrush.color().isValid());
     QVERIFY(!editor.saveChanges(true));
+    QCOMPARE(editor.tableView()->currentIndex(), english);
     QCOMPARE(probe.saveCount, 0);
     QVERIFY(editor.hasUnsavedChanges());
 
@@ -976,6 +1905,9 @@ void NextRosterEditorTests::structuredCellIssuesLocalizeAndQuestionableKoreanReq
         return issue.code == Application::RosterSaveIssueCode::StudentNameKoreanTooShort
             && issue.row.rawValue() == 0 && issue.column.rawValue() == 1;
     }));
+    QVERIFY(!editor.saveChanges(false));
+    QCOMPARE(probe.saveCount, 0);
+    QVERIFY(editor.hasUnsavedChanges());
     const QString koreanMessage = editor.model()->data(korean, Qt::ToolTipRole).toString();
     QVERIFY(koreanMessage.contains(QStringLiteral("one syllable")));
 
@@ -992,6 +1924,28 @@ void NextRosterEditorTests::structuredCellIssuesLocalizeAndQuestionableKoreanReq
     QCOMPARE(translatedMessage, QCoreApplication::translate(
         "NextRosterEditor", "The Korean name has one syllable. Check that it is correct."));
     QVERIFY(translatedMessage != koreanMessage);
+
+    QVERIFY(editor.model()->setData(korean, QStringLiteral("\uAC00\uB098")));
+    const auto& warningIssues = editor.model()->validationIssues();
+    QVERIFY(std::any_of(warningIssues.cbegin(), warningIssues.cend(), [](const auto& issue) {
+        return issue.code == Application::RosterSaveIssueCode::StudentNameKoreanUnusualLength
+            && issue.severity == Application::RosterSaveIssueSeverity::Warning
+            && issue.row.rawValue() == 0 && issue.column.rawValue() == 1;
+    }));
+    const QString translatedWarning = editor.model()->data(
+        korean, Qt::ToolTipRole).toString();
+    QCOMPARE(translatedWarning, QCoreApplication::translate(
+        "NextRosterEditor", "Check the Korean name length."));
+    QVERIFY(translatedWarning != QStringLiteral("Check the Korean name length."));
+    const QVariant warningBackground = editor.model()->data(korean, Qt::BackgroundRole);
+    QVERIFY(warningBackground.canConvert<QBrush>());
+    const QBrush warningBrush = warningBackground.value<QBrush>();
+    QVERIFY(warningBrush.color().isValid());
+    QVERIFY(warningBrush != errorBrush);
+
+    QVERIFY(editor.model()->setData(korean, QStringLiteral("\uAE40")));
+    QCOMPARE(editor.model()->data(korean, Qt::ToolTipRole).toString(), translatedMessage);
+    QCOMPARE(editor.model()->data(korean, Qt::BackgroundRole).value<QBrush>(), errorBrush);
     QCoreApplication::removeTranslator(&translator);
     editor.model()->retranslate();
 
@@ -1094,11 +2048,11 @@ void NextRosterEditorTests::customColumnTailDataRequiresTwoStageConfirmation()
     actions.saveMode = Application::SaveMode::Manual;
     actions.readRoster = Platform::readRosterWindowAtPath;
     actions.saveRoster = [&unused, path](const QString& actualPath,
-        const Application::RosterSaveRequest& request) {
+        Application::RosterSaveRequest request) {
         ++unused.saveCount;
         unused.lastSavePath = actualPath;
         unused.lastSave = request;
-        return Platform::saveRosterAtPath(actualPath, request);
+        return Platform::saveRosterAtPath(actualPath, std::move(request));
     };
     actions.columnHasTailData = Platform::rosterColumnHasTailDataAtPath;
     Ui::RosterEditorWidget editor(std::move(actions));

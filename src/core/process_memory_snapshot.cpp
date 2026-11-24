@@ -4,8 +4,11 @@
 #include <optional>
 #include <utility>
 
+#include <QElapsedTimer>
+
 #if defined(Q_OS_WIN)
 #include <windows.h>
+#include <heapapi.h>
 #include <psapi.h>
 #include <tlhelp32.h>
 #elif defined(Q_OS_MACOS)
@@ -287,6 +290,74 @@ ProcessMemorySnapshot PlatformProcessMemorySnapshotProvider::snapshot() const
             ));
         result.threadCountAvailable = true;
     }
+#endif
+
+    return result;
+}
+
+DefaultProcessHeapSnapshot defaultProcessHeapSnapshot()
+{
+    DefaultProcessHeapSnapshot result;
+
+#if defined(Q_OS_WIN)
+    using HeapSummaryFunction = BOOL(WINAPI*)(
+        HANDLE, DWORD, LPHEAP_SUMMARY);
+
+    // Resolve the optional Windows 10 build 20348 API dynamically. This keeps
+    // older Windows versions able to start the app and report the diagnostic
+    // as unavailable instead of failing to load the executable.
+    HMODULE kernel = GetModuleHandleW(L"kernel32.dll");
+    if (!kernel)
+    {
+        const DWORD error = GetLastError();
+        result.error = QStringLiteral(
+            "GetModuleHandleW(kernel32.dll) failed with Win32 error %1.")
+            .arg(error);
+        return result;
+    }
+    const auto summarize = reinterpret_cast<HeapSummaryFunction>(
+        GetProcAddress(kernel, "HeapSummary"));
+    if (!summarize)
+    {
+        const DWORD error = GetLastError();
+        result.error = QStringLiteral(
+            "HeapSummary is unavailable on this Windows runtime (Win32 error %1).")
+            .arg(error);
+        return result;
+    }
+
+    HANDLE heap = GetProcessHeap();
+    if (!heap)
+    {
+        const DWORD error = GetLastError();
+        result.error = QStringLiteral(
+            "GetProcessHeap failed with Win32 error %1.").arg(error);
+        return result;
+    }
+
+    HEAP_SUMMARY summary{};
+    summary.cb = sizeof(summary);
+    QElapsedTimer timer;
+    timer.start();
+    const BOOL summarized = summarize(heap, 0, &summary);
+    const quint64 duration = static_cast<quint64>(timer.nsecsElapsed());
+    result.callDurationNanoseconds = duration;
+    if (!summarized)
+    {
+        const DWORD error = GetLastError();
+        result.error = QStringLiteral(
+            "HeapSummary failed with Win32 error %1.").arg(error);
+        return result;
+    }
+
+    result.isAvailable = true;
+    result.cbAllocated = static_cast<quint64>(summary.cbAllocated);
+    result.cbCommitted = static_cast<quint64>(summary.cbCommitted);
+    result.cbReserved = static_cast<quint64>(summary.cbReserved);
+    result.cbMaxReserve = static_cast<quint64>(summary.cbMaxReserve);
+#else
+    result.error = QStringLiteral(
+        "The default process heap summary is supported only on Windows.");
 #endif
 
     return result;

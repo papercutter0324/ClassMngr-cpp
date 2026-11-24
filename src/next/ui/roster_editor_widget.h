@@ -31,7 +31,11 @@ struct RosterEditorActions final
     std::function<Application::RosterWindowReadResult(
         const QString&, const Domain::ClassId&)> readRoster;
     std::function<Domain::Result<void>(
-        const QString&, const Application::RosterSaveRequest&)> saveRoster;
+        const QString&, Application::RosterSaveRequest)> saveRoster;
+    std::function<Domain::Result<void>(
+        const QString&,
+        Application::RosterSaveRequest,
+        Application::RosterSaveDiagnosticObserver)> saveRosterWithDiagnostics;
     std::function<Domain::Result<bool>(
         const QString&, const Domain::ClassId&, const std::u16string&)>
         columnHasTailData;
@@ -43,10 +47,22 @@ struct RosterEditorActions final
     std::function<Domain::Result<void>(
         const QString&, const Application::RosterRowTransferSaveRequest&)>
         saveRosterTransfer;
+    std::function<void(
+        quint64,
+        const QString&,
+        const QString&,
+        std::optional<int>,
+        std::optional<int>)> diagnosticCheckpoint;
+    std::function<void(
+        quint64,
+        quint64,
+        Application::RosterSaveDiagnosticStage,
+        Application::RosterSaveDiagnosticOutcome)> saveStageDiagnosticCheckpoint;
 };
 
 class RosterTableModel;
 class RosterCellDelegate;
+class SelectedClassEditor;
 
 // A single 25-row model/view editor shared by regular and testing classes.
 // Item editors are created by the delegate only while a cell is being edited.
@@ -57,6 +73,7 @@ public:
         RosterEditorActions actions = {},
         QWidget* parent = nullptr
         );
+    ~RosterEditorWidget() override;
 
     [[nodiscard]] RosterTableModel* model() const noexcept;
     [[nodiscard]] QTableView* tableView() const noexcept;
@@ -70,6 +87,7 @@ public:
         bool testingClassMode = false
         );
     void finishEditing();
+    void markSuccessfulLeave() noexcept;
     void openRosterOutput();
     void clear();
     void setSaveMode(Application::SaveMode mode);
@@ -78,6 +96,19 @@ public:
     void setDirtyChangedCallback(std::function<void(bool)> callback);
 
 private:
+    [[nodiscard]] std::function<void()>
+    postDestructionDiagnosticCheckpoint() const;
+    void recordDiagnosticCheckpoint(
+        const QString& checkpoint,
+        const QString& outcome,
+        std::optional<int> row = std::nullopt,
+        std::optional<int> column = std::nullopt
+        ) const;
+    void recordSaveStageDiagnosticCheckpoint(
+        quint64 saveSequence,
+        Application::RosterSaveDiagnosticStage stage,
+        Application::RosterSaveDiagnosticOutcome outcome
+        ) const noexcept;
     void buildUi();
     void retranslateUi();
     void updateTablePalette();
@@ -106,6 +137,8 @@ protected:
 
 private:
     RosterEditorActions m_actions;
+    const quint64 m_diagnosticInstanceId;
+    quint64 m_nextSaveDiagnosticSequence = 1;
     RosterTableModel* m_model = nullptr;
     RosterCellDelegate* m_delegate = nullptr;
     QTableView* m_table = nullptr;
@@ -139,7 +172,10 @@ private:
     std::array<bool, 4> m_hasSourceEvaluationColumns{};
     bool m_widthsDirty = false;
     bool m_testingClassMode = false;
+    bool m_destroyAfterSuccessfulLeave = false;
     std::vector<std::u16string> m_removedCustomColumns;
+
+    friend class SelectedClassEditor;
 };
 
 } // namespace ClassMngr::Next::Ui
