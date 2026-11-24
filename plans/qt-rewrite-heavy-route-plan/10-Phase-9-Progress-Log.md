@@ -2252,3 +2252,143 @@ Executor is paused before route execution while the user-requested root
 P9-17 remains Deferred and unaccepted after plateau cleanup failed; Phase 9
 remains In progress. The 256 MiB target, inclusive 450 MiB ceiling, separate
 512 MiB operation advisory, and cold/plateau cleanup formulas remain unchanged.
+
+### 2026-11-24 - P9-18 route attempt #1 stopped at Created availability
+
+The packaged [route attempt #1 manifest](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T050220198Z-6dec4e81106b4f888ea01a6370beff2d/manifest.json)
+records `campus_map/created -> campus_information/suspended ->
+campus_map/activated`, then stops before warm-up memory windows:
+`campus_map/created` reported `page_instance_available=false`,
+`sample_available=true`; the suspended and activated events were true/true.
+PID 8556 exited normally (0); app-data/settings were unchanged, with no temp
+files or SQLite sidecars. The cold baseline had 10 samples and maximum Working
+Set 203,182,080 B. This is not a P9-18 memory route result or acceptance.
+
+An independent Tester confirmed PageHost emits Created before storing the
+instance. The state-aware runner/validator/test repair passed focused checks;
+review then found a missing `page_instance_available` may be coerced to false.
+Require explicit presence/type validation and regression coverage before retry.
+Preserve successful exact-source Release build #8 [receipt](../../artifacts/phase9/p9-18-exact-release-builds/20261124T051100000Z-RETRY8/release-build-receipt.json)
+as pre-strict-schema evidence: source SHA-256
+`573d962afa6757f6ffb108c267c38efa3119485a10df7241641a132eeeafbc5a`, harness
+SHA-256 `54778501a440e4ad11ad8f8148c1e090d9586177d092a076ce091e067aa3660b`.
+Build #8 is not route-eligible; rerun the strict-schema build as RETRY9, then
+route only from its fresh receipt. Retain root `build/`: runner/validator
+receipts require `build/windows-x64-release/CMakeCache.txt` and the preserved
+Release directory.
+
+P9-17 remains Deferred and unaccepted after plateau cleanup failed; Phase 9
+remains In progress.
+
+### 2026-11-24 - P9-18 route attempts #2/#3; #4 unaccepted
+
+Attempt #2 (`20261124T060100186Z-83f2ce3af0a3496089d63d285ce50f83`)
+[manifest](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T060100186Z-83f2ce3af0a3496089d63d285ce50f83/manifest.json)
+and [validation report](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T060100186Z-83f2ce3af0a3496089d63d285ce50f83/validation.json)
+show lifecycle and map loads succeeded, but the runner stopped before warm-up:
+it compared fixture catalog `resource_file` with runtime `package_file`.
+PID 32484 exited normally; app-data stayed unchanged, with no temp files or
+SQLite sidecars. This produced no P9-18 route-memory result.
+
+An independent raw-artifact audit of attempt #3
+(`20261124T063058681Z-eb8b8afa557f4f47ac68e7803afa1027`) used its
+[manifest](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T063058681Z-eb8b8afa557f4f47ac68e7803afa1027/manifest.json)
+and [process metrics](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T063058681Z-eb8b8afa557f4f47ac68e7803afa1027/process-metrics.jsonl)
+to inspect 28 windows/280 samples. It found maximum Working Set was
+226,410,496 B, no settled sample was >= 268,435,456 B, the 450 MiB ceiling and
+512 MiB operation advisory passed, and operation peak was 236,736,512 B. Cold
+cleanup failed: baseline 203,038,720 B, return 214,466,560 B, uplift
+11,427,840 B. Plateau cleanup failed cycles 1, 2, 4, and 5 over 214,482,944 B
+by 909,312 / 1,339,392 / 1,970,176 / 2,557,952 B. Stable baseline and fitted
+cycle change do not erase these failures. UIA/resource/file/database/process
+checks passed; PID 25728 exited normally, with no app-data/temp/sidecar changes.
+The validator crashed before writing `validation.json`. Its [rerun receipt](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T063058681Z-eb8b8afa557f4f47ac68e7803afa1027/logs/validator-rerun.json)
+and [log](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T063058681Z-eb8b8afa557f4f47ac68e7803afa1027/logs/validator-rerun-output.txt)
+show an `AttributeError`: PowerShell serialized singleton `lifecycleEvents`
+in cold/plateau confirmations as an object, then the validator iterated its
+dictionary keys as events. Keep attempt #3 immutable and unaccepted.
+
+Tester accepted the successful [RETRY12 receipt](../../artifacts/phase9/p9-18-exact-release-builds/20261124T063700000Z-RETRY12/release-build-receipt.json)
+and its harness and five focused tests. For attempt #4
+(`20261124T065629417Z-bad41c4e931d484b9eef363a0d1639a6`), the [manifest](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T065629417Z-bad41c4e931d484b9eef363a0d1639a6/manifest.json)
+and top-level [validation report](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T065629417Z-bad41c4e931d484b9eef363a0d1639a6/validation.json)
+incorrectly say `passed`, but
+`settledMemoryAndCleanupGates.details.passed=false`: cold
+cleanup failed by 11,087,872 B and plateau cleanup failed cycles 1, 2, and 4;
+the fitted cycle trend is within the baseline envelope. This status-propagation
+contradiction is under independent audit/repair. Preserve attempt #4 immutably;
+make no acceptance claim. P9-18 remains Active and the memory gates are unchanged.
+
+### 2026-11-24 - P9-18 RETRY13 route attempt #5: cleanup failed
+
+The [attempt #5 manifest](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T072603004Z-6e550a50e1d24deaa3abae409d1e3bfe/manifest.json),
+[validation report](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T072603004Z-6e550a50e1d24deaa3abae409d1e3bfe/validation.json),
+[process metrics](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T072603004Z-6e550a50e1d24deaa3abae409d1e3bfe/process-metrics.jsonl),
+and [RETRY13 receipt](../../artifacts/phase9/p9-18-exact-release-builds/20261124T161000000Z-RETRY13/release-build-receipt.json)
+record run `20261124T072603004Z-6e550a50e1d24deaa3abae409d1e3bfe`. The
+independent raw audit was accepted by the Tester; this is not P9-18 acceptance.
+With the earlier validator wrapper issue fixed in RETRY13, validation correctly
+reports failure: four gates passed and `settledMemoryAndCleanupGates` failed.
+
+The route captured 28 windows/280 samples across 10 cycles. Maximum Working
+Set was 226,082,816 B, with zero strict-target misses and zero 450 MiB
+exceedances; operation peak was 235,950,080 B. Cold cleanup failed: baseline
+203,005,952 B, range 69,632 B, allowance 203,075,584 B, return 214,204,416 B,
+uplift 11,198,464 B (11,128,832 B over allowance). Plateau cleanup failed:
+center 214,712,320 B, envelope 344,064 B, fitted drift +660,275.2 B outside the
+envelope, upper bound 215,056,384 B; cycles 1-4 returned 215,343,104 / 215,584,768 /
+216,150,016 / 216,174,592 B, all above the bound.
+
+Raw UIA/resource/image/screenshot, app-data, natural-exit, temp, and sidecar
+checks passed; PID 22668 exited 0 without forced termination. Private-usage
+diagnostics: settled `privateBytes` maximum 155,717,632 B at cycle 10 open;
+continuous diagnostic peak 166,854,656 B at cycle 3 activation; lifecycle
+private/pagefile peak 165,548,032 B during cycle 10 activation; cold private
+baseline 131,182,592 B and warm-up return 142,290,944 B. These establish
+neither a leak nor its owner. P9-18 remains Active and unaccepted because both
+cleanup gates fail; the memory thresholds and formulas are unchanged.
+
+### 2026-11-24 - P9-18 retained-versus-released Maps diagnostic
+
+The independent Tester accepted this diagnostic-only [receipt](../../artifacts/phase9/p9-18-retained-vs-released-diagnostic/20261124T085644091Z-b41ae767f09f4a2daecb45b15a54db59/diagnostic-receipt.json)
+(SHA-256 `71d8cf7690fa3982c3cf5ce5654dbb23a398fa31a4f526892128d668d6a61f61`),
+using `tests/next/campus_directory_visual_capture.cpp` at SHA-256
+`60c73c3eac4ebfa33c37838f4523f96673006816c22cf8b0112b8f61836abace`. The
+[first](../../artifacts/phase9/p9-18-retained-vs-released-diagnostic/20261124T085644091Z-b41ae767f09f4a2daecb45b15a54db59/visual-captures/campus_directory_paired_capture.json)
+and [second](../../artifacts/phase9/p9-18-retained-vs-released-diagnostic/20261124T085644091Z-b41ae767f09f4a2daecb45b15a54db59/visual-captures-attempt2/campus_directory_paired_capture.json)
+Release run manifests record 10/10 samples before and after release and 52
+PNGs each. The same visible `campus_information` page stayed at 74 widgets;
+the retained Maps instance had 32 widgets and zero image references, and was
+absent after release.
+
+Run 1 retained-to-released medians: Working Set 82,124,800 -> 82,145,280 B
+(+20,480); PrivateUsage 52,273,152 -> 52,285,440 B (+12,288). Run 2:
+Working Set 81,281,024 -> 81,297,408 B (+16,384); PrivateUsage 52,518,912 ->
+53,149,696 B (+630,784). Releasing Maps produced no meaningful process-memory
+decrease; this diagnostic does not justify a production lifecycle change or
+identify a leak. P9-18 remains Active and unaccepted after cleanup failed in
+[route attempt #5](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T072603004Z-6e550a50e1d24deaa3abae409d1e3bfe/manifest.json);
+its thresholds and gates are unchanged.
+
+#### 2026-11-24 - Strict-precondition rerun
+
+The independent Tester accepted this diagnostic-only [receipt](../../artifacts/phase9/p9-18-retained-vs-released-diagnostic/20261124T092403077Z-e9f12008e8ff454998371b14083905f1/diagnostic-receipt.json)
+(SHA-256 `9fb71d70e3830792c63b2fd9c7a0cf483a248d8c2999d8f484664a5bf535c0aa`),
+using `tests/next/campus_directory_visual_capture.cpp` at SHA-256
+`401bd200bf91e33dfeef62dbe6a6aedff2d0ec42bd85895d4ecf904534ac9391`. The
+[first](../../artifacts/phase9/p9-18-retained-vs-released-diagnostic/20261124T092403077Z-e9f12008e8ff454998371b14083905f1/visual-captures/campus_directory_paired_capture.json)
+and [second](../../artifacts/phase9/p9-18-retained-vs-released-diagnostic/20261124T092403077Z-e9f12008e8ff454998371b14083905f1/visual-captures-attempt2/campus_directory_paired_capture.json)
+Release runs enforced the precondition before sampling: Maps suspended and
+retained with 32 widgets and zero loaded resources, decoded dimensions,
+image-label widgets, or pixmaps. After release it was absent while the same
+visible 74-widget Information page remained. The Release build and both runs
+exited 0, saved 52 PNGs each, and had 10/10 available samples in both states.
+
+Retained-to-released medians in run 1: Working Set 82,223,104 -> 82,247,680 B
+(+24,576); PrivateUsage 52,371,456 -> 52,383,744 B (+12,288). Run 2:
+Working Set 81,076,224 -> 80,957,440 B (-118,784); PrivateUsage 53,202,944 ->
+52,736,000 B (-466,944). The mixed deltas show no consistent process-memory
+benefit. This diagnostic is not P9-18 acceptance and supports neither a
+production lifecycle change nor leak attribution. The earlier diagnostic is
+unchanged; P9-18 remains Active and unaccepted after [route attempt #5](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T072603004Z-6e550a50e1d24deaa3abae409d1e3bfe/manifest.json)
+cleanup failure. Memory gates are unchanged.

@@ -16,6 +16,7 @@
 #include <QApplication>
 #include <QAction>
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -35,8 +36,11 @@
 #include <QTranslator>
 
 #include <algorithm>
+#include <chrono>
+#include <limits>
 #include <memory>
 #include <optional>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -84,7 +88,9 @@ QJsonObject memorySnapshotJson(const ProcessMemorySnapshot& snapshot)
         {QStringLiteral("available"), snapshot.isAvailable},
         {QStringLiteral("platform"), snapshot.platform},
         {QStringLiteral("workingSetBytes"), static_cast<double>(snapshot.workingSetBytes)},
+        {QStringLiteral("workingSetBytesAvailable"), snapshot.workingSetBytesAvailable},
         {QStringLiteral("privateUsageBytes"), static_cast<double>(snapshot.privateUsageBytes)},
+        {QStringLiteral("privateUsageBytesAvailable"), snapshot.privateUsageBytesAvailable},
         {QStringLiteral("peakWorkingSetBytes"), static_cast<double>(snapshot.peakWorkingSetBytes)},
         {QStringLiteral("capturedAt"), snapshot.capturedAt.toString(Qt::ISODateWithMs)}
     };
@@ -125,6 +131,190 @@ QJsonObject memoryPoint(
         {QStringLiteral("loadedMapResourceCount"), maps.count},
         {QStringLiteral("decodedMapDimensions"), maps.decodedSizes},
         {QStringLiteral("campusPngLoadEvents"), loadEvents}
+    };
+}
+
+constexpr int DiagnosticMemorySampleCount = 10;
+constexpr int DiagnosticMemorySampleIntervalMilliseconds = 100;
+
+struct MemoryWindow final
+{
+    std::vector<ProcessMemorySnapshot> samples;
+    std::optional<quint64> workingSetMedianBytes;
+    std::optional<quint64> privateUsageMedianBytes;
+};
+
+std::optional<quint64> medianMetric(
+    const std::vector<ProcessMemorySnapshot>& samples,
+    quint64 ProcessMemorySnapshot::*value,
+    bool ProcessMemorySnapshot::*available
+    )
+{
+    std::vector<quint64> values;
+    for (const ProcessMemorySnapshot& sample : samples)
+    {
+        if (sample.isAvailable && sample.*available) values.push_back(sample.*value);
+    }
+    if (values.empty()) return std::nullopt;
+    std::sort(values.begin(), values.end());
+    const std::size_t upper = values.size() / 2;
+    if (values.size() % 2 != 0) return values[upper];
+    const quint64 lowerValue = values[upper - 1];
+    return lowerValue + (values[upper] - lowerValue) / 2;
+}
+
+MemoryWindow sampleMemoryWindow(const PlatformProcessMemorySnapshotProvider& provider)
+{
+    MemoryWindow result;
+    result.samples.reserve(DiagnosticMemorySampleCount);
+    for (int sampleIndex = 0; sampleIndex < DiagnosticMemorySampleCount; ++sampleIndex)
+    {
+        if (sampleIndex > 0)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(
+                DiagnosticMemorySampleIntervalMilliseconds));
+        }
+        QApplication::processEvents();
+        result.samples.push_back(provider.snapshot());
+    }
+    result.workingSetMedianBytes = medianMetric(
+        result.samples,
+        &ProcessMemorySnapshot::workingSetBytes,
+        &ProcessMemorySnapshot::workingSetBytesAvailable);
+    result.privateUsageMedianBytes = medianMetric(
+        result.samples,
+        &ProcessMemorySnapshot::privateUsageBytes,
+        &ProcessMemorySnapshot::privateUsageBytesAvailable);
+    return result;
+}
+
+QJsonValue optionalBytesJson(const std::optional<quint64>& value)
+{
+    return value ? QJsonValue(static_cast<double>(*value)) : QJsonValue(QJsonValue::Null);
+}
+
+QJsonValue availableMetricCountJson(
+    const MemoryWindow& window,
+    bool ProcessMemorySnapshot::*available
+    )
+{
+    return static_cast<int>(std::count_if(
+        window.samples.cbegin(), window.samples.cend(),
+        [available](const ProcessMemorySnapshot& sample) {
+            return sample.isAvailable && sample.*available;
+        }));
+}
+
+QJsonObject memoryWindowJson(const MemoryWindow& window)
+{
+    QJsonArray samples;
+    for (const ProcessMemorySnapshot& sample : window.samples)
+    {
+        samples.append(memorySnapshotJson(sample));
+    }
+    return {
+        {QStringLiteral("sampleCount"), static_cast<int>(window.samples.size())},
+        {QStringLiteral("sampleWaitMilliseconds"), DiagnosticMemorySampleIntervalMilliseconds},
+        {QStringLiteral("workingSetBytes"), QJsonObject{
+             {QStringLiteral("median"), optionalBytesJson(window.workingSetMedianBytes)},
+             {QStringLiteral("availableSampleCount"), availableMetricCountJson(
+                  window, &ProcessMemorySnapshot::workingSetBytesAvailable)}
+         }},
+        {QStringLiteral("privateUsageBytes"), QJsonObject{
+             {QStringLiteral("median"), optionalBytesJson(window.privateUsageMedianBytes)},
+             {QStringLiteral("availableSampleCount"), availableMetricCountJson(
+                  window, &ProcessMemorySnapshot::privateUsageBytesAvailable)}
+         }},
+        {QStringLiteral("samples"), samples}
+    };
+}
+
+std::optional<qint64> medianDelta(
+    const std::optional<quint64>& after,
+    const std::optional<quint64>& before
+    )
+{
+    if (!after || !before) return std::nullopt;
+    constexpr quint64 maxSigned = static_cast<quint64>(std::numeric_limits<qint64>::max());
+    if (*after >= *before)
+    {
+        const quint64 difference = *after - *before;
+        if (difference > maxSigned) return std::nullopt;
+        return static_cast<qint64>(difference);
+    }
+    const quint64 difference = *before - *after;
+    if (difference > maxSigned) return std::nullopt;
+    return -static_cast<qint64>(difference);
+}
+
+QJsonValue optionalSignedBytesJson(const std::optional<qint64>& value)
+{
+    return value ? QJsonValue(static_cast<double>(*value)) : QJsonValue(QJsonValue::Null);
+}
+
+int widgetCount(const QWidget* parent)
+{
+    if (!parent) return 0;
+    return parent->findChildren<QWidget*>(QString(), Qt::FindChildrenRecursively).size();
+}
+
+std::optional<Ui::PageLifecycleState> lifecycleStateFor(
+    const Ui::PageHost& host,
+    const QString& pageId
+    )
+{
+    const std::optional<Ui::PageId> parsedPageId = Ui::PageId::fromString(pageId);
+    if (!parsedPageId) return std::nullopt;
+    return host.pageLifecycleState(*parsedPageId);
+}
+
+QString lifecycleStateName(const std::optional<Ui::PageLifecycleState>& state)
+{
+    if (!state) return QStringLiteral("unknown");
+    switch (*state)
+    {
+    case Ui::PageLifecycleState::Declared: return QStringLiteral("declared");
+    case Ui::PageLifecycleState::Created: return QStringLiteral("created");
+    case Ui::PageLifecycleState::Activated: return QStringLiteral("activated");
+    case Ui::PageLifecycleState::Suspended: return QStringLiteral("suspended");
+    case Ui::PageLifecycleState::Released: return QStringLiteral("released");
+    }
+    return QStringLiteral("unknown");
+}
+
+QJsonObject retainedReleaseCheckpoint(
+    const Ui::PageHost& host,
+    const QString& mapPageId,
+    const QString& informationPageId,
+    const Ui::Page* expectedInformationPage,
+    const Ui::CampusDirectoryPage* mapPage,
+    const MemoryWindow& memoryWindow,
+    const int campusPngLoadEvents
+    )
+{
+    const Ui::Page* const informationPage = host.pageInstance(informationPageId);
+    const MapState maps = mapState(mapPage);
+    const std::optional<Ui::PageLifecycleState> mapLifecycle = lifecycleStateFor(
+        host, mapPageId);
+    const QList<QLabel*> mapLabels = mapPage
+        ? mapPage->findChildren<QLabel*>(QStringLiteral("campusMapImage"))
+        : QList<QLabel*>{};
+    return {
+        {QStringLiteral("processId"), static_cast<double>(QCoreApplication::applicationPid())},
+        {QStringLiteral("activePageId"), host.activePageKey().value_or(QString())},
+        {QStringLiteral("informationPageInstanceAvailable"), host.hasPageInstance(informationPageId)},
+        {QStringLiteral("informationPageVisible"), informationPage && informationPage->isVisible()},
+        {QStringLiteral("informationPageSameInstance"), informationPage == expectedInformationPage},
+        {QStringLiteral("informationPageWidgetCount"), widgetCount(informationPage)},
+        {QStringLiteral("mapPageInstanceAvailable"), host.hasPageInstance(mapPageId)},
+        {QStringLiteral("mapPageLifecycleState"), lifecycleStateName(mapLifecycle)},
+        {QStringLiteral("mapPageWidgetCount"), widgetCount(mapPage)},
+        {QStringLiteral("mapImageLabelWidgetCount"), static_cast<int>(mapLabels.size())},
+        {QStringLiteral("liveMapImagePixmapCount"), maps.count},
+        {QStringLiteral("loadedMapResourceCount"), maps.count},
+        {QStringLiteral("decodedMapDimensions"), maps.decodedSizes},
+        {QStringLiteral("campusPngLoadEvents"), campusPngLoadEvents},
+        {QStringLiteral("memoryWindow"), memoryWindowJson(memoryWindow)}
     };
 }
 
@@ -285,17 +475,68 @@ bool captureNext(
             if (error) *error = QStringLiteral("Could not leave Next Maps for lifecycle measurement.");
             return false;
         }
-        if (!host.releasePage(mapsId) || host.hasPageInstance(mapsId))
+        QApplication::processEvents();
+        const Ui::Page* const informationPage = host.pageInstance(informationId);
+        if (!informationPage || !informationPage->isVisible()
+            || host.activePageKey() != std::optional<QString>{informationId}
+            || !host.hasPageInstance(mapsId)
+            || host.pageInstance(mapsId) != page)
         {
-            if (error) *error = QStringLiteral("Next Maps page did not release after suspension.");
+            if (error) *error = QStringLiteral("Could not establish the retained Maps checkpoint on visible Information.");
             return false;
         }
-        const auto suspended = memoryProvider.snapshot();
-        const MapState suspendedMaps;
-        const int suspendedLoads = campusPngLoads();
-        if (suspendedMaps.count != 0)
+
+        const std::optional<Ui::PageLifecycleState> mapLifecycle = lifecycleStateFor(
+            host, mapsId);
+        const MapState suspendedMaps = mapState(page);
+        const QList<QLabel*> suspendedMapImageLabels = page->findChildren<QLabel*>(
+            QStringLiteral("campusMapImage"));
+        const int liveMapImagePixmaps = static_cast<int>(std::count_if(
+            suspendedMapImageLabels.cbegin(), suspendedMapImageLabels.cend(),
+            [](const QLabel* label) {
+                return !label->pixmap(Qt::ReturnByValue).isNull();
+            }));
+        if (!mapLifecycle || *mapLifecycle != Ui::PageLifecycleState::Suspended
+            || suspendedMaps.count != 0
+            || !suspendedMaps.decodedSizes.isEmpty()
+            || !suspendedMapImageLabels.isEmpty()
+            || liveMapImagePixmaps != 0)
         {
-            if (error) *error = QStringLiteral("Next Maps retained map images after suspension.");
+            if (error) *error = QStringLiteral("Retained Maps state did not clear its resources, decoded dimensions, image labels, and pixmaps before sampling.");
+            return false;
+        }
+
+        const int suspendedLoads = campusPngLoads();
+        const MemoryWindow retainedWindow = sampleMemoryWindow(memoryProvider);
+        const QJsonObject retainedCheckpoint = retainedReleaseCheckpoint(
+            host,
+            mapsId,
+            informationId,
+            informationPage,
+            page,
+            retainedWindow,
+            suspendedLoads);
+        if (!host.releasePage(mapsId) || host.hasPageInstance(mapsId))
+        {
+            if (error) *error = QStringLiteral("Next Maps page did not release after the retained checkpoint.");
+            return false;
+        }
+        page = nullptr;
+        const auto afterRelease = memoryProvider.snapshot();
+        const MemoryWindow releasedWindow = sampleMemoryWindow(memoryProvider);
+        const QJsonObject releasedCheckpoint = retainedReleaseCheckpoint(
+            host,
+            mapsId,
+            informationId,
+            informationPage,
+            nullptr,
+            releasedWindow,
+            campusPngLoads());
+        if (host.activePageKey() != std::optional<QString>{informationId}
+            || host.pageInstance(informationId) != informationPage
+            || !informationPage->isVisible())
+        {
+            if (error) *error = QStringLiteral("Information did not remain visible on the same page instance after release.");
             return false;
         }
         if (!host.activatePage(mapsId))
@@ -334,8 +575,30 @@ bool captureNext(
                 {QStringLiteral("observations"), QJsonObject{
                      {QStringLiteral("beforeMapEntry"), memoryPoint(baseline, MapState{}, baselineLoads)},
                      {QStringLiteral("afterMapEntry"), memoryPoint(entered, enteredMaps, enteredLoads)},
-                     {QStringLiteral("afterLeaveSuspensionRelease"), memoryPoint(suspended, suspendedMaps, suspendedLoads)},
+                     {QStringLiteral("afterLeaveSuspensionRelease"), memoryPoint(afterRelease, MapState{}, suspendedLoads)},
                      {QStringLiteral("afterReopen"), memoryPoint(reopened, reopenedMaps, reopenedLoads)}
+                 }},
+                {QStringLiteral("retainedVsReleasedDiagnostic"), QJsonObject{
+                     {QStringLiteral("purpose"), QStringLiteral("Matched whole-process memory windows around releasePage after normal Maps suspension; diagnostic only, not a memory budget or acceptance result.")},
+                     {QStringLiteral("samplingProtocol"), QStringLiteral("10 ProcessMemorySnapshot samples per state with a 100 ms wait between successive samples; Qt events are processed before each sample.")},
+                     {QStringLiteral("sameProcess"), retainedCheckpoint.value(QStringLiteral("processId"))
+                          == releasedCheckpoint.value(QStringLiteral("processId"))},
+                     {QStringLiteral("sameVisibleInformationPage"),
+                          retainedCheckpoint.value(QStringLiteral("activePageId"))
+                              == releasedCheckpoint.value(QStringLiteral("activePageId"))
+                          && retainedCheckpoint.value(QStringLiteral("activePageId")).toString() == informationId
+                          && retainedCheckpoint.value(QStringLiteral("informationPageVisible")).toBool()
+                          && releasedCheckpoint.value(QStringLiteral("informationPageVisible")).toBool()
+                          && retainedCheckpoint.value(QStringLiteral("informationPageSameInstance")).toBool()
+                          && releasedCheckpoint.value(QStringLiteral("informationPageSameInstance")).toBool()},
+                     {QStringLiteral("retainedSuspendedBeforeRelease"), retainedCheckpoint},
+                     {QStringLiteral("afterRelease"), releasedCheckpoint},
+                     {QStringLiteral("afterReleaseMinusRetainedMedianBytes"), QJsonObject{
+                          {QStringLiteral("workingSetBytes"), optionalSignedBytesJson(medianDelta(
+                               releasedWindow.workingSetMedianBytes, retainedWindow.workingSetMedianBytes))},
+                          {QStringLiteral("privateUsageBytes"), optionalSignedBytesJson(medianDelta(
+                               releasedWindow.privateUsageMedianBytes, retainedWindow.privateUsageMedianBytes))}
+                      }}
                  }},
                 {QStringLiteral("scope"), QStringLiteral("Whole-process observations; not page-attributed memory and not a memory budget.")}
             };
