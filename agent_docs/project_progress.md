@@ -1,40 +1,79 @@
 # Project Progress
 
-## Phase 9 current position -- P9-18 active -- 2026-11-24
+## Phase 9 current position -- Batch 4 / P9-19 ready -- 2026-11-24
 
-### Current P9-17 corrected v143 route outcome -- 2026-11-24
+Phase 9 remains In Progress on Heavy. Batch 3 is closed and pushed as
+c4c22e7b9; Batch 4 is active. P9-19 is next and has a written preimplementation
+route contract in Current-Slice-Batches.md. No P9-19 implementation has begun.
+The full Windows Debug CTest and final packaged Release gates remain open.
 
-The current-source VS17 2022/x64/v143 Release receipt
-`artifacts/phase9/p9-17-exact-release-builds/20261123T171216444Z-10ad8ff10faf4280bee7aab5041897ff/release-build-receipt.json`
-was independently accepted. It binds 2,422 files at SHA-256
-`eedc28b3b50a9296267d37351757b628936be4779e567080cbdaade8bf088143` and the
-Release executable at SHA-256
-`d8ea15ec884f8e615bbe902da739d8fe4582750d0e7ce232e97cd4fa40c698ad`. The
-receipt includes the corrected natural-close evidence and the shared
-P9-14 lifecycle helper in the P9-17 harness inventory. The 69-test validator
-suite, four fixture tests, and PowerShell 5.1 parsing passed independent review.
+P9-17's plateau cleanup and P9-18's cold cleanup both remain unaccepted and
+explicitly deferred by user direction to Phase 14. Phase 9 may close after the
+remaining Batch 4 slices and all other final gates pass, while those two named
+cleanup gates remain deferred and unaccepted. Preserve the Maps page retention.
+No memory thresholds, formulas, or gate criteria changed.
 
-The fresh route
-`artifacts/phase9/packaged-next-p9-17-large-roster/20261123T172727262Z-c5489fce11ad4b8d898dcd935aa4b8b8/`
-completed all ten cycles, UI/database/readback checks, natural exit, and file
-cleanup. The validator correctly reports cold cleanup **passed** and plateau
-cleanup **failed**. All 460 Working Set samples stayed below the strict
-268,435,456 B target; maximum was 227,966,976 B. Operation peak was
-223,801,344 B. Cold baseline median/range was 227,966,976/0 B; first return
-median was 142,843,904 B. Plateau center/envelope/upper bound were
-141,725,696/2,039,808/143,765,504 B. Cycle 1 returned at 158,384,128 B,
-14,618,624 B above the upper bound; cycles 2–10 were below it. Baseline drift
-was −2,598,502.4 B, slightly outside the envelope. Diagnostic PrivateUsage
-rose from 198,451,200 B at cycle 1 return to 348,467,200 B at cycle 10 while
-Working Set fell; this does not identify live retained objects or a leak.
+### Latest P9-18 targeted-UIA route -- 2026-11-24
 
-By user direction, P9-17 is deferred as active work but remains unaccepted
-because its required plateau cleanup gate fails. Phase 9 remains In Progress;
-P9-18 campus-map open/close is the active next slice. Phase 14 is planned after
-Phase 13 to attribute the unresolved PrivateUsage growth and revalidate P9-17
-cleanup if a confirmed owner is fixed. Keep the strict 256 MiB Working Set
-target, inclusive 450 MiB ceiling, separate 512 MiB operation advisory limit,
-and cold/plateau formulas unchanged.
+Exact-source VS2022/x64/v143 Release attempt #7 is recorded at
+artifacts/phase9/packaged-next-p9-18-campus-map/20261124T122412350Z-d59e56771be74f66ad00b21cbaad38e5/.
+The independently reviewed route passed fixture, exact source/package,
+UIA/lifecycle/image/screenshot, normal-exit/read-only-data, and plateau cleanup
+checks. All 280 settled Working Set samples stayed below the 268,435,456 B
+target; maximum was 224,354,304 B. Operation peak was 234,217,472 B. Cold
+cleanup failed by 10,809,344 B. The targeted UIA artifacts retain the visible
+page title and Maps image/card controls; the validator cross-checks their
+identity and visibility. This does not identify a memory owner.
+
+The full-descendant observer route showed per-confirmation Working Set steps
+and failed plateau cleanup; the targeted observer route passed plateau cleanup
+but still failed cold cleanup. The changes suggest that observation breadth
+can affect repeated-window measurements, while the remaining cold uplift is
+associated with first Maps activation. The decoded Bundang image payload totals
+9,867,100 B; the first-use residual is similar in scale, but no Qt resource,
+pixmap, allocator, or application owner is established.
+
+### P9-17 deferred route and Windows build-folder cleanup
+
+P9-17 remains Deferred and unaccepted: the current v143 large-roster route
+passed cold cleanup and the strict Working Set target but failed plateau
+cleanup. Its diagnostic PrivateUsage growth does not name a live allocation
+owner. Phase 14 will attribute and revalidate this gate.
+
+The user-requested emptying of C:\Git\ClassMngr-cpp\build remains incomplete.
+The path-guarded cleanup script hash
+B49DDAE27B956D584DA417EEB75D42E1E160342C5B4922068316038EE87EC4F1 was
+retried after the latest build; preflight denied access to
+build\p9-17-save-stage-diagnostic-release\generated\ClassMngrNext\Resources
+before deletion. No entries were removed; 17 top-level entries remain, and the
+tool exposed no UAC approval prompt. This requires a session with an actual
+administrator token.
+
+A subsequent opt-in Map-stage diagnostic build was stopped after the user
+deferred attribution to Phase 14. Its source/test/parser changes were removed;
+no stage route ran. The separate Campus Directory test target failed with
+exit 1 and no output in both CTest and direct verbose invocation. Its receipt
+is stale and is not acceptance evidence. See the Phase 9 progress log and Phase
+14 current note for the preserved artifact path and exact failure record.
+
+### P9-19 preimplementation route contract
+
+P9-07 already covered My Classes; P9-19 covers Classes only. The fresh fixture
+uses tests/fixtures/workspaces/large_startup.sql (96 classes, 768 schedules),
+verified by the existing P9-16 preparer. The agreed route is one warm-up, five
+no-action My Workspace baselines, then ten measured Classes-entry / deterministic
+96-class selection / My Workspace-return cycles. Keep process-bound UIA and
+complete app lifecycle records, exact source/package binding, before/after
+SQLite snapshots, integrity and read-only checks, natural exit, and temp/sidecar
+cleanup.
+
+At settled windows, use the unchanged <268,435,456 B target, inclusive
+471,859,200 B ceiling, separate 536,870,912 B operation advisory, two-second
+settle, ten 100 ms samples, and existing cold/plateau formulas. Continuous
+operation sampling remains 50 ms. Compact app-side checkpoints must verify one
+SelectedClassEditor, fewer than 250 non-roster widgets, zero per-class class_id
+child widgets, and no editor-count growth through the full sweep. The P9-19
+contract and ordered follow-up candidates are in Current-Slice-Batches.md.
 
 ### Superseded P9-17 outcome and next step -- 2026-11-23
 

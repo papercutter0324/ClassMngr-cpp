@@ -1,73 +1,93 @@
 # Latest Session Work
 
-## Current continuation -- P9-18 and deferred P9-17 -- 2026-11-24
+## Current continuation -- Phase 9 Batch 4 paused -- 2026-11-24
 
-Deployment ID: `p9-phase9-resume-20261124`. Use Heavy for implementation and
-local Windows validation; use Light for Git. Phase 9 remains In Progress.
-P9-17 is deferred as active work by user direction, not accepted: the latest
-exact-source VS2022/v143 route peaked at 227,966,976 B Working Set and
-352,763,904 B PrivateUsage at final re-entry; cold cleanup passed and plateau
-cleanup failed. Its reviewed code/test/harness slice is committed locally as
-`2c2eb161`, not yet pushed; no leak owner is established. P9-18 campus-map
-open/close remains the active next slice. Phase 14 is planned after Phase 13
-for allocation attribution and any confirmed fixes. Keep the strict
-268,435,456 B (256 MiB) Working Set target, inclusive 471,859,200 B (450 MiB)
-ceiling, separate 536,870,912 B (512 MiB) operation advisory, and cold/plateau
-gates unchanged.
+Deployment ID: p9-resume-20261124. The user requested a pause with handoff,
+commit, and push. Phase 9 remains In Progress; the goal is paused. Use Heavy
+for implementation and local Windows validation and Light for Git. Do not
+start P9-19 implementation until the user resumes.
 
-The completed filled-versus-compact-text diagnostic found little effect from
-text length and did not identify a leak owner. The separate full-versus-three-
-row harness received independent contract review and five focused tests passed,
-but no live arms ran; it provides no row-cardinality result or leak attribution.
-WPR hooks were statically reviewed, but RunAs failed with `0xc0000142` before
-an elevated worker; there is no WPR session, snapshot, or ETL. No UAC or
-registry settings were changed.
+### Current state
 
-The VS Code CMake reopen failure was separate from the accepted VS17 Release
-tree: the first VS18 configure selected a missing 14.51.36231 compiler; the
-retry reached configure but CMake exited with `0xC0000409` before generation.
-The VS17 2022/x64/v143 Release tree remains intact. No CMake preset or user
-environment change has been made.
+Batch 3 is closed and pushed on Qt-Rewrite as c4c22e7b9
+(Phase9 - Add targeted UIA map evidence). Batch 4 is active with P9-19 next.
+The P9-19 preimplementation route contract is in
+plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md; no implementation
+has started. P9-07 already covered My Classes, so P9-19 measures Classes only.
 
-The Phase 9/14 plan and handoff documents were committed as `f207ccb2` and
-pushed to `origin/Qt-Rewrite`. P9-17 fixture and validator checks passed 8/8
-and 86/86, plus Python compilation and PowerShell parsing. Its current-source
-Release build #4 at
-`artifacts/phase9/p9-18-exact-release-builds/20261124T034500000Z-RETRY4/`
-passed all five focused CTests (5/5); the independent Tester verified the
-receipt, all P9-17 source/test hashes, and CTest log. An earlier one-job build
-had C1083 for the generated platform save-port `.moc`, but the expected file
-was generated and the clean retry passed without source/CMake edits. Preserve
-the failed log as historical. The P9-17 code/harness change set is safe for a
-separate local commit as Deferred/unaccepted; its plateau cleanup gate still
-fails.
+By explicit user direction, Phase 9 may close after its remaining Batch 4
+slices and all other final gates pass, with only the P9-17 plateau-cleanup and
+P9-18 cold-cleanup gates deferred and unaccepted for Phase 14. Preserve the
+current Maps page retention. Phase 14 remains scheduled after Phase 13 and now
+owns attribution/fixes plus unchanged-gate revalidation for both deferred
+cleanup issues. No memory threshold or formula changed.
 
-P9-18 is active. Exact-source Release build #7 succeeded at
-`artifacts/phase9/p9-18-exact-release-builds/20261124T044000000Z-RETRY7/`.
-It binds product source SHA
-`573d962afa6757f6ffb108c267c38efa3119485a10df7241641a132eeeafbc5a`, harness
-SHA `380ec9dc4603fe7d3c2562ea77d52bca253969049474a09209cf0a57350a16ea`,
-executable SHA `95250da05aa2c32ecb9129ec8213bd32a53ba794aeabefb84776ba02581ce224`,
-VS17 2022/x64/v143, compiler 19.44.35230.0, SDK 10.0.26100.0, and a locally
-verified Microsoft-signed redistributable. All five focused CTests and 14
-P9-18 Python tests passed; both PowerShell parsers passed. The harness verifies
-the first lifecycle ordering `campus_map/created`,
-`campus_information/suspended`, `campus_map/activated`, then uses exact
-lowercase lifecycle states for later switches.
+### P9-18 route evidence
 
-The packaged UIA route has not started. The user requested emptying only the
-repository `build/` folder after build #7. Its resolved target is exactly
-`C:\Git\ClassMngr-cpp\build`; the active RETRY7 tree is under `artifacts/`.
-Standard and sandbox-elevated scans stopped on ACL-protected generated
-resources before deleting anything. A path-guarded PowerShell cleanup script
-is waiting on actual Windows UAC approval; `Consent.exe` is active, but no
-approval/result has arrived and 17 top-level build entries remain. The
-Computer Use skill prohibits accepting Windows security prompts, so the user
-must approve if the prompt is visible. After approval, empty only `build/`,
-verify it is empty, then resume the packaged route from RETRY7. Preserve all
-failed P9-18 attempts and unrelated `$testLog`, `debug.log`,
-`p9-09-integration-output.txt`, and PID 35864. The full-versus-three-row
-harness remains diagnostic-only until matched live arms actually run.
+The exact-source targeted-UIA route #7 is at
+artifacts/phase9/packaged-next-p9-18-campus-map/20261124T122412350Z-d59e56771be74f66ad00b21cbaad38e5/.
+Its build receipt is
+artifacts/phase9/p9-18-exact-release-builds/20261124T120937000Z-TARGETED3/release-build-receipt.json.
+The independent Tester verified source/package binding, the targeted UIA
+artifacts, 85 call-phase records, lifecycle/resource/screenshots, data
+read-only state, and raw gates. All 280 settled Working Set samples were below
+the strict 256 MiB target (maximum 224,354,304 B); operation peak was
+234,217,472 B. Plateau cleanup passed. Cold cleanup failed by 10,809,344 B.
+The latest local P9-18 harness recheck passed 30/30 Python tests, five-file
+Python compilation, and PowerShell 5.1 parsing; logs are under
+artifacts/phase9/p9-18-targeted-uia-local-test-recheck/20261124T140621543Z-34d82d45c77e4ed18a4d1b7b9eba5253/.
+The full-descendant route #6 failed both cold and plateau cleanup. Its UIA
+calls correlated with repeat-window increases; this is not ownership evidence.
+
+An opt-in Map-stage attribution attempt was stopped after the user deferred
+the cleanup work to Phase 14. Its partial app/test/parser edits were removed.
+The MAPSTAGE build succeeded and five prescribed CTests passed, but the added
+Campus Directory test target failed with no output; no diagnostic route ran.
+Artifacts remain under
+artifacts/phase9/p9-18-exact-release-builds/20261124T133334000Z-MAPSTAGE/.
+Its receipt is stale and must not be used for a route.
+
+P9-17's latest exact-source route passed cold cleanup and the 256 MiB target
+but failed plateau cleanup; details remain in the Phase 9 progress log. No
+owner is established.
+
+### P9-19 contract and resume point
+
+Use a fresh 96-class / 768-schedule workspace generated from
+tests/fixtures/workspaces/large_startup.sql, seed SHA-256
+1b2f09be03cce809e239112b3f7b4f2af405bad83a420db0c6ffe5ef0eb597e3.
+Run one warm-up, five no-action My Workspace baseline windows, then ten cycles
+of entering Classes, selecting all 96 fixture classes deterministically via
+PID/HWND-bound UIA, and returning to My Workspace. Preserve full app-origin
+lifecycle evidence and read-only before/after DB snapshots. Verify the 96-row
+class list and selection of each item. A compact app-side checkpoint must
+confirm exactly one SelectedClassEditor, fewer than 250 non-roster widgets,
+zero per-class class_id children, and no editor-count growth across the sweep.
+At settled windows use a two-second settle and ten 100 ms samples; continuous
+operation sampling is 50 ms. Keep the <256 MiB target, inclusive 450 MiB
+ceiling, separate 512 MiB operation advisory, and existing cold/plateau
+formulas unchanged. Run the relevant ClassesNavigator Page, visual capture,
+PageHost, and Bootstrap CTests as applicable, plus local Windows exact-source
+VS2022/x64/v143 Release packaging and independent Tester review. P9-20 remains
+conditional on a suitable valid fixture; P9-21 follows P9-16's PrivateUsage
+trend. Batch 4 is pushed after it closes and final Phase 9 gates pass.
+
+### Build-folder and worktree handoff
+
+The user requested emptying only C:\Git\ClassMngr-cpp\build after the build.
+The approved script
+artifacts/phase9/build-folder-cleanup/clean-build-folder.ps1 (SHA-256
+B49DDAE27B956D584DA417EEB75D42E1E160342C5B4922068316038EE87EC4F1) failed its
+preflight on an ACL-protected generated Resources directory, before deletion.
+No UAC approval prompt was shown and no files were removed; 17 top-level
+entries remain. Emptying it needs an actual administrator token.
+
+Preserve unrelated user work: modified
+plans/qt-rewrite-heavy-route-plan/sub-prep-class-information-memory-plan.md
+and untracked $testLog, debug.log, p9-09-integration-output.txt. Do not stage
+or revert these. The current pause handoff and P9-19 contract are intended for
+a narrow docs commit/push. No Phase 9 implementation or validation is in
+progress.
 
 ## Historical P9-17 handoff -- plateau remediation -- 2026-11-24
 

@@ -1,14 +1,20 @@
 # Project Diary
 
-### User-directed P9-17 deferral and Phase 14 -- 2026-11-24
+### User-directed P9-17 and P9-18 deferrals -- 2026-11-24
 
-End P9-17 as active work when directed, but preserve the failed plateau cleanup
-gate as unaccepted. The latest normal route passed cold cleanup and the strict
-256 MiB Working Set target, yet plateau cleanup failed; rising PrivateUsage
-does not name a live allocation owner. Continue Phase 9 with P9-18. Defer leak
-attribution and any confirmed fixes to Phase 14 after Phase 13, and require a
-fresh P9-17 route to pass the unchanged cleanup contract before resolving its
-gate. Keep the 256/450/512 MiB policy unchanged.
+By user direction, Phase 9 may close after its remaining slices and final gates
+pass with the P9-17 plateau-cleanup and P9-18 cold-cleanup gates explicitly
+deferred and unaccepted for Phase 14. Preserve the suspended Maps page; the
+retained-versus-released diagnostic showed no consistent memory reduction.
+Keep the existing 256/450/512 MiB policy and cleanup formulas unchanged.
+
+The targeted UIA route removed repeated full-descendant observation overhead
+enough for its plateau gate to pass, but its first Maps-use cold cleanup still
+failed by 10.8 MB. The uplift appears during first image activation and is
+still present after suspension; the image payload size is suggestive but does
+not identify a Qt, pixmap, allocator, or application owner. Resume attribution
+after Phase 13, then revalidate both deferred gates under their unchanged
+contracts.
 
 ### P9-17 corrected v143 route and plateau failure -- 2026-11-24
 
