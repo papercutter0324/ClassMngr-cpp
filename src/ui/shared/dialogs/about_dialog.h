@@ -9,7 +9,8 @@ class AboutDialog : public DialogShell
 
 public:
     explicit AboutDialog(
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        DialogGeometryPreferencesCallbacks geometryPreferences = {}
         );
 
 private slots:
@@ -20,6 +21,7 @@ private slots:
 
 private:
     void buildUi();
+    DialogGeometryPreferencesCallbacks m_geometryPreferences;
     void showLicense(
         const QString& title,
         const QString& relativePath

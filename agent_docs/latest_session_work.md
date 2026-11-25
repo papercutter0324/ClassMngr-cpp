@@ -7623,3 +7623,33 @@ testable memory-churn hypothesis. Build and acceptance must be repeated against
 the resulting exact source; commit only after P9-17 closes, then continue P9-18
 and push Batch 3 after both slices close. Preserve untracked
 `p9-09-integration-output.txt` and unrelated PID 35864.
+
+
+## Current continuation — 2026-11-25 — Phase 10 through Candidate 14
+
+Deployment ID: `qtphase10-20261125`. The user directed us to stop after the current Candidate 14 and asked that completed candidates be marked. Candidate 14 is complete for current-source Linux evidence; Phase 10 remains In Progress and is paused here. Do not start Candidate 15 until the user resumes.
+
+### Candidate state
+
+See the [Batch 1 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md) for the concise status list. Candidates 1–3 have focused Linux verification. Candidate 4's current-source C53 pair is complete but the page-break/product disposition remains open. Candidates 5–10 have focused Linux evidence; cross-platform behavior is open. Candidate 11 is partial because the full installed Next app/runtime was not staged. Candidates 12–14 are requalified/fixed on Linux, with other supported platforms still open. Candidates 15–20 have not started; Candidate 19 remains the trigger for next-batch discovery.
+
+### Candidate 12 — My Classes
+
+Fresh source-bound 96-class captures used production fonts across English/Korean and light/dark. Fixed Next grade-tab elision, hid the empty status label while retaining visible empty/error messages, and aligned the combined header-content gap to the Legacy 24 px value. The selected tab top is y=129 in all four pairs; historical accepted typography, selector density, schedule text, and Korean room-label differences remain. Focused status/tab CTests passed independently. Latest evidence: [capture report](../artifacts/phase10/p10-b1-c12-linux-my-classes-20261125T104422Z-header-gap-fb5828ab/manifest.json) and [final independent review](../artifacts/phase10/p10-b1-c12-header-gap-final-independent-review-20261125T104803Z-fb5828ab/report.md). Limits: Linux offscreen only; empty-state screenshots and forced grade-tab overflow were not reviewed.
+
+### Candidate 13 — Schedule display
+
+Fresh Linux source-bound matrix verified toolbar geometry, three display modes, row/overflow behavior, Intensive elision/accessibility, and focused Testing assignments. Next now sizes the plain Testing assignment row from its translated wrapped text and actual width; the room label is localized through the existing full-message catalog key. Focused page/capture CTests passed independently. Extreme 256-character Regular/Testing strings clip in both routes; Next retains full text in DisplayRole/accessibility/tooltips, and this compact-row behavior is accepted. The Korean Testing label is localized in Next, and Next can reach the 96-class bottom rows while Legacy has no scroll range in the captured viewport. The prior toolbar placement, Intensive compact typography/elision, and glyph-rendering differences are accepted; only Next exposes Print/Import through Preferences. Evidence: [final row-fit/localization captures](../artifacts/phase10/p10-b1-c13-korean-room-prefix-20261125T121321Z-fb5828ab/report.md), [independent review](../artifacts/phase10/p10-b1-c13-korean-room-prefix-independent-review-20261125T123000Z-fb5828ab/report.md), and [long-label stress disposition](../artifacts/phase10/p10-b1-c13-wrap-stress-independent-review-20261125T124500Z-fb5828ab/report.md). Cross-platform rendering and extreme Regular/Testing interactive behavior remain open.
+
+### Candidate 14 — Schedule Import preview
+
+Fresh Legacy/Next Linux captures showed the compact Next Meeting times column clipped at the initial horizontal position. The model now supplies complete strings through DisplayRole, ToolTipRole, and AccessibleTextRole; horizontal scrolling and compact layout remain. The deterministic first typed overlap pair now passes through validation and appears in a localized status with both classes, weekdays, and time ranges. Apply remains disabled for conflicts. Updated only the five translation catalogs plus their Phase 4 inventory records. App-state validation, Legacy import dialog, and Next integration CTests each passed independently; 56 source captures were hash-validated. Evidence: [implementation report](../artifacts/phase10/p10-b1-c14-preview-access-conflict-20261125T133418Z-fb5828ab/report.md) and [final independent review](../artifacts/phase10/p10-b1-c14-preview-access-conflict-independent-review-20261125T135300Z-fb5828ab/report.md). Windows/macOS and live screen-reader/tooltip interaction remain unverified.
+
+### Resume point and constraints
+
+Resume at Candidate 15, Teacher Profile visual disposition. Keep all existing uncommitted worktree changes. Candidate 4's product disposition, Candidate 11's installed-runtime completion, cross-platform C1–14 evidence, Candidates 15–20, and the Phase 10 exit gate remain open. No commit, push, or remote workflow occurred in this continuation.
+
+
+## Current publish continuation — 2026-11-25
+
+After pausing Phase 10 at Candidate 14, the user authorized staging, committing, and pushing the current Phase 10 candidate changes as one commit. A read-only inventory found 49 modified tracked paths (3,258 insertions, 191 deletions), zero staged paths, and no nonignored untracked files. The branch is `Qt-Rewrite`, tracking `origin/Qt-Rewrite`; both refs were at `fb5828ab` with zero ahead/behind at inspection. Ignored `artifacts/` and `build/` trees are not part of the commit. The candidate and Phase 10 open-gate status is unchanged; see the tracker and prior Candidate 1–14 handoff above. The commit and remote result are reported in the publication handoff.

@@ -376,13 +376,14 @@ void SpeakingEvaluationReportBatchDialog::exportReports()
             if (!request.overwriteExisting) return;
         }
     }
+    const QString outputDirectory = request.outputDirectory;
     m_lastResult = run(this, std::move(request), m_actions); m_status->setText(m_lastResult.output.message);
     notice(m_actions, this, m_lastResult.output);
     if (m_lastResult.output.succeeded())
     {
         if (m_mode == Mode::SaveAs && m_open->isChecked())
         {
-            if (m_actions.openOutputFolder) m_actions.openOutputFolder(m_directory->text());
+            if (m_actions.openOutputFolder) m_actions.openOutputFolder(outputDirectory);
         }
         accept();
     }

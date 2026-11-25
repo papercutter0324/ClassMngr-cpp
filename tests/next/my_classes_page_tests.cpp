@@ -351,6 +351,11 @@ void NextMyClassesPageTests::oneModelLoadsOneSelectedIdAndReleasesOnSuspension()
     QVERIFY(fixture.initialize());
     Ui::MyClassesPage* const page = fixture.page();
     QVERIFY(page);
+    QLabel* const loadState = page->findChild<QLabel*>(
+        QStringLiteral("myClassesLoadState"));
+    QVERIFY(loadState);
+    QVERIFY(loadState->isHidden());
+    QVERIFY(loadState->text().isEmpty());
     QCOMPARE(page->summaryModel(), page->classList()->model());
     QCOMPARE(page->summaryModel()->summaryCount(), 96);
     QCOMPARE(fixture.state.requestedIds.size(), std::size_t(1));
@@ -360,6 +365,7 @@ void NextMyClassesPageTests::oneModelLoadsOneSelectedIdAndReleasesOnSuspension()
     page->resize(1024, 768);
     page->show();
     QApplication::processEvents();
+    QVERIFY(loadState->isHidden());
     const int widgetsFor96Rows = widgetCount(page);
     QVERIFY(widgetsFor96Rows < 100);
     QCOMPARE(page->findChildren<QListView*>(QStringLiteral("myClassesSummaryList"))
@@ -398,20 +404,27 @@ void NextMyClassesPageTests::oneModelLoadsOneSelectedIdAndReleasesOnSuspension()
 
     QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
     QCOMPARE(page->summaryModel()->summaryCount(), 0);
+    QVERIFY(loadState->isHidden());
+    QVERIFY(loadState->text().isEmpty());
     QVERIFY(page->detailsReleased());
     QVERIFY(!page->selectedDetails());
     QCOMPARE(page->selectedClassId()->value(), std::string("50"));
 
     QVERIFY(fixture.host->activatePage(QStringLiteral("my_classes")));
     QCOMPARE(page->summaryModel()->summaryCount(), 96);
+    QVERIFY(loadState->isHidden());
     QCOMPARE(page->selectedClassId()->value(), std::string("50"));
     QCOMPARE(fixture.state.requestedIds.back(), std::string("50"));
     QVERIFY(page->selectedDetails());
 
     fixture.state.identity = QStringLiteral("workspace-b");
     page->clearForWorkspaceChange();
+    QVERIFY(!loadState->isHidden());
+    QCOMPARE(loadState->text(), QStringLiteral("Workspace changed."));
     QVERIFY(page->summaryModel()->summaries().empty());
     QVERIFY(page->onActivating());
+    QVERIFY(loadState->isHidden());
+    QVERIFY(loadState->text().isEmpty());
     QCOMPARE(page->selectedClassId()->value(),
              page->summaryModel()->summaries().front().classId.value());
     QCOMPARE(fixture.state.requestedIds.back(),
@@ -420,13 +433,34 @@ void NextMyClassesPageTests::oneModelLoadsOneSelectedIdAndReleasesOnSuspension()
 
 void NextMyClassesPageTests::emptyReadFailureDetailFailureAndUnassignedTeacherAreVisible()
 {
+    auto* const application = qobject_cast<QApplication*>(QCoreApplication::instance());
+    QVERIFY(application);
     PageFixture empty;
     QVERIFY(empty.initialize());
-    QVERIFY(empty.page()->findChild<QLabel*>(QStringLiteral("myClassesLoadState")));
+    auto* const emptyState = empty.page()->findChild<QLabel*>(
+        QStringLiteral("myClassesLoadState"));
+    QVERIFY(emptyState);
+    QVERIFY(!emptyState->isHidden());
     QCOMPARE(empty.page()->summaryModel()->summaryCount(), 0);
-    QCOMPARE(empty.page()->findChild<QLabel*>(QStringLiteral("myClassesLoadState"))
-                 ->text(), QStringLiteral("No classes available."));
+    QCOMPARE(emptyState->text(), QStringLiteral("No classes available."));
     QVERIFY(empty.state.requestedIds.empty());
+
+    QTranslator koreanTranslator;
+    QVERIFY(koreanTranslator.load(QStringLiteral(CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY)
+        + QStringLiteral("/ClassMngr_ko_KR.qm")));
+    QVERIFY(application->installTranslator(&koreanTranslator));
+    QApplication::processEvents();
+    QVERIFY(!emptyState->isHidden());
+    QCOMPARE(emptyState->text(), QStringLiteral("사용 가능한 수업이 없습니다."));
+    empty.page()->clearForClosedWorkspace();
+    QVERIFY(!emptyState->isHidden());
+    QCOMPARE(emptyState->text(), QStringLiteral("열린 교사 프로필이 없습니다."));
+    empty.page()->clearForWorkspaceChange();
+    QVERIFY(!emptyState->isHidden());
+    QCOMPARE(emptyState->text(), QStringLiteral("작업 공간이 변경되었습니다."));
+    application->removeTranslator(&koreanTranslator);
+    QApplication::processEvents();
+    QCOMPARE(emptyState->text(), QStringLiteral("Workspace changed."));
 
     PageFixture failed;
     auto row = summary(1, QStringLiteral("E4"), QStringLiteral("A"),
@@ -434,8 +468,11 @@ void NextMyClassesPageTests::emptyReadFailureDetailFailureAndUnassignedTeacherAr
     failed.state.summaries.push_back(row);
     failed.state.summaryFailure = true;
     QVERIFY(failed.initialize());
-    QCOMPARE(failed.page()->findChild<QLabel*>(QStringLiteral("myClassesLoadState"))
-                 ->text(), QStringLiteral("summary read failed"));
+    auto* const failedState = failed.page()->findChild<QLabel*>(
+        QStringLiteral("myClassesLoadState"));
+    QVERIFY(failedState);
+    QVERIFY(!failedState->isHidden());
+    QCOMPARE(failedState->text(), QStringLiteral("summary read failed"));
     QVERIFY(failed.page()->summaryModel()->summaries().empty());
 
     PageFixture unassigned;
@@ -612,6 +649,10 @@ void NextMyClassesPageTests::navigationMatchesLegacyFlatAndGroupedThreshold()
     QVERIFY(page->summaryModel()->isGrouped());
     QVERIFY(!page->gradeTabs()->isHidden());
     QCOMPARE(page->gradeTabs()->count(), 2);
+    QCOMPARE(page->gradeTabs()->elideMode(), Qt::ElideNone);
+    QVERIFY(page->gradeTabs()->usesScrollButtons());
+    QCOMPARE(page->gradeTabs()->tabText(0), QStringLiteral("E4"));
+    QCOMPARE(page->gradeTabs()->tabText(1), QStringLiteral("M1"));
     QVERIFY(page->classList()->rootIndex().isValid());
     QVERIFY(page->classList()->model()->rowCount(page->classList()->rootIndex()) > 0);
 }

@@ -67,6 +67,8 @@ private:
         );
     void handleGradeChanged(int index);
     void activateSelectedClass();
+    void setLoadState(const QString& message, const QString& translationSource);
+    void clearLoadState();
     void showSelectedDetails(
         const Application::MyClassesPageSelectedDetails& details
         );

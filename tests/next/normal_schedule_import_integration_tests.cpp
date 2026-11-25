@@ -32,6 +32,7 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QAbstractItemView>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QHeaderView>
@@ -40,6 +41,8 @@
 #include <QFileInfo>
 #include <QElapsedTimer>
 #include <QFontDatabase>
+#include <QFontInfo>
+#include <QFontMetrics>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -65,6 +68,7 @@
 #include <QSqlQuery>
 #include <QSysInfo>
 #include <QTableView>
+#include <QScrollBar>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QThread>
@@ -557,6 +561,132 @@ QJsonObject memoryJson(const ProcessMemorySnapshot& sample)
 QJsonArray rectangleJson(const QRect& rect)
 {
     return {rect.x(), rect.y(), rect.width(), rect.height()};
+}
+
+QJsonObject importPreviewViewEvidence(
+    QTableView* view,
+    const int timeColumn
+    )
+{
+    if (!view || !view->model())
+    {
+        return {};
+    }
+
+    const auto scrollbarEvidence = [](const QScrollBar* scrollbar) {
+        return QJsonObject{
+            {QStringLiteral("visible"), scrollbar->isVisible()},
+            {QStringLiteral("minimum"), scrollbar->minimum()},
+            {QStringLiteral("maximum"), scrollbar->maximum()},
+            {QStringLiteral("value"), scrollbar->value()},
+            {QStringLiteral("pageStep"), scrollbar->pageStep()},
+            {QStringLiteral("range"), scrollbar->maximum() - scrollbar->minimum()}
+        };
+    };
+
+    QJsonArray columns;
+    for (int column = 0; column < view->model()->columnCount(); ++column)
+    {
+        columns.append(QJsonObject{
+            {QStringLiteral("index"), column},
+            {QStringLiteral("header"), view->model()->headerData(
+                column, Qt::Horizontal, Qt::DisplayRole).toString()},
+            {QStringLiteral("width"), view->columnWidth(column)},
+            {QStringLiteral("hidden"), view->isColumnHidden(column)},
+            {QStringLiteral("viewportPosition"),
+                view->horizontalHeader()->sectionViewportPosition(column)}
+        });
+    }
+
+    QJsonArray timeCells;
+    QJsonArray visibleRows;
+    const QRect viewport = view->viewport()->rect();
+    int visibleRowCount = 0;
+    for (int row = 0; row < view->model()->rowCount(); ++row)
+    {
+        const QRect rowRect = view->visualRect(view->model()->index(row, 0));
+        const bool rowVisible = rowRect.intersects(viewport);
+        if (rowVisible)
+        {
+            ++visibleRowCount;
+            visibleRows.append(row);
+        }
+        if (timeColumn < 0 || timeColumn >= view->model()->columnCount())
+        {
+            continue;
+        }
+
+        const QModelIndex index = view->model()->index(row, timeColumn);
+        const QRect cellRect = view->visualRect(index);
+        const QRect clippedCellRect = cellRect.intersected(viewport);
+        const QString fullText = index.data(Qt::DisplayRole).toString();
+        int measuredTextWidth = 0;
+        QStringList visiblePrefixLines;
+        QStringList elidedLines;
+        const int fullTextWidth = qMax(0, cellRect.width() - 8);
+        const int visibleTextWidth = qMax(0, clippedCellRect.width() - 8);
+        const QStringList textLines = fullText.split(QLatin1Char('\n'));
+        for (const QString& line : textLines)
+        {
+            measuredTextWidth = qMax(measuredTextWidth,
+                view->fontMetrics().horizontalAdvance(line));
+            int visibleCharacters = 0;
+            while (visibleCharacters < line.size()
+                && view->fontMetrics().horizontalAdvance(
+                    line.left(visibleCharacters + 1)) <= visibleTextWidth)
+            {
+                ++visibleCharacters;
+            }
+            visiblePrefixLines.append(line.left(visibleCharacters));
+            elidedLines.append(view->fontMetrics().elidedText(
+                line, view->textElideMode(), visibleTextWidth));
+        }
+        const QString estimatedVisibleText =
+            visiblePrefixLines.join(QLatin1Char('\n'));
+        timeCells.append(QJsonObject{
+            {QStringLiteral("row"), row},
+            {QStringLiteral("fullText"), fullText},
+            {QStringLiteral("accessibleText"), index.data(Qt::AccessibleTextRole).toString()},
+            {QStringLiteral("toolTip"), index.data(Qt::ToolTipRole).toString()},
+            {QStringLiteral("cellBounds"), rectangleJson(cellRect)},
+            {QStringLiteral("visibleCellBounds"), rectangleJson(clippedCellRect)},
+            {QStringLiteral("rowVisible"), rowVisible},
+            {QStringLiteral("availableTextWidth"), fullTextWidth},
+            {QStringLiteral("visibleTextWidth"), visibleTextWidth},
+            {QStringLiteral("measuredTextWidth"), measuredTextWidth},
+            {QStringLiteral("textFitsColumn"), measuredTextWidth <= fullTextWidth},
+            {QStringLiteral("textFitsVisibleArea"),
+                measuredTextWidth <= visibleTextWidth},
+            {QStringLiteral("visibleSubstringEstimate"), estimatedVisibleText},
+            {QStringLiteral("elidedTextEstimate"),
+                elidedLines.join(QLatin1Char('\n'))},
+            {QStringLiteral("fontFamily"), view->font().family()},
+            {QStringLiteral("resolvedFontFamily"), QFontInfo(view->font()).family()},
+            {QStringLiteral("fontPointSize"), view->font().pointSizeF()},
+            {QStringLiteral("elideMode"), static_cast<int>(view->textElideMode())}
+        });
+    }
+
+    return QJsonObject{
+        {QStringLiteral("objectName"), view->objectName()},
+        {QStringLiteral("viewBounds"), rectangleJson(view->geometry())},
+        {QStringLiteral("viewportBounds"), rectangleJson(view->viewport()->geometry())},
+        {QStringLiteral("viewportSize"), QJsonArray{
+            view->viewport()->width(), view->viewport()->height()}},
+        {QStringLiteral("rowCount"), view->model()->rowCount()},
+        {QStringLiteral("columnCount"), view->model()->columnCount()},
+        {QStringLiteral("visibleRowCount"), visibleRowCount},
+        {QStringLiteral("visibleRows"), visibleRows},
+        {QStringLiteral("horizontalScroll"), scrollbarEvidence(view->horizontalScrollBar())},
+        {QStringLiteral("verticalScroll"), scrollbarEvidence(view->verticalScrollBar())},
+        {QStringLiteral("horizontalScrollMode"),
+            static_cast<int>(view->horizontalScrollMode())},
+        {QStringLiteral("verticalScrollMode"),
+            static_cast<int>(view->verticalScrollMode())},
+        {QStringLiteral("columns"), columns},
+        {QStringLiteral("timeColumn"), timeColumn},
+        {QStringLiteral("timeCells"), timeCells}
+    };
 }
 
 QString compactOutputText(QString text)
@@ -1389,10 +1519,29 @@ overlappingWorkbookPresentsReviewConflict()
     QCOMPARE(dialog->classTable()->model()->rowCount(), importedUser->classes.size());
     setAllTeachersToCreate(dialog);
     setAllClassesToCreateNew(dialog);
-    const QString conflictWord = QStringLiteral("overlap");
-    QTRY_VERIFY_WITH_TIMEOUT(dialog->findChild<QLabel*>(
-        QStringLiteral("nextScheduleImportReviewStatus"))->text().contains(
-            conflictWord, Qt::CaseInsensitive), 5000);
+    auto* const conflictStatus = dialog->findChild<QLabel*>(
+        QStringLiteral("nextScheduleImportReviewStatus"));
+    QVERIFY(conflictStatus);
+    const QString expectedConflictStatus = QStringLiteral(
+        "E4 Hercules (4:00 PM - 4:55 PM) overlaps E4 Theseus "
+        "(4:30 PM - 5:25 PM) on Monday.");
+    QTRY_COMPARE_WITH_TIMEOUT(conflictStatus->text(),
+                              expectedConflictStatus, 5000);
+    auto* const preview = dialog->findChild<QTableView*>(
+        QStringLiteral("nextScheduleImportPreviewTable"));
+    QVERIFY(preview);
+    QVERIFY(preview->model());
+    for (int row = 0; row < preview->model()->rowCount(); ++row)
+    {
+        for (int column = 0; column < preview->model()->columnCount(); ++column)
+        {
+            const QModelIndex index = preview->model()->index(row, column);
+            const QString display = index.data(Qt::DisplayRole).toString();
+            QVERIFY(!display.isEmpty());
+            QCOMPARE(index.data(Qt::AccessibleTextRole).toString(), display);
+            QCOMPARE(index.data(Qt::ToolTipRole).toString(), display);
+        }
+    }
     QVERIFY(!dialog->primaryButton()->isEnabled());
     QVERIFY(fixture.applyRequests.empty());
 }
@@ -1463,18 +1612,23 @@ importMessagesRetranslateAndPreserveTechnicalDetails()
     auto* const conflictStatus = conflictDialog->findChild<QLabel*>(
         QStringLiteral("nextScheduleImportReviewStatus"));
     QVERIFY(conflictStatus);
-    QTRY_VERIFY_WITH_TIMEOUT(conflictStatus->text().contains(
-        QStringLiteral("overlap"), Qt::CaseInsensitive), 5000);
+    const QString expectedEnglishConflict = QStringLiteral(
+        "E4 Hercules (4:00 PM - 4:55 PM) overlaps E4 Theseus "
+        "(4:30 PM - 5:25 PM) on Monday.");
+    QTRY_COMPARE_WITH_TIMEOUT(conflictStatus->text(),
+                              expectedEnglishConflict, 5000);
 
     QTranslator conflictTranslator;
     QVERIFY(conflictTranslator.load(koreanCatalog));
     QVERIFY(qApp->installTranslator(&conflictTranslator));
     QTRY_COMPARE_WITH_TIMEOUT(conflictStatus->text(),
-        QStringLiteral("제안된 일정이 서로 겹칩니다."), 5000);
+        QStringLiteral(
+            "월요일에 E4 Hercules(4:00 PM~4:55 PM) 및 "
+            "E4 Theseus(4:30 PM~5:25 PM)의 일정이 겹칩니다."), 5000);
     QVERIFY(!conflictDialog->primaryButton()->isEnabled());
     QVERIFY(qApp->removeTranslator(&conflictTranslator));
     QTRY_COMPARE_WITH_TIMEOUT(conflictStatus->text(),
-        QStringLiteral("The proposed schedule contains an overlap."), 5000);
+                              expectedEnglishConflict, 5000);
     conflictDialog->reject();
 
     QTemporaryDir failureTemporary;
@@ -2994,6 +3148,28 @@ captureImportVisualEvidenceWhenConfigured()
                     rectangleJson(dialog->sourcePathEdit()->geometry()));
                 metrics.insert(QStringLiteral("primaryButtonBounds"),
                     rectangleJson(dialog->primaryButton()->geometry()));
+                metrics.insert(QStringLiteral("applyButtonText"),
+                    dialog->primaryButton()->text());
+                metrics.insert(QStringLiteral("applyEnabled"),
+                    dialog->primaryButton()->isEnabled());
+                if (auto* const sourceStatus = dialog->findChild<QLabel*>(
+                        QStringLiteral("nextScheduleImportSourceStatus")))
+                {
+                    metrics.insert(QStringLiteral("sourceStatusText"),
+                                   sourceStatus->text());
+                }
+                if (auto* const reviewStatus = dialog->findChild<QLabel*>(
+                        QStringLiteral("nextScheduleImportReviewStatus")))
+                {
+                    metrics.insert(QStringLiteral("reviewStatusText"),
+                                   reviewStatus->text());
+                }
+                if (auto* const reviewSummary = dialog->findChild<QLabel*>(
+                        QStringLiteral("nextScheduleImportSummary")))
+                {
+                    metrics.insert(QStringLiteral("reviewSummaryText"),
+                                   reviewSummary->text());
+                }
                 if (dialog->sheetCombo()->isVisible())
                 {
                     metrics.insert(QStringLiteral("worksheetChoiceBounds"),
@@ -3008,6 +3184,8 @@ captureImportVisualEvidenceWhenConfigured()
                                    preview->model()->rowCount());
                     metrics.insert(QStringLiteral("previewViewportBounds"),
                         rectangleJson(preview->viewport()->geometry()));
+                    metrics.insert(QStringLiteral("previewTableEvidence"),
+                        importPreviewViewEvidence(preview, 2));
                     int visible = 0;
                     for (int row = 0; row < preview->model()->rowCount(); ++row)
                     {
@@ -3304,19 +3482,24 @@ captureImportVisualEvidenceWhenConfigured()
             QVERIFY(overlapFixture.continueToReview(overlapDialog));
             setAllTeachersToCreate(overlapDialog);
             setAllClassesToCreateNew(overlapDialog);
-            const QString overlapWord = locale == QStringLiteral("ko")
-                ? QStringLiteral("겹칩니다") : QStringLiteral("overlap");
-            QTRY_VERIFY_WITH_TIMEOUT(overlapDialog->findChild<QLabel*>(
-                QStringLiteral("nextScheduleImportReviewStatus"))->text().contains(
-                    overlapWord, Qt::CaseInsensitive), 5000);
+            auto* const overlapStatus = overlapDialog->findChild<QLabel*>(
+                QStringLiteral("nextScheduleImportReviewStatus"));
+            QVERIFY(overlapStatus);
+            const QString expectedOverlapStatus = locale == QStringLiteral("ko")
+                ? QStringLiteral(
+                    "월요일에 E4 Hercules(4:00 PM~4:55 PM) 및 "
+                    "E4 Theseus(4:30 PM~5:25 PM)의 일정이 겹칩니다.")
+                : QStringLiteral(
+                    "E4 Hercules (4:00 PM - 4:55 PM) overlaps E4 Theseus "
+                    "(4:30 PM - 5:25 PM) on Monday.");
+            QTRY_COMPARE_WITH_TIMEOUT(overlapStatus->text(),
+                                      expectedOverlapStatus, 5000);
             const QJsonObject matchedConflict = saveDialog(overlapDialog,
                 QStringLiteral("matched-conflict"),
                 {{QStringLiteral("workbook"),
                     QStringLiteral("schedule_overlap_conflict.xlsx")},
                  {QStringLiteral("candidateCount"), overlapUser->classes.size()},
-                 {QStringLiteral("conflictStatus"),
-                    overlapDialog->findChild<QLabel*>(
-                        QStringLiteral("nextScheduleImportReviewStatus"))->text()}});
+                 {QStringLiteral("conflictStatus"), overlapStatus->text()}});
             QVERIFY(!matchedConflict.isEmpty());
             captureRows.append(matchedConflict);
             overlapDialog->reject();
@@ -3412,7 +3595,7 @@ captureImportVisualEvidenceWhenConfigured()
 
     const QJsonObject manifest{
         {QStringLiteral("taskId"), QStringLiteral(
-            "phase7-c31-schedule-workbook-import-20261028")},
+            "P10-B1-C14-PREVIEW-ACCESS-AND-CONFLICT-DETAIL")},
         {QStringLiteral("captureScenes"), captureRows},
         {QStringLiteral("nextCoverage"), QJsonArray{
             QStringLiteral("English/light"), QStringLiteral("English/dark"),
@@ -3432,11 +3615,22 @@ captureImportVisualEvidenceWhenConfigured()
         {QStringLiteral("visualDifferences"), QStringLiteral(
             "Shared workflow states are captured with Fusion and explicit light/dark palettes. "
             "Legacy and Next source/selection dialogs are 436x520; review/conflict dialogs "
-            "are 800x800. Next's narrow candidate preview clips part of a meeting time until "
-            "horizontal scrolling; its overlap status is generic and does not identify the "
-            "conflicting pair, while Legacy shows the conflicting class details. Legacy "
-            "Korean retains some English fallback strings. The images compare state and "
-            "content, not pixel parity.")},
+            "are 800x800. In the captured Next review, the meeting-times column extends beyond "
+            "the 240-254px preview viewport; its visible text is clipped and a horizontal "
+            "scrollbar exposes two item steps. Complete preview values are exposed through "
+            "DisplayRole, AccessibleTextRole, and ToolTipRole. Next overlap status identifies "
+            "both classes, typed-localized weekday, and both original time ranges; Apply remains "
+            "disabled. Legacy's 84px time column displays its time labels on two visible lines; "
+            "its overlap status identifies the classes and times and disables Import. Legacy "
+            "Korean retains English conflict details. Visible-prefix estimates use the captured "
+            "font metrics and clipped cell width; they are not OCR. The images "
+            "compare state and content, not pixel parity.")},
+        {QStringLiteral("previewMeasurementMethod"), QStringLiteral(
+            "Viewport and column geometry, scroll-bar ranges, row visibility, model DisplayRole, "
+            "AccessibleTextRole, ToolTipRole, font family/point size, and per-line text width are "
+            "read directly from the live views. The visible-prefix estimate uses per-character "
+            "font advances within the clipped cell width; a separate field records Qt's elided "
+            "text estimate. Screenshots remain the direct visual evidence.")},
         {QStringLiteral("memoryScope"), QStringLiteral(
             "Samples cover the whole test process on this host, including Qt, "
             "the page host, current workflow, and runtime caches. They do not "

@@ -11618,6 +11618,34 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
         <translation>수업 시간</translation>
     </message>
     <message>
+        <source>Monday</source>
+        <translation>월요일</translation>
+    </message>
+    <message>
+        <source>Tuesday</source>
+        <translation>화요일</translation>
+    </message>
+    <message>
+        <source>Wednesday</source>
+        <translation>수요일</translation>
+    </message>
+    <message>
+        <source>Thursday</source>
+        <translation>목요일</translation>
+    </message>
+    <message>
+        <source>Friday</source>
+        <translation>금요일</translation>
+    </message>
+    <message>
+        <source>Saturday</source>
+        <translation>토요일</translation>
+    </message>
+    <message>
+        <source>Sunday</source>
+        <translation>일요일</translation>
+    </message>
+    <message>
         <source>No existing match</source>
         <translation>일치하는 기존 항목 없음</translation>
     </message>
@@ -11656,6 +11684,10 @@ GS 팀원: %8명 추가, %9명 업데이트, %10명 변경 없음.</translation>
     <message>
         <source>The proposed schedule contains an overlap.</source>
         <translation>제안된 일정이 서로 겹칩니다.</translation>
+    </message>
+    <message>
+        <source>%1 (%2 - %3) overlaps %4 (%5 - %6) on %7.</source>
+        <translation>%7에 %1(%2~%3) 및 %4(%5~%6)의 일정이 겹칩니다.</translation>
     </message>
     <message>
         <source>The review choices are invalid.</source>

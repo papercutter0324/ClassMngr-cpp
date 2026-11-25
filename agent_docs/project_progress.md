@@ -7478,3 +7478,15 @@ workflow run, or remote ref changed. Phase 8 and 8a remain open pending the
 remaining local failures and authorized hosted runs. Next step: obtain explicit
 authorization to upload candidate `f6b258f` to public
 `papercutter0324/ClassMngr-cpp` and open a draft PR against `Qt-Rewrite`.
+
+
+## Phase 10 — Batch 1 continuation status (2026-11-25)
+
+Deployment `qtphase10-20261125` is paused after Candidate 14 at the user's direction; Phase 10 remains In Progress and its cross-platform exit gate is Open. Candidates 1–3 have focused Linux evidence. Candidate 4 has current-source output requalification, with product disposition still open. Candidates 5–10 have focused Linux evidence and platform-specific follow-ups remain. Candidate 11 is partial: resource/font/translation probes passed, but no full installed Next application was staged. Candidates 12–14 have current-source Linux capture/review evidence and bounded repairs; Windows/macOS and interactive-host evidence remain open. Candidate 15 is next on resume; Candidates 16–20 are pending.
+
+The candidate-by-candidate state and evidence references are in the [Batch 1 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md) and [Phase 10 progress log](../plans/qt-rewrite-heavy-route-plan/11-Phase-10-Progress-Log.md). No commit or remote update was made.
+
+
+## Phase 10 candidate publication — 2026-11-25
+
+The user authorized the tracked Candidate 1–14 changes to be published as one commit on `Qt-Rewrite`. This is a repository handoff, not Phase 10 completion: Phase 10 remains paused after Candidate 14, with cross-platform and remaining candidate gates open. The candidate-by-candidate status remains in the [Batch 1 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md).

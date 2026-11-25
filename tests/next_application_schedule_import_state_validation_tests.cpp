@@ -909,7 +909,8 @@ rejectsOverlapsAndAllowsAdjacentTimes()
     addNewCandidate(
         request,
         "teacher-b",
-        {time(Weekday::Monday, 16 * 60 + 54, 17 * 60)}
+        {time(Weekday::Monday, 16 * 60 + 54, 17 * 60,
+              "Monday", "4:54 PM", "5:00 PM")}
         );
     request.candidates[0].classLabel = "First";
     request.candidates[1].classLabel = "Second";
@@ -923,6 +924,21 @@ rejectsOverlapsAndAllowsAdjacentTimes()
     QVERIFY(conflict.has_value());
     QCOMPARE(conflict->classLabel, std::string("First"));
     QCOMPARE(conflict->conflictingClassLabel, std::string("Second"));
+    QVERIFY(conflict->overlapConflict.has_value());
+    QCOMPARE(conflict->overlapConflict->classLabel, std::string("First"));
+    QCOMPARE(conflict->overlapConflict->conflictingClassLabel,
+             std::string("Second"));
+    QCOMPARE(conflict->overlapConflict->time.scheduleTime.weekday(),
+             Weekday::Monday);
+    QCOMPARE(conflict->overlapConflict->time.startLabel, std::string("4:00 PM"));
+    QCOMPARE(conflict->overlapConflict->time.endLabel, std::string("4:55 PM"));
+    QCOMPARE(conflict->overlapConflict->conflictingTime.startLabel,
+             std::string("4:54 PM"));
+    QCOMPARE(conflict->overlapConflict->conflictingTime.endLabel,
+             std::string("5:00 PM"));
+    QCOMPARE(conflict->day, std::string("Monday"));
+    QCOMPARE(conflict->startTime, std::string("4:00 PM"));
+    QCOMPARE(conflict->endTime, std::string("4:55 PM"));
 
     request.candidates[1].times[0] = time(Weekday::Monday, 16 * 60 + 55, 17 * 60);
     QVERIFY(!errorCode(request).has_value());

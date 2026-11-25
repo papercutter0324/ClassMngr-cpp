@@ -10327,6 +10327,34 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
         <translation>Meeting times</translation>
     </message>
     <message>
+        <source>Monday</source>
+        <translation>Monday</translation>
+    </message>
+    <message>
+        <source>Tuesday</source>
+        <translation>Tuesday</translation>
+    </message>
+    <message>
+        <source>Wednesday</source>
+        <translation>Wednesday</translation>
+    </message>
+    <message>
+        <source>Thursday</source>
+        <translation>Thursday</translation>
+    </message>
+    <message>
+        <source>Friday</source>
+        <translation>Friday</translation>
+    </message>
+    <message>
+        <source>Saturday</source>
+        <translation>Saturday</translation>
+    </message>
+    <message>
+        <source>Sunday</source>
+        <translation>Sunday</translation>
+    </message>
+    <message>
         <source>No existing match</source>
         <translation>No existing match</translation>
     </message>
@@ -10365,6 +10393,10 @@ GS Team members: %8 created, %9 updated, %10 unchanged.</translation></message>
     <message>
         <source>The proposed schedule contains an overlap.</source>
         <translation>The proposed schedule contains an overlap.</translation>
+    </message>
+    <message>
+        <source>%1 (%2 - %3) overlaps %4 (%5 - %6) on %7.</source>
+        <translation>%1 (%2 - %3) overlaps %4 (%5 - %6) on %7.</translation>
     </message>
     <message>
         <source>The review choices are invalid.</source>

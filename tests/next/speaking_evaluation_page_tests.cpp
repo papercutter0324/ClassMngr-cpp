@@ -33,12 +33,14 @@
 #include <QFileInfo>
 #include <QFontDatabase>
 #include <QImage>
+#include <QKeySequence>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
 #include <QLocale>
 #include <QMessageBox>
+#include <QMetaObject>
 #include <QListView>
 #include <QLineEdit>
 #include <QPalette>
@@ -741,6 +743,10 @@ void SpeakingEvaluationPageTests::
 matrixIsFixedSizeTracksExactDeltaValidationAndUndo()
 {
     FakeEvaluationState state;
+    auto fallRows = emptyEvaluation();
+    fallRows[0][3] = u"B";
+    state.evaluations[evaluationKey(classId(1), QStringLiteral("Fall"))] =
+        std::move(fallRows);
     PageHarness harness;
     QVERIFY(harness.initialize(state));
     auto* const page = harness.page();
@@ -768,6 +774,50 @@ matrixIsFixedSizeTracksExactDeltaValidationAndUndo()
     page->findChild<QPushButton*>(QStringLiteral("speakingEvaluationUndo"))->click();
     QVERIFY(page->matrixModel()->isDirty());
     QCOMPARE(page->matrixModel()->cellText(0, 3), QStringLiteral("not-a-score"));
+
+    harness.host().resize(1200, 800);
+    harness.host().show();
+    QApplication::processEvents();
+    page->tableView()->setFocus();
+    QTRY_VERIFY(page->tableView()->hasFocus());
+    QVERIFY(page->metaObject()->indexOfMethod("undo()") >= 0);
+    QVERIFY(page->metaObject()->indexOfMethod("redo()") >= 0);
+
+    QWidget* undoTarget = page->tableView();
+    while (undoTarget
+        && undoTarget->metaObject()->indexOfMethod("redo()") < 0)
+    {
+        undoTarget = qobject_cast<QWidget*>(undoTarget->parent());
+    }
+    QCOMPARE(undoTarget, static_cast<QWidget*>(page));
+
+    const QKeyCombination redoKey = QKeySequence(QKeySequence::Redo)[0];
+    QTest::keyClick(
+        page->tableView(), redoKey.key(), redoKey.keyboardModifiers());
+    QCOMPARE(page->matrixModel()->cellText(0, 3), QStringLiteral("A"));
+    const QKeyCombination undoKey = QKeySequence(QKeySequence::Undo)[0];
+    QTest::keyClick(
+        page->tableView(), undoKey.key(), undoKey.keyboardModifiers());
+    QCOMPARE(page->matrixModel()->cellText(0, 3), QStringLiteral("not-a-score"));
+
+    QVERIFY(QMetaObject::invokeMethod(undoTarget, "redo", Qt::DirectConnection));
+    QCOMPARE(page->matrixModel()->cellText(0, 3), QStringLiteral("A"));
+    QVERIFY(QMetaObject::invokeMethod(undoTarget, "undo", Qt::DirectConnection));
+    QCOMPARE(page->matrixModel()->cellText(0, 3), QStringLiteral("not-a-score"));
+
+    state.unsavedChoice = Ui::SpeakingEvaluationUnsavedChoice::Discard;
+    const int fallIndex = page->evaluationChoice()->findData(
+        QStringLiteral("Fall"));
+    QVERIFY(fallIndex >= 0);
+    page->evaluationChoice()->setCurrentIndex(fallIndex);
+    QCOMPARE(page->selectedEvaluationName(), QStringLiteral("Fall"));
+    QCOMPARE(page->matrixModel()->cellText(0, 3), QStringLiteral("B"));
+
+    page->tableView()->setFocus();
+    QTRY_VERIFY(page->tableView()->hasFocus());
+    QVERIFY(QMetaObject::invokeMethod(
+        undoTarget, "redo", Qt::DirectConnection));
+    QCOMPARE(page->matrixModel()->cellText(0, 3), QStringLiteral("B"));
 }
 
 void SpeakingEvaluationPageTests::
@@ -2426,6 +2476,8 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
             return;
         }
         chooseDirectory->click();
+        dialog->outputDirectoryEdit()->setText(
+            QStringLiteral("  %1  ").arg(currentDirectory));
         openAfterSaving->setChecked(true);
         dialog->exportButton()->click();
         currentResult = dialog->lastResult().output;
@@ -2443,6 +2495,8 @@ reportsUseUnsavedProjectionCurrentSelectionAndBatchOutputs()
     QCOMPARE(currentResult.savedPdfPaths.size(), 1);
     QVERIFY(currentResult.savedArchivePath.isEmpty());
     QVERIFY(QFileInfo::exists(currentResult.savedPdfPaths.constFirst()));
+    QCOMPARE(QFileInfo(currentResult.savedPdfPaths.constFirst()).absolutePath(),
+        currentDirectory);
     QVERIFY(folderRequest.has_value());
     QCOMPARE(folderRequest->purpose,
              Application::FileDialogPurpose::GeneratedPdf);

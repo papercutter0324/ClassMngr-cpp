@@ -19,6 +19,7 @@
 #include <QEvent>
 #include <QFrame>
 #include <QFont>
+#include <QFontMetricsF>
 #include <QStringList>
 #include <QHeaderView>
 #include <QHBoxLayout>
@@ -34,6 +35,7 @@
 #include <QTableView>
 #include <QTextDocument>
 #include <QToolButton>
+#include <QtMath>
 #include <QVBoxLayout>
 #include <QWidgetAction>
 
@@ -47,15 +49,74 @@ namespace
 {
 
 constexpr int ScheduleToolbarButtonHeight = 40;
-
-[[nodiscard]] QString pageText(const char* source)
-{
-    return QCoreApplication::translate("SchedulePage", source);
-}
+constexpr qreal ScheduleCellCardInset = 2.0;
+constexpr qreal ScheduleCellContentHorizontalInset = 4.0;
+constexpr qreal ScheduleCellContentVerticalInset = 3.0;
+constexpr int ScheduleCellBaseHeight = 60;
+constexpr int ScheduleEntryBaseHeight = 22;
+constexpr int ScheduleEntryHeight = 38;
 
 [[nodiscard]] QString scheduleText(const char* source)
 {
     return QCoreApplication::translate("ScheduleWidget", source);
+}
+
+[[nodiscard]] QString plainTestingAssignmentText(const SchedulePageCell& cell)
+{
+    return cell.testingRoom.trimmed().isEmpty()
+        ? scheduleText("Oral Testing")
+        : scheduleText("Oral Testing\nRm: %1")
+            .arg(cell.testingRoom.trimmed());
+}
+
+[[nodiscard]] QFont plainTestingAssignmentFont(QFont font)
+{
+    font.setPointSize(14);
+    font.setBold(true);
+    return font;
+}
+
+[[nodiscard]] int plainTestingAssignmentRowHeight(
+    const SchedulePageCell& cell,
+    const int cellWidth,
+    const QFont& baseFont
+    )
+{
+    const qreal contentWidth = std::max(
+        0.0, static_cast<qreal>(cellWidth)
+            - 2.0 * ScheduleCellCardInset
+            - 2.0 * ScheduleCellContentHorizontalInset);
+    const QFontMetricsF metrics(plainTestingAssignmentFont(baseFont));
+    const QRectF textBounds = metrics.boundingRect(
+        QRectF(0.0, 0.0, contentWidth, 100000.0),
+        Qt::AlignCenter | Qt::TextWordWrap,
+        plainTestingAssignmentText(cell));
+    const qreal verticalInsets = 2.0 * ScheduleCellCardInset
+        + 2.0 * ScheduleCellContentVerticalInset;
+    return qCeil(textBounds.height() + verticalInsets);
+}
+
+[[nodiscard]] int scheduleCellRowHeight(
+    const SchedulePageCell& cell,
+    const int cellWidth,
+    const QFont& baseFont
+    )
+{
+    int height = cell.entries.empty()
+        ? ScheduleCellBaseHeight
+        : ScheduleEntryBaseHeight
+            + static_cast<int>(cell.entries.size()) * ScheduleEntryHeight;
+    if (cell.plainTestingAssignment)
+    {
+        height = std::max(height, plainTestingAssignmentRowHeight(
+            cell, cellWidth, baseFont));
+    }
+    return height;
+}
+
+[[nodiscard]] QString pageText(const char* source)
+{
+    return QCoreApplication::translate("SchedulePage", source);
 }
 
 [[nodiscard]] QColor validColor(const QString& value, const QColor& fallback)
@@ -88,7 +149,9 @@ public:
         const auto* model = dynamic_cast<const SchedulePageModel*>(index.model());
         const bool dark = QApplication::palette()
             .color(QPalette::Window).lightness() < 128;
-        const QRectF card = QRectF(option.rect).adjusted(2.0, 2.0, -2.0, -2.0);
+        const QRectF card = QRectF(option.rect).adjusted(
+            ScheduleCellCardInset, ScheduleCellCardInset,
+            -ScheduleCellCardInset, -ScheduleCellCardInset);
         painter->save();
         painter->setClipRect(option.rect);
         painter->setRenderHint(QPainter::Antialiasing, true);
@@ -229,16 +292,15 @@ public:
             painter->drawRoundedRect(card, 6, 6);
             painter->setPen(QColor(dark ? QStringLiteral("#FFF2C2")
                                         : QStringLiteral("#4A3500")));
-            QFont testingFont = option.font;
-            testingFont.setPointSize(14);
-            testingFont.setBold(true);
+            const QFont testingFont = plainTestingAssignmentFont(option.font);
             painter->setFont(testingFont);
-            const QString text = cell->testingRoom.trimmed().isEmpty()
-                ? scheduleText("Oral Testing")
-                : scheduleText("Oral Testing") + QStringLiteral("\nRm: ")
-                    + cell->testingRoom.trimmed();
-            painter->drawText(card.adjusted(4, 3, -4, -3),
-                Qt::AlignCenter | Qt::TextWordWrap, text);
+            painter->drawText(card.adjusted(
+                ScheduleCellContentHorizontalInset,
+                ScheduleCellContentVerticalInset,
+                -ScheduleCellContentHorizontalInset,
+                -ScheduleCellContentVerticalInset),
+                Qt::AlignCenter | Qt::TextWordWrap,
+                plainTestingAssignmentText(*cell));
             drawMarker(QColor(dark ? QStringLiteral("#FFD166")
                                    : QStringLiteral("#B66A00")));
         }
@@ -290,9 +352,18 @@ public:
         const auto* model = dynamic_cast<const SchedulePageModel*>(index.model());
         const SchedulePageCell* const cell = model
             ? model->cellAt(index.row(), index.column()) : nullptr;
-        const int entryHeight = cell && !cell->entries.empty()
-            ? 22 + static_cast<int>(cell->entries.size()) * 38 : 60;
-        return base.expandedTo(QSize(100, entryHeight));
+        int cellWidth = option.rect.width();
+        if (cellWidth <= 0)
+        {
+            if (const auto* const table = qobject_cast<const QTableView*>(parent()))
+            {
+                cellWidth = table->columnWidth(index.column());
+            }
+        }
+        const int rowHeight = cell
+            ? scheduleCellRowHeight(*cell, cellWidth, option.font)
+            : ScheduleCellBaseHeight;
+        return base.expandedTo(QSize(100, rowHeight));
     }
 };
 
@@ -482,7 +553,6 @@ bool SchedulePage::reload()
     restoreControlsFromSnapshot();
     setControlsEnabled(true);
     setStatus(pageText("Schedule data is ready."));
-    updateRowHeights();
     m_table->resizeColumnsToContents();
     m_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     m_table->setColumnWidth(0, 92);
@@ -490,6 +560,7 @@ bool SchedulePage::reload()
     {
         m_table->horizontalHeader()->setSectionResizeMode(column, QHeaderView::Stretch);
     }
+    updateRowHeights();
     m_loading = false;
     m_retry->setEnabled(true);
     return true;
@@ -565,6 +636,7 @@ void SchedulePage::changeEvent(QEvent* event)
     if (event && event->type() == QEvent::LanguageChange)
     {
         retranslateUi();
+        updateRowHeights();
     }
     else if (event && event->type() == QEvent::PaletteChange)
     {
@@ -715,6 +787,13 @@ void SchedulePage::buildUi()
     m_model = new SchedulePageModel(m_table);
     m_table->setModel(m_model);
     m_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
+    connect(m_table->horizontalHeader(), &QHeaderView::sectionResized,
+        this, [this](int, int, int) {
+            if (!m_loading)
+            {
+                updateRowHeights();
+            }
+        });
     root->addWidget(m_table, 1);
     connect(m_table, &QTableView::clicked,
         this, [this](const QModelIndex& index) {
@@ -1337,20 +1416,22 @@ void SchedulePage::updateTestingBanner()
 
 void SchedulePage::updateRowHeights()
 {
+    if (!m_model || !m_table)
+    {
+        return;
+    }
     for (int row = 0; row < m_model->rowCount(); ++row)
     {
-        int maximumEntryCount = 0;
+        int rowHeight = ScheduleCellBaseHeight;
         for (int column = 1; column < m_model->columnCount(); ++column)
         {
             if (const SchedulePageCell* const cell = m_model->cellAt(row, column))
             {
-                maximumEntryCount = std::max(
-                    maximumEntryCount, static_cast<int>(cell->entries.size()));
+                rowHeight = std::max(rowHeight, scheduleCellRowHeight(
+                    *cell, m_table->columnWidth(column), m_table->font()));
             }
         }
-        m_table->setRowHeight(row, maximumEntryCount > 0
-            ? 22 + maximumEntryCount * 38
-            : 60);
+        m_table->setRowHeight(row, rowHeight);
     }
 }
 

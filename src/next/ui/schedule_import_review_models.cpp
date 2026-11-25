@@ -704,7 +704,10 @@ QVariant ScheduleImportCandidatePreviewModel::data(
     const int role
     ) const
 {
-    if (!m_user || !index.isValid() || role != Qt::DisplayRole
+    if (!m_user || !index.isValid()
+        || (role != Qt::DisplayRole
+            && role != Qt::AccessibleTextRole
+            && role != Qt::ToolTipRole)
         || index.row() < 0 || index.row() >= rowCount())
     {
         return {};

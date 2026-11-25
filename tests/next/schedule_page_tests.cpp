@@ -32,6 +32,7 @@
 #include <QEvent>
 #include <QFile>
 #include <QFontDatabase>
+#include <QFontMetricsF>
 #include <QGroupBox>
 #include <QLabel>
 #include <QLineEdit>
@@ -45,6 +46,7 @@
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QTranslator>
+#include <QtMath>
 #include <QtTest/QtTest>
 
 #include <algorithm>
@@ -605,6 +607,8 @@ class SchedulePageTests final : public QObject
 
 private slots:
     void controlsPersistModesPreferencesAndTestingDisplay();
+    void plainTestingAssignmentRowsFitAndResizeWithAvailableWidth();
+    void plainTestingAssignmentRoomPrefixUsesLocaleTranslation();
     void saveFailuresKeepVisibleAndPersistedDisplayState();
     void modelCellEntryLimitIsVisibleAndRejectsPartialProjection();
     void slotCyclesPersistDeleteDefaultsAndShowFailures();
@@ -754,6 +758,202 @@ void SchedulePageTests::controlsPersistModesPreferencesAndTestingDisplay()
     const auto m1PreferenceSaved = Platform::readSchedulePageAtPath(path);
     QVERIFY(m1PreferenceSaved);
     QVERIFY(!m1PreferenceSaved.value().displayPreferences.testingAffectsM1);
+}
+
+void SchedulePageTests::plainTestingAssignmentRowsFitAndResizeWithAvailableWidth()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString path = createTemporaryWorkspace(
+        temporary, QStringLiteral("testing-row-fit.tps"),
+        QStringLiteral("Testing Row Teacher"));
+    QVERIFY(!path.isEmpty());
+
+    WorkspaceStore store;
+    QVERIFY(store.openExisting(path));
+    QSqlQuery clearSchedule(store.database());
+    QVERIFY(clearSchedule.exec(QStringLiteral("DELETE FROM class_times")));
+    QSqlQuery addSchedule(store.database());
+    QVERIFY(addSchedule.exec(QStringLiteral(R"(
+        INSERT INTO class_times (class_id, day, start_time, end_time)
+        VALUES (1, 'Monday', '3:00 PM', '3:50 PM')
+    )")));
+
+    PageFixture fixture;
+    QVERIFY(fixture.initialize(path));
+    QVERIFY(fixture.host);
+    Ui::SchedulePage* const page = fixture.schedule;
+    QVERIFY(page);
+    QTableView* const table = page->scheduleTable();
+    QVERIFY(table);
+
+    fixture.host->resize(1024, 768);
+    QApplication::processEvents();
+    QTest::mouseClick(page->modeButton(Application::ScheduleDisplayMode::Testing),
+                      Qt::LeftButton);
+    QApplication::processEvents();
+    QCOMPARE(page->model()->displayMode(), Application::ScheduleDisplayMode::Testing);
+
+    const auto assignment = findCell(page->model(), [](const Ui::SchedulePageCell& cell) {
+        return cell.day == QStringLiteral("Monday")
+            && cell.startMinute == 17 * 60
+            && cell.plainTestingAssignment;
+    });
+    QVERIFY(assignment.has_value());
+    const QModelIndex assignmentIndex = page->model()->index(
+        assignment->row(), assignment->column());
+    const QString assignmentText = page->model()->data(
+        assignmentIndex, Qt::DisplayRole).toString();
+    QVERIFY(assignmentText.contains(QStringLiteral("Rm: Testing Room")));
+
+    const auto requiredRowHeight = [table, &assignmentText](const int row,
+                                                            const int column) {
+        QFont font = table->font();
+        font.setPointSize(14);
+        font.setBold(true);
+        const qreal contentWidth = std::max(
+            0, table->columnWidth(column) - 12);
+        const QFontMetricsF metrics(font);
+        const QRectF textBounds = metrics.boundingRect(
+            QRectF(0.0, 0.0, contentWidth, 100000.0),
+            Qt::AlignCenter | Qt::TextWordWrap, assignmentText);
+        Q_UNUSED(row);
+        return qCeil(textBounds.height() + 10.0);
+    };
+    const auto assertAssignmentFits = [&] {
+        const int row = assignmentIndex.row();
+        const int column = assignmentIndex.column();
+        const int rowHeight = table->rowHeight(row);
+        const int neededHeight = requiredRowHeight(row, column);
+        QCOMPARE(rowHeight, std::max(60, neededHeight));
+        const QRect cellRect = table->visualRect(assignmentIndex);
+        const QRect contentRect = cellRect.adjusted(6, 5, -6, -5);
+        QFont font = table->font();
+        font.setPointSize(14);
+        font.setBold(true);
+        const QFontMetricsF metrics(font);
+        const QRectF bounds = metrics.boundingRect(
+            QRectF(0.0, 0.0, contentRect.width(), 100000.0),
+            Qt::AlignCenter | Qt::TextWordWrap, assignmentText);
+        QVERIFY(bounds.height() <= contentRect.height());
+        table->scrollTo(assignmentIndex, QAbstractItemView::PositionAtCenter);
+        QApplication::processEvents();
+        QVERIFY(table->viewport()->rect().contains(
+            table->visualRect(assignmentIndex)));
+    };
+
+    table->scrollTo(assignmentIndex, QAbstractItemView::PositionAtCenter);
+    QApplication::processEvents();
+    const int wideRowHeight = table->rowHeight(assignmentIndex.row());
+    const int wideColumnWidth = table->columnWidth(assignmentIndex.column());
+    QVERIFY(wideColumnWidth > 84);
+    assertAssignmentFits();
+
+    for (int row = 0; row < page->model()->rowCount(); ++row)
+    {
+        int maximumEntryCount = 0;
+        bool containsPlainAssignment = false;
+        for (int column = 1; column < page->model()->columnCount(); ++column)
+        {
+            const Ui::SchedulePageCell* const cell =
+                page->model()->cellAt(row, column);
+            QVERIFY(cell);
+            maximumEntryCount = std::max(
+                maximumEntryCount, static_cast<int>(cell->entries.size()));
+            containsPlainAssignment = containsPlainAssignment
+                || cell->plainTestingAssignment;
+        }
+        if (maximumEntryCount > 0 && !containsPlainAssignment)
+        {
+            QCOMPARE(table->rowHeight(row),
+                     22 + maximumEntryCount * 38);
+        }
+    }
+
+    fixture.host->resize(720, 768);
+    QApplication::processEvents();
+    const int narrowColumnWidth = table->columnWidth(assignmentIndex.column());
+    QVERIFY(narrowColumnWidth < wideColumnWidth);
+    const int narrowRowHeight = table->rowHeight(assignmentIndex.row());
+    QVERIFY(narrowRowHeight > wideRowHeight);
+    assertAssignmentFits();
+    qInfo().noquote() << QStringLiteral(
+        "Testing assignment row fit at 1024x768: column %1 px, row %2 px; "
+        "at 720x768: column %3 px, row %4 px")
+        .arg(wideColumnWidth).arg(wideRowHeight)
+        .arg(narrowColumnWidth).arg(narrowRowHeight);
+
+    fixture.host->resize(1024, 768);
+    QApplication::processEvents();
+    QCOMPARE(table->columnWidth(assignmentIndex.column()), wideColumnWidth);
+    QCOMPARE(table->rowHeight(assignmentIndex.row()), wideRowHeight);
+    assertAssignmentFits();
+}
+
+void SchedulePageTests::plainTestingAssignmentRoomPrefixUsesLocaleTranslation()
+{
+    QTemporaryDir temporary;
+    QVERIFY(temporary.isValid());
+    const QString path = createTemporaryWorkspace(
+        temporary, QStringLiteral("testing-room-translation.tps"),
+        QStringLiteral("Translation Teacher"));
+    QVERIFY(!path.isEmpty());
+    WorkspaceStore store;
+    QVERIFY(store.openExisting(path));
+    QSqlQuery clearSchedule(store.database());
+    QVERIFY(clearSchedule.exec(QStringLiteral("DELETE FROM class_times")));
+    QSqlQuery addSchedule(store.database());
+    QVERIFY(addSchedule.exec(QStringLiteral(R"(
+        INSERT INTO class_times (class_id, day, start_time, end_time)
+        VALUES (1, 'Monday', '3:00 PM', '3:50 PM')
+    )")));
+
+    PageFixture fixture;
+    QVERIFY(fixture.initialize(path));
+    Ui::SchedulePage* const page = fixture.schedule;
+    QVERIFY(page);
+    QTest::mouseClick(page->modeButton(Application::ScheduleDisplayMode::Testing),
+                      Qt::LeftButton);
+    QApplication::processEvents();
+
+    const auto assignment = findCell(page->model(), [](const Ui::SchedulePageCell& cell) {
+        return cell.day == QStringLiteral("Monday")
+            && cell.startMinute == 17 * 60
+            && cell.plainTestingAssignment;
+    });
+    QVERIFY(assignment.has_value());
+    const QModelIndex index = page->model()->index(
+        assignment->row(), assignment->column());
+    const QString englishText = QStringLiteral("Oral Testing\nRm: Testing Room");
+    QCOMPARE(page->model()->data(index, Qt::DisplayRole).toString(), englishText);
+    QCOMPARE(page->model()->data(index, Qt::AccessibleTextRole).toString(),
+             englishText);
+
+    QTranslator translator;
+    QVERIFY(translator.load(QDir(QStringLiteral(
+        CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY)).filePath(
+            QStringLiteral("ClassMngr_ko_KR.qm"))));
+    QVERIFY(qApp->installTranslator(&translator));
+    QEvent languageChange(QEvent::LanguageChange);
+    QApplication::sendEvent(page, &languageChange);
+
+    const QString koreanText = QStringLiteral("구술 시험\n강의실: Testing Room");
+    QCOMPARE(page->model()->data(index, Qt::DisplayRole).toString(), koreanText);
+    QCOMPARE(page->model()->data(index, Qt::AccessibleTextRole).toString(),
+             koreanText);
+    QCOMPARE(page->model()->data(index, Qt::ToolTipRole).toString(), koreanText);
+    QFont roomFont = page->scheduleTable()->font();
+    roomFont.setPointSize(14);
+    roomFont.setBold(true);
+    const QFontMetricsF roomMetrics(roomFont);
+    const qreal contentWidth = std::max(
+        0, page->scheduleTable()->columnWidth(index.column()) - 12);
+    const QRectF textBounds = roomMetrics.boundingRect(
+        QRectF(0.0, 0.0, contentWidth, 100000.0),
+        Qt::AlignCenter | Qt::TextWordWrap, koreanText);
+    QCOMPARE(page->scheduleTable()->rowHeight(index.row()),
+             std::max(60, qCeil(textBounds.height() + 10.0)));
+    QVERIFY(qApp->removeTranslator(&translator));
 }
 
 void SchedulePageTests::saveFailuresKeepVisibleAndPersistedDisplayState()

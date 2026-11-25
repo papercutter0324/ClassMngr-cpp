@@ -83,6 +83,8 @@ struct SpeakingEvaluationPageActions final
 
 class SpeakingEvaluationPage final : public Page
 {
+    Q_OBJECT
+
 public:
     explicit SpeakingEvaluationPage(
         const PageContext& context,
@@ -117,6 +119,9 @@ public:
     [[nodiscard]] bool refreshFromStore();
     void clearForWorkspaceChange();
     void clearForClosedWorkspace();
+
+    Q_INVOKABLE void undo();
+    Q_INVOKABLE void redo();
 
 protected:
     void changeEvent(QEvent* event) override;

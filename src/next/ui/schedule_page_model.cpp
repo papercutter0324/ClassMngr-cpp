@@ -710,8 +710,8 @@ QString SchedulePageModel::accessibleCellText(const SchedulePageCell& cell) cons
     {
         return cell.testingRoom.trimmed().isEmpty()
             ? trSchedule("Oral Testing")
-            : trSchedule("Oral Testing") + QStringLiteral("\nRm: ")
-                + cell.testingRoom.trimmed();
+            : trSchedule("Oral Testing\nRm: %1")
+                .arg(cell.testingRoom.trimmed());
     }
     switch (cell.state)
     {

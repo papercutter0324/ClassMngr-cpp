@@ -10,12 +10,16 @@
 
 #include <QPushButton>
 #include <QAction>
+#include <QClipboard>
 #include <QContextMenuEvent>
 #include <QKeySequence>
+#include <QLineEdit>
 #include <QMenu>
 #include <QMenuBar>
+#include <QPlainTextEdit>
 #include <QPointer>
 #include <QStatusBar>
+#include <QTextEdit>
 #include <QTreeWidget>
 #include <QTreeWidgetItemIterator>
 #include <QtTest/QtTest>
@@ -26,6 +30,25 @@
 #include <stdexcept>
 #include <utility>
 #include <vector>
+
+class EditCommandHost final : public QWidget
+{
+    Q_OBJECT
+
+public:
+    int undoCalls = 0;
+    int redoCalls = 0;
+    int cutCalls = 0;
+    int copyCalls = 0;
+    int pasteCalls = 0;
+
+public slots:
+    void undo() { ++undoCalls; }
+    void redo() { ++redoCalls; }
+    void cut() { ++cutCalls; }
+    void copy() { ++copyCalls; }
+    void paste() { ++pasteCalls; }
+};
 
 using namespace ClassMngr::Next;
 
@@ -239,6 +262,8 @@ private slots:
     void windowGeometryLoadsBeforeFirstShow();
     void windowGeometryWritesAfterAcceptedClose();
     void windowGeometryDoesNotWriteWhenCloseIsRejected();
+    void shellExitActionUsesCloseApprovalAndGeometryPersistence();
+    void shellEditActionsFollowFocusDispatchAndClipboard();
     void windowGeometryKeepsDefaultForEmptyOrInvalidPayload();
 
 private:
@@ -1491,6 +1516,176 @@ void NavigationModelTests::windowGeometryDoesNotWriteWhenCloseIsRejected()
     QVERIFY(!shell.close());
     QCOMPARE(probe->writeCount, 0);
     QVERIFY(shell.isVisible());
+}
+
+void NavigationModelTests::shellExitActionUsesCloseApprovalAndGeometryPersistence()
+{
+    auto geometryPort = Test::makeMemoryWindowGeometryPort();
+    Test::MemoryWindowGeometryPort* const probe = geometryPort.get();
+    Ui::ApplicationShell shell(
+        *m_loader,
+        m_preferences.model,
+        std::move(geometryPort),
+        Test::emptyFontFamilyAvailabilityPort()
+        );
+    QAction* const exitAction = shell.findChild<QAction*>(
+        QStringLiteral("classMngrNextExit")
+        );
+    QVERIFY(exitAction);
+    QCOMPARE(exitAction->text(), QStringLiteral("Exit"));
+    shell.show();
+    QApplication::processEvents();
+
+    shell.setCloseHandler([] { return false; });
+    exitAction->trigger();
+    QVERIFY(shell.isVisible());
+    QCOMPARE(probe->writeCount, 0);
+
+    int writesDuringAcceptedHandler = -1;
+    shell.setCloseHandler([&] {
+        writesDuringAcceptedHandler = probe->writeCount;
+        return true;
+    });
+    exitAction->trigger();
+    QVERIFY(!shell.isVisible());
+    QCOMPARE(writesDuringAcceptedHandler, 0);
+    QCOMPARE(probe->writeCount, 1);
+}
+
+void NavigationModelTests::shellEditActionsFollowFocusDispatchAndClipboard()
+{
+    Ui::ApplicationShell shell(
+        *m_loader,
+        m_preferences.model,
+        Test::makeMemoryWindowGeometryPort(),
+        Test::emptyFontFamilyAvailabilityPort()
+        );
+    QAction* const undoAction = shell.findChild<QAction*>(
+        QStringLiteral("classMngrNextUndo")
+        );
+    QAction* const redoAction = shell.findChild<QAction*>(
+        QStringLiteral("classMngrNextRedo")
+        );
+    QAction* const cutAction = shell.findChild<QAction*>(
+        QStringLiteral("classMngrNextCut")
+        );
+    QAction* const copyAction = shell.findChild<QAction*>(
+        QStringLiteral("classMngrNextCopy")
+        );
+    QAction* const pasteAction = shell.findChild<QAction*>(
+        QStringLiteral("classMngrNextPaste")
+        );
+    QVERIFY(undoAction && redoAction && cutAction && copyAction && pasteAction);
+    auto* const editMenu = shell.findChild<QMenu*>(
+        QStringLiteral("classMngrNextEditMenu")
+        );
+    QVERIFY(editMenu);
+    for (QAction* const action : {
+             undoAction, redoAction, cutAction, copyAction, pasteAction})
+    {
+        QCOMPARE(qobject_cast<QMenu*>(action->parent()), editMenu);
+    }
+    QCOMPARE(undoAction->shortcut(), QKeySequence(QKeySequence::Undo));
+    QCOMPARE(redoAction->shortcut(), QKeySequence(QKeySequence::Redo));
+    QCOMPARE(cutAction->shortcut(), QKeySequence(QKeySequence::Cut));
+    QCOMPARE(copyAction->shortcut(), QKeySequence(QKeySequence::Copy));
+    QCOMPARE(pasteAction->shortcut(), QKeySequence(QKeySequence::Paste));
+
+    QClipboard* const clipboard = QApplication::clipboard();
+    clipboard->clear(QClipboard::Clipboard);
+    shell.show();
+    QApplication::processEvents();
+    QLineEdit lineEdit(&shell);
+    lineEdit.show();
+    lineEdit.setText(QStringLiteral("Shell"));
+    lineEdit.setFocus();
+    QTRY_COMPARE(QApplication::focusWidget(), static_cast<QWidget*>(&lineEdit));
+    QTRY_VERIFY(undoAction->isEnabled());
+    QVERIFY(redoAction->isEnabled());
+    QVERIFY(cutAction->isEnabled());
+    QVERIFY(copyAction->isEnabled());
+    QVERIFY(!pasteAction->isEnabled());
+
+    lineEdit.selectAll();
+    copyAction->trigger();
+    QCOMPARE(clipboard->text(), QStringLiteral("Shell"));
+    QTRY_VERIFY(pasteAction->isEnabled());
+    cutAction->trigger();
+    QCOMPARE(lineEdit.text(), QString());
+    undoAction->trigger();
+    QCOMPARE(lineEdit.text(), QStringLiteral("Shell"));
+    redoAction->trigger();
+    QCOMPARE(lineEdit.text(), QString());
+    pasteAction->trigger();
+    QCOMPARE(lineEdit.text(), QStringLiteral("Shell"));
+
+    lineEdit.selectAll();
+    QTest::keyClick(&lineEdit, Qt::Key_C, Qt::ControlModifier);
+    QCOMPARE(clipboard->text(), QStringLiteral("Shell"));
+
+    EditCommandHost commandHost;
+    QWidget focusedChild(&commandHost);
+    focusedChild.setFocusPolicy(Qt::StrongFocus);
+    commandHost.setParent(&shell);
+    commandHost.show();
+    focusedChild.show();
+    focusedChild.setFocus();
+    QTRY_COMPARE(QApplication::focusWidget(), &focusedChild);
+    QVERIFY(undoAction->isEnabled());
+    QVERIFY(redoAction->isEnabled());
+    QVERIFY(cutAction->isEnabled());
+    QVERIFY(copyAction->isEnabled());
+    QVERIFY(pasteAction->isEnabled());
+    undoAction->trigger();
+    redoAction->trigger();
+    cutAction->trigger();
+    copyAction->trigger();
+    pasteAction->trigger();
+    QCOMPARE(commandHost.undoCalls, 1);
+    QCOMPARE(commandHost.redoCalls, 1);
+    QCOMPARE(commandHost.cutCalls, 1);
+    QCOMPARE(commandHost.copyCalls, 1);
+    QCOMPARE(commandHost.pasteCalls, 1);
+
+    clipboard->setText(QStringLiteral("blocked"));
+    QLineEdit readOnlyLineEdit(&shell);
+    readOnlyLineEdit.setReadOnly(true);
+    readOnlyLineEdit.setText(QStringLiteral("unchanged"));
+    readOnlyLineEdit.show();
+    readOnlyLineEdit.setFocus();
+    QTRY_COMPARE(QApplication::focusWidget(), static_cast<QWidget*>(&readOnlyLineEdit));
+    QVERIFY(!cutAction->isEnabled());
+    QVERIFY(!pasteAction->isEnabled());
+    cutAction->trigger();
+    pasteAction->trigger();
+    QCOMPARE(readOnlyLineEdit.text(), QStringLiteral("unchanged"));
+
+    QTextEdit readOnlyTextEdit(&shell);
+    readOnlyTextEdit.setReadOnly(true);
+    readOnlyTextEdit.setPlainText(QStringLiteral("unchanged text"));
+    readOnlyTextEdit.show();
+    readOnlyTextEdit.setFocus();
+    QTRY_COMPARE(QApplication::focusWidget(), static_cast<QWidget*>(&readOnlyTextEdit));
+    QVERIFY(!cutAction->isEnabled());
+    QVERIFY(!pasteAction->isEnabled());
+    cutAction->trigger();
+    pasteAction->trigger();
+    QCOMPARE(readOnlyTextEdit.toPlainText(), QStringLiteral("unchanged text"));
+
+    QPlainTextEdit readOnlyPlainTextEdit(&shell);
+    readOnlyPlainTextEdit.setReadOnly(true);
+    readOnlyPlainTextEdit.setPlainText(QStringLiteral("unchanged plain text"));
+    readOnlyPlainTextEdit.show();
+    readOnlyPlainTextEdit.setFocus();
+    QTRY_COMPARE(QApplication::focusWidget(), static_cast<QWidget*>(&readOnlyPlainTextEdit));
+    QVERIFY(!cutAction->isEnabled());
+    QVERIFY(!pasteAction->isEnabled());
+    cutAction->trigger();
+    pasteAction->trigger();
+    QCOMPARE(readOnlyPlainTextEdit.toPlainText(), QStringLiteral("unchanged plain text"));
+
+    clipboard->clear(QClipboard::Clipboard);
+    QTRY_VERIFY(!pasteAction->isEnabled());
 }
 
 void NavigationModelTests::windowGeometryKeepsDefaultForEmptyOrInvalidPayload()

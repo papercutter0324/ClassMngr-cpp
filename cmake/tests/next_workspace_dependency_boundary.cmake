@@ -81,7 +81,7 @@ foreach(_line IN LISTS _report_lines)
 endforeach()
 
 set(_expected_next_links
-    "Qt6::Core|$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>|$<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>|ClassMngrProcessMemory|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextSubPrepOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNextCalendarUi|ClassMngrQtZipArchiveReadAdapter|ClassMngrNextDocumentCatalog|ClassMngrQtPdfPrint|ClassMngrQtPdfGeneration|Qt6::PdfWidgets|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
+    "Qt6::Core|$<TARGET_OBJECTS:ClassMngrNextWorkspaceProfilerCompat>|$<TARGET_OBJECTS:ClassMngrNextSubPrepProfilerCompat>|ClassMngrProcessMemory|Qt6::Widgets|ClassMngrNext::Application|ClassMngrClassTransferSupport|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNextScheduleOutput|ClassMngrNextSubPrepOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNextCalendarUi|ClassMngrQtZipArchiveReadAdapter|ClassMngrNextDocumentCatalog|ClassMngrQtPdfPrint|ClassMngrAboutPresentation|ClassMngrQtPdfGeneration|Qt6::PdfWidgets|ClassMngrNextStartupUpdates|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Network"
 )
 if(NOT _next_links STREQUAL _expected_next_links)
     message(FATAL_ERROR

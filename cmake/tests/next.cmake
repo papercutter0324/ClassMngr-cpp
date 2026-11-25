@@ -466,6 +466,7 @@ target_link_libraries(ClassMngrNextBootstrapTests
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
         ClassMngrQtPdfPrint
+        ClassMngrAboutPresentation
         ClassMngrNextStartupUpdates
         ClassMngrNextUpdateAdapters
         ClassMngrTeacherImportParser
@@ -5107,6 +5108,7 @@ classmngr_add_qt_test(
 # widget, lifecycle, and process-wide memory observations.
 add_executable(ClassMngrNextMyClassesVisualCapture
     tests/next/my_classes_visual_capture.cpp
+    src/next/platform/qt_font_family_availability_adapter.cpp
     src/next/ui/my_classes_page.cpp
     src/next/ui/my_classes_summary_model.cpp
     src/next/ui/page_host.cpp

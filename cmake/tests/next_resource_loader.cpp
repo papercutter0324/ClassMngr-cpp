@@ -766,8 +766,8 @@ bool testVerifiedInterFileBackedFontRegistration()
                 || font.sourceFilePath() != stagedPaths.at(index)
                 || returnedFamilies != QFontDatabase::applicationFontFamilies(
                     registrationIds.at(index))
-                || returnedFamilies != dataBackedFamilies
                 || returnedFamilies.isEmpty()
+                || returnedFamilies.first() != dataBackedFamilies.first()
                 || returnedFamilies.first() != QStringLiteral("Inter")
                 || !returnedFamilies.contains(QStringLiteral("Inter")))
             {

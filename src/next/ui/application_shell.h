@@ -115,6 +115,7 @@ public:
     void setUpcomingBirthdaysHandler(std::function<void()> handler);
     void setCloseWorkspaceHandler(std::function<void()> handler);
     void setPreferencesHandler(std::function<void()> handler);
+    void setAboutHandler(std::function<void()> handler);
     void setManualUpdateHandler(std::function<void()> handler);
     void setExternalUrlOpener(ExternalUrlOpener opener);
     void setCampusEditCapability(
@@ -200,6 +201,8 @@ private:
     void showKoreanTeacherContextMenu(const QPoint& position);
     void synchronizeNavigationSelection();
     void synchronizeHistoryControls();
+    void synchronizeEditActions() noexcept;
+    [[nodiscard]] bool dispatchEditCommand(const char* method) const;
     void refreshRecentWorkspaceMenu();
     void retranslateUi();
     void applyPreferences(
@@ -227,7 +230,14 @@ private:
     QAction* m_importTeachersAction = nullptr;
     QAction* m_upcomingBirthdaysAction = nullptr;
     QAction* m_closeWorkspaceAction = nullptr;
+    QAction* m_exitAction = nullptr;
+    QAction* m_undoAction = nullptr;
+    QAction* m_redoAction = nullptr;
+    QAction* m_cutAction = nullptr;
+    QAction* m_copyAction = nullptr;
+    QAction* m_pasteAction = nullptr;
     QAction* m_preferencesAction = nullptr;
+    QAction* m_aboutAction = nullptr;
     QAction* m_manualUpdateAction = nullptr;
     QAction* m_manageCampusesAction = nullptr;
     QMenu* m_fileMenu = nullptr;
@@ -265,6 +275,7 @@ private:
     std::function<void()> m_upcomingBirthdaysHandler;
     std::function<void()> m_closeWorkspaceHandler;
     std::function<void()> m_preferencesHandler;
+    std::function<void()> m_aboutHandler;
     std::function<void()> m_manualUpdateHandler;
     ExternalUrlOpener m_externalUrlOpener;
     Application::CampusEditCapability m_campusEditCapability =

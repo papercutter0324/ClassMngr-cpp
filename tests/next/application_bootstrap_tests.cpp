@@ -14,6 +14,8 @@
 #include "next/platform/qt_update_download_port.h"
 #include "next/platform/qt_update_package_action_port.h"
 #include "ui/shared/dialogs/update_dialog.h"
+#include "ui/shared/dialogs/about_dialog.h"
+#include "ui/shared/dialogs/license_dialog.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_descriptor.h"
 #include "next/resources/resource_error.h"
@@ -51,6 +53,7 @@
 #include "next/platform/settings_manager_automatic_update_preferences_port.h"
 #include "next/platform/settings_manager_excel_import_timeout_port.h"
 #include "ui/shared/widgets/on_screen_keyboard.h"
+#include "core/resource_paths.h"
 #include "core/settingsmanager.h"
 #include "features/my_info/data/signature_image_processor.h"
 #include "data/database/workspace_store.h"
@@ -121,6 +124,7 @@
 #include <QSpinBox>
 #include <QTabWidget>
 #include <QTemporaryDir>
+#include <QTextEdit>
 #include <QTimer>
 #include <QToolButton>
 #include <QUrl>
@@ -160,6 +164,7 @@ private slots:
     void initTestCase();
     void cleanupTestCase();
     void sharedWidgetIconResourcesAreAvailableToTheirConsumers();
+    void aboutActionShowsModalDialogWithShellParentAndNestedLicense();
     void createsVisibleShellAndReportsOnlyCompletedStartupStage();
     void startupUpdateCheckWaitsForVisibleInitialPageAndLivesUntilShutdown();
     void manualUpdateActionSharesCoordinatorBeforeStartupDispatch();
@@ -2346,6 +2351,140 @@ sharedWidgetIconResourcesAreAvailableToTheirConsumers()
     numericInput.show();
     QCoreApplication::processEvents();
     QVERIFY(!numericInput.grab().isNull());
+}
+
+void ApplicationBootstrapTests::
+aboutActionShowsModalDialogWithShellParentAndNestedLicense()
+{
+    QApplication& application = *qApp;
+    const QString previousStyleSheet = application.styleSheet();
+    StartupPreferencesGuard preferences(
+        static_cast<int>(Application::LanguagePreference::English),
+        static_cast<int>(Application::Theme::Light)
+        );
+    StartupResourceFixture resources;
+    QVERIFY(resources.isValid());
+    QVERIFY(resources.addStartupResources(
+        expectedEnglishLocale(), QStringLiteral("light")
+        ));
+
+    SettingsManager& settings = SettingsManager::instance();
+    const QString aboutGeometryKey = QStringLiteral("ui/dialogs/about/geometry");
+    const QString licenseGeometryKey = QStringLiteral("ui/dialogs/licenseViewer/geometry");
+    const QVariant previousAboutGeometry = settings.get(aboutGeometryKey);
+    const QVariant previousLicenseGeometry = settings.get(licenseGeometryKey);
+
+    struct AboutDialogStateGuard final
+    {
+        QApplication& application;
+        SettingsManager& settings;
+        QString stylesheet;
+        QString aboutGeometryKey;
+        QString licenseGeometryKey;
+        QVariant previousAboutGeometry;
+        QVariant previousLicenseGeometry;
+
+        ~AboutDialogStateGuard()
+        {
+            if (previousAboutGeometry.isValid())
+            {
+                settings.set(aboutGeometryKey, previousAboutGeometry);
+            }
+            else
+            {
+                settings.remove(aboutGeometryKey);
+            }
+            if (previousLicenseGeometry.isValid())
+            {
+                settings.set(licenseGeometryKey, previousLicenseGeometry);
+            }
+            else
+            {
+                settings.remove(licenseGeometryKey);
+            }
+            application.setStyleSheet(stylesheet);
+        }
+    } stateGuard{
+        application,
+        settings,
+        previousStyleSheet,
+        aboutGeometryKey,
+        licenseGeometryKey,
+        previousAboutGeometry,
+        previousLicenseGeometry
+    };
+
+    settings.remove(aboutGeometryKey);
+    settings.remove(licenseGeometryKey);
+
+    Bootstrap::ApplicationBootstrap bootstrap(
+        application,
+        {},
+        silentStartupDiagnosticsSinkFactory(),
+        resolverForRoot(resources.resourceRoot())
+        );
+    QVERIFY(bootstrap.start().succeeded());
+    Ui::ApplicationShell* const shell = bootstrap.shell();
+    QVERIFY(shell);
+    QAction* const aboutAction = shell->findChild<QAction*>(
+        QStringLiteral("classMngrNextAbout")
+        );
+    QVERIFY(aboutAction);
+
+    struct AboutProbe final
+    {
+        bool aboutWasModalAndParented = false;
+        bool licenseWasModalAndParented = false;
+        bool aboutContentWasPresent = false;
+    } probe;
+    QTimer::singleShot(0, &application, [&] {
+        auto* const about = qobject_cast<AboutDialog*>(
+            QApplication::activeModalWidget()
+            );
+        if (!about)
+        {
+            return;
+        }
+        probe.aboutWasModalAndParented = about->isModal()
+            && about->parentWidget() == shell;
+        auto* const title = about->findChild<QLabel*>(QStringLiteral("pageTitle"));
+        probe.aboutContentWasPresent = title
+            && title->text() == QStringLiteral("ClassMngr")
+            && !QPixmap(ResourcePaths::Icons::appDefault()).isNull();
+
+        auto* const interLicenseButton = about->findChild<QPushButton*>(
+            QStringLiteral("aboutInterLicenseButton")
+            );
+        if (!interLicenseButton)
+        {
+            about->accept();
+            return;
+        }
+        QTimer::singleShot(0, about, [&] {
+            auto* const license = qobject_cast<LicenseDialog*>(
+                QApplication::activeModalWidget()
+                );
+            if (!license)
+            {
+                return;
+            }
+            probe.licenseWasModalAndParented = license->isModal()
+                && license->parentWidget() == about
+                && license->findChild<QTextEdit*>(QStringLiteral("licenseText"));
+            license->accept();
+        });
+        interLicenseButton->click();
+        about->accept();
+    });
+
+    aboutAction->trigger();
+    QVERIFY(probe.aboutWasModalAndParented);
+    QVERIFY(probe.licenseWasModalAndParented);
+    QVERIFY(probe.aboutContentWasPresent);
+    QVERIFY(!settings.get(aboutGeometryKey).toByteArray().isEmpty());
+    QVERIFY(!settings.get(licenseGeometryKey).toByteArray().isEmpty());
+
+    static_cast<void>(bootstrap.shutdown());
 }
 
 void ApplicationBootstrapTests::
@@ -5328,6 +5467,28 @@ void ApplicationBootstrapTests::shellAppearanceUsesSelectedThemeAndLanguage()
     Ui::ApplicationShell* const shell = bootstrap.shell();
     QVERIFY(shell);
     QCOMPARE(shell->windowTitle(), QStringLiteral("ClassMngr Next"));
+    const std::array<std::pair<QString, QString>, 7> commandLabels{{
+        {QStringLiteral("classMngrNextExit"),
+         korean ? QStringLiteral("종료") : QStringLiteral("Exit")},
+        {QStringLiteral("classMngrNextUndo"),
+         korean ? QStringLiteral("실행 취소") : QStringLiteral("Undo")},
+        {QStringLiteral("classMngrNextRedo"),
+         korean ? QStringLiteral("다시 실행") : QStringLiteral("Redo")},
+        {QStringLiteral("classMngrNextCut"),
+         korean ? QStringLiteral("잘라내기") : QStringLiteral("Cut")},
+        {QStringLiteral("classMngrNextCopy"),
+         korean ? QStringLiteral("복사") : QStringLiteral("Copy")},
+        {QStringLiteral("classMngrNextPaste"),
+         korean ? QStringLiteral("붙여넣기") : QStringLiteral("Paste")},
+        {QStringLiteral("classMngrNextAbout"),
+         korean ? QStringLiteral("정보") : QStringLiteral("About")}
+    }};
+    for (const auto& [objectName, expectedText] : commandLabels)
+    {
+        QAction* const action = shell->findChild<QAction*>(objectName);
+        QVERIFY2(action, qPrintable(objectName));
+        QCOMPARE(action->text(), expectedText);
+    }
     shell->resize(1024, 720);
     const QString expectedQss = readTextFile(QDir(resources.resourceRoot()).filePath(
         QStringLiteral("assets/styles/%1.qss").arg(theme)));
@@ -7738,7 +7899,10 @@ openActionUpdatesWorkspaceNavigationAndHistoryOnlyAfterSuccess()
     QCOMPARE(fileDialogProbe->lastOpenRequest->title,
              std::string("Open Teacher Profile"));
     QCOMPARE(fileDialogProbe->lastOpenRequest->nameFilters,
-             std::vector<std::string>{"ClassMngr Teacher Profile (*.tps *.db)"});
+             (std::vector<std::string>{
+                 "ClassMngr Teacher Profile (*.tps)",
+                 "Legacy Teacher Profile (*.db)"
+             }));
     QCOMPARE(gatewayProbe->openCalls, 1);
     QCOMPARE(historyProbe->saveCount, 1);
     QCOMPARE(QString::fromUtf8(

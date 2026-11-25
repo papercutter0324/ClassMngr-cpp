@@ -33,6 +33,7 @@
 #include <QDateEdit>
 #include <QDateTime>
 #include <QCryptographicHash>
+#include <QDebug>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
@@ -1236,6 +1237,27 @@ void CalendarPageTests::calendarLifecycleDiagnosticsCaptureContentReadyAndSuspen
 
     const QJsonObject activated = findCalendarRecord(QStringLiteral("activated"));
     QVERIFY(!activated.isEmpty());
+    const QString platform = activated.value(QStringLiteral("platform")).toString();
+    QString workingSetMetricKey;
+    QString privateUsageMetricKey;
+    if (platform == QStringLiteral("windows"))
+    {
+        workingSetMetricKey = QStringLiteral("working_set_bytes");
+        privateUsageMetricKey = QStringLiteral("private_usage_bytes");
+    }
+    else if (platform == QStringLiteral("macos"))
+    {
+        workingSetMetricKey = QStringLiteral("resident_bytes");
+        privateUsageMetricKey = QStringLiteral("physical_footprint_bytes");
+    }
+    else if (platform == QStringLiteral("linux"))
+    {
+        workingSetMetricKey = QStringLiteral("rss_bytes");
+        privateUsageMetricKey = QStringLiteral("private_usage_bytes");
+    }
+    QVERIFY2(!workingSetMetricKey.isEmpty(),
+        qPrintable(QStringLiteral("Unknown lifecycle memory platform: %1")
+            .arg(platform)));
     const QJsonObject activatedMetrics = activated.value(QStringLiteral("page"))
         .toObject().value(QStringLiteral("calendar_runtime_metrics")).toObject();
     QCOMPARE(activatedMetrics.value(QStringLiteral("observation")).toString(),
@@ -1245,8 +1267,8 @@ void CalendarPageTests::calendarLifecycleDiagnosticsCaptureContentReadyAndSuspen
     QVERIFY(activatedMetrics.contains(QStringLiteral("cache_loading")));
     const QJsonObject activatedMemory = activated.value(QStringLiteral("memory"))
         .toObject();
-    QVERIFY(activatedMemory.value(QStringLiteral("working_set_bytes")).isDouble());
-    QVERIFY(activatedMemory.value(QStringLiteral("private_usage_bytes")).isDouble());
+    QVERIFY(activatedMemory.value(workingSetMetricKey).isDouble());
+    QVERIFY(activatedMemory.value(privateUsageMetricKey).isDouble());
     QVERIFY(activatedMemory.value(QStringLiteral("thread_count")).isDouble());
 
     QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
@@ -1254,6 +1276,7 @@ void CalendarPageTests::calendarLifecycleDiagnosticsCaptureContentReadyAndSuspen
 
     const QJsonObject suspended = findCalendarRecord(QStringLiteral("suspended"));
     QVERIFY(!suspended.isEmpty());
+    QCOMPARE(suspended.value(QStringLiteral("platform")).toString(), platform);
     const QJsonObject suspendedMetrics = suspended.value(QStringLiteral("page"))
         .toObject().value(QStringLiteral("calendar_runtime_metrics")).toObject();
     QCOMPARE(suspendedMetrics.value(QStringLiteral("observation")).toString(),
@@ -1261,7 +1284,7 @@ void CalendarPageTests::calendarLifecycleDiagnosticsCaptureContentReadyAndSuspen
     QCOMPARE(suspendedMetrics.value(QStringLiteral("calendar_view_count")).toInt(), 0);
     QCOMPARE(suspendedMetrics.value(QStringLiteral("calendar_root_object_count")).toInt(), 0);
     QVERIFY(suspended.value(QStringLiteral("memory")).toObject()
-        .value(QStringLiteral("working_set_bytes")).isDouble());
+        .value(workingSetMetricKey).isDouble());
 }
 
 void CalendarPageTests::calendarViewMemoryProbe()
@@ -3788,6 +3811,8 @@ void CalendarPageTests::calendarWidgetViewMatchesQmlCapturesAcrossContexts()
         QStringLiteral(CLASSMNGR_CALENDAR_CAPTURE_DIR)
         + QStringLiteral("/calendar-view-parity/") + runId);
     QVERIFY(QDir().mkpath(outputDirectory));
+    const QString titleDiagnosticOutputDirectory = qEnvironmentVariable(
+        "CLASSMNGR_PHASE10_CALENDAR_TITLE_DIAGNOSTIC_DIR").trimmed();
 
     QJsonArray records;
     QJsonArray fontRegistrationRecords;
@@ -4214,8 +4239,10 @@ void CalendarPageTests::calendarWidgetViewMatchesQmlCapturesAcrossContexts()
                 QCOMPARE(widgetTitle->accessibleName(), expectedTitle);
                 QCOMPARE(widgetTitle->toolTip(), expectedTitle);
 
-                const QColor toolbarBackground = widgetTitle->parentWidget()
-                    ->palette().color(QPalette::Window);
+                QWidget* const titleParentWidget = widgetTitle->parentWidget();
+                QVERIFY(titleParentWidget);
+                const QColor toolbarBackground =
+                    titleParentWidget->palette().color(QPalette::Window);
                 QCOMPARE(toolbarBackground,
                     qmlWidget->rootObject()->property("toolbarColor")
                         .value<QColor>());
@@ -4346,42 +4373,60 @@ void CalendarPageTests::calendarWidgetViewMatchesQmlCapturesAcrossContexts()
                     widgetTitle->size());
                 QVERIFY(widgetImage.rect().contains(titleImageRect));
                 const QImage renderedTitleImage =
-                    widgetImage.copy(titleImageRect);
-
-                const int referenceTitleWidth = qMax(
-                    4096,
-                    qCeil(widgetTitleAdvance)
-                        + widgetTitle->contentsMargins().left()
-                        + widgetTitle->contentsMargins().right() + 32);
-                QLabel fullTitleReference;
-                fullTitleReference.setText(expectedTitle);
+                    widgetTitle->grab().toImage().convertToFormat(
+                        QImage::Format_ARGB32);
+                QWidget titleReferenceHost;
+                titleReferenceHost.setAttribute(Qt::WA_DontShowOnScreen);
+                titleReferenceHost.setObjectName(
+                    titleParentWidget->objectName());
+                titleReferenceHost.setPalette(titleParentWidget->palette());
+                titleReferenceHost.setBackgroundRole(
+                    titleParentWidget->backgroundRole());
+                titleReferenceHost.setForegroundRole(
+                    titleParentWidget->foregroundRole());
+                titleReferenceHost.setAutoFillBackground(
+                    titleParentWidget->autoFillBackground());
+                titleReferenceHost.setStyle(titleParentWidget->style());
+                titleReferenceHost.setStyleSheet(
+                    titleParentWidget->styleSheet());
+                titleReferenceHost.setLayoutDirection(
+                    titleParentWidget->layoutDirection());
+                titleReferenceHost.setAttribute(Qt::WA_StyledBackground,
+                    titleParentWidget->testAttribute(Qt::WA_StyledBackground));
+                titleReferenceHost.setAttribute(Qt::WA_NoSystemBackground,
+                    titleParentWidget->testAttribute(Qt::WA_NoSystemBackground));
+                titleReferenceHost.setAttribute(Qt::WA_OpaquePaintEvent,
+                    titleParentWidget->testAttribute(Qt::WA_OpaquePaintEvent));
+                titleReferenceHost.setAttribute(Qt::WA_TranslucentBackground,
+                    titleParentWidget->testAttribute(
+                        Qt::WA_TranslucentBackground));
+                titleReferenceHost.resize(widgetTitle->size());
+                QLabel fullTitleReference(&titleReferenceHost);
+                fullTitleReference.setObjectName(widgetTitle->objectName());
+                fullTitleReference.setText(widgetTitle->text());
                 fullTitleReference.setFont(widgetTitle->font());
                 fullTitleReference.setPalette(widgetTitle->palette());
+                fullTitleReference.setBackgroundRole(
+                    widgetTitle->backgroundRole());
+                fullTitleReference.setForegroundRole(
+                    widgetTitle->foregroundRole());
+                fullTitleReference.setAutoFillBackground(
+                    widgetTitle->autoFillBackground());
+                fullTitleReference.setStyle(widgetTitle->style());
+                fullTitleReference.setStyleSheet(widgetTitle->styleSheet());
                 fullTitleReference.setAlignment(widgetTitle->alignment());
-                fullTitleReference.setWordWrap(false);
+                fullTitleReference.setWordWrap(widgetTitle->wordWrap());
                 fullTitleReference.setMargin(widgetTitle->margin());
                 fullTitleReference.setIndent(widgetTitle->indent());
                 fullTitleReference.setContentsMargins(
                     widgetTitle->contentsMargins());
                 fullTitleReference.setTextFormat(widgetTitle->textFormat());
-                fullTitleReference.resize(
-                    referenceTitleWidth, titleImageRect.height());
+                fullTitleReference.resize(widgetTitle->size());
+                fullTitleReference.move(0, 0);
                 fullTitleReference.ensurePolished();
-
-                QImage fullTitleReferenceImage(
-                    referenceTitleWidth, titleImageRect.height(),
-                    QImage::Format_ARGB32);
-                fullTitleReferenceImage.fill(toolbarBackground);
-                {
-                    QPainter painter(&fullTitleReferenceImage);
-                    fullTitleReference.render(&painter, QPoint(0, 0),
-                        QRegion(), QWidget::DrawChildren);
-                }
-                const int referenceCropX =
-                    (referenceTitleWidth - titleImageRect.width()) / 2;
                 const QImage expectedTitleImage =
-                    fullTitleReferenceImage.copy(referenceCropX, 0,
-                        titleImageRect.width(), titleImageRect.height());
+                    fullTitleReference.grab().toImage().convertToFormat(
+                        QImage::Format_ARGB32);
                 QCOMPARE(renderedTitleImage.size(), expectedTitleImage.size());
 
                 qint64 renderedTitlePixelMismatchCount = 0;
@@ -4413,6 +4458,232 @@ void CalendarPageTests::calendarWidgetViewMatchesQmlCapturesAcrossContexts()
                     renderedTitlePixelMismatchCount == 0
                     && renderedTitleInkPixelCount
                         == expectedTitleInkPixelCount;
+                if (!renderedTitleMatchesExpected
+                    && !titleDiagnosticOutputDirectory.isEmpty())
+                {
+                    const QString diagnosticDirectory = QDir(
+                        titleDiagnosticOutputDirectory).filePath(
+                            QStringLiteral("calendar-title-%1-%2-%3-%4")
+                                .arg(runId, localeTag, paletteTag, contextTag));
+                    if (!QDir().mkpath(diagnosticDirectory))
+                    {
+                        qWarning().noquote()
+                            << "Could not create optional calendar title "
+                               "diagnostic directory:"
+                            << diagnosticDirectory;
+                    }
+                    else
+                    {
+                        QImage pixelDiffImage(expectedTitleImage.size(),
+                            QImage::Format_ARGB32);
+                        pixelDiffImage.setDevicePixelRatio(
+                            renderedTitleImage.devicePixelRatio());
+                        pixelDiffImage.fill(toolbarBackground);
+
+                        QJsonArray mismatchCoordinates;
+                        int minimumMismatchX = expectedTitleImage.width();
+                        int minimumMismatchY = expectedTitleImage.height();
+                        int maximumMismatchX = -1;
+                        int maximumMismatchY = -1;
+                        for (int y = 0; y < expectedTitleImage.height(); ++y)
+                        {
+                            for (int x = 0; x < expectedTitleImage.width(); ++x)
+                            {
+                                if (expectedTitleImage.pixelColor(x, y)
+                                    == renderedTitleImage.pixelColor(x, y))
+                                {
+                                    continue;
+                                }
+                                mismatchCoordinates.append(QJsonArray{x, y});
+                                pixelDiffImage.setPixelColor(x, y,
+                                    QColor(QStringLiteral("#ff00ff")));
+                                minimumMismatchX = qMin(minimumMismatchX, x);
+                                minimumMismatchY = qMin(minimumMismatchY, y);
+                                maximumMismatchX = qMax(maximumMismatchX, x);
+                                maximumMismatchY = qMax(maximumMismatchY, y);
+                            }
+                        }
+
+                        const QFont titleFont = widgetTitle->font();
+                        const QFontInfo resolvedTitleFont(titleFont);
+                        const QString renderedPath = QDir(
+                            diagnosticDirectory).filePath(
+                                QStringLiteral("rendered-title.png"));
+                        const QString expectedPath = QDir(
+                            diagnosticDirectory).filePath(
+                                QStringLiteral("expected-title.png"));
+                        const QString diffPath = QDir(
+                            diagnosticDirectory).filePath(
+                                QStringLiteral("pixel-diff.png"));
+                        const QString metadataPath = QDir(
+                            diagnosticDirectory).filePath(
+                                QStringLiteral("metadata.json"));
+                        const auto saveImageWithoutOverwrite = [](
+                            const QImage& image,
+                            const QString& path)
+                        {
+                            QFile file(path);
+                            return file.open(QIODevice::WriteOnly
+                                    | QIODevice::NewOnly)
+                                && image.save(&file, "PNG")
+                                && file.flush();
+                        };
+                        QStringList failedArtifacts;
+                        if (!saveImageWithoutOverwrite(
+                                renderedTitleImage, renderedPath))
+                        {
+                            failedArtifacts.append(renderedPath);
+                        }
+                        if (!saveImageWithoutOverwrite(
+                                expectedTitleImage, expectedPath))
+                        {
+                            failedArtifacts.append(expectedPath);
+                        }
+                        if (!saveImageWithoutOverwrite(
+                                pixelDiffImage, diffPath))
+                        {
+                            failedArtifacts.append(diffPath);
+                        }
+
+                        const QRect contentsRect = widgetTitle->contentsRect();
+                        const QJsonObject metadata{
+                            {QStringLiteral("schema"), QStringLiteral(
+                                "classmngr-phase10-calendar-title-diagnostic-v1")},
+                            {QStringLiteral("runId"), runId},
+                            {QStringLiteral("locale"), localeTag},
+                            {QStringLiteral("palette"), paletteTag},
+                            {QStringLiteral("context"), contextTag},
+                            {QStringLiteral("titleText"), widgetTitle->text()},
+                            {QStringLiteral("renderedImageSource"), QStringLiteral(
+                                "calendarWidgetMonthTitle QWidget::grab().toImage()")},
+                            {QStringLiteral("expectedImageSource"), QStringLiteral(
+                                "same-size QLabel child grab in offscreen toolbar context")},
+                            {QStringLiteral("titleWidgetClass"), QString::fromLatin1(
+                                widgetTitle->metaObject()->className())},
+                            {QStringLiteral("titleGeometry"), QJsonObject{
+                                {QStringLiteral("x"), titleImageRect.x()},
+                                {QStringLiteral("y"), titleImageRect.y()},
+                                {QStringLiteral("width"), widgetTitle->width()},
+                                {QStringLiteral("height"), widgetTitle->height()},
+                                {QStringLiteral("widthIsOdd"),
+                                 widgetTitle->width() % 2 != 0},
+                                {QStringLiteral("contentsRect"), QJsonArray{
+                                    contentsRect.x(), contentsRect.y(),
+                                    contentsRect.width(),
+                                    contentsRect.height()}}
+                            }},
+                            {QStringLiteral("renderedCrop"), QJsonObject{
+                                {QStringLiteral("width"),
+                                 renderedTitleImage.width()},
+                                {QStringLiteral("height"),
+                                 renderedTitleImage.height()},
+                                {QStringLiteral("widthIsOdd"),
+                                 renderedTitleImage.width() % 2 != 0},
+                                {QStringLiteral("devicePixelRatio"),
+                                 renderedTitleImage.devicePixelRatio()},
+                                {QStringLiteral("widgetCaptureDevicePixelRatio"),
+                                 widgetImage.devicePixelRatio()}
+                            }},
+                            {QStringLiteral("expectedCrop"), QJsonObject{
+                                {QStringLiteral("referenceWidgetClass"),
+                                 QString::fromLatin1(
+                                     fullTitleReference.metaObject()->className())},
+                                {QStringLiteral("referenceWidgetSize"),
+                                 QJsonArray{fullTitleReference.width(),
+                                     fullTitleReference.height()}},
+                                {QStringLiteral("referenceParentObjectName"),
+                                 titleReferenceHost.objectName()},
+                                {QStringLiteral("referenceParentSize"),
+                                 QJsonArray{titleReferenceHost.width(),
+                                     titleReferenceHost.height()}},
+                                {QStringLiteral("referenceParentBackgroundRole"),
+                                 static_cast<int>(
+                                     titleReferenceHost.backgroundRole())},
+                                {QStringLiteral("referenceParentAutoFillBackground"),
+                                 titleReferenceHost.autoFillBackground()},
+                                {QStringLiteral("referenceParentWindowColor"),
+                                 titleReferenceHost.palette().color(
+                                     QPalette::Window).name(QColor::HexArgb)},
+                                {QStringLiteral("referenceParentStyleClass"),
+                                 QString::fromLatin1(titleReferenceHost.style()
+                                     ->metaObject()->className())},
+                                {QStringLiteral("referenceParentStyleSheet"),
+                                 titleReferenceHost.styleSheet()},
+                                {QStringLiteral("referenceParentIsOffscreen"),
+                                 titleReferenceHost.testAttribute(
+                                     Qt::WA_DontShowOnScreen)},
+                                {QStringLiteral("width"),
+                                 expectedTitleImage.width()},
+                                {QStringLiteral("height"),
+                                 expectedTitleImage.height()},
+                                {QStringLiteral("devicePixelRatio"),
+                                 expectedTitleImage.devicePixelRatio()},
+                                {QStringLiteral("wordWrap"),
+                                 fullTitleReference.wordWrap()}
+                            }},
+                            {QStringLiteral("font"), QJsonObject{
+                                {QStringLiteral("requestedFamily"),
+                                 titleFont.family()},
+                                {QStringLiteral("requestedStyle"),
+                                 titleFont.styleName()},
+                                {QStringLiteral("resolvedFamily"),
+                                 resolvedTitleFont.family()},
+                                {QStringLiteral("resolvedStyle"),
+                                 resolvedTitleFont.styleName()},
+                                {QStringLiteral("pixelSize"),
+                                 resolvedTitleFont.pixelSize()},
+                                {QStringLiteral("pointSize"),
+                                 titleFont.pointSizeF()}
+                            }},
+                            {QStringLiteral("titleWordWrap"),
+                             widgetTitle->wordWrap()},
+                            {QStringLiteral("alignment"),
+                             static_cast<int>(widgetTitle->alignment())},
+                            {QStringLiteral("textFormat"),
+                             static_cast<int>(widgetTitle->textFormat())},
+                            {QStringLiteral("mismatchCount"),
+                             renderedTitlePixelMismatchCount},
+                            {QStringLiteral("mismatchBoundsInclusive"),
+                             maximumMismatchX >= 0
+                                ? QJsonArray{minimumMismatchX,
+                                    minimumMismatchY, maximumMismatchX,
+                                    maximumMismatchY}
+                                : QJsonArray{}},
+                            {QStringLiteral("mismatchCoordinatesCropPixels"),
+                             mismatchCoordinates},
+                            {QStringLiteral("expectedInkPixelCount"),
+                             expectedTitleInkPixelCount},
+                            {QStringLiteral("renderedInkPixelCount"),
+                             renderedTitleInkPixelCount},
+                            {QStringLiteral("artifacts"), QJsonObject{
+                                {QStringLiteral("renderedCrop"),
+                                 QFileInfo(renderedPath).fileName()},
+                                {QStringLiteral("expectedCrop"),
+                                 QFileInfo(expectedPath).fileName()},
+                                {QStringLiteral("pixelDiff"),
+                                 QFileInfo(diffPath).fileName()}}
+                            }
+                        };
+                        QFile metadataFile(metadataPath);
+                        const QByteArray metadataBytes = QJsonDocument(metadata)
+                            .toJson(QJsonDocument::Indented);
+                        if (!metadataFile.open(QIODevice::WriteOnly
+                                | QIODevice::NewOnly)
+                            || metadataFile.write(metadataBytes)
+                                != metadataBytes.size()
+                            || !metadataFile.flush())
+                        {
+                            failedArtifacts.append(metadataPath);
+                        }
+                        if (!failedArtifacts.isEmpty())
+                        {
+                            qWarning().noquote()
+                                << "Could not write optional calendar title "
+                                   "diagnostic artifacts:"
+                                << failedArtifacts.join(QStringLiteral(", "));
+                        }
+                    }
+                }
                 const bool titleFitsOneLine =
                     widgetTitleAdvance
                         <= widgetTitle->contentsRect().width() + 0.5
@@ -4520,8 +4791,18 @@ void CalendarPageTests::calendarWidgetViewMatchesQmlCapturesAcrossContexts()
                         {QStringLiteral("expectedFullText"), expectedTitle},
                         {QStringLiteral("expectedSuffix"),
                          expectedTitleSuffix},
-                        {QStringLiteral("referenceRenderWidth"),
-                         referenceTitleWidth},
+                        {QStringLiteral("referenceWidgetSize"),
+                         QJsonArray{fullTitleReference.width(),
+                             fullTitleReference.height()}},
+                        {QStringLiteral("referenceCaptureRoute"),
+                         QStringLiteral("QWidget::grab().toImage()")},
+                        {QStringLiteral("referenceParentObjectName"),
+                         titleReferenceHost.objectName()},
+                        {QStringLiteral("referenceParentBackgroundColor"),
+                         titleReferenceHost.palette().color(
+                             QPalette::Window).name(QColor::HexArgb)},
+                        {QStringLiteral("referenceWordWrap"),
+                         fullTitleReference.wordWrap()},
                         {QStringLiteral("text"), widgetTitle->text()},
                         {QStringLiteral("accessibleName"),
                          widgetTitle->accessibleName()},
@@ -4701,7 +4982,7 @@ void CalendarPageTests::calendarWidgetViewMatchesQmlCapturesAcrossContexts()
     QVERIFY(manifest.open(QIODevice::WriteOnly | QIODevice::NewOnly));
     const QByteArray manifestBytes = QJsonDocument(QJsonObject{
         {QStringLiteral("schema"), QStringLiteral(
-            "classmngr-phase9-calendar-view-font-parity-v6")},
+            "classmngr-phase9-calendar-view-font-parity-v8")},
         {QStringLiteral("taskId"), QStringLiteral(
             "P9_07_CALENDAR_TITLE_PARITY_FIX")},
         {QStringLiteral("runId"), runId},

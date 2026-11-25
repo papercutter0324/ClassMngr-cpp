@@ -79,6 +79,7 @@
 #include "next/resources/resource_loader.h"
 #include "next/resources/resource_scope.h"
 #include "next/ui/application_shell.h"
+#include "next/ui/dialog_geometry_preferences_callbacks.h"
 #include "next/ui/document_viewer_route.h"
 #include "next/ui/font_size_presenter.h"
 #include "next/ui/initial_page.h"
@@ -100,6 +101,7 @@
 #include "next/ui/qt_user_prompt_presenter.h"
 #include "next/ui/theme_presenter.h"
 #include "next/ui/preferences_dialog.h"
+#include "ui/shared/dialogs/about_dialog.h"
 #include "next/ui/teacher_profile_page.h"
 #include "next/ui/upcoming_birthdays_dialog.h"
 #include "next/ui/upcoming_birthdays_flow.h"
@@ -1598,6 +1600,17 @@ Application::StartupResult ApplicationBootstrap::start()
             {
                 m_startupUpdateDispatcher->openManual();
             }
+        });
+        m_shell->setAboutHandler([this] {
+            if (!m_shell)
+            {
+                return;
+            }
+            ::AboutDialog dialog(
+                m_shell.get(),
+                Ui::settingsManagerDialogGeometryPreferencesCallbacks()
+                );
+            static_cast<void>(dialog.exec());
         });
         m_shell->setPreferencesHandler([this] {
             if (!m_coreServices || !m_shell)

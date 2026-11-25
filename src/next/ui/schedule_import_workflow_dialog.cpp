@@ -3,6 +3,7 @@
 #include "features/schedule/import/schedule_workbook_parser.h"
 #include "next/application/schedule_import_review_summary_projection.h"
 #include "next/application/schedule_import_schedules_cleared_projection.h"
+#include "next/domain/schedule_time.h"
 #include "next/ui/schedule_import_review_models.h"
 
 #include <QCheckBox>
@@ -119,6 +120,50 @@ QString utf8(const std::string& value)
     return QString::fromUtf8(value.data(), static_cast<qsizetype>(value.size()));
 }
 
+QString scheduleImportWeekdayLabel(const Domain::Weekday weekday)
+{
+    switch (weekday)
+    {
+    case Domain::Weekday::Monday: return reviewText("Monday");
+    case Domain::Weekday::Tuesday: return reviewText("Tuesday");
+    case Domain::Weekday::Wednesday: return reviewText("Wednesday");
+    case Domain::Weekday::Thursday: return reviewText("Thursday");
+    case Domain::Weekday::Friday: return reviewText("Friday");
+    case Domain::Weekday::Saturday: return reviewText("Saturday");
+    case Domain::Weekday::Sunday: return reviewText("Sunday");
+    }
+    return {};
+}
+
+QString scheduleOverlapStatus(
+    const Application::ScheduleImportStateValidationError& error
+    )
+{
+    if (!error.overlapConflict)
+    {
+        return reviewText("The proposed schedule contains an overlap.");
+    }
+
+    const Application::ScheduleImportScheduleConflict& conflict =
+        *error.overlapConflict;
+    const QString weekday = scheduleImportWeekdayLabel(
+        conflict.time.scheduleTime.weekday());
+    if (weekday.isEmpty())
+    {
+        return reviewText("The proposed schedule contains an overlap.");
+    }
+
+    return reviewText(
+        "%1 (%2 - %3) overlaps %4 (%5 - %6) on %7.")
+        .arg(utf8(conflict.classLabel))
+        .arg(utf8(conflict.time.startLabel))
+        .arg(utf8(conflict.time.endLabel))
+        .arg(utf8(conflict.conflictingClassLabel))
+        .arg(utf8(conflict.conflictingTime.startLabel))
+        .arg(utf8(conflict.conflictingTime.endLabel))
+        .arg(weekday);
+}
+
 QString decisionStatus(
     const Application::ScheduleImportReviewReadinessResult& readiness
     )
@@ -140,7 +185,7 @@ QString decisionStatus(
         case Code::SelectedClassUnavailable:
             return reviewText("Choose an available class match.");
         case Code::ProjectedScheduleOverlap:
-            return reviewText("The proposed schedule contains an overlap.");
+            return scheduleOverlapStatus(*readiness.stateError);
         case Code::InvalidProjectedTime:
             return reviewText("The proposed schedule contains an invalid time.");
         case Code::CreateNewClassHasTarget:

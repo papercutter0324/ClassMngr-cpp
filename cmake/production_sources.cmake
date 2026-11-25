@@ -335,12 +335,8 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/components/bottom_bar_builder.h"
     "src/ui/shared/constants/gui_constants.h"
     "src/ui/shared/constants/options.h"
-    "src/ui/shared/dialogs/about_dialog.cpp"
-    "src/ui/shared/dialogs/about_dialog.h"
     "src/ui/shared/dialogs/file_dialog_service.cpp"
     "src/ui/shared/dialogs/file_dialog_service.h"
-    "src/ui/shared/dialogs/license_dialog.cpp"
-    "src/ui/shared/dialogs/license_dialog.h"
     "src/ui/shared/dialogs/record_selection_dialog.cpp"
     "src/ui/shared/dialogs/record_selection_dialog.h"
     "src/ui/shared/testing/qt_startup_workflow_test_adapters.cpp"
@@ -423,6 +419,13 @@ set(CLASSMNGR_UI_SHARED_SOURCES
     "src/ui/shared/widgets/text_fit_dialog_button_box.h"
     "src/ui/shared/widgets/text_fit_push_button.h"
     "src/ui/shared/widgets/roster_row_preferences_group.h"
+)
+
+set(CLASSMNGR_ABOUT_PRESENTATION_SOURCES
+    "src/ui/shared/dialogs/about_dialog.cpp"
+    "src/ui/shared/dialogs/about_dialog.h"
+    "src/ui/shared/dialogs/license_dialog.cpp"
+    "src/ui/shared/dialogs/license_dialog.h"
 )
 
 set(CLASSMNGR_ON_SCREEN_KEYBOARD_SOURCES

@@ -288,6 +288,33 @@ classmngr_add_production_objects(
         Qt6::Widgets
         Qt6::Network
 )
+add_library(ClassMngrAboutPresentation STATIC
+    ${CLASSMNGR_ABOUT_PRESENTATION_SOURCES}
+)
+target_compile_features(ClassMngrAboutPresentation
+    PUBLIC
+        cxx_std_23
+)
+target_include_directories(ClassMngrAboutPresentation
+    PUBLIC
+        "${PROJECT_SOURCE_DIR}/src"
+)
+target_link_libraries(ClassMngrAboutPresentation
+    PUBLIC
+        ClassMngrQtPdfPrint
+        Qt6::Widgets
+    PRIVATE
+        ClassMngrFontManager
+        ClassMngrUpdatePresentation
+)
+set_target_properties(ClassMngrAboutPresentation
+    PROPERTIES
+        AUTOMOC ON
+        AUTOUIC OFF
+        AUTORCC OFF
+        CXX_EXTENSIONS OFF
+        POSITION_INDEPENDENT_CODE ON
+)
 # The concrete PDF writer is isolated from shared painting/document code.
 add_library(ClassMngrQtPdfGeneration STATIC ${CLASSMNGR_QT_PDF_GENERATION_SOURCES})
 target_compile_features(ClassMngrQtPdfGeneration PUBLIC cxx_std_23)
@@ -722,6 +749,7 @@ target_link_libraries(ClassMngrRuntime
         ClassMngrScheduleImportParser
         ClassMngrSchedulePrint
         ClassMngrQtPdfPrint
+        ClassMngrAboutPresentation
         ClassMngrRosterTemplateRenderer
         ClassMngrSpeakingEvalReportEngine
         ClassMngrSpeakingEvalPowerPointAdapter
@@ -774,6 +802,7 @@ if(APPLE AND BUILD_TESTING)
             ClassMngrScheduleImportParser
             ClassMngrSchedulePrint
             ClassMngrQtPdfPrint
+            ClassMngrAboutPresentation
             ClassMngrRosterTemplateRenderer
             ClassMngrSubPrepShared
             ClassMngrSpeakingEvalReportEngine

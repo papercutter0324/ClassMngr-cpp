@@ -66,6 +66,9 @@ function(classmngr_check_source_ownership)
     _classmngr_record_manifest(ClassMngrUpdatePresentation
         ${CLASSMNGR_UPDATE_PRESENTATION_SOURCES}
     )
+    _classmngr_record_manifest(ClassMngrAboutPresentation
+        ${CLASSMNGR_ABOUT_PRESENTATION_SOURCES}
+    )
     _classmngr_record_manifest(ClassMngrSettings ${CLASSMNGR_SETTINGS_SOURCES})
     _classmngr_record_manifest(ClassMngrLegacyPdfComposition
         ${CLASSMNGR_LEGACY_PDF_COMPOSITION_SOURCES}

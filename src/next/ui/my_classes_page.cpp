@@ -286,8 +286,6 @@ PageOperationResult<void> MyClassesPage::onActivating()
     if (!refreshFromStore(&error))
     {
         setDetailError(error);
-        m_loadState->setText(error);
-        m_loadState->setProperty("translationSource", QString{});
     }
     return {};
 }
@@ -315,8 +313,7 @@ void MyClassesPage::onSuspending() noexcept
     m_details.reset();
     m_model->clear();
     clearDetailFields();
-    m_loadState->clear();
-    m_loadState->setProperty("translationSource", QString{});
+    clearLoadState();
     m_detailPanel->hide();
     m_loading = false;
 }
@@ -325,12 +322,11 @@ bool MyClassesPage::refreshFromStore(QString* error)
 {
     if (!m_actions.readSummaries)
     {
-        m_loadState->setProperty(
-            "translationSource", QStringLiteral("Class summaries are unavailable.")
-            );
+        const QString message = text("Class summaries are unavailable.");
+        setLoadState(message, QStringLiteral("Class summaries are unavailable."));
         if (error)
         {
-            *error = text("Class summaries are unavailable.");
+            *error = message;
         }
         m_loading = true;
         clearTabs(m_gradeTabs);
@@ -355,8 +351,7 @@ bool MyClassesPage::refreshFromStore(QString* error)
         m_classList->setRootIndex({});
         m_model->clear();
         const QString message = errorText(loaded.error().message);
-        m_loadState->setProperty("translationSource", QString{});
-        m_loadState->setText(message);
+        setLoadState(message, {});
         setDetailError(message);
         if (error)
         {
@@ -378,10 +373,8 @@ bool MyClassesPage::refreshFromStore(QString* error)
 
     if (m_model->summaryCount() == 0)
     {
-        m_loadState->setText(text("No classes available."));
-        m_loadState->setProperty(
-            "translationSource", QStringLiteral("No classes available.")
-            );
+        setLoadState(text("No classes available."),
+                     QStringLiteral("No classes available."));
         m_classTitle->setText(text("No classes available."));
         m_classTitle->setProperty(
             "translationSource", QStringLiteral("No classes available.")
@@ -393,8 +386,7 @@ bool MyClassesPage::refreshFromStore(QString* error)
         }
         return true;
     }
-    m_loadState->clear();
-    m_loadState->setProperty("translationSource", QString{});
+    clearLoadState();
     m_detailPanel->show();
     activateSelectedClass();
     if (error)
@@ -407,10 +399,8 @@ bool MyClassesPage::refreshFromStore(QString* error)
 void MyClassesPage::clearForClosedWorkspace()
 {
     clearForWorkspaceChange();
-    m_loadState->setText(text("No Teacher Profile is open."));
-    m_loadState->setProperty(
-        "translationSource", QStringLiteral("No Teacher Profile is open.")
-        );
+    setLoadState(text("No Teacher Profile is open."),
+                 QStringLiteral("No Teacher Profile is open."));
 }
 
 void MyClassesPage::clearForWorkspaceChange()
@@ -431,8 +421,7 @@ void MyClassesPage::clearForWorkspaceChange()
     m_model->clear();
     clearDetailFields();
     m_detailPanel->hide();
-    m_loadState->setText(text("Workspace changed."));
-    m_loadState->setProperty("translationSource", QStringLiteral("Workspace changed."));
+    setLoadState(text("Workspace changed."), QStringLiteral("Workspace changed."));
     m_loading = false;
 }
 
@@ -472,18 +461,19 @@ void MyClassesPage::buildUi()
     m_subtitle->setWordWrap(true);
     contentLayout->addWidget(m_title);
     contentLayout->addWidget(m_subtitle);
-    contentLayout->addSpacing(10);
+    contentLayout->addSpacing(16);
 
     m_loadState = new QLabel(content);
     m_loadState->setObjectName(QStringLiteral("myClassesLoadState"));
     m_loadState->setWordWrap(true);
+    m_loadState->hide();
     contentLayout->addWidget(m_loadState);
 
     m_gradeTabs = new QTabBar(content);
     m_gradeTabs->setObjectName(QStringLiteral("myClassesGradeTabs"));
     m_gradeTabs->setUsesScrollButtons(true);
     m_gradeTabs->setExpanding(false);
-    m_gradeTabs->setElideMode(Qt::ElideRight);
+    m_gradeTabs->setElideMode(Qt::ElideNone);
     m_gradeTabs->setDrawBase(false);
     m_gradeTabs->hide();
     m_gradeTabs->setStyleSheet(QStringLiteral(
@@ -696,7 +686,7 @@ void MyClassesPage::retranslateUi()
         m_loadState->property("translationSource").toString();
     if (!loadStateSource.isEmpty())
     {
-        m_loadState->setText(text(loadStateSource.toUtf8().constData()));
+        setLoadState(text(loadStateSource.toUtf8().constData()), loadStateSource);
     }
     std::optional<Domain::ClassId> selected;
     if (const QModelIndex current = m_classList->currentIndex(); current.isValid())
@@ -759,6 +749,20 @@ void MyClassesPage::activateSelectedClass()
     }
     m_details = details.value();
     showSelectedDetails(*m_details);
+}
+
+void MyClassesPage::setLoadState(
+    const QString& message,
+    const QString& translationSource)
+{
+    m_loadState->setText(message);
+    m_loadState->setProperty("translationSource", translationSource);
+    m_loadState->setVisible(!message.isEmpty());
+}
+
+void MyClassesPage::clearLoadState()
+{
+    setLoadState({}, {});
 }
 
 void MyClassesPage::showSelectedDetails(

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "next/application/schedule_import_overlap_projection.h"
 #include "next/application/schedule_import_state_projection.h"
 
 #include <optional>
@@ -35,6 +36,7 @@ struct ScheduleImportStateValidationError
     std::string day;
     std::string startTime;
     std::string endTime;
+    std::optional<ScheduleImportScheduleConflict> overlapConflict;
 };
 
 namespace ScheduleImportStateValidationDetail
@@ -293,6 +295,7 @@ validateScheduleImportState(
         error.day = conflicts.front().time.dayLabel;
         error.startTime = conflicts.front().time.startLabel;
         error.endTime = conflicts.front().time.endLabel;
+        error.overlapConflict = conflicts.front();
         return error;
     }
 

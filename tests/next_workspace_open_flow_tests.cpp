@@ -258,7 +258,10 @@ void NextWorkspaceOpenFlowTests::opensTpsUpdatesHistoryAfterSuccessAndRefreshesS
     QCOMPARE(QString::fromStdString(fileDialog.observedRequest->title),
              QStringLiteral("Open Teacher Profile"));
     QCOMPARE(fileDialog.observedRequest->nameFilters,
-             std::vector<std::string>{"ClassMngr Teacher Profile (*.tps *.db)"});
+             (std::vector<std::string>{
+                 "ClassMngr Teacher Profile (*.tps)",
+                 "Legacy Teacher Profile (*.db)"
+             }));
     QCOMPARE(history.loadCalls, 1);
     QCOMPARE(history.saved.size(), std::size_t(1));
     QCOMPARE(history.saved.front().paths.front(), opened.session->location());

@@ -8,9 +8,14 @@
 LicenseDialog::LicenseDialog(
     const QString& title,
     const QString& licenseText,
-    QWidget* parent
+    QWidget* parent,
+    DialogGeometryPreferencesCallbacks geometryPreferences
     )
-    : DialogShell(QStringLiteral("licenseViewer"), parent)
+    : DialogShell(
+        QStringLiteral("licenseViewer"),
+        parent,
+        geometryPreferences
+        )
 {
     setWindowTitle(title);
     setMinimumSize(640, 520);

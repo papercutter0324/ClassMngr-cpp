@@ -10000,3 +10000,18 @@ All 19 tests over 10s were reviewed; the long startup, PDF, integration, and
 visual-capture jobs are proportionate, and only the fixed Bootstrap delays
 showed a small safe reduction. Linux/macOS runtime tests were not available on
 this Windows host; Phase 8/8a remain open.
+
+
+## 2026-11-25 — Phase 10 Linux continuation
+
+- Current-source visual captures are only decision-ready when both Legacy and Next use their production fonts and the artifact binds source, fixture, font, toolchain, executable, and image hashes. The My Classes capture harness now registers the production font setup.
+- In My Classes, a cleared but visible empty QLabel still occupied layout height; hide the transient status when empty and show it only for actual status messages. Qt's QTabBar also elided a valid Korean grade code; preserve the complete label and retain scroll controls.
+- For schedule displays, keep ordinary class rows compact, but derive plain Testing assignment height from the actual translated wrapped text and current column width. Use the existing full translated catalog message rather than concatenating a raw localized prefix.
+- Schedule Import readiness already carries a deterministic first typed overlap. Carry that pair through the validation error and format it in the review UI instead of recomputing it. A clipped compact preview still needs full tooltip and accessibility values.
+
+These decisions preserve Apply gating and imported data while making the relevant information visible or accessible. Cross-platform confirmation remains open.
+
+
+## 2026-11-25 — Phase 10 publication boundary
+
+Publishing the verified Linux candidate work as one commit does not close Phase 10. Keep Candidate 4's disposition, Candidate 11's installed-runtime work, cross-platform evidence, and Candidates 15–20 open. Stage the reviewed tracked paths only; generated captures and build trees remain ignored artifacts.

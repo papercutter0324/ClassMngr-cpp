@@ -7,6 +7,8 @@
 
 #include <algorithm>
 #include <QByteArray>
+#include <QApplication>
+#include <QClipboard>
 #include <QDir>
 #include <QCloseEvent>
 #include <QCoreApplication>
@@ -15,9 +17,12 @@
 #include <QFontMetrics>
 #include <QHBoxLayout>
 #include <QKeySequence>
+#include <QLineEdit>
+#include <QMetaObject>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMouseEvent>
+#include <QPlainTextEdit>
 #include <QPainter>
 #include <QPersistentModelIndex>
 #include <QPixmap>
@@ -26,6 +31,7 @@
 #include <QSignalBlocker>
 #include <QStatusBar>
 #include <QStyledItemDelegate>
+#include <QTextEdit>
 #include <QTimer>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
@@ -67,6 +73,50 @@ constexpr auto KoreanTeacherGroupId = "teachers_all_korean";
     }
 
     return "unknown";
+}
+
+[[nodiscard]] bool isClipboardMutationMethod(const char* method) noexcept
+{
+    return qstrcmp(method, "cut") == 0 || qstrcmp(method, "paste") == 0;
+}
+
+[[nodiscard]] bool isReadOnlyTextWidget(QWidget* widget) noexcept
+{
+    if (auto* const lineEdit = qobject_cast<QLineEdit*>(widget))
+    {
+        return lineEdit->isReadOnly();
+    }
+    if (auto* const textEdit = qobject_cast<QTextEdit*>(widget))
+    {
+        return textEdit->isReadOnly();
+    }
+    if (auto* const plainTextEdit = qobject_cast<QPlainTextEdit*>(widget))
+    {
+        return plainTextEdit->isReadOnly();
+    }
+    return false;
+}
+
+[[nodiscard]] QWidget* focusedWidgetForMethod(
+    QWidget* widget,
+    const char* method
+    ) noexcept
+{
+    const QByteArray signature = QByteArray(method) + "()";
+    while (widget)
+    {
+        if (widget->metaObject()->indexOfMethod(signature.constData()) >= 0)
+        {
+            if (isClipboardMutationMethod(method)
+                && isReadOnlyTextWidget(widget))
+            {
+                return nullptr;
+            }
+            return widget;
+        }
+        widget = qobject_cast<QWidget*>(widget->parent());
+    }
+    return nullptr;
 }
 
 class NavigationTreeItemDelegate final : public QStyledItemDelegate
@@ -452,11 +502,43 @@ ApplicationShell::ApplicationShell(
         );
     m_closeWorkspaceAction->setShortcut(QKeySequence::Close);
     m_closeWorkspaceAction->setEnabled(false);
+    m_fileMenu->addSeparator();
+    m_exitAction = m_fileMenu->addAction(
+        QCoreApplication::translate("ActionRegistry", "Exit")
+        );
+    m_exitAction->setObjectName(QStringLiteral("classMngrNextExit"));
 
     m_editMenu = menuBar()->addMenu(
         QCoreApplication::translate("NextShell", "Edit")
         );
     m_editMenu->setObjectName(QStringLiteral("classMngrNextEditMenu"));
+    m_undoAction = m_editMenu->addAction(
+        QCoreApplication::translate("ActionRegistry", "Undo")
+        );
+    m_undoAction->setObjectName(QStringLiteral("classMngrNextUndo"));
+    m_undoAction->setShortcut(QKeySequence::Undo);
+    m_redoAction = m_editMenu->addAction(
+        QCoreApplication::translate("ActionRegistry", "Redo")
+        );
+    m_redoAction->setObjectName(QStringLiteral("classMngrNextRedo"));
+    m_redoAction->setShortcut(QKeySequence::Redo);
+    m_editMenu->addSeparator();
+    m_cutAction = m_editMenu->addAction(
+        QCoreApplication::translate("ActionRegistry", "Cut")
+        );
+    m_cutAction->setObjectName(QStringLiteral("classMngrNextCut"));
+    m_cutAction->setShortcut(QKeySequence::Cut);
+    m_copyAction = m_editMenu->addAction(
+        QCoreApplication::translate("ActionRegistry", "Copy")
+        );
+    m_copyAction->setObjectName(QStringLiteral("classMngrNextCopy"));
+    m_copyAction->setShortcut(QKeySequence::Copy);
+    m_pasteAction = m_editMenu->addAction(
+        QCoreApplication::translate("ActionRegistry", "Paste")
+        );
+    m_pasteAction->setObjectName(QStringLiteral("classMngrNextPaste"));
+    m_pasteAction->setShortcut(QKeySequence::Paste);
+    m_editMenu->addSeparator();
     m_preferencesAction = m_editMenu->addAction(
         QCoreApplication::translate("NextShell", "Preferences…")
         );
@@ -536,6 +618,24 @@ ApplicationShell::ApplicationShell(
             m_closeWorkspaceHandler();
         }
     });
+    connect(m_exitAction, &QAction::triggered, this, [this] {
+        static_cast<void>(close());
+    });
+    connect(m_undoAction, &QAction::triggered, this, [this] {
+        static_cast<void>(dispatchEditCommand("undo"));
+    });
+    connect(m_redoAction, &QAction::triggered, this, [this] {
+        static_cast<void>(dispatchEditCommand("redo"));
+    });
+    connect(m_cutAction, &QAction::triggered, this, [this] {
+        static_cast<void>(dispatchEditCommand("cut"));
+    });
+    connect(m_copyAction, &QAction::triggered, this, [this] {
+        static_cast<void>(dispatchEditCommand("copy"));
+    });
+    connect(m_pasteAction, &QAction::triggered, this, [this] {
+        static_cast<void>(dispatchEditCommand("paste"));
+    });
     m_helpMenu = menuBar()->addMenu(
         QCoreApplication::translate("MenuBuilder", "Help"));
     m_manualUpdateAction = m_helpMenu->addAction(
@@ -545,6 +645,17 @@ ApplicationShell::ApplicationShell(
         if (m_manualUpdateHandler)
         {
             m_manualUpdateHandler();
+        }
+    });
+    m_helpMenu->addSeparator();
+    m_aboutAction = m_helpMenu->addAction(
+        QCoreApplication::translate("ActionRegistry", "About")
+        );
+    m_aboutAction->setObjectName(QStringLiteral("classMngrNextAbout"));
+    connect(m_aboutAction, &QAction::triggered, this, [this] {
+        if (m_aboutHandler)
+        {
+            m_aboutHandler();
         }
     });
     connect(m_preferencesAction, &QAction::triggered, this, [this] {
@@ -565,6 +676,15 @@ ApplicationShell::ApplicationShell(
             m_upcomingBirthdaysHandler();
         }
     });
+    connect(qApp, &QApplication::focusChanged, this,
+            [this](QWidget*, QWidget*) {
+        synchronizeEditActions();
+    });
+    connect(QApplication::clipboard(), &QClipboard::dataChanged, this,
+            [this] {
+        synchronizeEditActions();
+    });
+    synchronizeEditActions();
     connect(m_navigationTree, &QTreeWidget::currentItemChanged, this,
             [this](QTreeWidgetItem* current, QTreeWidgetItem*) {
         if (const auto documentId =
@@ -780,6 +900,11 @@ void ApplicationShell::setExternalUrlOpener(ExternalUrlOpener opener)
 void ApplicationShell::setPreferencesHandler(std::function<void()> handler)
 {
     m_preferencesHandler = std::move(handler);
+}
+
+void ApplicationShell::setAboutHandler(std::function<void()> handler)
+{
+    m_aboutHandler = std::move(handler);
 }
 
 void ApplicationShell::setCampusEditCapability(
@@ -1627,6 +1752,55 @@ void ApplicationShell::synchronizeHistoryControls()
     m_forwardButton->setEnabled(state.forwardEnabled);
 }
 
+void ApplicationShell::synchronizeEditActions() noexcept
+{
+    QWidget* const focus = QApplication::focusWidget();
+    if (m_undoAction)
+    {
+        m_undoAction->setEnabled(
+            focusedWidgetForMethod(focus, "undo") != nullptr
+            );
+    }
+    if (m_redoAction)
+    {
+        m_redoAction->setEnabled(
+            focusedWidgetForMethod(focus, "redo") != nullptr
+            );
+    }
+    if (m_cutAction)
+    {
+        m_cutAction->setEnabled(
+            focusedWidgetForMethod(focus, "cut") != nullptr
+            );
+    }
+    if (m_copyAction)
+    {
+        m_copyAction->setEnabled(
+            focusedWidgetForMethod(focus, "copy") != nullptr
+            );
+    }
+    if (m_pasteAction)
+    {
+        const QClipboard* const clipboard = QApplication::clipboard();
+        m_pasteAction->setEnabled(
+            focusedWidgetForMethod(focus, "paste") != nullptr
+            && clipboard && !clipboard->text().isEmpty()
+            );
+    }
+}
+
+bool ApplicationShell::dispatchEditCommand(const char* method) const
+{
+    QWidget* const target = focusedWidgetForMethod(
+        QApplication::focusWidget(), method
+        );
+    if (!target)
+    {
+        return false;
+    }
+    return QMetaObject::invokeMethod(target, method, Qt::DirectConnection);
+}
+
 void ApplicationShell::refreshRecentWorkspaceMenu()
 {
     if (!m_recentWorkspaceMenu)
@@ -1811,10 +1985,38 @@ void ApplicationShell::retranslateUi()
     setActionText(m_saveWorkspaceAsAction, "Save As…");
     setActionText(m_exportWorkspaceAction, "Export Teacher Profile…");
     setActionText(m_closeWorkspaceAction, "Close Teacher Profile");
+    if (m_exitAction)
+    {
+        m_exitAction->setText(QCoreApplication::translate("ActionRegistry", "Exit"));
+    }
+    if (m_undoAction)
+    {
+        m_undoAction->setText(QCoreApplication::translate("ActionRegistry", "Undo"));
+    }
+    if (m_redoAction)
+    {
+        m_redoAction->setText(QCoreApplication::translate("ActionRegistry", "Redo"));
+    }
+    if (m_cutAction)
+    {
+        m_cutAction->setText(QCoreApplication::translate("ActionRegistry", "Cut"));
+    }
+    if (m_copyAction)
+    {
+        m_copyAction->setText(QCoreApplication::translate("ActionRegistry", "Copy"));
+    }
+    if (m_pasteAction)
+    {
+        m_pasteAction->setText(QCoreApplication::translate("ActionRegistry", "Paste"));
+    }
     setActionText(m_preferencesAction, "Preferences…");
     m_helpMenu->setTitle(QCoreApplication::translate("MenuBuilder", "Help"));
     m_manualUpdateAction->setText(
         QCoreApplication::translate("ActionRegistry", "Check for Updates..."));
+    if (m_aboutAction)
+    {
+        m_aboutAction->setText(QCoreApplication::translate("ActionRegistry", "About"));
+    }
     setActionText(m_importTeachersAction, "Import Teachers…");
     setActionText(m_upcomingBirthdaysAction, "Upcoming Birthdays…");
     if (m_manageCampusesAction)

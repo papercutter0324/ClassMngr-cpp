@@ -14,6 +14,7 @@ public:
     LicenseDialog(
         const QString& title,
         const QString& licenseText,
-        QWidget* parent = nullptr
+        QWidget* parent = nullptr,
+        DialogGeometryPreferencesCallbacks geometryPreferences = {}
         );
 };

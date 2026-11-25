@@ -1,8 +1,10 @@
 #include "app/services/feature_services.h"
+#include "core/fontmanager.h"
 #include "core/application_services.h"
 #include "core/process_memory_snapshot.h"
 #include "data/database/workspace_store.h"
 #include "features/schedule/ui/schedule_widget.h"
+#include "features/schedule/ui/schedule_widget_delegates.h"
 #include "features/schedule/services/schedule_print_service.h"
 #include "features/schedule/ui/testing_assignment_dialog.h"
 #include "next/platform/qt_font_family_availability_adapter.h"
@@ -18,13 +20,17 @@
 #include "sql_script_runner.h"
 
 #include <QApplication>
+#include <QAbstractButton>
 #include <QAbstractItemView>
+#include <QAction>
 #include <QComboBox>
+#include <QColor>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QFont>
 #include <QFontMetrics>
+#include <QFontMetricsF>
 #include <QHeaderView>
 #include <QImage>
 #include <QJsonArray>
@@ -38,11 +44,13 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QRegion>
+#include <QScrollBar>
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QTableView>
 #include <QTableWidget>
 #include <QTemporaryDir>
+#include <QTextDocument>
 #include <QTranslator>
 #include <QVBoxLayout>
 
@@ -130,6 +138,327 @@ int maximumRowHeight(const QTableView& table)
         maximum = std::max(maximum, table.rowHeight(row));
     }
     return maximum;
+}
+
+QJsonObject rectJson(const QRect& rect)
+{
+    return {
+        {QStringLiteral("x"), rect.x()},
+        {QStringLiteral("y"), rect.y()},
+        {QStringLiteral("width"), rect.width()},
+        {QStringLiteral("height"), rect.height()}
+    };
+}
+
+QJsonObject widgetEvidence(QWidget* widget, QWidget* coordinateParent)
+{
+    if (!widget)
+    {
+        return {{QStringLiteral("found"), false}};
+    }
+    const QPoint topLeft = coordinateParent
+        ? widget->mapTo(coordinateParent, QPoint(0, 0)) : widget->pos();
+    QJsonObject result{
+        {QStringLiteral("found"), true},
+        {QStringLiteral("objectName"), widget->objectName()},
+        {QStringLiteral("visible"), widget->isVisible()},
+        {QStringLiteral("enabled"), widget->isEnabled()},
+        {QStringLiteral("geometry"), rectJson(QRect(topLeft, widget->size()))}
+    };
+    if (auto* const button = qobject_cast<QAbstractButton*>(widget))
+    {
+        result.insert(QStringLiteral("text"), button->text());
+        result.insert(QStringLiteral("checkable"), button->isCheckable());
+        result.insert(QStringLiteral("checked"), button->isChecked());
+    }
+    return result;
+}
+
+QJsonObject actionEvidence(QAction* action)
+{
+    if (!action)
+    {
+        return {{QStringLiteral("found"), false}};
+    }
+    return {
+        {QStringLiteral("found"), true},
+        {QStringLiteral("objectName"), action->objectName()},
+        {QStringLiteral("text"), action->text()},
+        {QStringLiteral("visible"), action->isVisible()},
+        {QStringLiteral("enabled"), action->isEnabled()}
+    };
+}
+
+QJsonObject toolbarEvidence(QWidget* root, QWidget* coordinateParent,
+                            const bool legacy)
+{
+    const QStringList widgetNames = legacy
+        ? QStringList{
+              QStringLiteral("scheduleRegularModeButton"),
+              QStringLiteral("scheduleIntensiveModeButton"),
+              QStringLiteral("scheduleTestingModeButton"),
+              QStringLiteral("scheduleTestingClassesButton"),
+              QStringLiteral("scheduleImportButton")}
+        : QStringList{
+              QStringLiteral("nextScheduleModeRegular"),
+              QStringLiteral("nextScheduleModeIntensive"),
+              QStringLiteral("nextScheduleModeTesting"),
+              QStringLiteral("nextSchedulePreferences")};
+    QJsonObject widgets;
+    for (const QString& name : widgetNames)
+    {
+        widgets.insert(name, widgetEvidence(
+            root->findChild<QWidget*>(name), coordinateParent));
+    }
+    QJsonObject actions;
+    if (!legacy)
+    {
+        for (const QString& name : {
+                 QStringLiteral("nextScheduleImportAction"),
+                 QStringLiteral("nextScheduleOutputAction")})
+        {
+            actions.insert(name, actionEvidence(root->findChild<QAction*>(name)));
+        }
+    }
+    return {
+        {QStringLiteral("widgets"), widgets},
+        {QStringLiteral("actions"), actions}
+    };
+}
+
+QJsonObject verticalOverflowEvidence(QAbstractItemView& view,
+                                     QWidget& captureFrame)
+{
+    QScrollBar* const scrollBar = view.verticalScrollBar();
+    const int originalValue = scrollBar->value();
+    const int minimum = scrollBar->minimum();
+    const int maximum = scrollBar->maximum();
+    const int rowCount = view.model() ? view.model()->rowCount() : 0;
+    const int columnCount = view.model() ? view.model()->columnCount() : 0;
+    const QRect captureCrop(QPoint(0, 0), Viewport);
+    const QPoint viewportOrigin = view.viewport()->mapTo(
+        &captureFrame, QPoint(0, 0));
+    QRect bottomRowRect;
+    QRect bottomRowRectInCapture;
+    QRect bottomRowRectInCaptureAtMaximum;
+    bool bottomRowIntersectsCaptureAtCapture = false;
+    bool bottomRowFullyVisibleInCaptureAtCapture = false;
+    bool bottomRowIntersectsViewport = false;
+    bool bottomRowFullyVisibleAtMaximum = false;
+    bool bottomRowIntersectsCaptureAtMaximum = false;
+    bool bottomRowFullyVisibleInCaptureAtMaximum = false;
+    if (rowCount > 0 && columnCount > 0)
+    {
+        const QModelIndex bottomRow = view.model()->index(
+            rowCount - 1, std::min(1, columnCount - 1));
+        bottomRowRect = view.visualRect(bottomRow);
+        bottomRowRectInCapture = bottomRowRect.translated(viewportOrigin);
+        bottomRowIntersectsCaptureAtCapture =
+            bottomRowRectInCapture.intersects(captureCrop);
+        bottomRowFullyVisibleInCaptureAtCapture =
+            captureCrop.contains(bottomRowRectInCapture);
+        scrollBar->setValue(maximum);
+        QApplication::processEvents();
+        bottomRowRect = view.visualRect(bottomRow);
+        const QRect viewportRect = view.viewport()->rect();
+        bottomRowIntersectsViewport = bottomRowRect.intersects(viewportRect);
+        bottomRowFullyVisibleAtMaximum = viewportRect.contains(bottomRowRect);
+        bottomRowRectInCaptureAtMaximum = bottomRowRect.translated(viewportOrigin);
+        bottomRowIntersectsCaptureAtMaximum =
+            bottomRowRectInCaptureAtMaximum.intersects(captureCrop);
+        bottomRowFullyVisibleInCaptureAtMaximum =
+            captureCrop.contains(bottomRowRectInCaptureAtMaximum);
+        scrollBar->setValue(originalValue);
+        QApplication::processEvents();
+    }
+    return {
+        {QStringLiteral("scrollBarVisible"), scrollBar->isVisible()},
+        {QStringLiteral("minimum"), minimum},
+        {QStringLiteral("maximum"), maximum},
+        {QStringLiteral("range"), maximum - minimum},
+        {QStringLiteral("pageStep"), scrollBar->pageStep()},
+        {QStringLiteral("valueAtCapture"), originalValue},
+        {QStringLiteral("overflowRangeAvailable"), maximum > minimum},
+        {QStringLiteral("bottomRowIntersectsCaptureCropAtCapture"),
+         bottomRowIntersectsCaptureAtCapture},
+        {QStringLiteral("bottomRowFullyVisibleInCaptureCropAtCapture"),
+         bottomRowFullyVisibleInCaptureAtCapture},
+        {QStringLiteral("bottomRowIntersectsViewportAtMaximum"),
+         bottomRowIntersectsViewport},
+        {QStringLiteral("bottomRowFullyVisibleAtMaximum"),
+         bottomRowFullyVisibleAtMaximum},
+        {QStringLiteral("bottomRowRectAtMaximum"), rectJson(bottomRowRect)},
+        {QStringLiteral("bottomRowRectInCaptureAtCapture"),
+         rectJson(bottomRowRectInCapture)},
+        {QStringLiteral("bottomRowRectInCaptureAtMaximum"),
+         rectJson(bottomRowRectInCaptureAtMaximum)},
+        {QStringLiteral("bottomRowIntersectsCaptureCropAtMaximum"),
+         bottomRowIntersectsCaptureAtMaximum},
+        {QStringLiteral("bottomRowFullyVisibleInCaptureCropAtMaximum"),
+         bottomRowFullyVisibleInCaptureAtMaximum},
+        {QStringLiteral("viewportRect"), rectJson(view.viewport()->rect())},
+        {QStringLiteral("captureCropRect"), rectJson(captureCrop)}
+    };
+}
+
+QJsonObject plainTextEvidence(const QString& text, const QFont& font,
+                              const QRect& cellRect, const QRect& viewportRect,
+                              const QRectF& contentRect,
+                              const QRect& cellRectInCapture,
+                              const QRect& captureCropRect)
+{
+    const QFontMetrics metrics(font);
+    const QRect bounds = metrics.boundingRect(
+        QRect(0, 0, std::max(0, qRound(contentRect.width())), 10000),
+        Qt::AlignCenter | Qt::TextWordWrap, text);
+    const bool cellFullyVisible = viewportRect.contains(cellRect);
+    const bool cellFullyVisibleInCapture =
+        captureCropRect.contains(cellRectInCapture);
+    const bool fitsContent = bounds.height() <= contentRect.height();
+    return {
+        {QStringLiteral("text"), text},
+        {QStringLiteral("fontFamily"), font.family()},
+        {QStringLiteral("pointSize"), font.pointSizeF()},
+        {QStringLiteral("cellRect"), rectJson(cellRect)},
+        {QStringLiteral("cellRectInCapture"), rectJson(cellRectInCapture)},
+        {QStringLiteral("captureCropRect"), rectJson(captureCropRect)},
+        {QStringLiteral("contentRect"), rectJson(contentRect.toAlignedRect())},
+        {QStringLiteral("requiredTextHeight"), bounds.height()},
+        {QStringLiteral("contentHeight"), contentRect.height()},
+        {QStringLiteral("documentFitsCellContent"), fitsContent},
+        {QStringLiteral("cellFullyVisibleInViewport"), cellFullyVisible},
+        {QStringLiteral("cellFullyVisibleInCaptureCrop"), cellFullyVisibleInCapture},
+        {QStringLiteral("completeTextVisible"),
+         fitsContent && cellFullyVisible && cellFullyVisibleInCapture}
+    };
+}
+
+QJsonObject richTextDocumentEvidence(
+    const QString& html,
+    const QFont& font,
+    const QString& accessibleText,
+    const QString& tooltipText,
+    const QStringList& expectedSourceValues,
+    const QRect& cellRect,
+    const QRectF& contentRect,
+    const QRect& viewportRect,
+    const QRect& cellRectInCapture,
+    const QRect& captureCropRect,
+    const int rowHeight)
+{
+    QTextDocument document;
+    document.setDocumentMargin(0);
+    document.setDefaultFont(font);
+    document.setHtml(html);
+    document.setTextWidth(contentRect.width());
+    const QString renderedText = document.toPlainText();
+    const qreal measuredHeight = document.size().height();
+    const qreal overflowHeight = std::max(
+        0.0, measuredHeight - contentRect.height());
+    QJsonArray sourceEvidence;
+    for (const QString& sourceValue : expectedSourceValues)
+    {
+        sourceEvidence.append(QJsonObject{
+            {QStringLiteral("value"), sourceValue},
+            {QStringLiteral("length"), sourceValue.size()},
+            {QStringLiteral("presentInDocumentText"),
+             renderedText.contains(sourceValue)},
+            {QStringLiteral("presentInAccessibleText"),
+             accessibleText.contains(sourceValue)},
+            {QStringLiteral("presentInTooltipText"),
+             tooltipText.contains(sourceValue)}});
+    }
+    const QRect alignedContent = contentRect.toAlignedRect();
+    const bool cellFullyVisibleInViewport = viewportRect.contains(cellRect);
+    const bool cellFullyVisibleInCapture = captureCropRect.contains(cellRectInCapture);
+    return {
+        {QStringLiteral("renderedText"), renderedText},
+        {QStringLiteral("documentPlainText"), renderedText},
+        {QStringLiteral("accessibleText"), accessibleText},
+        {QStringLiteral("tooltipText"), tooltipText},
+        {QStringLiteral("documentHtml"), html},
+        {QStringLiteral("fontFamily"), font.family()},
+        {QStringLiteral("fontPointSize"), font.pointSizeF()},
+        {QStringLiteral("fontWeight"), static_cast<int>(font.weight())},
+        {QStringLiteral("rowHeight"), rowHeight},
+        {QStringLiteral("cellRect"), rectJson(cellRect)},
+        {QStringLiteral("cellRectInCapture"), rectJson(cellRectInCapture)},
+        {QStringLiteral("contentRect"), rectJson(alignedContent)},
+        {QStringLiteral("contentWidth"), contentRect.width()},
+        {QStringLiteral("contentHeight"), contentRect.height()},
+        {QStringLiteral("measuredDocumentWidth"), document.size().width()},
+        {QStringLiteral("measuredDocumentHeight"), measuredHeight},
+        {QStringLiteral("documentOverflowHeight"), overflowHeight},
+        {QStringLiteral("documentFitsCellContent"), overflowHeight == 0.0},
+        {QStringLiteral("cellFullyVisibleInViewport"),
+         cellFullyVisibleInViewport},
+        {QStringLiteral("cellFullyVisibleInCaptureCrop"),
+         cellFullyVisibleInCapture},
+        {QStringLiteral("expectedSourceValues"), sourceEvidence}
+    };
+}
+
+QString captureNextCellHtml(const Ui::SchedulePageCell& cell,
+                            const bool showEnglishNames)
+{
+    QString html;
+    for (const Ui::SchedulePageEntry& entry : cell.entries)
+    {
+        const QColor colorValue(entry.fontColor);
+        const QString color = (colorValue.isValid()
+            ? colorValue : QColor(Qt::black)).name(QColor::HexRgb);
+        const QString teacherLine = QStringLiteral("%1 %2")
+            .arg(scheduleEntryTeacherName(entry, showEnglishNames),
+                 entry.room.trimmed())
+            .simplified().toHtmlEscaped();
+        const QString classLine = scheduleEntryClassLine(entry).toHtmlEscaped();
+        if (entry.testingClass)
+        {
+            html += QStringLiteral(
+                "<div style='margin-bottom:6.4px;text-align:center;line-height:0.92;'>"
+                "<div style='color:%1;font-size:13pt;font-weight:700;'>%2</div>"
+                "<div style='color:%1;font-size:11pt;font-weight:500;'>%3</div>"
+                "<div style='color:%1;font-size:10pt;font-weight:400;'>%4</div></div>")
+                .arg(color, entry.className.toHtmlEscaped(),
+                     teacherLine, classLine);
+        }
+        else
+        {
+            html += QStringLiteral(
+                "<div style='margin-bottom:6.4px;text-align:center;line-height:0.96;'>"
+                "<div style='color:%1;font-size:15pt;font-weight:600;'>%2</div>"
+                "<div style='color:%1;font-size:14pt;font-weight:400;'>%3</div></div>")
+                .arg(color, teacherLine, classLine);
+        }
+    }
+    return html;
+}
+
+QString stressValue(const QString& phrase)
+{
+    QString value = phrase.repeated(12).left(256);
+    if (!value.isEmpty() && value.back().isSpace())
+    {
+        value.back() = QLatin1Char('X');
+    }
+    return value.size() == 256 ? value : QString{};
+}
+
+QStringList wrapStressExpectedSourceValues(const QString& stressCase)
+{
+    if (stressCase == QStringLiteral("regular_teacher_room"))
+    {
+        return {
+            stressValue(QStringLiteral("Teacher with an exceptionally long schedule display name ")),
+            stressValue(QStringLiteral("Room with an exceptionally long schedule location label "))
+        };
+    }
+    if (stressCase == QStringLiteral("testing_class_name"))
+    {
+        return {stressValue(QStringLiteral(
+            "Testing class with an exceptionally long display name "))};
+    }
+    return {};
 }
 
 class CaptureTestingClassChoicesPort final
@@ -573,6 +902,122 @@ bool createWorkspaceFixture(const QString& path,
     return true;
 }
 
+bool createWrapStressWorkspace(const QString& path,
+                               const QString& stressCase,
+                               QString* error)
+{
+    const bool testingClassName =
+        stressCase == QStringLiteral("testing_class_name");
+    if (!testingClassName
+        && stressCase != QStringLiteral("regular_teacher_room"))
+    {
+        *error = QStringLiteral("Unknown wrapped-label stress fixture: %1")
+            .arg(stressCase);
+        return false;
+    }
+    const Application::ScheduleDisplayMode mode = testingClassName
+        ? Application::ScheduleDisplayMode::Testing
+        : Application::ScheduleDisplayMode::Regular;
+    if (!createWorkspaceFixture(path, mode, error))
+    {
+        return false;
+    }
+
+    WorkspaceStore store;
+    if (!store.openExisting(path))
+    {
+        *error = QStringLiteral("Could not reopen wrapped-label stress workspace.");
+        return false;
+    }
+    QSqlQuery clearSchedule(store.database());
+    if (!clearSchedule.exec(QStringLiteral("DELETE FROM class_times")))
+    {
+        *error = clearSchedule.lastError().text();
+        return false;
+    }
+
+    if (testingClassName)
+    {
+        const QString longClassName = stressValue(
+            QStringLiteral("Testing class with an exceptionally long display name "));
+        if (longClassName.size() != 256)
+        {
+            *error = QStringLiteral("The Testing class name did not reach 256 characters.");
+            return false;
+        }
+        QSqlQuery updateClass(store.database());
+        updateClass.prepare(QStringLiteral(
+            "UPDATE classes SET name=? WHERE id=1"));
+        updateClass.addBindValue(longClassName);
+        if (!updateClass.exec() || updateClass.numRowsAffected() != 1)
+        {
+            *error = updateClass.lastError().text().isEmpty()
+                ? QStringLiteral("Could not install the long Testing class name.")
+                : updateClass.lastError().text();
+            return false;
+        }
+        QSqlQuery insertTestingClass(store.database());
+        insertTestingClass.prepare(QStringLiteral(
+            "INSERT INTO testing_classes (class_id, room) VALUES (1, ?)"));
+        insertTestingClass.addBindValue(QStringLiteral("Testing Room"));
+        if (!insertTestingClass.exec())
+        {
+            *error = insertTestingClass.lastError().text();
+            return false;
+        }
+        QSqlQuery assignTestingClass(store.database());
+        if (!assignTestingClass.exec(QStringLiteral(R"(
+                UPDATE schedule_testing_blocks
+                SET room='', class_id=1
+                WHERE day='Monday' AND start_time='17:00'
+            )")) || assignTestingClass.numRowsAffected() != 1)
+        {
+            *error = assignTestingClass.lastError().text().isEmpty()
+                ? QStringLiteral("Could not map the Testing assignment to class 1.")
+                : assignTestingClass.lastError().text();
+            return false;
+        }
+        return true;
+    }
+
+    QSqlQuery addRegularSlot(store.database());
+    if (!addRegularSlot.exec(QStringLiteral(R"(
+            INSERT INTO class_times (class_id, day, start_time, end_time)
+            VALUES (1, 'Monday', '5:00 PM', '5:50 PM')
+        )")))
+    {
+        *error = addRegularSlot.lastError().text();
+        return false;
+    }
+    const QString longTeacher = stressValue(QStringLiteral(
+        "Teacher with an exceptionally long schedule display name "));
+    const QString longRoom = stressValue(QStringLiteral(
+        "Room with an exceptionally long schedule location label "));
+    if (longTeacher.size() != 256 || longRoom.size() != 256)
+    {
+        *error = QStringLiteral("The Regular teacher and room labels did not reach 256 characters.");
+        return false;
+    }
+    QSqlQuery updateTeacher(store.database());
+    updateTeacher.prepare(QStringLiteral(R"(
+        UPDATE teachers
+        SET teacher_en=?, preferred_name=?, preferred_romanization=?, room_number=?
+        WHERE id=1
+    )"));
+    updateTeacher.addBindValue(longTeacher);
+    updateTeacher.addBindValue(longTeacher);
+    updateTeacher.addBindValue(longTeacher);
+    updateTeacher.addBindValue(longRoom);
+    if (!updateTeacher.exec() || updateTeacher.numRowsAffected() != 1)
+    {
+        *error = updateTeacher.lastError().text().isEmpty()
+            ? QStringLiteral("Could not install long Regular teacher/room labels.")
+            : updateTeacher.lastError().text();
+        return false;
+    }
+    return true;
+}
+
 class OtherPage final : public Ui::Page
 {
 public:
@@ -623,8 +1068,11 @@ bool captureLegacy(const QString& databasePath,
                    const QString& outputPath,
                    QJsonObject* state,
                    QString* error,
-                   const bool focusTestingAssignment)
+                   const bool focusTestingAssignment,
+                   const QString& wrapStressCase = {})
 {
+    const bool captureFocusedRow = focusTestingAssignment
+        || !wrapStressCase.isEmpty();
     PlatformProcessMemorySnapshotProvider memoryProvider;
     const ProcessMemorySnapshot before = memoryProvider.snapshot();
     ApplicationServices services;
@@ -643,7 +1091,7 @@ bool captureLegacy(const QString& databasePath,
     QTableWidget* table = page->findChild<QTableWidget*>(
         QStringLiteral("scheduleTable"));
     QTableWidgetItem* focusTimeItem = nullptr;
-    if (focusTestingAssignment && table)
+    if (captureFocusedRow && table)
     {
         for (int row = 0; row < table->rowCount(); ++row)
         {
@@ -655,15 +1103,18 @@ bool captureLegacy(const QString& databasePath,
             }
         }
     }
-    if (focusTestingAssignment && !focusTimeItem)
+    if (captureFocusedRow && !focusTimeItem)
     {
-        *error = QStringLiteral(
-            "The Legacy Testing capture could not find the Monday 5:00 PM row.");
+        *error = wrapStressCase.isEmpty()
+            ? QStringLiteral(
+                "The Legacy Testing capture could not find the Monday 5:00 PM row.")
+            : QStringLiteral(
+                "The Legacy wrapped-label capture could not find the Monday 5:00 PM row.");
         return false;
     }
     if (!saveCapture(captureFrame, outputPath, state, error,
-                     [table, focusTimeItem] {
-                         if (table && focusTimeItem)
+                     [table, focusTimeItem, captureFocusedRow] {
+                         if (table && focusTimeItem && captureFocusedRow)
                          {
                              table->setVerticalScrollMode(
                                  QAbstractItemView::ScrollPerPixel);
@@ -689,6 +1140,45 @@ bool captureLegacy(const QString& databasePath,
         state->insert(QStringLiteral("captureFocus"),
                       QStringLiteral("Monday 5:00 PM Testing assignment"));
         state->insert(QStringLiteral("focusedCellVisible"), visible);
+        const QRect cellRect = table->visualRect(table->model()->index(
+            focusTimeItem->row(), 1));
+        const QRectF card = QRectF(cellRect).adjusted(0.5, 0.5, -0.5, -0.5);
+        const QRectF content = card.adjusted(4, 3.2, -4, -3.2);
+        const QRect cellRectInCapture = cellRect.translated(
+            table->viewport()->mapTo(&captureFrame, QPoint(0, 0)));
+        state->insert(QStringLiteral("testingAssignmentRoomTextEvidence"),
+            plainTextEvidence(table->item(focusTimeItem->row(), 1)->text(),
+                table->item(focusTimeItem->row(), 1)->font(), cellRect,
+                table->viewport()->rect(), content, cellRectInCapture,
+                QRect(QPoint(0, 0), Viewport)));
+    }
+    if (!wrapStressCase.isEmpty())
+    {
+        QTableWidgetItem* const item = table->item(focusTimeItem->row(), 1);
+        if (!item)
+        {
+            *error = QStringLiteral("The Legacy stress capture cell is unavailable.");
+            return false;
+        }
+        const QModelIndex index = table->model()->index(focusTimeItem->row(), 1);
+        const QRect cellRect = table->visualRect(index);
+        const QRectF card = QRectF(cellRect).adjusted(0.5, 0.5, -0.5, -0.5);
+        const QRectF content = card.adjusted(4, 3.2, -4, -3.2);
+        const QRect cellRectInCapture = cellRect.translated(
+            table->viewport()->mapTo(&captureFrame, QPoint(0, 0)));
+        const QString html = FontManager::adjustRichTextPointSizes(
+            item->data(ScheduleWidgetDelegates::HtmlRole).toString(),
+            FontManager::sizeOffset()
+                - item->data(ScheduleWidgetDelegates::HtmlFontOffsetRole).toInt());
+        state->insert(QStringLiteral("wrapStressCase"), wrapStressCase);
+        state->insert(QStringLiteral("wrapStressEvidence"),
+            richTextDocumentEvidence(
+                html, item->font(),
+                item->data(Qt::AccessibleTextRole).toString(),
+                item->data(Qt::ToolTipRole).toString(),
+                wrapStressExpectedSourceValues(wrapStressCase),
+                cellRect, content, table->viewport()->rect(), cellRectInCapture,
+                QRect(QPoint(0, 0), Viewport), table->rowHeight(index.row())));
     }
     int toolbarTop = -1;
     int toolbarHeight = -1;
@@ -702,6 +1192,13 @@ bool captureLegacy(const QString& databasePath,
         ? table->horizontalHeader()->mapTo(&captureFrame, QPoint(0, 0)).y()
         : -1;
     const int gridHeaderHeight = table ? table->horizontalHeader()->height() : -1;
+    if (table)
+    {
+        state->insert(QStringLiteral("verticalOverflow"),
+                      verticalOverflowEvidence(*table, captureFrame));
+        state->insert(QStringLiteral("toolbarControls"),
+                      toolbarEvidence(page, &captureFrame, true));
+    }
     const ProcessMemorySnapshot active = memoryProvider.snapshot();
     const ScheduleWidgetRuntimeMetrics metrics = page->runtimeMetrics();
     QJsonArray renderedRowHeights;
@@ -752,8 +1249,11 @@ bool captureNext(const QString& databasePath,
                  const QString& outputPath,
                  QJsonObject* state,
                  QString* error,
-                 const bool focusTestingAssignment)
+                 const bool focusTestingAssignment,
+                 const QString& wrapStressCase = {})
 {
+    const bool captureFocusedRow = focusTestingAssignment
+        || !wrapStressCase.isEmpty();
     PlatformProcessMemorySnapshotProvider memoryProvider;
     const ProcessMemorySnapshot before = memoryProvider.snapshot();
     Platform::QtFontFamilyAvailabilityAdapter fontFamilyAvailabilityPort;
@@ -811,7 +1311,7 @@ bool captureNext(const QString& databasePath,
         return false;
     }
     int focusedRow = -1;
-    if (focusTestingAssignment)
+    if (captureFocusedRow)
     {
         for (int row = 0; row < schedule->model()->rowCount(); ++row)
         {
@@ -825,13 +1325,17 @@ bool captureNext(const QString& databasePath,
         }
         if (focusedRow < 0)
         {
-            *error = QStringLiteral(
-                "The Next Testing capture could not find the Monday 5:00 PM row.");
+            *error = wrapStressCase.isEmpty()
+                ? QStringLiteral(
+                    "The Next Testing capture could not find the Monday 5:00 PM row.")
+                : QStringLiteral(
+                    "The Next wrapped-label capture could not find the Monday 5:00 PM row.");
             return false;
         }
     }
-    if (!saveCapture(host, outputPath, state, error, [schedule, focusedRow] {
-            if (schedule && focusedRow >= 0)
+    if (!saveCapture(host, outputPath, state, error,
+                     [schedule, focusedRow, captureFocusedRow] {
+            if (schedule && focusedRow >= 0 && captureFocusedRow)
             {
                 schedule->scheduleTable()->setVerticalScrollMode(
                     QAbstractItemView::ScrollPerPixel);
@@ -857,6 +1361,53 @@ bool captureNext(const QString& databasePath,
         state->insert(QStringLiteral("captureFocus"),
                       QStringLiteral("Monday 5:00 PM Testing assignment"));
         state->insert(QStringLiteral("focusedCellVisible"), visible);
+        const QRect cellRect = schedule->scheduleTable()->visualRect(
+            schedule->model()->index(focusedRow, 1));
+        const QRectF card = QRectF(cellRect).adjusted(2.0, 2.0, -2.0, -2.0);
+        const QRectF content = card.adjusted(4, 3, -4, -3);
+        const QRect cellRectInCapture = cellRect.translated(
+            schedule->scheduleTable()->viewport()->mapTo(&host, QPoint(0, 0)));
+        QFont testingFont = schedule->scheduleTable()->font();
+        testingFont.setPointSize(14);
+        testingFont.setBold(true);
+        state->insert(QStringLiteral("testingAssignmentRoomTextEvidence"),
+            plainTextEvidence(schedule->model()->data(
+                schedule->model()->index(focusedRow, 1), Qt::DisplayRole).toString(),
+                testingFont, cellRect, schedule->scheduleTable()->viewport()->rect(),
+                content, cellRectInCapture, QRect(QPoint(0, 0), Viewport)));
+    }
+    if (!wrapStressCase.isEmpty())
+    {
+        QTableView* const table = schedule->scheduleTable();
+        const QModelIndex index = schedule->model()->index(focusedRow, 1);
+        const Ui::SchedulePageCell* const cell =
+            schedule->model()->cellAt(focusedRow, 1);
+        if (!cell || cell->entries.empty())
+        {
+            *error = QStringLiteral("The Next stress capture cell has no class entry.");
+            return false;
+        }
+        const QRect cellRect = table->visualRect(index);
+        const QRectF card = QRectF(cellRect).adjusted(2.0, 2.0, -2.0, -2.0);
+        const QRectF content = card.adjusted(4, 3, -4, -3);
+        const QRect cellRectInCapture = cellRect.translated(
+            table->viewport()->mapTo(&host, QPoint(0, 0)));
+        const QString displayText =
+            schedule->model()->data(index, Qt::DisplayRole).toString();
+        const QString accessibleText =
+            schedule->model()->data(index, Qt::AccessibleTextRole).toString();
+        const QString tooltipText =
+            schedule->model()->data(index, Qt::ToolTipRole).toString();
+        const QString html = captureNextCellHtml(
+            *cell, schedule->model()->preferences().showEnglishNames);
+        state->insert(QStringLiteral("wrapStressCase"), wrapStressCase);
+        state->insert(QStringLiteral("wrapStressDisplayRoleText"), displayText);
+        state->insert(QStringLiteral("wrapStressEvidence"),
+            richTextDocumentEvidence(
+                html, table->font(), accessibleText, tooltipText,
+                wrapStressExpectedSourceValues(wrapStressCase),
+                cellRect, content, table->viewport()->rect(), cellRectInCapture,
+                QRect(QPoint(0, 0), Viewport), table->rowHeight(focusedRow)));
     }
     int intensiveClassLineExpectedCount = 0;
     int intensiveClassLineVisibleCount = 0;
@@ -1019,6 +1570,10 @@ bool captureNext(const QString& databasePath,
     const int gridHeaderTop = schedule->scheduleTable()->horizontalHeader()
         ->mapTo(&host, QPoint(0, 0)).y();
     const int gridHeaderHeight = schedule->scheduleTable()->horizontalHeader()->height();
+    state->insert(QStringLiteral("verticalOverflow"),
+                  verticalOverflowEvidence(*schedule->scheduleTable(), host));
+    state->insert(QStringLiteral("toolbarControls"),
+                  toolbarEvidence(schedule, &host, false));
     static_cast<void>(host.activatePage(QStringLiteral("other")));
     QApplication::processEvents();
     const ProcessMemorySnapshot released = memoryProvider.snapshot();
@@ -1075,25 +1630,55 @@ bool capturePair(const QString& databasePath,
                  const QString& theme,
                  QJsonArray* captures,
                  QString* error,
-                 const bool focusTestingAssignment = false)
+                 const bool focusTestingAssignment = false,
+                 const QString& wrapStressCase = {})
 {
     QJsonObject legacy;
     QJsonObject next;
     if (!captureLegacy(databasePath,
                        QDir(outputDirectory).filePath(captureStem(
                            QStringLiteral("legacy"), mode, locale, theme)),
-                       &legacy, error, focusTestingAssignment)
+                       &legacy, error, focusTestingAssignment, wrapStressCase)
         || !captureNext(databasePath, loader, preferences,
                         QDir(outputDirectory).filePath(captureStem(
                             QStringLiteral("next"), mode, locale, theme)),
-                        &next, error, focusTestingAssignment))
+                        &next, error, focusTestingAssignment, wrapStressCase))
     {
         return false;
+    }
+    if (focusTestingAssignment
+        && !next.value(QStringLiteral("testingAssignmentRoomTextEvidence"))
+                .toObject().value(QStringLiteral("completeTextVisible")).toBool())
+    {
+        *error = QStringLiteral(
+            "The Next Testing assignment room label does not fit in its cell and capture viewport.");
+        return false;
+    }
+    if (focusTestingAssignment)
+    {
+        const QString expectedRoomText = locale == QStringLiteral("ko_KR")
+            ? QStringLiteral("구술 시험\n강의실: Testing Room")
+            : QStringLiteral("Oral Testing\nRm: Testing Room");
+        const QString capturedRoomText = next.value(
+            QStringLiteral("testingAssignmentRoomTextEvidence")).toObject()
+            .value(QStringLiteral("text")).toString();
+        if (capturedRoomText != expectedRoomText)
+        {
+            *error = QStringLiteral(
+                "The Next Testing assignment text does not use the expected %1 locale string: %2")
+                .arg(locale, capturedRoomText);
+            return false;
+        }
     }
     legacy.insert(QStringLiteral("locale"), locale);
     legacy.insert(QStringLiteral("theme"), theme);
     next.insert(QStringLiteral("locale"), locale);
     next.insert(QStringLiteral("theme"), theme);
+    if (!wrapStressCase.isEmpty())
+    {
+        legacy.insert(QStringLiteral("wrapStressCase"), wrapStressCase);
+        next.insert(QStringLiteral("wrapStressCase"), wrapStressCase);
+    }
     if (focusTestingAssignment)
     {
         const QString variant = QStringLiteral(
@@ -1283,12 +1868,15 @@ int main(int argc, char* argv[])
                           << outputDirectory;
         return 0;
     }
-    if (argc != 2)
+    const bool wrapStressOnly = argc == 3
+        && QString::fromLocal8Bit(argv[1]) == QStringLiteral("--wrap-stress");
+    if (argc != 2 && !wrapStressOnly)
     {
-        qCritical("Usage: ClassMngrNextScheduleVisualCapture OUTPUT_DIR | --c32 OUTPUT_DIR");
+        qCritical("Usage: ClassMngrNextScheduleVisualCapture OUTPUT_DIR | --c32 OUTPUT_DIR | --wrap-stress OUTPUT_DIR");
         return 2;
     }
-    const QString outputDirectory = QString::fromLocal8Bit(argv[1]);
+    const QString outputDirectory = QString::fromLocal8Bit(
+        wrapStressOnly ? argv[2] : argv[1]);
     if (!QDir().mkpath(outputDirectory))
     {
         qCritical("Could not create Schedule capture output directory");
@@ -1327,6 +1915,91 @@ int main(int argc, char* argv[])
     QJsonArray captures;
     QString error;
 
+    if (wrapStressOnly)
+    {
+        QLocale::setDefault(QLocale(QStringLiteral("en_US")));
+        application.setPalette(themePalette(QStringLiteral("light")));
+        application.setStyleSheet(readText(QDir(stylesheetDirectory)
+            .filePath(QStringLiteral("light.qss"))));
+
+        const QString regularStressPath = temporary.filePath(
+            QStringLiteral("regular-long-teacher-room.tps"));
+        if (!createWrapStressWorkspace(
+                regularStressPath, QStringLiteral("regular_teacher_room"), &error)
+            || !capturePair(
+                regularStressPath, loader, memoryPreferences.model,
+                outputDirectory, QStringLiteral("wrap_regular"),
+                QStringLiteral("en_US"), QStringLiteral("light"),
+                &captures, &error, false,
+                QStringLiteral("regular_teacher_room")))
+        {
+            qCritical().noquote() << error;
+            return 1;
+        }
+
+        const QString testingStressPath = temporary.filePath(
+            QStringLiteral("testing-long-class-name.tps"));
+        if (!createWrapStressWorkspace(
+                testingStressPath, QStringLiteral("testing_class_name"), &error)
+            || !capturePair(
+                testingStressPath, loader, memoryPreferences.model,
+                outputDirectory, QStringLiteral("wrap_testing"),
+                QStringLiteral("en_US"), QStringLiteral("light"),
+                &captures, &error, false,
+                QStringLiteral("testing_class_name")))
+        {
+            qCritical().noquote() << error;
+            return 1;
+        }
+
+        const QJsonObject manifest{
+            {QStringLiteral("taskId"), QStringLiteral("P10-B1-C13-REGULAR-TESTING-WRAP-STRESS")},
+            {QStringLiteral("fixture"), QStringLiteral("tests/fixtures/workspaces/large_startup.sql")},
+            {QStringLiteral("fixtureClasses"), 96},
+            {QStringLiteral("viewport"), QJsonArray{1024, 768}},
+            {QStringLiteral("locale"), QStringLiteral("en_US")},
+            {QStringLiteral("theme"), QStringLiteral("light")},
+            {QStringLiteral("capturePairs"), 2},
+            {QStringLiteral("captureImages"), captures.size()},
+            {QStringLiteral("cases"), QJsonArray{
+                QJsonObject{
+                    {QStringLiteral("name"), QStringLiteral("regular_teacher_room")},
+                    {QStringLiteral("teacherLength"), 256},
+                    {QStringLiteral("roomLength"), 256},
+                    {QStringLiteral("classTimes"), QStringLiteral("class 1 only at Monday 17:00")}},
+                QJsonObject{
+                    {QStringLiteral("name"), QStringLiteral("testing_class_name")},
+                    {QStringLiteral("classNameLength"), 256},
+                    {QStringLiteral("assignment"), QStringLiteral("class 1 assigned at Monday 17:00")}}}},
+            {QStringLiteral("measurementMethod"), QStringLiteral(
+                "The capture reproduces each route's QTextDocument HTML, default font, and actual content width; measured document height is compared with the painted content rectangle. No fit assertion is applied to stress cases.")},
+            {QStringLiteral("pixelParityClaim"), false},
+            {QStringLiteral("captures"), captures}
+        };
+        QFile manifestFile(QDir(outputDirectory).filePath(
+            QStringLiteral("manifest.json")));
+        if (!manifestFile.open(QIODevice::WriteOnly | QIODevice::Truncate)
+            || manifestFile.write(QJsonDocument(manifest).toJson(
+                   QJsonDocument::Indented)) < 0)
+        {
+            qCritical("Could not write Schedule wrap-stress manifest");
+            return 1;
+        }
+        qInfo().noquote() << "Wrote" << captures.size()
+                          << "wrapped-text stress captures to" << outputDirectory;
+        return 0;
+    }
+
+    const QString focusedTestingPath = temporary.filePath(
+        QStringLiteral("testing-assignment-focused.tps"));
+    if (!createWorkspaceFixture(focusedTestingPath,
+                                Application::ScheduleDisplayMode::Testing,
+                                &error, true))
+    {
+        qCritical().noquote() << error;
+        return 1;
+    }
+
     for (const QString& locale : locales)
     {
         for (const QString& theme : themes)
@@ -1362,6 +2035,13 @@ int main(int argc, char* argv[])
                     return 1;
                 }
             }
+            if (!capturePair(focusedTestingPath, loader, memoryPreferences.model,
+                             outputDirectory, QStringLiteral("testing-assignment"),
+                             locale, theme, &captures, &error, true))
+            {
+                qCritical().noquote() << error;
+                return 1;
+            }
             if (translator)
             {
                 application.removeTranslator(translator.get());
@@ -1390,20 +2070,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    const QString focusedTestingPath = temporary.filePath(
-        QStringLiteral("testing-assignment-focused.tps"));
-    if (!createWorkspaceFixture(focusedTestingPath,
-                                Application::ScheduleDisplayMode::Testing,
-                                &error, true)
-        || !capturePair(focusedTestingPath, loader, memoryPreferences.model,
-                        outputDirectory, QStringLiteral("testing-assignment"),
-                        QStringLiteral("en_US"), QStringLiteral("light"),
-                        &captures, &error, true))
-    {
-        qCritical().noquote() << error;
-        return 1;
-    }
-
     const QString wrappedIntensivePath = temporary.filePath(
         QStringLiteral("intensive-wrapped-labels.tps"));
     if (!createWorkspaceFixture(wrappedIntensivePath,
@@ -1419,12 +2085,24 @@ int main(int argc, char* argv[])
     }
 
     const QJsonObject manifest{
-        {QStringLiteral("taskId"), QStringLiteral("phase7-c30-schedule-implementation-20261028")},
+        {QStringLiteral("taskId"), QStringLiteral("P10-B1-C13-KOREAN-ROOM-PREFIX")},
         {QStringLiteral("fixture"), QStringLiteral("tests/fixtures/workspaces/large_startup.sql")},
         {QStringLiteral("fixtureClasses"), 96},
         {QStringLiteral("fixtureRegularRows"), 768},
         {QStringLiteral("fixtureIntensiveRows"), 24},
         {QStringLiteral("wrappedLabelSourceLength"), 256},
+        {QStringLiteral("capturePairs"), captures.size()},
+        {QStringLiteral("plannedCapturePairsPreserved"), 16},
+        {QStringLiteral("focusedTestingAssignmentLocaleThemePairs"), 4},
+        {QStringLiteral("testingAssignmentRoomPrefixByLocale"), QJsonObject{
+            {QStringLiteral("en_US"), QStringLiteral("Rm:")},
+            {QStringLiteral("ko_KR"), QStringLiteral("강의실:")}}},
+        {QStringLiteral("measuredEvidence"), QJsonArray{
+            QStringLiteral("Legacy and Next vertical scroll-bar visibility, range, and bottom-row reachability in the 1024x768 capture crop before and at maximum scroll value"),
+            QStringLiteral("toolbar mode and action geometry, visibility, checked state, and enabled state"),
+            QStringLiteral("Testing assignment room text uses the exact locale-specific display string and fits cell content and viewport bounds; Next capture fails if text differs or is clipped")}},
+        {QStringLiteral("regularTestingLongLabels"), QStringLiteral(
+            "No custom long-label fixture was added; Regular and Testing use the existing 96-class source, and the 256-character synthetic case remains Intensive-only.")},
         {QStringLiteral("intensiveLongLabelLayout"), QStringLiteral(
              "fixed single-line teacher and room bands with right elision; reserved grade/level band; full strings in accessible and tooltip text")},
         {QStringLiteral("testingAssignmentKey"), QStringLiteral("Monday 17:00")},

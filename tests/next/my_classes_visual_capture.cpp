@@ -1,21 +1,27 @@
 #include "app/services/feature_services.h"
 #include "core/application_services.h"
+#include "core/fontmanager.h"
 #include "core/process_memory_snapshot.h"
 #include "data/database/workspace_store.h"
 #include "features/my_info/ui/my_classes_page.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
 #include "next/application/my_classes_page_read_query.h"
 #include "next/platform/workspace_store_my_classes_page_read_port.h"
+#include "next/platform/qt_font_family_availability_adapter.h"
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
+#include "next/ui/font_size_presenter.h"
 #include "next/ui/my_classes_page.h"
 #include "next/ui/page_host.h"
 #include "preferences_test_ports.h"
 
 #include <QApplication>
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFont>
+#include <QFontInfo>
 #include <QFrame>
 #include <QImage>
 #include <QJsonArray>
@@ -30,9 +36,11 @@
 #include <QListView>
 
 #include <memory>
+#include <array>
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 using namespace ClassMngr;
 using namespace ClassMngr::Next;
@@ -53,6 +61,133 @@ QString readText(const QString& path)
     return file.open(QIODevice::ReadOnly | QIODevice::Text)
         ? QString::fromUtf8(file.readAll())
         : QString{};
+}
+
+QJsonArray fontFamilies(const QFont& font)
+{
+    QJsonArray result;
+    for (const QString& family : font.families())
+    {
+        result.append(family);
+    }
+    return result;
+}
+
+QJsonObject fontJson(const QFont& font)
+{
+    const QFontInfo resolved(font);
+    return {
+        {QStringLiteral("families"), fontFamilies(font)},
+        {QStringLiteral("family"), font.family()},
+        {QStringLiteral("resolvedFamily"), resolved.family()},
+        {QStringLiteral("pointSize"), font.pointSize()},
+        {QStringLiteral("pointSizeF"), font.pointSizeF()},
+        {QStringLiteral("weight"), font.weight()},
+        {QStringLiteral("italic"), font.italic()}
+    };
+}
+
+QString sha256File(const QString& path, QString* error = nullptr)
+{
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Could not read file for SHA-256: %1")
+                .arg(path);
+        }
+        return {};
+    }
+    const QByteArray hash = QCryptographicHash::hash(
+        file.readAll(), QCryptographicHash::Sha256).toHex();
+    return QString::fromLatin1(hash);
+}
+
+std::optional<QJsonObject> registeredFontJson(
+    const Resources::ResourceLoader& loader,
+    const QString& resourceId,
+    const QString& registrationPath,
+    const Resources::RegisteredFont& registration,
+    QString* error)
+{
+    const auto id = Resources::ResourceId::fromString(resourceId);
+    if (!id)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Invalid font resource ID: %1")
+                .arg(resourceId);
+        }
+        return std::nullopt;
+    }
+    const Resources::ResourceDescriptor* const descriptor =
+        loader.catalog().find(*id);
+    if (!descriptor)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Font is missing from the resource catalog: %1")
+                .arg(resourceId);
+        }
+        return std::nullopt;
+    }
+    const QString packagePath = QDir(loader.catalog().resourceRoot()).filePath(
+        descriptor->packageRelativePath());
+    QFile packageFile(packagePath);
+    if (!packageFile.open(QIODevice::ReadOnly))
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Could not read packaged font: %1")
+                .arg(packagePath);
+        }
+        return std::nullopt;
+    }
+    const QByteArray packageBytes = packageFile.readAll();
+    const QByteArray actualSha256 = QCryptographicHash::hash(
+        packageBytes, QCryptographicHash::Sha256).toHex();
+    if (packageBytes.isEmpty()
+        || (descriptor->expectedBytes()
+            && packageBytes.size() != *descriptor->expectedBytes())
+        || (descriptor->expectedSha256()
+            && actualSha256 != descriptor->expectedSha256()->toHex()))
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Packaged font does not match catalog metadata: %1")
+                .arg(resourceId);
+        }
+        return std::nullopt;
+    }
+
+    QJsonArray families;
+    for (const QString& family : registration.familyNames())
+    {
+        families.append(family);
+    }
+    if (families.isEmpty())
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Registered font has no family name: %1")
+                .arg(resourceId);
+        }
+        return std::nullopt;
+    }
+    return QJsonObject{
+        {QStringLiteral("resourceId"), resourceId},
+        {QStringLiteral("registrationPath"), registrationPath},
+        {QStringLiteral("packageFile"), QFileInfo(packagePath).canonicalFilePath()},
+        {QStringLiteral("packageRelativePath"), descriptor->packageRelativePath()},
+        {QStringLiteral("packageFileBytes"), packageBytes.size()},
+        {QStringLiteral("packageFileSha256"), QString::fromLatin1(actualSha256)},
+        {QStringLiteral("catalogExpectedSha256"), descriptor->expectedSha256()
+            ? QJsonValue(QString::fromLatin1(descriptor->expectedSha256()->toHex()))
+            : QJsonValue{}},
+        {QStringLiteral("registeredFamilyNames"), families},
+        {QStringLiteral("registeredSourceFile"), registration.sourceFilePath()}
+    };
 }
 
 QPalette themePalette(const QString& theme)
@@ -128,10 +263,13 @@ bool copyFixture(const QString& destination, QString* error)
 bool captureLegacy(
     const QString& databasePath,
     const QString& outputPath,
+    const QString& locale,
     QJsonObject* state,
     QString* error
     )
 {
+    FontManager::setSizeOffset(0);
+    FontManager::applyGlobalFont(*qApp, locale);
     PlatformProcessMemorySnapshotProvider memoryProvider;
     const ProcessMemorySnapshot before = memoryProvider.snapshot();
     ApplicationServices services;
@@ -181,6 +319,9 @@ bool captureLegacy(
         {QStringLiteral("image"), QFileInfo(outputPath).fileName()},
         {QStringLiteral("width"), image.width()},
         {QStringLiteral("height"), image.height()},
+        {QStringLiteral("fontPreference"), QStringLiteral("Normal")},
+        {QStringLiteral("applicationFont"), fontJson(QApplication::font())},
+        {QStringLiteral("pageFont"), fontJson(page.font())},
         {QStringLiteral("summaryListReadCount"), metrics.classSummaryListQueryCount},
         {QStringLiteral("gradeTabCount"), gradeTabs ? gradeTabs->count() : 0},
         {QStringLiteral("visibleClassTabCount"), tabs ? tabs->count() : 0},
@@ -200,11 +341,129 @@ bool captureNext(
     const QString& databasePath,
     Resources::ResourceLoader& loader,
     Application::PreferencesModel& preferences,
+    const QString& locale,
     const QString& outputPath,
     QJsonObject* state,
     QString* error
     )
 {
+    const auto startupScope = Resources::ResourceScope::create(
+        Resources::ResourceScopeKind::Startup,
+        QStringLiteral("application-bootstrap"));
+    if (!startupScope)
+    {
+        if (error)
+        {
+            *error = startupScope.error().message;
+        }
+        return false;
+    }
+
+    const std::array<QString, 6> interResources{
+        QStringLiteral("resource:assets/fonts/Inter-Regular.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-Medium.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-SemiBold.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-Bold.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-BoldItalic.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-Black.ttf")
+    };
+    std::vector<Resources::ScopedResource<Resources::RegisteredFont>>
+        interFontRegistrations;
+    interFontRegistrations.reserve(interResources.size());
+    QString interFamily;
+    QJsonArray fontResources;
+    for (const QString& resourceId : interResources)
+    {
+        const auto id = Resources::ResourceId::fromString(resourceId);
+        if (!id)
+        {
+            if (error)
+            {
+                *error = QStringLiteral("Invalid Inter font resource ID: %1")
+                    .arg(resourceId);
+            }
+            return false;
+        }
+        const auto request = Resources::ResourceRequest::create(
+            *id, *startupScope);
+        if (!request)
+        {
+            if (error)
+            {
+                *error = request.error().message;
+            }
+            return false;
+        }
+        auto registration = loader.loadFileBackedFont(*request);
+        if (!registration)
+        {
+            if (error)
+            {
+                *error = registration.error().message;
+            }
+            return false;
+        }
+        const auto identity = registeredFontJson(
+            loader, resourceId,
+            QStringLiteral("ResourceLoader::loadFileBackedFont"),
+            registration->get(), error);
+        if (!identity)
+        {
+            return false;
+        }
+        if (interFamily.isEmpty())
+        {
+            interFamily = registration->get().familyNames().value(0);
+        }
+        fontResources.append(*identity);
+        interFontRegistrations.emplace_back(std::move(*registration));
+    }
+
+    const QString pretendardResource = QStringLiteral(
+        "resource:assets/fonts/PretendardVariable.ttf");
+    const auto pretendardId = Resources::ResourceId::fromString(pretendardResource);
+    if (!pretendardId)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("Invalid Pretendard font resource ID");
+        }
+        return false;
+    }
+    const auto pretendardRequest = Resources::ResourceRequest::create(
+        *pretendardId, *startupScope);
+    if (!pretendardRequest)
+    {
+        if (error)
+        {
+            *error = pretendardRequest.error().message;
+        }
+        return false;
+    }
+    auto pretendardRegistration = loader.loadFont(*pretendardRequest);
+    if (!pretendardRegistration)
+    {
+        if (error)
+        {
+            *error = pretendardRegistration.error().message;
+        }
+        return false;
+    }
+    const auto pretendardIdentity = registeredFontJson(
+        loader, pretendardResource, QStringLiteral("ResourceLoader::loadFont"),
+        pretendardRegistration->get(), error);
+    if (!pretendardIdentity)
+    {
+        return false;
+    }
+    fontResources.append(*pretendardIdentity);
+    const QString pretendardFamily =
+        pretendardRegistration->get().familyNames().value(0);
+    Platform::QtFontFamilyAvailabilityAdapter fontPresentation;
+    Ui::FontSizePresenter fontSizePresenter(*qApp, fontPresentation);
+    fontSizePresenter.applyStartupPreference(
+        Application::FontSize::Normal, locale, interFamily, pretendardFamily);
+
     WorkspaceStore store;
     const RepositoryStatus opened = store.openExisting(databasePath);
     if (!opened)
@@ -315,6 +574,10 @@ bool captureNext(
         {QStringLiteral("image"), QFileInfo(outputPath).fileName()},
         {QStringLiteral("width"), image.width()},
         {QStringLiteral("height"), image.height()},
+        {QStringLiteral("fontPreference"), QStringLiteral("Normal")},
+        {QStringLiteral("applicationFont"), fontJson(QApplication::font())},
+        {QStringLiteral("pageFont"), fontJson(page->font())},
+        {QStringLiteral("registeredFonts"), fontResources},
         {QStringLiteral("summaryModelCount"), modelCount},
         {QStringLiteral("summaryRowCountWhileActive"), summaryCount},
         {QStringLiteral("gradeTabCount"), gradeTabCount},
@@ -343,6 +606,8 @@ int main(int argc, char* argv[])
 {
     QApplication application(argc, argv);
     QApplication::setStyle(QStringLiteral("Fusion"));
+    FontManager::loadFonts();
+    FontManager::setSizeOffset(0);
     if (argc != 2)
     {
         qCritical("Usage: ClassMngrNextMyClassesVisualCapture OUTPUT_DIR");
@@ -356,6 +621,61 @@ int main(int argc, char* argv[])
     }
 
     const QString resourceRoot = QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_ROOT);
+    const QString fixturePath = QStringLiteral(
+        CLASSMNGR_NEXT_MY_CLASSES_LARGE_FIXTURE);
+    QString hashError;
+    const QString fixtureSha256 = sha256File(fixturePath, &hashError);
+    if (fixtureSha256.isEmpty())
+    {
+        qCritical().noquote() << hashError;
+        return 1;
+    }
+    const QString sourceRoot = QStringLiteral(CLASSMNGR_SOURCE_DIR);
+    Platform::QtFontFamilyAvailabilityAdapter fontPresentation;
+    QJsonArray sourceFiles;
+    for (const QString& sourcePath : {
+             QStringLiteral("tests/next/my_classes_visual_capture.cpp"),
+             QStringLiteral("cmake/tests/next.cmake")
+         })
+    {
+        const QString absolutePath = QDir(sourceRoot).filePath(sourcePath);
+        const QString sha256 = sha256File(absolutePath, &hashError);
+        if (sha256.isEmpty())
+        {
+            qCritical().noquote() << hashError;
+            return 1;
+        }
+        sourceFiles.append(QJsonObject{
+            {QStringLiteral("path"), QFileInfo(absolutePath).canonicalFilePath()},
+            {QStringLiteral("sha256"), sha256}
+        });
+    }
+    QJsonArray fontAssets;
+    const QStringList fontAssetNames{
+        QStringLiteral("Inter-Regular.ttf"),
+        QStringLiteral("Inter-Medium.ttf"),
+        QStringLiteral("Inter-SemiBold.ttf"),
+        QStringLiteral("Inter-Bold.ttf"),
+        QStringLiteral("Inter-BoldItalic.ttf"),
+        QStringLiteral("Inter-Black.ttf"),
+        QStringLiteral("PretendardVariable.ttf")
+    };
+    for (const QString& fontName : fontAssetNames)
+    {
+        const QString fontPath = QDir(sourceRoot).filePath(
+            QStringLiteral("resources/assets/fonts/") + fontName);
+        const QString sha256 = sha256File(fontPath, &hashError);
+        if (sha256.isEmpty())
+        {
+            qCritical().noquote() << hashError;
+            return 1;
+        }
+        fontAssets.append(QJsonObject{
+            {QStringLiteral("file"), QFileInfo(fontPath).canonicalFilePath()},
+            {QStringLiteral("bytes"), QFileInfo(fontPath).size()},
+            {QStringLiteral("sha256"), sha256}
+        });
+    }
     const auto loadedCatalog = Resources::ResourceCatalog::load(
         QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG), resourceRoot);
     if (!loadedCatalog)
@@ -415,12 +735,13 @@ int main(int argc, char* argv[])
                 QStringLiteral("legacy_%1.png").arg(key));
             const QString nextImage = QDir(outputDirectory).filePath(
                 QStringLiteral("next_%1.png").arg(key));
-            if (!captureLegacy(legacyDb, legacyImage, &legacyState, &error))
+            if (!captureLegacy(legacyDb, legacyImage, locale,
+                               &legacyState, &error))
             {
                 qCritical().noquote() << error;
                 return 1;
             }
-            if (!captureNext(nextDb, loader, preferences.model, nextImage,
+            if (!captureNext(nextDb, loader, preferences.model, locale, nextImage,
                              &nextState, &error))
             {
                 qCritical().noquote() << error;
@@ -449,6 +770,22 @@ int main(int argc, char* argv[])
         {QStringLiteral("platform"), QStringLiteral("offscreen")},
         {QStringLiteral("fixture"), QStringLiteral(
             "tracked 96-class large-classes visual fixture")},
+        {QStringLiteral("fixtureFile"), QFileInfo(fixturePath).canonicalFilePath()},
+        {QStringLiteral("fixtureSha256"), fixtureSha256},
+        {QStringLiteral("sourceRoot"), QFileInfo(sourceRoot).canonicalFilePath()},
+        {QStringLiteral("sourceFiles"), sourceFiles},
+        {QStringLiteral("fontPreference"), QStringLiteral("Normal")},
+        {QStringLiteral("configuredBaseFontPointSize"),
+         fontPresentation.applicationBaseFontPointSize()},
+        {QStringLiteral("legacyFontSetup"), QStringLiteral(
+            "FontManager::loadFonts + FontManager::applyGlobalFont")},
+        {QStringLiteral("nextFontSetup"), QStringLiteral(
+            "ResourceLoader::loadFileBackedFont (six Inter faces) + ResourceLoader::loadFont (Pretendard) + FontSizePresenter::applyStartupPreference")},
+        {QStringLiteral("fontAssets"), fontAssets},
+        {QStringLiteral("runtime"), QJsonObject{
+            {QStringLiteral("qtVersion"), QString::fromLatin1(qVersion())},
+            {QStringLiteral("platformName"), QGuiApplication::platformName()}
+        }},
         {QStringLiteral("memoryScope"), QStringLiteral(
             "Process-wide samples; not per-page allocation measurements")},
         {QStringLiteral("captures"), captures}

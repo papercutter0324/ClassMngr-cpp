@@ -23,6 +23,7 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QShortcut>
 #include <QStyle>
 #include <QStyleOptionButton>
 #include <QSplitter>
@@ -423,6 +424,16 @@ SpeakingEvaluationPage::SpeakingEvaluationPage(
     }
     m_table->setColumnWidth(9, 220);
     m_table->setColumnWidth(10, 180);
+    const auto addHistoryShortcut = [this](
+        const QKeySequence& sequence,
+        auto slot
+        ) {
+        auto* const shortcut = new QShortcut(sequence, m_table);
+        shortcut->setContext(Qt::WidgetWithChildrenShortcut);
+        connect(shortcut, &QShortcut::activated, this, slot);
+    };
+    addHistoryShortcut(QKeySequence::Undo, &SpeakingEvaluationPage::undo);
+    addHistoryShortcut(QKeySequence::Redo, &SpeakingEvaluationPage::redo);
     splitter->addWidget(m_classList);
     splitter->addWidget(m_table);
     splitter->setStretchFactor(0, 0);
@@ -485,7 +496,8 @@ SpeakingEvaluationPage::SpeakingEvaluationPage(
     connect(m_reportsButton, &QPushButton::clicked, this, [this] { openReports(); });
     connect(m_saveReportsButton, &QPushButton::clicked, this, [this] { openReports(1); });
     connect(m_printReportsButton, &QPushButton::clicked, this, [this] { openReports(2); });
-    connect(m_undoButton, &QPushButton::clicked, m_undoStack, &QUndoStack::undo);
+    connect(m_undoButton, &QPushButton::clicked,
+        this, &SpeakingEvaluationPage::undo);
     connect(m_saveButton, &QPushButton::clicked, this, [this] {
         static_cast<void>(saveCurrentEvaluation(true));
     });
@@ -524,6 +536,16 @@ QTableView* SpeakingEvaluationPage::tableView() const noexcept
 QLabel* SpeakingEvaluationPage::statusLabel() const noexcept
 {
     return m_status;
+}
+
+void SpeakingEvaluationPage::undo()
+{
+    m_undoStack->undo();
+}
+
+void SpeakingEvaluationPage::redo()
+{
+    m_undoStack->redo();
 }
 
 QPushButton* SpeakingEvaluationPage::retryButton() const noexcept

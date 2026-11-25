@@ -22,6 +22,8 @@
 #include <QStringList>
 #include <QVBoxLayout>
 
+#include <utility>
+
 namespace
 {
 constexpr auto ProjectSourceUrl =
@@ -156,9 +158,11 @@ QString resolveLicensePath(
 }
 
 AboutDialog::AboutDialog(
-    QWidget* parent
+    QWidget* parent,
+    DialogGeometryPreferencesCallbacks geometryPreferences
     )
-    : DialogShell(QStringLiteral("about"), parent)
+    : DialogShell(QStringLiteral("about"), parent, geometryPreferences)
+    , m_geometryPreferences(std::move(geometryPreferences))
 {
     buildUi();
 }
@@ -230,7 +234,8 @@ void AboutDialog::showTypedSignatureFontLicenses()
     LicenseDialog dialog(
         tr("Typed Signature Font Licenses"),
         licenseText.join(QStringLiteral("\n\n==========\n\n")),
-        this
+        this,
+        m_geometryPreferences
         );
     dialog.exec();
 }
@@ -255,6 +260,7 @@ void AboutDialog::buildUi()
 
     auto* iconLabel =
         new QLabel(this);
+    iconLabel->setObjectName(QStringLiteral("aboutApplicationIcon"));
     iconLabel->setFixedSize(72, 72);
     iconLabel->setAlignment(Qt::AlignCenter);
 
@@ -407,6 +413,9 @@ void AboutDialog::buildUi()
             tr("View Inter License"),
             this
             );
+    interLicenseButton->setObjectName(
+        QStringLiteral("aboutInterLicenseButton")
+        );
 
     auto* pretendardLicenseButton =
         new TextFitPushButton(
@@ -534,7 +543,8 @@ void AboutDialog::showLicense(
     LicenseDialog dialog(
         title,
         QString::fromUtf8(file.readAll()),
-        this
+        this,
+        m_geometryPreferences
         );
     dialog.exec();
 }
