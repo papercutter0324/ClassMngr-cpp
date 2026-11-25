@@ -781,6 +781,7 @@ target_link_libraries(ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationT
         ClassMngrNextWorkspace
         ClassMngrNext::DocumentCatalog
         ClassMngrQtPdfPrint
+        ClassMngrAboutPresentation
         ClassMngrNextStartupUpdates
         ClassMngrTeacherImportParser
         ClassMngrScheduleImportParser

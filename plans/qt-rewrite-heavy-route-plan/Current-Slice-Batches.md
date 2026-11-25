@@ -1,6 +1,6 @@
 # Current Slice Batches
 
-## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (Paused after Candidate 14)
+## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; next: Candidate 6 Windows x64 follow-up)
 
 Batch goal: requalify migrated behavior, appearance, and outputs against the
 legacy product on supported platforms using current-source evidence. Record
@@ -10,19 +10,23 @@ defects. Use the existing output comparators where applicable; keep the
 Sub Prep W7.5.1 page-break requalification distinct from the broader output
 matrix. Search remaining migrated product surfaces during next-batch discovery.
 
-### Candidate status — 2026-11-25
+### Candidate status — 2026-11-26
 
 Phase 10 remains In Progress and its cross-platform exit gate remains open.
 “Linux complete” below records this host's bounded evidence; it does not close
 the cross-platform Phase 10 requirement.
 
+Next entry point: Candidate 6 Windows x64 native printing follow-up.
+Candidates 6–10 and 12–14 have not had Windows x64 follow-ups; Candidate 11
+remains partial Linux evidence. Candidate 19 still triggers next-batch discovery.
+
 | Candidate | Status |
 | --- | --- |
-| 1. Focused Phase 7 verification | Linux focused subset passed 19/19; full Phase 7 was not rerun by scope. |
-| 2. Shell command parity | Focused Linux checks complete; other-host parity remains open. |
-| 3. Speaking Evaluation redo | Focused Linux checks complete; other-host parity remains open. |
-| 4. Sub Prep page-break | Current-source Linux C53 pair passed at 12 pages each; page-break/product disposition remains open. |
-| 5. Output matrix | Linux matrix complete; Windows x64/ARM64 and macOS remain open. |
+| 1. Focused Phase 7 verification | Linux focused subset and Windows x64 Debug selected subset passed 19/19 (265.79s); full Phase 7 was not rerun by scope. |
+| 2. Shell command parity | Focused Linux checks complete; Windows x64 offscreen check passed and was accepted; native Windows focus/clipboard/window behavior and other-host parity remain open. |
+| 3. Speaking Evaluation redo | Focused Linux checks complete; Windows x64 offscreen check passed and was accepted; native interactive Windows behavior and other-host parity remain open. |
+| 4. Sub Prep page-break | Linux C53 pair passed at 12 pages each; Windows x64 accepted the user-selected grouping (Teachers 22–24 on page 11; Sub Notes page 12); ARM64/macOS remain open. The older historical reference is sourceBound=false. |
+| 5. Output matrix | Linux matrix and Windows x64 matrix complete; Windows x64 Schedule/Roster/Speaking passed 7/7, with Candidate 4 as the Sub Prep row; ARM64/macOS remain open. |
 | 6. Native printing | Linux dialog/PDF checks complete; desktop UI, physical printer, Windows/macOS/ARM64 remain open. |
 | 7. PowerPoint automation | Linux service/fallback checks complete; live Office/COM/PowerPoint hosts remain open. |
 | 8. Updater | Linux focused checks complete; Windows/macOS branches remain open. |
@@ -50,12 +54,13 @@ the cross-platform Phase 10 requirement.
 3. **Speaking Evaluation redo parity** — verify the redo control and shortcut
    against behavior and tests in src/next/ui/speaking_evaluation_page.cpp and
    tests/next/speaking_evaluation_page_tests.cpp.
-4. **Sub Prep W7.5.1 page-break output requalification** — capture current
-   source-bound output and resolve the Teachers 22–24 difference; prior
-   evidence is not source-bound.
-5. **Current-source output comparison matrix** — use existing comparators for
-   Schedule, Roster, Speaking reports, and Sub Prep C53 across platforms;
-   record source, toolchain, fixture, and raw artifacts without duplicating 4.
+4. **Sub Prep W7.5.1 page-break output requalification** — the user-selected product
+   grouping is Teachers 22–24 on page 11, with Sub Notes on page 12. Windows
+   x64 evidence is accepted; compare remaining hosts. The historical reference
+   is not source-bound.
+5. **Current-source output comparison matrix** — compare Schedule, Roster, Speaking
+   reports, and Sub Prep C53 across platforms. Linux and Windows x64 evidence
+   is complete; Windows ARM64/macOS remain open. Keep distinct from 4.
 6. **Native printer and print-preview parity** — compare the complete native
    print and preview workflows across supported platforms.
 7. **PowerPoint automation behavior** — verify automation availability and

@@ -94,6 +94,50 @@ remote workflow occurred.
 
 Candidates 5–10 also have focused Linux evidence, with their platform-specific
 follow-ups still open; Candidate 11 remains partial because a full installed
-Next runtime was not staged. Candidate 4's page-break/product disposition is
-unresolved. The paused deployment resumes at Candidate 15; Candidate 19 still
-triggers next-batch discovery.
+Next runtime was not staged. Candidate 4's page-break/product disposition was
+unresolved at that point; its later user decision and Windows x64 evidence are
+recorded below. At the time of that pause, Candidate 15 was the resume point;
+Candidate 19 still triggers next-batch discovery.
+
+### 2026-11-26 — Windows x64 follow-up through Candidate 5
+
+Phase 10 remains In Progress. Candidates 1–5 now have Windows x64 evidence;
+resume with Candidate 6 Windows x64. Candidates 6–10 and 12–14 have no
+Windows x64 follow-up yet; Candidate 11 remains partial Linux evidence.
+
+- **Candidate 1:** The exact selected 19 migrated-feature CTests passed 19/19
+  in Windows x64 Debug (265.79s). Toolchain: VS18 2026, MSVC 19.52.37029,
+  SDK 10.0.28000, Qt 6.12.0. A one-line `ClassMngrAboutPresentation` test link dependency was added at
+  `cmake/tests/next.cmake:782`; no C2/C3 product implementation changed. See
+  [CTest log](../../artifacts/phase10/p10-win-c1-c3-filetracker-20261125T153339Z-8dadae2b/ctest-c1-exact19-followup5.log)
+  and [commands](../../artifacts/phase10/p10-win-c1-c3-filetracker-20261125T153339Z-8dadae2b/p10-win-c1-c3-commands-followup5.txt).
+- **Candidates 2–3:** Windows x64 offscreen `ClassMngrNextNavigationTests`
+  and `ClassMngrNextSpeakingEvaluationPageTests` passed 1/1 each and were
+  independently accepted for tested behavior. Native interactive Windows
+  focus, clipboard, and window behavior remain open. See the
+  [Candidate 2 log](../../artifacts/phase10/p10-win-c1-c3-filetracker-20261125T153339Z-8dadae2b/ctest-c2-navigation-followup5.log)
+  and [Candidate 3 log](../../artifacts/phase10/p10-win-c1-c3-filetracker-20261125T153339Z-8dadae2b/ctest-c3-speaking-redo-followup5.log).
+- **Candidate 4:** The user selected the historical grouping as the product
+  contract: Teachers 22–24 stay together on page 11 and Sub Notes starts on
+  page 12. The shared pagination renderer and focused test were updated;
+  `ClassMngrSubPrepPrintPdfTests` passed 1/1, and independent review accepted
+  Windows x64. Refreshed C53 has 12 Sub Prep and 5 roster pages; all 17
+  Legacy/Next rasters match at 150 DPI, the SQL oracle reports 750 students,
+  30 class headers, and 0 bullets, and extracted Legacy/Next text matches
+  (11,119 chars) with 30 class notes and 24 teacher notes. The older historical
+  reference is `sourceBound=false`. The strict Next Sub Prep PDF diagnostic
+  found 903 U+0009 TAB mappings and zero unmapped; that diagnostic is not a
+  pass. The formal strict C53 audit passes for the Next roster PDF. Windows
+  ARM64 and macOS remain open. See the [independent report](../../artifacts/phase10/p10-win-13-subprep-c53-repair-20261126T023203/report.md)
+  and [test log](../../artifacts/phase10/p10-win-13-subprep-c53-repair-20261126T023203/subprep-test-final.log).
+- **Candidate 5:** Schedule, Roster, and Speaking targets passed 7/7 with
+  page, text, geometry, and raster checks; independent review accepted this
+  Windows x64 matrix. Candidate 4's refreshed C53 is the Sub Prep row. Windows
+  ARM64/macOS remain open. Cross-host comparison values and an LNK4075 warning
+  are documented; two capture environment assignments were not fully
+  recorded. See the [matrix report](../../artifacts/phase10/p10-win-c5-output-parity-20261125T170351Z/report.md).
+
+For the Windows run, resource input byte drift was corrected only for guarded
+HEAD/inventory-identical CRLF variants; all 238 Phase 4 inventory records pass.
+A process-only TEMP/TMP override avoided MSBuild FileTracker denial; the Phase
+4 verification evidence is [here](../../artifacts/phase10/p10-win-c1-c3-filetracker-20261125T153339Z-8dadae2b/phase4-verify-238-followup5.json).

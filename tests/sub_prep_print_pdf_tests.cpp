@@ -527,6 +527,7 @@ private slots:
     void rendersTeacherReferenceTableAndClassList();
     void teacherSectionBordersUseScheduleColor();
     void keepsTeacherSectionsTogetherAcrossPages();
+    void keepsFittingTeacherCardRunTogetherBeforeSubNotes();
     void detailedClassAndLessonNotesRenderAlongsideSubNotesWritingSpace();
     void emptyDetailedClassAndLessonNotesRenderNotAvailable();
     void subNotesArePresentForSelectedDayCombinations_data();
@@ -1447,6 +1448,93 @@ void SubPrepPrintPdfTests::keepsTeacherSectionsTogetherAcrossPages()
             )
         >= 4
         );
+}
+
+void SubPrepPrintPdfTests
+    ::keepsFittingTeacherCardRunTogetherBeforeSubNotes()
+{
+    QTemporaryDir temporaryDirectory;
+    QVERIFY(temporaryDirectory.isValid());
+
+    SubPrepPrintService::Request request = denseWeekdayScheduleRequest();
+    const SubPrepClassInformation::TeacherGroup sourceGroup =
+        sampleRequest().classInformation.first();
+    request.classInformation.clear();
+
+    for (int teacherIndex = 1; teacherIndex <= 24; ++teacherIndex)
+    {
+        SubPrepClassInformation::TeacherGroup group = sourceGroup;
+        const QString teacherName =
+            QStringLiteral("Pagination Teacher %1")
+                .arg(teacherIndex, 2, 10, QLatin1Char('0'));
+        group.displayName = teacherName;
+        group.teacher.teacherEn = teacherName;
+        group.teacher.notes =
+            QStringLiteral("Synthetic teacher pagination note.");
+
+        SubPrepClassInformation::ClassDetails details =
+            sourceGroup.classes.first();
+        details.classId = 100 + teacherIndex;
+        details.classLabel =
+            QStringLiteral("Class for %1").arg(teacherName);
+        details.info.notes =
+            QStringLiteral("Synthetic class pagination note.");
+        group.classes = {details};
+        request.classInformation.append(group);
+    }
+
+    const QString path = temporaryDirectory.filePath(
+        QStringLiteral("Fitting Teacher Card Run.pdf")
+        );
+    const SubPrepPrintService::Result result =
+        SubPrepPrintService::saveSubPrepPdf(request, path);
+
+    QCOMPARE(result.status, SubPrepPrintService::Status::Sent);
+
+    QPdfDocument document;
+    loadDocument(document, path);
+
+    int teacher22Page = -1;
+    int teacher23Page = -1;
+    int teacher24Page = -1;
+    int subNotesPage = -1;
+    for (int pageIndex = 0; pageIndex < document.pageCount(); ++pageIndex)
+    {
+        const QString contents = pageText(document, pageIndex);
+        if (contents.contains(QStringLiteral("Pagination Teacher 22")))
+        {
+            teacher22Page = pageIndex;
+        }
+        if (contents.contains(QStringLiteral("Pagination Teacher 23")))
+        {
+            teacher23Page = pageIndex;
+        }
+        if (contents.contains(QStringLiteral("Pagination Teacher 24")))
+        {
+            teacher24Page = pageIndex;
+        }
+        if (contents.contains(QStringLiteral("Sub Notes")))
+        {
+            subNotesPage = pageIndex;
+        }
+    }
+
+    QVERIFY(teacher22Page >= 0);
+    QCOMPARE(teacher23Page, teacher22Page);
+    QCOMPARE(teacher24Page, teacher22Page);
+    QCOMPARE(subNotesPage, teacher22Page + 1);
+
+    const QString contents = documentText(document);
+    for (const QString& expectedText : {
+             QStringLiteral("Class for Pagination Teacher 22"),
+             QStringLiteral("Class for Pagination Teacher 23"),
+             QStringLiteral("Class for Pagination Teacher 24"),
+             QStringLiteral("Synthetic class pagination note."),
+             QStringLiteral("Synthetic teacher pagination note.")
+         })
+    {
+        QVERIFY(contents.contains(expectedText));
+    }
 }
 
 void SubPrepPrintPdfTests

@@ -924,6 +924,12 @@ QSet<int> teacherSectionsRequiringPageBreak(
         teacherCardTables(document);
     const qreal pageStartClearance =
         SubPrepPdfMarginInches * std::max(1, resolutionDpi);
+    QList<QRectF> cardBounds;
+    QList<int> cardFirstPages;
+    QList<int> cardLastPages;
+    cardBounds.reserve(cards.size());
+    cardFirstPages.reserve(cards.size());
+    cardLastPages.reserve(cards.size());
     bool previousCardSpansPages = false;
     int previousLastPage = -1;
 
@@ -934,6 +940,9 @@ QSet<int> teacherSectionsRequiringPageBreak(
 
         if (bounds.isEmpty() || bounds.height() >= pageHeight)
         {
+            cardBounds.append(bounds);
+            cardFirstPages.append(-1);
+            cardLastPages.append(-1);
             previousCardSpansPages = false;
             previousLastPage = -1;
             continue;
@@ -954,6 +963,10 @@ QSet<int> teacherSectionsRequiringPageBreak(
             && firstPage == previousLastPage
             && offsetFromPageStart < pageStartClearance;
 
+        cardBounds.append(bounds);
+        cardFirstPages.append(firstPage);
+        cardLastPages.append(lastPage);
+
         if (cardSpansPages || followsCrossingCardNearPageStart)
         {
             groups.insert(index);
@@ -963,7 +976,92 @@ QSet<int> teacherSectionsRequiringPageBreak(
         previousLastPage = lastPage;
     }
 
-    return groups;
+    QSet<int> pageBreaksForFittingRuns;
+    QSet<int> coveredGroups;
+    for (int groupIndex = 0; groupIndex < cards.size(); ++groupIndex)
+    {
+        if (!groups.contains(groupIndex) || coveredGroups.contains(groupIndex))
+        {
+            continue;
+        }
+
+        int runStart = groupIndex;
+        int runEnd = groupIndex;
+        const int runStartPage = cardFirstPages.at(groupIndex);
+        const int runLastPage = cardLastPages.at(groupIndex);
+        qreal runHeight = cardBounds.at(groupIndex).height();
+        bool runFitsOnFreshPage = true;
+        for (int index = groupIndex + 1; index < cards.size(); ++index)
+        {
+            const QRectF bounds = cardBounds.at(index);
+            if (
+                bounds.isEmpty()
+                || bounds.height() >= pageHeight
+                || cardFirstPages.at(index) < runStartPage
+                || cardFirstPages.at(index) > runLastPage
+                )
+            {
+                break;
+            }
+
+            const qreal nextRunHeight =
+                runHeight
+                + bounds.height()
+                + pageStartClearance;
+            if (nextRunHeight > pageHeight)
+            {
+                runFitsOnFreshPage = false;
+                break;
+            }
+
+            runHeight = nextRunHeight;
+            runEnd = index;
+        }
+
+        while (runFitsOnFreshPage && runStart > 0)
+        {
+            const int previousIndex = runStart - 1;
+            const QRectF bounds = cardBounds.at(previousIndex);
+            if (
+                bounds.isEmpty()
+                || bounds.height() >= pageHeight
+                || cardFirstPages.at(previousIndex) != runStartPage
+                )
+            {
+                break;
+            }
+
+            const qreal nextRunHeight =
+                runHeight + bounds.height() + pageStartClearance;
+            if (nextRunHeight > pageHeight)
+            {
+                break;
+            }
+
+            runHeight = nextRunHeight;
+            runStart = previousIndex;
+        }
+
+        if (
+            runFitsOnFreshPage
+            && runEnd > runStart
+            && groupIndex <= runEnd
+            )
+        {
+            pageBreaksForFittingRuns.insert(runStart);
+            for (int index = runStart; index <= runEnd; ++index)
+            {
+                coveredGroups.insert(index);
+            }
+        }
+        else
+        {
+            pageBreaksForFittingRuns.insert(groupIndex);
+            coveredGroups.insert(groupIndex);
+        }
+    }
+
+    return pageBreaksForFittingRuns;
 }
 
 void collectTables(
