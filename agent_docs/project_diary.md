@@ -1,5 +1,22 @@
 # Project Diary
 
+### P9-19 deferred; Phase 10 started — 2026-11-25
+
+P9-19 met its UIA, lifecycle, database, normal-exit, and Working Set limits,
+but its required plateau cleanup failed: five baseline medians were
+158,613,504 B, cycle 10 returned at 163,328,000 B, and the fitted return rise
+was 57,427,186 B against a zero-byte envelope. The generated validation report
+said pass even though nested plateau fields were false; Phase 14 must fix the
+validator propagation before revalidation. The user deferred all remaining
+Phase 9 work to Phase 14 after Phase 13. Phase 9 remains incomplete, and the
+Maps page remains retained.
+
+The focused local Windows x64 Release precheck passed and independently
+verified four CTests. It authorizes Phase 10 start only. Phase 10 Batch 1
+candidate 1 is the transferred, focused Linux verification of migrated Phase
+7 behavior; full Phase 7 must not be rerun. Phase 9 thresholds and cleanup
+formulas are unchanged.
+
 ### User-directed P9-17 and P9-18 deferrals -- 2026-11-24
 
 By user direction, Phase 9 may close after its remaining slices and final gates

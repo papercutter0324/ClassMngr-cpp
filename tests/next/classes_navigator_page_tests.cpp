@@ -174,6 +174,7 @@ struct ReadState final
     int scheduleSaveCount = 0;
     int visibilitySaveCount = 0;
     int detailsReadCount = 0;
+    std::vector<Domain::ClassId> detailsReadIds;
     int coTeacherReadCount = 0;
     int teacherChoicesReadCount = 0;
     int teacherDetailsReadCount = 0;
@@ -318,6 +319,7 @@ struct PageFixture final
                     const Domain::ClassId& id
                     ) {
                     ++state.detailsReadCount;
+                    state.detailsReadIds.push_back(id);
                     if (state.failDetailsRead)
                     {
                         return Application::ClassDetailsPageReadResult::failure({
@@ -1707,9 +1709,21 @@ p919SelectionSweepCheckpointStaysCompactAcrossActivations()
     Ui::SelectedClassEditor* const editor = page->selectedClassEditor();
     QVERIFY(editor);
     QCOMPARE(page->classList()->model()->rowCount(), 96);
+    QVERIFY(!fixture.state.detailsReadIds.empty());
+    QCOMPARE(fixture.state.detailsReadIds.back().value(),
+        classId(3'000).value());
     for (int row = 1; row < 96; ++row)
     {
-        page->classList()->setCurrentIndex(page->model()->index(row, 0));
+        const QModelIndex selectedIndex = page->model()->index(row, 0);
+        const int detailReadsBefore = fixture.state.detailsReadCount;
+        page->classList()->selectionModel()->select(selectedIndex,
+            QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        QCOMPARE(page->classList()->currentIndex(), selectedIndex);
+        QVERIFY(page->selectedClassId().has_value());
+        QCOMPARE(page->selectedClassId()->value(), classId(3'000 + row).value());
+        QCOMPARE(fixture.state.detailsReadCount, detailReadsBefore + 1);
+        QCOMPARE(fixture.state.detailsReadIds.back().value(),
+            classId(3'000 + row).value());
     }
 
     QCOMPARE(fixture.state.diagnosticCheckpoints.size(), std::size_t(1));
@@ -1740,9 +1754,26 @@ p919SelectionSweepCheckpointStaysCompactAcrossActivations()
     QVERIFY(fixture.host->activatePage(QStringLiteral("other")));
     QVERIFY(fixture.host->activatePage(QStringLiteral("classes")));
     QCOMPARE(page->selectedClassId()->value(), std::string("3095"));
-    for (int row = 0; row < 95; ++row)
+    const QModelIndex keyboardSelectedIndex = page->model()->index(94, 0);
+    const int keyboardDetailReadsBefore = fixture.state.detailsReadCount;
+    page->classList()->setCurrentIndex(keyboardSelectedIndex);
+    QCOMPARE(page->classList()->currentIndex(), keyboardSelectedIndex);
+    QCOMPARE(page->selectedClassId()->value(), std::string("3094"));
+    QCOMPARE(fixture.state.detailsReadCount, keyboardDetailReadsBefore + 1);
+    QCOMPARE(fixture.state.detailsReadIds.back().value(),
+        classId(3'094).value());
+    for (int row = 0; row < 94; ++row)
     {
-        page->classList()->setCurrentIndex(page->model()->index(row, 0));
+        const QModelIndex selectedIndex = page->model()->index(row, 0);
+        const int detailReadsBefore = fixture.state.detailsReadCount;
+        page->classList()->selectionModel()->select(selectedIndex,
+            QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        QCOMPARE(page->classList()->currentIndex(), selectedIndex);
+        QVERIFY(page->selectedClassId().has_value());
+        QCOMPARE(page->selectedClassId()->value(), classId(3'000 + row).value());
+        QCOMPARE(fixture.state.detailsReadCount, detailReadsBefore + 1);
+        QCOMPARE(fixture.state.detailsReadIds.back().value(),
+            classId(3'000 + row).value());
     }
 
     QCOMPARE(fixture.state.diagnosticCheckpoints.size(), std::size_t(2));
@@ -1750,11 +1781,15 @@ p919SelectionSweepCheckpointStaysCompactAcrossActivations()
         .value(QStringLiteral("details")).toObject();
     QCOMPARE(second.value(QStringLiteral("sweep_number")).toInt(), 2);
     QCOMPARE(second.value(QStringLiteral("selected_unique_class_count")).toInt(), 96);
+    QCOMPARE(second.value(QStringLiteral("selection_observation_count")).toInt(), 96);
     QCOMPARE(second.value(QStringLiteral("selected_class_editor_count_minimum")).toInt(), 1);
     QCOMPARE(second.value(QStringLiteral("selected_class_editor_count_maximum")).toInt(), 1);
     QCOMPARE(second.value(QStringLiteral("selected_class_editor_instance_generation")).toInt(), 1);
     QVERIFY(second.value(QStringLiteral("selected_class_editor_stable_within_sweep")).toBool());
     QVERIFY(second.value(QStringLiteral("selected_class_editor_stable_across_sweeps")).toBool());
+    QVERIFY(second.value(QStringLiteral("non_roster_widget_count_maximum")).toInt() < 250);
+    QCOMPARE(second.value(QStringLiteral("class_id_child_widget_count_maximum")).toInt(), 0);
+    QCOMPARE(page->findChildren<QWidget*>(QStringLiteral("selectedClassEditor")).size(), 1);
     QCOMPARE(page->selectedClassEditor(), editor);
 }
 

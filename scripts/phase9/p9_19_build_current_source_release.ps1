@@ -32,6 +32,9 @@ $harnessPaths = @(
     'scripts/phase9/run_packaged_next_p9_19_classes_lifecycle.ps1',
     'scripts/phase9/validate_packaged_next_p9_19_classes_lifecycle.py',
     'scripts/phase9/test_prepare_p9_19_large_startup_fixture.py',
+    'scripts/phase9/test_p9_19_package_staging.ps1',
+    'scripts/phase9/p9_19_virtualized_selection.ps1',
+    'scripts/phase9/test_p9_19_virtualized_selection.ps1',
     'scripts/phase9/test_validate_packaged_next_p9_19_classes_lifecycle.py'
 )
 $source = Get-P914SourceInventory $RepositoryRoot $includedRoots

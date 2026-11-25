@@ -32,13 +32,17 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 
 ## Status
 
-- Status: Not started
+- Status: In progress
 - Default route: Heavy
 - Depends on: Phases 7 through 9
 - Blocks: Final release qualification
 - Owner: Unassigned
-- Last updated: 2026-09-16
-- Current note: Prove that the rewrite preserved the product, not merely that it compiles.
+- Last updated: 2026-11-25
+- Current note: The user authorized Phase 10 to start after the passing focused
+  Windows x64 Release precheck recorded in the progress log, while Phase 9
+  remains In progress with its remaining work deferred to Phase 14 after
+  Phase 13. The precheck establishes Phase 10 start only; all Phase 10 parity
+  and exit requirements remain unchanged.
 
 ### Slice batches
 

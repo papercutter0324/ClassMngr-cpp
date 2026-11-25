@@ -5,17 +5,19 @@
 - Overall status: In progress
 - Default route: Heavy route
 - Branch scope: Qt-Rewrite
-- Last updated: 2026-11-24
-- Current milestone: Phase 9 remains In progress. Batches 1–3 are closed for
-  slice scheduling; Batch 4 is active, with P9-19 next. Phase 9 may close only
-  after its remaining slices and final gates pass. By user direction, P9-17
-  plateau cleanup and P9-18 cold cleanup are the only gates deferred to Phase
-  14; both remain failed and unaccepted. Preserve current Maps page retention.
-  Phase 14 remains Not started until Phase 13 and owns attribution and
-  unchanged-gate revalidation of both deferrals. No threshold or formula
-  changed. See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
-  [progress log](10-Phase-9-Progress-Log.md), [current slice-batch
-  tracker](Current-Slice-Batches.md), and [Phase 14
+- Last updated: 2026-11-25
+- Current milestone: Phase 9 remains In progress and is not Complete. P9-17
+  plateau and P9-18 cold cleanup remain failed and unaccepted for Phase 14.
+  User deferred the remaining Phase 9 work to Phase 14 after Phase 13: P9-19
+  plateau cleanup, conditional P9-20, P9-21, the full Windows x64 Debug CTest,
+  and final packaged Release exit gates. None is accepted by deferral. Preserve
+  current Maps page retention and the original thresholds and formulas. The
+  user authorized Phase 10 to start after a passing focused Windows x64 Release
+  precheck, so Phase 10 is In progress while Phase 9 remains incomplete. That
+  precheck is not a Phase 9 final Release gate. Phase 14 remains Not started
+  until Phase 13. See the [Phase 9 plan](10-Phase-9-Windows-Memory-Hardening.md),
+  [progress log](10-Phase-9-Progress-Log.md), [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md),
+  [current slice-batch tracker](Current-Slice-Batches.md), and [Phase 14
   plan](15-Phase-14-Windows-Memory-Leak-Attribution.md).
 
 - Phase 0 was declared Complete by the user on 2026-09-18. The separate
@@ -45,7 +47,7 @@
 | 8 | 09-Phase-8-Platform-and-Output-Adapters.md | Complete | Heavy | 2, 3, 7 |
 | 8a | 09.5-Phase-8a-CI-Failure-and-QWARN-Triage.md | Complete | Heavy | 8 |
 | 9 | 10-Phase-9-Windows-Memory-Hardening.md | In progress | Heavy | 4–8 |
-| 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | Not started | Heavy | 7–9 |
+| 10 | 11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity.md | In progress | Heavy | 7–9 |
 | 11 | 12-Phase-11-Test-Restructuring-and-Release-Gates.md | Not started | Heavy | 0–10 |
 | 12 | 13-Phase-12-Beta-Cutover-and-Legacy-Removal.md | Not started | Heavy | 10, 11 |
 | 13 | 14-Phase-13-Post-Release-Maintenance.md | Not started | Heavy | 12 |

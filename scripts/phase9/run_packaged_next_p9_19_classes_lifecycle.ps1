@@ -11,9 +11,42 @@ $RepositoryRoot = [IO.Path]::GetFullPath($RepositoryRoot)
 $scriptRepositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 if ($RepositoryRoot -ine $scriptRepositoryRoot) { throw "P9-19 repository root does not match the runner's checkout: $RepositoryRoot" }
 . (Join-Path $RepositoryRoot 'scripts/phase9/p9_14_packaged_lifecycle_common.ps1')
+. (Join-Path $RepositoryRoot 'scripts/phase9/p9_19_virtualized_selection.ps1')
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
 Add-Type -AssemblyName System.Drawing
+if (-not ('P919ScrollNative' -as [type])) {
+    $nativeSource = @(
+        'using System;',
+        'using System.ComponentModel;',
+        'using System.Runtime.InteropServices;',
+        'public static class P919ScrollNative {',
+        ' private const uint WmMouseWheel=0x020A, SmtoAbortIfHung=0x0002;',
+        ' [StructLayout(LayoutKind.Sequential)] private struct Point { public int x; public int y; }',
+        ' [StructLayout(LayoutKind.Sequential)] private struct Rect { public int left; public int top; public int right; public int bottom; }',
+        ' [DllImport("user32.dll",SetLastError=true)] private static extern uint GetWindowThreadProcessId(IntPtr window,out uint processId);',
+        ' [DllImport("user32.dll",SetLastError=true)] private static extern bool ScreenToClient(IntPtr window,ref Point point);',
+        ' [DllImport("user32.dll",SetLastError=true)] private static extern bool GetClientRect(IntPtr window,out Rect rect);',
+        ' [DllImport("user32.dll",EntryPoint="SendMessageTimeoutW",SetLastError=true)] private static extern IntPtr SendMessageTimeoutW(IntPtr window,uint message,UIntPtr wParam,IntPtr lParam,uint flags,uint timeoutMilliseconds,out IntPtr result);',
+        ' [DllImport("user32.dll",SetLastError=true)] private static extern uint WaitForInputIdle(IntPtr process,uint milliseconds);',
+        ' private static IntPtr Pack(int x,int y) { return new IntPtr(unchecked((int)(((uint)(ushort)x)|((uint)(ushort)y<<16)))); }',
+        ' public static long[] ScrollListWindowMessage(IntPtr window,IntPtr process,int left,int top,int right,int bottom,int wheelDelta,uint expectedProcessId) {',
+        '  uint pid; if(window==IntPtr.Zero||GetWindowThreadProcessId(window,out pid)==0) throw new Win32Exception(Marshal.GetLastWin32Error(),"GetWindowThreadProcessId failed for P9-19 Classes scroll.");',
+        '  if(pid!=expectedProcessId) throw new InvalidOperationException("P9-19 Classes scroll HWND does not belong to the measured app PID.");',
+        '  if((wheelDelta!=-120&&wheelDelta!=120)||right<=left||bottom<=top) throw new InvalidOperationException("P9-19 Classes scroll bounds or direction are invalid.");',
+        '  uint idle=WaitForInputIdle(process,10000); if(idle!=0) throw new InvalidOperationException("P9-19 app did not reach input-idle before Classes scrolling.");',
+        '  int sx=left+((right-left)/2), sy=top+((bottom-top)/2); Point point=new Point{x=sx,y=sy};',
+        '  if(!ScreenToClient(window,ref point)) throw new Win32Exception(Marshal.GetLastWin32Error(),"ScreenToClient failed for UIA-derived P9-19 Classes scroll point.");',
+        '  Rect client; if(!GetClientRect(window,out client)) throw new Win32Exception(Marshal.GetLastWin32Error(),"GetClientRect failed for P9-19 app window.");',
+        '  if(point.x<client.left||point.x>=client.right||point.y<client.top||point.y>=client.bottom) throw new InvalidOperationException("P9-19 Classes scroll point is outside main-window client bounds.");',
+        '  uint wheelWord=unchecked((uint)(ushort)(short)wheelDelta)<<16; IntPtr ignored;',
+        '  if(SendMessageTimeoutW(window,WmMouseWheel,new UIntPtr(wheelWord),Pack(sx,sy),SmtoAbortIfHung,2000,out ignored)==IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error(),"P9-19 bounded Classes wheel event was not delivered.");',
+        '  return new long[]{idle,pid,sx,sy,point.x,point.y,client.left,client.top,client.right,client.bottom,wheelDelta};',
+        ' }',
+        '}'
+    )
+    Add-Type -TypeDefinition ($nativeSource -join [Environment]::NewLine)
+}
 
 $TaskId = 'P9_19_PACKAGED_NEXT_CLASSES_NAVIGATION'
 $Schema = 'classmngr-phase9-p9-19-packaged-classes-lifecycle-v1'
@@ -30,6 +63,9 @@ $HarnessPaths = @(
     'scripts/phase9/run_packaged_next_p9_19_classes_lifecycle.ps1',
     'scripts/phase9/validate_packaged_next_p9_19_classes_lifecycle.py',
     'scripts/phase9/test_prepare_p9_19_large_startup_fixture.py',
+    'scripts/phase9/test_p9_19_package_staging.ps1',
+    'scripts/phase9/p9_19_virtualized_selection.ps1',
+    'scripts/phase9/test_p9_19_virtualized_selection.ps1',
     'scripts/phase9/test_validate_packaged_next_p9_19_classes_lifecycle.py'
 )
 $BaseWorkspaceSha256 = '85c23437621fe67361b38157bb53acdb19e78573ebaa0297fad769b71ad0c9e9'
@@ -78,9 +114,16 @@ function Assert-P919BuildReceipt([string]$ReceiptPath, [string]$Directory) {
     if ([string]$assets.sha256 -cne [string]$generated.assetsSha256 -or [string]$translations.sha256 -cne [string]$generated.translationsSha256 -or (Get-P914FileSha256 ([string]$generated.catalogPath)) -cne [string]$generated.catalogSha256) { throw 'P9-19 generated resources differ from the exact-source build receipt.' }
     [ordered]@{ path = [IO.Path]::GetFullPath($ReceiptPath); sha256 = Get-P914FileSha256 $ReceiptPath; schema = [string]$receipt.schema; releaseExecutablePath = $exe; releaseExecutableSha256 = [string]$receipt.releaseExecutableSha256; sourceSha256 = [string]$source.sha256; harnessSha256 = [string]$harness.sha256; configuration = [string]$receipt.configuration; platform = [string]$receipt.platform; compilerVersion = [string]$receipt.compiler.fileVersion; buildHelperSha256 = [string]$receipt.buildHelperSha256; focusedTests = @($receipt.focusedTests.testNames) }
 }
+function Initialize-P919PackageDirectory([string]$PackageRoot) {
+    if ([string]::IsNullOrWhiteSpace($PackageRoot)) { throw 'P9-19 package root path is empty.' }
+    $resolvedPackageRoot = [IO.Path]::GetFullPath($PackageRoot)
+    [void][IO.Directory]::CreateDirectory($resolvedPackageRoot)
+    if (-not (Test-Path -LiteralPath $resolvedPackageRoot -PathType Container)) { throw "P9-19 package root is not a directory: $resolvedPackageRoot" }
+    return $resolvedPackageRoot
+}
 function Stage-P919Package([object]$BuildProof, [string]$Directory) {
     $receipt = Read-P914Json ([string]$BuildProof.path)
-    $packageRoot = Join-Path (Join-Path $Directory 'package') 'bin'
+    $packageRoot = Initialize-P919PackageDirectory (Join-Path (Join-Path $Directory 'package') 'bin')
     $applicationPath = Join-Path $packageRoot 'ClassMngrNext.exe'
     Copy-Item -LiteralPath ([string]$receipt.releaseExecutablePath) -Destination $applicationPath
     $resourceRoot = Join-Path $packageRoot 'resources'; $assetRoot = Join-Path $resourceRoot 'assets'
@@ -139,7 +182,14 @@ function Initialize-P919Settings([string]$Directory) {
     $inventory = Get-P914CanonicalInventory $root
     if ([int]$inventory.fileCount -ne 1 -or [IO.File]::ReadAllText($profile,[Text.Encoding]::UTF8) -cne $text) { throw 'Fresh P9-19 English/Light settings profile does not match its contract.' }
     $path = Join-Path (Join-Path $Directory 'runtime') 'settings-before-launch-inventory.json'; Write-P914Json $path $inventory
-    [ordered]@{ root = [IO.Path]::GetFullPath($root); profileRelativePath = 'runtime/settings/PaperCloud/ClassMngr.ini'; profileSha256 = Get-P914FileSha256 $profile; inventoryPath = 'runtime/settings-before-launch-inventory.json'; inventoryFileSha256 = Get-P914FileSha256 $path; inventorySha256 = [string]$inventory.sha256 }
+    $snapshotPath = Join-Path (Join-Path $Directory 'runtime') 'settings-before-launch.ini'
+    [IO.File]::WriteAllBytes($snapshotPath,[IO.File]::ReadAllBytes($profile))
+    [ordered]@{
+        root = [IO.Path]::GetFullPath($root); profileRelativePath = 'runtime/settings/PaperCloud/ClassMngr.ini'
+        profileSha256 = Get-P914FileSha256 $profile; prelaunchSnapshotPath = 'runtime/settings-before-launch.ini'
+        prelaunchSnapshotSha256 = Get-P914FileSha256 $snapshotPath; workspacePath = [IO.Path]::GetFullPath((Join-Path (Join-Path $Directory 'workspace') 'p9-19-large-startup.tps'))
+        inventoryPath = 'runtime/settings-before-launch-inventory.json'; inventoryFileSha256 = Get-P914FileSha256 $path; inventorySha256 = [string]$inventory.sha256
+    }
 }
 function Find-P919Suffix([object]$Context, [string]$Suffix, [string]$ControlType = '') {
     $root = Get-P914MainRoot $Context
@@ -172,91 +222,225 @@ function Wait-P919Suffix([object]$Context, [string]$EvidenceDirectory, [string]$
     throw "Timed out waiting for P9-19 UIA target $Suffix."
 }
 function Get-P919ClassItems([object]$Context, [System.Windows.Automation.AutomationElement]$ClassList) {
+    $listCurrent = $ClassList.Current
+    if ([uint32]$listCurrent.ProcessId -ne [uint32]$Context.process.Id -or [string]$listCurrent.ControlType.ProgrammaticName -cne 'ControlType.List') { throw 'P9-19 Classes control changed measured PID or List control type.' }
+    $listKey = Get-P914RuntimeKey $ClassList
+    if (-not $Context.ownerHandles.ContainsKey($listKey)) { throw 'P9-19 Classes List has no verified owning main HWND.' }
+    $owner = [Int64]$Context.ownerHandles[$listKey]
+    $ownerPid = [Int64][P914Native]::GetWindowProcessId([IntPtr]$owner)
+    if ($owner -ne [Int64]$Context.mainWindowHandle -or $ownerPid -ne [Int64]$Context.process.Id) { throw 'P9-19 Classes List escaped the measured main PID/HWND.' }
     $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::ControlTypeProperty,[System.Windows.Automation.ControlType]::ListItem)
     $elements = $ClassList.FindAll([System.Windows.Automation.TreeScope]::Descendants,$condition)
-    $listKey = Get-P914RuntimeKey $ClassList; $owner = [Int64]$Context.ownerHandles[$listKey]
-    $items = [Collections.Generic.List[object]]::new(); $targets = [Collections.Generic.List[System.Windows.Automation.AutomationElement]]::new()
+    $items = [Collections.Generic.List[object]]::new()
+    $targets = [Collections.Generic.List[System.Windows.Automation.AutomationElement]]::new()
     foreach ($element in $elements) {
         $current = $element.Current
         if ([uint32]$current.ProcessId -ne [uint32]$Context.process.Id -or [string]$current.ControlType.ProgrammaticName -cne 'ControlType.ListItem') { throw 'P9-19 class ListItem is outside the measured PID or exact ControlType.' }
         $Context.ownerHandles[(Get-P914RuntimeKey $element)] = $owner
-        $selected = $false
-        try { $pattern = [System.Windows.Automation.SelectionItemPattern]$element.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern); $selected = [bool]$pattern.Current.IsSelected } catch { }
-        $items.Add([ordered]@{ element = $element; name = [string]$current.Name; automationId = [string]$current.AutomationId; controlType = [string]$current.ControlType.ProgrammaticName; processId = [Int64]$current.ProcessId; isEnabled = [bool]$current.IsEnabled; isOffscreen = [bool]$current.IsOffscreen; isSelected = $selected; ownerWindowHandle = $owner; ownerWindowProcessId = [Int64][P914Native]::GetWindowProcessId([IntPtr]$owner) })
+        $selected = $false; $selectionPatternAvailable = $false
+        try { $pattern = [System.Windows.Automation.SelectionItemPattern]$element.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern); $selected = [bool]$pattern.Current.IsSelected; $selectionPatternAvailable = $true } catch { }
+        $rectangle = $current.BoundingRectangle
+        $items.Add([ordered]@{
+            element = $element; name = [string]$current.Name; automationId = [string]$current.AutomationId
+            controlType = [string]$current.ControlType.ProgrammaticName; processId = [Int64]$current.ProcessId
+            isEnabled = [bool]$current.IsEnabled; isOffscreen = [bool]$current.IsOffscreen; isVisible = (-not [bool]$current.IsOffscreen)
+            isSelected = $selected; selectionItemPatternAvailable = $selectionPatternAvailable
+            ownerWindowHandle = $owner; ownerWindowProcessId = $ownerPid
+            rectangle = [ordered]@{ x = [double]$rectangle.X; y = [double]$rectangle.Y; width = [double]$rectangle.Width; height = [double]$rectangle.Height }
+        })
         $targets.Add($element)
     }
     $scroll = $null
     try { $scroll = [System.Windows.Automation.ScrollPattern]$ClassList.GetCurrentPattern([System.Windows.Automation.ScrollPattern]::Pattern) } catch { }
     [ordered]@{ elements = $targets.ToArray(); items = $items.ToArray(); scrollPattern = $scroll }
 }
-function Ensure-P919ClassItemVisible([object]$Context, [System.Windows.Automation.AutomationElement]$ClassList, [System.Windows.Automation.AutomationElement]$Item, [string]$ExpectedName) {
-    for ($attempt = 0; $attempt -lt 24; $attempt++) {
-        $current = $Item.Current
-        if ([uint32]$current.ProcessId -ne [uint32]$Context.process.Id -or [string]$current.Name -cne $ExpectedName -or [string]$current.ControlType.ProgrammaticName -cne 'ControlType.ListItem') { throw "P9-19 class item identity changed before selection: $ExpectedName" }
-        if (-not [bool]$current.IsOffscreen -and $current.BoundingRectangle.Width -gt 0 -and $current.BoundingRectangle.Height -gt 0) { return }
-        $scrollItem = $null
-        try { $scrollItem = [System.Windows.Automation.ScrollItemPattern]$Item.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern) } catch { }
-        if ($null -ne $scrollItem) { $scrollItem.ScrollIntoView() }
-        else {
-            $scroll = $null
-            try { $scroll = [System.Windows.Automation.ScrollPattern]$ClassList.GetCurrentPattern([System.Windows.Automation.ScrollPattern]::Pattern) } catch { }
-            if ($null -eq $scroll -or -not [bool]$scroll.Current.VerticallyScrollable) { throw "Offscreen class item has no bounded UIA scroll method: $ExpectedName" }
-            $scroll.Scroll([System.Windows.Automation.ScrollAmount]::NoAmount,[System.Windows.Automation.ScrollAmount]::LargeIncrement)
+function Get-P919ClassViewport([object]$Context, [string]$EvidenceDirectory, [int]$TimeoutSeconds) {
+    $classList = Wait-P919Suffix $Context $EvidenceDirectory 'classesNavigatorClassList' 'ControlType.List' $TimeoutSeconds
+    $current = $classList.Current
+    $owner = [Int64]$Context.ownerHandles[(Get-P914RuntimeKey $classList)]
+    $rectangle = $current.BoundingRectangle
+    if ([bool]$current.IsOffscreen -or [double]$rectangle.Width -le 0 -or [double]$rectangle.Height -le 0) { throw 'P9-19 Classes List has no visible UIA bounds.' }
+    $windowBounds = [P914Native]::GetBounds([IntPtr][Int64]$Context.mainWindowHandle,[uint32]$Context.process.Id)
+    $elementLeft = [double]$rectangle.X; $elementTop = [double]$rectangle.Y; $elementRight = $elementLeft + [double]$rectangle.Width; $elementBottom = $elementTop + [double]$rectangle.Height
+    $left = [Math]::Max($elementLeft,[double]$windowBounds[0]); $top = [Math]::Max($elementTop,[double]$windowBounds[1])
+    $right = [Math]::Min($elementRight,([double]$windowBounds[0] + [double]$windowBounds[2])); $bottom = [Math]::Min($elementBottom,([double]$windowBounds[1] + [double]$windowBounds[3]))
+    if ($right -le $left -or $bottom -le $top) { throw "P9-19 Classes List has no visible intersection with its measured main HWND. UIA=($elementLeft,$elementTop,$($rectangle.Width),$($rectangle.Height)); HWND=($($windowBounds[0]),$($windowBounds[1]),$($windowBounds[2]),$($windowBounds[3]))." }
+    $itemSnapshot = Get-P919ClassItems $Context $classList
+    $visibleNames = [Collections.Generic.List[string]]::new()
+    foreach ($item in $itemSnapshot.items) {
+        if ([bool]$item.isVisible) {
+            $itemRect = $item.rectangle
+            $visibleLeft = [Math]::Max([double]$itemRect.x,$left)
+            $visibleTop = [Math]::Max([double]$itemRect.y,$top)
+            $visibleRight = [Math]::Min(([double]$itemRect.x + [double]$itemRect.width),$right)
+            $visibleBottom = [Math]::Min(([double]$itemRect.y + [double]$itemRect.height),$bottom)
+            if ([double]$itemRect.width -le 0 -or [double]$itemRect.height -le 0 -or $visibleRight -le $visibleLeft -or $visibleBottom -le $visibleTop) { throw "P9-19 visible ListItem bounds do not intersect the Classes List: $($item.name)" }
+            $item.visibleIntersection = [ordered]@{ x = $visibleLeft; y = $visibleTop; width = ($visibleRight - $visibleLeft); height = ($visibleBottom - $visibleTop) }
+            $visibleNames.Add([string]$item.name)
+        }
+    }
+    $scroll = $itemSnapshot.scrollPattern
+    $scrollable = $true; $scrollPercent = 0.0
+    if ($null -ne $scroll) { $scrollable = [bool]$scroll.Current.VerticallyScrollable; if ($scrollable) { $scrollPercent = [double]$scroll.Current.VerticalScrollPercent } }
+    [ordered]@{
+        list = $classList; items = $itemSnapshot.items; visibleNames = $visibleNames.ToArray()
+        listBounds = [ordered]@{ x = $left; y = $top; width = ($right - $left); height = ($bottom - $top) }
+        listElementBounds = [ordered]@{ x = $elementLeft; y = $elementTop; width = [double]$rectangle.Width; height = [double]$rectangle.Height }
+        mainWindowBounds = [ordered]@{ x = [double]$windowBounds[0]; y = [double]$windowBounds[1]; width = [double]$windowBounds[2]; height = [double]$windowBounds[3] }
+        scrollPattern = $scroll; canScroll = $scrollable; verticalScrollPercent = $scrollPercent
+    }
+}
+function Reset-P919ClassViewportToTop([object]$Context, [string]$EvidenceDirectory, [int]$TimeoutSeconds, [int]$MaximumScrolls = 40) {
+    $viewport = Get-P919ClassViewport $Context $EvidenceDirectory $TimeoutSeconds
+    for ($attempt = 0; $attempt -lt $MaximumScrolls; $attempt++) {
+        if ($null -ne $viewport.scrollPattern -and (-not [bool]$viewport.canScroll -or [double]$viewport.verticalScrollPercent -le 0.001)) { return $viewport }
+        if ($null -eq $viewport.scrollPattern -and -not [bool]$viewport.canScroll) { return $viewport }
+        $beforePercent = [double]$viewport.verticalScrollPercent
+        $beforeNames = [string]::Join([char]10,[string[]]@($viewport.visibleNames))
+        if ($null -ne $viewport.scrollPattern) {
+            $viewport.scrollPattern.Scroll([System.Windows.Automation.ScrollAmount]::NoAmount,[System.Windows.Automation.ScrollAmount]::LargeDecrement)
+        } else {
+            $bounds = $viewport.listBounds
+            $null = [P919ScrollNative]::ScrollListWindowMessage([IntPtr][Int64]$Context.mainWindowHandle,$Context.process.Handle,[int][Math]::Floor($bounds.x),[int][Math]::Floor($bounds.y),[int][Math]::Ceiling($bounds.x + $bounds.width),[int][Math]::Ceiling($bounds.y + $bounds.height),120,[uint32]$Context.process.Id)
         }
         Start-Sleep -Milliseconds 100
+        $next = Get-P919ClassViewport $Context $EvidenceDirectory $TimeoutSeconds
+        $afterNames = [string]::Join([char]10,[string[]]@($next.visibleNames))
+        if ($null -eq $viewport.scrollPattern -and $afterNames -ceq $beforeNames) { return $next }
+        if ([double]$next.verticalScrollPercent -ge ($beforePercent - 0.001) -and $afterNames -ceq $beforeNames) { throw 'P9-19 could not reset the virtualized Classes viewport to its top position.' }
+        if ([double]$next.verticalScrollPercent -gt ($beforePercent + 0.001)) { throw 'P9-19 Classes viewport moved down while resetting to top.' }
+        $viewport = $next
     }
-    throw "P9-19 class item stayed offscreen after bounded scroll attempts: $ExpectedName"
+    if ($null -ne $viewport.scrollPattern -and [double]$viewport.verticalScrollPercent -gt 0.001) { throw 'P9-19 Classes viewport did not reach top within the bounded reset.' }
+    return $viewport
 }
 function Select-P919ClassSweep([object]$Context, [object]$Manifest, [string]$Directory, [string]$SweepId, [string]$Phase, [int]$CycleNumber, [int]$TimeoutSeconds) {
     $sweepStartedAtUtc = Get-P914Utc
-    $classList = Wait-P919Suffix $Context $Directory 'classesNavigatorClassList' 'ControlType.List' $TimeoutSeconds
-    $items = Get-P919ClassItems $Context $classList
-    if (@($items.items).Count -ne 96) { throw "P9-19 Classes List exposed $(@($items.items).Count) rows; expected 96." }
-    $expectedNames = [Collections.Generic.List[string]]::new()
-    for ($row = 0; $row -lt 96; $row++) { $expectedNames.Add(('Heavy Fixture Class {0:D3}' -f ($row + 1))) }
-    $actualNames = @($items.items | ForEach-Object { [string]$_.name })
-    $expectedNameSet = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-    foreach ($name in $expectedNames) { [void]$expectedNameSet.Add($name) }
-    if (@($actualNames | Select-Object -Unique).Count -ne 96 -or $actualNames.Count -ne 96 -or @($actualNames | Where-Object { -not $expectedNameSet.Contains([string]$_) }).Count -ne 0) { throw 'P9-19 UIA Classes list does not expose the exact unique 96 fixture class names.' }
-    if ([Int64]$items.items[0].ownerWindowHandle -ne [Int64]$Context.mainWindowHandle -or [Int64]$items.items[0].ownerWindowProcessId -ne [Int64]$Context.process.Id) { throw 'P9-19 class ListItems are not bound to the measured PID/HWND.' }
+    $classRows = @($Manifest.fixture.classListRows | Sort-Object { [int]$_.classId })
+    if ($classRows.Count -ne 96 -or @($classRows | ForEach-Object { [int]$_.classId } | Sort-Object -Unique) -join ',' -cne [string]::Join(',', [string[]](1..96))) { throw 'P9-19 fixture receipt does not contain exactly class IDs 1 through 96.' }
+    $expectedNames = @($classRows | ForEach-Object { [string]$_.accessibleName })
+    if (@($expectedNames | Select-Object -Unique).Count -ne 96) { throw 'P9-19 fixture accessible names are not unique.' }
+    $classIdByName = [Collections.Generic.Dictionary[string,int]]::new([StringComparer]::Ordinal)
+    $classRowByName = [Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
+    foreach ($classRow in $classRows) {
+        $accessibleName = [string]$classRow.accessibleName
+        if ([string]::IsNullOrWhiteSpace($accessibleName) -or $classIdByName.ContainsKey($accessibleName)) { throw 'P9-19 fixture accessible-name map is empty or duplicated.' }
+        $classIdByName.Add($accessibleName,[int]$classRow.classId)
+        $classRowByName.Add($accessibleName,$classRow)
+    }
+    $null = Reset-P919ClassViewportToTop $Context $Directory $TimeoutSeconds
     $readbackPath = Join-Path (Join-Path $Directory 'output') ($SweepId + '.jsonl')
     [IO.File]::WriteAllText($readbackPath,'',[Text.UTF8Encoding]::new($false))
-    $startAction = [int]$Manifest.route.actions.Count
     $arrivalBefore = [Int64]$Context.arrival
     Set-P914SamplerContext $Context 'operation' ($Phase + '-select-all-96-classes')
-    for ($row = 0; $row -lt 96; $row++) {
-        $expectedName = [string]$actualNames[$row]
-        $classIdMatch = [regex]::Match($expectedName, '^Heavy Fixture Class (?<classId>[0-9]{3})$')
-        if (-not $classIdMatch.Success) { throw "P9-19 class accessible name cannot be bound to a fixture class id: $expectedName" }
-        $classId = [int]$classIdMatch.Groups['classId'].Value
-        $item = $items.elements[$row]
-        Ensure-P919ClassItemVisible $Context $classList $item $expectedName
-        $current = $item.Current
-        $target = Get-P914ControlSnapshot $Context $item
-        if ([Int64]$target.ownerWindowHandle -ne [Int64]$Context.mainWindowHandle -or [Int64]$target.ownerWindowProcessId -ne [Int64]$Context.process.Id -or -not [bool]$target.isEnabled -or [bool]$target.isOffscreen) { throw "P9-19 UIA class target failed exact PID/HWND, enabled, or visible checks: $expectedName" }
-        $selectionMethod = 'SelectionItemPattern.Select'
-        $pattern = $null
-        try { $pattern = [System.Windows.Automation.SelectionItemPattern]$item.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern) } catch { throw "P9-19 class ListItem lacks SelectionItemPattern: $expectedName" }
-        $action = [ordered]@{ actionKind = 'select-fixture-class'; method = $selectionMethod; sweepId = $SweepId; cycleNumber = if ($CycleNumber -gt 0) { $CycleNumber } else { $null }; classId = $classId; className = $expectedName; target = [ordered]@{ name = [string]$current.Name; automationId = [string]$current.AutomationId; controlType = [string]$current.ControlType.ProgrammaticName; processId = [Int64]$current.ProcessId; ownerWindowHandle = [Int64]$target.ownerWindowHandle; ownerWindowProcessId = [Int64]$target.ownerWindowProcessId }; issuedAtUtc = Get-P914Utc }
-        $pattern.Select()
-        $watch = [Diagnostics.Stopwatch]::StartNew(); $selected = $false
-        while ($watch.Elapsed.TotalSeconds -lt 2.0) { Drain-P914Output $Context $Directory; $selected = [bool]$pattern.Current.IsSelected; if ($selected) { break }; Start-Sleep -Milliseconds 50 }
-        if (-not $selected) {
-            $selectionMethod = 'SelectionItemPattern.Select plus UIA-bounded ListItem click fallback'
-            $rect = $item.Current.BoundingRectangle
-            $listRect = $classList.Current.BoundingRectangle
-            if ([bool]$item.Current.IsOffscreen -or $rect.Width -le 0 -or $rect.Height -le 0 -or $rect.X -lt $listRect.X -or $rect.Y -lt $listRect.Y -or ($rect.X + $rect.Width) -gt ($listRect.X + $listRect.Width) -or ($rect.Y + $rect.Height) -gt ($listRect.Y + $listRect.Height)) { throw "P9-19 selection fallback cannot be bounded inside the exact class list: $expectedName" }
-            $x = [int][Math]::Round($rect.X + $rect.Width / 2); $y = [int][Math]::Round($rect.Y + $rect.Height / 2)
-            [P914Native]::ClickScreenPoint([IntPtr]$Context.mainWindowHandle,[uint32]$Context.process.Id,$x,$y)
-            $action.pointerAction = [ordered]@{ kind = 'UIA-derived ListItem center click clipped to the visible Classes List'; screenX = $x; screenY = $y; windowHandle = [Int64]$Context.mainWindowHandle; windowProcessId = [Int64][P914Native]::GetWindowProcessId([IntPtr]$Context.mainWindowHandle); targetProcessId = [Int64]$Context.process.Id; classListAutomationId = [string]$classList.Current.AutomationId }
-            $action.method = $selectionMethod
-            $watch.Restart()
-            while ($watch.Elapsed.TotalSeconds -lt 2.0) { Drain-P914Output $Context $Directory; $selected = [bool]$pattern.Current.IsSelected; if ($selected) { break }; Start-Sleep -Milliseconds 50 }
+
+    $readViewport = { Get-P919ClassViewport $Context $Directory $TimeoutSeconds }.GetNewClosure()
+    $scrollViewport = {
+        param($viewport)
+        if (-not [bool]$viewport.canScroll) { throw 'P9-19 realized UIA viewport has no bounded vertical scrolling method.' }
+        if ($null -ne $viewport.scrollPattern) {
+            $viewport.scrollPattern.Scroll([System.Windows.Automation.ScrollAmount]::NoAmount,[System.Windows.Automation.ScrollAmount]::LargeIncrement)
+            $scrollMethod = 'ScrollPattern.LargeIncrement'
+            $scrollResult = $null
+        } else {
+            $bounds = $viewport.listBounds
+            $scrollResult = [P919ScrollNative]::ScrollListWindowMessage([IntPtr][Int64]$Context.mainWindowHandle,$Context.process.Handle,[int][Math]::Floor($bounds.x),[int][Math]::Floor($bounds.y),[int][Math]::Ceiling($bounds.x + $bounds.width),[int][Math]::Ceiling($bounds.y + $bounds.height),-120,[uint32]$Context.process.Id)
+            $scrollMethod = 'measured-PID/HWND UIA-list-bounds WM_MOUSEWHEEL'
         }
-        if (-not $selected) { throw "P9-19 SelectionItemPattern readback did not confirm class id $($row + 1)." }
-        $action.selectedListItemName = [string]$item.Current.Name; $action.selectionItemPatternIsSelected = $selected; $action.readbackAtUtc = Get-P914Utc
-        Add-P914JsonLine $readbackPath $action
-    }
+        Start-Sleep -Milliseconds 100
+        $Context.process.Refresh()
+        if ($Context.process.HasExited) { throw 'Measured app exited while advancing the P9-19 Classes viewport.' }
+        [ordered]@{ method = $scrollMethod; listBounds = $viewport.listBounds; mainWindowHandle = [Int64]$Context.mainWindowHandle; processId = [Int64]$Context.process.Id; nativeScrollResult = $scrollResult }
+    }.GetNewClosure()
+    $selectAndReadback = {
+        param($viewport,$item,$expectedName)
+        if (-not $classRowByName.ContainsKey([string]$expectedName)) { throw "P9-19 UIA class row is outside the fixture accessible-name map: $expectedName" }
+        $classRow = $classRowByName[[string]$expectedName]
+        $classId = [int]$classRow.classId
+        $className = [string]$classRow.className
+        if ($classId -lt 1 -or $classId -gt 96 -or [string]$item.name -cne $expectedName) { throw "P9-19 UIA class row does not bind to the exact fixture ID: $expectedName" }
+        $selectionMethod = 'SelectionItemPattern.Select'
+        $initialPattern = $null
+        try { $initialPattern = [System.Windows.Automation.SelectionItemPattern]$item.element.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern) } catch { throw "P9-19 class ListItem lacks SelectionItemPattern: $expectedName" }
+        $initialPattern.Select()
+        $readback = $null
+        $watch = [Diagnostics.Stopwatch]::StartNew()
+        while ($watch.Elapsed.TotalSeconds -lt 2.0) {
+            Drain-P914Output $Context $Directory
+            $freshViewport = Get-P919ClassViewport $Context $Directory $TimeoutSeconds
+            $freshMatches = @($freshViewport.items | Where-Object { [string]$_.name -ceq $expectedName -and [bool]$_.isVisible })
+            if ($freshMatches.Count -gt 1) { throw "P9-19 fresh UIA readback contains duplicate visible class row: $expectedName" }
+            if ($freshMatches.Count -eq 1) {
+                $freshItem = $freshMatches[0]
+                $freshPattern = $null
+                try { $freshPattern = [System.Windows.Automation.SelectionItemPattern]$freshItem.element.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern) } catch { }
+                if ($null -ne $freshPattern -and [bool]$freshPattern.Current.IsSelected) { $readback = [ordered]@{ viewport = $freshViewport; item = $freshItem; pattern = $freshPattern }; break }
+            }
+            Start-Sleep -Milliseconds 50
+        }
+        $pointerAction = $null
+        if ($null -eq $readback) {
+            $freshViewport = Get-P919ClassViewport $Context $Directory $TimeoutSeconds
+            $freshMatches = @($freshViewport.items | Where-Object { [string]$_.name -ceq $expectedName -and [bool]$_.isVisible })
+            if ($freshMatches.Count -ne 1) { throw "P9-19 selection fallback cannot reacquire one visible UIA row: $expectedName" }
+            $freshItem = $freshMatches[0]
+            $rect = $freshItem.element.Current.BoundingRectangle
+            $listRect = $freshViewport.listBounds
+            $clickLeft = [Math]::Max([double]$rect.X,[double]$listRect.x); $clickTop = [Math]::Max([double]$rect.Y,[double]$listRect.y)
+            $clickRight = [Math]::Min(([double]$rect.X + [double]$rect.Width),([double]$listRect.x + [double]$listRect.width))
+            $clickBottom = [Math]::Min(([double]$rect.Y + [double]$rect.Height),([double]$listRect.y + [double]$listRect.height))
+            if ([bool]$freshItem.element.Current.IsOffscreen -or [double]$rect.Width -le 0 -or [double]$rect.Height -le 0 -or $clickRight -le $clickLeft -or $clickBottom -le $clickTop) { throw "P9-19 UIA selection fallback does not intersect the visible Classes List: $expectedName" }
+            $x = [int][Math]::Round($clickLeft + ($clickRight - $clickLeft) / 2); $y = [int][Math]::Round($clickTop + ($clickBottom - $clickTop) / 2)
+            [P914Native]::ClickScreenPoint([IntPtr]$Context.mainWindowHandle,[uint32]$Context.process.Id,$x,$y)
+            $selectionMethod = 'SelectionItemPattern.Select plus fresh UIA-bounded visible ListItem click'
+            $pointerAction = [ordered]@{ kind = 'visible UIA ListItem center click clipped to Classes List'; screenX = $x; screenY = $y; windowHandle = [Int64]$Context.mainWindowHandle; windowProcessId = [Int64][P914Native]::GetWindowProcessId([IntPtr]$Context.mainWindowHandle); targetProcessId = [Int64]$Context.process.Id; classListAutomationId = [string]$freshViewport.list.Current.AutomationId; rectangle = [ordered]@{ x = [double]$rect.X; y = [double]$rect.Y; width = [double]$rect.Width; height = [double]$rect.Height } }
+            $watch.Restart()
+            while ($watch.Elapsed.TotalSeconds -lt 2.0) {
+                Drain-P914Output $Context $Directory
+                $freshViewport = Get-P919ClassViewport $Context $Directory $TimeoutSeconds
+                $freshMatches = @($freshViewport.items | Where-Object { [string]$_.name -ceq $expectedName -and [bool]$_.isVisible })
+                if ($freshMatches.Count -gt 1) { throw "P9-19 fresh UIA readback contains duplicate visible class row: $expectedName" }
+                if ($freshMatches.Count -eq 1) {
+                    $freshItem = $freshMatches[0]
+                    $freshPattern = $null
+                    try { $freshPattern = [System.Windows.Automation.SelectionItemPattern]$freshItem.element.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern) } catch { }
+                    if ($null -ne $freshPattern -and [bool]$freshPattern.Current.IsSelected) { $readback = [ordered]@{ viewport = $freshViewport; item = $freshItem; pattern = $freshPattern }; break }
+                }
+                Start-Sleep -Milliseconds 50
+            }
+        }
+        if ($null -eq $readback) { throw "P9-19 fresh SelectionItemPattern readback did not confirm class id $classId." }
+        $freshItem = $readback.item; $freshViewport = $readback.viewport; $current = $freshItem.element.Current
+        $row = [ordered]@{
+            actionKind = 'select-fixture-class'; method = $selectionMethod; sweepId = $SweepId
+            cycleNumber = if ($CycleNumber -gt 0) { $CycleNumber } else { $null }
+            classId = $classId; className = $className; expectedAccessibleName = $expectedName
+            target = [ordered]@{
+                name = [string]$current.Name; automationId = [string]$current.AutomationId
+                controlType = [string]$current.ControlType.ProgrammaticName; processId = [Int64]$current.ProcessId
+                ownerWindowHandle = [Int64]$freshItem.ownerWindowHandle; ownerWindowProcessId = [Int64]$freshItem.ownerWindowProcessId
+                isVisible = [bool]$freshItem.isVisible; isEnabled = [bool]$freshItem.isEnabled
+                rectangle = $freshItem.rectangle; listBounds = $freshViewport.listBounds; listElementBounds = $freshViewport.listElementBounds; mainWindowBounds = $freshViewport.mainWindowBounds; visibleIntersection = $freshItem.visibleIntersection
+            }
+            selectedListItemName = [string]$current.Name; selectionItemPatternIsSelected = [bool]$readback.pattern.Current.IsSelected
+            visibleViewportNames = @($freshViewport.visibleNames); verticalScrollPercent = [double]$freshViewport.verticalScrollPercent
+            pointerAction = $pointerAction; issuedAtUtc = Get-P914Utc; readbackAtUtc = Get-P914Utc
+        }
+        Add-P914JsonLine $readbackPath $row
+        return $row
+    }.GetNewClosure()
+
+    $viewportDiscovery = Get-P919VirtualizedDisplayOrder -ExpectedNames $expectedNames -ClassIdByName $classIdByName -ExpectedProcessId ([int]$Context.process.Id) -ExpectedWindowHandle ([Int64]$Context.mainWindowHandle) -ReadViewport $readViewport -ScrollViewport $scrollViewport -MaximumScrolls 40
+    if ($viewportDiscovery.classIds.Count -ne 96 -or @($viewportDiscovery.classIds | Sort-Object -Unique) -join ',' -cne [string]::Join(',', [string[]](1..96))) { throw 'P9-19 visible viewport discovery missed or duplicated a fixture class.' }
+    $expectedNames = @($viewportDiscovery.accessibleNames | ForEach-Object { [string]$_ })
+    $expectedIds = @($viewportDiscovery.classIds | ForEach-Object { [int]$_ })
+    $null = Reset-P919ClassViewportToTop $Context $Directory $TimeoutSeconds
+    $traversal = Invoke-P919VirtualizedSelectionSweep -ExpectedNames $expectedNames -ExpectedClassIds $expectedIds -ExpectedProcessId ([int]$Context.process.Id) -ExpectedWindowHandle ([Int64]$Context.mainWindowHandle) -ReadViewport $readViewport -ScrollViewport $scrollViewport -SelectAndReadback $selectAndReadback -MaximumScrollsPerClass 40
+    $actualNames = @($traversal.readbacks | ForEach-Object { [string]$_.selectedListItemName })
+    if ($actualNames.Count -ne 96 -or @($actualNames | Select-Object -Unique).Count -ne 96 -or [string]::Join([char]10,[string[]]$actualNames) -cne [string]::Join([char]10,[string[]]$expectedNames)) { throw 'P9-19 fresh UIA selection readbacks missed, reordered, or duplicated a fixture class.' }
+    $actualIds = @($traversal.readbacks | ForEach-Object { [int]$_.classId })
+    if ([string]::Join(',', [string[]]$actualIds) -cne [string]::Join(',', [string[]]$expectedIds)) { throw 'P9-19 fresh UIA selection readbacks changed the discovered fixture ID order.' }
+
     $checkpointWatch = [Diagnostics.Stopwatch]::StartNew(); $checkpoint = $null
     while ($checkpointWatch.Elapsed.TotalSeconds -lt $TimeoutSeconds) {
         Drain-P914Output $Context $Directory
@@ -269,8 +453,21 @@ function Select-P919ClassSweep([object]$Context, [object]$Manifest, [string]$Dir
     $details = $checkpoint.record.details
     $checkpointContract = ([string]$details.schema -ceq 'classmngr-phase9-p9-19-class-selection-sweep-v1' -and [int]$details.class_count -eq 96 -and [int]$details.visible_class_count -eq 96 -and [int]$details.selected_unique_class_count -eq 96 -and [int]$details.selection_observation_count -eq 96 -and [int]$details.selected_class_editor_count_minimum -eq 1 -and [int]$details.selected_class_editor_count_maximum -eq 1 -and [int]$details.non_roster_widget_count_maximum -lt 250 -and [int]$details.class_id_child_widget_count_maximum -eq 0 -and [bool]$details.selected_class_editor_stable_within_sweep -and [bool]$details.selected_class_editor_stable_across_sweeps)
     if (-not $checkpointContract) { throw "P9-19 app-side class/editor checkpoint failed its contract for sweep $SweepId." }
+    $outputObservation = @($Context.outputLines | Where-Object { [Int64]$_.arrivalIndex -eq [Int64]$checkpoint.arrivalIndex })
+    if ($outputObservation.Count -ne 1 -or [string]::IsNullOrWhiteSpace([string]$outputObservation[0].observedAtUtc)) { throw "P9-19 app-side checkpoint has no unique observed output timestamp for sweep $SweepId." }
     $file = Get-Item -LiteralPath $readbackPath
-    $sweep = [ordered]@{ sweepId = $SweepId; phase = $Phase; cycleNumber = if ($CycleNumber -gt 0) { $CycleNumber } else { $null }; startedAtUtc = $sweepStartedAtUtc; completedAtUtc = Get-P914Utc; classCount = 96; listItemNameHash = Get-P914StringSha256 ($actualNames -join "`n"); selectionActionCount = 96; selectionReadbackPath = [IO.Path]::GetRelativePath($Directory,$readbackPath).Replace('\','/'); selectionReadbackSha256 = Get-P914FileSha256 $readbackPath; selectionReadbackBytes = [Int64]$file.Length; appCheckpointArrivalIndex = [Int64]$checkpoint.arrivalIndex; appCheckpointObservedAtUtc = [string]$checkpoint.observedAtUtc; appCheckpointDetails = $details; allSelectionReadbacksConfirmed = $true }
+    $sweep = [ordered]@{
+        sweepId = $SweepId; phase = $Phase; cycleNumber = if ($CycleNumber -gt 0) { $CycleNumber } else { $null }
+        startedAtUtc = $sweepStartedAtUtc; completedAtUtc = Get-P914Utc; classCount = 96
+        listItemNameHash = Get-P914StringSha256 ([string]::Join([char]10,[string[]]$actualNames))
+        selectionActionCount = [int]$traversal.selectionCount
+        viewportDiscovery = [ordered]@{ classIds = @($viewportDiscovery.classIds); accessibleNames = @($viewportDiscovery.accessibleNames); viewportScrollCount = [int]$viewportDiscovery.viewportScrollCount; scrollEvents = @($viewportDiscovery.scrollEvents) }
+        viewportScrollCount = [int]($viewportDiscovery.scrollEvents.Count + $traversal.scrollEvents.Count); viewportScrollEvents = @($traversal.scrollEvents)
+        selectionReadbackPath = [IO.Path]::GetRelativePath($Directory,$readbackPath).Replace('\','/')
+        selectionReadbackSha256 = Get-P914FileSha256 $readbackPath; selectionReadbackBytes = [Int64]$file.Length
+        appCheckpointArrivalIndex = [Int64]$checkpoint.arrivalIndex; appCheckpointObservedAtUtc = [string]$outputObservation[0].observedAtUtc
+        appCheckpointCapturedAtUtc = [string]$checkpoint.record.captured_at; appCheckpointDetails = $details; allSelectionReadbacksConfirmed = $true
+    }
     $Manifest.route.selectionSweeps.Add($sweep)
     return $sweep
 }
@@ -348,7 +545,7 @@ $manifest = [ordered]@{
     schema = $Schema; taskId = $TaskId; runId = $RunId; status = 'running'; routeMode = 'current-next-classes-navigation-editor-ui-packaged-windows-x64-release-local'
     startedAtUtc = Get-P914Utc; completedAtUtc = $null; repositoryRoot = $RepositoryRoot; evidenceDirectory = $EvidenceDirectory
     packageProvenance = $null; package = $null; settings = $null
-    fixture = [ordered]@{ kind = 'fresh-p9-19-large-startup-workspace'; baseWorkspacePath = [IO.Path]::GetFullPath($BaseWorkspacePath); baseWorkspaceSha256Expected = $BaseWorkspaceSha256; baseWorkspaceSha256Observed = $null; baseWorkspacePinVerified = $false; seedSqlPath = [IO.Path]::GetFullPath($SeedSqlPath); seedSqlRawSha256 = $null; seedSqlCanonicalLfSha256Expected = $SeedCanonicalSha256; seedSqlCanonicalLfSha256Observed = $null; preparationReceipt = $null; beforeSnapshot = $null; afterSnapshot = $null }
+    fixture = [ordered]@{ kind = 'fresh-p9-19-large-startup-workspace'; baseWorkspacePath = [IO.Path]::GetFullPath($BaseWorkspacePath); baseWorkspaceSha256Expected = $BaseWorkspaceSha256; baseWorkspaceSha256Observed = $null; baseWorkspacePinVerified = $false; seedSqlPath = [IO.Path]::GetFullPath($SeedSqlPath); seedSqlRawSha256 = $null; seedSqlCanonicalLfSha256Expected = $SeedCanonicalSha256; seedSqlCanonicalLfSha256Observed = $null; classListRows = @(); preparationReceipt = $null; beforeSnapshot = $null; afterSnapshot = $null }
     runtimeAppData = [ordered]@{ before = $null; after = $null; tempFilesAfterExit = @(); sqliteSidecarsAfterExit = @() }
     process = $null; processExit = $null
     route = [ordered]@{ workflow = 'classes-navigation-and-96-selection-sweeps'; startedAtUtc = Get-P914Utc; actions = [Collections.Generic.List[object]]::new(); transitions = [Collections.Generic.List[object]]::new(); selectionSweeps = [Collections.Generic.List[object]]::new(); routeEvents = @(); lifecycleEvents = @(); screenshots = [Collections.Generic.List[object]]::new(); uiaSnapshots = [Collections.Generic.List[object]]::new(); warmupCount = 1; baselineWindowsPerState = 5; measuredCycleCount = 10; classCount = 96; completedAtUtc = $null }
@@ -369,6 +566,10 @@ try {
     $prepared = Invoke-P919Python $helper @('prepare','--base-workspace',$BaseWorkspacePath,'--seed-sql',$SeedSqlPath,'--output',$workspacePath,'--receipt',$fixtureReceiptPath,'--p916-receipt',$p916ReceiptPath,'--canonical-seed-sql',$canonicalSeedPath) $prepareLog
     $fixtureReceipt = Read-P914Json $fixtureReceiptPath
     if ([string]$fixtureReceipt.schema -cne $FixtureSchema -or [string]$fixtureReceipt.status -cne 'passed' -or [string]$fixtureReceipt.baseWorkspaceSha256 -cne $BaseWorkspaceSha256 -or [string]$fixtureReceipt.seedSqlCanonicalLfSha256 -cne $SeedCanonicalSha256 -or [int]$fixtureReceipt.identity.classCount -ne 96 -or [int]$fixtureReceipt.identity.classInfoCount -ne 96 -or [int]$fixtureReceipt.identity.scheduleEntryCount -ne 768) { throw 'P9-19 fixture preparation receipt does not prove the exact base/SQL pins and 96/96/768 identity.' }
+    $fixtureClassRows = @($fixtureReceipt.classListRows | Sort-Object { [int]$_.classId })
+    $fixtureClassIds = [string]::Join(',', [string[]]@($fixtureClassRows | ForEach-Object { [int]$_.classId }))
+    if ($fixtureClassRows.Count -ne 96 -or $fixtureClassIds -cne [string]::Join(',', [string[]](1..96)) -or @($fixtureClassRows | ForEach-Object { [string]$_.accessibleName } | Select-Object -Unique).Count -ne 96) { throw 'P9-19 fixture receipt does not bind exactly 96 unique accessible class rows to IDs 1 through 96.' }
+    $manifest.fixture.classListRows = @($fixtureClassRows)
     $manifest.fixture.seedSqlCanonicalLfSha256Observed = [string]$fixtureReceipt.seedSqlCanonicalLfSha256
     $manifest.fixture.preparationReceipt = [ordered]@{ relativePath = 'workspace/preparation-receipt.json'; sha256 = Get-P914FileSha256 $fixtureReceiptPath; helperLogPath = 'logs/fixture-preparation.log'; helperLogSha256 = [string]$prepared.logSha256; workspaceSha256 = [string]$fixtureReceipt.workspaceSha256; baseWorkspaceSha256 = [string]$fixtureReceipt.baseWorkspaceSha256; seedSqlRawSha256 = [string]$fixtureReceipt.seedSqlRawSha256; seedSqlCanonicalLfSha256 = [string]$fixtureReceipt.seedSqlCanonicalLfSha256; canonicalSeedPath = [string]$fixtureReceipt.canonicalSeedSql; canonicalSeedSha256 = [string]$fixtureReceipt.canonicalSeedSqlSha256; identity = $fixtureReceipt.identity }
     $manifest.fixture.beforeSnapshot = Write-P919Snapshot 'before' $workspacePath $fixtureReceiptPath $EvidenceDirectory

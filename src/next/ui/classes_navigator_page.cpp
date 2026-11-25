@@ -839,6 +839,35 @@ void ClassesNavigatorPage::buildUi()
                 selectClass(*selected);
             }
         });
+    connect(m_classList->selectionModel(),
+        &QItemSelectionModel::selectionChanged,
+        this,
+        [this](const QItemSelection& selected, const QItemSelection&) {
+            if (m_rebuilding)
+            {
+                return;
+            }
+            QModelIndex selectedIndex;
+            for (const QModelIndex& candidate : selected.indexes())
+            {
+                if (!m_model->classIdAt(candidate))
+                {
+                    continue;
+                }
+                if (selectedIndex.isValid() && selectedIndex != candidate)
+                {
+                    return;
+                }
+                selectedIndex = candidate;
+            }
+            if (!selectedIndex.isValid()
+                || m_classList->currentIndex() == selectedIndex)
+            {
+                return;
+            }
+            m_classList->selectionModel()->setCurrentIndex(
+                selectedIndex, QItemSelectionModel::NoUpdate);
+        });
     connect(m_scheduleSource, qOverload<int>(&QComboBox::currentIndexChanged),
         this, [this](const int index) {
             if (!m_rebuilding)

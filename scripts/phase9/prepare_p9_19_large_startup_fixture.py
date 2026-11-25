@@ -8,6 +8,8 @@ import hashlib
 import importlib.util
 import json
 import sys
+import sqlite3
+import re
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +19,11 @@ BASE_SHA256 = "85c23437621fe67361b38157bb53acdb19e78573ebaa0297fad769b71ad0c9e9"
 SEED_CANONICAL_SHA256 = "1b2f09be03cce809e239112b3f7b4f2af405bad83a420db0c6ffe5ef0eb597e3"
 CLASS_COUNT = 96
 SCHEDULE_ENTRY_COUNT = 768
+APP_SETTINGS_PRESEED = [
+    {"key": "classes_navigation_visibility_scope", "value": "active_schedule"},
+    {"key": "classes_navigation_day_filter_reset_policy", "value": "on_application_close"},
+    {"key": "classes_navigation_class_selection_reset_policy", "value": "on_application_close"},
+]
 P916_MODULE_PATH = Path(__file__).with_name("prepare_p9_16_workspace.py")
 P916_SPEC = importlib.util.spec_from_file_location("p916_workspace_for_p919", P916_MODULE_PATH)
 assert P916_SPEC is not None and P916_SPEC.loader is not None
@@ -58,6 +65,147 @@ def canonical_seed_bytes(seed: Path) -> tuple[bytes, dict[str, Any]]:
     }
 
 
+
+def compact_start_time(value: str) -> str:
+    text = value.strip()
+    match = re.fullmatch(r"(\d{1,2}):(\d{2})(?:\s*(AM|PM))?", text, re.IGNORECASE)
+    if match is None:
+        return text.removesuffix(" AM").removesuffix(" PM").strip()
+    hour, minute = int(match.group(1)), match.group(2)
+    if match.group(3):
+        hour = hour % 12 or 12
+    return f"{hour}:{minute}"
+
+
+def compressed_days(days: list[str]) -> str:
+    day_rank = {
+        "Monday": 0, "Tuesday": 1, "Wednesday": 2, "Thursday": 3,
+        "Friday": 4, "Saturday": 5, "Sunday": 6,
+    }
+    day_code = {
+        "Monday": "M", "Tuesday": "T", "Wednesday": "W", "Thursday": "Th",
+        "Friday": "F", "Saturday": "Sat", "Sunday": "Sun",
+    }
+    ordered = sorted(dict.fromkeys(days), key=lambda day: day_rank.get(day, 99))
+    codes = [day_code.get(day, day) for day in ordered if day]
+    if codes in (["M", "W"], ["M", "F"], ["M", "W", "F"], ["T", "Th"]):
+        return {"M/W": "M/W", "M/F": "M/F", "M/W/F": "M/W/F", "T/Th": "T/Th"}["/".join(codes)]
+    return "/".join(codes)
+
+
+def preferred_schedule_text(connection: sqlite3.Connection, class_id: int) -> str:
+    regular = list(connection.execute(
+        "SELECT day,start_time FROM class_times WHERE class_id=? ORDER BY id",
+        (class_id,),
+    ))
+    intensive = not regular
+    rows = regular or list(connection.execute(
+        "SELECT day,start_time FROM class_intensive_times WHERE class_id=? ORDER BY id",
+        (class_id,),
+    ))
+    if not rows:
+        return "No time"
+    groups: dict[str, list[str]] = {}
+    for day, start_time in rows:
+        compact = compact_start_time(str(start_time))
+        if compact:
+            groups.setdefault(compact, []).append(str(day))
+    labels = [f"{compressed_days(days)} {start}" for start, days in groups.items()]
+    schedule = "; ".join(labels) if labels else "No time"
+    return f"Int {schedule}" if intensive else schedule
+
+
+def class_list_rows(connection: sqlite3.Connection) -> list[dict[str, Any]]:
+    """Derive each exact Classes ListItem accessible name and bind it to fixture ID."""
+    candidates: list[dict[str, Any]] = []
+    rows = connection.execute(
+        "SELECT c.id,c.name,ci.class_grade,ci.class_level,t.teacher_en,t.teacher_kr "
+        "FROM classes c LEFT JOIN class_info ci ON ci.class_id=c.id "
+        "LEFT JOIN teachers t ON t.id=ci.teacher_id ORDER BY c.id"
+    )
+    for class_id, class_name, grade, level, teacher_en, teacher_kr in rows:
+        class_id = int(class_id)
+        details_available = grade is not None or level is not None or teacher_en is not None or teacher_kr is not None
+        if grade and level:
+            class_text = f"{grade} {level}"
+        elif level:
+            class_text = str(level)
+        elif grade:
+            class_text = str(grade)
+        else:
+            class_text = str(class_name or f"Class {class_id}")
+        base = f"{class_text} • {preferred_schedule_text(connection, class_id)}" if details_available else class_text
+        candidates.append({
+            "classId": class_id,
+            "className": str(class_name or ""),
+            "base": base,
+            "teacher": str(teacher_en or teacher_kr or ""),
+        })
+    if len(candidates) != CLASS_COUNT or {row["classId"] for row in candidates} != set(range(1, CLASS_COUNT + 1)):
+        raise ValueError("P9-19 class-list accessible-name derivation does not cover class IDs 1 through 96.")
+    for row in candidates:
+        duplicates = [other for other in candidates if other["base"] == row["base"]]
+        label = row["base"]
+        if len(duplicates) > 1:
+            expanded = f"{row['base']} • {row['teacher']}" if row["teacher"] else row["base"]
+            collision = any(
+                other["classId"] != row["classId"]
+                and other["base"] == row["base"]
+                and (f"{other['base']} • {other['teacher']}" if other["teacher"] else other["base"]) == expanded
+                for other in candidates
+            )
+            label = f"{expanded} #{row['classId']}" if not row["teacher"] or collision else expanded
+        row["accessibleName"] = label
+    for row in candidates:
+        del row["base"]
+        del row["teacher"]
+    if len({row["accessibleName"] for row in candidates}) != CLASS_COUNT:
+        raise ValueError("P9-19 fixture class-list accessible names are not unique.")
+    return candidates
+
+
+def seed_navigation_app_settings(workspace: Path) -> tuple[dict[str, Any], list[list[Any]]]:
+    """Add only the three Classes defaults otherwise written on first navigation."""
+    connection = sqlite3.connect(str(workspace))
+    try:
+        connection.execute("PRAGMA foreign_keys=ON")
+        connection.execute("PRAGMA journal_mode=DELETE")
+        before = p916.workspace_snapshot(connection)
+        if "app_settings" not in before["tables"]:
+            raise ValueError("P9-19 fixture has no app_settings table.")
+        before_rows = before["tables"]["app_settings"]["rows"]
+        columns = before["tables"]["app_settings"]["columns"]
+        if columns != ["key", "value"]:
+            raise ValueError(f"Unexpected app_settings columns: {columns!r}")
+        existing_keys = {str(row[0]) for row in before_rows}
+        expected_keys = {row["key"] for row in APP_SETTINGS_PRESEED}
+        if existing_keys.intersection(expected_keys):
+            raise ValueError("P9-19 navigation defaults already exist before the exact seed step.")
+        connection.execute("BEGIN IMMEDIATE")
+        connection.executemany(
+            "INSERT INTO app_settings(key, value) VALUES(?, ?)",
+            [(row["key"], row["value"]) for row in APP_SETTINGS_PRESEED],
+        )
+        connection.commit()
+        after = p916.workspace_snapshot(connection)
+        if before["schemaObjects"] != after["schemaObjects"]:
+            raise ValueError("P9-19 app_settings preseed changed SQLite schema objects.")
+        if set(before["tables"]) != set(after["tables"]):
+            raise ValueError("P9-19 app_settings preseed changed the table inventory.")
+        for table in before["tables"]:
+            if table == "app_settings":
+                expected_rows = sorted(before_rows + [[row["key"], row["value"]] for row in APP_SETTINGS_PRESEED])
+                if after["tables"][table]["columns"] != before["tables"][table]["columns"] or after["tables"][table]["declaration"] != before["tables"][table]["declaration"] or after["tables"][table]["rows"] != expected_rows:
+                    raise ValueError("P9-19 app_settings preseed changed prior settings or inserted unexpected rows.")
+            elif before["tables"][table] != after["tables"][table]:
+                raise ValueError(f"P9-19 app_settings preseed changed unrelated table data: {table}")
+        inspected = p916.inspect_database(connection, "prepared-with-navigation-defaults", profile_size="large")
+    finally:
+        connection.close()
+    p916.remove_sidecars(workspace, "navigation-defaults-preseed")
+    return inspected, before_rows
+
+
 def prepare(
     base: Path,
     seed: Path,
@@ -85,6 +233,24 @@ def prepare(
     canonical_seed_path.parent.mkdir(parents=True, exist_ok=True)
     canonical_seed_path.write_bytes(canonical)
     p916_receipt = p916.prepare(base, canonical_seed_path, output, "large")
+    prepared_snapshot, prior_app_settings_rows = seed_navigation_app_settings(output)
+    connection = sqlite3.connect(f"file:{output.as_posix()}?mode=ro", uri=True)
+    try:
+        expected_class_list_rows = class_list_rows(connection)
+    finally:
+        connection.close()
+    p916_receipt.update(
+        {
+            "workspaceSha256": sha256_file(output),
+            "workspaceBytes": output.stat().st_size,
+            "baselineSchemaObjects": prepared_snapshot["schemaObjects"],
+            "baselineSchemaObjectsSha256": prepared_snapshot["schemaObjectsSha256"],
+            "baselineTables": prepared_snapshot["workspaceTables"],
+            "baselineTablesSha256": prepared_snapshot["workspaceTablesSha256"],
+            "identity": prepared_snapshot["identity"],
+            "identityRule": p916_receipt["identityRule"] + "; exact P9-19 Classes navigation defaults are preseeded before the baseline snapshot",
+        }
+    )
     p916_receipt_path.parent.mkdir(parents=True, exist_ok=True)
     p916.write_new_json(p916_receipt_path, p916_receipt)
 
@@ -95,6 +261,9 @@ def prepare(
         "workspace": str(output),
         "workspaceSha256": p916_receipt["workspaceSha256"],
         "workspaceBytes": p916_receipt["workspaceBytes"],
+        "appSettingsPreseed": APP_SETTINGS_PRESEED,
+        "priorAppSettingsRows": prior_app_settings_rows,
+        "classListRows": expected_class_list_rows,
         "baseWorkspace": str(base),
         "baseWorkspaceSha256": sha256_file(base),
         "baseWorkspaceSha256Pinned": BASE_SHA256,
@@ -135,6 +304,11 @@ def read_receipt(path: Path, workspace: Path) -> dict[str, Any]:
         "scheduleEntryCount": SCHEDULE_ENTRY_COUNT,
     }:
         raise ValueError("Preparation receipt has an unexpected large fixture identity.")
+    if receipt.get("appSettingsPreseed") != APP_SETTINGS_PRESEED:
+        raise ValueError("Preparation receipt does not retain the exact P9-19 Classes app_settings preseed.")
+    rows = receipt.get("classListRows")
+    if not isinstance(rows, list) or rows != sorted(rows, key=lambda row: int(row["classId"])) or {row.get("classId") for row in rows} != set(range(1, CLASS_COUNT + 1)) or len({row.get("accessibleName") for row in rows}) != CLASS_COUNT:
+        raise ValueError("Preparation receipt does not retain a unique accessible name for each fixture class ID.")
     return receipt
 
 
@@ -158,6 +332,7 @@ def snapshot(phase: str, workspace: Path, receipt_path: Path) -> dict[str, Any]:
             "seedSqlCanonicalLfSha256": receipt["seedSqlCanonicalLfSha256"],
             "readOnlyConnection": True,
             "readOnlyConnectionMode": "SQLite URI mode=ro with PRAGMA query_only=ON",
+            "appSettingsPreseed": receipt["appSettingsPreseed"],
         }
     )
     return result

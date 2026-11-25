@@ -8,29 +8,19 @@ and phase sequence.
 - Status: Not started
 - Default route: Heavy
 - Depends on: Phase 13; uses Phase 9 evidence
-- Blocks: Resolution of the deferred P9-17 plateau and P9-18 cold cleanup
-  requirements
+- Blocks: Resolution of all deferred Phase 9 work and final gates
 - Owner: Unassigned
-- Last updated: 2026-11-24
-- Current note: This phase remains Not started until Phase 13 is complete.
-  P9-17 plateau cleanup and P9-18 cold cleanup are Deferred and unaccepted by
-  user direction; Phase 9 remains In progress through Batch 4 and its final
-  gates. P9-18 attempt #7 passed all non-memory gates and plateau cleanup but
-  failed cold cleanup by 10,809,344 B. Preserve the current Maps page
-  retention. UIA and image-lifecycle evidence support first-use retention
-  during Map activation/setup but identify no owner. P9-17's plateau gate also
-  remains failed. WPR capture did not start, and the full-versus-3-row
-  comparator has no live result, so neither identifies an owner. Revalidate
-  both deferred gates here under their unchanged contracts; no result is
-  accepted by deferral. The stopped MAPSTAGE probe has no attribution result:
-  its diagnostic changes were removed, no route or stage JSONL was produced,
-  and its receipt is stale after rollback. Five prescribed focused CTests
-  passed, but the extra Campus Directory CTest failed after 19.22 seconds with
-  no output; prior Python/parse checks were not rerun after rollback. After
-  Phase 13, use a fresh diagnostic implementation and build on current source.
-  See the [P9-18 route validation](../../artifacts/phase9/packaged-next-p9-18-campus-map/20261124T122412350Z-d59e56771be74f66ad00b21cbaad38e5/validation.json),
-  [MAPSTAGE build receipt](../../artifacts/phase9/p9-18-exact-release-builds/20261124T133334000Z-MAPSTAGE/release-build-receipt.json),
-  and [Phase 9 progress log](10-Phase-9-Progress-Log.md).
+- Last updated: 2026-11-25
+- Current note: This phase remains Not started until Phase 13 is complete. The
+  user deferred the remaining Phase 9 work here: P9-17 plateau, P9-18 cold
+  cleanup, P9-19 plateau, conditional P9-20, P9-21, full Windows x64 Debug
+  CTest, and final packaged Release exit gates. None is accepted by deferral.
+  P9-19's target, operation-advisory, and cold-cleanup gates passed, but its
+  plateau failed; nested cleanup reports passed=false while the report's
+  formula and top-level status incorrectly say true. Repair and verify status
+  propagation before revalidation. Preserve current Maps page retention and
+  all original thresholds and formulas. Revalidate after Phase 13 under the
+  unchanged contracts. See the [Phase 9 progress log](10-Phase-9-Progress-Log.md).
 
 ## Progress log location
 
@@ -40,22 +30,28 @@ current status and contracts here.
 
 ## Objective
 
-Attribute the PrivateUsage growth and cleanup failures observed in the P9-17
-large-roster and P9-18 campus-map routes. Distinguish surviving application
-allocations from allocator retention, Qt or resource-cache growth, and route-
-specific lifecycle effects. Preserve current Maps page retention. Fix every
-confirmed leak in its owning module.
+Own the Phase 9 work explicitly deferred here after Phase 13: revalidate
+P9-17 plateau, P9-18 cold cleanup, and P9-19 plateau; handle conditional P9-20
+Schedule Import apply and P9-21 PrivateUsage trend follow-up; and run the full
+Phase 9 Windows x64 Debug CTest and final packaged Release exit gates. Distinguish
+surviving application allocations from allocator retention, Qt/resource-cache
+growth, and route-specific lifecycle effects. Preserve current Maps page
+retention and fix every confirmed leak in its owning module.
 
 ## Sequence and scope
 
-Phase 14 is scheduled after Phase 13 and uses recorded Phase 9 evidence. It
-owns revalidation of the user-deferred P9-17 plateau cleanup and P9-18 cold
-cleanup gates; both remain failed and unaccepted until they pass their original
-contracts. Diagnosis alone does not resolve either requirement. Preserve the
-current Maps page retention while investigating P9-18. After any confirmed
-leak is fixed, use fresh exact-source packaged Release evidence to revalidate
-both routes under their unchanged gates before claiming either requirement
-resolved.
+Phase 14 remains Not started until Phase 13 is complete. By user direction,
+it owns the remaining Phase 9 work: P9-17 plateau and P9-18 cold cleanup (both
+already deferred and unaccepted), P9-19 plateau cleanup, conditional P9-20
+larger successful Schedule Import apply, P9-21 PrivateUsage trend follow-up,
+the full Windows x64 Debug CTest, and final packaged Release exit gates. None
+is accepted by deferral. Preserve current Maps page retention. P9-19 must not
+be revalidated until the validator propagates nested cleanup failures to
+settledMemoryAndCleanupFormulas and the top-level report status, with its
+tests and retained logs reviewed. After any confirmed leak is fixed, use fresh
+exact-source packaged Release evidence to revalidate each applicable route
+under its unchanged original gate. No threshold, formula, allowance, or gate is
+waived.
 
 The stopped P9-18 MAPSTAGE probe is not reusable diagnostic evidence: its
 instrumented changes were removed, the build receipt binds the reverted stage
@@ -104,6 +100,20 @@ or cleanup criteria.
   cleanup gate and all other applicable route gates under the unchanged
   contract while preserving current Maps page retention. A failure leaves the
   deferred requirement open.
+- After repairing and verifying P9-19 validator status propagation, a fresh
+  exact-source packaged Release route passes the original plateau-cleanup
+  formula. Nested failures must fail the formula and top-level report; a failure
+  leaves P9-19 open.
+- If a suitable larger valid Schedule Import fixture exists, complete P9-20
+  with parse, review, apply, cleanup, and persisted-association evidence where
+  feasible. If no suitable fixture exists, document that limitation and leave
+  the slice conditional.
+- Complete the P9-21 PrivateUsage trend follow-up against accepted P9-16
+  evidence; report the trend as diagnostic and do not label it a leak without
+  ownership evidence.
+- Run the full Phase 9 Windows x64 Debug CTest and final packaged Release exit
+  gates under their original contracts. Any failed or incomplete gate remains
+  open; deferral itself is not acceptance.
 
 ## Heavy-route requirements
 

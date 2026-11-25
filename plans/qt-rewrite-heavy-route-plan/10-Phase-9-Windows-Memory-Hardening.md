@@ -37,18 +37,21 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 4 through 8
 - Blocks: Release qualification and cutover
 - Owner: Codex
-- Last updated: 2026-11-24
-- Current note: Phase 9 remains In progress. Batches 1–3 are closed for slice
-  scheduling; Batch 4 is active, with P9-19 next. By user direction, the
-  failed P9-17 plateau cleanup and P9-18 cold cleanup gates are Deferred and
-  unaccepted to [Phase 14](15-Phase-14-Windows-Memory-Leak-Attribution.md).
-  Preserve the current Maps page retention. Phase 14 remains scheduled after
-  Phase 13. Phase 9 may close after its remaining slices and final gates pass,
-  with exactly those two cleanup gates deferred and not accepted. The strict
-  268,435,456 B (256 MiB) Working Set target, inclusive 471,859,200 B
-  (450 MiB) ceiling, separate 536,870,912 B (512 MiB) advisory operation
-  peak, and all cleanup formulas remain unchanged. See the [current batch
-  tracker](Current-Slice-Batches.md).
+- Last updated: 2026-11-25
+- Current note: Phase 9 remains In progress and is not Complete. P9-17 plateau
+  and P9-18 cold cleanup remain failed and unaccepted for [Phase
+  14](15-Phase-14-Windows-Memory-Leak-Attribution.md). P9-19 passed its
+  settled-target, operation-advisory, and cold-cleanup gates but failed plateau
+  cleanup; its report has a false-green top-level status that must be fixed
+  before revalidation. The user deferred the remaining Phase 9 work to Phase 14
+  after Phase 13: P9-19 plateau, conditional P9-20, P9-21, the full Windows x64
+  Debug CTest, and final packaged Release exit gates. Phase 10 is In progress
+  after a separate passing focused Release precheck; this does not satisfy
+  Phase 9's final gates. Phase 14 remains Not started. Preserve current Maps
+  page retention and the strict 268,435,456 B (256 MiB) Working Set target,
+  inclusive 471,859,200 B (450 MiB) ceiling, 536,870,912 B (512 MiB) operation
+  advisory, and all cleanup formulas. See the [progress log](10-Phase-9-Progress-Log.md)
+  and [current batch tracker](Current-Slice-Batches.md).
 
 ### Slice batches
 
@@ -272,12 +275,14 @@ Normal feature navigation does not create unbounded growth; startup has no
 loaded catalog PDF, and large features release their resources after leaving,
 including the active QtPdf document.
 
-After all remaining Phase 9 slices, the full Windows x64 Debug CTest, and the
-final packaged Release gates pass, Phase 9 may close with exactly the
-user-approved P9-17 plateau cleanup and P9-18 cold cleanup gates explicitly
-deferred and unaccepted to Phase 14. Their failed results do not count as
-passes. Phase 14 must revalidate both under their unchanged original gates;
-no memory threshold, formula, or other Phase 9 gate is waived.
+Phase 9 remains In progress and its exit gate remains open. By explicit user
+direction, the remaining work is deferred to Phase 14 after Phase 13: the
+failed P9-17 plateau and P9-18 cold-cleanup requirements; P9-19 plateau
+cleanup; conditional P9-20; P9-21; the full Windows x64 Debug CTest; and the
+final packaged Release exit gates. These deferrals are not passes or acceptance.
+Phase 14 must repair P9-19 validation-status propagation before revalidation
+and run the deferred requirements under their unchanged original contracts.
+No memory threshold, formula, or gate is waived.
 
 ## Heavy-route requirements
 
@@ -288,6 +293,8 @@ no memory threshold, formula, or other Phase 9 gate is waived.
 - Do not meet the target by reducing required visual assets or font quality.
 - Do not use only binary size as a memory proxy.
 - Do not accept a single successful launch as proof.
-- Keep memory cleanup in Phase 9 except for the user-approved Phase 14 handoff
-  of P9-17 plateau cleanup and P9-18 cold cleanup; both remain failed and
-  unaccepted until they pass their original gates.
+- Keep memory work in Phase 9 except for the user-approved Phase 14 handoff
+  of P9-17 plateau cleanup, P9-18 cold cleanup, P9-19 plateau cleanup,
+  conditional P9-20, P9-21, and the full Phase 9 Windows x64 Debug CTest and
+  final packaged Release exit gates. Every deferred result remains open and
+  unaccepted until its original gate passes.

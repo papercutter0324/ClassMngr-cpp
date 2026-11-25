@@ -1,17 +1,27 @@
 # Project Progress
 
-## Phase 9 current position -- Batch 4 / P9-19 ready -- 2026-11-24
+## Current position — Phase 10 Batch 1, candidate 1 — 2026-11-25
 
-Phase 9 remains In Progress on Heavy. Batch 3 is closed and pushed as
-c4c22e7b9; Batch 4 is active. P9-19 is next and has a written preimplementation
-route contract in Current-Slice-Batches.md. No P9-19 implementation has begun.
-The full Windows Debug CTest and final packaged Release gates remain open.
+Phase 10 is In Progress on the Heavy route after the focused Windows x64
+Release precheck passed. Candidate 1 is the focused Linux verification of
+migrated Phase 7 behavior transferred by Phase 7.5; do not rerun the full
+Phase 7 suite. The required local Linux test set and an available local runner
+are being established before execution. The Release precheck is not Phase 9
+final acceptance evidence.
 
-P9-17's plateau cleanup and P9-18's cold cleanup both remain unaccepted and
-explicitly deferred by user direction to Phase 14. Phase 9 may close after the
-remaining Batch 4 slices and all other final gates pass, while those two named
-cleanup gates remain deferred and unaccepted. Preserve the Maps page retention.
-No memory thresholds, formulas, or gate criteria changed.
+Phase 9 remains In Progress and incomplete. By user direction, all remaining
+Phase 9 work is deferred to Phase 14 after Phase 13: P9-17 plateau cleanup,
+P9-18 cold cleanup, P9-19 plateau cleanup and validator propagation, P9-20
+conditional import apply, P9-21 PrivateUsage trend, full Windows x64 Debug
+CTest, and final packaged Release exit gates. Preserve Maps page retention and
+all original thresholds and cleanup formulas. These deferred gates remain
+failed or unaccepted; deferral is not acceptance.
+
+The Phase 10 Batch 1 candidate order and active-slice tracker are in
+plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md. Start with the
+focused Linux transfer, then shell command and Speaking Evaluation redo
+parity. Continue local Windows validation for Windows work. Commit each slice
+and push at batch closure.
 
 ### Latest P9-18 targeted-UIA route -- 2026-11-24
 

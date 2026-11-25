@@ -2511,3 +2511,39 @@ not slice acceptance.
 The P9-17 plateau and P9-18 cold-cleanup failures remain Deferred and unaccepted
 for Phase 14; Maps retention, Phase 9 Batch 4, and final gates are unchanged.
 See the [Phase 14 plan](15-Phase-14-Windows-Memory-Leak-Attribution.md).
+
+### 2026-11-25 — P9-19 plateau failure; remaining Phase 9 work deferred
+
+The exact-source P9-19 route completed at
+artifacts/phase9/p9-19-exact-release-builds/20261125T012238Z-p9-19-selection-sync-03/ui-route-evidence-selection-sync-03/20261125T013803176Z-2d82b8be5fbf4c4290efc55f818252d9/.
+The documented fixture generator recovered the base; candidate and restored
+targets both matched SHA-256
+85c23437621fe67361b38157bb53acdb19e78573ebaa0297fad769b71ad0c9e9. The
+independent Tester audited 28 windows, 280 settled samples, and 48,280 process
+records. Maximum settled Working Set was 207,695,872 B, below the
+268,435,456 B target; operation peak was 219,750,400 B, below the
+536,870,912 B advisory. Cold cleanup passed: the 158,613,504 B return was
+below the 207,695,872 B allowance. Plateau cleanup failed: all five baseline
+medians were 158,613,504 B (zero envelope); cycle 10 returned at 163,328,000 B
+(+4,714,496 B), and fitted trend was +57,427,186 B, above that envelope. All
+11 sweeps (warm-up plus ten measured) contained 96 unique UIA IDs/readbacks
+with matching app checkpoints. Other route gates passed, including normal exit,
+database/schema/integrity/foreign-key, profile, temp-file, and sidecar checks.
+
+The route's validation-report.json and manifest report success even though
+nested cleanup/plateau results say passed=false; the
+settledMemoryAndCleanupFormulas and top-level status incorrectly remain true.
+The validator status-propagation fix was paused when the user deferred the
+remaining Phase 9 work. Fix and verify that propagation before revalidation.
+Some retained Python test logs show 11 tests rather than the reported 17; no
+17-test result is credited without a matching log.
+
+The user then directed, “Defer the rest of phase 9 to phase 14,” after already
+deferring P9-17 plateau and P9-18 cold cleanup. Phase 9 remains In progress,
+not Complete. P9-19 plateau cleanup, conditional P9-20 (larger successful
+Schedule Import apply), P9-21 (PrivateUsage trend follow-up), the full Windows
+x64 Debug CTest, and final packaged Release exit gates are deferred to Phase 14
+after Phase 13; none is accepted by deferral. Preserve current Maps page
+retention. No threshold or formula changed. The Phase 10 start precheck and
+authorization are recorded in the Phase 10 progress log; that focused precheck
+does not satisfy Phase 9's final Release gate.
