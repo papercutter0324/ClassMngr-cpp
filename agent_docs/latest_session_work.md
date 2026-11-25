@@ -1,28 +1,73 @@
 # Latest Session Work
 
-## Current continuation -- Phase 9 Batch 4 paused -- 2026-11-24
+## Current continuation — Phase 10 Batch 1 candidate 1 paused for Linux — 2026-11-25
 
-Deployment ID: p9-resume-20261124. The user requested a pause with handoff,
-commit, and push. Phase 9 remains In Progress; the goal is paused. Use Heavy
-for implementation and local Windows validation and Light for Git. Do not
-start P9-19 implementation until the user resumes.
+Deployment ID: `qtphase10-20261125`. The user asked to pause while switching
+to Linux. Resume with Heavy for implementation and verification and Light for
+Git. The active Windows checkout was `D:\Git\ClassMngr-cpp`; the configured
+`C:\Git\ClassMngr-cpp` checkout is stale. Resolve the actual repository path
+on Linux before building.
 
-### Current state
+The Phase 9 transition commit
+`95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87` is pushed, and the verified
+`origin/Qt-Rewrite` tip matches. This pause handoff is recorded locally; push it with Phase 10 Batch 1 closure.
 
-Batch 3 is closed and pushed on Qt-Rewrite as c4c22e7b9
-(Phase9 - Add targeted UIA map evidence). Batch 4 is active with P9-19 next.
-The P9-19 preimplementation route contract is in
-plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md; no implementation
-has started. P9-07 already covered My Classes, so P9-19 measures Classes only.
+The focused Windows x64 Release precheck passed Bootstrap, PageHost, Classes
+Navigator Page, and Classes visual-capture CTests. Receipt:
+`artifacts/phase9/p9-19-exact-release-builds/p10-release-precheck-20261125-115431-f8d41043`.
+This authorizes Phase 10 start only; it is not a Phase 9 final gate.
 
-By explicit user direction, Phase 9 may close after its remaining Batch 4
-slices and all other final gates pass, with only the P9-17 plateau-cleanup and
-P9-18 cold-cleanup gates deferred and unaccepted for Phase 14. Preserve the
-current Maps page retention. Phase 14 remains scheduled after Phase 13 and now
-owns attribution/fixes plus unchanged-gate revalidation for both deferred
-cleanup issues. No memory threshold or formula changed.
+Phase 9 remains In Progress and incomplete. The user deferred all remaining
+work to Phase 14 after Phase 13: P9-17 plateau, P9-18 cold cleanup, P9-19
+plateau and validator propagation, conditional P9-20, P9-21, full Windows x64
+Debug CTest, and final packaged Release exit gates. Preserve Maps page
+retention and all original thresholds/formulas. P9-19's Working Set, operation
+peak, and cold cleanup passed; plateau cleanup failed (five baseline medians
+158,613,504 B with zero envelope; cycle 10 was 163,328,000 B; fitted rise was
+57,427,186 B). The report incorrectly showed pass while nested plateau fields
+were false. Fix validator propagation before Phase 14 revalidation.
 
-### P9-18 route evidence
+### Phase 10 resume point
+
+Batch 1 candidate 1 is the focused Linux verification of migrated Phase 7
+behavior transferred by Phase 7.5. It has not run. On Linux, use the standard
+`linux-gcc-debug` preset and only these selected CTest executables; do not
+rerun the full Phase 7 suite:
+
+`ClassMngrNextBootstrapTests`,
+`ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests`,
+`ClassMngrNextMyWorkspacePageTests`, `ClassMngrNextMyClassesPageTests`,
+`ClassMngrNextUpcomingBirthdaysFlowTests`,
+`ClassMngrNextSharedStaffDirectoryTests`,
+`ClassMngrNextTeacherImportWorkflowTests`,
+`ClassMngrNextClassesNavigatorPageTests`,
+`ClassMngrNextTestingClassesManagerTests`,
+`ClassMngrNextClassTransferWorkflowTests`, `ClassMngrNextSchedulePageTests`,
+`ClassMngrNextNormalScheduleImportIntegrationTests`,
+`ClassMngrNextCalendarPageTests`, `ClassMngrNextRosterEditorTests`,
+`ClassMngrNextRosterOutputTests`, `ClassMngrNextSpeakingEvaluationPageTests`,
+`ClassMngrNextCampusDirectoryTests`, `ClassMngrNextDocumentViewerTests`, and
+`ClassMngrNextSubPrepPageTests`.
+
+Use `build/linux-gcc-debug` and `QT_QPA_PLATFORM=offscreen` for headless Qt
+tests. Record source SHA, compiler/Qt/CMake/Ninja versions, selected test
+results, and raw CTest output. No Linux build or CTest has run, and no GitHub
+workflow was triggered. The temporary hosted-workflow fallback was removed.
+
+After candidate 1 passes, proceed to Batch 1 candidate 2, application-shell
+command parity. Legacy Exit uses the safe close path; About is modal and
+parented; Edit commands use standard platform shortcuts and focus-based widget
+dispatch. Keep feature undo history page-owned unless the product contract
+establishes another scope. No P10-02 source changes have begun.
+
+## Superseded Phase 9 handoff — 2026-11-24
+
+The retained material below is the prior handoff, written before P9-19 was
+implemented and measured. Use the current Phase 9 progress log for its outcome
+and the Phase 10 progress log for the present authorization and pause state.
+P9-19 completed its route with a failed plateau-cleanup gate and remains
+unaccepted.
+### Historical P9-18 route evidence — 2026-11-24
 
 The exact-source targeted-UIA route #7 is at
 artifacts/phase9/packaged-next-p9-18-campus-map/20261124T122412350Z-d59e56771be74f66ad00b21cbaad38e5/.
@@ -51,7 +96,7 @@ P9-17's latest exact-source route passed cold cleanup and the 256 MiB target
 but failed plateau cleanup; details remain in the Phase 9 progress log. No
 owner is established.
 
-### P9-19 contract and resume point
+### Historical P9-19 preimplementation contract — 2026-11-24
 
 Use a fresh 96-class / 768-schedule workspace generated from
 tests/fixtures/workspaces/large_startup.sql, seed SHA-256
@@ -72,7 +117,7 @@ VS2022/x64/v143 Release packaging and independent Tester review. P9-20 remains
 conditional on a suitable valid fixture; P9-21 follows P9-16's PrivateUsage
 trend. Batch 4 is pushed after it closes and final Phase 9 gates pass.
 
-### Build-folder and worktree handoff
+### Historical build-folder and worktree state — 2026-11-24
 
 The user requested emptying only C:\Git\ClassMngr-cpp\build after the build.
 The approved script

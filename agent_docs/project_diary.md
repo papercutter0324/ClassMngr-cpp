@@ -1,5 +1,26 @@
 # Project Diary
 
+### Phase 10 paused for Linux switch — 2026-11-25
+
+The Phase 9 transition commit `95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87`
+was pushed to `origin/Qt-Rewrite`; the remote tip matches. This pause handoff is recorded locally; push it with Phase 10 Batch 1 closure.
+
+P9-19 remains unaccepted because plateau cleanup failed and its report
+mis-propagated the nested failure. The user deferred all remaining Phase 9 work
+to Phase 14 after Phase 13. Preserve the Maps page and original memory gates.
+
+The local Windows x64 Release precheck passed and authorized Phase 10 to start.
+The first Phase 10 slice is focused Linux verification of migrated Phase 7
+behavior. This Windows session had no Linux runtime, so no Linux tests were
+run. The user is switching to Linux; resume with the `linux-gcc-debug` preset
+and 19 selected migrated-feature CTests, not the full Phase 7 suite. A temporary
+Linux-only hosted workflow was removed; no GitHub workflow was triggered.
+
+Read-only discovery for the next shell-command slice found that Next lacks the
+legacy Exit, Edit, and About menu actions. Legacy edit commands route to the
+focused widget; preserve page-owned undo history rather than adding a global
+undo stack. No source changes for that slice have begun.
+
 ### P9-19 deferred; Phase 10 started — 2026-11-25
 
 P9-19 met its UIA, lifecycle, database, normal-exit, and Working Set limits,

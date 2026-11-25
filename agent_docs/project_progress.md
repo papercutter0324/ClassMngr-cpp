@@ -2,26 +2,30 @@
 
 ## Current position — Phase 10 Batch 1, candidate 1 — 2026-11-25
 
-Phase 10 is In Progress on the Heavy route after the focused Windows x64
-Release precheck passed. Candidate 1 is the focused Linux verification of
-migrated Phase 7 behavior transferred by Phase 7.5; do not rerun the full
-Phase 7 suite. The required local Linux test set and an available local runner
-are being established before execution. The Release precheck is not Phase 9
-final acceptance evidence.
+Phase 10 is In Progress on the Heavy route. The user paused this session to
+switch to Linux. Candidate 1 is the focused Linux verification of migrated
+Phase 7 behavior transferred by Phase 7.5. It has not run yet. On Linux, use
+the standard `linux-gcc-debug` preset and the 19 focused CTest executables
+recorded in `agent_docs/latest_session_work.md`; do not rerun the full Phase 7
+suite. The temporary hosted-workflow fallback was removed. No GitHub workflow
+was triggered.
+
+The focused Windows x64 Release precheck passed independently reviewed
+Bootstrap, PageHost, Classes Navigator Page, and Classes visual-capture CTests.
+It authorizes Phase 10 to start only; it is not Phase 9 final evidence. The
+transition commit `95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87` is pushed and the remote Qt-Rewrite tip matches. This pause handoff is recorded locally; push it with Phase 10 Batch 1 closure.
 
 Phase 9 remains In Progress and incomplete. By user direction, all remaining
 Phase 9 work is deferred to Phase 14 after Phase 13: P9-17 plateau cleanup,
 P9-18 cold cleanup, P9-19 plateau cleanup and validator propagation, P9-20
 conditional import apply, P9-21 PrivateUsage trend, full Windows x64 Debug
 CTest, and final packaged Release exit gates. Preserve Maps page retention and
-all original thresholds and cleanup formulas. These deferred gates remain
-failed or unaccepted; deferral is not acceptance.
+all original thresholds and cleanup formulas. Deferral is not acceptance.
 
-The Phase 10 Batch 1 candidate order and active-slice tracker are in
-plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md. Start with the
-focused Linux transfer, then shell command and Speaking Evaluation redo
-parity. Continue local Windows validation for Windows work. Commit each slice
-and push at batch closure.
+Phase 10 Batch 1 order is in
+`plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`. The next slice
+after Linux verification is shell command parity. Continue local Windows
+validation for Windows work; commit each slice and push at batch closure.
 
 ### Latest P9-18 targeted-UIA route -- 2026-11-24
 

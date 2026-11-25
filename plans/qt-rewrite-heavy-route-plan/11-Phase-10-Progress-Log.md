@@ -32,3 +32,20 @@ The active Batch 1 discovery is in the [current slice-batch tracker](Current-Sli
 Its visual candidates are discovery targets, not verified current-source
 defects; requalify with source-bound captures and record source, toolchain,
 fixture, and raw artifacts.
+
+### 2026-11-25 — Phase 10 paused for Linux switch
+
+The user paused this session to switch to Linux. Phase 10 remains In Progress.
+Batch 1 candidate 1, focused Linux verification of migrated Phase 7 behavior,
+has not run. Resume on Linux with the standard `linux-gcc-debug` preset and
+the 19 selected CTest executables listed in the canonical
+[session handoff](../../agent_docs/latest_session_work.md). Do not rerun the
+full Phase 7 suite. The current Windows environment had no local Linux runtime;
+the temporary hosted-workflow fallback was removed, and no GitHub workflow
+was triggered.
+
+The focused Windows x64 Release precheck passed and authorizes Phase 10 start
+only; it does not satisfy Phase 9's final Release gate. The Phase 9 transition
+commit `95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87` is pushed to
+`origin/Qt-Rewrite`. Phase 9 remains In Progress and incomplete with all
+remaining work deferred to Phase 14 after Phase 13 under the unchanged gates.
