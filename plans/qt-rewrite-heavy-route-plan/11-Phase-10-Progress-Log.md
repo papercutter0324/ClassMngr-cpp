@@ -358,3 +358,39 @@ is limited and its ARM64 result is cross-build-only. No native ARM64/macOS host
 is currently available; runtime, native-interaction, macOS, and cross-host
 Phase 10 gates remain open. Continue with remaining Windows-native interaction
 and cross-host requirements.
+
+### 2026-11-26 — Windows native follow-up handoff
+
+Candidate 2's isolated `shellExitActionUsesCloseApprovalAndGeometryPersistence`
+slot built and passed under `QT_QPA_PLATFORM=windows`. Independent review
+confirmed `qwindowsd.dll`, the exact PID and slot, 12 matching compilation-unit
+hashes, and the artifact inventory. The window sample came from a different
+process, so it is not shell-HWND or UIA evidence; the clipboard slot was not
+run. This is limited platform-backend evidence. See the
+[report](../../artifacts/phase10/p10-win-c2-shell-exit-native-20261126/execution-report.md).
+
+Candidate 11's staged Windows x64 Release package and ARM64 cross-build retain
+their limited acceptance. Three artifact-isolated Windows UI attempts did not
+complete the app-level geometry/font/translation checks. The first rejected
+the provider-prefixed root AutomationId; source and the existing P9 helper
+confirm the exact identity is `QApplication.classMngrNextApplicationShell`.
+The corrected attempt confirmed that root and moved the window, but foreground
+activation failed, so it produced no screenshot, UIA close, or saved geometry.
+The final retry stopped before UIA enumeration when PowerShell rejected a
+`pid` parameter due to its case-insensitive collision with automatic `$PID`.
+It terminated only the exact launch PID. No geometry persistence or Korean
+visual result is accepted. Evidence is under
+`artifacts/phase10/p10-win-c11-installed-runtime-20261126/interactive-followup-20261126/`,
+`interactive-followup-retry1-20261126/`, and
+`interactive-followup-retry2-20261126/`.
+
+Read-only maps found no safe current-host real OS action for Candidates 6–8
+and 10: the Windows print route enumerates the user's printer, Office COM
+activation does not isolate the Office profile, the Windows updater starts
+the selected package detached, and external URL/folder routes lack exact
+process identity for cleanup. Candidate 9's Windows product dialog policy
+uses Qt widgets; its forced Native test backend is not the normal Windows
+product route. No printer, Office app, installer, browser, or Explorer action
+was performed. The user has no native ARM64 or macOS host available. Phase 10
+remains In Progress; this Windows follow-up is handed off paused, with the
+native-interaction and cross-host gates open.

@@ -10071,3 +10071,18 @@ These decisions preserve Apply gating and imported data while making the relevan
 ## 2026-11-25 — Phase 10 publication boundary
 
 Publishing the verified Linux candidate work as one commit does not close Phase 10. Keep Candidate 4's disposition, Candidate 11's installed-runtime work, cross-platform evidence, and Candidates 15–20 open. Stage the reviewed tracked paths only; generated captures and build trees remain ignored artifacts.
+
+## 2026-11-26 — Phase 10 Windows native follow-up limits
+
+For Qt Widgets UI Automation on Windows, the accepted main-shell AutomationId
+is `QApplication.classMngrNextApplicationShell`; matching only the Qt
+`objectName` without its provider prefix can cause a false timeout. Avoid
+PowerShell parameter names that collide case-insensitively with automatic
+variables such as `$PID`; use an explicit name like `TargetProcessId`.
+
+Treat a Windows-QPA QtTest pass as platform-backend evidence, not a UIA or
+native-input pass. Do not run tests that replace the shared clipboard. Do not
+open the Windows print route when it enumerates the user's default printer, or
+launch Office, installers, browser, or Explorer when the test cannot bind and
+clean up the exact process/window. Record these gates as open when isolation
+does not provide a safe route.

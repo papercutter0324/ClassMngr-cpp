@@ -1,24 +1,39 @@
 # Latest Session Work
 
-## Current continuation — Phase 10 Batch 1 Windows parity follow-ups — 2026-11-26
+## Paused handoff — Phase 10 Batch 1 Windows parity follow-ups — 2026-11-26
 
-Deployment ID: `phase10-windows-followups-20261126`. Continue on the Heavy
-route for implementation and verification and Light for Git. The active
-checkout is `D:\Git\ClassMngr-cpp`; `C:\Git\ClassMngr-cpp` remains stale.
-Candidate 11's Windows x64 installed-runtime result passed bounded independent
-review; its Windows ARM64 Debug cross-build also passed, without runtime tests.
-Candidate 9's Windows-QPA file-dialog cancellation check passed using the
-existing Debug executable. The shared x64 Debug and ARM64 Debug build trees are
-released.
+Deployment ID: `phase10-windows-followups-20261126`. The user set a ten-minute
+cutoff and directed a handoff, commit, push, and stop. This follow-up is paused;
+Phase 10 itself remains In Progress. The active checkout is
+`D:\Git\ClassMngr-cpp`; `C:\Git\ClassMngr-cpp` remains stale. The branch tip
+before the handoff commit was `28362fed105f49f610fe481e0e8f87b170e4ca9f`,
+already pushed to `origin/Qt-Rewrite`.
 
-Evidence: [Candidate 11 Windows x64](../artifacts/phase10/p10-win-c11-installed-runtime-20261126/report.md),
+Candidate 2's selected `shellExitActionUsesCloseApprovalAndGeometryPersistence`
+slot built and passed under `QT_QPA_PLATFORM=windows`; independent review
+confirmed `qwindowsd.dll`, exact PID/slot, 12 compilation-unit hashes, and the
+artifact inventory. It is limited native-QPA evidence: the shell HWND sample
+belonged to a different process, and clipboard/UIA behavior remains open. Report:
+`artifacts/phase10/p10-win-c2-shell-exit-native-20261126/execution-report.md`.
+
+Candidate 11's x64 staged Release package and ARM64 Debug cross-build retain
+their earlier limited acceptance. New interactive attempts remain incomplete:
+the first harness rejected the provider-prefixed AutomationId; the corrected
+run found the shell and moved it but foreground activation failed; the final
+run stopped on a PowerShell `$PID` parameter collision before enumeration.
+No app-level geometry persistence or Korean visual result is accepted. Evidence
+is in `artifacts/phase10/p10-win-c11-installed-runtime-20261126/`.
+
+Evidence: [Candidate 2 native-QPA](../artifacts/phase10/p10-win-c2-shell-exit-native-20261126/execution-report.md),
+[Candidate 11 Windows x64](../artifacts/phase10/p10-win-c11-installed-runtime-20261126/report.md),
 [Candidate 11 ARM64 cross-build](../artifacts/phase10/p10-win-arm64-crossbuild-20261126/report.md),
 and [Candidate 9 Windows QPA](../artifacts/phase10/p10-win-qt-dialog-qpa-20261126/report.md).
 
 The Phase 9 transition commit
 `95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87` is pushed to `origin/Qt-Rewrite`.
-The user authorized a Phase 10 batch commit and push after these follow-ups;
-keep the unrelated modified resource trees outside that batch.
+The user authorized a batch commit and push for this handoff. Keep the 101
+pre-existing modified paths under `resources/assets/` and `resources/windows/`
+outside that batch. The local artifacts are ignored and remain uncommitted.
 
 The focused Windows x64 Release precheck passed Bootstrap, PageHost, Classes
 Navigator Page, and Classes visual-capture CTests. Receipt:

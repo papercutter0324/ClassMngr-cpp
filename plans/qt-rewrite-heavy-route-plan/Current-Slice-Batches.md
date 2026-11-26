@@ -17,32 +17,37 @@ Phase 10 remains In Progress and its cross-platform exit gate remains open.
 the cross-platform Phase 10 requirement.
 
 Supplemental Windows x64 follow-ups for Candidates 19–22 are closed. Candidate
-9's presenter cancellation slot passed under Windows QPA as a limited
-follow-up; its fresh build attempt failed before compilation, so the existing
-test executable was used. Candidate 6's safe print-dialog feasibility map is
-complete, but the actual dialog path was not exercised. Candidate 11's Windows
-x64 Release staging and ARM64 Debug cross-build remain limited results: no
-ARM64 CTests, app launch, or install occurred; the qmake metadata probe was
-rejected by Windows before execution. All Candidates 1–22 have bounded Windows
-x64 follow-up evidence. Continue with remaining Windows-native interaction and
-cross-host gates; none are claimed complete. No native ARM64 or macOS host is
-currently available, so ARM64/macOS runtime and native behavior remain open.
+2's isolated Exit/geometry slot passed under Windows QPA and independently
+verified `qwindowsd.dll` loading; shell-HWND identity, clipboard, and UIA
+coverage remain open. Candidate 9's presenter cancellation slot remains a
+limited Qt-widget check; Windows product `PlatformDefault` selects Qt widgets,
+while the forced Native backend is not the normal Windows route. Read-only
+maps found no safe current-host interaction for Candidates 6–8 or 10: printing
+enumerates the live default printer, Office COM activation does not isolate
+the Office profile, Windows updater action launches a package, and URL/folder
+dispatch lacks process identity for exact cleanup. Candidate 11's staged x64
+Release package and ARM64 Debug cross-build remain limited. Three isolated
+x64 interactive attempts did not produce installed geometry persistence or a
+Korean visual capture; the latest stopped on a PowerShell `$PID` parameter
+collision before UIA enumeration. All Candidates 1–22 have bounded Windows
+x64 follow-up evidence, but the native-interaction and cross-host gates remain
+open. No native ARM64 or macOS host is currently available.
 Candidate 19's next-batch discovery produced Candidates 21–22; their
 current-source requalifications did not establish product defects.
 
 | Candidate | Status |
 | --- | --- |
 | 1. Focused Phase 7 verification | Linux focused subset and Windows x64 Debug selected subset passed 19/19 (265.79s); full Phase 7 was not rerun by scope. |
-| 2. Shell command parity | Focused Linux checks complete; Windows x64 offscreen check passed and was accepted; native Windows focus/clipboard/window behavior and other-host parity remain open. |
+| 2. Shell command parity | Focused Linux checks complete; Windows x64 offscreen check passed and the isolated Exit/geometry slot passed under Windows QPA with `qwindowsd.dll` loaded. UIA/HWND identity, clipboard, focus, and other-host parity remain open. [Native-QPA report](../../artifacts/phase10/p10-win-c2-shell-exit-native-20261126/execution-report.md) |
 | 3. Speaking Evaluation redo | Focused Linux checks complete; Windows x64 offscreen check passed and was accepted; native interactive Windows behavior and other-host parity remain open. |
 | 4. Sub Prep page-break | Linux C53 pair passed at 12 pages each; Windows x64 accepted the user-selected grouping (Teachers 22–24 on page 11; Sub Notes page 12); ARM64/macOS remain open. The older historical reference is sourceBound=false. |
 | 5. Output matrix | Linux matrix and Windows x64 matrix complete; Windows x64 Schedule/Roster/Speaking passed 7/7, with Candidate 4 as the Sub Prep row; ARM64/macOS remain open. |
-| 6. Native printing | Linux dialog/PDF checks complete; Windows x64 headless viewer/print-route evidence accepted (2 capture CTests and focused print slots). Read-only feasibility mapping found the existing cancellation slot returns `QDialog::Rejected` without opening `QPrintDialog`; the product Windows route enumerates/uses the system default printer before showing it. No print dialog or printer was touched. Actual dialogs, printers, jobs, and physical output remain open. [Windows evidence](../../artifacts/phase10/p10-win-36-c6-headless-print-20261126/report.md) |
-| 7. PowerPoint automation | Linux service/fallback checks complete; Windows x64 safe service/fallback checks passed 2/2; live Office COM activation and PowerPoint rendering remain open. [Windows evidence](../../artifacts/phase10/p10-win-c7-windows-x64-debug/report.md) |
-| 8. Updater | Linux focused checks complete; Windows x64 updater tests passed 2/2 with fake/loopback services; native installer/folder actions remain open. [Windows evidence](../../artifacts/phase10/p10-win-22-updater-windows-x64-debug/report.md) |
-| 9. Native file workflows | Linux fix and checks complete; Windows x64 focused workflow tests passed 10/10. A supplemental existing presenter cancellation slot passed with `QT_QPA_PLATFORM=windows` (PID 6632, exit 0, 307 ms), asserting no selection and no preference write; the focused rebuild failed in ZERO_CHECK/FileTracker before compilation, so the pre-existing executable ran. No UIA, navigation, visual parity, or Windows common-dialog behavior was exercised. [Supplemental evidence](../../artifacts/phase10/p10-win-qt-dialog-qpa-20261126/report.md) |
-| 10. External launches | Linux normalized-path fix and checks complete; Windows x64 injected URL/folder-route checks passed, including a fake local-file opener follow-up; registered OS handlers and real browser/Explorer launches remain open. [Windows evidence](../../artifacts/phase10/p10-win-27-external-launch-windows-x64-debug/report.md) |
-| 11. Installed runtime | Windows x64 Release staging and Windows ARM64 Debug cross-build have limited independent acceptance; Linux evidence remains partial. ARM64 built `ClassMngrNext`, `ClassMngrNextResourceRootResolverTests`, and `ClassMngrNextPlatformSettingsManagerWindowGeometryPortTests`; `dumpbin` confirmed all three AA64/ARM64 and 10 artifact hashes matched. No ARM64 CTests, app launch, or install. The qmake metadata probe was rejected by Windows before execution. Installed geometry across relaunches and visual font/translation rendering remain untested. No native ARM64/macOS host is currently available. [x64 report](../../artifacts/phase10/p10-win-c11-installed-runtime-20261126/report.md), [ARM64 cross-build report](../../artifacts/phase10/p10-win-arm64-crossbuild-20261126/report.md) |
+| 6. Native printing | Linux dialog/PDF checks complete; Windows x64 headless viewer/print-route evidence accepted. The cancellation slot bypasses `QPrintDialog`; Windows product flow enumerates the live printer list/default first and no fake-printer seam exists. No dialog or printer was touched; actual dialogs, printers, jobs, and physical output remain open. [Windows evidence](../../artifacts/phase10/p10-win-36-c6-headless-print-20261126/report.md) |
+| 7. PowerPoint automation | Linux service/fallback checks complete; Windows x64 safe service/fallback checks passed 2/2. Registration is only an availability heuristic; live COM activation/rendering remain open because Office profile state is not isolated. [Windows evidence](../../artifacts/phase10/p10-win-c7-windows-x64-debug/report.md) |
+| 8. Updater | Linux focused checks complete; Windows x64 updater tests passed 2/2 with fake/loopback services. Windows primary action starts the selected package detached; a fake package would still launch. Native installer/folder actions remain open. [Windows evidence](../../artifacts/phase10/p10-win-22-updater-windows-x64-debug/report.md) |
+| 9. Native file workflows | Linux fix and checks complete; Windows x64 focused workflow tests passed 10/10. The supplemental presenter cancellation slot passed under Windows QPA using an existing executable after a pre-compilation FileTracker failure. It exercises a Qt widget dialog, not the Windows product's system common-dialog backend; product `PlatformDefault` selects native dialogs only on macOS. UIA, navigation, and visual parity remain open. [Supplemental evidence](../../artifacts/phase10/p10-win-qt-dialog-qpa-20261126/report.md) |
+| 10. External launches | Linux normalized-path fix and Windows x64 injected URL/folder checks passed, including a fake local-file opener. Product dispatch exposes no process/window identity for exact cleanup; the folder route creates/persists output. Registered OS handlers and real browser/Explorer launches remain open. [Windows evidence](../../artifacts/phase10/p10-win-27-external-launch-windows-x64-debug/report.md) |
+| 11. Installed runtime | Windows x64 Release staging and Windows ARM64 Debug cross-build have limited independent acceptance; Linux evidence remains partial. ARM64 binaries were confirmed AA64/ARM64; no ARM64 CTests, app launch, or install. Three isolated Windows x64 UI attempts stopped before a normal-close/relaunch comparison: identity assertion mismatch (later resolved against the existing `QApplication.classMngrNextApplicationShell` convention), foreground activation denial, and a PowerShell `$PID` parameter collision. No installed geometry persistence or Korean screenshot is accepted. No native ARM64/macOS host is available. [x64 report](../../artifacts/phase10/p10-win-c11-installed-runtime-20261126/report.md), [interactive evidence](../../artifacts/phase10/p10-win-c11-installed-runtime-20261126/interactive-followup-retry2-20261126/report.md), [ARM64 report](../../artifacts/phase10/p10-win-arm64-crossbuild-20261126/report.md) |
 | 12. My Classes visuals | Linux disposition and Windows x64 populated/empty/error captures accepted for supported states (3 focused capture CTests); forced grade-tab overflow remains open because the current grade contract collapses unknown labels to “Other.” [Windows state evidence](../../artifacts/phase10/p10-win-29-my-classes-state-followup-20261126/report.md) |
 | 13. Schedule display | Linux disposition complete; Windows x64 page/capture CTests passed 2/2 after a test-only font-metric precision correction; pixel parity is not claimed and one screenshot-order question remains inconclusive. ARM64/macOS and interactive behavior remain open. [Windows evidence](../../artifacts/phase10/p10-win-13-schedule-harness-fix-20261126T065642/report.md) |
 | 14. Schedule Import preview | Linux disposition complete; Windows x64 model/dialog/integration tests and Legacy/Next captures passed; live tooltip and screen-reader behavior, ARM64/macOS remain open. [Windows evidence](../../artifacts/phase10/p10-b1-c14-preview-access-conflict-windows-x64-20261126T065044/report.md) |

@@ -1,16 +1,34 @@
 # Project Progress
 
-## Current position — Phase 10 Batch 1, Candidate 11 Windows cross-builds and Candidate 9 QPA check accepted — 2026-11-26
+## Current position — Phase 10 Batch 1 Windows native follow-up handoff — 2026-11-26
 
-Phase 10 is In Progress on the Heavy route. Candidates 19–22 supplemental
-Windows x64 follow-ups are complete and independently accepted. Candidate 11's
-Windows x64 installed-runtime follow-up passed independent, bounded review in a
-separate Release build tree with an artifact-local install prefix. Its package
-manifest and installed resource-root probe passed, two focused CTests passed,
-and an isolated offscreen startup trace recorded entry into the event loop.
-See the [Candidate 11 report](../artifacts/phase10/p10-win-c11-installed-runtime-20261126/report.md),
-the [Batch 1 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md),
-and [Phase 10 progress log](../plans/qt-rewrite-heavy-route-plan/11-Phase-10-Progress-Log.md).
+Phase 10 remains In Progress on the Heavy route; this Windows follow-up is
+handed off paused at the user's ten-minute limit. Candidate 2's isolated
+Windows-QPA Exit/geometry slot passed independent review, with `qwindowsd.dll`
+loaded. It does not establish UIA, shell-HWND identity, clipboard behavior, or
+native interaction closure. See
+`artifacts/phase10/p10-win-c2-shell-exit-native-20261126/execution-report.md`.
+
+Candidate 11's staged Windows x64 Release package remains a limited pass, and
+its ARM64 result remains cross-build-only. Three isolated interactive attempts
+did not complete the app-level geometry and visual checks: one used an overly
+strict unprefixed UIA identity, one confirmed the root and moved the window but
+could not activate the foreground, and the final retry stopped on a PowerShell
+`$PID` parameter collision before window interaction. No geometry persistence
+or Korean screenshot claim is made. Reports are under
+`artifacts/phase10/p10-win-c11-installed-runtime-20261126/interactive-followup-20261126/`,
+`interactive-followup-retry1-20261126/`, and
+`interactive-followup-retry2-20261126/`.
+
+Read-only Windows feasibility maps found no safe real OS action for the open
+Candidate 6 printer, Candidate 7 Office COM, Candidate 8 installer, or
+Candidate 10 browser/Explorer paths under current isolation. Candidate 9's
+Windows product policy selects Qt widgets; its forced Native backend is not
+the normal Windows product route. Candidate 2 clipboard interaction also
+remains open because its test overwrites the shared clipboard. Native ARM64
+and macOS are unavailable. The [Batch 1 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
+and [Phase 10 progress log](../plans/qt-rewrite-heavy-route-plan/11-Phase-10-Progress-Log.md)
+contain the detailed boundaries. Phase 10 is not complete.
 
 - Candidate 19 Calendar evidence is at
   `artifacts/phase10/p10-win-c19-calendar-20261126/`. The capture CTest passed
