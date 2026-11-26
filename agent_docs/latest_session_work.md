@@ -84,15 +84,19 @@ hashes match. Its current-source capture includes Roster even though historical
 Phase 7 materials describe three other states. No Roster acceptance, parity,
 or native Windows claim is made. See
 `artifacts/phase10/p10-win-c29-testing-classes-20261126/`. Candidate 11 and
-native/cross-host Phase 10 gates remain open; continue with read-only discovery
-for the next bounded Windows x64 slice.
+native/cross-host Phase 10 gates remain open. Candidate 30 discovery and
+execution follow.
 
 Candidate 30 discovery found existing Windows x64 Schedule page and capture
 evidence with 27/28 source inputs unchanged, matching page/capture binary
 hashes, and unchanged Schedule CMake target blocks. Its registered
-WorkspaceStore actions CTest has no built executable. The next slice is the
-focused Debug build and that single CTest; discovery evidence is in
-`artifacts/phase10/p10-win-c30-schedule-discovery-20261126/`.
+WorkspaceStore actions CTest had no built executable. Its current-source x64
+Debug build succeeded and the test passed 1/1 in 11.27 seconds. Together with
+the matching page/capture binaries, unchanged Schedule CMake blocks, and
+existing 38-record capture, this closes Candidate 30's bounded verification
+gap. See `artifacts/phase10/p10-win-c30-schedule-20261126/`. Candidate 11 and
+native/cross-host Phase 10 gates remain open; continue with read-only discovery
+for the next bounded Windows x64 slice.
 
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 

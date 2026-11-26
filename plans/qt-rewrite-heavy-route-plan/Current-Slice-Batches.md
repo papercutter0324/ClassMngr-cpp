@@ -12,7 +12,12 @@ inputs match. Both Schedule CMake target blocks also match; only the global
 CMake file hash differs. The remaining gap is the registered but unbuilt
 WorkspaceStore actions CTest. See the [discovery report](../../artifacts/phase10/p10-win-c30-schedule-discovery-20261126/discovery-report.md).
 
-## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 29)
+Candidate 30's missing WorkspaceStore actions target is now built and its
+focused CTest passed 1/1. The source-matched Windows page/capture package
+remains applicable, so no duplicate 38-record capture was run. See the
+[execution report](../../artifacts/phase10/p10-win-c30-schedule-20261126/execution-report.md).
+
+## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 30)
 
 Batch goal: requalify migrated behavior, appearance, and outputs against the
 legacy product on supported platforms using current-source evidence. Record
@@ -242,8 +247,8 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
 separate. Candidate 26's current-source Windows x64 requalification is
 recorded in the [execution report](../../artifacts/phase10/p10-win-c26-classes-analytics-20261126/execution-report.md).
-The next slice is the Candidate 30 Schedule WorkspaceStore actions CTest on
-Windows x64. Native interaction, Windows ARM64, macOS, and cross-host Phase 10
-gates remain open.
+The next slice is read-only discovery of another bounded current-source
+Windows x64 follow-up. Native interaction, Windows ARM64, macOS, and cross-host
+Phase 10 gates remain open.
 Read-only discovery evidence:
 [report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).

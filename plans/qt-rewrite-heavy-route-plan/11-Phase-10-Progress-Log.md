@@ -4,6 +4,19 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 - Candidate 30 Windows x64 Schedule verification
+
+At source HEAD `f1bba551432781ae8b98b78718de23540a8761ad`, the
+`ClassMngrNextScheduleWorkspaceStoreActionsTests` Windows x64 Debug build
+succeeded in 17.84 seconds and its focused CTest passed 1/1 in 11.27 seconds.
+The target declares three cases for path isolation, transactional testing
+assignment behavior, and errors. Combined with the source-matched page/capture
+executables and 38-record Windows package, Candidate 30 now has scoped
+WorkspaceStore, page, and visual-capture evidence. All 11 direct input hashes
+and artifact hashes match. No new capture was needed; no product or test source
+changed. Details are in
+`artifacts/phase10/p10-win-c30-schedule-20261126/`.
+
 ### 2026-11-26 - Candidate 30 Windows x64 Schedule discovery
 
 Read-only discovery at current HEAD `d11ed895a77aa652c4ac5618fb99d8de41fcb688`
