@@ -115,8 +115,8 @@ set_tests_properties(ClassMngrNextDocumentViewerTests
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
 
-# Produce the four C42 catalog states and metadata-only memory/lifecycle
-# measurement only when explicitly invoked.
+# Produce the four Next shell states plus matched Next/Legacy sidebar regions
+# and metadata-only memory/lifecycle evidence only when explicitly invoked.
 add_executable(ClassMngrNextDocumentCatalogVisualCapture
     tests/next/document_catalog_visual_capture.cpp
     src/core/process_memory_snapshot.cpp
@@ -125,6 +125,14 @@ add_executable(ClassMngrNextDocumentCatalogVisualCapture
     src/next/ui/navigation_model.cpp
     src/next/ui/page_host.cpp
     src/next/ui/qt_notification_presenter.cpp
+    src/ui/shared/widgets/sidebar/sidebar.cpp
+    src/ui/shared/widgets/sidebar/sidebar_context_menu.cpp
+    src/ui/shared/widgets/sidebar/sidebar_definitions.cpp
+    src/ui/shared/widgets/sidebar/sidebar_marquee_delegate.cpp
+    src/ui/shared/widgets/sidebar/sidebar_overflow.cpp
+    src/ui/shared/widgets/sidebar/sidebar_selection.cpp
+    src/ui/shared/widgets/sidebar/sidebar_teachers.cpp
+    src/ui/shared/widgets/sidebar/sidebar_tree.cpp
 )
 target_compile_features(ClassMngrNextDocumentCatalogVisualCapture
     PRIVATE
@@ -146,6 +154,7 @@ target_link_libraries(ClassMngrNextDocumentCatalogVisualCapture
         ClassMngrNext::Application
         ClassMngrNext::DocumentCatalog
         ClassMngrNext::Resources
+        ClassMngrFontManager
         Qt6::Widgets
 )
 set_target_properties(ClassMngrNextDocumentCatalogVisualCapture
@@ -159,6 +168,7 @@ set_property(TARGET ClassMngrNextDocumentCatalogVisualCapture
 )
 add_dependencies(ClassMngrNextDocumentCatalogVisualCapture
     ClassMngrNextResourcePackage
+    ClassMngrNextTranslationOutputs
 )
 add_test(
     NAME ClassMngrNextDocumentCatalogVisualCapture
@@ -550,12 +560,24 @@ add_test(
         initialSetupPersonalDetailsAppearance:english-light
 )
 add_test(
+    NAME ClassMngrNextInitialSetupVisualCaptureEnglishDark
+    COMMAND ClassMngrNextBootstrapTests
+        initialSetupPersonalDetailsAppearance:english-dark
+)
+add_test(
+    NAME ClassMngrNextInitialSetupVisualCaptureKoreanLight
+    COMMAND ClassMngrNextBootstrapTests
+        initialSetupPersonalDetailsAppearance:korean-light
+)
+add_test(
     NAME ClassMngrNextInitialSetupVisualCaptureKoreanDark
     COMMAND ClassMngrNextBootstrapTests
         initialSetupPersonalDetailsAppearance:korean-dark
 )
 set_tests_properties(
     ClassMngrNextInitialSetupVisualCaptureEnglishLight
+    ClassMngrNextInitialSetupVisualCaptureEnglishDark
+    ClassMngrNextInitialSetupVisualCaptureKoreanLight
     ClassMngrNextInitialSetupVisualCaptureKoreanDark
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1;CLASSMNGR_INITIAL_SETUP_VISUAL_CAPTURE_DIR=${CMAKE_CURRENT_BINARY_DIR}/initial-setup-visual-captures"
@@ -5165,6 +5187,22 @@ set_tests_properties(ClassMngrNextMyClassesVisualCapture
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
 )
+add_test(
+    NAME ClassMngrNextMyClassesEmptyVisualCapture
+    COMMAND ClassMngrNextMyClassesVisualCapture
+        --empty "${CMAKE_CURRENT_BINARY_DIR}/my-classes-empty-visual-capture"
+)
+add_test(
+    NAME ClassMngrNextMyClassesSummaryErrorVisualCapture
+    COMMAND ClassMngrNextMyClassesVisualCapture
+        --summary-error "${CMAKE_CURRENT_BINARY_DIR}/my-classes-summary-error-visual-capture"
+)
+set_tests_properties(
+    ClassMngrNextMyClassesEmptyVisualCapture
+    ClassMngrNextMyClassesSummaryErrorVisualCapture
+    PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"
+)
 
 classmngr_add_qt_test(
     NAME UpdateControllerAutomaticStartup
@@ -5328,6 +5366,18 @@ add_test(
         en_US light
 )
 add_test(
+    NAME ClassMngrNextUpcomingBirthdaysVisualCaptureEnDark
+    COMMAND ClassMngrNextUpcomingBirthdaysVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/upcoming-birthdays-visual-capture/en_US_dark"
+        en_US dark
+)
+add_test(
+    NAME ClassMngrNextUpcomingBirthdaysVisualCaptureKoLight
+    COMMAND ClassMngrNextUpcomingBirthdaysVisualCapture
+        "${CMAKE_CURRENT_BINARY_DIR}/upcoming-birthdays-visual-capture/ko_KR_light"
+        ko_KR light
+)
+add_test(
     NAME ClassMngrNextUpcomingBirthdaysVisualCaptureKoDark
     COMMAND ClassMngrNextUpcomingBirthdaysVisualCapture
         "${CMAKE_CURRENT_BINARY_DIR}/upcoming-birthdays-visual-capture/ko_KR_dark"
@@ -5335,6 +5385,8 @@ add_test(
 )
 set_tests_properties(
     ClassMngrNextUpcomingBirthdaysVisualCaptureEnLight
+    ClassMngrNextUpcomingBirthdaysVisualCaptureEnDark
+    ClassMngrNextUpcomingBirthdaysVisualCaptureKoLight
     ClassMngrNextUpcomingBirthdaysVisualCaptureKoDark
     PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_SCALE_FACTOR=1"

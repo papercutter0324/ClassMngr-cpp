@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "core/fontmanager.h"
 #include "core/process_memory_snapshot.h"
 #include "data/database/workspace_store.h"
 #include "features/my_info/data/signature_image_processor.h"
@@ -16,12 +17,15 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QFontDatabase>
+#include <QFontInfo>
+#include <QFontMetrics>
 #include <QImage>
 #include <QLabel>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLineEdit>
+#include <QLocale>
 #include <QPushButton>
 #include <QTabBar>
 #include <QTemporaryDir>
@@ -110,6 +114,14 @@ QJsonObject memoryJson(const ProcessMemorySnapshot& snapshot)
         {QStringLiteral("capturedAt"),
          snapshot.capturedAt.toString(Qt::ISODateWithMs)}
     };
+}
+
+QString resolvedRegisteredFontFamily(const QFont& font)
+{
+    const QString family = QFontInfo(font).family().trimmed();
+    return !family.isEmpty()
+            && QFontDatabase::families().contains(family, Qt::CaseInsensitive)
+        ? family : QString();
 }
 
 bool hasVisibleContent(const QImage& image)
@@ -530,21 +542,37 @@ int main(int argc, char* argv[])
     Next::Application::PreferencesModel preferences(
         preferencesRead, preferencesPersist);
 
+    QJsonArray signatureFonts;
     for (const QString& font : {
-             QStringLiteral("Inter.ttc"),
-             QStringLiteral("PretendardVariable.ttf"),
-             QStringLiteral("DancingScript.ttf"),
-             QStringLiteral("GreatVibes.ttf"),
-             QStringLiteral("Caveat.ttf"),
-             QStringLiteral("JustAnotherHand.ttf")
+             QStringLiteral("DancingScript-wght.ttf"),
+             QStringLiteral("GreatVibes-Regular.ttf"),
+             QStringLiteral("Caveat-wght.ttf"),
+             QStringLiteral("JustAnotherHand-Regular.ttf")
          })
     {
         const QString path = QDir(resourceRoot).filePath(
             QStringLiteral("assets/fonts/") + font);
-        if (QFile::exists(path))
+        if (!QFile::exists(path))
         {
-            static_cast<void>(QFontDatabase::addApplicationFont(path));
+            qCritical().noquote() << "Missing signature preview font:" << path;
+            return 1;
         }
+        const int fontId = QFontDatabase::addApplicationFont(path);
+        if (fontId < 0)
+        {
+            qCritical().noquote() << "Could not register signature preview font:" << path;
+            return 1;
+        }
+        const QStringList families = QFontDatabase::applicationFontFamilies(fontId);
+        if (families.isEmpty())
+        {
+            qCritical().noquote() << "Registered signature font has no family:" << path;
+            return 1;
+        }
+        signatureFonts.append(QJsonObject{
+            {QStringLiteral("file"), font},
+            {QStringLiteral("family"), families.first()}
+        });
     }
 
     QTemporaryDir temporaryDirectory;
@@ -564,11 +592,45 @@ int main(int argc, char* argv[])
 
     PlatformProcessMemorySnapshotProvider memoryProvider;
     QJsonArray captures;
+    QJsonArray captureFontFamilies;
     for (const auto& [locale, theme] : {
              std::pair{QStringLiteral("en_US"), QStringLiteral("light")},
+             std::pair{QStringLiteral("en_US"), QStringLiteral("dark")},
+             std::pair{QStringLiteral("ko_KR"), QStringLiteral("light")},
              std::pair{QStringLiteral("ko_KR"), QStringLiteral("dark")}
          })
     {
+        QLocale::setDefault(locale == QStringLiteral("ko_KR")
+            ? QLocale(QLocale::Korean, QLocale::SouthKorea)
+            : QLocale(QLocale::English, QLocale::UnitedStates));
+        FontManager::applyGlobalFont(application, locale);
+        const QString expectedFontFamily = locale == QStringLiteral("ko_KR")
+            ? QStringLiteral("Pretendard") : QStringLiteral("Inter");
+        const QString resolvedApplicationFontFamily =
+            resolvedRegisteredFontFamily(application.font());
+        if (resolvedApplicationFontFamily.isEmpty()
+            || !resolvedApplicationFontFamily.contains(
+                expectedFontFamily, Qt::CaseInsensitive))
+        {
+            qCritical().noquote() << "Capture font did not resolve to"
+                                  << expectedFontFamily << ":"
+                                  << resolvedApplicationFontFamily;
+            return 1;
+        }
+        const bool supportsHangul =
+            QFontMetrics(application.font()).inFont(QChar(0xD55C));
+        if (locale == QStringLiteral("ko_KR") && !supportsHangul)
+        {
+            qCritical("Korean capture font does not support the Hangul sample glyph.");
+            return 1;
+        }
+        captureFontFamilies.append(QJsonObject{
+            {QStringLiteral("locale"), locale},
+            {QStringLiteral("configuredFamily"), application.font().family()},
+            {QStringLiteral("resolvedFamily"), resolvedApplicationFontFamily},
+            {QStringLiteral("supportsHangul"), supportsHangul}
+        });
+
         const QString stylesheet = readText(QDir(resourceRoot).filePath(
             QStringLiteral("assets/styles/%1.qss").arg(theme)));
         if (stylesheet.isEmpty())
@@ -621,6 +683,11 @@ int main(int argc, char* argv[])
                     {QStringLiteral("file"), fileName},
                     {QStringLiteral("width"), Viewport.width()},
                     {QStringLiteral("height"), Viewport.height()},
+                    {QStringLiteral("applicationFontFamily"),
+                     application.font().family()},
+                    {QStringLiteral("resolvedApplicationFontFamily"),
+                     resolvedApplicationFontFamily},
+                    {QStringLiteral("supportsHangul"), supportsHangul},
                     {QStringLiteral("previewHasVisibleSignature"),
                      memory.previewHasVisibleSignature},
                     {QStringLiteral("footerHiddenWhileClean"),
@@ -650,6 +717,18 @@ int main(int argc, char* argv[])
              {QStringLiteral("height"), Viewport.height()}}},
         {QStringLiteral("qtPlatform"), QStringLiteral("offscreen")},
         {QStringLiteral("style"), QStringLiteral("Fusion")},
+        {QStringLiteral("applicationFontFamilies"), captureFontFamilies},
+        {QStringLiteral("signaturePreviewFonts"), signatureFonts},
+        {QStringLiteral("localeThemePairs"), QJsonArray{
+             QJsonObject{{QStringLiteral("locale"), QStringLiteral("en_US")},
+                         {QStringLiteral("theme"), QStringLiteral("light")}},
+             QJsonObject{{QStringLiteral("locale"), QStringLiteral("en_US")},
+                         {QStringLiteral("theme"), QStringLiteral("dark")}},
+             QJsonObject{{QStringLiteral("locale"), QStringLiteral("ko_KR")},
+                         {QStringLiteral("theme"), QStringLiteral("light")}},
+             QJsonObject{{QStringLiteral("locale"), QStringLiteral("ko_KR")},
+                         {QStringLiteral("theme"), QStringLiteral("dark")}}
+         }},
         {QStringLiteral("workspace"), QJsonObject{
              {QStringLiteral("name"), QStringLiteral("Alex Morgan")},
              {QStringLiteral("campus"), QStringLiteral("Bundang")},

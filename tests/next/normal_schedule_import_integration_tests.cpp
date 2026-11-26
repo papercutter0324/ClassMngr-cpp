@@ -563,6 +563,15 @@ QJsonArray rectangleJson(const QRect& rect)
     return {rect.x(), rect.y(), rect.width(), rect.height()};
 }
 
+QString resolvedRegisteredFontFamily(const QFont& font)
+{
+    const QString family = QFontInfo(font).family().trimmed();
+    return !family.isEmpty()
+            && QFontDatabase::families().contains(
+                family, Qt::CaseInsensitive)
+        ? family : QString();
+}
+
 QJsonObject importPreviewViewEvidence(
     QTableView* view,
     const int timeColumn
@@ -661,7 +670,8 @@ QJsonObject importPreviewViewEvidence(
             {QStringLiteral("elidedTextEstimate"),
                 elidedLines.join(QLatin1Char('\n'))},
             {QStringLiteral("fontFamily"), view->font().family()},
-            {QStringLiteral("resolvedFontFamily"), QFontInfo(view->font()).family()},
+            {QStringLiteral("resolvedFontFamily"),
+                resolvedRegisteredFontFamily(view->font())},
             {QStringLiteral("fontPointSize"), view->font().pointSizeF()},
             {QStringLiteral("elideMode"), static_cast<int>(view->textElideMode())}
         });
@@ -669,6 +679,9 @@ QJsonObject importPreviewViewEvidence(
 
     return QJsonObject{
         {QStringLiteral("objectName"), view->objectName()},
+        {QStringLiteral("fontFamily"), view->font().family()},
+        {QStringLiteral("resolvedFontFamily"),
+            resolvedRegisteredFontFamily(view->font())},
         {QStringLiteral("viewBounds"), rectangleJson(view->geometry())},
         {QStringLiteral("viewportBounds"), rectangleJson(view->viewport()->geometry())},
         {QStringLiteral("viewportSize"), QJsonArray{
@@ -3061,10 +3074,25 @@ captureImportVisualEvidenceWhenConfigured()
     QVERIFY(QDir().mkpath(outputPath));
     auto* const application = qApp;
     QVERIFY(application);
+    struct RestoreCaptureEnvironment final
+    {
+        QLocale locale = QLocale();
+        QPalette palette = QApplication::palette();
+        QFont applicationFont = QApplication::font();
+
+        ~RestoreCaptureEnvironment()
+        {
+            QLocale::setDefault(locale);
+            QApplication::setPalette(palette);
+            QApplication::setFont(applicationFont);
+        }
+    } restoreCaptureEnvironment;
     application->setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
     PlatformProcessMemorySnapshotProvider memoryProvider;
 
     QJsonArray captureRows;
+    QJsonArray captureFontFamilies;
+    bool fontResolutionFailed = false;
     for (const QString& locale : {QStringLiteral("en"), QStringLiteral("ko")})
     {
         QTranslator translator;
@@ -3077,6 +3105,32 @@ captureImportVisualEvidenceWhenConfigured()
         QLocale::setDefault(locale == QStringLiteral("ko")
             ? QLocale(QLocale::Korean, QLocale::SouthKorea)
             : QLocale(QLocale::English, QLocale::UnitedStates));
+        const QString fontLocale = locale == QStringLiteral("ko")
+            ? QStringLiteral("ko_KR") : QStringLiteral("en_US");
+        FontManager::applyGlobalFont(*application, fontLocale);
+        const QString expectedFontFamily = locale == QStringLiteral("ko")
+            ? QStringLiteral("Pretendard") : QStringLiteral("Inter");
+        const QString resolvedApplicationFontFamily =
+            resolvedRegisteredFontFamily(application->font());
+        QVERIFY2(!resolvedApplicationFontFamily.isEmpty(),
+            "The capture application font did not resolve to a registered family.");
+        QVERIFY2(resolvedApplicationFontFamily.contains(
+            expectedFontFamily, Qt::CaseInsensitive),
+            qPrintable(resolvedApplicationFontFamily));
+        const bool supportsHangul =
+            QFontMetrics(application->font()).inFont(QChar(0xD55C));
+        if (locale == QStringLiteral("ko"))
+        {
+            QVERIFY2(supportsHangul,
+                "The Korean capture font does not resolve the Hangul glyph used by the review UI.");
+        }
+        captureFontFamilies.append(QJsonObject{
+            {QStringLiteral("locale"), locale},
+            {QStringLiteral("fontFamily"), application->font().family()},
+            {QStringLiteral("resolvedFontFamily"),
+                resolvedApplicationFontFamily},
+            {QStringLiteral("supportsHangul"), supportsHangul}
+        });
 
         for (const QString& theme : {QStringLiteral("light"), QStringLiteral("dark")})
         {
@@ -3121,6 +3175,13 @@ captureImportVisualEvidenceWhenConfigured()
                 {
                     return {};
                 }
+                const QString resolvedSceneFontFamily =
+                    resolvedRegisteredFontFamily(application->font());
+                if (resolvedSceneFontFamily.isEmpty())
+                {
+                    fontResolutionFailed = true;
+                    return {};
+                }
                 const QImage image = dialog->grab().toImage();
                 const QString fileName = prefix + QLatin1Char('-') + scene
                     + QStringLiteral(".png");
@@ -3134,6 +3195,10 @@ captureImportVisualEvidenceWhenConfigured()
                 metrics.insert(QStringLiteral("height"), image.height());
                 metrics.insert(QStringLiteral("dialogWidth"), dialog->width());
                 metrics.insert(QStringLiteral("dialogHeight"), dialog->height());
+                metrics.insert(QStringLiteral("applicationFontFamily"),
+                               application->font().family());
+                metrics.insert(QStringLiteral("resolvedApplicationFontFamily"),
+                               resolvedSceneFontFamily);
                 if (auto* const pages = dialog->findChild<QStackedWidget*>(
                         QStringLiteral("nextScheduleImportPages")))
                 {
@@ -3180,10 +3245,21 @@ captureImportVisualEvidenceWhenConfigured()
                 if (auto* const preview = dialog->findChild<QTableView*>(
                         QStringLiteral("nextScheduleImportPreviewTable")))
                 {
+                    const QString resolvedPreviewFontFamily =
+                        resolvedRegisteredFontFamily(preview->font());
+                    if (resolvedPreviewFontFamily.isEmpty())
+                    {
+                        fontResolutionFailed = true;
+                        return {};
+                    }
                     metrics.insert(QStringLiteral("previewModelRows"),
                                    preview->model()->rowCount());
                     metrics.insert(QStringLiteral("previewViewportBounds"),
                         rectangleJson(preview->viewport()->geometry()));
+                    metrics.insert(QStringLiteral("previewFontFamily"),
+                                   preview->font().family());
+                    metrics.insert(QStringLiteral("resolvedPreviewFontFamily"),
+                                   resolvedPreviewFontFamily);
                     metrics.insert(QStringLiteral("previewTableEvidence"),
                         importPreviewViewEvidence(preview, 2));
                     int visible = 0;
@@ -3309,6 +3385,10 @@ captureImportVisualEvidenceWhenConfigured()
                 QDir(outputPath).filePath(successHandoffName), "PNG"));
             captureRows.append(QJsonObject{
                 {QStringLiteral("image"), successHandoffName},
+                {QStringLiteral("applicationFontFamily"),
+                    application->font().family()},
+                {QStringLiteral("resolvedApplicationFontFamily"),
+                    resolvedApplicationFontFamily},
                 {QStringLiteral("width"), successHandoffImage.width()},
                 {QStringLiteral("height"), successHandoffImage.height()},
                 {QStringLiteral("pageHostWidth"), smallFixture.host->width()},
@@ -3509,6 +3589,9 @@ captureImportVisualEvidenceWhenConfigured()
         }
     }
 
+    QVERIFY2(!fontResolutionFailed,
+        "At least one captured dialog or preview font did not resolve to a registered family.");
+
     const QStringList legacyScenes{
         QStringLiteral("small-source"),
         QStringLiteral("small-selection"),
@@ -3597,6 +3680,7 @@ captureImportVisualEvidenceWhenConfigured()
         {QStringLiteral("taskId"), QStringLiteral(
             "P10-B1-C14-PREVIEW-ACCESS-AND-CONFLICT-DETAIL")},
         {QStringLiteral("captureScenes"), captureRows},
+        {QStringLiteral("fontFamilies"), captureFontFamilies},
         {QStringLiteral("nextCoverage"), QJsonArray{
             QStringLiteral("English/light"), QStringLiteral("English/dark"),
             QStringLiteral("Korean/light"), QStringLiteral("Korean/dark")}},

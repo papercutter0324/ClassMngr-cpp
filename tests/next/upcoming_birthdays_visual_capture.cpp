@@ -13,6 +13,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QFontDatabase>
+#include <QFontInfo>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -21,6 +22,7 @@
 #include <QLocale>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QRawFont>
 #include <QStyleFactory>
 #include <QTemporaryDir>
 #include <QTranslator>
@@ -377,9 +379,11 @@ int main(int argc, char* argv[])
     application.installTranslator(&translator);
 
     const bool korean = locale.startsWith(QStringLiteral("ko"));
+    QString englishFontFamily;
+    QString koreanFontFamily;
     for (const auto& [name, family] : {
-             std::pair{QStringLiteral("Inter-Regular.ttf"), QStringLiteral("Inter")},
-             std::pair{QStringLiteral("PretendardVariable.ttf"), QStringLiteral("Pretendard")}
+             std::pair{QStringLiteral("Inter-Regular.ttf"), &englishFontFamily},
+             std::pair{QStringLiteral("PretendardVariable.ttf"), &koreanFontFamily}
          })
     {
         const QString fontPath = QDir(resourceRoot).filePath(
@@ -390,7 +394,13 @@ int main(int argc, char* argv[])
             qCritical().noquote() << "Could not load visual font:" << fontPath;
             return 1;
         }
-        static_cast<void>(family);
+        const QStringList families = QFontDatabase::applicationFontFamilies(fontId);
+        if (families.isEmpty())
+        {
+            qCritical().noquote() << "Visual font registration returned no family:" << fontPath;
+            return 1;
+        }
+        *family = families.front();
     }
     QFile stylesheet(QDir(resourceRoot).filePath(
         QStringLiteral("assets/styles/%1.qss").arg(theme)));
@@ -400,12 +410,33 @@ int main(int argc, char* argv[])
         return 1;
     }
     application.setStyleSheet(QString::fromUtf8(stylesheet.readAll()));
-    QFont applicationFont(korean ? QStringLiteral("Pretendard") : QStringLiteral("Inter"), 11);
+    const QString requestedApplicationFontFamily = korean
+        ? koreanFontFamily : englishFontFamily;
+    QFont applicationFont(requestedApplicationFontFamily, 11);
     application.setFont(applicationFont);
+    const QString resolvedApplicationFontFamily = QFontInfo(application.font()).family();
+    const QRawFont hangulProbe = QRawFont::fromFont(QFont(koreanFontFamily, 11));
+    const bool hangulGlyphAvailable = hangulProbe.isValid()
+        && hangulProbe.supportsCharacter(0xAC00);
+    if (resolvedApplicationFontFamily.isEmpty()
+        || !resolvedApplicationFontFamily.contains(
+            requestedApplicationFontFamily, Qt::CaseInsensitive)
+        || !hangulGlyphAvailable)
+    {
+        qCritical().noquote() << "Capture font resolution failed. Requested:"
+            << requestedApplicationFontFamily << "resolved:"
+            << resolvedApplicationFontFamily << "Pretendard Hangul glyph available:"
+            << hangulGlyphAvailable;
+        return 1;
+    }
 
     QDir().mkpath(outputDirectory);
     const QString legacyPath = QDir(outputDirectory).filePath(QStringLiteral("legacy.png"));
     const QString nextPath = QDir(outputDirectory).filePath(QStringLiteral("next.png"));
+    const QString emptyLegacyPath = QDir(outputDirectory).filePath(
+        QStringLiteral("legacy_empty.png"));
+    const QString emptyNextPath = QDir(outputDirectory).filePath(
+        QStringLiteral("next_empty.png"));
     const ProcessMemorySnapshot before = PlatformProcessMemorySnapshotProvider().snapshot();
     Surface legacy;
     Surface next;
@@ -439,11 +470,21 @@ int main(int argc, char* argv[])
     {
         const UpcomingBirthdaySchedule emptySchedule;
         UpcomingBirthdaysDialog dialog(emptySchedule);
+        if (!saveCapture(dialog, emptyLegacyPath))
+        {
+            qCritical("The legacy empty birthday dialog capture was blank or could not be saved");
+            return 1;
+        }
         emptyLegacy = legacyMetrics(dialog);
     }
     {
         const Next::Application::UpcomingBirthdaySchedule emptySchedule;
         Next::Ui::UpcomingBirthdaysDialog dialog(emptySchedule);
+        if (!saveCapture(dialog, emptyNextPath))
+        {
+            qCritical("The Next empty birthday dialog capture was blank or could not be saved");
+            return 1;
+        }
         emptyNext = nextMetrics(dialog);
     }
 
@@ -481,6 +522,13 @@ int main(int argc, char* argv[])
         {QStringLiteral("expectedDialogSize"), QJsonArray{520, 560}},
         {QStringLiteral("legacySurface"), surfaceJson(legacy)},
         {QStringLiteral("nextSurface"), surfaceJson(next)},
+        {QStringLiteral("fontResolution"), QJsonObject{
+             {QStringLiteral("requestedApplicationFamily"), requestedApplicationFontFamily},
+             {QStringLiteral("resolvedApplicationFamily"), resolvedApplicationFontFamily},
+             {QStringLiteral("registeredInterFamily"), englishFontFamily},
+             {QStringLiteral("registeredPretendardFamily"), koreanFontFamily},
+             {QStringLiteral("hangulProbeCodePoint"), QStringLiteral("U+AC00")},
+             {QStringLiteral("pretendardHangulGlyphAvailable"), hangulGlyphAvailable}}},
         {QStringLiteral("emptyScheduleAssertions"), QJsonObject{
              {QStringLiteral("legacy"), surfaceJson(emptyLegacy)},
              {QStringLiteral("next"), surfaceJson(emptyNext)}}},
@@ -490,7 +538,9 @@ int main(int argc, char* argv[])
              {QStringLiteral("afterNextCapture"), memoryJson(afterNext)},
              {QStringLiteral("afterDialogCleanup"), memoryJson(afterCleanup)}}},
         {QStringLiteral("legacyCapture"), QFileInfo(legacyPath).fileName()},
-        {QStringLiteral("nextCapture"), QFileInfo(nextPath).fileName()}
+        {QStringLiteral("nextCapture"), QFileInfo(nextPath).fileName()},
+        {QStringLiteral("emptyLegacyCapture"), QFileInfo(emptyLegacyPath).fileName()},
+        {QStringLiteral("emptyNextCapture"), QFileInfo(emptyNextPath).fileName()}
     };
     QFile manifestFile(QDir(outputDirectory).filePath(QStringLiteral("manifest.json")));
     if (!manifestFile.open(QIODevice::WriteOnly | QIODevice::Truncate)

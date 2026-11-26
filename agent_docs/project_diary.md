@@ -1,5 +1,61 @@
 # Project Diary
 
+### Phase 10 Windows x64 follow-up through Candidate 22 — 2026-11-26
+
+Candidates 19–21 now have independently accepted Windows x64 evidence.
+Candidate 19 added lower Upcoming captures and measured the Legacy/Next scroll
+state; its Calendar capture CTest passed after correcting layout-sensitive
+scroll settling, while the My Workspace and Calendar page tests passed in an
+earlier valid run. Candidate 20 expanded Classes empty/delete/read-error
+captures to all four locale/theme pairs. The Next read-error text continues
+past the 800×600 capture edge, although its status and Retry control remain
+visible.
+
+Candidate 21 expanded both wizard routes to four locale/theme pairs and exposed
+a capture-harness setup gap: the Legacy wizard test constructed its widgets
+without loading the production bundled fonts. The test target now links
+`ClassMngrFontManager`, applies Inter or Pretendard Variable per locale, asserts
+font resolution and Hangul support only in capture mode, and restores the
+application font with scoped RAII. The final 60 images have readable Korean
+glyphs; the original tofu captures remain preserved as pre-fix diagnostics.
+
+Candidate 22 completed current-source Windows x64 captures of the Legacy and
+Next catalog navigation regions across English/Korean and light/dark while
+retaining the existing Next full-shell captures. Independent review
+accepted 12 PNGs, 24 hashes, and both focused CTests. The four equal-size
+254×630 tree pairs show the same selected Lesson Planning item and 7 folder/30
+document rows; the eight sidebar font records report Hangul support and no PDF
+body was loaded. Long labels elide in the narrower Next tree. The scope is the
+sidebar region and makes no full-window Legacy parity claim. Phase 10 remains
+In Progress; ARM64, macOS, and native interactive behavior remain open.
+
+Candidate 11's Windows x64 installed-runtime follow-up passed independent,
+bounded review. The separate Release build staged under an artifact-local
+prefix; package verification accepted 406 manifest paths and 338 hashes, the
+installed resource-root probe resolved the staged `resources` directory, and
+both focused CTests passed. An isolated offscreen startup trace recorded
+`application.exec.enter` before the harness stopped the exact process. The
+geometry test covers only the settings adapter round trip; installed geometry
+persistence across relaunches and visual font/translation rendering were not
+tested. See `artifacts/phase10/p10-win-c11-installed-runtime-20261126/report.md`.
+
+A Windows ARM64 Debug cross-build in the standard
+`build/windows-arm64-debug` directory passed independent review. The Next app
+and the ResourceRootResolver and WindowGeometryPort test executables are
+AA64/ARM64; CTests, installation, app launch, and runtime behavior remain
+unrun because this host is x64. This is cross-build evidence, not native
+ARM64 parity. Candidate 9's selected cancellation slot passed under Windows
+QPA using the existing Debug executable in 307 ms. The fresh target build failed
+at ZERO_CHECK with FileTracker access denied, so this result verifies the
+pre-existing binary; the artifact records its source and executable hashes.
+The slot created a Qt widget dialog and sent Escape in-process, confirming
+cancellation with no selection or preference write. It does not establish
+external UI Automation, navigation, visual parity, or Windows common-dialog
+behavior. Candidate 6's safe-dialog map found its existing cancellation test
+bypasses QPrintDialog, while the real Windows route enumerates system printers;
+no print dialog or printer was touched. Native UI, macOS, and cross-host
+requirements remain open; Phase 10 stays In Progress.
+
 ### Phase 10 paused for Linux switch — 2026-11-25
 
 The Phase 9 transition commit `95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87`

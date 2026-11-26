@@ -79,6 +79,8 @@
 #include <QDesktopServices>
 #include <QEvent>
 #include <QFontDatabase>
+#include <QFontInfo>
+#include <QFontMetrics>
 #include <QFormLayout>
 #include <QDir>
 #include <QFile>
@@ -4918,11 +4920,7 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
     const QString visualCaptureDirectory = qEnvironmentVariable(
         "CLASSMNGR_INITIAL_SETUP_VISUAL_CAPTURE_DIR");
     const bool visualCaptureEnabled = !visualCaptureDirectory.isEmpty();
-    const bool captureOtherStages = visualCaptureEnabled
-        && ((locale == QStringLiteral("en_US")
-             && theme == QStringLiteral("light"))
-            || (locale == QStringLiteral("ko_KR")
-                && theme == QStringLiteral("dark")));
+    const bool captureOtherStages = visualCaptureEnabled;
     [[maybe_unused]] const ScopedCaptureAppearance captureAppearance(
         application, visualCaptureEnabled);
     StartupPreferencesGuard preferences(storedLanguage, storedTheme, 0);
@@ -4984,6 +4982,44 @@ void ApplicationBootstrapTests::initialSetupPersonalDetailsAppearance()
             )
         );
     QVERIFY(page);
+    if (visualCaptureEnabled)
+    {
+        const QFont activeFont = application.font();
+        const QFontInfo resolvedFont(activeFont);
+        const QFontMetrics fontMetrics(activeFont);
+        const QJsonObject fontMetadata{
+            {QStringLiteral("application"),
+                QStringLiteral("Next ApplicationBootstrap")},
+            {QStringLiteral("locale"), locale},
+            {QStringLiteral("theme"), theme},
+            {QStringLiteral("requestedFamilies"),
+                QJsonArray::fromStringList(activeFont.families())},
+            {QStringLiteral("resolvedFamily"), resolvedFont.family()},
+            {QStringLiteral("hangulSyllableU+AC00InFontMetrics"),
+                fontMetrics.inFont(QChar(0xAC00))}
+        };
+        if (!QDir().mkpath(visualCaptureDirectory))
+        {
+            qWarning().noquote() << "Could not create font metadata directory:"
+                << visualCaptureDirectory;
+        }
+        else
+        {
+            const QString fontMetadataPath = QDir(visualCaptureDirectory).filePath(
+                QStringLiteral("next-font-metadata-%1-%2.json")
+                    .arg(locale, theme));
+            const QByteArray fontMetadataBytes = QJsonDocument(fontMetadata).toJson(
+                QJsonDocument::Indented);
+            QFile fontMetadataFile(fontMetadataPath);
+            if (!fontMetadataFile.open(QIODevice::WriteOnly | QIODevice::Text)
+                || fontMetadataFile.write(fontMetadataBytes)
+                    != fontMetadataBytes.size())
+            {
+                qWarning().noquote() << "Could not write font metadata:"
+                    << fontMetadataPath;
+            }
+        }
+    }
     auto* const createButton = page->findChild<QPushButton*>(
         QStringLiteral("classMngrNextInitialSetupCreateProfile")
         );

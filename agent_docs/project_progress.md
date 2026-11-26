@@ -1,19 +1,64 @@
 # Project Progress
 
-## Current position — Phase 10 Batch 1, candidate 1 — 2026-11-25
+## Current position — Phase 10 Batch 1, Candidate 11 Windows cross-builds and Candidate 9 QPA check accepted — 2026-11-26
 
-Phase 10 is In Progress on the Heavy route. The user paused this session to
-switch to Linux. Candidate 1 is the focused Linux verification of migrated
-Phase 7 behavior transferred by Phase 7.5. It has not run yet. On Linux, use
-the standard `linux-gcc-debug` preset and the 19 focused CTest executables
-recorded in `agent_docs/latest_session_work.md`; do not rerun the full Phase 7
-suite. The temporary hosted-workflow fallback was removed. No GitHub workflow
-was triggered.
+Phase 10 is In Progress on the Heavy route. Candidates 19–22 supplemental
+Windows x64 follow-ups are complete and independently accepted. Candidate 11's
+Windows x64 installed-runtime follow-up passed independent, bounded review in a
+separate Release build tree with an artifact-local install prefix. Its package
+manifest and installed resource-root probe passed, two focused CTests passed,
+and an isolated offscreen startup trace recorded entry into the event loop.
+See the [Candidate 11 report](../artifacts/phase10/p10-win-c11-installed-runtime-20261126/report.md),
+the [Batch 1 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md),
+and [Phase 10 progress log](../plans/qt-rewrite-heavy-route-plan/11-Phase-10-Progress-Log.md).
+
+- Candidate 19 Calendar evidence is at
+  `artifacts/phase10/p10-win-c19-calendar-20261126/`. The capture CTest passed
+  after scroll-settling and heading-alignment fixes; the page and Calendar page
+  CTests passed in the earlier valid run. Korean Legacy shell labels remain
+  English while Next labels are Korean; lower Upcoming content is visible.
+- Candidate 20 Classes evidence is at
+  `artifacts/phase10/p10-win-c20-classes-20261126/`. Both focused CTests passed
+  and all four locale/theme pairs are covered. The Next read-error diagnostic
+  text clips at the bottom of its 800×600 capture, while status and Retry stay
+  visible.
+- Candidate 21 Initial Setup Wizard evidence is at
+  `artifacts/phase10/p10-win-c21-initial-setup-wizard-20261126/`. The Legacy
+  capture target now loads/applies the production bundled fonts and asserts
+  resolved-family and Hangul support in capture mode. All five focused CTests
+  passed; all 60 final images are readable. The pre-fix tofu captures are
+  retained as diagnostics only.
+- Candidate 22 Document Catalog evidence is at
+  `artifacts/phase10/p10-win-c22-document-catalog-20261126/`. Both focused
+  CTests passed; all 12 images and 24 hashes were accepted. Four 254×630
+  Legacy/Next sidebar pairs use the same selected document and record 7 folders,
+  30 documents, resolved fonts, and no loaded PDF body. The narrow Next tree
+  elides some long labels; this is sidebar-region evidence, not full-window
+  Legacy parity.
+
+The shared Windows x64 Debug tree and Candidate 11 Release tree are released.
+The standard Windows ARM64 Debug cross-build also passed independent review:
+the Next app and two focused test executables are AA64/ARM64, while CTests,
+installation, app launch, and runtime behavior were not run on this x64 host.
+Candidate 11 is still partial overall: its installed geometry test covers the
+settings adapter round trip, not geometry persistence across app relaunches,
+and the offscreen startup trace does not verify visual font or translation
+rendering. Candidate 9's selected cancellation slot passed under Windows QPA
+using the existing Debug executable after a fresh target build failed at
+ZERO_CHECK with FileTracker access denied. It uses an in-process Escape event;
+UI Automation, navigation, visual parity, and the Windows common-dialog backend
+remain unverified. Candidate 6's safe test map found the existing cancellation
+slot bypasses QPrintDialog; the real Windows route enumerates system printers,
+and no print dialog or printer was touched. Native ARM64 runtime, macOS, other
+native interactions, and remaining cross-host checks remain open. Phase 10 is
+not complete. Candidate 4's requested checkpoint is commit `6208ebe9`. The
+user authorized a batch commit and push for the current Phase 10 follow-ups;
+that publication does not close Phase 10.
 
 The focused Windows x64 Release precheck passed independently reviewed
 Bootstrap, PageHost, Classes Navigator Page, and Classes visual-capture CTests.
 It authorizes Phase 10 to start only; it is not Phase 9 final evidence. The
-transition commit `95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87` is pushed and the remote Qt-Rewrite tip matches. This pause handoff is recorded locally; push it with Phase 10 Batch 1 closure.
+transition commit `95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87` is pushed and the remote Qt-Rewrite tip matches.
 
 Phase 9 remains In Progress and incomplete. By user direction, all remaining
 Phase 9 work is deferred to Phase 14 after Phase 13: P9-17 plateau cleanup,
@@ -23,9 +68,8 @@ CTest, and final packaged Release exit gates. Preserve Maps page retention and
 all original thresholds and cleanup formulas. Deferral is not acceptance.
 
 Phase 10 Batch 1 order is in
-`plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`. The next slice
-after Linux verification is shell command parity. Continue local Windows
-validation for Windows work; commit each slice and push at batch closure.
+`plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`. Continue with the
+remaining Windows native-interaction and cross-host gates listed there.
 
 ### Latest P9-18 targeted-UIA route -- 2026-11-24
 

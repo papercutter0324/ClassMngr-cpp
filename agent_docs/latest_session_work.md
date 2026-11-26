@@ -1,16 +1,24 @@
 # Latest Session Work
 
-## Current continuation — Phase 10 Batch 1 candidate 1 paused for Linux — 2026-11-25
+## Current continuation — Phase 10 Batch 1 Windows parity follow-ups — 2026-11-26
 
-Deployment ID: `qtphase10-20261125`. The user asked to pause while switching
-to Linux. Resume with Heavy for implementation and verification and Light for
-Git. The active Windows checkout was `D:\Git\ClassMngr-cpp`; the configured
-`C:\Git\ClassMngr-cpp` checkout is stale. Resolve the actual repository path
-on Linux before building.
+Deployment ID: `phase10-windows-followups-20261126`. Continue on the Heavy
+route for implementation and verification and Light for Git. The active
+checkout is `D:\Git\ClassMngr-cpp`; `C:\Git\ClassMngr-cpp` remains stale.
+Candidate 11's Windows x64 installed-runtime result passed bounded independent
+review; its Windows ARM64 Debug cross-build also passed, without runtime tests.
+Candidate 9's Windows-QPA file-dialog cancellation check passed using the
+existing Debug executable. The shared x64 Debug and ARM64 Debug build trees are
+released.
+
+Evidence: [Candidate 11 Windows x64](../artifacts/phase10/p10-win-c11-installed-runtime-20261126/report.md),
+[Candidate 11 ARM64 cross-build](../artifacts/phase10/p10-win-arm64-crossbuild-20261126/report.md),
+and [Candidate 9 Windows QPA](../artifacts/phase10/p10-win-qt-dialog-qpa-20261126/report.md).
 
 The Phase 9 transition commit
-`95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87` is pushed, and the verified
-`origin/Qt-Rewrite` tip matches. This pause handoff is recorded locally; push it with Phase 10 Batch 1 closure.
+`95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87` is pushed to `origin/Qt-Rewrite`.
+The user authorized a Phase 10 batch commit and push after these follow-ups;
+keep the unrelated modified resource trees outside that batch.
 
 The focused Windows x64 Release precheck passed Bootstrap, PageHost, Classes
 Navigator Page, and Classes visual-capture CTests. Receipt:
@@ -27,12 +35,41 @@ peak, and cold cleanup passed; plateau cleanup failed (five baseline medians
 57,427,186 B). The report incorrectly showed pass while nested plateau fields
 were false. Fix validator propagation before Phase 14 revalidation.
 
-### Phase 10 resume point
+Windows x64 Candidates 19–21 are independently accepted. Candidate 19's
+calendar report is
+`artifacts/phase10/p10-win-c19-calendar-20261126/report.md`. Its capture test
+passed after scroll settling and heading alignment; the page and Calendar page
+tests passed in an earlier valid run. Candidate 20's report is
+`artifacts/phase10/p10-win-c20-classes-20261126/review-notes.md`; both focused
+tests passed, with the clipped Next read-error diagnostic noted. Candidate
+21's report is
+`artifacts/phase10/p10-win-c21-initial-setup-wizard-20261126/visual-review.md`;
+all five capture CTests passed, the Legacy harness applies bundled fonts, and
+all 60 final captures are readable. The pre-fix tofu images are diagnostics.
+
+Candidate 4's requested checkpoint commit `6208ebe9` has been made. Preserve
+the existing user-owned resource changes and keep them outside the authorized
+Phase 10 follow-up batch.
+
+Phase 10 remains In Progress. Candidate 22 was independently accepted: the
+report is `artifacts/phase10/p10-win-c22-document-catalog-20261126/review-notes.md`.
+It has four matched 254×630 Legacy/Next sidebar pairs plus four Next full-shell
+captures. The narrow Next tree elides some long sibling labels; this evidence
+does not claim full-window Legacy parity. Candidate 11 remains partial overall:
+its Windows x64 package pass and ARM64 cross-build do not cover installed
+geometry persistence across app relaunches, visual font/translation review, or
+native ARM64 execution. Candidate 9's Qt widget dialog was created and
+cancelled under Windows QPA, but UIA, navigation, visual comparison, and the
+Windows common-dialog backend remain open. Candidate 6's real print dialog and
+printer behavior, macOS, and other cross-host checks also remain open.
+
+### Original Phase 10 Linux handoff — 2026-11-25 (superseded)
 
 Batch 1 candidate 1 is the focused Linux verification of migrated Phase 7
-behavior transferred by Phase 7.5. It has not run. On Linux, use the standard
-`linux-gcc-debug` preset and only these selected CTest executables; do not
-rerun the full Phase 7 suite:
+behavior transferred by Phase 7.5. The Linux focused subset later passed
+19/19; see the current Batch 1 tracker. The selected-test list below is retained
+as the original scope record, not as a pending run. Do not rerun the full Phase
+7 suite:
 
 `ClassMngrNextBootstrapTests`,
 `ClassMngrNextInitialSetupTeacherEntryBootstrapIntegrationTests`,
@@ -54,11 +91,8 @@ tests. Record source SHA, compiler/Qt/CMake/Ninja versions, selected test
 results, and raw CTest output. No Linux build or CTest has run, and no GitHub
 workflow was triggered. The temporary hosted-workflow fallback was removed.
 
-After candidate 1 passes, proceed to Batch 1 candidate 2, application-shell
-command parity. Legacy Exit uses the safe close path; About is modal and
-parented; Edit commands use standard platform shortcuts and focus-based widget
-dispatch. Keep feature undo history page-owned unless the product contract
-establishes another scope. No P10-02 source changes have begun.
+Candidate 1 and subsequent candidates now have current progress in the Phase 10
+tracker and log; the original handoff sequence above has been superseded.
 
 ## Superseded Phase 9 handoff — 2026-11-24
 

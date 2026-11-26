@@ -1,4 +1,5 @@
 #include "core/application_services.h"
+#include "core/fontmanager.h"
 #include "core/theme_service.h"
 #include "data/data_service.h"
 #include "data/database/database_session.h"
@@ -18,7 +19,13 @@
 #include <QColorDialog>
 #include <QComboBox>
 #include <QDir>
+#include <QFontInfo>
+#include <QFontMetrics>
+#include <QFile>
 #include <QImage>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
 #include <QLocale>
@@ -161,6 +168,25 @@ private:
     QString m_styleName;
     QString m_styleSheet;
     QPalette m_palette;
+};
+
+class ScopedApplicationFont final
+{
+public:
+    explicit ScopedApplicationFont(QApplication& application)
+        : m_application(application)
+        , m_previousFont(application.font())
+    {
+    }
+
+    ~ScopedApplicationFont()
+    {
+        m_application.setFont(m_previousFont);
+    }
+
+private:
+    QApplication& m_application;
+    QFont m_previousFont;
 };
 
 class ScopedDefaultLocale final
@@ -442,6 +468,7 @@ capturesInitialSetupPersonalDetailsForVisualReview()
     QApplication& application = *qApp;
     [[maybe_unused]] const ScopedCaptureBaseStyle baseStyle(
         application, true);
+    [[maybe_unused]] const ScopedApplicationFont applicationFont(application);
 
     QByteArray signatureBytes;
     QBuffer signatureBuffer(&signatureBytes);
@@ -455,11 +482,13 @@ capturesInitialSetupPersonalDetailsForVisualReview()
         {QStringLiteral("ko_KR"), QStringLiteral("light")},
         {QStringLiteral("ko_KR"), QStringLiteral("dark")}
     }};
+    FontManager::loadFonts();
     // Legacy has no Korean catalog for this page; Korean rows retain its
     // shipped English source strings while the Qt default locale is recorded.
     for (const auto& [locale, theme] : appearanceCases)
     {
         [[maybe_unused]] const ScopedDefaultLocale defaultLocale(locale);
+        FontManager::applyGlobalFont(application, locale);
         ApplicationServices services;
         QVERIFY(openDatabase(services, m_directory));
         QVERIFY(services.settingsService());
@@ -514,6 +543,10 @@ capturesInitialSetupOtherStagesForVisualReview_data()
     QTest::addColumn<QString>("theme");
     QTest::newRow("english-light")
         << QStringLiteral("en_US") << QStringLiteral("light");
+    QTest::newRow("english-dark")
+        << QStringLiteral("en_US") << QStringLiteral("dark");
+    QTest::newRow("korean-light")
+        << QStringLiteral("ko_KR") << QStringLiteral("light");
     QTest::newRow("korean-dark")
         << QStringLiteral("ko_KR") << QStringLiteral("dark");
 }
@@ -534,7 +567,10 @@ capturesInitialSetupOtherStagesForVisualReview()
     QApplication& application = *qApp;
     [[maybe_unused]] const ScopedCaptureBaseStyle baseStyle(
         application, true);
+    [[maybe_unused]] const ScopedApplicationFont applicationFont(application);
     [[maybe_unused]] const ScopedDefaultLocale defaultLocale(locale);
+    FontManager::loadFonts();
+    FontManager::applyGlobalFont(application, locale);
 
     ApplicationServices services;
     QVERIFY(openDatabase(services, m_directory));
@@ -597,6 +633,41 @@ capturesInitialSetupOtherStagesForVisualReview()
     showSetupWizard(teacherImportWizard);
     QCOMPARE(teacherImportWizard.currentId(),
              InitialSetupWizard::TeacherImportPage);
+    const QFont activeFont = teacherImportWizard.font();
+    const QFontInfo resolvedFont(activeFont);
+    const QFontMetrics fontMetrics(activeFont);
+    QVERIFY(!resolvedFont.family().isEmpty());
+    QVERIFY(fontMetrics.inFont(QChar(0xAC00)));
+    const QJsonObject fontMetadata{
+        {QStringLiteral("application"),
+            QStringLiteral("Legacy InitialSetupWizard")},
+        {QStringLiteral("locale"), locale},
+        {QStringLiteral("theme"), theme},
+        {QStringLiteral("requestedFamilies"),
+            QJsonArray::fromStringList(activeFont.families())},
+        {QStringLiteral("resolvedFamily"), resolvedFont.family()},
+        {QStringLiteral("hangulSyllableU+AC00InFontMetrics"),
+            fontMetrics.inFont(QChar(0xAC00))}
+    };
+    const QString fontMetadataPath = QDir(outputDirectory).filePath(
+        QStringLiteral("legacy-font-metadata-%1-%2.json").arg(locale, theme));
+    const QByteArray fontMetadataBytes = QJsonDocument(fontMetadata).toJson(
+        QJsonDocument::Indented);
+    if (!QDir().mkpath(outputDirectory))
+    {
+        qWarning().noquote() << "Could not create font metadata directory:"
+            << outputDirectory;
+    }
+    else
+    {
+        QFile fontMetadataFile(fontMetadataPath);
+        if (!fontMetadataFile.open(QIODevice::WriteOnly | QIODevice::Text)
+            || fontMetadataFile.write(fontMetadataBytes) != fontMetadataBytes.size())
+        {
+            qWarning().noquote() << "Could not write font metadata:"
+                << fontMetadataPath;
+        }
+    }
     QVERIFY(captureStage(teacherImportWizard, QStringLiteral("teacher-import")));
 
     TeacherImportDialog teacherImportDialog(&teacherImportWizard);

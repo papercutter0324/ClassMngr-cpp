@@ -752,9 +752,13 @@ QString writeScheduleConflictWorkbook(
     return path;
 }
 
-QString loadReviewFontFamily()
+QString loadReviewFontFamily(QString* const koreanFontFamily = nullptr)
 {
     QString interFamily;
+    if (koreanFontFamily)
+    {
+        koreanFontFamily->clear();
+    }
     const QString sourceDirectory =
         QStringLiteral(CLASSMNGR_SOURCE_DIR);
     for (const QString& relativePath : {
@@ -771,9 +775,20 @@ QString loadReviewFontFamily()
 
         const QStringList families =
             QFontDatabase::applicationFontFamilies(fontId);
-        if (interFamily.isEmpty() && !families.isEmpty())
+        if (families.isEmpty())
+        {
+            continue;
+        }
+        if (relativePath == QStringLiteral("resources/assets/fonts/Inter.ttc")
+            && interFamily.isEmpty())
         {
             interFamily = families.first();
+        }
+        else if (relativePath == QStringLiteral(
+                     "resources/assets/fonts/PretendardVariable.ttf")
+            && koreanFontFamily && koreanFontFamily->isEmpty())
+        {
+            *koreanFontFamily = families.first();
         }
     }
     return interFamily;
@@ -908,7 +923,28 @@ void ScheduleImportDialogTests::captureScheduleImportVisualEvidenceWhenConfigure
     QVERIFY(QDir().mkpath(outputPath));
     auto* const application = qApp;
     QVERIFY(application);
+    const QFont originalApplicationFont = application->font();
+    struct RestoreCaptureFont final
+    {
+        QFont font;
+        ~RestoreCaptureFont()
+        {
+            QApplication::setFont(font);
+        }
+    } restoreCaptureFont{originalApplicationFont};
+
     application->setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
+    QString koreanReviewFontFamily;
+    const QString englishReviewFontFamily =
+        loadReviewFontFamily(&koreanReviewFontFamily);
+    QVERIFY2(!englishReviewFontFamily.trimmed().isEmpty(),
+        "The bundled Inter review font could not be loaded.");
+    QVERIFY2(!koreanReviewFontFamily.trimmed().isEmpty(),
+        "The bundled Pretendard review font could not be loaded.");
+    QVERIFY(QFontDatabase::families().contains(
+        englishReviewFontFamily, Qt::CaseInsensitive));
+    QVERIFY(QFontDatabase::families().contains(
+        koreanReviewFontFamily, Qt::CaseInsensitive));
 
     const QString sourceRoot = QStringLiteral(CLASSMNGR_SOURCE_DIR);
     const QString smallWorkbook = QDir(sourceRoot).filePath(
@@ -919,6 +955,7 @@ void ScheduleImportDialogTests::captureScheduleImportVisualEvidenceWhenConfigure
     QVERIFY(QFileInfo::exists(overlapWorkbook));
 
     QJsonArray scenes;
+    QJsonArray captureFontFamilies;
     const auto rectangle = [](const QRect& rect) {
         return QJsonArray{rect.x(), rect.y(), rect.width(), rect.height()};
     };
@@ -1045,6 +1082,27 @@ void ScheduleImportDialogTests::captureScheduleImportVisualEvidenceWhenConfigure
     const auto saveScene = [&](QWidget& widget, const QString& prefix,
                                const QString& scene, QJsonObject metrics) {
         QCoreApplication::processEvents();
+        const QString fontFamily = widget.font().family().trimmed();
+        const QString resolvedFontFamily =
+            QFontInfo(widget.font()).family().trimmed();
+        if (fontFamily.isEmpty() || resolvedFontFamily.isEmpty()
+            || !QFontDatabase::families().contains(
+                resolvedFontFamily, Qt::CaseInsensitive))
+        {
+            return false;
+        }
+        if (auto* const preview = widget.findChild<QTableWidget*>(
+                QStringLiteral("scheduleTable")))
+        {
+            const QString resolvedPreviewFontFamily =
+                QFontInfo(preview->font()).family().trimmed();
+            if (resolvedPreviewFontFamily.isEmpty()
+                || !QFontDatabase::families().contains(
+                    resolvedPreviewFontFamily, Qt::CaseInsensitive))
+            {
+                return false;
+            }
+        }
         const QImage image = widget.grab().toImage();
         const QString fileName = prefix + QLatin1Char('-') + scene
             + QStringLiteral(".png");
@@ -1058,11 +1116,18 @@ void ScheduleImportDialogTests::captureScheduleImportVisualEvidenceWhenConfigure
         metrics.insert(QStringLiteral("height"), image.height());
         metrics.insert(QStringLiteral("widgetCount"),
                        widget.findChildren<QWidget*>().size() + 1);
+        metrics.insert(QStringLiteral("fontFamily"), fontFamily);
+        metrics.insert(QStringLiteral("resolvedFontFamily"), resolvedFontFamily);
         if (auto* const preview = widget.findChild<QTableWidget*>(
                 QStringLiteral("scheduleTable")))
         {
+            QJsonObject previewEvidence = previewViewEvidence(preview, 0);
+            previewEvidence.insert(QStringLiteral("fontFamily"),
+                                   preview->font().family());
+            previewEvidence.insert(QStringLiteral("resolvedFontFamily"),
+                QFontInfo(preview->font()).family());
             metrics.insert(QStringLiteral("legacySchedulePreviewEvidence"),
-                previewViewEvidence(preview, 0));
+                           previewEvidence);
         }
         if (auto* const status = widget.findChild<QLabel*>(
                 QStringLiteral("scheduleImportReviewStatus")))
@@ -1113,6 +1178,31 @@ void ScheduleImportDialogTests::captureScheduleImportVisualEvidenceWhenConfigure
         QLocale::setDefault(locale == QStringLiteral("ko")
             ? QLocale(QLocale::Korean, QLocale::SouthKorea)
             : QLocale(QLocale::English, QLocale::UnitedStates));
+        const QString captureFontFamily = locale == QStringLiteral("ko")
+            ? koreanReviewFontFamily : englishReviewFontFamily;
+        application->setFont(QFont(captureFontFamily));
+        const QString resolvedCaptureFontFamily =
+            QFontInfo(application->font()).family().trimmed();
+        QVERIFY2(!resolvedCaptureFontFamily.isEmpty(),
+            "The capture application font did not resolve to a real family.");
+        QVERIFY2(QFontDatabase::families().contains(
+            resolvedCaptureFontFamily, Qt::CaseInsensitive),
+            qPrintable(resolvedCaptureFontFamily));
+        QCOMPARE(resolvedCaptureFontFamily.compare(
+                     captureFontFamily, Qt::CaseInsensitive), 0);
+        const bool supportsHangul =
+            QFontMetrics(application->font()).inFont(QChar(0xD55C));
+        if (locale == QStringLiteral("ko"))
+        {
+            QVERIFY2(supportsHangul,
+                "The Korean capture font does not resolve the Hangul glyph used by the review UI.");
+        }
+        captureFontFamilies.append(QJsonObject{
+            {QStringLiteral("locale"), locale},
+            {QStringLiteral("fontFamily"), captureFontFamily},
+            {QStringLiteral("resolvedFontFamily"), resolvedCaptureFontFamily},
+            {QStringLiteral("supportsHangul"), supportsHangul}
+        });
         QVERIFY(application->installTranslator(&translator));
 
         for (const QString& theme : {QStringLiteral("light"), QStringLiteral("dark")})
@@ -1275,6 +1365,7 @@ void ScheduleImportDialogTests::captureScheduleImportVisualEvidenceWhenConfigure
     const QJsonDocument document(QJsonObject{
         {QStringLiteral("taskId"), QStringLiteral(
             "P10-B1-C14-PREVIEW-ACCESS-AND-CONFLICT-DETAIL")},
+        {QStringLiteral("fontFamilies"), captureFontFamilies},
         {QStringLiteral("captureScope"), QStringLiteral(
             "Current-source Legacy Schedule Import source, selected sheet/block, small review, and overlap conflict states across English/Korean and light/dark. The source and review use schedule_review.xlsx; the conflict review uses schedule_overlap_conflict.xlsx.")},
         {QStringLiteral("previewMeasurementMethod"), QStringLiteral(

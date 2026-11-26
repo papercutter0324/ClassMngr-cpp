@@ -51,6 +51,7 @@ classmngr_add_qt_test(
     LIBRARIES
         Qt6::Test
         Qt6::Widgets
+        ClassMngrFontManager
     OFFSCREEN
 )
 

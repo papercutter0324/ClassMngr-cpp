@@ -13,6 +13,8 @@
 #include "next/ui/my_workspace_page.h"
 #include "next/ui/page_host.h"
 #include "preferences_test_ports.h"
+#include "ui/shared/pages/page_header.h"
+#include "ui/shared/widgets/navigation_tab_widget.h"
 
 #include <QApplication>
 #include <QCryptographicHash>
@@ -23,11 +25,15 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLabel>
 #include <QLocale>
+#include <QListWidget>
+#include <QListWidgetItem>
 #include <QPalette>
 #include <QPushButton>
 #include <QQuickWidget>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QStackedWidget>
@@ -40,6 +46,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <functional>
 
 using namespace ClassMngr;
 using namespace ClassMngr::Next;
@@ -100,6 +107,260 @@ QJsonObject geometryJson(const QWidget* widget, const QWidget* origin)
         {QStringLiteral("width"), widget->width()},
         {QStringLiteral("height"), widget->height()}
     };
+}
+
+QRect widgetRectIn(const QWidget* widget, const QWidget* origin)
+{
+    if (!widget || !origin)
+    {
+        return {};
+    }
+    return QRect(widget->mapTo(origin, QPoint{}), widget->size());
+}
+
+QJsonObject rectJson(const QRect& rect)
+{
+    return {
+        {QStringLiteral("x"), rect.x()},
+        {QStringLiteral("y"), rect.y()},
+        {QStringLiteral("width"), rect.width()},
+        {QStringLiteral("height"), rect.height()}
+    };
+}
+
+void writeCaptureFailureJson(
+    const QString& outputImagePath,
+    const QString& failureName,
+    const QJsonObject& details
+    )
+{
+    QFile file(QDir(QFileInfo(outputImagePath).absolutePath()).filePath(failureName));
+    if (file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+        file.write(QJsonDocument(details).toJson(QJsonDocument::Indented));
+    }
+}
+
+QJsonArray legacyTabLabels(const NavigationTabWidget* tabs)
+{
+    QJsonArray result;
+    if (tabs)
+    {
+        for (int index = 0; index < tabs->count(); ++index)
+        {
+            result.append(tabs->tabText(index));
+        }
+    }
+    return result;
+}
+
+QJsonArray nextTabLabels(const QTabBar* tabs)
+{
+    QJsonArray result;
+    if (tabs)
+    {
+        for (int index = 0; index < tabs->count(); ++index)
+        {
+            result.append(tabs->tabText(index));
+        }
+    }
+    return result;
+}
+
+QJsonObject legacyWorkspaceShellLabels(const MyWorkspacePage& page)
+{
+    PageHeader* header = nullptr;
+    for (PageHeader* candidate : page.findChildren<PageHeader*>())
+    {
+        if (candidate->parentWidget()
+            && candidate->parentWidget()->parentWidget() == &page)
+        {
+            header = candidate;
+            break;
+        }
+    }
+    const auto* tabs = page.findChild<NavigationTabWidget*>(
+        QStringLiteral("myWorkspaceTabs"));
+    return {
+        {QStringLiteral("title"), header ? header->title() : QString{}},
+        {QStringLiteral("subtitle"), header ? header->subtitle() : QString{}},
+        {QStringLiteral("tabs"), legacyTabLabels(tabs)}
+    };
+}
+
+QJsonObject nextWorkspaceShellLabels(const Ui::MyWorkspacePage& page)
+{
+    const auto* title = page.findChild<QLabel*>(
+        QStringLiteral("pageTitle"), Qt::FindDirectChildrenOnly);
+    const auto* subtitle = page.findChild<QLabel*>(
+        QStringLiteral("pageSubtitle"), Qt::FindDirectChildrenOnly);
+    const auto* tabs = page.findChild<QTabBar*>(
+        QStringLiteral("nextMyWorkspaceTabBar"));
+    return {
+        {QStringLiteral("title"), title ? title->text() : QString{}},
+        {QStringLiteral("subtitle"), subtitle ? subtitle->text() : QString{}},
+        {QStringLiteral("tabs"), nextTabLabels(tabs)}
+    };
+}
+
+struct LowerUpcomingEventEvidence final
+{
+    QRect bounds;
+    QString text;
+};
+
+QJsonObject scrollAreaJson(const QScrollArea* scrollArea, const QWidget* origin)
+{
+    if (!scrollArea || !scrollArea->verticalScrollBar())
+    {
+        return {};
+    }
+    const QScrollBar* bar = scrollArea->verticalScrollBar();
+    return {
+        {QStringLiteral("minimum"), bar->minimum()},
+        {QStringLiteral("maximum"), bar->maximum()},
+        {QStringLiteral("value"), bar->value()},
+        {QStringLiteral("pageStep"), bar->pageStep()},
+        {QStringLiteral("viewportBounds"), geometryJson(scrollArea->viewport(), origin)},
+        {QStringLiteral("contentSize"), QJsonArray{
+             scrollArea->widget() ? scrollArea->widget()->width() : 0,
+             scrollArea->widget() ? scrollArea->widget()->height() : 0}}
+    };
+}
+
+bool saveCapture(QWidget& page, const QString& path, QJsonObject* state, QString* error);
+bool saveCurrentCapture(QWidget& page, const QString& path, QJsonObject* state, QString* error);
+
+bool captureLowerUpcoming(
+    QWidget& captureRoot,
+    QScrollArea* scrollArea,
+    QWidget* upcomingHeading,
+    const std::function<LowerUpcomingEventEvidence()>& readRepresentativeEvent,
+    const QString& outputPath,
+    QJsonObject* state,
+    QString* error
+    )
+{
+    if (!scrollArea || !scrollArea->verticalScrollBar() || !upcomingHeading)
+    {
+        *error = QStringLiteral("The embedded Calendar Upcoming scroll surface is unavailable.");
+        writeCaptureFailureJson(outputPath,
+            QStringLiteral("lower-upcoming-failure.json"), QJsonObject{
+                {QStringLiteral("error"), *error},
+                {QStringLiteral("scrollAreaFound"), scrollArea != nullptr},
+                {QStringLiteral("headingFound"), upcomingHeading != nullptr}
+            });
+        return false;
+    }
+
+    QScrollBar* const bar = scrollArea->verticalScrollBar();
+    for (int attempt = 0; attempt < 6; ++attempt)
+    {
+        const int requestedMaximum = bar->maximum();
+        bar->setValue(requestedMaximum);
+        QApplication::processEvents();
+        QApplication::processEvents();
+        if (bar->maximum() == requestedMaximum
+            && bar->value() == bar->maximum())
+        {
+            break;
+        }
+    }
+
+    // The lower section heading can be partly clipped at the exact bottom of
+    // the content. Align it back into the viewport by only the amount it is
+    // clipped, keeping this a near-bottom capture while making the full heading
+    // readable.
+    int headingScrollAdjustment = 0;
+    for (int attempt = 0; attempt < 3; ++attempt)
+    {
+        const QRect viewportBounds = widgetRectIn(scrollArea->viewport(), &captureRoot);
+        const QRect headingBounds = widgetRectIn(upcomingHeading, &captureRoot);
+        if (viewportBounds.contains(headingBounds))
+        {
+            break;
+        }
+        if (headingBounds.top() < viewportBounds.top())
+        {
+            const int adjustment = headingBounds.top() - viewportBounds.top();
+            headingScrollAdjustment += adjustment;
+            bar->setValue(bar->value() + adjustment);
+        }
+        else if (headingBounds.bottom() > viewportBounds.bottom())
+        {
+            const int adjustment = headingBounds.bottom() - viewportBounds.bottom();
+            headingScrollAdjustment += adjustment;
+            bar->setValue(bar->value() + adjustment);
+        }
+        QApplication::processEvents();
+        QApplication::processEvents();
+    }
+
+    const QRect viewportBounds = widgetRectIn(scrollArea->viewport(), &captureRoot);
+    const QRect headingBounds = widgetRectIn(upcomingHeading, &captureRoot);
+    const LowerUpcomingEventEvidence event = readRepresentativeEvent
+        ? readRepresentativeEvent()
+        : LowerUpcomingEventEvidence{};
+    const QRect currentEventBounds = event.bounds;
+    const bool headingInFrame = viewportBounds.contains(headingBounds)
+        && upcomingHeading->isVisibleTo(&captureRoot);
+    const bool eventInFrame = !currentEventBounds.isEmpty()
+        && !event.text.trimmed().isEmpty()
+        && viewportBounds.intersects(currentEventBounds);
+    if (bar->maximum() <= bar->minimum()
+        || !headingInFrame || !eventInFrame)
+    {
+        *error = QStringLiteral(
+            "The lower Upcoming capture is not in the embedded Calendar viewport. "
+            "scroll=%1 heading=%2 event=%3")
+            .arg(QString::fromUtf8(QJsonDocument(scrollAreaJson(scrollArea, &captureRoot))
+                .toJson(QJsonDocument::Compact)))
+            .arg(QString::fromUtf8(QJsonDocument(geometryJson(upcomingHeading, &captureRoot))
+                .toJson(QJsonDocument::Compact)))
+            .arg(QString::fromUtf8(QJsonDocument(rectJson(currentEventBounds))
+                .toJson(QJsonDocument::Compact)));
+        writeCaptureFailureJson(outputPath,
+            QStringLiteral("lower-upcoming-failure.json"), QJsonObject{
+                {QStringLiteral("error"), *error},
+                {QStringLiteral("scroll"), scrollAreaJson(scrollArea, &captureRoot)},
+                {QStringLiteral("viewportBounds"), rectJson(viewportBounds)},
+                {QStringLiteral("headingBounds"), rectJson(headingBounds)},
+                {QStringLiteral("headingText"), qobject_cast<QLabel*>(upcomingHeading)
+                    ? qobject_cast<QLabel*>(upcomingHeading)->text() : QString{}},
+                {QStringLiteral("headingVisibleToRoot"),
+                    upcomingHeading->isVisibleTo(&captureRoot)},
+                {QStringLiteral("eventBounds"), rectJson(currentEventBounds)},
+                {QStringLiteral("eventText"), event.text},
+                {QStringLiteral("headingInFrame"), headingInFrame},
+                  {QStringLiteral("headingScrollAdjustment"), headingScrollAdjustment},
+                {QStringLiteral("eventInFrame"), eventInFrame}
+            });
+        return false;
+    }
+
+    QJsonObject lowerCapture;
+    if (!saveCurrentCapture(captureRoot, outputPath, &lowerCapture, error))
+    {
+        return false;
+    }
+    state->insert(QStringLiteral("lowerUpcomingCapture"), lowerCapture);
+    state->insert(QStringLiteral("lowerUpcomingScroll"),
+        scrollAreaJson(scrollArea, &captureRoot));
+    state->insert(QStringLiteral("lowerUpcomingHeadingText"),
+        qobject_cast<QLabel*>(upcomingHeading)
+            ? qobject_cast<QLabel*>(upcomingHeading)->text()
+            : QString{});
+    state->insert(QStringLiteral("lowerUpcomingHeadingBounds"),
+        geometryJson(upcomingHeading, &captureRoot));
+    state->insert(QStringLiteral("lowerUpcomingRepresentativeEventBounds"),
+        rectJson(currentEventBounds));
+    state->insert(QStringLiteral("lowerUpcomingRepresentativeEventText"),
+        event.text);
+    state->insert(QStringLiteral("lowerUpcomingHeadingInFrame"), headingInFrame);
+    state->insert(QStringLiteral("lowerUpcomingRepresentativeEventInFrame"), eventInFrame);
+    state->insert(QStringLiteral("lowerUpcomingHeadingScrollAdjustment"),
+        headingScrollAdjustment);
+    return true;
 }
 
 bool geometryMatches(
@@ -262,6 +523,11 @@ bool saveCapture(QWidget& page, const QString& path, QJsonObject* state, QString
         focused->clearFocus();
     }
     QApplication::processEvents();
+    return saveCurrentCapture(page, path, state, error);
+}
+
+bool saveCurrentCapture(QWidget& page, const QString& path, QJsonObject* state, QString* error)
+{
     const QImage image = page.grab().toImage();
     const bool saved = image.size() == Viewport && image.save(path, "PNG");
     if (!saved)
@@ -337,6 +603,7 @@ bool captureLegacyCalendar(
     const QString& databasePath,
     const QString& stylesheet,
     const QString& outputPath,
+    const QString& lowerOutputPath,
     QJsonObject* state,
     QString* error
     )
@@ -373,7 +640,16 @@ bool captureLegacyCalendar(
     {
         return false;
     }
-    const auto* const calendarViewport = calendar->findChild<QScrollArea*>();
+    const QJsonObject shellLabels = legacyWorkspaceShellLabels(page);
+    if (shellLabels.value(QStringLiteral("title")).toString().isEmpty()
+        || shellLabels.value(QStringLiteral("subtitle")).toString().isEmpty()
+        || shellLabels.value(QStringLiteral("tabs")).toArray().size() != 3)
+    {
+        *error = QStringLiteral("The Legacy My Workspace shell labels were not found.");
+        return false;
+    }
+    state->insert(QStringLiteral("workspaceShellLabels"), shellLabels);
+    auto* const calendarViewport = calendar->findChild<QScrollArea*>();
     const auto* const calendarGrid = calendar->findChild<QQuickWidget*>();
     const auto* const calendarCard = calendarGrid
         ? calendarGrid->parentWidget()
@@ -411,6 +687,54 @@ bool captureLegacyCalendar(
             .arg(QString::fromUtf8(QJsonDocument(
                 state->value(QStringLiteral("calendarGridRect")).toObject())
                 .toJson(QJsonDocument::Compact)));
+        writeCaptureFailureJson(outputPath,
+            QStringLiteral("legacy-calendar-geometry-failure.json"), QJsonObject{
+                {QStringLiteral("error"), *error},
+                {QStringLiteral("viewportRect"), viewportRect},
+                {QStringLiteral("gridRect"), gridRect},
+                {QStringLiteral("expectedStableInsets"), QJsonObject{
+                     {QStringLiteral("viewportX"), 44},
+                     {QStringLiteral("viewportWidth"), 936},
+                     {QStringLiteral("gridX"), 90},
+                     {QStringLiteral("gridWidth"), 834},
+                     {QStringLiteral("gridHeight"), 840}}}
+            });
+        return false;
+    }
+
+    auto* const upcomingHeading = calendar->findChild<QLabel*>(
+        QStringLiteral("sectionTitle"));
+    const auto eventRows = calendar->findChildren<QWidget*>(
+        QStringLiteral("upcomingCalendarEventRow"));
+    QWidget* const representativeEvent = eventRows.isEmpty()
+        ? nullptr : eventRows.front();
+    if (!captureLowerUpcoming(
+            page,
+            calendarViewport,
+            upcomingHeading,
+            [&page, representativeEvent]
+            {
+                QStringList labels;
+                if (representativeEvent)
+                {
+                    for (const QLabel* label :
+                         representativeEvent->findChildren<QLabel*>())
+                    {
+                        if (!label->text().trimmed().isEmpty())
+                        {
+                            labels.append(label->text());
+                        }
+                    }
+                }
+                return LowerUpcomingEventEvidence{
+                    .bounds = widgetRectIn(representativeEvent, &page),
+                    .text = labels.join(QStringLiteral(" | "))
+                };
+            },
+            lowerOutputPath,
+            state,
+            error))
+    {
         return false;
     }
     const ProcessMemorySnapshot active = memoryProvider.snapshot();
@@ -441,6 +765,7 @@ bool captureNextSurface(
     const QString& stylesheet,
     const int tabIndex,
     const QString& outputPath,
+    const QString& lowerOutputPath,
     QJsonObject* state,
     QString* error
     )
@@ -532,6 +857,15 @@ bool captureNextSurface(
     {
         return false;
     }
+    const QJsonObject shellLabels = nextWorkspaceShellLabels(*nextPage);
+    if (shellLabels.value(QStringLiteral("title")).toString().isEmpty()
+        || shellLabels.value(QStringLiteral("subtitle")).toString().isEmpty()
+        || shellLabels.value(QStringLiteral("tabs")).toArray().size() != 3)
+    {
+        *error = QStringLiteral("The Next My Workspace shell labels were not found.");
+        return false;
+    }
+    state->insert(QStringLiteral("workspaceShellLabels"), shellLabels);
 
     const ProcessMemorySnapshot active = memoryProvider.snapshot();
     const auto* const scheduleTable = nextPage->findChild<QTableView*>(
@@ -596,6 +930,45 @@ bool captureNextSurface(
         *error = QStringLiteral(
             "The embedded Next My Workspace Calendar content did not activate.");
         return false;
+    }
+    if (tabIndex == 2)
+    {
+        auto* const calendarScrollArea = nextPage->findChild<QScrollArea*>(
+            QStringLiteral("nextMyWorkspaceCalendarScrollArea"));
+        auto* const upcomingHeading = embeddedCalendar
+            ? embeddedCalendar->findChild<QLabel*>(
+                QStringLiteral("calendarUpcomingTitle"))
+            : nullptr;
+        auto* const upcomingList = embeddedCalendar
+            ? embeddedCalendar->findChild<QListWidget*>(
+                QStringLiteral("calendarUpcomingEvents"))
+            : nullptr;
+        if (!captureLowerUpcoming(
+                host,
+                calendarScrollArea,
+                upcomingHeading,
+                [&host, upcomingList]
+                {
+                    if (!upcomingList || upcomingList->count() == 0)
+                    {
+                        return LowerUpcomingEventEvidence{};
+                    }
+                    const QRect itemBounds = upcomingList->visualItemRect(
+                        upcomingList->item(0));
+                    return LowerUpcomingEventEvidence{
+                        .bounds = QRect(
+                            upcomingList->viewport()->mapTo(
+                                &host, itemBounds.topLeft()),
+                            itemBounds.size()),
+                        .text = upcomingList->item(0)->text()
+                    };
+                },
+                lowerOutputPath,
+                state,
+                error))
+        {
+            return false;
+        }
     }
     const int modelCount = static_cast<int>(nextPage->findChildren<QTableView*>().size());
     static_cast<void>(host.activatePage(QStringLiteral("other")));
@@ -727,6 +1100,10 @@ int main(int argc, char* argv[])
                     ? QStringLiteral("next_schedule_") + suffix + QStringLiteral(".png")
                     : QStringLiteral("next_my_workspace_calendar_")
                         + suffix + QStringLiteral(".png");
+                const QString lowerUpcomingName = tabIndex == 2
+                    ? QStringLiteral("next_my_workspace_calendar_upcoming_")
+                        + suffix + QStringLiteral(".png")
+                    : QString{};
                 QJsonObject nextState;
                 if (!captureNextSurface(
                         sourceDatabase,
@@ -736,6 +1113,9 @@ int main(int argc, char* argv[])
                         stylesheet,
                         tabIndex,
                         QDir(outputDirectory).filePath(name),
+                        lowerUpcomingName.isEmpty()
+                            ? QString{}
+                            : QDir(outputDirectory).filePath(lowerUpcomingName),
                         &nextState,
                         &error))
                 {
@@ -750,6 +1130,9 @@ int main(int argc, char* argv[])
                 {
                     const QString legacyName = QStringLiteral("legacy_my_workspace_calendar_")
                         + suffix + QStringLiteral(".png");
+                    const QString legacyLowerUpcomingName =
+                        QStringLiteral("legacy_my_workspace_calendar_upcoming_")
+                        + suffix + QStringLiteral(".png");
                     const QString legacyDatabase = temporaryDirectory.filePath(
                         QStringLiteral("legacy-") + suffix + QStringLiteral(".tps"));
                     QFile::remove(legacyDatabase);
@@ -763,6 +1146,7 @@ int main(int argc, char* argv[])
                             legacyDatabase,
                             stylesheet,
                             QDir(outputDirectory).filePath(legacyName),
+                            QDir(outputDirectory).filePath(legacyLowerUpcomingName),
                             &legacyState,
                             &error))
                     {
@@ -802,6 +1186,7 @@ int main(int argc, char* argv[])
             1,
             QDir(outputDirectory).filePath(
                 QStringLiteral("next_schedule_96_classes_en_US_light.png")),
+            QString{},
             &largeState,
             &error))
     {
@@ -829,13 +1214,18 @@ int main(int argc, char* argv[])
             "workspace stores, repositories, translations, widgets, and allocator behavior.")},
         {QStringLiteral("calendarCapture"), QStringLiteral(
             "Paired Legacy and Next captures show the actual Calendar tab inside each "
-            "My Workspace page at a 1024x768 embedded viewport. Next uses fixed "
-            "rectangles 44,185 936x495 and 90,239 834x840; Legacy is checked for "
-            "the same stable insets while allowing native Qt height metrics.")},
-        {QStringLiteral("localizedDivergence"), QStringLiteral(
-            "In ko_KR, the Legacy My Workspace parent title, subtitle, and tab labels "
-            "remain English while its Calendar labels are Korean. Next keeps the Korean "
-            "My Workspace and Calendar translations, as required for Phase 7.")},
+            "My Workspace page at a 1024x768 embedded viewport. Each Calendar tab "
+            "has an initial capture and a second capture after its scroll range settles "
+            "at the bottom; a minimal scroll offset then brings the full Upcoming heading "
+            "into view while keeping a representative event row visible. Each lower capture "
+            "records the resulting scroll value and range, heading adjustment, and event "
+            "bounds. "
+            "Next uses fixed upper-view rectangles 44,185 936x495 and 90,239 834x840; "
+            "Legacy is checked for the same stable insets while allowing native Qt "
+            "height metrics.")},
+        {QStringLiteral("shellLabelEvidence"), QStringLiteral(
+            "Each route records the title, subtitle, and tab labels read from the live "
+            "Legacy or Next workspace widgets; no fixed localization divergence is asserted.")},
         {QStringLiteral("captures"), captures}
     };
     QFile manifestFile(QDir(outputDirectory).filePath(QStringLiteral("manifest.json")));

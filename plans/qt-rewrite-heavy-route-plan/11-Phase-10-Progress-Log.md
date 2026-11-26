@@ -141,3 +141,220 @@ For the Windows run, resource input byte drift was corrected only for guarded
 HEAD/inventory-identical CRLF variants; all 238 Phase 4 inventory records pass.
 A process-only TEMP/TMP override avoided MSBuild FileTracker denial; the Phase
 4 verification evidence is [here](../../artifacts/phase10/p10-win-c1-c3-filetracker-20261125T153339Z-8dadae2b/phase4-verify-238-followup5.json).
+
+### 2026-11-26 — Windows x64 follow-up through Candidate 18; Candidate 19 started
+
+Phase 10 remains In Progress. Candidates 6–10 and 12–18 now have bounded
+Windows x64 follow-up evidence; Candidate 11 remains partial because a full
+installed Next runtime was not staged. These Windows captures and tests do not
+close native interactive, Windows ARM64, or macOS requirements unless stated.
+
+- **Candidate 6 — Native printing:** Independent review accepted bounded
+  Windows x64 headless viewer and print-route evidence: two capture CTests and
+  focused injected print slots passed. No native dialog, printer, print job,
+  or physical output was exercised. See the [report](../../artifacts/phase10/p10-win-36-c6-headless-print-20261126/report.md).
+- **Candidates 7–10 — PowerPoint, updater, file workflows, external launches:**
+  Focused Windows x64 service/fallback tests passed 2/2 for Candidate 7, updater
+  tests passed 2/2 for Candidate 8, and file-workflow tests passed 10/10 for
+  Candidate 9. Candidate 10 verified injected URL/folder routes and a fake
+  local-file opener; registered OS handlers, Office COM/PowerPoint rendering,
+  native installer/folder UI, native pickers, and real browser/Explorer launches
+  remain open. Evidence: [C7](../../artifacts/phase10/p10-win-c7-windows-x64-debug/report.md),
+  [C8](../../artifacts/phase10/p10-win-22-updater-windows-x64-debug/report.md),
+  [C9](../../artifacts/phase10/p10-win-25-file-workflow-followup/report.md),
+  [C10](../../artifacts/phase10/p10-win-27-external-launch-windows-x64-debug/report.md)
+  and its [local-file follow-up](../../artifacts/phase10/p10-win-27-external-launch-windows-x64-debug/follow-up.md).
+- **Candidate 12 — My Classes:** Windows x64 populated, empty, and summary-read
+  error capture CTests passed 3/3; the accepted populated captures stayed
+  byte-identical to the prior Windows run. Forced grade-tab overflow remains
+  open because unsupported grade labels collapse to “Other.” See the
+  [state follow-up](../../artifacts/phase10/p10-win-29-my-classes-state-followup-20261126/report.md)
+  and [populated capture report](../../artifacts/phase10/p10-win-29-my-classes-visual-20261126/report.md).
+- **Candidate 13 — Schedule display:** A test-only precision correction to
+  `plainTextEvidence` preserved all fit and containment assertions. The focused
+  page and capture CTests passed 2/2; 38 Legacy/Next records were captured.
+  Testing rows grow in Next to fit wrapped room text, while long Intensive text
+  remains available to accessibility/tooltip roles. Pixel parity is not
+  claimed. Independent review found the manifest's same-data field is
+  hard-coded and a screenshot-order concern inconclusive; current source order
+  did not establish a product defect. See the [report](../../artifacts/phase10/p10-win-13-schedule-harness-fix-20261126T065642/report.md).
+- **Candidate 14 — Schedule Import preview:** Focused model/dialog/integration
+  checks and both Legacy/Next capture CTests passed. The artifact set has 72
+  PNGs across four locale/theme pairs; live tooltip and screen-reader behavior
+  remain open. See the [report](../../artifacts/phase10/p10-b1-c14-preview-access-conflict-windows-x64-20261126T065044/report.md).
+- **Candidate 15 — Teacher Profile:** The capture CTest and focused birthday
+  clear/save/reopen slot passed; four page images were readable. Native popup,
+  pointer, keyboard/IME, and accessibility behavior remain open. See the
+  [report](../../artifacts/phase10/p10-win-15-teacher-profile-followup-20261126/report.md).
+- **Candidate 16 — My Details and Signature:** The four-locale/theme capture
+  CTest and three focused signature slots passed; all 16 images were reviewed
+  and readable. Native picker, keyboard/IME, and screen-reader behavior remain
+  open. See the [report](../../artifacts/phase10/p10-win-16-my-details-signature-20261126/report.md).
+- **Candidate 17 — Staff Directory:** Independent review accepted the Windows
+  x64 offscreen evidence: the unit CTest passed 1/1, four registered capture
+  CTests passed, and four direct cases exited 0. All 16 PNGs were readable and
+  all 67 hashes verified. Eight page-relative manifests measure Legacy table
+  bottom Y=670 and Next Y=676 (+6 px), matching the historical direction; no
+  pixel-parity threshold was applied. Native DPI/window behavior, ARM64, and
+  macOS remain open. See the [review summary](../../artifacts/phase10/p10-win-37-staff-directory-20261126/review-summary.json)
+  and [hash inventory](../../artifacts/phase10/p10-win-37-staff-directory-20261126/SHA256SUMS.json).
+- **Candidate 18 — Upcoming Birthdays:** Independent review accepted the final
+  focused CTest run (7/7), 16 readable populated/empty captures, four manifests,
+  and 20 matching hashes. Legacy and Next PNGs are byte-identical per pair;
+  Inter/Pretendard Variable resolution and Hangul support are recorded. Native
+  display behavior, ARM64, and macOS remain open. See the [report](../../artifacts/phase10/p10-win-18-upcoming-birthdays-20261126T0852KST/report.md).
+
+Candidate 19's next-batch discovery is complete, and its Windows x64 visual
+follow-up is now in progress. The current harness
+(`tests/next/my_workspace_visual_capture.cpp`) covers the initial embedded
+Calendar view in all four locale/theme pairs but does not scroll to the lower
+Upcoming section. Requalification will capture upper and lower Legacy/Next
+views and record actual shell labels, including the reported Korean difference.
+The focused CTests are `ClassMngrNextMyWorkspaceVisualCapture`,
+`ClassMngrNextMyWorkspacePageTests`, and `ClassMngrNextCalendarPageTests`; no
+Candidate 19 result is available yet.
+Candidate 20's source mapping has also begun as read-only exploration; no
+Windows Candidate 20 implementation or verification has started.
+
+The beyond-20 scan found two further discovery targets, not confirmed defects:
+the historical Initial Setup Wizard package has 14 Legacy/Next stage pairs but
+omits English/dark and Korean/light ([README](../../docs/qt-rewrite/visual-baseline/next/phase-7/initial-setup-wizard/README.md));
+the historical Document Catalog package contains Next states without a Legacy
+pair ([README](../../docs/qt-rewrite/visual-baseline/next/phase-7/document-catalog-c42/README.md)).
+Document Viewer and Campus Directory already have historical four-pair
+Legacy/Next packages. Requalify all historical findings against current source.
+
+### 2026-11-26 — Windows x64 follow-up through Candidate 21; Candidate 22 started
+
+Phase 10 remains In Progress. Candidates 19–21 now have bounded, independently
+accepted Windows x64 evidence. Candidate 22 is the next entry point. These
+offscreen runs do not close Windows ARM64, macOS, or native-interaction gates.
+
+- **Candidate 19 — My Workspace Calendar:** The focused page and Calendar page
+  CTests passed in an earlier valid run; the capture CTest then failed because
+  the Legacy scrollbar range changed during layout. After bounded settling and
+  an 18 px heading alignment, the focused capture CTest passed 1/1. Independent
+  review accepted all 21 PNGs and 134 hashes. The lower Upcoming heading and an
+  event row are visible in all eight Legacy/Next locale/theme captures. Korean
+  Legacy shell labels remain English while Next uses Korean labels; actual
+  strings are recorded without a defect conclusion. See the
+  [report](../../artifacts/phase10/p10-win-c19-calendar-20261126/report.md).
+- **Candidate 20 — Classes states/localization:** Independent review accepted
+  all 24 PNGs, 12 manifest entries across four locale/theme pairs, 37 hashes,
+  and both focused CTests. The initial build failed in MSBuild FileTracker
+  with E_ACCESSDENIED when TEMP/TMP pointed to the user temp directory; the
+  artifact-local retry built both targets and passed both tests. The Next
+  read-error diagnostic continues below the 800×600 capture edge while the
+  localized status and Retry control remain visible. See the
+  [review notes](../../artifacts/phase10/p10-win-c20-classes-20261126/review-notes.md).
+- **Candidate 21 — Initial Setup Wizard locale/theme coverage:** Independent
+  review accepted 60 final PNGs (28 Legacy/Next stage pairs and four extra Next
+  personal-details captures), eight font records, 325 hashes, and five focused
+  capture CTests. Review found the first Legacy captures had missing glyphs
+  because the test bypassed production FontManager initialization. The
+  capture-only harness now links, loads, and applies bundled Inter/Pretendard
+  fonts per locale, asserts a resolved family and U+AC00 support, and restores
+  the QApplication font. The final Korean text renders; pre-fix tofu images
+  remain preserved as diagnostics, not accepted captures. See the
+  [visual review](../../artifacts/phase10/p10-win-c21-initial-setup-wizard-20261126/visual-review.md).
+- **Candidate 22 — Document Catalog paired visual review:** Current-source
+  Windows follow-up is underway. The Legacy `Sidebar` accepts the same typed
+  `DocumentCatalogProjection` used by Next; a sidebar-region pair is feasible.
+  The historical package contains Next shell captures without a Legacy pair.
+  Full-window Legacy parity is outside this mapped scope, and no result or
+  product-defect conclusion is available yet. See the
+  [historical package](../../docs/qt-rewrite/visual-baseline/next/phase-7/document-catalog-c42/README.md).
+
+### 2026-11-26 — Candidate 22 accepted; supplemental Windows follow-ups closed
+
+Candidate 22's current-source Windows x64 sidebar-region review was independently
+accepted. Two focused CTests passed. The artifact set contains 12 PNGs and 24
+verified hashes: four Next full-shell captures plus eight matched Legacy/Next
+sidebar-tree images, 254×630, across en_US/ko_KR and light/dark. The manifest
+records 7 folders and 30 documents, the same selected stable ID
+`document_guides_lesson_planning`, and no loaded PDF body; the capture target
+records zero `QPdfDocument` instances and zero document-body diagnostics.
+Korean labels and the selected row are visible in both trees. At the fixed
+254-pixel Next tree width, some long sibling labels elide, while the selected
+label remains readable. This is a sidebar-region comparison and makes no
+full-window Legacy parity claim. See the
+[review notes](../../artifacts/phase10/p10-win-c22-document-catalog-20261126/review-notes.md).
+
+With Candidate 22 accepted, the supplemental Windows x64 follow-ups for
+Candidates 19–22 are closed. Phase 10 remains In Progress: Candidate 11 is
+partial Linux evidence, and Windows ARM64, macOS, native-interaction, and
+cross-host requirements remain open.
+
+### 2026-11-26 — Candidate 11 Windows x64 installed-runtime follow-up started
+
+Candidate 11's existing Linux evidence remains partial; its Windows x64
+installed-runtime follow-up has started, and no runtime result is available
+yet. The bounded plan uses a separate Release build tree, an artifact-local
+install prefix, explicit components, and isolated settings. It excludes
+Program Files installs and the installer target. Candidates 19–22 remain
+independently accepted. Phase 10 stays In Progress with Windows ARM64, macOS,
+native-interaction, and cross-host requirements open.
+
+### 2026-11-26 — Candidate 11 Windows x64 limited pass; ARM64 cross-build started
+
+Independent review accepted the bounded Windows x64 Release staging result.
+The package manifest covered 406 paths; 338 package hashes and 192 direct
+resource hashes were verified, and the catalog matched its fixture.
+`ClassMngrNextResourceRootResolverTests` and
+`ClassMngrNextPlatformSettingsManagerWindowGeometryPortTests` passed, and the
+layout probe resolved the staged `resources` directory.
+An isolated 15-second offscreen startup recorded a flushed
+`application.exec.enter` event before the harness stopped that exact PID. The
+368-entry artifact inventory is at
+[report](../../artifacts/phase10/p10-win-c11-installed-runtime-20261126/report.md).
+
+This is not full installed-runtime acceptance: the geometry CTest covers only
+the settings adapter/key round trip; installed-app geometry across relaunches
+and visual font/translation rendering were not tested. No native GUI, installer,
+Program Files install, ARM64 runtime, or macOS was exercised. Candidate 11
+remains partial overall because Linux evidence is partial. Its separate Windows
+ARM64 Debug cross-build follow-up is now in progress; no build result is
+available yet. Phase 10 remains In Progress with cross-host and native gates
+open.
+
+### 2026-11-26 — Candidate 11 ARM64 cross-build accepted; supplemental checks started
+
+Independent review accepted Candidate 11's Windows ARM64 Debug cross-build as
+cross-build-only. The standard `build/windows-arm64-debug` tree configured and
+built `ClassMngrNext`, `ClassMngrNextResourceRootResolverTests`, and
+`ClassMngrNextPlatformSettingsManagerWindowGeometryPortTests`. The x64 `dumpbin`
+verifier confirmed all three executable headers as AA64/ARM64, and all 10
+artifact checksums matched. No ARM64 CTests, application launch, or install was
+performed. The qmake metadata probe was rejected by Windows before execution;
+this was a host/tool execution rejection, not a source or test failure. See the
+[cross-build report](../../artifacts/phase10/p10-win-arm64-crossbuild-20261126/report.md).
+
+Candidate 9's supplemental Windows-QPA presenter cancellation test is now in
+progress, with no result. Candidate 6's safe print-dialog feasibility map is
+also in progress, with no result. The user confirmed that no native ARM64 or
+macOS host is currently available. Candidate 11 remains partial overall, and
+Phase 10's runtime, native-interaction, macOS, and cross-host gates remain open.
+
+### 2026-11-26 — Candidate 9 Windows-QPA cancellation and Candidate 6 print feasibility
+
+The selected existing Candidate 9 presenter cancellation slot passed under
+`QT_QPA_PLATFORM=windows`: PID 6632 exited 0 in 307 ms, and the test asserted
+cancellation with no selected path and no preference write; all 46 artifact
+checksum entries were verified. Its focused build
+attempt failed in ZERO_CHECK with MSB4018/FileTracker access denied before
+compilation, so the pre-existing x64 Debug executable was used. This verifies
+in-process Escape cancellation for the Qt widget dialog only; it does not cover
+UI Automation, navigation, visual parity, or the Windows common-dialog backend.
+See the [supplemental report](../../artifacts/phase10/p10-win-qt-dialog-qpa-20261126/report.md).
+
+Read-only Candidate 6 mapping found that the existing cancellation slot returns
+`QDialog::Rejected` directly and never opens `QPrintDialog`. The product
+Windows “Use Windows Print Dialog” route enumerates/uses the system default
+printer before showing `QPrintDialog`. No dialog or printer was touched. Actual
+print dialogs, printers, jobs, and physical output remain unverified.
+
+Candidate 11 remains partial overall: its Windows x64 installed-runtime result
+is limited and its ARM64 result is cross-build-only. No native ARM64/macOS host
+is currently available; runtime, native-interaction, macOS, and cross-host
+Phase 10 gates remain open. Continue with remaining Windows-native interaction
+and cross-host requirements.

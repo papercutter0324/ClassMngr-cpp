@@ -1,6 +1,6 @@
 # Current Slice Batches
 
-## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; next: Candidate 6 Windows x64 follow-up)
+## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; next: remaining Windows-native interaction and cross-host gates)
 
 Batch goal: requalify migrated behavior, appearance, and outputs against the
 legacy product on supported platforms using current-source evidence. Record
@@ -16,9 +16,19 @@ Phase 10 remains In Progress and its cross-platform exit gate remains open.
 “Linux complete” below records this host's bounded evidence; it does not close
 the cross-platform Phase 10 requirement.
 
-Next entry point: Candidate 6 Windows x64 native printing follow-up.
-Candidates 6–10 and 12–14 have not had Windows x64 follow-ups; Candidate 11
-remains partial Linux evidence. Candidate 19 still triggers next-batch discovery.
+Supplemental Windows x64 follow-ups for Candidates 19–22 are closed. Candidate
+9's presenter cancellation slot passed under Windows QPA as a limited
+follow-up; its fresh build attempt failed before compilation, so the existing
+test executable was used. Candidate 6's safe print-dialog feasibility map is
+complete, but the actual dialog path was not exercised. Candidate 11's Windows
+x64 Release staging and ARM64 Debug cross-build remain limited results: no
+ARM64 CTests, app launch, or install occurred; the qmake metadata probe was
+rejected by Windows before execution. All Candidates 1–22 have bounded Windows
+x64 follow-up evidence. Continue with remaining Windows-native interaction and
+cross-host gates; none are claimed complete. No native ARM64 or macOS host is
+currently available, so ARM64/macOS runtime and native behavior remain open.
+Candidate 19's next-batch discovery produced Candidates 21–22; their
+current-source requalifications did not establish product defects.
 
 | Candidate | Status |
 | --- | --- |
@@ -27,21 +37,23 @@ remains partial Linux evidence. Candidate 19 still triggers next-batch discovery
 | 3. Speaking Evaluation redo | Focused Linux checks complete; Windows x64 offscreen check passed and was accepted; native interactive Windows behavior and other-host parity remain open. |
 | 4. Sub Prep page-break | Linux C53 pair passed at 12 pages each; Windows x64 accepted the user-selected grouping (Teachers 22–24 on page 11; Sub Notes page 12); ARM64/macOS remain open. The older historical reference is sourceBound=false. |
 | 5. Output matrix | Linux matrix and Windows x64 matrix complete; Windows x64 Schedule/Roster/Speaking passed 7/7, with Candidate 4 as the Sub Prep row; ARM64/macOS remain open. |
-| 6. Native printing | Linux dialog/PDF checks complete; desktop UI, physical printer, Windows/macOS/ARM64 remain open. |
-| 7. PowerPoint automation | Linux service/fallback checks complete; live Office/COM/PowerPoint hosts remain open. |
-| 8. Updater | Linux focused checks complete; Windows/macOS branches remain open. |
-| 9. Native file workflows | Linux fix and checks complete; native OS pickers and platform-specific paths remain open. |
-| 10. External launches | Linux normalized-path fix and checks complete; native OS handlers and other hosts remain open. |
-| 11. Installed runtime | Partial Linux evidence; a full installed Next application/runtime was not staged. Cross-platform remains open. |
-| 12. My Classes visuals | Linux disposition complete; empty-state/forced-overflow captures and Windows/macOS remain open. |
-| 13. Schedule display | Linux disposition complete; cross-platform rendering and interactive hosts remain open. |
-| 14. Schedule Import preview | Linux disposition complete; Windows/macOS and live tooltip/screen-reader behavior remain open. |
-| 15. Teacher Profile | Not started. |
-| 16. My Details and Signature | Not started. |
-| 17. Staff Directory | Not started. |
-| 18. Upcoming Birthdays | Not started. |
-| 19. My Workspace Calendar | Not started; beginning this candidate triggers next-batch discovery. |
-| 20. Classes states/localization | Not started. |
+| 6. Native printing | Linux dialog/PDF checks complete; Windows x64 headless viewer/print-route evidence accepted (2 capture CTests and focused print slots). Read-only feasibility mapping found the existing cancellation slot returns `QDialog::Rejected` without opening `QPrintDialog`; the product Windows route enumerates/uses the system default printer before showing it. No print dialog or printer was touched. Actual dialogs, printers, jobs, and physical output remain open. [Windows evidence](../../artifacts/phase10/p10-win-36-c6-headless-print-20261126/report.md) |
+| 7. PowerPoint automation | Linux service/fallback checks complete; Windows x64 safe service/fallback checks passed 2/2; live Office COM activation and PowerPoint rendering remain open. [Windows evidence](../../artifacts/phase10/p10-win-c7-windows-x64-debug/report.md) |
+| 8. Updater | Linux focused checks complete; Windows x64 updater tests passed 2/2 with fake/loopback services; native installer/folder actions remain open. [Windows evidence](../../artifacts/phase10/p10-win-22-updater-windows-x64-debug/report.md) |
+| 9. Native file workflows | Linux fix and checks complete; Windows x64 focused workflow tests passed 10/10. A supplemental existing presenter cancellation slot passed with `QT_QPA_PLATFORM=windows` (PID 6632, exit 0, 307 ms), asserting no selection and no preference write; the focused rebuild failed in ZERO_CHECK/FileTracker before compilation, so the pre-existing executable ran. No UIA, navigation, visual parity, or Windows common-dialog behavior was exercised. [Supplemental evidence](../../artifacts/phase10/p10-win-qt-dialog-qpa-20261126/report.md) |
+| 10. External launches | Linux normalized-path fix and checks complete; Windows x64 injected URL/folder-route checks passed, including a fake local-file opener follow-up; registered OS handlers and real browser/Explorer launches remain open. [Windows evidence](../../artifacts/phase10/p10-win-27-external-launch-windows-x64-debug/report.md) |
+| 11. Installed runtime | Windows x64 Release staging and Windows ARM64 Debug cross-build have limited independent acceptance; Linux evidence remains partial. ARM64 built `ClassMngrNext`, `ClassMngrNextResourceRootResolverTests`, and `ClassMngrNextPlatformSettingsManagerWindowGeometryPortTests`; `dumpbin` confirmed all three AA64/ARM64 and 10 artifact hashes matched. No ARM64 CTests, app launch, or install. The qmake metadata probe was rejected by Windows before execution. Installed geometry across relaunches and visual font/translation rendering remain untested. No native ARM64/macOS host is currently available. [x64 report](../../artifacts/phase10/p10-win-c11-installed-runtime-20261126/report.md), [ARM64 cross-build report](../../artifacts/phase10/p10-win-arm64-crossbuild-20261126/report.md) |
+| 12. My Classes visuals | Linux disposition and Windows x64 populated/empty/error captures accepted for supported states (3 focused capture CTests); forced grade-tab overflow remains open because the current grade contract collapses unknown labels to “Other.” [Windows state evidence](../../artifacts/phase10/p10-win-29-my-classes-state-followup-20261126/report.md) |
+| 13. Schedule display | Linux disposition complete; Windows x64 page/capture CTests passed 2/2 after a test-only font-metric precision correction; pixel parity is not claimed and one screenshot-order question remains inconclusive. ARM64/macOS and interactive behavior remain open. [Windows evidence](../../artifacts/phase10/p10-win-13-schedule-harness-fix-20261126T065642/report.md) |
+| 14. Schedule Import preview | Linux disposition complete; Windows x64 model/dialog/integration tests and Legacy/Next captures passed; live tooltip and screen-reader behavior, ARM64/macOS remain open. [Windows evidence](../../artifacts/phase10/p10-b1-c14-preview-access-conflict-windows-x64-20261126T065044/report.md) |
+| 15. Teacher Profile | Windows x64 capture and focused birthday-clear/save/reopen slot passed; native popup/pointer, keyboard/IME, accessibility, ARM64/macOS remain open. [Windows evidence](../../artifacts/phase10/p10-win-15-teacher-profile-followup-20261126/report.md) |
+| 16. My Details and Signature | Windows x64 four-locale/theme capture and three focused signature slots passed; native picker, keyboard/IME, screen-reader, ARM64/macOS remain open. [Windows evidence](../../artifacts/phase10/p10-win-16-my-details-signature-20261126/report.md) |
+| 17. Staff Directory | Windows x64 bounded evidence independently accepted: unit 1/1, four registered CTests, four direct cases, 16 readable PNGs/eight manifests, and 67 hashes verified; page-relative table bottom is Legacy 670/Next 676 (+6 px). Native DPI/window behavior, ARM64/macOS remain open. [Review summary](../../artifacts/phase10/p10-win-37-staff-directory-20261126/review-summary.json) |
+| 18. Upcoming Birthdays | Windows x64 bounded evidence independently accepted: focused CTests 7/7, 16 readable PNGs/four manifests, and 20 hashes verified; Legacy/Next images match byte-for-byte per locale/theme pair. Native display, ARM64/macOS remain open. [Windows report](../../artifacts/phase10/p10-win-18-upcoming-birthdays-20261126T0852KST/report.md) |
+| 19. My Workspace Calendar | Windows x64 evidence independently accepted: 21 PNGs and 134 hashes verified. Lower Upcoming heading and an event row are visible in all eight Legacy/Next locale/theme captures. Korean Legacy shell labels remain English while Next labels are translated; observed strings are recorded without a defect conclusion. Page/Calendar CTests passed in an earlier valid run; the capture CTest initially failed on scroll settling and passed 1/1 after the harness fix. [Report](../../artifacts/phase10/p10-win-c19-calendar-20261126/report.md) |
+| 20. Classes states/localization | Windows x64 evidence independently accepted: 24 PNGs, 12 manifest entries, four locale/theme pairs, and 37 hashes verified; both focused CTests passed. The first build hit MSBuild FileTracker E_ACCESSDENIED with user-temp paths; the artifact-local retry succeeded. Next read-error text is clipped at the 800×600 edge, while status and Retry remain visible. [Report](../../artifacts/phase10/p10-win-c20-classes-20261126/review-notes.md) |
+| 21. Initial Setup Wizard locale/theme capture coverage | Windows x64 evidence independently accepted: 60 final PNGs (28 Legacy/Next stage pairs plus four Next personal-details captures), eight font records, 325 hashes, and five focused CTests passed after harness fix/assertions. Legacy capture now loads/applies bundled FontManager fonts; final Korean glyphs are readable. Preserved pre-fix tofu captures are diagnostic only. [Review](../../artifacts/phase10/p10-win-c21-initial-setup-wizard-20261126/visual-review.md) |
+| 22. Document Catalog paired visual review | Windows x64 current-source sidebar-region evidence independently accepted: 12 PNGs and 24 hashes; eight matched 254×630 Legacy/Next tree images across four locale/theme pairs plus four Next full-shell captures. Two focused CTests passed. Manifest records 7 folders, 30 documents, the same selected stable ID, and no loaded PDF body. Korean labels and selection are visible; some long Next labels elide at the fixed width. Scope is sidebar-only, with no full-window Legacy parity claim. [Review notes](../../artifacts/phase10/p10-win-c22-document-catalog-20261126/review-notes.md) |
 
 ### Ordered candidates
 
@@ -61,18 +73,25 @@ remains partial Linux evidence. Candidate 19 still triggers next-batch discovery
 5. **Current-source output comparison matrix** — compare Schedule, Roster, Speaking
    reports, and Sub Prep C53 across platforms. Linux and Windows x64 evidence
    is complete; Windows ARM64/macOS remain open. Keep distinct from 4.
-6. **Native printer and print-preview parity** — compare the complete native
-   print and preview workflows across supported platforms.
+6. **Native printer and print-preview parity** — a safe feasibility map found
+   the existing cancellation slot does not open `QPrintDialog`; the product
+   Windows route uses the default printer before opening it. No dialog or
+   printer was touched; compare complete native workflows across platforms.
 7. **PowerPoint automation behavior** — verify automation availability and
    fallback behavior on supported hosts.
 8. **Updater runtime behavior** — verify installer/folder actions and
    platform-specific branches.
-9. **Native file workflows** — compare file dialogs, Save As, recent files,
-   and output-folder selection.
+9. **Native file workflows** — the existing presenter cancellation slot passed
+   under Windows QPA using the pre-existing executable after a pre-compilation
+   FileTracker build failure. Native picker behavior remains open.
 10. **External launch behavior** — compare external URL and folder launches
     across platforms.
-11. **Installed-runtime matrix** — verify resource paths, translations, font
-    loading, and window-state persistence from installed builds.
+11. **Installed-runtime matrix** — Windows x64 Release staging has a limited
+    pass; Linux evidence remains partial. The Windows ARM64 Debug cross-build
+    is accepted as cross-build-only; ARM64 runtime tests and installed-app
+    geometry across relaunches and visual font/translation rendering remain
+    unverified. Native GUI, installer, Program Files, and macOS remain outside
+    the accepted result.
 12. **My Classes visual disposition** — review documented layout and
     typography differences with fresh source-bound captures.
 13. **Schedule display visual disposition** — review display toolbar,
@@ -92,9 +111,12 @@ remains partial Linux evidence. Candidate 19 still triggers next-batch discovery
 20. **Classes state and localization disposition** — capture full-window
     empty, delete, read-error, modal-inline, and localization states.
 
-Begin next-batch discovery when starting candidate 19. Search remaining
-migrated product surfaces and any candidates beyond this 20-item limit at that
-time. Historical visual findings under
+Candidate 19's required next-batch discovery ran on 2026-11-26 and identified
+Candidates 21–22 above. The Initial Setup Wizard and Document Catalog are
+discovery targets, not verified defects. The Document Viewer and Campus
+Directory already have historical four-pair Legacy/Next capture packages;
+their cross-host evidence is still distinct from current-source requalification.
+Historical visual findings under
 docs/qt-rewrite/visual-baseline/next/phase-7/ and behavior/output evidence in
 the Phase 7, 7.5, 8, and 8a progress logs are references for discovery only;
 requalify against current source before calling a difference a defect.

@@ -32,6 +32,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFont>
+#include <QFontInfo>
+#include <QFontMetrics>
 #include <QImage>
 #include <QItemSelectionModel>
 #include <QLabel>
@@ -1153,7 +1156,8 @@ QJsonObject captureManifestEntry(
     const QString& legacyPath,
     const QString& nextPath,
     const ModalImage& legacyModal,
-    const ModalImage& nextModal
+    const ModalImage& nextModal,
+    const QJsonObject& activeApplicationFont
     )
 {
     const auto imageRecord = [&pairName, &fixture](
@@ -1197,8 +1201,23 @@ QJsonObject captureManifestEntry(
         {QStringLiteral("fixture"), fixtureRecord},
         {QStringLiteral("selectedClassId"),
             state == QStringLiteral("delete-confirmation") ? SelectedClassId : 0},
+        {QStringLiteral("activeApplicationFont"), activeApplicationFont},
         {QStringLiteral("legacy"), imageRecord(legacyPath, legacyModal)},
         {QStringLiteral("next"), imageRecord(nextPath, nextModal)}
+    };
+}
+
+QJsonObject activeApplicationFontMetadata(const QApplication& application)
+{
+    const QFont requestedFont = application.font();
+    const QFontInfo resolvedFont(requestedFont);
+    const QFontMetrics metrics(requestedFont);
+    return QJsonObject{
+        {QStringLiteral("requestedFamilies"),
+            QJsonArray::fromStringList(requestedFont.families())},
+        {QStringLiteral("resolvedFamily"), resolvedFont.family()},
+        {QStringLiteral("hangulSyllableU+AC00InActiveFont"),
+            metrics.inFont(QChar(0xAC00))}
     };
 }
 
@@ -1231,6 +1250,8 @@ int main(int argc, char* argv[])
 
     const QList<QPair<QString, QString>> matchedLocalesAndThemes{
         {QStringLiteral("en_US"), QStringLiteral("light")},
+        {QStringLiteral("en_US"), QStringLiteral("dark")},
+        {QStringLiteral("ko_KR"), QStringLiteral("light")},
         {QStringLiteral("ko_KR"), QStringLiteral("dark")}
     };
     const QStringList states{
@@ -1314,7 +1335,8 @@ int main(int argc, char* argv[])
                 return 1;
             }
             captures.append(captureManifestEntry(state, locale, theme, pairName,
-                fixture, legacyPath, nextPath, legacyModal, nextModal));
+                fixture, legacyPath, nextPath, legacyModal, nextModal,
+                activeApplicationFontMetadata(application)));
             qInfo().noquote() << "Captured" << state << locale << theme
                 << "Legacy/Next pair" << legacyHash << nextHash;
         }
@@ -1328,6 +1350,10 @@ int main(int argc, char* argv[])
             QStringLiteral("list-read-error")}},
         {QStringLiteral("localesAndThemes"), QJsonArray{
             QJsonObject{{QStringLiteral("locale"), QStringLiteral("en_US")},
+                {QStringLiteral("theme"), QStringLiteral("light")}},
+            QJsonObject{{QStringLiteral("locale"), QStringLiteral("en_US")},
+                {QStringLiteral("theme"), QStringLiteral("dark")}},
+            QJsonObject{{QStringLiteral("locale"), QStringLiteral("ko_KR")},
                 {QStringLiteral("theme"), QStringLiteral("light")}},
             QJsonObject{{QStringLiteral("locale"), QStringLiteral("ko_KR")},
                 {QStringLiteral("theme"), QStringLiteral("dark")}}}},
@@ -1356,6 +1382,6 @@ int main(int argc, char* argv[])
         qCritical().noquote() << "Could not write the capture manifest:" << manifestPath;
         return 1;
     }
-    qInfo().noquote() << "Wrote 12 full-window state images and manifest to" << outputRoot;
+    qInfo().noquote() << "Wrote 24 full-window state images and manifest to" << outputRoot;
     return 0;
 }

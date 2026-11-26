@@ -16,7 +16,10 @@
 #include <QDir>
 #include <QFile>
 #include <QFontDatabase>
+#include <QFontInfo>
+#include <QFontMetrics>
 #include <QFileInfo>
+#include <QHeaderView>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -30,6 +33,7 @@
 #include <QSqlError>
 #include <QSqlQuery>
 #include <QStyleFactory>
+#include <QScrollBar>
 #include <QTemporaryDir>
 #include <QTranslator>
 #include <QUuid>
@@ -88,6 +92,13 @@ struct SurfaceMetrics final
     bool sortingEnabled = false;
     bool repositoryOrderMatched = false;
     QStringList headers;
+    QRect tableBounds;
+    QRect viewportBounds;
+    int headerHeight = 0;
+    QJsonArray representativeRowHeights;
+    int tableBottomY = 0;
+    QJsonObject horizontalScrollbar;
+    QJsonObject verticalScrollbar;
 };
 
 struct CaptureMemorySnapshots final
@@ -287,6 +298,66 @@ bool validateSurface(
     return true;
 }
 
+QJsonObject rectangleJson(const QRect& bounds)
+{
+    return {
+        {QStringLiteral("x"), bounds.x()},
+        {QStringLiteral("y"), bounds.y()},
+        {QStringLiteral("width"), bounds.width()},
+        {QStringLiteral("height"), bounds.height()}
+    };
+}
+
+QJsonObject scrollbarJson(const QScrollBar* scrollbar)
+{
+    return {
+        {QStringLiteral("visible"), scrollbar && scrollbar->isVisible()},
+        {QStringLiteral("minimum"), scrollbar ? scrollbar->minimum() : 0},
+        {QStringLiteral("maximum"), scrollbar ? scrollbar->maximum() : 0},
+        {QStringLiteral("value"), scrollbar ? scrollbar->value() : 0},
+        {QStringLiteral("pageStep"), scrollbar ? scrollbar->pageStep() : 0}
+    };
+}
+
+bool captureGeometry(
+    QTableView* table,
+    QWidget* pageRoot,
+    SurfaceMetrics* metrics,
+    const QString& surfaceName,
+    QString* error
+    )
+{
+    if (!table || !pageRoot || !table->model()
+        || !table->horizontalHeader() || !metrics)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("%1 directory geometry is unavailable.")
+                .arg(surfaceName);
+        }
+        return false;
+    }
+
+    metrics->tableBounds = QRect(
+        table->mapTo(pageRoot, QPoint(0, 0)), table->size());
+    metrics->viewportBounds = table->viewport()->geometry();
+    metrics->headerHeight = table->horizontalHeader()->height();
+    metrics->tableBottomY = metrics->tableBounds.bottom();
+    metrics->horizontalScrollbar = scrollbarJson(table->horizontalScrollBar());
+    metrics->verticalScrollbar = scrollbarJson(table->verticalScrollBar());
+    for (const int row : {0, metrics->rows / 2, metrics->rows - 1})
+    {
+        if (row >= 0 && row < metrics->rows)
+        {
+            metrics->representativeRowHeights.append(QJsonObject{
+                {QStringLiteral("row"), row},
+                {QStringLiteral("height"), table->rowHeight(row)}
+            });
+        }
+    }
+    return true;
+}
+
 QJsonObject surfaceMetricsJson(const SurfaceMetrics& metrics)
 {
     QJsonObject result{
@@ -296,7 +367,14 @@ QJsonObject surfaceMetricsJson(const SurfaceMetrics& metrics)
         {QStringLiteral("sortingEnabled"), metrics.sortingEnabled},
         {QStringLiteral("repositoryOrderMatched"), metrics.repositoryOrderMatched},
         {QStringLiteral("tableItemCount"), metrics.tableItemCount},
-        {QStringLiteral("cellWidgetCount"), metrics.cellWidgetCount}
+        {QStringLiteral("cellWidgetCount"), metrics.cellWidgetCount},
+        {QStringLiteral("tableBounds"), rectangleJson(metrics.tableBounds)},
+        {QStringLiteral("viewportBounds"), rectangleJson(metrics.viewportBounds)},
+        {QStringLiteral("headerHeight"), metrics.headerHeight},
+        {QStringLiteral("representativeRowHeights"), metrics.representativeRowHeights},
+        {QStringLiteral("tableBottomY"), metrics.tableBottomY},
+        {QStringLiteral("horizontalScrollbar"), metrics.horizontalScrollbar},
+        {QStringLiteral("verticalScrollbar"), metrics.verticalScrollbar}
     };
     if (metrics.compactRecordCount >= 0)
     {
@@ -509,6 +587,11 @@ bool captureLegacy(
         page.resize(CaptureSize);
         page.show();
         QApplication::processEvents();
+        if (!captureGeometry(table, &page, metrics,
+                QStringLiteral("Legacy"), error))
+        {
+            return false;
+        }
         memory->rendered = memoryProvider.snapshot();
         const QImage image = page.grab().toImage();
         if (image.size() != CaptureSize || !image.save(output, "PNG"))
@@ -623,6 +706,11 @@ bool captureNext(
         {
             return false;
         }
+        if (!captureGeometry(page->tableView(), page, metrics,
+                QStringLiteral("Next"), error))
+        {
+            return false;
+        }
         metrics->compactRecordCount = static_cast<int>(
             page->directoryModel()->storedRecordCount());
         if (metrics->compactRecordCount != expectedRows(expected, kind))
@@ -714,6 +802,10 @@ int main(int argc, char* argv[])
     }
     QFont appFont(korean ? koreanFontFamily : englishFontFamily, 11);
     application.setFont(appFont);
+    const QString requestedAppFontFamily = appFont.family();
+    const QString resolvedAppFontFamily = QFontInfo(application.font()).family();
+    const bool hangulGlyphSupported = QFontMetrics(application.font())
+        .inFont(QChar(0xD55C));
     QFile stylesheet(QDir(resourceRoot).filePath(
         QStringLiteral("assets/styles/%1.qss").arg(theme)));
     if (!stylesheet.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -805,6 +897,12 @@ int main(int argc, char* argv[])
         {QStringLiteral("locale"), locale},
         {QStringLiteral("theme"), theme},
         {QStringLiteral("viewport"), QJsonArray{CaptureSize.width(), CaptureSize.height()}},
+        {QStringLiteral("geometryCoordinateSystem"), QStringLiteral(
+             "table bounds and tableBottomY are page-relative pixels; "
+             "viewport bounds are table-relative pixels; tableBottomY is inclusive")},
+        {QStringLiteral("requestedAppFontFamily"), requestedAppFontFamily},
+        {QStringLiteral("resolvedAppFontFamily"), resolvedAppFontFamily},
+        {QStringLiteral("hangulGlyphU+D55CSupported"), hangulGlyphSupported},
         {QStringLiteral("fixtureRows"), FixtureRows},
         {QStringLiteral("columns"), nextMetrics.columns},
         {QStringLiteral("sortingEnabled"), nextMetrics.sortingEnabled},

@@ -2,6 +2,7 @@
 #include "core/application_services.h"
 #include "core/fontmanager.h"
 #include "core/process_memory_snapshot.h"
+#include "data/database/database_session.h"
 #include "data/database/workspace_store.h"
 #include "features/my_info/ui/my_classes_page.h"
 #include "ui/shared/widgets/navigation_tab_widget.h"
@@ -29,9 +30,14 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QLocale>
+#include <QMessageBox>
 #include <QPointer>
 #include <QPalette>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QTranslator>
 #include <QListView>
 
@@ -245,25 +251,82 @@ QJsonObject memoryJson(const ProcessMemorySnapshot& snapshot)
     };
 }
 
-bool copyFixture(const QString& destination, QString* error)
+bool copyFixture(
+    const QString& source,
+    const QString& destination,
+    QString* error
+    )
 {
     QFile::remove(destination);
-    if (QFile::copy(QStringLiteral(CLASSMNGR_NEXT_MY_CLASSES_LARGE_FIXTURE),
-                    destination))
+    if (QFile::copy(source, destination))
     {
         return true;
     }
     if (error)
     {
-        *error = QStringLiteral("The tracked 96-class fixture could not be copied.");
+        *error = QStringLiteral("The My Classes fixture could not be copied: %1")
+            .arg(source);
     }
     return false;
+}
+
+bool createEmptyFixture(const QString& destination, QString* error)
+{
+    QFile::remove(destination);
+    ApplicationServices creator;
+    const RepositoryStatus opened = creator.openDatabase(destination);
+    if (!opened)
+    {
+        if (error)
+        {
+            *error = toLegacyDiagnostic(opened.error());
+        }
+        return false;
+    }
+    creator.closeDatabase();
+    if (!QFileInfo::exists(destination) || QFileInfo(destination).size() <= 0)
+    {
+        if (error)
+        {
+            *error = QStringLiteral("The empty My Classes workspace was not created.");
+        }
+        return false;
+    }
+    return true;
+}
+
+QJsonObject labelState(QWidget* root, QLabel* label)
+{
+    return label
+        ? QJsonObject{
+            {QStringLiteral("text"), label->text()},
+            {QStringLiteral("visible"), label->isVisible()},
+            {QStringLiteral("geometry"), QJsonObject{
+                {QStringLiteral("x"), label->mapTo(root, QPoint(0, 0)).x()},
+                {QStringLiteral("y"), label->mapTo(root, QPoint(0, 0)).y()},
+                {QStringLiteral("width"), label->width()},
+                {QStringLiteral("height"), label->height()}}}}
+        : QJsonObject{{QStringLiteral("found"), false}};
+}
+
+QLabel* findLabel(QWidget* root, const QString& text)
+{
+    for (QLabel* const label : root->findChildren<QLabel*>())
+    {
+        if (label->text() == text)
+        {
+            return label;
+        }
+    }
+    return nullptr;
 }
 
 bool captureLegacy(
     const QString& databasePath,
     const QString& outputPath,
     const QString& locale,
+    const bool injectClassListReadError,
+    const QString& dialogOutputPath,
     QJsonObject* state,
     QString* error
     )
@@ -294,6 +357,75 @@ bool captureLegacy(
     }
     QApplication::processEvents();
 
+    QJsonObject errorStatus;
+    QImage dialogImage;
+    if (injectClassListReadError)
+    {
+        if (!services.databaseSession())
+        {
+            if (error)
+            {
+                *error = QStringLiteral("The Legacy My Classes database is unavailable.");
+            }
+            return false;
+        }
+        QSqlDatabase database = services.databaseSession()->database();
+        QSqlQuery disableForeignKeys(database);
+        QSqlQuery dropClasses(database);
+        if (!disableForeignKeys.exec(QStringLiteral("PRAGMA foreign_keys=OFF"))
+            || !dropClasses.exec(QStringLiteral("DROP TABLE classes")))
+        {
+            if (error)
+            {
+                *error = disableForeignKeys.lastError().text().isEmpty()
+                    ? dropClasses.lastError().text()
+                    : disableForeignKeys.lastError().text();
+            }
+            return false;
+        }
+        QString dialogTitle;
+        QString dialogText;
+        QString dialogDetails;
+        bool dialogCaptured = false;
+        QTimer::singleShot(0, &page,
+            [&dialogImage, &dialogTitle, &dialogText, &dialogDetails,
+             &dialogCaptured, &dialogOutputPath]
+            {
+                auto* const warning = qobject_cast<QMessageBox*>(
+                    QApplication::activeModalWidget());
+                if (!warning)
+                {
+                    return;
+                }
+                dialogTitle = warning->windowTitle();
+                dialogText = warning->text();
+                dialogDetails = warning->detailedText();
+                dialogImage = warning->grab().toImage();
+                dialogCaptured = !dialogImage.isNull()
+                    && dialogImage.save(dialogOutputPath, "PNG");
+                warning->accept();
+            });
+        page.refresh();
+        if (!dialogCaptured)
+        {
+            if (error)
+            {
+                *error = QStringLiteral("The Legacy class-list error dialog was not captured.");
+            }
+            return false;
+        }
+        errorStatus = {
+            {QStringLiteral("kind"), QStringLiteral("modal warning")},
+            {QStringLiteral("title"), dialogTitle},
+            {QStringLiteral("text"), dialogText},
+            {QStringLiteral("details"), dialogDetails},
+            {QStringLiteral("dialogWidth"), dialogImage.width()},
+            {QStringLiteral("dialogHeight"), dialogImage.height()},
+            {QStringLiteral("image"), QFileInfo(dialogOutputPath).fileName()}
+        };
+        QApplication::processEvents();
+    }
+
     const ProcessMemorySnapshot active = memoryProvider.snapshot();
     const QImage image = page.grab().toImage();
     if (image.size() != Viewport || !image.save(outputPath, "PNG"))
@@ -308,17 +440,30 @@ bool captureLegacy(
         QStringLiteral("myInfoClassTabs"));
     const auto* const gradeTabs = page.findChild<NavigationTabWidget*>(
         QStringLiteral("myInfoGradeTabs"));
+    const QString emptyStateText = QCoreApplication::translate(
+        "MyClassesPage", "No classes available.");
+    QLabel* const emptyState = findLabel(&page, emptyStateText);
     const MyClassesPageRuntimeMetrics metrics = page.runtimeMetrics();
     const int classShells = classShellCount(&page);
     const int widgets = widgetCount(&page);
     page.releaseFeatureResources();
     QApplication::processEvents();
     const ProcessMemorySnapshot suspended = memoryProvider.snapshot();
+    services.closeDatabase();
+    const QString databaseSha256 = sha256File(databasePath, error);
+    if (databaseSha256.isEmpty())
+    {
+        return false;
+    }
     *state = {
         {QStringLiteral("page"), QStringLiteral("legacy")},
         {QStringLiteral("image"), QFileInfo(outputPath).fileName()},
+        {QStringLiteral("databaseSha256"), databaseSha256},
         {QStringLiteral("width"), image.width()},
         {QStringLiteral("height"), image.height()},
+        {QStringLiteral("summaryReadErrorInjected"), injectClassListReadError},
+        {QStringLiteral("errorStatus"), errorStatus},
+        {QStringLiteral("emptyStatus"), labelState(&page, emptyState)},
         {QStringLiteral("fontPreference"), QStringLiteral("Normal")},
         {QStringLiteral("applicationFont"), fontJson(QApplication::font())},
         {QStringLiteral("pageFont"), fontJson(page.font())},
@@ -343,6 +488,8 @@ bool captureNext(
     Application::PreferencesModel& preferences,
     const QString& locale,
     const QString& outputPath,
+    const bool injectSummaryReadError,
+    const bool expectEmptyState,
     QJsonObject* state,
     QString* error
     )
@@ -481,11 +628,19 @@ bool captureNext(
     Ui::PageDescriptor myClasses{
         .id = *Ui::PageId::fromString(QStringLiteral("my_classes")),
         .label = QStringLiteral("My Classes"),
-        .factory = [&store](const Ui::PageContext& context)
+        .factory = [&store, injectSummaryReadError](const Ui::PageContext& context)
             -> Ui::PageOperationResult<std::unique_ptr<Ui::Page>> {
             Ui::MyClassesPageActions actions;
             actions.workspaceIdentity = [] { return QStringLiteral("large-fixture"); };
-            actions.readSummaries = [&store] {
+            actions.readSummaries = [&store, injectSummaryReadError] {
+                if (injectSummaryReadError)
+                {
+                    return Application::MyClassesPageSummaryResult::failure({
+                        .code = Domain::ErrorCode::Technical,
+                        .message = "summary read failed",
+                        .recoverable = true
+                    });
+                }
                 Platform::WorkspaceStoreMyClassesPageReadPort port(store);
                 return Application::MyClassesPageReadQuery(port).readSummaries();
             };
@@ -535,6 +690,32 @@ bool captureNext(
         focused->clearFocus();
     }
     QApplication::processEvents();
+    QLabel* const loadState = page->findChild<QLabel*>(
+        QStringLiteral("myClassesLoadState"));
+    if (expectEmptyState)
+    {
+        const QString expected = QCoreApplication::translate(
+            "NextMyClassesPage", "No classes available.");
+        if (!loadState || !loadState->isVisible() || loadState->text() != expected)
+        {
+            if (error)
+            {
+                *error = QStringLiteral("The Next empty-workspace message is not visible.");
+            }
+            return false;
+        }
+    }
+    if (injectSummaryReadError
+        && (!loadState || !loadState->isVisible()
+            || loadState->text() != QStringLiteral("summary read failed")))
+    {
+        if (error)
+        {
+            *error = QStringLiteral("The Next summary-read error status is not visible.");
+        }
+        return false;
+    }
+    const QJsonObject loadStateAtCapture = labelState(page, loadState);
     const ProcessMemorySnapshot active = memoryProvider.snapshot();
     const QImage image = host.grab().toImage();
     if (image.size() != Viewport || !image.save(outputPath, "PNG"))
@@ -574,6 +755,8 @@ bool captureNext(
         {QStringLiteral("image"), QFileInfo(outputPath).fileName()},
         {QStringLiteral("width"), image.width()},
         {QStringLiteral("height"), image.height()},
+        {QStringLiteral("summaryReadErrorInjected"), injectSummaryReadError},
+        {QStringLiteral("loadState"), loadStateAtCapture},
         {QStringLiteral("fontPreference"), QStringLiteral("Normal")},
         {QStringLiteral("applicationFont"), fontJson(QApplication::font())},
         {QStringLiteral("pageFont"), fontJson(page->font())},
@@ -608,12 +791,36 @@ int main(int argc, char* argv[])
     QApplication::setStyle(QStringLiteral("Fusion"));
     FontManager::loadFonts();
     FontManager::setSizeOffset(0);
-    if (argc != 2)
+    QString scenario = QStringLiteral("populated");
+    QString outputDirectory;
+    if (argc == 2)
     {
-        qCritical("Usage: ClassMngrNextMyClassesVisualCapture OUTPUT_DIR");
+        outputDirectory = QString::fromLocal8Bit(argv[1]);
+    }
+    else if (argc == 3)
+    {
+        const QString option = QString::fromLocal8Bit(argv[1]);
+        if (option == QStringLiteral("--empty"))
+        {
+            scenario = QStringLiteral("empty");
+        }
+        else if (option == QStringLiteral("--summary-error"))
+        {
+            scenario = QStringLiteral("summary-error");
+        }
+        else
+        {
+            qCritical("Unknown My Classes visual capture scenario");
+            return 2;
+        }
+        outputDirectory = QString::fromLocal8Bit(argv[2]);
+    }
+    else
+    {
+        qCritical("Usage: ClassMngrNextMyClassesVisualCapture OUTPUT_DIR | "
+                  "--empty OUTPUT_DIR | --summary-error OUTPUT_DIR");
         return 2;
     }
-    const QString outputDirectory = QString::fromLocal8Bit(argv[1]);
     if (!QDir().mkpath(outputDirectory))
     {
         qCritical("Could not create capture output directory");
@@ -621,9 +828,34 @@ int main(int argc, char* argv[])
     }
 
     const QString resourceRoot = QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_ROOT);
-    const QString fixturePath = QStringLiteral(
+    const QString sourceFixturePath = QStringLiteral(
         CLASSMNGR_NEXT_MY_CLASSES_LARGE_FIXTURE);
     QString hashError;
+    const QString sourceFixtureSha256 = sha256File(sourceFixturePath, &hashError);
+    if (sourceFixtureSha256.isEmpty())
+    {
+        qCritical().noquote() << hashError;
+        return 1;
+    }
+    QString fixturePath = sourceFixturePath;
+    if (scenario == QStringLiteral("empty"))
+    {
+        const QString fixturesDirectory = QDir(outputDirectory)
+            .filePath(QStringLiteral("fixtures"));
+        if (!QDir().mkpath(fixturesDirectory))
+        {
+            qCritical("Could not create synthetic fixture directory");
+            return 1;
+        }
+        fixturePath = QDir(fixturesDirectory)
+            .filePath(QStringLiteral("empty-workspace.tps"));
+        QString fixtureError;
+        if (!createEmptyFixture(fixturePath, &fixtureError))
+        {
+            qCritical().noquote() << fixtureError;
+            return 1;
+        }
+    }
     const QString fixtureSha256 = sha256File(fixturePath, &hashError);
     if (fixtureSha256.isEmpty())
     {
@@ -723,29 +955,63 @@ int main(int argc, char* argv[])
             QString error;
             const QString legacyDb = temporary.filePath(QStringLiteral("legacy.tps"));
             const QString nextDb = temporary.filePath(QStringLiteral("next.tps"));
-            if (!copyFixture(legacyDb, &error) || !copyFixture(nextDb, &error))
+            if (!copyFixture(fixturePath, legacyDb, &error)
+                || !copyFixture(fixturePath, nextDb, &error))
             {
                 qCritical().noquote() << error;
                 return 1;
             }
             const QString key = locale + QLatin1Char('_') + theme;
+            const bool injectSummaryError =
+                scenario == QStringLiteral("summary-error");
+            const bool expectEmptyState = scenario == QStringLiteral("empty");
+            const QString imagePrefix = expectEmptyState
+                ? QStringLiteral("empty_")
+                : injectSummaryError ? QStringLiteral("summary_error_")
+                                     : QString{};
             QJsonObject legacyState;
             QJsonObject nextState;
             const QString legacyImage = QDir(outputDirectory).filePath(
-                QStringLiteral("legacy_%1.png").arg(key));
+                QStringLiteral("legacy_%1%2.png").arg(imagePrefix, key));
             const QString nextImage = QDir(outputDirectory).filePath(
-                QStringLiteral("next_%1.png").arg(key));
+                QStringLiteral("next_%1%2.png").arg(imagePrefix, key));
+            const QString legacyDialogImage = injectSummaryError
+                ? QDir(outputDirectory).filePath(
+                    QStringLiteral("legacy_summary_error_dialog_%1.png").arg(key))
+                : QString{};
             if (!captureLegacy(legacyDb, legacyImage, locale,
+                               injectSummaryError, legacyDialogImage,
                                &legacyState, &error))
             {
                 qCritical().noquote() << error;
                 return 1;
             }
             if (!captureNext(nextDb, loader, preferences.model, locale, nextImage,
+                             injectSummaryError, expectEmptyState,
                              &nextState, &error))
             {
                 qCritical().noquote() << error;
                 return 1;
+            }
+            if (injectSummaryError && locale == QStringLiteral("en_US")
+                && theme == QStringLiteral("light"))
+            {
+                const QString fixturesDirectory = QDir(outputDirectory)
+                    .filePath(QStringLiteral("fixtures"));
+                if (!QDir().mkpath(fixturesDirectory))
+                {
+                    qCritical("Could not create preserved fixture directory");
+                    return 1;
+                }
+                const QString preservedPath = QDir(fixturesDirectory)
+                    .filePath(QStringLiteral("summary-error-legacy.tps"));
+                if (!copyFixture(legacyDb, preservedPath, &error))
+                {
+                    qCritical().noquote() << error;
+                    return 1;
+                }
+                legacyState.insert(QStringLiteral("preservedFixtureFile"),
+                                   QFileInfo(preservedPath).canonicalFilePath());
             }
             captures.append(QJsonObject{
                 {QStringLiteral("locale"), locale},
@@ -763,15 +1029,20 @@ int main(int argc, char* argv[])
     const QJsonObject manifest{
         {QStringLiteral("purpose"), QStringLiteral(
             "Matched legacy and Next My Classes page captures")},
+        {QStringLiteral("scenario"), scenario},
         {QStringLiteral("viewport"), QJsonObject{
             {QStringLiteral("width"), Viewport.width()},
             {QStringLiteral("height"), Viewport.height()}}},
         {QStringLiteral("style"), QStringLiteral("Fusion")},
         {QStringLiteral("platform"), QStringLiteral("offscreen")},
-        {QStringLiteral("fixture"), QStringLiteral(
-            "tracked 96-class large-classes visual fixture")},
+        {QStringLiteral("fixture"), scenario == QStringLiteral("empty")
+            ? QStringLiteral("Synthetic schema-valid empty workspace")
+            : QStringLiteral("tracked 96-class large-classes visual fixture")},
         {QStringLiteral("fixtureFile"), QFileInfo(fixturePath).canonicalFilePath()},
         {QStringLiteral("fixtureSha256"), fixtureSha256},
+        {QStringLiteral("sourceFixtureFile"),
+         QFileInfo(sourceFixturePath).canonicalFilePath()},
+        {QStringLiteral("sourceFixtureSha256"), sourceFixtureSha256},
         {QStringLiteral("sourceRoot"), QFileInfo(sourceRoot).canonicalFilePath()},
         {QStringLiteral("sourceFiles"), sourceFiles},
         {QStringLiteral("fontPreference"), QStringLiteral("Normal")},

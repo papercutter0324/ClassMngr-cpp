@@ -307,9 +307,9 @@ QJsonObject plainTextEvidence(const QString& text, const QFont& font,
                               const QRect& cellRectInCapture,
                               const QRect& captureCropRect)
 {
-    const QFontMetrics metrics(font);
-    const QRect bounds = metrics.boundingRect(
-        QRect(0, 0, std::max(0, qRound(contentRect.width())), 10000),
+    const QFontMetricsF metrics(font);
+    const QRectF bounds = metrics.boundingRect(
+        QRectF(0.0, 0.0, std::max(0.0, contentRect.width()), 10000.0),
         Qt::AlignCenter | Qt::TextWordWrap, text);
     const bool cellFullyVisible = viewportRect.contains(cellRect);
     const bool cellFullyVisibleInCapture =
