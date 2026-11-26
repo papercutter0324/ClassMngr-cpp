@@ -734,3 +734,27 @@ and [visual observations](../../artifacts/phase10/p10-macos-c13-schedule-display
 
 This is bounded macOS capture and focused-page evidence, not a Candidate 13
 or Phase 10 acceptance conclusion.
+
+### 2026-11-26 — Candidate 14 macOS Schedule Import preview
+
+Independent Tester verified the current-source evidence at HEAD
+`07d78ccc43fb7750bdb78e2188b7d2e6fa9b72c3` and tree
+`8df141480d428490a44f45bd2ddf972eb11aa379`, including isolated inputs and all
+captured hashes. Two targets built; the conflict slot and both Legacy/Next
+capture slots passed offscreen. Captures contain 16 Legacy and 40 Next scenes
+across English/Korean and light/dark. Universal binaries ran on arm64 only.
+
+In the English/light Next small-review preview, the Meeting-times cell is
+553 px wide but only 48 px intersects the 254 px viewport; 40 px remains for
+text after padding. `DisplayRole`, `AccessibleTextRole`, and `ToolTipRole` hold
+the full meeting-time strings. This is a geometry/model-role measurement, not
+a fit assertion, parity result, defect finding, or acceptance conclusion.
+There is no native picker, real hover, VoiceOver traversal, or user path in
+this evidence. The two tracked large XLSX fixture hashes were omitted from
+`source-fixtures.sha256`; HEAD, tree, and clean status are recorded. Live
+tooltip/accessibility and native Cocoa behavior remain open. See the [report](../../artifacts/phase10/p10-macos-c14-schedule-import-20261126T105423Z-07d78ccc/report.md)
+and [preview measurements](../../artifacts/phase10/p10-macos-c14-schedule-import-20261126T105423Z-07d78ccc/preview-measurements.md).
+
+This remains bounded offscreen state/content evidence, not Candidate 14 or
+Phase 10 acceptance. x86_64 runtime and native accessibility behavior remain
+open.
