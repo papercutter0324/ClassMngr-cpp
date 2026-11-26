@@ -4,6 +4,23 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 - Candidate 30 Windows x64 Schedule discovery
+
+Read-only discovery at current HEAD `d11ed895a77aa652c4ac5618fb99d8de41fcb688`
+found an existing Windows x64 Schedule package from source HEAD
+`6208ebe92b87d04b1beaa436396e166db1c095a5`. Its focused page and capture
+CTest passed 2/2 and its manifest has 38 Regular/Intensive/Testing records.
+Current-source comparison found 27/28 tracked inputs identical; the only file
+hash difference is global `cmake/tests/next.cmake`. Both Schedule target blocks
+are unchanged and both current executables match their recorded hashes.
+
+The registered `ClassMngrNextScheduleWorkspaceStoreActionsTests` CTest has no
+current x64 executable; the existing package did not cover it. The next bounded
+slice will build that target and run its single CTest. `ctest -N` confirmed the
+registration without running it. No build, test, or capture ran during this
+discovery. Report and input inventory:
+`artifacts/phase10/p10-win-c30-schedule-discovery-20261126/`.
+
 ### 2026-11-26 - Candidate 29 Windows x64 Testing Classes requalification
 
 At source HEAD `1cb3fa3a8fc02c3c20934240ca1cb1066c994660`, the Visual Studio 18

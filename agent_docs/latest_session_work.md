@@ -87,6 +87,13 @@ or native Windows claim is made. See
 native/cross-host Phase 10 gates remain open; continue with read-only discovery
 for the next bounded Windows x64 slice.
 
+Candidate 30 discovery found existing Windows x64 Schedule page and capture
+evidence with 27/28 source inputs unchanged, matching page/capture binary
+hashes, and unchanged Schedule CMake target blocks. Its registered
+WorkspaceStore actions CTest has no built executable. The next slice is the
+focused Debug build and that single CTest; discovery evidence is in
+`artifacts/phase10/p10-win-c30-schedule-discovery-20261126/`.
+
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 
 Deployment ID: `qtphase10-macos-20261126`; route: Heavy. At that handoff, the
