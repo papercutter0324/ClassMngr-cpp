@@ -20,11 +20,16 @@ x64 work and record the remaining native and cross-host limits accurately.
 Candidate 2 is not accepted, and Phase 10's Windows ARM64, macOS, native
 interaction, and cross-host gates remain open. No push was requested.
 
-Candidate 25 is in progress. Its Windows x64 workflow CTest passed 1/1, but
-the first capture showed missing-glyph squares because the capture harness
-didn't register bundled fonts. The test-only correction now loads Inter for
-English and Pretendard for Korean; a fresh 24-image validation is readable.
-The current-source CTest/capture rerun remains next. Candidate 11's
+Candidate 25's bounded Windows x64 Class Transfer run is complete. The Debug
+build exited 0 for the workflow-test and capture targets; the focused Next
+workflow CTest passed 1/1 in 46.35 seconds. Final offscreen capture produced
+24 readable Legacy/Next PNGs across four locale/theme pairs and three states,
+with all ten source-input hashes matching. The first missing-glyph capture is
+preserved as diagnostic only; the test-only font registration correction is
+committed as ad46ba41. Evidence, logs, and captures are under
+`artifacts/phase10/p10-win-c25-class-transfer-20261126/`. This is observational
+evidence with no pixel-parity or native Windows UI claim. Continue with
+read-only discovery for the next safe Windows x64 slice. Candidate 11's
 installed-runtime geometry/font follow-up remains separate and open.
 
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)

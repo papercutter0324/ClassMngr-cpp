@@ -1,6 +1,6 @@
 # Current Slice Batches
 
-## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 24)
+## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 25)
 
 Batch goal: requalify migrated behavior, appearance, and outputs against the
 legacy product on supported platforms using current-source evidence. Record
@@ -38,6 +38,12 @@ Candidate 24's current-source Windows x64 offscreen Campus Directory and C46
 capture follow-up has been recorded. It adds scoped build, focused test, route
 capture, and visual-review evidence; native Windows UI and pixel-parity gates
 remain open. See the [Candidate 24 report](../../artifacts/phase10/p10-win-c24-campus-directory-20261126/execution-report.md).
+Candidate 25's current-source Windows x64 Class Transfer workflow and capture
+follow-up is recorded. The focused Next workflow CTest passed 1/1; the paired
+offscreen capture produced 24 readable images across four locale/theme pairs
+and three states. The first missing-glyph capture is diagnostic only; the
+test-only font harness correction and final rerun are documented. No pixel
+parity or native-window claim is made. See the [Candidate 25 report](../../artifacts/phase10/p10-win-c25-class-transfer-20261126/execution-report.md).
 Candidate 19's next-batch discovery produced Candidates 21–22; their
 current-source requalifications did not establish product defects.
 
@@ -72,6 +78,7 @@ Windows clipboard, physical focus, and UIA remain open. See the
 | 21. Initial Setup Wizard locale/theme capture coverage | Windows x64 evidence independently accepted: 60 final PNGs (28 Legacy/Next stage pairs plus four Next personal-details captures), eight font records, 325 hashes, and five focused CTests passed after harness fix/assertions. Legacy capture now loads/applies bundled FontManager fonts; final Korean glyphs are readable. Preserved pre-fix tofu captures are diagnostic only. [Review](../../artifacts/phase10/p10-win-c21-initial-setup-wizard-20261126/visual-review.md) |
 | 22. Document Catalog paired visual review | Windows x64 current-source sidebar-region evidence independently accepted: 12 PNGs and 24 hashes; eight matched 254×630 Legacy/Next tree images across four locale/theme pairs plus four Next full-shell captures. Two focused CTests passed. Manifest records 7 folders, 30 documents, the same selected stable ID, and no loaded PDF body. Korean labels and selection are visible; some long Next labels elide at the fixed width. Scope is sidebar-only, with no full-window Legacy parity claim. [Review notes](../../artifacts/phase10/p10-win-c22-document-catalog-20261126/review-notes.md) |
 | 24. Campus Directory and C46 Admin states | Current-source Windows x64 Debug build exited 0; focused Campus Directory CTest passed 1/1 and the capability-gated Admin navigation slot passed 3/3. Offscreen review decoded 40 paired C41 route captures and 12 C46 menu/authorized/read-only states across four locale/theme pairs. All nine source hashes match. Observations only: no pixel-parity or native-window claim. [Execution report](../../artifacts/phase10/p10-win-c24-campus-directory-20261126/execution-report.md) |
+| 25. Class Transfer workflow and captures | Current-source Windows x64 Debug build exited 0; focused Next workflow CTest passed 1/1 (46.35s). Final offscreen capture produced 24 readable Legacy/Next PNGs at 1024×768 across four locale/theme pairs and three states; ten source hashes match. Bundled-font registration was corrected in the capture harness, and the initial tofu run is preserved as diagnostic only. No pixel-parity or native-window claim. [Execution report](../../artifacts/phase10/p10-win-c25-class-transfer-20261126/execution-report.md) |
 
 ### Ordered candidates
 
@@ -139,7 +146,7 @@ docs/qt-rewrite/visual-baseline/next/phase-7/ and behavior/output evidence in
 the Phase 7, 7.5, 8, and 8a progress logs are references for discovery only;
 requalify against current source before calling a difference a defect.
 
-## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (Candidate 24 recorded; next: Candidate 25 Class Transfer)
+## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (Candidate 25 recorded; next: read-only discovery)
 
 Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
 
@@ -160,20 +167,22 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
   observational and makes no pixel-parity claim.
 
 - **Candidate 25 — Class Transfer.** Read-only discovery found no current-source
-  Windows x64 capture package. The existing target can capture 12 Legacy/Next
-  export-selection, import-review, and schedule-conflict pairs across four
-  locale/theme combinations into a caller-supplied output path. The proposed
-  bounded run will build the Next workflow tests and capture target, run only
-  the Next workflow CTest, then review 24 PNGs and their manifest. Its first
-  capture had missing-glyph squares because the harness did not register
-  packaged fonts. A test-only correction now loads Inter and Pretendard and
-  passed a fresh 24-image validation. Final current-source requalification is
-  pending. The broad Legacy aggregate has a historical failure of unknown
-  origin and is outside this slice. See the [discovery report](../../artifacts/phase10/p10-win-c25-class-transfer-discovery-20261126/discovery-report.md)
+  Windows x64 capture package, and the final bounded requalification is now
+  recorded. The Next workflow CTest passed 1/1; the offscreen capture produced
+  24 readable Legacy/Next images for export selection, import review, and
+  schedule-conflict feedback across four locale/theme pairs. A test-only
+  correction registers the packaged Inter and Pretendard fonts; the first
+  missing-glyph run is preserved as diagnostic only. The broad Legacy
+  aggregate has a historical failure of unknown origin and remains outside
+  this slice. No pixel-parity or native-window claim is made. See the
+  [execution report](../../artifacts/phase10/p10-win-c25-class-transfer-20261126/execution-report.md),
+  [discovery report](../../artifacts/phase10/p10-win-c25-class-transfer-discovery-20261126/discovery-report.md),
   and [font correction report](../../artifacts/phase10/p10-win-c25-class-transfer-20261126/font-harness-correction-report.md).
 
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
 separate. Native interaction, Windows ARM64, macOS, and cross-host Phase 10
-gates remain open. Candidate 25 is a proposed bounded follow-up.
+gates remain open. The next slice is read-only discovery of a further safe
+current-source Windows x64 follow-up; Candidate 11's installed geometry/font
+task remains separate.
 Read-only discovery evidence:
 [report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).

@@ -4,6 +4,26 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 25 Windows x64 Class Transfer requalification
+
+At source HEAD ad46ba419bc4b83c084ce6bdb83dcced2fabb66f, the Windows x64
+Debug build exited 0 for ClassMngrNextClassTransferWorkflowTests and
+ClassMngrNextClassTransferVisualCapture. The focused Next workflow CTest passed
+1/1 in 46.35 seconds. The direct offscreen capture exited 0 and produced the
+24 Legacy/Next images for export selection, import review, and conflict
+feedback across en_US/ko_KR and light/dark. All images decode at 1024x768; all
+ten source-input hashes match.
+
+The final captures use packaged Inter at 11 pt for English and Pretendard
+Variable at 11 pt for Korean. The initial missing-glyph run is preserved as a
+diagnostic and superseded by the test-only font-registration correction in
+ad46ba41. Review recorded readable labels, visible conflict feedback, clipped
+Legacy export rows at the fixed viewport, and an elided Next Matches value.
+These are observations only: no pixel-parity or native Windows UI claim is
+made. The broad Legacy aggregate and full repository suite were not run; no
+product source changed. Evidence is in
+artifacts/phase10/p10-win-c25-class-transfer-20261126/.
+
 ### 2026-11-26 — Candidate 25 Windows x64 capture font harness correction
 
 At source HEAD 0b4fd7c521d2bb93678970565c1cf3057dd132d1, the first Windows x64
