@@ -780,3 +780,31 @@ documentation changed during the evidence run. See the [macOS report](../../arti
 
 This is bounded macOS test/capture evidence, not a Candidate 15 or Phase 10
 acceptance conclusion.
+
+### 2026-11-26 — Candidate 16 macOS focused tests; capture matrix open
+
+At source HEAD `5c79c863319ec3f53ae8016da5ab6fc97d8ee3c1`, three focused
+signature slots passed on the universal macOS Debug executable under arm64:
+`typedAndImageSignaturesPersistAndCanBeRemoved`,
+`typedSignaturePreviewRendersTheSelectedTextAndFont`, and
+`signaturePreviewIsReleasedOnSuspendAndReloadedOnActivation`. The standalone
+capture target built, but two normal runs exited 139 after producing only the
+four en_US/light images; neither wrote a manifest. The requested 16-image
+matrix is incomplete. The fixed CTest output directory and hashes remained
+unchanged.
+
+Diagnostic crash reports localize the faulting caller to
+`QApplication::setStyleSheet` at line 641 during the transition to en_US/dark;
+they show arm64 `EXC_BAD_ACCESS` at `0x30`. The underlying cause is unknown
+(the relevant Qt framework frames lack symbols). An escalated LLDB attempt
+produced no backtrace and was stopped; no repair or source change was made, and
+the crash is not a product-defect conclusion. A Rosetta probe returned “Bad
+CPU type” before app launch, so no x86_64 runtime was obtained.
+
+Candidate 16 and the visual matrix remain open. See the [main report](../../artifacts/phase10/p10-macos-c16-my-details-signature-20261126T112448Z-5c79c863/report.md),
+[crash diagnostic](../../artifacts/phase10/p10-macos-c16-crash-diagnostic-20261126T114253Z-5c79c863/report.md),
+and [Rosetta probe](../../artifacts/phase10/p10-macos-c16-rosetta-20261126T115517Z-5c79c863/report.md).
+Their bundle manifest SHA-256 values are respectively
+`4a3dc6e2d900ff1174df267df229b64a4d1da17fac6a4eaf03e458f9cdb64a06`,
+`71579bf376628937bab50cca746962a17ed9750845166d41198ed92af21e9178`, and
+`48394b106b7714cc3e4c9afa896fd63a50f6581de4791fbca224212d9f5b0e67`.
