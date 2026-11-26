@@ -391,6 +391,26 @@ the selected package detached, and external URL/folder routes lack exact
 process identity for cleanup. Candidate 9's Windows product dialog policy
 uses Qt widgets; its forced Native test backend is not the normal Windows
 product route. No printer, Office app, installer, browser, or Explorer action
-was performed. The user has no native ARM64 or macOS host available. Phase 10
+was performed. At the time of this Windows follow-up, the user had no native
+ARM64 or macOS host available. Phase 10
 remains In Progress; this Windows follow-up is handed off paused, with the
 native-interaction and cross-host gates open.
+
+### 2026-11-26 — Candidate 1 macOS focused subset verified
+
+Independent verification accepted bounded macOS evidence for the exact
+selected 19 CTests: 19/19 passed in 22.74 seconds on macOS 27.2.1 arm64 using
+the standard universal `macos-clang-debug` preset (`arm64;x86_64`, Debug,
+`BUILD_TESTING=ON`). CTest ran with the offscreen Qt platform. The test
+executables and app were universal; x86_64 was compile-time verified only, and
+the runtime execution was arm64. Full Phase 7 was not run. Non-fatal linker
+warnings and CTest `QWARN` output remain.
+
+The first build attempt stopped at the generated-resource manifest guard
+because the existing generated tree was stale. Before retrying, the prior
+190-file tree was preserved and all its hashes verified; the retry rebuilt
+resources successfully and the selected tests passed. See the [macOS report](../../artifacts/phase10/p10-macos-c1-exact19-20261126T061233Z-6981b584/report.md).
+
+This gives Candidate 1 bounded macOS evidence, not Phase 10 acceptance. Phase
+10 remains In Progress and its cross-platform and native-interaction gates
+remain open.
