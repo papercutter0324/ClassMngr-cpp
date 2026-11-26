@@ -126,6 +126,17 @@ match; English and Korean labels are readable in the reviewed samples. See
 interaction claim is made. Candidate 11 and native/cross-host Phase 10 gates
 remain open; continue with read-only discovery for Candidate 33.
 
+Candidate 33 discovery is complete at source HEAD `8d3b1ea9`. The Phase 7
+Calendar events/preferences/month-grid package has 12 macOS-origin reference
+captures; Candidate 19's Windows Workspace Calendar evidence is a separate
+scope. Four focused CTest registrations were found, while the Legacy parity
+and Next WorkspaceStore executables are absent. The shared build capture
+directory already contains 59 files, so the execution slice will use a
+separate x64 Debug build directory and an artifact-local Legacy capture path.
+The baseline output hashes and discovery details are in
+`artifacts/phase10/p10-win-c33-calendar-discovery-20261126/`. Next is the
+bounded Candidate 33 Windows x64 build, test, and capture run.
+
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 
 Deployment ID: `qtphase10-macos-20261126`; route: Heavy. At that handoff, the

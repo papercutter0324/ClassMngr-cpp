@@ -4,6 +4,19 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 - Candidate 33 Windows x64 Calendar discovery
+
+Read-only discovery confirmed four relevant CTest registrations: the Legacy
+Calendar event-mutation parity suite, the Next startup dependency boundary,
+the Next Calendar page suite, and the Next Calendar WorkspaceStore actions
+suite. Only the Next page executable currently exists in the shared Debug
+build. The Phase 7 Candidate #33 package has 12 macOS-origin reference images;
+Candidate 19's Windows Workspace Calendar captures cover a separate page.
+The Next capture slot writes to a populated fixed build directory containing
+59 files, so execution will use an isolated x64 Debug binary directory. No
+tests or captures ran during discovery. See
+`artifacts/phase10/p10-win-c33-calendar-discovery-20261126/discovery-report.md`.
+
 ### 2026-11-26 - Candidate 32 Windows x64 Schedule output/printing discovery
 
 Read-only discovery found adjacent Windows x64 C51 PDF and output-adapter

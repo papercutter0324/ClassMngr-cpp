@@ -36,6 +36,13 @@ reused from Candidate 29. All 19 direct source hashes match. See the
 [execution report](../../artifacts/phase10/p10-win-c32-schedule-output-20261126/execution-report.md)
 and [visual review](../../artifacts/phase10/p10-win-c32-schedule-output-20261126/visual-review.md).
 
+Candidate 33 Calendar discovery found four focused test registrations and the
+12-image macOS-origin Phase 7 reference package. The current shared build
+capture directory contains 59 files, so execution will use an isolated x64
+Debug binary directory to preserve it. Candidate 19's Windows Workspace
+Calendar captures are a separate scope. See the
+[discovery report](../../artifacts/phase10/p10-win-c33-calendar-discovery-20261126/discovery-report.md).
+
 ## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 32)
 
 Batch goal: requalify migrated behavior, appearance, and outputs against the
@@ -266,7 +273,7 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
 separate. Candidate 26's current-source Windows x64 requalification is
 recorded in the [execution report](../../artifacts/phase10/p10-win-c26-classes-analytics-20261126/execution-report.md).
-The next slice is read-only discovery for Candidate 33 Calendar. Native
-interaction, Windows ARM64, macOS, and cross-host Phase 10 gates remain open.
-Read-only discovery evidence:
-[report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).
+Candidate 33's next slice is bounded Windows x64 execution in an isolated
+build directory. Native interaction, Windows ARM64, macOS, and cross-host
+Phase 10 gates remain open. See its
+[discovery report](../../artifacts/phase10/p10-win-c33-calendar-discovery-20261126/discovery-report.md).
