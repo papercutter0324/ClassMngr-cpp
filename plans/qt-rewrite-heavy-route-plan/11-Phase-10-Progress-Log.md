@@ -482,7 +482,8 @@ printer, dialog, job, or physical output was used.
   finalizer. The selected-page PDFKit match does not establish full text-layer
   or copy fidelity. Legacy audits include mapped tabs (903 Sub Prep, 1,640
   roster), so they are not strict non-control passes; this bundle has no
-  strict Next Sub Prep audit. Keep broader text/copy review with Candidate 5.
+  strict Next Sub Prep audit. Candidate 5 did not close this text/copy gap; a
+  source-aware text-layer follow-up remains needed before Phase 10 exit.
 
 This is bounded macOS evidence, not full Candidate 5 output-matrix closure or
 Phase 10 acceptance. Windows ARM64, x86_64 runtime, physical output, and the
@@ -523,3 +524,38 @@ full text matrix; see the [Candidate 4 review](../../artifacts/phase10/p10-macos
 This scoped macOS evidence is accepted; the full output matrix, Windows ARM64,
 x86_64 runtime, and Phase 10 cross-host gates remain open. See the [macOS
 report](../../artifacts/phase10/p10-macos-c5-output-matrix-20261126T075719Z-75fd7d20/report.md).
+
+### 2026-11-26 — Candidate 6 macOS safe print-route checks
+
+Independent verification accepted three bounded individual offscreen slots on
+the standard `macos-clang-debug` tree at source HEAD
+`eaf3b1415e27fdd578a232b9ab4d4c27cc8757b0`. The incremental build regenerated
+resources but had no C++ compile or link steps. The executable is universal
+(`arm64;x86_64`); runtime was arm64 only. The full registered CTest target was
+inventoried but not run.
+
+- `batchPrintValidatesBeforeDialogAndReleasesOnCancellation`
+- `selectedDocumentPrintUsesInjectedBorrowedOperation`
+- `zoomEntryButtonsAndFitModesUpdateThePdfView`
+
+Each selected slot passed with zero failures, errors, or skips. The first
+checks invalid-input rejection before the injected dialog hook and release
+before cancellation; the second uses a recording fake print operation; the
+third checks PDF-view zoom, fit, navigation, close, and reopen offscreen.
+
+This does not verify the native print panel. The cancellation route constructs
+`QPrinter::NativeFormat` and `QPrintDialog`, but the injected hook returns
+`Rejected` without calling `exec()`. No explicit printer enumeration, panel
+display, selection, or job submission was triggered; lower-level Qt
+printer-service initialization or queries are not ruled out. Native dialog
+geometry persistence after return, including cancel, printer selection,
+system preview, real jobs, and physical output remain unverified. A prior
+Cocoa window attempt stopped before window creation because no screen was
+available; this run did not retry it. The preliminary `-help` probe without
+offscreen QPA logged PasteBoard errors, while the three test processes used
+offscreen QPA and had clean console output. No source, test, or documentation
+changes were made.
+
+Candidate 6 and Phase 10 remain open. See the [corrected macOS report](../../artifacts/phase10/p10-macos-c6-safe-print-route-20261126T081814Z-eaf3b141/report.md);
+the bundle manifest SHA-256 is
+`2835f16729ad93085dc1c225dfc61495310a5588e9d4ab42065b0b756d0932d4`.
