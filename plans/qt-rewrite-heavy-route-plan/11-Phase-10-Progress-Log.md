@@ -451,3 +451,39 @@ changed. See the [macOS report](../../artifacts/phase10/p10-macos-c3-speaking-re
 This is bounded offscreen evidence, not native parity or Phase 10 acceptance.
 Phase 10 remains In Progress with cross-platform and native-interaction gates
 open.
+
+### 2026-11-26 — Candidate 4 macOS C53 current-source review
+
+Subsequent independent review and source analysis accepted the macOS result
+for the user-selected page grouping, visible 17-page parity, and SQL-backed
+roster content at source HEAD
+`9dcba15b414ad4ee22d8fc09678f04f0c6c68f1b`. The standard
+`macos-clang-debug` tree was reused; all four built executables were universal
+(`arm64;x86_64`), but runtime was arm64 only. No code or tests changed; no
+printer, dialog, job, or physical output was used.
+
+- **Tests and visible output:** `ClassMngrSubPrepPrintPdfTests` passed 25/25
+  QtTest slots; the C53 startup capture passed 3/3. All 12 Sub Prep and 5
+  roster Legacy/Next pages matched at 150 DPI with zero changed pixels.
+  Page 11 keeps Teachers 22–24 and their class/teacher notes together; page 12
+  starts Sub Notes. PDFKit text for those selected pages matches. This
+  supports the selected grouping and visible 17-page result.
+- **Roster data:** The SQL oracle reports 750 student names, 30 class headers,
+  and 0 bullets. The Next roster strict used-code audit passes with no
+  unmapped codes or control-code uses; generation left the prepared database
+  unchanged.
+- **Text-layer limits:** The checked-in runner sets
+  `pdfToPdfTextComparison=false`; it does not assert full PDF text equality.
+  Raw roster extraction differs: Legacy emits PUA punctuation while Next emits
+  ASCII. A supplemental three-codepoint mapping outside the runner makes those
+  full extracts match. Source analysis attributes the punctuation map to the
+  Legacy roster finalizer, corrected by Next; the Sub Prep page 11 opening `(`
+  remains U+E081 in both because the Next sheet path does not use that
+  finalizer. The selected-page PDFKit match does not establish full text-layer
+  or copy fidelity. Legacy audits include mapped tabs (903 Sub Prep, 1,640
+  roster), so they are not strict non-control passes; this bundle has no
+  strict Next Sub Prep audit. Keep broader text/copy review with Candidate 5.
+
+This is bounded macOS evidence, not full Candidate 5 output-matrix closure or
+Phase 10 acceptance. Windows ARM64, x86_64 runtime, physical output, and the
+broader cross-platform gates remain open. See the [macOS C53 report](../../artifacts/phase10/p10-macos-c4-c53-20261126T073111Z-9dcba15b/report.md).
