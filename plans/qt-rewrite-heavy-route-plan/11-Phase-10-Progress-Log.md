@@ -4,6 +4,27 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 26 Windows x64 Classes Analytics requalification
+
+At source HEAD 121852f289bd9c1db2c0ebd189cfdd535a0d5939, the Windows x64
+Debug build exited 0 for ClassMngrNextClassesNavigatorPageTests and
+ClassMngrNextClassesAnalyticsVisualCapture. The focused page CTest passed 1/1
+in 9.26 seconds, and both selected Analytics QtTest cases exited 0. The final
+offscreen paired capture exited 0 and produced 16 readable Legacy/Next images
+at 1024x768 across four locale/theme pairs, each covering All and Winter for
+selected class 1. All 16 source-input hashes match.
+
+English and Korean labels are readable; no missing-glyph squares were seen.
+The Legacy and Next shells differ, some Korean Legacy controls remain in
+English, and the fixed viewport crops lower content. These are descriptive
+observations only, with no pixel-parity or defect conclusion. The initial
+FileTracker build attempt and default-QPA capture attempt are preserved as
+environment diagnostics; the build retry passed with artifact-local temp,
+and CTest/capture passed with isolated temp/profile paths and the registered
+offscreen settings. No product or test source changed. Logs,
+manifests, captures, review, and verification are in
+artifacts/phase10/p10-win-c26-classes-analytics-20261126/.
+
 ### 2026-11-26 — Candidate 26 Windows x64 Classes Analytics discovery
 
 Read-only discovery at source HEAD 53e5fb9f89f38ea3bb7be7ea41c650a454d60d87
