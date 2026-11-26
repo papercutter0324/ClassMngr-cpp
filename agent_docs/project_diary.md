@@ -1,5 +1,26 @@
 # Project Diary
 
+### Phase 10 macOS Batch 1 paused after Candidate 20 — 2026-11-26
+
+The user directed the macOS sequence to stop after Candidate 20, with one
+local documentation commit per candidate and no push. Phase 10 remains open;
+Candidate 21 and later work waits for the user to resume. Current candidate
+status and artifact links are in the Batch 1 tracker and Phase 10 progress log.
+
+Offscreen Qt evidence on this host does not establish AppKit behavior. The
+Cocoa platform could not create a window because no screen was available, and
+Rosetta was unavailable. Preserve that limit rather than treating it as a
+product defect. Use fresh capture output paths: several registered capture
+tests write fixed paths, and the Candidate 20 harness temporarily stages
+translation catalogs in the build tree, which were restored and hash-checked.
+
+Candidate 11 produced a verified staged app but no DMG (`hdiutil` returned
+“Device not configured”); the packaged Cocoa-only app could not use the missing
+offscreen plugin. Candidate 16's two arm64 crashes are localized to the
+English/dark `QApplication::setStyleSheet` call, but no Qt stack or underlying
+cause was obtained. Keep both gates open. Other visual clipping/localization
+differences remain observations pending product disposition.
+
 ### Phase 10 Windows x64 follow-up through Candidate 22 — 2026-11-26
 
 Candidates 19–21 now have independently accepted Windows x64 evidence.

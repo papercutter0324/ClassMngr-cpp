@@ -1,6 +1,43 @@
 # Latest Session Work
 
-## Paused handoff — Phase 10 Batch 1 Windows parity follow-ups — 2026-11-26
+## Paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26
+
+Deployment ID: `qtphase10-macos-20261126`; route: Heavy. The user directed the
+macOS tasks for Phase 10, requested a local commit after each candidate, then
+instructed us to commit Candidate 20 and stop. This deployment is paused after
+Candidate 20. Phase 10 remains In Progress; do not continue with Candidate 21
+until the user resumes. No push was requested or performed.
+
+Candidate 20 is committed as `fdb31d2f` (`Phase10 - Record macOS Candidate 20
+classes evidence`). The Candidate 8–20 macOS record commits are local and
+contain only the Phase 10 progress log and current slice-batch tracker. The
+checkout was clean after Candidate 20's commit; closure Git inspection records
+the final branch state. Detailed evidence and per-candidate reports are linked
+from `plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md` and
+`11-Phase-10-Progress-Log.md`.
+
+Key open macOS results:
+
+- Candidate 11's fresh universal Release app passed staged-package verification
+  for 919 paths, while DMG creation failed with `hdiutil: Device not configured`.
+  The offscreen launch aborted before startup because the bundle contains only
+  the Cocoa platform plugin. No system install, Finder launch, or app runtime
+  was accepted.
+- Candidate 16's three focused signature slots passed, but the 16-image capture
+  matrix is incomplete. Two arm64 runs crashed during the English/dark
+  `QApplication::setStyleSheet` switch. Crash reports identify the caller, not
+  the underlying cause. LLDB yielded no backtrace; Rosetta is unavailable.
+- Candidates 12–15 and 17–20 have bounded reviewed evidence. Clipping and
+  localization differences in captures remain observations without product
+  disposition. Native Cocoa, live accessibility/input, x86_64 runtime, Windows
+  ARM64, and full cross-platform Phase 10 gates remain open.
+
+Next resume point: Candidate 21 Initial Setup Wizard captures, then Candidate
+22 Document Catalog, followed by disposition of all open visual/output/native
+and cross-host gates. Phase 9 remains incomplete and deferred to Phase 14 after
+Phase 13.
+
+## Previous handoff — Phase 10 Batch 1 Windows parity follow-ups — 2026-11-26
 
 Deployment ID: `phase10-windows-followups-20261126`. The user set a ten-minute
 cutoff and directed a handoff, commit, push, and stop. This follow-up is paused;

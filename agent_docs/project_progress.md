@@ -1,345 +1,37 @@
 # Project Progress
 
-## Current position — Phase 10 Batch 1 Windows native follow-up handoff — 2026-11-26
+## Current position — Phase 10 Batch 1 macOS follow-up paused after Candidate 20 — 2026-11-26
 
-Phase 10 remains In Progress on the Heavy route; this Windows follow-up is
-handed off paused at the user's ten-minute limit. Candidate 2's isolated
-Windows-QPA Exit/geometry slot passed independent review, with `qwindowsd.dll`
-loaded. It does not establish UIA, shell-HWND identity, clipboard behavior, or
-native interaction closure. See
-`artifacts/phase10/p10-win-c2-shell-exit-native-20261126/execution-report.md`.
+Deployment `qtphase10-macos-20261126` is paused at the user's direction after
+Candidate 20. Phase 10 remains In Progress and its cross-platform exit gate is
+open. Candidate 20's documentation commit is `fdb31d2f`; no push was performed.
+The candidate tracker and Phase 10 progress log remain the canonical detailed
+status and evidence index.
 
-Candidate 11's staged Windows x64 Release package remains a limited pass, and
-its ARM64 result remains cross-build-only. Three isolated interactive attempts
-did not complete the app-level geometry and visual checks: one used an overly
-strict unprefixed UIA identity, one confirmed the root and moved the window but
-could not activate the foreground, and the final retry stopped on a PowerShell
-`$PID` parameter collision before window interaction. No geometry persistence
-or Korean screenshot claim is made. Reports are under
-`artifacts/phase10/p10-win-c11-installed-runtime-20261126/interactive-followup-20261126/`,
-`interactive-followup-retry1-20261126/`, and
-`interactive-followup-retry2-20261126/`.
+macOS candidates 1–20 have bounded, independently reviewed evidence recorded,
+with one local documentation commit per candidate. The work in this continuation
+made no product-source changes. Most visual captures used offscreen Qt on the
+Apple Silicon arm64 host; universal binaries do not establish x86_64 runtime.
+Native Cocoa interaction remains unverified because the host has no available
+screen, and Rosetta is unavailable.
 
-Read-only Windows feasibility maps found no safe real OS action for the open
-Candidate 6 printer, Candidate 7 Office COM, Candidate 8 installer, or
-Candidate 10 browser/Explorer paths under current isolation. Candidate 9's
-Windows product policy selects Qt widgets; its forced Native backend is not
-the normal Windows product route. Candidate 2 clipboard interaction also
-remains open because its test overwrites the shared clipboard. Native ARM64
-and macOS are unavailable. The [Batch 1 tracker](../plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md)
-and [Phase 10 progress log](../plans/qt-rewrite-heavy-route-plan/11-Phase-10-Progress-Log.md)
-contain the detailed boundaries. Phase 10 is not complete.
+Two material macOS gates remain open. Candidate 11's current-source staged
+universal app passed package verification, but DMG creation failed in `hdiutil`
+with “Device not configured”; the packaged app could not start with offscreen
+QPA because the bundle contains only Cocoa. Candidate 16's signature capture
+matrix still crashes during the English/dark stylesheet switch; crash reports
+map the caller to `QApplication::setStyleSheet` but do not establish the cause.
 
-- Candidate 19 Calendar evidence is at
-  `artifacts/phase10/p10-win-c19-calendar-20261126/`. The capture CTest passed
-  after scroll-settling and heading-alignment fixes; the page and Calendar page
-  CTests passed in the earlier valid run. Korean Legacy shell labels remain
-  English while Next labels are Korean; lower Upcoming content is visible.
-- Candidate 20 Classes evidence is at
-  `artifacts/phase10/p10-win-c20-classes-20261126/`. Both focused CTests passed
-  and all four locale/theme pairs are covered. The Next read-error diagnostic
-  text clips at the bottom of its 800×600 capture, while status and Retry stay
-  visible.
-- Candidate 21 Initial Setup Wizard evidence is at
-  `artifacts/phase10/p10-win-c21-initial-setup-wizard-20261126/`. The Legacy
-  capture target now loads/applies the production bundled fonts and asserts
-  resolved-family and Hangul support in capture mode. All five focused CTests
-  passed; all 60 final images are readable. The pre-fix tofu captures are
-  retained as diagnostics only.
-- Candidate 22 Document Catalog evidence is at
-  `artifacts/phase10/p10-win-c22-document-catalog-20261126/`. Both focused
-  CTests passed; all 12 images and 24 hashes were accepted. Four 254×630
-  Legacy/Next sidebar pairs use the same selected document and record 7 folders,
-  30 documents, resolved fonts, and no loaded PDF body. The narrow Next tree
-  elides some long labels; this is sidebar-region evidence, not full-window
-  Legacy parity.
+Other capture observations requiring disposition remain in the Phase 10 log,
+including clipped labels/controls in Candidates 12–14 and 20 and the differing
+Candidate 19 Korean Legacy/Next shell labels. They are recorded as bounded
+observations, not product decisions. Windows ARM64 runtime, remaining native
+interactions, and the cross-platform exit requirements also remain open.
 
-The shared Windows x64 Debug tree and Candidate 11 Release tree are released.
-The standard Windows ARM64 Debug cross-build also passed independent review:
-the Next app and two focused test executables are AA64/ARM64, while CTests,
-installation, app launch, and runtime behavior were not run on this x64 host.
-Candidate 11 is still partial overall: its installed geometry test covers the
-settings adapter round trip, not geometry persistence across app relaunches,
-and the offscreen startup trace does not verify visual font or translation
-rendering. Candidate 9's selected cancellation slot passed under Windows QPA
-using the existing Debug executable after a fresh target build failed at
-ZERO_CHECK with FileTracker access denied. It uses an in-process Escape event;
-UI Automation, navigation, visual parity, and the Windows common-dialog backend
-remain unverified. Candidate 6's safe test map found the existing cancellation
-slot bypasses QPrintDialog; the real Windows route enumerates system printers,
-and no print dialog or printer was touched. Native ARM64 runtime, macOS, other
-native interactions, and remaining cross-host checks remain open. Phase 10 is
-not complete. Candidate 4's requested checkpoint is commit `6208ebe9`. The
-user authorized a batch commit and push for the current Phase 10 follow-ups;
-that publication does not close Phase 10.
+On resume, continue with Candidate 21, then Candidate 22, and resolve the
+remaining Phase 10 gates. Phase 9 remains In Progress and incomplete; the user
+deferred its remaining gates to Phase 14 after Phase 13.
 
-The focused Windows x64 Release precheck passed independently reviewed
-Bootstrap, PageHost, Classes Navigator Page, and Classes visual-capture CTests.
-It authorizes Phase 10 to start only; it is not Phase 9 final evidence. The
-transition commit `95c2d4abf3ab03ff69e6871a7b10b6a93c0efd87` is pushed and the remote Qt-Rewrite tip matches.
-
-Phase 9 remains In Progress and incomplete. By user direction, all remaining
-Phase 9 work is deferred to Phase 14 after Phase 13: P9-17 plateau cleanup,
-P9-18 cold cleanup, P9-19 plateau cleanup and validator propagation, P9-20
-conditional import apply, P9-21 PrivateUsage trend, full Windows x64 Debug
-CTest, and final packaged Release exit gates. Preserve Maps page retention and
-all original thresholds and cleanup formulas. Deferral is not acceptance.
-
-Phase 10 Batch 1 order is in
-`plans/qt-rewrite-heavy-route-plan/Current-Slice-Batches.md`. Continue with the
-remaining Windows native-interaction and cross-host gates listed there.
-
-### Latest P9-18 targeted-UIA route -- 2026-11-24
-
-Exact-source VS2022/x64/v143 Release attempt #7 is recorded at
-artifacts/phase9/packaged-next-p9-18-campus-map/20261124T122412350Z-d59e56771be74f66ad00b21cbaad38e5/.
-The independently reviewed route passed fixture, exact source/package,
-UIA/lifecycle/image/screenshot, normal-exit/read-only-data, and plateau cleanup
-checks. All 280 settled Working Set samples stayed below the 268,435,456 B
-target; maximum was 224,354,304 B. Operation peak was 234,217,472 B. Cold
-cleanup failed by 10,809,344 B. The targeted UIA artifacts retain the visible
-page title and Maps image/card controls; the validator cross-checks their
-identity and visibility. This does not identify a memory owner.
-
-The full-descendant observer route showed per-confirmation Working Set steps
-and failed plateau cleanup; the targeted observer route passed plateau cleanup
-but still failed cold cleanup. The changes suggest that observation breadth
-can affect repeated-window measurements, while the remaining cold uplift is
-associated with first Maps activation. The decoded Bundang image payload totals
-9,867,100 B; the first-use residual is similar in scale, but no Qt resource,
-pixmap, allocator, or application owner is established.
-
-### P9-17 deferred route and Windows build-folder cleanup
-
-P9-17 remains Deferred and unaccepted: the current v143 large-roster route
-passed cold cleanup and the strict Working Set target but failed plateau
-cleanup. Its diagnostic PrivateUsage growth does not name a live allocation
-owner. Phase 14 will attribute and revalidate this gate.
-
-The user-requested emptying of C:\Git\ClassMngr-cpp\build remains incomplete.
-The path-guarded cleanup script hash
-B49DDAE27B956D584DA417EEB75D42E1E160342C5B4922068316038EE87EC4F1 was
-retried after the latest build; preflight denied access to
-build\p9-17-save-stage-diagnostic-release\generated\ClassMngrNext\Resources
-before deletion. No entries were removed; 17 top-level entries remain, and the
-tool exposed no UAC approval prompt. This requires a session with an actual
-administrator token.
-
-A subsequent opt-in Map-stage diagnostic build was stopped after the user
-deferred attribution to Phase 14. Its source/test/parser changes were removed;
-no stage route ran. The separate Campus Directory test target failed with
-exit 1 and no output in both CTest and direct verbose invocation. Its receipt
-is stale and is not acceptance evidence. See the Phase 9 progress log and Phase
-14 current note for the preserved artifact path and exact failure record.
-
-### P9-19 preimplementation route contract
-
-P9-07 already covered My Classes; P9-19 covers Classes only. The fresh fixture
-uses tests/fixtures/workspaces/large_startup.sql (96 classes, 768 schedules),
-verified by the existing P9-16 preparer. The agreed route is one warm-up, five
-no-action My Workspace baselines, then ten measured Classes-entry / deterministic
-96-class selection / My Workspace-return cycles. Keep process-bound UIA and
-complete app lifecycle records, exact source/package binding, before/after
-SQLite snapshots, integrity and read-only checks, natural exit, and temp/sidecar
-cleanup.
-
-At settled windows, use the unchanged <268,435,456 B target, inclusive
-471,859,200 B ceiling, separate 536,870,912 B operation advisory, two-second
-settle, ten 100 ms samples, and existing cold/plateau formulas. Continuous
-operation sampling remains 50 ms. Compact app-side checkpoints must verify one
-SelectedClassEditor, fewer than 250 non-roster widgets, zero per-class class_id
-child widgets, and no editor-count growth through the full sweep. The P9-19
-contract and ordered follow-up candidates are in Current-Slice-Batches.md.
-
-### Superseded P9-17 outcome and next step -- 2026-11-23
-
-The latest normal 10-cycle Release route is
-`artifacts/p9a/r20261122T192719Z/20261122T192720300Z-55cda0046ba144b189be428145c79ecf/manifest.json`.
-Its exact-source receipt records 2,422 files and source SHA-256
-`f72d3ba6fee1ecf823953592954df0d2625256118d7070f89f092a8d8061f458`; executable
-SHA-256 is `fcbea7749a037153fa2e0e241b311bcc152eabacb7e8208e7fdb439dda76e390`.
-The route completed naturally with UI/database checks and sidecar/temp cleanup
-passing. Of 460 Working Set samples, 380 missed the strict 256 MiB target; the
-maximum was 380,026,880 B under the inclusive 450 MiB ceiling. The operation
-peak was 380,030,976 B under 512 MiB. Cold cleanup failed by 23,412,736 B.
-Independent raw-sample plateau calculation gives center 273,403,904 B,
-envelope 270,336 B, upper bound 273,674,240 B; all ten returns exceed it and
-the fitted cycle trend is 62,506,151.6 B. P9-17 remains open.
-
-The prepared-INSERT reuse did not demonstrate cleanup benefit. The opt-in
-save-stage diagnostic at
-`artifacts/phase9/p9-17-save-stage-diagnostic-retry/20261122T205732627Z-b5a5828f258942ee808f2db9bae18bda/`
-ran four five-cycle arms. Each arm passed its own event/heap/readback checks;
-the top-level full/reduced comparison remains failed because action signatures
-differ (50 vs 48; the full mode includes two class-list scroll actions). The
-VS2026/v145 + Qt 6.12 diagnostic is not acceptance evidence. Independent
-analysis found full-mode per-save PrivateUsage medians of +1.754 MiB at
-snapshot, +1.027 MiB in preparation, +1.555 MiB in legacy conversion, and
-+0.762 MiB in repository save. Process growth also occurs during roster open,
-edit, and return; these measurements identify no allocation owner or leak.
-
-Row-wise snapshot-to-repository streaming is implemented in
-`RosterRepository::WindowSaveRowSource`. Focused current-source checks passed
-5/5 CTest targets, the renamed Qt save test, the 58-test P9-17 Python suite,
-and PowerShell 5.1 parsing. The matching Release receipt is VS18/v145 and
-supplemental only. VS2022 Build Tools 17.14.37906.3 is now verified with v143
-14.44.35207, x64 compiler 19.44.35230, and SDK 10.0.26100. The current
-2,422-file inventory before receipt-contract edits has SHA
-`fb4391a04bcbf6ac2f18c453ac6eb6a5f764e43a14131d07597d46e4224405fa`. Two
-v145 route attempts stopped before roster
-cycles at `Open Teacher Profile`; neither gives memory-gate results. The
-harness now preserves raw hit-test evidence before the existing fail-closed
-guards; focused checks passed 55/55, and an independent Tester confirmed the
-PID, visibility, containment, stability, and click guards remain. A live
-failure screenshot is not yet verified. A new audit found the builder, runner,
-and validator receipt chain did not bind the generator/toolset. The v3 chain
-now requires VS17 2022/v143. The exact-source build succeeded and its receipt,
-inventory, compiler, SDK, and executable were independently accepted. The
-chronology validator passed 63 tests and an independent review. Fresh v143
-route `20261123T162707040Z-d2a0dfa31bf44023ac03b55baa8845f5` completed ten
-cycles, but remains unaccepted. Route/readback and natural-exit checks passed;
-the validator stopped at the final close action because its record omitted
-`completedAtUtc` despite containing `closeReturnedAtUtc` and successful
-process-exit evidence. Independent raw-sample review confirms cold cleanup
-fails by 22,798,336 B and plateau cleanup fails, with cycles 2–10 above the
-169,791,488 B allowance and a 142,282,528.6 B fitted rise. Settled max was
-309,858,304 B (below 450 MiB); 100/460 samples missed the strict 256 MiB
-target; operation peak was 310,480,896 B (below the 512 MiB advisory limit).
-The timestamp/schema and route-local helper inventory are being corrected;
-the artifact remains immutable. A fresh exact-source build and route are
-required after the source fix. Cleanup gates and memory limits remain unchanged.
-
-Keep the <268,435,456 B target, inclusive 471,859,200 B ceiling, separate
-536,870,912 B operation budget, and cold/plateau cleanup gates unchanged. P9-17
-remains open pending the current route. P9-18 remains queued; its proposed
-contract is one warm-up, five matched baseline windows, and ten measured
-Bundang campus-map open/suspend cycles with process-bound UIA, image, and
-screenshot evidence. Start it after P9-17 closes; push Batch 3 after P9-18
-closes. Preserve `p9-09-integration-output.txt`, `$testLog`, and PID 35864.
-
-### Superseded P9-17 result before prepared-INSERT reuse -- 2026-11-23
-
-The current exact-source Release build used 2,422 files, tree SHA-256
-`494774b15999c3930437822f644996cb677c1a128fdb4d76a5bd586bd10e0450`, and
-executable SHA-256 `c740d87cc456b3e176d168a753c1625518e44a40230777ae8c4db3ea40650ebf`.
-The guarded build and route ran as SID ending `-1001`, Medium integrity,
-non-admin, Session 1, with all 192 resources readable.
-
-The fresh ten-cycle 100x156 Release route completed naturally and its SQLite
-integrity, foreign-key, and three edited-cell snapshot checks passed. Across 460
-Working Set samples, the inclusive 450 MiB ceiling passed with a maximum of
-382,664,704 B; the 512 MiB operation peak passed at 388,730,880 B. The strict
-256 MiB target was missed in 370 samples across 37 windows. Cold cleanup failed:
-baseline median/range was 242,814,976/0 B and the first return was 265,875,456 B,
-23,060,480 B above its unchanged empirical allowance. The validator stopped at
-that failure. Recomputing the unchanged plateau formula from raw samples gives a
-271,589,376 B center, 270,336 B envelope, and 271,859,712 B upper bound; all ten
-cycle returns exceed it, with an 87,881,541.8 B fitted change. P9-17 therefore
-remains open; neither cleanup gate passes.
-
-The successful counterbalanced default-process-heap diagnostic is
-`artifacts/p9h/20261122T180803249Z-af39be17f4094fb7ac18a6084bbb394a/comparison-manifest.json`.
-All comparison checks passed for four arms with the same source, executable,
-package, fixture, actions, readbacks, and checkpoint order. Full UIA observation
-added about 16 MiB by measured cycle 5 in both run orders; reduced observation
-still grew about 41 MiB. Deleting the roster widget returned about 4.2 MiB to
-the default process heap each cycle, but the heap summaries do not identify an
-allocation owner or measure Working Set.
-
-P9-17's PowerShell 5.1 runner now uses ordinal `IndexOf` instead of the
-unsupported two-argument `String.Contains` overload. The P9-17 Python suite
-passed 57/57, the runner/build/shared helpers parsed in PowerShell 5.1, and the
-positive/negative `IndexOf` checks passed. Two earlier diagnostic attempts are
-preserved: a deep output path hit classic MAX_PATH before app launch, then the
-shallow-root run exposed the `Contains` compatibility bug. The fixed shallow-
-root diagnostic succeeded. A RunAs WPR preflight was canceled before elevation;
-no WPR trace, IFEO entry, or registry change was made.
-
-The next bounded production candidate reuses the `roster_data` INSERT statement
-in `RosterRepository::writeRoster` instead of preparing it for every non-empty
-cell. This is a memory-churn hypothesis, not an assumed fix. P9-17 source and
-docs remain uncommitted until the acceptance slice closes; P9-18 is queued and
-Batch 3 push waits until P9-18 closes. Preserve untracked
-`p9-09-integration-output.txt` and unrelated PID 35864.
-
-### Historical measurements through 2026-11-22
-
-The active normal-use Windows Working Set target is below 268,435,456 bytes
-(256 MiB). Values through 471,859,200 bytes (450 MiB) inclusive are accepted
-target misses; values above the ceiling fail. Operation peaks remain separate.
-Cold and post-primer cleanup gates remain unchanged. Historical runs retain the
-threshold in force when they were measured.
-
-Phase 9 remains in progress. Batches 1 and 2 are closed; Batch 3 covers P9-17
-and P9-18. P9-16 repeated workspace open/close passed independent review with
-10 measured cycles and a maximum settled Working Set of 235,921,408 bytes.
-Its Private Bytes trend remains unresolved and does not establish a leak.
-
-P9-17 remains open. The latest complete normal full-observer route reached
-435,896,320 bytes settled Working Set under the prior 350 MiB ceiling; its
-operation peak was 435,953,664 bytes. Under the current 450 MiB policy these
-values are below the ceiling by sample reclassification only. The run missed
-the 256 MiB target in 370/460 samples, failed cold cleanup by 22,261,760 bytes,
-and all ten cycle returns exceeded the post-primer envelope. It does not pass
-P9-17.
-
-The latest exact-source Release build is recorded in
-`artifacts/phase9/p9-17-exact-release-builds/20261122T093754300Z-0ef971a592ad454880c49d9d431eb32/`
-(2,422 files; tree SHA-256
-`005121d59d6d4e8796a590475a43839cf806591b66596f7cfe3fce709059b816`). The
-helper verified an active-console standard identity at Medium integrity,
-non-admin, in interactive Session 1. The default CodexSandboxOffline token
-could not enumerate generated Release Resources, while the active-console
-identity could; no Windows elevation or ACL change was used.
-
-The earlier five-cycle full/reduced UIA comparison is diagnostic-only. It
-recorded 13.439–15.305 MiB more fitted Private Bytes growth in full-observer
-arms, while reduced arms still grew 52.1–52.6 MiB; Working Set attribution was
-order-dependent. A newer client-GC comparison used the same full observer and
-route actions with and without forced collection in the PowerShell client.
-The app’s cycle-1-to-5 return growth stayed effectively unchanged across arms:
-64.273–64.824 MiB Working Set and 65.777–66.559 MiB Private Bytes. Client GC
-released an estimated 39.75–57.02 MiB of client-managed memory per boundary but
-did not measurably improve app memory. Each arm remained below the 450 MiB
-ceiling, missed the 256 MiB target in 220–230/310 samples, and failed cold
-return by 22.04–22.36 MiB. The diagnostic did not evaluate plateau acceptance;
-the earlier full/reduced arms failed repeated-return cleanup. App exits were
-natural and no sidecars or isolated temp files remained. Independent review
-passed 54 focused preparer/validator tests and verified artifact identities and
-sample counts.
-
-The fixture’s raw roster/header text is 0.717 MiB per copy; three simultaneous
-raw representations are about 2.15 MiB. The current-source default-process-
-heap diagnostic is recorded in `artifacts/p9/20261122T123519219Z-a2f5358d58e04aa6a1b56eecc6483803/`.
-Four diagnostic arms recorded 40 app heap checkpoints each; cycles 1–5
-`cbAllocated` rose about 41.5 MiB with the reduced observer and 54.7–54.9 MiB
-with the full observer. These are default-heap totals without allocation-owner
-or stack data, and the release event was sampled inside the widget destructor,
-before its owner finished deletion. A new opt-in checkpoint fires after
-`delete editor` returns; the ordered runner and QPointer test are added. The
-target now includes the required SelectedClassEditor implementations. The
-current-source Debug build and focused CTest passed 2/2 under the expected
-standard SID at Medium integrity in Session 1; the independent Tester audited
-the build/CTest logs and the QPointer assertions. The complete P9-17 Python
-suite passes 56/56 and PowerShell 5.1 parser checks pass. A new exact-source
-Release build and matched after-delete diagnostic route are in progress. These
-checks do not establish memory acceptance or an allocation owner. P9-17 still
-needs a normal ten-cycle route that passes cold and plateau cleanup.
-
-The user reports that this high memory use is Windows-specific and that Linux
-and macOS use less RAM. No matched numeric cross-platform route is available;
-private-memory fields differ by platform, so this is a hypothesis lead rather
-than verified attribution. Windows UIA/accessibility or platform caches remain
-possible contributors, while the raw roster text and one-time startup fonts do
-not explain repeated growth by themselves.
-
-The user-requested memory-policy commit `c3409dfe` was pushed to
-`origin/Qt-Rewrite`. P9-18 Campus Maps remains queued until P9-17 is accepted;
-then close Batch 3 and push that batch. Preserve untracked
-`p9-09-integration-output.txt` and do not stage it. Batch 4 discovery found no
-additional slices beyond P9-19 Classes navigation/editor lifecycle, conditional
-P9-20 larger Schedule Import apply, and P9-21 Private Bytes follow-up. The final
-packaged Release exit gate remains open.
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 
 Deployment `phase8_gate_close_20261117` completed on Heavy; Light was used for
