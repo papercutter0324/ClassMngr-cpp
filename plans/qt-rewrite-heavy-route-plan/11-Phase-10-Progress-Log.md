@@ -4,6 +4,29 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 25 Windows x64 capture font harness correction
+
+At source HEAD 0b4fd7c521d2bb93678970565c1cf3057dd132d1, the first Windows x64
+offscreen Class Transfer capture target exited 0 and wrote 24 PNGs, but every
+English and Korean label rendered as missing-glyph squares. The capture
+harness had not registered the packaged fonts. This is a capture-environment
+result, not a product defect; those images are preserved as diagnostics.
+
+The test-only harness now registers packaged Inter-Regular and
+PretendardVariable, selects the corresponding 11 pt application font by
+locale, and records font family and size in each manifest locale/theme entry.
+The capture target rebuilt successfully and a fresh validation capture exited
+0. All 24 images decoded at 1024x768; visual review of English/light and
+Korean/dark Legacy/Next export, review, and conflict states found readable
+text. The workflow CTest passed 1/1 earlier in this run, before the capture-
+only correction; its target/source was unchanged. The font-validation result
+and superseded images are retained in
+artifacts/phase10/p10-win-c25-class-transfer-20261126/.
+
+This correction changes no product source and makes no pixel-parity claim.
+Candidate 25 still needs a final current-source Windows x64 requalification
+after the harness source is committed.
+
 ### 2026-11-26 — Candidate 25 Windows x64 next-slice discovery
 
 Read-only discovery at source HEAD 2ad30f2cbf0aaf06d3ea325f3dd4da0489fa67c5

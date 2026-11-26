@@ -164,9 +164,13 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
   export-selection, import-review, and schedule-conflict pairs across four
   locale/theme combinations into a caller-supplied output path. The proposed
   bounded run will build the Next workflow tests and capture target, run only
-  the Next workflow CTest, then review 24 PNGs and their manifest. The broad
-  Legacy aggregate has a historical failure of unknown origin and is outside
-  this slice. See the [discovery report](../../artifacts/phase10/p10-win-c25-class-transfer-discovery-20261126/discovery-report.md).
+  the Next workflow CTest, then review 24 PNGs and their manifest. Its first
+  capture had missing-glyph squares because the harness did not register
+  packaged fonts. A test-only correction now loads Inter and Pretendard and
+  passed a fresh 24-image validation. Final current-source requalification is
+  pending. The broad Legacy aggregate has a historical failure of unknown
+  origin and is outside this slice. See the [discovery report](../../artifacts/phase10/p10-win-c25-class-transfer-discovery-20261126/discovery-report.md)
+  and [font correction report](../../artifacts/phase10/p10-win-c25-class-transfer-20261126/font-harness-correction-report.md).
 
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
 separate. Native interaction, Windows ARM64, macOS, and cross-host Phase 10

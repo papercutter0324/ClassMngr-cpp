@@ -23,6 +23,8 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFont>
+#include <QFontDatabase>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -750,8 +752,34 @@ int main(int argc, char* argv[])
 
     QJsonArray pairs;
     PlatformProcessMemorySnapshotProvider memory;
+    const QString resourceRoot = QString::fromUtf8(
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT);
+    QString englishFontFamily;
+    QString koreanFontFamily;
+    for (const auto& font : {
+             std::pair{QStringLiteral("Inter-Regular.ttf"), &englishFontFamily},
+             std::pair{QStringLiteral("PretendardVariable.ttf"), &koreanFontFamily}
+         })
+    {
+        const QString path = QDir(resourceRoot).filePath(
+            QStringLiteral("assets/fonts/") + font.first);
+        const int id = QFontDatabase::addApplicationFont(path);
+        const QStringList families = id < 0
+            ? QStringList{}
+            : QFontDatabase::applicationFontFamilies(id);
+        if (families.empty())
+        {
+            qCritical().noquote() << "Could not load capture font:" << path;
+            return 1;
+        }
+        *font.second = families.front();
+    }
+
     for (const QString& locale : {QStringLiteral("en_US"), QStringLiteral("ko_KR")})
     {
+        const QString& fontFamily = locale == QStringLiteral("ko_KR")
+            ? koreanFontFamily : englishFontFamily;
+        application.setFont(QFont(fontFamily, 11));
         for (const QString& theme : {QStringLiteral("light"), QStringLiteral("dark")})
         {
             application.setPalette(themePalette(theme));
@@ -779,6 +807,8 @@ int main(int argc, char* argv[])
                     qPrintable(error));
                 return 1;
             }
+            pair.insert(QStringLiteral("captureFontFamily"), application.font().family());
+            pair.insert(QStringLiteral("captureFontPointSize"), application.font().pointSizeF());
             pairs.append(pair);
         }
     }

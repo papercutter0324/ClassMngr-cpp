@@ -20,13 +20,12 @@ x64 work and record the remaining native and cross-host limits accurately.
 Candidate 2 is not accepted, and Phase 10's Windows ARM64, macOS, native
 interaction, and cross-host gates remain open. No push was requested.
 
-Next entry point: proposed Candidate 25, current-source Windows x64 Class
-Transfer workflow and paired captures. Discovery found no current-source
-Windows artifact; its two CTests are registered, and the capture target accepts
-a fresh output directory. Candidate 6 already provides current-source-
-equivalent Windows x64 Document Viewer state captures, so do not duplicate
-Candidate 23. Candidate 11's installed-runtime geometry/font follow-up
-remains separate and open.
+Candidate 25 is in progress. Its Windows x64 workflow CTest passed 1/1, but
+the first capture showed missing-glyph squares because the capture harness
+didn't register bundled fonts. The test-only correction now loads Inter for
+English and Pretendard for Korean; a fresh 24-image validation is readable.
+The current-source CTest/capture rerun remains next. Candidate 11's
+installed-runtime geometry/font follow-up remains separate and open.
 
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 
