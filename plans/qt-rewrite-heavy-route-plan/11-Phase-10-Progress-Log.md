@@ -4,6 +4,28 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 27 Windows x64 Classes Notes discovery
+
+Read-only discovery at source HEAD c1f4cc5f24f00f090a7c3292ded3b0f26c6929e2
+selected the paired Classes Notes and Time Filler capture as the next bounded
+Windows x64 follow-up. The current CMake registers the Notes capture, Classes
+Navigator page tests, and Navigator WorkspaceStore tests; CTest -N confirmed
+their names without running them. No current-source Phase 10 Windows x64 Notes
+capture was found. The existing Phase 7 package covers eight Legacy/Next
+images across four locale/theme pairs, but its historical Candidate 26 result
+is not Windows evidence.
+
+Proposed acceptance: build the page-test, WorkspaceStore-test, and Notes
+capture targets as Windows x64 Debug; run only the two focused CTests plus the
+five Notes page cases and one path-actions transaction case; run the capture
+directly into fresh artifact storage. Validate eight 1024x768 images, class 1,
+the four locale/theme entries, Notes/Time Filler context, and the actual
+Legacy Save-widget geometry/visibility recorded in the manifest. Review
+readable English and Korean text without a pixel-parity claim. The capture
+harness does not explicitly select a font. This discovery ran no build, test,
+or capture. Its report and 17 source hashes are in
+artifacts/phase10/p10-win-c27-classes-notes-discovery-20261126/.
+
 ### 2026-11-26 — Candidate 26 Windows x64 Classes Analytics requalification
 
 At source HEAD 121852f289bd9c1db2c0ebd189cfdd535a0d5939, the Windows x64
