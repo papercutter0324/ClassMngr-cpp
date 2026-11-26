@@ -98,6 +98,15 @@ gap. See `artifacts/phase10/p10-win-c30-schedule-20261126/`. Candidate 11 and
 native/cross-host Phase 10 gates remain open; continue with read-only discovery
 for the next bounded Windows x64 slice.
 
+Candidate 31 discovery found current Windows x64 import evidence in
+`p10-win-34-font-capture-rerun-20261126/`: three focused CTests and both
+capture CTests passed; all 72 PNGs are checksummed. Current test sources and
+all three executables match the package, its CMake target block is unchanged,
+and no product source changed since its build baseline. No duplicate run is
+needed. Evidence is in
+`artifacts/phase10/p10-win-c31-schedule-import-discovery-20261126/`. Next is
+read-only discovery for the Candidate 32 Schedule output/printing scope.
+
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 
 Deployment ID: `qtphase10-macos-20261126`; route: Heavy. At that handoff, the

@@ -4,6 +4,18 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 - Candidate 31 Windows x64 Schedule Import discovery
+
+The existing P10-WIN-34 Windows x64 package already covers Candidate #31:
+three focused CTests passed, followed by Legacy and Next capture CTests; its
+72 PNG files and 94 SHA-256 entries verify. Current import test sources and
+all three test executables match the package. The normal-import CMake block is
+unchanged, and no product `src/` path changed since the package's build
+baseline. `ctest -N` confirmed all three registrations without running them.
+No duplicate build, test, or capture is proposed. This discovery ran no build,
+test, or capture. Report and current input hashes:
+`artifacts/phase10/p10-win-c31-schedule-import-discovery-20261126/`.
+
 ### 2026-11-26 - Candidate 30 Windows x64 Schedule verification
 
 At source HEAD `f1bba551432781ae8b98b78718de23540a8761ad`, the
