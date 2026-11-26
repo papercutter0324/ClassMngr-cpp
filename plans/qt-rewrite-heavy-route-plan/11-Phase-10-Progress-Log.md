@@ -758,3 +758,25 @@ and [preview measurements](../../artifacts/phase10/p10-macos-c14-schedule-import
 This remains bounded offscreen state/content evidence, not Candidate 14 or
 Phase 10 acceptance. x86_64 runtime and native accessibility behavior remain
 open.
+
+### 2026-11-26 — Candidate 15 macOS Teacher Profile evidence
+
+At source HEAD `3f3faf6af00bb9665ce80e6d11951f2381561aac`, the selected
+`teacherProfileUsesTypedOpenAndStaticPageHistory` Bootstrap slot passed. The
+capture target and dependencies built; `ClassMngrNextBootstrapTests` was
+already current and was not recompiled. Both universal executables contain
+`arm64;x86_64`; tests ran on arm64 only. The standalone capture produced four
+1024×768 English/light and Korean/dark Legacy/Next images with a verified
+manifest. The pre-existing fixed capture directory's hashes were unchanged.
+
+The fixture shows March 14. Next displays a clear glyph; it is not
+distinguishable in Legacy English/light and is subtle in Legacy Korean/dark.
+This is a visual observation, not a parity or defect conclusion. The selected
+test simulated Qt calendar selection and a clear-button click, then verified
+save/reopen. The static capture did not open the birthday popup. Native Cocoa
+popup placement, physical input, IME, accessibility, and Windows ARM64 remain
+open. The fixed-path capture CTest was not run. No source, test, or tracked
+documentation changed during the evidence run. See the [macOS report](../../artifacts/phase10/p10-macos-c15-teacher-profile-20261126T111138Z-3f3faf6a/report.md).
+
+This is bounded macOS test/capture evidence, not a Candidate 15 or Phase 10
+acceptance conclusion.
