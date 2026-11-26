@@ -712,3 +712,25 @@ or acceptance conclusion. Full details are in the [visual observations](../../ar
 Forced grade-tab overflow remains open; this run used four supported grades.
 Native Cocoa rendering and x86_64 runtime remain open. No source or test files
 changed. See the [macOS report](../../artifacts/phase10/p10-macos-c12-my-classes-20261126T102031Z-d27bfd04/report.md).
+
+### 2026-11-26 — Candidate 13 macOS Schedule Display captures
+
+Independent Tester verified the evidence, hashes, and provenance at source
+HEAD `e670bdc0f509f6210f6071a55037e26ebe70ca30`. The standard universal Debug
+page/capture targets built successfully; two focused page slots passed. Direct
+offscreen capture produced 19 default Legacy/Next pairs and two stress pairs.
+The existing fixed capture directory's 33 files and hashes were unchanged.
+Built executables contain `arm64;x86_64`; runtime was arm64 only.
+
+No pixel or content parity is claimed. The manifest's
+`sameModeAndWorkspaceData=true` field is hard-coded, not a data comparator. Four
+256-character Regular/Testing stress entries report
+`documentFitsCellContent=false` in 60 px cells, with no fit assertion. This is
+an unresolved overflow finding, not a passing fit check or product-defect
+conclusion. The Windows screenshot-order question remains open; this macOS
+bundle contains no Windows evidence. Native Cocoa/interactive behavior and
+x86_64 runtime remain open. No source or test files changed. See the [report](../../artifacts/phase10/p10-macos-c13-schedule-display-20261126T103458Z-e670bdc0/report.md)
+and [visual observations](../../artifacts/phase10/p10-macos-c13-schedule-display-20261126T103458Z-e670bdc0/visual-observations.md).
+
+This is bounded macOS capture and focused-page evidence, not a Candidate 13
+or Phase 10 acceptance conclusion.
