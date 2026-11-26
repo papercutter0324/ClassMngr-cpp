@@ -26,6 +26,31 @@ reliable child exit code; it is retained as diagnostic evidence, and the
 accepted rerun records both exit code 0 and the passing totals. No product or
 test source changed. Candidate 2 and Phase 10 remain open.
 
+### 2026-11-26 — Windows x64 next-batch discovery
+
+Read-only discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6`
+found that Candidate 6 already supplies the current-source-equivalent Windows
+x64 Document Viewer state matrix: 16 Next and 16 Legacy captures, all four
+locale/theme pairs, and Ready/error/closed/reopened states. Its C6 manifest
+contains 35 source inputs; 34 C++/header files still match, and the sole
+difference is unrelated edits elsewhere in `cmake/tests/next.cmake`. No
+duplicate Candidate 23 capture run is needed for this Windows x64 scope.
+
+The next visual candidate is Candidate 24, current-source Campus Directory
+plus the C46 Admin menu, authorized, and read-only Information states. The
+existing capture target writes both sets to a supplied output directory and
+uses packaged Bundang data with a target-local Legacy resource alias. No
+Campus Directory Windows x64 capture artifact was found. The selected follow-
+up will build `ClassMngrNextCampusDirectoryTests` and
+`ClassMngrNextCampusDirectoryVisualCapture`, run the focused CTest, and capture
+40 C41 paired-route PNGs plus 12 C46 state PNGs into fresh artifact storage.
+No builds or tests were run during discovery. Full details and source hashes
+are in the [discovery report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).
+
+Candidate 11's installed geometry/font comparison remains a separate open
+Windows x64 task. Native interaction, Windows ARM64, macOS, and cross-host
+Phase 10 requirements remain open.
+
 ### 2026-11-25 — Phase 10 start precheck passed
 
 At the user's request, an independent local Tester reviewed the fresh

@@ -1,6 +1,6 @@
 # Current Slice Batches
 
-## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; next: remaining Windows-native interaction and cross-host gates)
+## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; next Windows x64 slice: Candidate 24 Campus Directory)
 
 Batch goal: requalify migrated behavior, appearance, and outputs against the
 legacy product on supported platforms using current-source evidence. Record
@@ -132,3 +132,29 @@ Historical visual findings under
 docs/qt-rewrite/visual-baseline/next/phase-7/ and behavior/output evidence in
 the Phase 7, 7.5, 8, and 8a progress logs are references for discovery only;
 requalify against current source before calling a difference a defect.
+
+## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (discovered; next: Candidate 24)
+
+Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
+
+- **Document Viewer (previously proposed Candidate 23): already covered.** The
+  accepted Windows x64 Candidate 6 artifact contains 16 Next and 16 Legacy
+  current-source-equivalent captures across all four locale/theme pairs and
+  Ready/error/closed/reopened states. All 34 C++/header source inputs still
+  match; the only source-inventory difference is an unrelated CMake test-file
+  change. No duplicate capture run is needed. See the [Candidate 6 report](../../artifacts/phase10/p10-win-36-c6-headless-print-20261126/report.md).
+- **Candidate 24 — Campus Directory and C46 Admin states.** Requalify the
+  current `ClassMngrNextCampusDirectoryVisualCapture` target on Windows x64.
+  It produces 40 paired C41 route PNGs and 12 C46 Admin/authorized/read-only
+  PNGs across the four locale/theme combinations, using packaged Bundang data
+  and an isolated capture-only Legacy map alias. Build
+  `ClassMngrNextCampusDirectoryTests` and the visual capture target, run the
+  focused directory CTest, and write the capture to a fresh artifact path.
+  Review the manifests, image readability, localized labels, route states, and
+  artifact hashes. Historical C41/C46 findings remain discovery references,
+  not current-source defects or pixel-parity claims.
+
+Candidate 11's Windows x64 installed geometry/font follow-up remains open and
+separate. Native interaction, Windows ARM64, macOS, and cross-host Phase 10
+gates remain open. Read-only discovery evidence:
+[report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).

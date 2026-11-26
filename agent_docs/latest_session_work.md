@@ -7,8 +7,8 @@ each slice. Phase 10 remains In Progress. Candidates 21–22 have bounded
 Windows x64 evidence recorded in the current slice tracker. The latest slice,
 Candidate 2 Edit-action/clipboard logic, passed the focused
 `shellEditActionsFollowFocusDispatchAndClipboard` slot under Qt offscreen;
-native Windows clipboard, physical focus, and UIA remain open. Its local
-artifact is
+native Windows clipboard, physical focus, and UIA remain open. It is committed
+as `fe48d348` (`Phase10 - Verify Windows x64 shell edit actions`). Its local artifact is
 `artifacts/phase10/p10-win-c2-edit-clipboard-offscreen-20261126/`. The Windows
 user clipboard was not read or modified. No product or test source changed.
 
@@ -18,9 +18,13 @@ x64 work and record the remaining native and cross-host limits accurately.
 Candidate 2 is not accepted, and Phase 10's Windows ARM64, macOS, native
 interaction, and cross-host gates remain open. No push was requested.
 
-Next entry point: perform the required next-batch discovery across remaining
-migrated surfaces, then begin the next bounded Windows x64 candidate. Preserve
-the separate open installed-runtime geometry/font follow-up for Candidate 11.
+Next entry point: Candidate 24, current-source Windows x64 Campus Directory
+paired-route and C46 Admin/read-only captures. Candidate 6 already provides
+current-source-equivalent Windows x64 Document Viewer state captures, so do
+not duplicate Candidate 23. The next-batch discovery report is
+`artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md`.
+Preserve the separate open installed-runtime geometry/font follow-up for
+Candidate 11.
 
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 
