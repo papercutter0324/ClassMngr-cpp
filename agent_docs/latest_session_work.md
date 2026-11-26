@@ -43,16 +43,19 @@ native-window claim is made. See
 `artifacts/phase10/p10-win-c26-classes-analytics-20261126/`. Candidate 11 and
 native/cross-host Phase 10 gates remain open.
 
-Candidate 27 read-only discovery is recorded at
-`artifacts/phase10/p10-win-c27-classes-notes-discovery-20261126/`. The current
-paired Notes/Time Filler capture has no Phase 10 Windows x64 result. Discovery
-confirmed the Notes capture, Navigator page-test, and WorkspaceStore-test
-registrations; CTest -N was used only to inventory names. The next bounded run
-builds those three targets, runs only the two focused CTests and selected Notes
-cases, then captures eight Legacy/Next images to fresh artifact storage. It
-must record the actual Legacy Save-widget geometry/visibility and check
-English/Korean readability. No build, test, or capture has run for Candidate
-27 yet. Candidate 11 and native/cross-host Phase 10 gates remain open.
+Candidate 27's current-source Windows x64 Classes Notes run is complete. The
+Debug build exited 0 for the page-test, WorkspaceStore-test, and capture
+targets. Both focused CTests passed 2/2 in 46.85 seconds; five Notes page
+cases and the path-actions transaction case each exited 0. The paired capture
+produced eight readable 1024x768 PNGs across four locale/theme pairs, and all
+17 source hashes match. The Legacy Save widget was found but hidden outside
+the crop in all four entries: English page height 843 with Save at y=816,
+Korean height 841 with Save at y=814. Next's Save Changes control is visible.
+No product or test source changed, and there is no pixel-parity or native
+window claim. See
+`artifacts/phase10/p10-win-c27-classes-notes-20261126/`. Candidate 11 and
+native/cross-host Phase 10 gates remain open. Continue with read-only discovery
+for the next bounded Windows x64 slice.
 
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 

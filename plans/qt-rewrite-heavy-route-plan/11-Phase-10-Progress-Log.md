@@ -4,6 +4,26 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 27 Windows x64 Classes Notes requalification
+
+At source HEAD 602e33f2fcc2617234eee5154efcd7fad0e14bfd, the Windows x64
+Debug build exited 0 for ClassMngrNextClassesNavigatorPageTests,
+ClassMngrNextClassesNavigatorWorkspaceStoreTests, and
+ClassMngrNextClassesNotesVisualCapture. The focused page and WorkspaceStore
+CTest selection passed 2/2 in 46.85 seconds. Five Notes page cases and the
+classNotesPathActionsBoundTextAndPreserveDetailsTransactionally case each
+exited 0. The paired offscreen capture exited 0 and produced eight decoded
+1024x768 PNGs across four locale/theme pairs. All 17 source-input hashes match.
+
+English and Korean labels are readable. The Legacy Save widget was found but
+hidden outside the viewport in all four entries: the page measured 1024x843
+for English with Save at (35,816), and 1024x841 for Korean with Save at
+(35,814), both 100x30. Next's Save Changes control is visible in its route.
+The cropped viewport and differing shells are observations only; no
+pixel-parity or defect conclusion is made. No product or test source changed.
+The manifest, captures, review, logs, and verification are in
+artifacts/phase10/p10-win-c27-classes-notes-20261126/.
+
 ### 2026-11-26 — Candidate 27 Windows x64 Classes Notes discovery
 
 Read-only discovery at source HEAD c1f4cc5f24f00f090a7c3292ded3b0f26c6929e2
