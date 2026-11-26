@@ -559,3 +559,33 @@ changes were made.
 Candidate 6 and Phase 10 remain open. See the [corrected macOS report](../../artifacts/phase10/p10-macos-c6-safe-print-route-20261126T081814Z-eaf3b141/report.md);
 the bundle manifest SHA-256 is
 `2835f16729ad93085dc1c225dfc61495310a5588e9d4ab42065b0b756d0932d4`.
+
+### 2026-11-26 — Candidate 7 macOS safe PowerPoint fallback checks
+
+Independent verification accepted bounded fake-only macOS evidence at source
+HEAD `c8350ef74ac3a0bc3ac48513daf45ba6e9b4d994`, using the standard universal
+`macos-clang-debug` tree. Built test binaries include `arm64;x86_64`; runtime
+was arm64 only. The two registered protected-data notice CTests passed:
+`ClassMngrPowerPointDataAccessNoticeTests` and
+`ClassMngrNextPlatformSettingsManagerPowerPointDataAccessNoticePortTests`.
+Three direct offscreen slots passed 13 synthetic data cases with
+`CLASSMNGR_ENABLE_POWERPOINT_INTEGRATION_TESTS` unset:
+
+- `SpeakingEvaluationPageTests::nextPowerPointUsesInjectedAutomationAndApplicationActions` (6 cases)
+- `SpeakingEvaluationPageTests::nextPowerPointRequestFailsWhenAutomationPortIsMissing` (1 case)
+- `SpeakingEvalBatchReportServiceTests::powerPointPortRejectsUnavailableAndIncompleteOutput` (6 cases)
+
+The full Speaking Evaluation CTest target was not run. The real availability
+slot was excluded because it checks `/Applications/Microsoft PowerPoint.app`
+and locates `osascript`; neither path nor executable availability was
+queried. No Office app, AppleScript, template, user Office state, or Automation
+permission was touched. Fake cases use synthetic data and temporary paths;
+`ClassMngrPowerPointProcessFixture` was built as a dependency but not executed.
+Real PowerPoint installation/availability, activation, rendering, export, and
+fallback against an actual unavailable installation remain open. No source,
+test, or documentation files changed.
+
+This does not establish Candidate 7 or Phase 10 acceptance. See the [macOS
+report](../../artifacts/phase10/p10-macos-c7-powerpoint-safe-fallback-20261126T083606Z-c8350ef7/report.md);
+the bundle manifest SHA-256 is
+`7c3c6563500b5f04fa227c30b422f727dfe35ad30731a3e79cf5a09d085800ad`.
