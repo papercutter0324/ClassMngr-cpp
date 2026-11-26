@@ -4,6 +4,19 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 - Candidate 32 Windows x64 Schedule output/printing discovery
+
+Read-only discovery found adjacent Windows x64 C51 PDF and output-adapter
+evidence, with current PDF/adapter executable hashes matching the prior
+package. It does not include Candidate32's Testing Assignment editor, output
+options, and representative PDF capture states. The current Schedule capture
+target provides a `--c32` path. CTest lists five print-model, PDF, and adapter
+registrations; the print-model executable is absent. The bounded next slice
+will build the model/PDF/adapter tests and capture target, run the five focused
+tests, and capture to a fresh `--c32` directory. `ctest -N` only was used.
+No build, test, or capture ran. Evidence:
+`artifacts/phase10/p10-win-c32-schedule-output-discovery-20261126/`.
+
 ### 2026-11-26 - Candidate 31 Windows x64 Schedule Import discovery
 
 The existing P10-WIN-34 Windows x64 package already covers Candidate #31:

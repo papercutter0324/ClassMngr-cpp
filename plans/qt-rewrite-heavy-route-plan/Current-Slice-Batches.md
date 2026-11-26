@@ -23,6 +23,11 @@ PNG package is checksummed. Current import test sources and all three test
 binaries match that package; no product source changed since its build
 baseline. See the [discovery report](../../artifacts/phase10/p10-win-c31-schedule-import-discovery-20261126/discovery-report.md).
 
+Candidate 32 Windows x64 discovery found existing C51 PDF/adapter results but
+no Candidate32 assignment-editor/output-options capture. The current capture
+source has a dedicated `--c32` path and the print-model test executable is
+absent. See the [discovery report](../../artifacts/phase10/p10-win-c32-schedule-output-discovery-20261126/discovery-report.md).
+
 ## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 30)
 
 Batch goal: requalify migrated behavior, appearance, and outputs against the
@@ -253,8 +258,8 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
 separate. Candidate 26's current-source Windows x64 requalification is
 recorded in the [execution report](../../artifacts/phase10/p10-win-c26-classes-analytics-20261126/execution-report.md).
-The next slice is Candidate 32 Schedule output and printing discovery for
-Windows x64. Native interaction, Windows ARM64, macOS, and cross-host Phase 10
+The next slice is Candidate 32 Windows x64 Schedule output and printing
+execution. Native interaction, Windows ARM64, macOS, and cross-host Phase 10
 gates remain open.
 Read-only discovery evidence:
 [report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).

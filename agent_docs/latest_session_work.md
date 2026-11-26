@@ -107,6 +107,14 @@ needed. Evidence is in
 `artifacts/phase10/p10-win-c31-schedule-import-discovery-20261126/`. Next is
 read-only discovery for the Candidate 32 Schedule output/printing scope.
 
+Candidate 32 discovery found the adjacent C51 PDF/adapter tests and output
+package, but no Candidate32 assignment-editor/output-options Windows capture.
+The current capture target supports `--c32`; the print-model test executable
+is absent, with five relevant CTest registrations identified. The next slice
+is a focused x64 Debug build, those tests, and a fresh direct `--c32` capture.
+Discovery evidence is in
+`artifacts/phase10/p10-win-c32-schedule-output-discovery-20261126/`.
+
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 
 Deployment ID: `qtphase10-macos-20261126`; route: Heavy. At that handoff, the
