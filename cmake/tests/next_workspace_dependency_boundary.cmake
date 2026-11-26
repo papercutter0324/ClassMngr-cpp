@@ -240,7 +240,7 @@ if(_bootstrap_update_adapter_index EQUAL -1)
 endif()
 
 set(_expected_bootstrap_test_links
-    "ClassMngrProcessMemory|ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrQtZipArchiveReadAdapter|ClassMngrSubPrepShared|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrQtPdfPrint|ClassMngrNextStartupUpdates|ClassMngrNextUpdateAdapters|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::PdfWidgets|Qt6::Widgets"
+    "ClassMngrProcessMemory|ClassMngrClassTransferSupport|ClassMngrNextCalendarUi|ClassMngrQtZipArchiveReadAdapter|ClassMngrSubPrepShared|ClassMngrNextScheduleOutput|ClassMngrNextRosterOutput|ClassMngrNextSpeakingEvaluationOutput|ClassMngrNext::Resources|ClassMngrNextWorkspace|ClassMngrNext::DocumentCatalog|ClassMngrQtPdfPrint|ClassMngrAboutPresentation|ClassMngrNextStartupUpdates|ClassMngrNextUpdateAdapters|ClassMngrTeacherImportParser|ClassMngrScheduleImportParser|Qt6::Concurrent|Qt6::Sql|Qt6::Test|Qt6::PdfWidgets|Qt6::Widgets"
 )
 if(NOT _bootstrap_test_links STREQUAL _expected_bootstrap_test_links)
     message(FATAL_ERROR
