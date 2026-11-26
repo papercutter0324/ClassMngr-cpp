@@ -4,6 +4,87 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-27 — Phase 10 next-batch discovery (Candidates 34–53)
+
+Read-only discovery at source HEAD
+`2e26e6b09d0d75e4cff46efef79903d1edbd78e2` identified 20 Phase 7 entries,
+Candidates 34–53. Candidate 41 (Campus Directory) is omitted: P10 C24 has 52
+captures and focused directory CTest/admin-route evidence, and all 9 source
+inputs match. Candidate 42 (Document Catalog navigation) is omitted because
+P10 C22 has 13 current inputs for that navigation scope; PDF viewing is
+explicitly outside the scope and remains with Candidate 43. The ordered next
+batch is 18 slices:
+
+1. [Candidate 34 — Calendar import](08-Phase-7-Progress-Log.md#L950): focused
+   import-use-case, campus-code query, Next Calendar import-state tests and
+   captures; reuse C33 import visuals only if the manifest proves fresh,
+   matching inputs.
+2. [Candidate 35 — Roster editor/student model](08-Phase-7-Progress-Log.md#L992):
+   `ClassMngrNextRosterEditorTests` and English/Korean light/dark captures;
+   no matching Windows package.
+3. [Candidate 36 — Roster score import/student transfer](08-Phase-7-Progress-Log.md#L1010):
+   editor import/transfer captures and WorkspaceStore actions; P10 C25 is
+   class transfer, not student transfer.
+4. [Candidate 37 — Roster templates/printing](08-Phase-7-Progress-Log.md#L1034):
+   Next roster output and template-print tests. P10 C5's current-source
+   comparison matches 13/15 inputs and covers By Day, Daily, and Per Class
+   PDFs; confirm target definitions and cover Testing Classes and Extra Info.
+5. [Candidate 38 — Speaking Evaluation core](08-Phase-7-Progress-Log.md#L1067):
+   Next page tests and English/Korean light/dark captures; no Windows page
+   workflow evidence.
+6. [Candidate 39 — AI-assisted comments/batch workflow](08-Phase-7-Progress-Log.md#L1107):
+   eligibility, prompt, selection, review, and apply cases; no Windows
+   AI-comment evidence.
+7. [Candidate 40 — Reports/PDF/PowerPoint/export jobs](08-Phase-7-Progress-Log.md#L1133):
+   report widget, batch report, widgetless PDF, and UI/export states; reuse
+   applicable P10 C5/C7 outputs and add current report UI/export cases. Make
+   no live Office automation claim.
+8. [Candidate 43 — Document viewer lifecycle/actions](08-Phase-7-Progress-Log.md#L1354):
+   Next viewer tests/captures, including Legacy viewer; no current Windows
+   viewer artifact, and C22 did not open a PDF.
+9. [Candidate 44 — Sub Prep class information/output](08-Phase-7-Progress-Log.md#L1412):
+   class model/page, captures, and print tests; rebuild and capture current
+   source because P10 C4/C53 renderer inputs changed and the prior
+   page-grouping comparison remains open.
+10. [Candidate 45 — App-wide Preferences](08-Phase-7-Progress-Log.md#L1456):
+    model/snapshot adapters and the production Preferences route in Next
+    bootstrap; no matching Windows route package.
+11. [Candidate 46 — Admin/permission gates](08-Phase-7-Progress-Log.md#L1496):
+    operation-level gate tests. P10 C24 has current captures but only directory
+    CTest and shell-route evidence.
+12. [Candidate 47 — User-initiated updates](08-Phase-7-Progress-Log.md#L1526):
+    coordinator/shared presentation/manual Help route and 36-state capture
+    matrix. Existing updater package and tests match except two CMake files;
+    current route/presentation registrations remain to verify.
+13. [Candidate 48 — Useful Links external navigation](08-Phase-7-Progress-Log.md#L1565):
+    selection behavior, locale labels, and four captures. Existing launch
+    package is partial (11/13), and bootstrap tests/CMake differ; rerun focused
+    tests/captures.
+14. [Candidate 49 — Workspace Calendar](08-Phase-7-Progress-Log.md#L1601):
+    My Workspace page/calendar tests and capture. P10 C19 has 21 captures and
+    focused tests but an incomplete source inventory; recheck inputs and
+    refresh if needed.
+15. [Candidate 50 — Classes parity/transfer boundary](08-Phase-7-Progress-Log.md#L1630):
+    navigator/full-window captures and transfer workflow. P10 C20 page source
+    differs, while C25 transfer inputs match; rerun the navigator and refresh
+    captures if product inputs differ. C26–29 cover adjacent sections.
+16. [Candidate 51 — Schedule import/output follow-up](08-Phase-7-Progress-Log.md#L1669):
+    normal schedule integration, Schedule page/output, and five-block
+    comparisons. P10 C30–32 are adjacent evidence; C5's integration source
+    differs. Run the current integration target and check inputs before reuse.
+17. [Candidate 52 — Document Catalog live-locale behavior](08-Phase-7-Progress-Log.md#L1701):
+    bootstrap live-locale switch plus catalog/viewer tests and captures; C22
+    covers navigation, not PDF/viewer-session behavior.
+18. [Candidate 53 — Sub Prep PDF text mapping/output parity](08-Phase-7-Progress-Log.md#L1726):
+    PDF finalizer/package tests and current C53 SQL parity capture. Hosted
+    Phase 7 and local P10 C4 evidence are older; renderer and test CMake inputs
+    differ, so rerun focused tests/current capture and retain the prior grouping
+    observation as open.
+
+Candidates 55–56 are reserved for the next discovery point, not this batch.
+No build, test, or capture ran during discovery. The live order and statuses
+are in the [current slice-batch tracker](Current-Slice-Batches.md).
+
 ### 2026-11-26 - Candidate 33 Windows x64 Calendar discovery
 
 Read-only discovery confirmed four relevant CTest registrations: the Legacy
