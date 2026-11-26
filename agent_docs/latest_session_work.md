@@ -28,9 +28,21 @@ with all ten source-input hashes matching. The first missing-glyph capture is
 preserved as diagnostic only; the test-only font registration correction is
 committed as ad46ba41. Evidence, logs, and captures are under
 `artifacts/phase10/p10-win-c25-class-transfer-20261126/`. This is observational
-evidence with no pixel-parity or native Windows UI claim. Continue with
-read-only discovery for the next safe Windows x64 slice. Candidate 11's
+evidence with no pixel-parity or native Windows UI claim. Candidate 11's
 installed-runtime geometry/font follow-up remains separate and open.
+
+Candidate 26 read-only discovery is recorded at
+`artifacts/phase10/p10-win-c26-classes-analytics-discovery-20261126/` and
+committed in the Phase 10 progress/tracker update. It selects the paired
+Classes Analytics capture: All and Winter for selected class 1, across four
+locale/theme pairs (16 PNGs). The planned Windows x64 Debug run builds the
+Navigator page tests and capture target, runs only the focused Navigator page
+CTest, and captures directly to fresh artifact storage. Discovery confirmed
+no Phase 10 Windows x64 populated Analytics capture, noted the existing
+Legacy/Next shell and viewport limits, and flagged that the harness does not
+explicitly select/record the font. No build, test, or capture has run for
+Candidate 26 yet. Candidate 11 and native/cross-host Phase 10 gates remain
+open.
 
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 

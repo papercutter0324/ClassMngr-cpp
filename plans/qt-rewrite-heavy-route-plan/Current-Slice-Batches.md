@@ -79,6 +79,7 @@ Windows clipboard, physical focus, and UIA remain open. See the
 | 22. Document Catalog paired visual review | Windows x64 current-source sidebar-region evidence independently accepted: 12 PNGs and 24 hashes; eight matched 254×630 Legacy/Next tree images across four locale/theme pairs plus four Next full-shell captures. Two focused CTests passed. Manifest records 7 folders, 30 documents, the same selected stable ID, and no loaded PDF body. Korean labels and selection are visible; some long Next labels elide at the fixed width. Scope is sidebar-only, with no full-window Legacy parity claim. [Review notes](../../artifacts/phase10/p10-win-c22-document-catalog-20261126/review-notes.md) |
 | 24. Campus Directory and C46 Admin states | Current-source Windows x64 Debug build exited 0; focused Campus Directory CTest passed 1/1 and the capability-gated Admin navigation slot passed 3/3. Offscreen review decoded 40 paired C41 route captures and 12 C46 menu/authorized/read-only states across four locale/theme pairs. All nine source hashes match. Observations only: no pixel-parity or native-window claim. [Execution report](../../artifacts/phase10/p10-win-c24-campus-directory-20261126/execution-report.md) |
 | 25. Class Transfer workflow and captures | Current-source Windows x64 Debug build exited 0; focused Next workflow CTest passed 1/1 (46.35s). Final offscreen capture produced 24 readable Legacy/Next PNGs at 1024×768 across four locale/theme pairs and three states; ten source hashes match. Bundled-font registration was corrected in the capture harness, and the initial tofu run is preserved as diagnostic only. No pixel-parity or native-window claim. [Execution report](../../artifacts/phase10/p10-win-c25-class-transfer-20261126/execution-report.md) |
+| 26. Classes Analytics All/Winter states | Selected for bounded current-source Windows x64 discovery. Proposed scope is the focused Navigator page CTest plus the paired Legacy/Next capture for All and Winter across four locale/theme pairs (16 PNGs). No build/test/capture run yet; discovery notes the font readability and shell-comparison limits. [Discovery report](../../artifacts/phase10/p10-win-c26-classes-analytics-discovery-20261126/discovery-report.md) |
 
 ### Ordered candidates
 
@@ -146,7 +147,7 @@ docs/qt-rewrite/visual-baseline/next/phase-7/ and behavior/output evidence in
 the Phase 7, 7.5, 8, and 8a progress logs are references for discovery only;
 requalify against current source before calling a difference a defect.
 
-## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (Candidate 25 recorded; next: read-only discovery)
+## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (Candidate 26 discovery recorded; next: bounded Windows x64 execution)
 
 Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
 
@@ -180,9 +181,9 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
   and [font correction report](../../artifacts/phase10/p10-win-c25-class-transfer-20261126/font-harness-correction-report.md).
 
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
-separate. Native interaction, Windows ARM64, macOS, and cross-host Phase 10
-gates remain open. The next slice is read-only discovery of a further safe
-current-source Windows x64 follow-up; Candidate 11's installed geometry/font
-task remains separate.
+separate. Candidate 26's selected current-source Analytics requalification is
+described in the [discovery report](../../artifacts/phase10/p10-win-c26-classes-analytics-discovery-20261126/discovery-report.md).
+Native interaction, Windows ARM64, macOS, and cross-host Phase 10 gates remain
+open.
 Read-only discovery evidence:
 [report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).

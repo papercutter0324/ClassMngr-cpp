@@ -4,6 +4,27 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 26 Windows x64 Classes Analytics discovery
+
+Read-only discovery at source HEAD 53e5fb9f89f38ea3bb7be7ea41c650a454d60d87
+selected the current paired Classes Analytics capture as the next bounded
+Windows x64 follow-up. CMake registers
+ClassMngrNextClassesAnalyticsVisualCapture and
+ClassMngrNextClassesNavigatorPageTests. The tracked Phase 7 package covers
+Legacy/Next All and Winter states for class 1 across four locale/theme pairs;
+its different Legacy and Next shells do not support a pixel-parity claim. No
+prior Phase 10 Windows x64 populated Analytics capture was found.
+
+Proposed acceptance: build both targets as Windows x64 Debug, run only the
+Navigator page CTest and review its two Analytics-specific cases, then run the
+capture executable directly into fresh artifact storage. Validate the 16
+1024x768 images, four locale/theme entries, selected class, All/Winter rows,
+readable English and Korean labels, matching route context, and source hashes.
+The current capture harness does not explicitly select or record an
+application font, so glyph readability needs direct review. This is a
+discovery only; no build, test, or capture ran. The report and 16 source hashes
+are in artifacts/phase10/p10-win-c26-classes-analytics-discovery-20261126/.
+
 ### 2026-11-26 — Candidate 25 Windows x64 Class Transfer requalification
 
 At source HEAD ad46ba419bc4b83c084ce6bdb83dcced2fabb66f, the Windows x64
