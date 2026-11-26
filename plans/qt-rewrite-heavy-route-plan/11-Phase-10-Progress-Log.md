@@ -4,6 +4,26 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 28 Windows x64 Classes Details/Co-Teacher discovery
+
+Read-only discovery at source HEAD b67ee6ea922ceb5b7ac840ca0576a49495c8eb83
+selected the paired Details/Times and Co-Teacher capture as the next bounded
+Windows x64 follow-up. CMake and CTest inventory confirmed the current capture
+target plus focused Navigator page and WorkspaceStore tests. No current-source
+Phase 10 Windows x64 capture was found. The historical Phase 7 package has 16
+images across four locale/theme pairs but is not Windows evidence.
+
+Proposed acceptance: build the page-test, WorkspaceStore-test, and capture
+targets as Windows x64 Debug; run only the two focused CTests and five page
+cases plus the path-actions transaction case; capture directly into fresh
+artifact storage. Validate the eight section/locale/theme entries and 16
+1024x768 images, class 1, the tracked 96-class fixture, and readable English
+and Korean labels. The known Level 02 Legacy selector/catalog mismatch is a
+fixture observation, not a new defect finding. The differing shells prevent a
+pixel-parity conclusion. This discovery ran no build, test, or capture. Its
+report and 17 source hashes are in
+artifacts/phase10/p10-win-c28-classes-details-coteacher-discovery-20261126/.
+
 ### 2026-11-26 — Candidate 27 Windows x64 Classes Notes requalification
 
 At source HEAD 602e33f2fcc2617234eee5154efcd7fad0e14bfd, the Windows x64

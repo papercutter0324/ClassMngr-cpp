@@ -54,8 +54,18 @@ Korean height 841 with Save at y=814. Next's Save Changes control is visible.
 No product or test source changed, and there is no pixel-parity or native
 window claim. See
 `artifacts/phase10/p10-win-c27-classes-notes-20261126/`. Candidate 11 and
-native/cross-host Phase 10 gates remain open. Continue with read-only discovery
-for the next bounded Windows x64 slice.
+native/cross-host Phase 10 gates remain open.
+
+Candidate 28 read-only discovery is recorded at
+`artifacts/phase10/p10-win-c28-classes-details-coteacher-discovery-20261126/`.
+The paired Details/Times and Co-Teacher target covers 16 Legacy/Next images
+across four locale/theme pairs; no Phase 10 Windows x64 current-source result
+was found. The proposed run builds the capture, Navigator page-test, and
+WorkspaceStore-test targets, runs only the two focused CTests plus five page
+cases and the path-actions transaction case, then captures to fresh storage.
+Review must preserve the known Level 02 fixture/catalog limitation and make
+no pixel-parity claim. No build, test, or capture has run for Candidate 28 yet.
+Candidate 11 and native/cross-host Phase 10 gates remain open.
 
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 

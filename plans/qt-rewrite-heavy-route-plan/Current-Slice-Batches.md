@@ -87,6 +87,7 @@ Windows clipboard, physical focus, and UIA remain open. See the
 | 25. Class Transfer workflow and captures | Current-source Windows x64 Debug build exited 0; focused Next workflow CTest passed 1/1 (46.35s). Final offscreen capture produced 24 readable Legacy/Next PNGs at 1024×768 across four locale/theme pairs and three states; ten source hashes match. Bundled-font registration was corrected in the capture harness, and the initial tofu run is preserved as diagnostic only. No pixel-parity or native-window claim. [Execution report](../../artifacts/phase10/p10-win-c25-class-transfer-20261126/execution-report.md) |
 | 26. Classes Analytics All/Winter states | Current-source Windows x64 Debug build exited 0; focused Navigator page CTest passed 1/1 and both selected Analytics cases exited 0. Final offscreen paired capture produced 16 decodable 1024×768 PNGs across four locale/theme pairs. All 16 source hashes match; labels are readable and no missing glyphs were observed. Shell and viewport differences are descriptive only, with no pixel-parity claim. [Execution report](../../artifacts/phase10/p10-win-c26-classes-analytics-20261126/execution-report.md) |
 | 27. Classes Notes and Time Filler | Current-source Windows x64 Debug build exited 0 for three targets; focused page and WorkspaceStore CTests passed 2/2, and all six selected Notes cases exited 0. Final offscreen paired capture produced eight decodable 1024×768 PNGs across four locale/theme pairs. All 17 source hashes match. The Legacy Save widget is hidden outside the crop in all four entries (English page 843 px, Korean 841 px); Next Save Changes is visible. Labels are readable; no pixel-parity claim. [Execution report](../../artifacts/phase10/p10-win-c27-classes-notes-20261126/execution-report.md) |
+| 28. Classes Details/Times and Co-Teacher | Selected by read-only discovery for current-source Windows x64 requalification. Proposed scope is focused Navigator page/WorkspaceStore CTests, Details and Co-Teacher cases, and a 16-image paired capture across four locale/theme pairs. The known Level 02 Legacy selector/catalog mismatch is a fixture limitation. No build/test/capture run yet. [Discovery report](../../artifacts/phase10/p10-win-c28-classes-details-coteacher-discovery-20261126/discovery-report.md) |
 
 ### Ordered candidates
 
@@ -154,7 +155,7 @@ docs/qt-rewrite/visual-baseline/next/phase-7/ and behavior/output evidence in
 the Phase 7, 7.5, 8, and 8a progress logs are references for discovery only;
 requalify against current source before calling a difference a defect.
 
-## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (Candidate 27 recorded; next: read-only discovery)
+## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (Candidate 28 discovery recorded; next: bounded Windows x64 execution)
 
 Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
 
@@ -204,12 +205,18 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
   made. See the [execution report](../../artifacts/phase10/p10-win-c27-classes-notes-20261126/execution-report.md),
   [visual review](../../artifacts/phase10/p10-win-c27-classes-notes-20261126/visual-review.md),
   and [discovery report](../../artifacts/phase10/p10-win-c27-classes-notes-discovery-20261126/discovery-report.md).
+- **Candidate 28 — Classes Details/Times and Co-Teacher.** Read-only discovery
+  found the paired capture and focused Navigator page/WorkspaceStore tests,
+  but no current-source Phase 10 Windows x64 capture. The proposed run covers
+  16 Legacy/Next images across four locale/theme pairs. The baseline's Level
+  02 Legacy selector limitation is a fixture/catalog observation. No build,
+  test, or capture ran during discovery. See the [discovery report](../../artifacts/phase10/p10-win-c28-classes-details-coteacher-discovery-20261126/discovery-report.md).
 
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
 separate. Candidate 26's current-source Windows x64 requalification is
 recorded in the [execution report](../../artifacts/phase10/p10-win-c26-classes-analytics-20261126/execution-report.md).
-The next slice is read-only discovery of another safe current-source Windows
-x64 follow-up. Native interaction, Windows ARM64, macOS, and cross-host Phase
-10 gates remain open.
+Candidate 28 is selected for bounded current-source Windows x64 execution.
+Native interaction, Windows ARM64, macOS, and cross-host Phase 10 gates remain
+open.
 Read-only discovery evidence:
 [report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).
