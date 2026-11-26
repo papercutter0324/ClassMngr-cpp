@@ -865,3 +865,22 @@ Legacy shell labels remain English; both routes show the heading
 defect, or acceptance conclusion. No native Cocoa window, pointer, or popup
 was used. Native window/DPI behavior and x86_64 runtime remain open. No source,
 test, or tracked documentation changed. See the [macOS report](../../artifacts/phase10/p10-macos-c19-my-workspace-calendar-20261126T122757Z-15c60e12/report.md).
+
+### 2026-11-26 — Candidate 20 macOS Classes full-window states
+
+At source HEAD `b77be502ee5f009e603465a6109fa2e30f1ce660`, the focused
+`ClassMngrNextClassesNavigatorPageTests` CTest passed 1/1. A direct offscreen
+capture produced 24 verified 800×600 PNGs in 12 Legacy/Next pairs across
+empty, delete-confirmation, and list-read-error states, two locales, and two
+themes. The independent review observed the Next Retry control and trailing
+diagnostic clipped at the right edge; Legacy shows a read warning over My
+Workspace/Schedule, while Next shows the Classes backdrop. These are
+observations only: no pixel-parity, Retry-functionality, native AppKit,
+defect, or acceptance conclusion.
+
+Fixtures were temporary. Translation destination files were absent before
+and after capture, with source catalog hashes preserved. The existing fixed
+13-file CTest output inventory matched before and after. Universal binaries
+ran on arm64 only. Native AppKit and runtime behavior remain unverified. No
+source, test, or tracked documentation changed. See the [macOS report](../../artifacts/phase10/p10-macos-c20-classes-full-window-state-20261126T124035Z-b77be502/report.md)
+and [capture images/manifest](../../artifacts/phase10/p10-macos-c20-classes-full-window-state-20261126T124035Z-b77be502/captures/matched-full-window-state-captures.json).
