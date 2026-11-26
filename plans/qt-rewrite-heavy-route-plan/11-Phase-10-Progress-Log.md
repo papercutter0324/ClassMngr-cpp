@@ -589,3 +589,26 @@ This does not establish Candidate 7 or Phase 10 acceptance. See the [macOS
 report](../../artifacts/phase10/p10-macos-c7-powerpoint-safe-fallback-20261126T083606Z-c8350ef7/report.md);
 the bundle manifest SHA-256 is
 `7c3c6563500b5f04fa227c30b422f727dfe35ad30731a3e79cf5a09d085800ad`.
+
+### 2026-11-26 — Candidate 8 macOS updater/coordinator checks
+
+Independent review accepted bounded macOS evidence at source HEAD
+`71f97551e792447349235ec7548501b18c0597b2`, using the standard universal
+`macos-clang-debug` tree. Both test binaries have `arm64;x86_64` slices; all
+runtime execution was arm64. In the initial restricted run,
+`ClassMngrNextUpdateCoordinatorTests` passed but `ClassMngrUpdaterTests` failed
+16 assertions when local `QTcpServer::listen()` returned false. The original
+bundle preserves this result. The same two CTests were rerun with approved
+escalation and unchanged binaries, without rebuilding; both passed in 0.94
+seconds.
+
+Independent comparison strongly resolves the first failure as
+environment-limited. The artifacts do not prove a kernel-level privilege
+boundary restricted to loopback. No package, Finder folder, external URL, or
+macOS `open` action was invoked. Real macOS `open` and Finder reveal behavior
+remain unverified. No x86_64 runtime was run; no source or test changes were
+made.
+
+This is bounded updater/coordinator evidence, not Candidate 8 or Phase 10
+acceptance. See the [initial restricted run](../../artifacts/phase10/p10-macos-c8-updater-fake-actions-20261126T085306Z-71f97551/report.md)
+and [approved retry](../../artifacts/phase10/p10-macos-c8-updater-loopback-retry-20261126T090057Z-71f97551/report.md).
