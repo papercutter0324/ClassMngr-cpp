@@ -4,6 +4,25 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 28 Windows x64 Classes Details/Co-Teacher requalification
+
+At source HEAD c6797a3a4f4e3e7bc3478735034fbbc8d137d09d, the Windows x64
+Debug build exited 0 for ClassMngrNextClassesNavigatorPageTests,
+ClassMngrNextClassesNavigatorWorkspaceStoreTests, and
+ClassMngrNextClassesDetailsCoTeacherVisualCapture. The focused page and
+WorkspaceStore CTests passed 2/2 in 56.94 seconds. Five selected Details and
+Co-Teacher page cases and the path-actions transaction case each exited 0.
+The paired offscreen capture exited 0 and produced 16 decoded 1024x768 PNGs
+across eight section/locale/theme entries. All 17 source-input hashes match.
+
+English and Korean labels are readable. The Legacy Details selector is blank
+while Next shows Level 02, confirming the known Phase 7 fixture/catalog
+limitation. Details schedule content extends below the crop; Co-Teacher data
+is visible. These are descriptive observations with no pixel-parity or defect
+conclusion. No product or test source changed. Logs, manifest, captures,
+review, and verification are in
+artifacts/phase10/p10-win-c28-classes-details-coteacher-20261126/.
+
 ### 2026-11-26 — Candidate 28 Windows x64 Classes Details/Co-Teacher discovery
 
 Read-only discovery at source HEAD b67ee6ea922ceb5b7ac840ca0576a49495c8eb83
