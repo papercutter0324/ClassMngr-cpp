@@ -433,3 +433,21 @@ defect, and native Cocoa behavior remains open. See the [macOS artifact report](
 
 Candidate 2 remains unaccepted, and Phase 10's cross-platform and
 native-interaction gates remain open.
+
+### 2026-11-26 — Candidate 3 macOS Speaking Evaluation redo
+
+Independent verification accepted bounded current-source evidence at
+`6d4e3c15c5f5580324afa83fdb93b91de691a153`. The standard
+`macos-clang-debug` universal tree and executable (`arm64;x86_64`) were reused.
+The incremental build regenerated resources but needed no compile or link
+steps. The single offscreen `ClassMngrNextSpeakingEvaluationPageTests` CTest
+passed all 41 QtTest slots, including
+`matrixIsFixedSizeTracksExactDeltaValidationAndUndo`; QtTest simulated
+`QKeySequence::Redo` and `Undo` dispatch and page-level undo/redo. Runtime was
+arm64 only. Physical keyboard delivery, native Cocoa focus, and x86_64 runtime
+remain unverified. Font/offscreen warnings remain; no production or test code
+changed. See the [macOS report](../../artifacts/phase10/p10-macos-c3-speaking-redo-20261126T072332Z-6d4e3c15/report.md).
+
+This is bounded offscreen evidence, not native parity or Phase 10 acceptance.
+Phase 10 remains In Progress with cross-platform and native-interaction gates
+open.
