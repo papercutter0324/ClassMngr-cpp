@@ -848,3 +848,20 @@ files changed.
 
 This evidence does not accept Candidate 18 or Phase 10. See the [macOS
 report](../../artifacts/phase10/p10-macos-c18-upcoming-birthdays-20261126T121421Z-ded5b8e8/report.md).
+
+### 2026-11-26 — Candidate 19 macOS My Workspace Calendar
+
+Independent review accepted the bounded current-source evidence at HEAD
+`15c60e12aae50a4156a0e9a86153b13d9205a38e`. The focused
+`ClassMngrNextMyWorkspacePageTests` CTest passed 1/1. The direct offscreen
+capture produced 21 images across 13 scenarios; in all eight lower-Upcoming
+records the heading and a representative event row are visible. The universal
+executables ran on arm64 only.
+
+Before/after hashes matched across 81 preserved build-output and historical
+baseline files. In the Korean captures, Next shell labels are localized while
+Legacy shell labels remain English; both routes show the heading
+`예정된 일정`. These are captured strings only, with no fixed-localization,
+defect, or acceptance conclusion. No native Cocoa window, pointer, or popup
+was used. Native window/DPI behavior and x86_64 runtime remain open. No source,
+test, or tracked documentation changed. See the [macOS report](../../artifacts/phase10/p10-macos-c19-my-workspace-calendar-20261126T122757Z-15c60e12/report.md).
