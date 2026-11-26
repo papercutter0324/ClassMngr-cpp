@@ -1,6 +1,6 @@
 # Current Slice Batches
 
-## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; next Windows x64 slice: Candidate 24 Campus Directory)
+## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 24)
 
 Batch goal: requalify migrated behavior, appearance, and outputs against the
 legacy product on supported platforms using current-source evidence. Record
@@ -33,6 +33,11 @@ collision before UIA enumeration. All Candidates 1–22 have bounded Windows
 x64 follow-up evidence. Candidate 1 also has independently verified bounded
 macOS evidence. Native-interaction and cross-host gates remain open; no native
 Windows ARM64 host is available.
+
+Candidate 24's current-source Windows x64 offscreen Campus Directory and C46
+capture follow-up has been recorded. It adds scoped build, focused test, route
+capture, and visual-review evidence; native Windows UI and pixel-parity gates
+remain open. See the [Candidate 24 report](../../artifacts/phase10/p10-win-c24-campus-directory-20261126/execution-report.md).
 Candidate 19's next-batch discovery produced Candidates 21–22; their
 current-source requalifications did not establish product defects.
 
@@ -66,6 +71,7 @@ Windows clipboard, physical focus, and UIA remain open. See the
 | 20. Classes states/localization | Windows x64 evidence independently accepted: 24 PNGs, 12 manifest entries, four locale/theme pairs, and 37 hashes verified; both focused CTests passed. The first build hit MSBuild FileTracker E_ACCESSDENIED with user-temp paths; the artifact-local retry succeeded. Next read-error text is clipped at the 800×600 edge, while status and Retry remain visible. Bounded macOS: Classes Navigator CTest 1/1; 24 verified 800×600 PNGs/12 pairs across three states, two locales, and two themes. Independent review observed clipped Next Retry/trailing diagnostic, plus Legacy warning over My Workspace/Schedule versus Next Classes backdrop. Observation only: no pixel parity, Retry-functionality, native AppKit, defect, or acceptance conclusion. Universal binaries ran arm64 only; native window/DPI remains open. [Windows report](../../artifacts/phase10/p10-win-c20-classes-20261126/review-notes.md), [macOS report](../../artifacts/phase10/p10-macos-c20-classes-full-window-state-20261126T124035Z-b77be502/report.md), [captures](../../artifacts/phase10/p10-macos-c20-classes-full-window-state-20261126T124035Z-b77be502/captures/matched-full-window-state-captures.json) |
 | 21. Initial Setup Wizard locale/theme capture coverage | Windows x64 evidence independently accepted: 60 final PNGs (28 Legacy/Next stage pairs plus four Next personal-details captures), eight font records, 325 hashes, and five focused CTests passed after harness fix/assertions. Legacy capture now loads/applies bundled FontManager fonts; final Korean glyphs are readable. Preserved pre-fix tofu captures are diagnostic only. [Review](../../artifacts/phase10/p10-win-c21-initial-setup-wizard-20261126/visual-review.md) |
 | 22. Document Catalog paired visual review | Windows x64 current-source sidebar-region evidence independently accepted: 12 PNGs and 24 hashes; eight matched 254×630 Legacy/Next tree images across four locale/theme pairs plus four Next full-shell captures. Two focused CTests passed. Manifest records 7 folders, 30 documents, the same selected stable ID, and no loaded PDF body. Korean labels and selection are visible; some long Next labels elide at the fixed width. Scope is sidebar-only, with no full-window Legacy parity claim. [Review notes](../../artifacts/phase10/p10-win-c22-document-catalog-20261126/review-notes.md) |
+| 24. Campus Directory and C46 Admin states | Current-source Windows x64 Debug build exited 0; focused Campus Directory CTest passed 1/1 and the capability-gated Admin navigation slot passed 3/3. Offscreen review decoded 40 paired C41 route captures and 12 C46 menu/authorized/read-only states across four locale/theme pairs. All nine source hashes match. Observations only: no pixel-parity or native-window claim. [Execution report](../../artifacts/phase10/p10-win-c24-campus-directory-20261126/execution-report.md) |
 
 ### Ordered candidates
 
@@ -133,7 +139,7 @@ docs/qt-rewrite/visual-baseline/next/phase-7/ and behavior/output evidence in
 the Phase 7, 7.5, 8, and 8a progress logs are references for discovery only;
 requalify against current source before calling a difference a defect.
 
-## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (discovered; next: Candidate 24)
+## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (Candidate 24 evidence recorded)
 
 Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
 
@@ -143,18 +149,18 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
   Ready/error/closed/reopened states. All 34 C++/header source inputs still
   match; the only source-inventory difference is an unrelated CMake test-file
   change. No duplicate capture run is needed. See the [Candidate 6 report](../../artifacts/phase10/p10-win-36-c6-headless-print-20261126/report.md).
-- **Candidate 24 — Campus Directory and C46 Admin states.** Requalify the
-  current `ClassMngrNextCampusDirectoryVisualCapture` target on Windows x64.
-  It produces 40 paired C41 route PNGs and 12 C46 Admin/authorized/read-only
-  PNGs across the four locale/theme combinations, using packaged Bundang data
-  and an isolated capture-only Legacy map alias. Build
-  `ClassMngrNextCampusDirectoryTests` and the visual capture target, run the
-  focused directory CTest, and write the capture to a fresh artifact path.
-  Review the manifests, image readability, localized labels, route states, and
-  artifact hashes. Historical C41/C46 findings remain discovery references,
-  not current-source defects or pixel-parity claims.
+- **Candidate 24 — Campus Directory and C46 Admin states.** The current-source
+  Windows x64 Debug run is recorded. The focused directory CTest and
+  capability-gated Admin-navigation slot passed. Fresh offscreen evidence
+  contains 40 C41 Legacy/Next route PNGs plus 12 C46 menu, authorized, and
+  read-only PNGs across all four locale/theme pairs. The manifests, 52 decoded
+  images, representative localized states, and nine source hashes were
+  reviewed. See the [execution report](../../artifacts/phase10/p10-win-c24-campus-directory-20261126/execution-report.md).
+  Legacy and Next retain different page structures, so this remains
+  observational and makes no pixel-parity claim.
 
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
 separate. Native interaction, Windows ARM64, macOS, and cross-host Phase 10
-gates remain open. Read-only discovery evidence:
+gates remain open. The next Windows x64 slice needs read-only discovery.
+Read-only discovery evidence:
 [report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).

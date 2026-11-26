@@ -4,6 +4,43 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 24 Windows x64 Campus Directory and C46 states
+
+At source HEAD 9c01f4e40dd37ee3579f205891bd4c852918c5ed, the three Debug x64
+targets ClassMngrNextCampusDirectoryTests,
+ClassMngrNextCampusDirectoryVisualCapture, and ClassMngrNextNavigationTests
+built successfully. A direct confirmation build recorded exit code 0 using
+Visual Studio 18 2026, MSBuild 18.12.3, CMake 4.4.2, and Qt 6.12.0 MSVC x64
+Debug.
+
+The focused ClassMngrNextCampusDirectoryTests CTest passed 1/1 with -C Debug.
+The exact navigation slot
+shellAdminMenuIsCapabilityGatedAndManageCampusesUsesNavigationGuard passed
+with 3 passed, 0 failed, and 0 skipped. Its QtTest log includes a Qt font
+directory warning from the installed Qt package.
+
+The offscreen capture target exited 0 and produced 40 C41 route captures and
+12 C46 Admin/authorized/read-only captures across en_US/ko_KR and light/dark.
+All 52 PNGs decoded: 48 route images are 1024x768 and four Admin-menu strips
+are 1024x49 or 1024x50. Review found the Manage Campuses menu item, the
+authorized Save control, the read-only notice with editing controls hidden,
+localized Korean labels, and the Bundang map/building images. These are
+observations; Legacy keeps a dashboard while Next uses individual routes, so
+no pixel-parity claim is made.
+
+All nine source-input hashes match. User profile, temporary files, and
+settings were isolated in the artifact directory. No installed app, native
+Windows window, physical input, UIA, or native clipboard was exercised. The
+first multi-config CTest invocation omitted -C Debug and was not run; the
+configuration-specific rerun passed. A hidden build wrapper stayed open after
+the target outputs; after confirming no active build/compiler processes, only
+that wrapper was stopped, and a direct rebuild captured exit code 0. The full
+report, manifests, logs, and hash inventory are in
+artifacts/phase10/p10-win-c24-campus-directory-20261126/.
+
+No product or test source changed. Candidate 24's scoped offscreen evidence is
+recorded; native Windows interaction and pixel parity remain open.
+
 ### 2026-11-26 — Candidate 2 Windows x64 Edit/clipboard logic follow-up
 
 At source HEAD `23f1976973ba899f8f9a4c4863e9f43b87d4b65f`, the Debug x64
