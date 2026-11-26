@@ -36,6 +36,12 @@ Windows ARM64 host is available.
 Candidate 19's next-batch discovery produced Candidates 21–22; their
 current-source requalifications did not establish product defects.
 
+Candidate 2 also has a focused Windows x64 Debug Edit-action follow-up:
+`shellEditActionsFollowFocusDispatchAndClipboard` passed under Qt offscreen.
+This checks QAction dispatch and the isolated Qt clipboard backend only; native
+Windows clipboard, physical focus, and UIA remain open. See the
+[execution report](../../artifacts/phase10/p10-win-c2-edit-clipboard-offscreen-20261126/execution-report.md).
+
 | Candidate | Status |
 | --- | --- |
 | 1. Focused Phase 7 verification | Linux focused subset and Windows x64 Debug selected subset passed 19/19 (265.79s); independently verified macOS `macos-clang-debug` passed the exact selection 19/19 in 22.74s on arm64. Universal `arm64;x86_64` binaries were built, but x86_64 was compile-time verified only. CTest was offscreen; warnings remain. Full Phase 7 was not rerun. Initial stale generated-resource manifest guard failure was resolved after preserving and hash-verifying the prior 190-file resource tree. [macOS report](../../artifacts/phase10/p10-macos-c1-exact19-20261126T061233Z-6981b584/report.md) |

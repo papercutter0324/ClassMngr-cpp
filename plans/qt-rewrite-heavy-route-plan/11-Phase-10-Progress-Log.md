@@ -4,6 +4,28 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 2 Windows x64 Edit/clipboard logic follow-up
+
+At source HEAD `23f1976973ba899f8f9a4c4863e9f43b87d4b65f`, the Debug x64
+`ClassMngrNextNavigationTests` target built successfully with Visual Studio 18
+2026, MSBuild 18.12.3, CMake 4.4.2, and Qt 6.12.0. The focused
+`shellEditActionsFollowFocusDispatchAndClipboard` slot passed with exit code 0
+(3 QtTest phases passed, 0 failed, 0 skipped; 196 ms). The slot covers Edit
+menu enabled states and shortcuts, action dispatch, copy/cut/paste, undo/redo,
+and blocking cut/paste in read-only editors.
+
+Qt loaded `qoffscreend.dll`; `qwindowsd.dll` was not loaded. The clipboard
+assertions therefore used Qt's offscreen clipboard backend, and the Windows
+user clipboard was not read or modified. This is focused action logic, not
+native Windows clipboard, physical focus, UIA, or window evidence. The build
+reconfigured its existing tree and regenerated 199 runtime resource records.
+The accepted run, source hashes, toolchain, and logs are in the
+[execution report](../../artifacts/phase10/p10-win-c2-edit-clipboard-offscreen-20261126/execution-report.md).
+An initial wrapper attempt captured a passing QtTest transcript but not a
+reliable child exit code; it is retained as diagnostic evidence, and the
+accepted rerun records both exit code 0 and the passing totals. No product or
+test source changed. Candidate 2 and Phase 10 remain open.
+
 ### 2026-11-25 — Phase 10 start precheck passed
 
 At the user's request, an independent local Tester reviewed the fresh

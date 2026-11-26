@@ -1,12 +1,34 @@
 # Latest Session Work
 
-## Paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26
+## Current handoff — Phase 10 Windows x64 follow-up — 2026-11-26
 
-Deployment ID: `qtphase10-macos-20261126`; route: Heavy. The user directed the
-macOS tasks for Phase 10, requested a local commit after each candidate, then
-instructed us to commit Candidate 20 and stop. This deployment is paused after
-Candidate 20. Phase 10 remains In Progress; do not continue with Candidate 21
-until the user resumes. No push was requested or performed.
+The user resumed Phase 10 for Windows x64 and requested a local commit after
+each slice. Phase 10 remains In Progress. Candidates 21–22 have bounded
+Windows x64 evidence recorded in the current slice tracker. The latest slice,
+Candidate 2 Edit-action/clipboard logic, passed the focused
+`shellEditActionsFollowFocusDispatchAndClipboard` slot under Qt offscreen;
+native Windows clipboard, physical focus, and UIA remain open. Its local
+artifact is
+`artifacts/phase10/p10-win-c2-edit-clipboard-offscreen-20261126/`. The Windows
+user clipboard was not read or modified. No product or test source changed.
+
+The Computer Use connector is unavailable in this session, so no visible
+installed-app interaction was attempted. Continue with current-source Windows
+x64 work and record the remaining native and cross-host limits accurately.
+Candidate 2 is not accepted, and Phase 10's Windows ARM64, macOS, native
+interaction, and cross-host gates remain open. No push was requested.
+
+Next entry point: perform the required next-batch discovery across remaining
+migrated surfaces, then begin the next bounded Windows x64 candidate. Preserve
+the separate open installed-runtime geometry/font follow-up for Candidate 11.
+
+## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
+
+Deployment ID: `qtphase10-macos-20261126`; route: Heavy. At that handoff, the
+user directed the macOS tasks for Phase 10, requested a local commit after each
+candidate, then instructed us to commit Candidate 20 and stop. The user later
+resumed Phase 10 for Windows x64, superseding the pause. No push was requested
+or performed.
 
 Candidate 20 is committed as `fdb31d2f` (`Phase10 - Record macOS Candidate 20
 classes evidence`). The Candidate 8–20 macOS record commits are local and
@@ -32,9 +54,9 @@ Key open macOS results:
   disposition. Native Cocoa, live accessibility/input, x86_64 runtime, Windows
   ARM64, and full cross-platform Phase 10 gates remain open.
 
-Next resume point: Candidate 21 Initial Setup Wizard captures, then Candidate
-22 Document Catalog, followed by disposition of all open visual/output/native
-and cross-host gates. Phase 9 remains incomplete and deferred to Phase 14 after
+At the time, the next resume point was Candidate 21 Initial Setup Wizard, then
+Candidate 22 Document Catalog. Both Windows x64 follow-ups are now recorded in
+the current tracker. Phase 9 remains incomplete and deferred to Phase 14 after
 Phase 13.
 
 ## Previous handoff — Phase 10 Batch 1 Windows parity follow-ups — 2026-11-26
