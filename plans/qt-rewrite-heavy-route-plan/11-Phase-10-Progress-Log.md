@@ -612,3 +612,25 @@ made.
 This is bounded updater/coordinator evidence, not Candidate 8 or Phase 10
 acceptance. See the [initial restricted run](../../artifacts/phase10/p10-macos-c8-updater-fake-actions-20261126T085306Z-71f97551/report.md)
 and [approved retry](../../artifacts/phase10/p10-macos-c8-updater-loopback-retry-20261126T090057Z-71f97551/report.md).
+
+### 2026-11-26 — Candidate 9 macOS file-dialog contract checks
+
+Independent review accepted the hashes and provenance and verified the bounded
+macOS policy inspection at source HEAD
+`4a8c0ccf9d449cd9202b509add58de2aa78cf0dd`. Both targets were built
+incrementally in the standard `macos-clang-debug` tree. The focused
+`ClassMngrNextFileDialogContractTests` CTest passed 1/1; only
+`forcedQtAndPlatformDefaultPolicyAreExplicit` and
+`openOneUsesEscapeForCancellationWithoutWritingPreferences` were run, each
+with zero failures. The two universal executables ran on arm64 only.
+
+The policy inspection confirms the macOS default maps to the native-dialog
+policy, but the selected presenter runs forced Qt mode; no native Cocoa panel
+or user path was opened. This does not verify platform-native picker behavior.
+The full presenter CTest and `ProfileFileWorkflowVisualCapture`, native
+Cocoa behavior, x86_64 runtime, interactive navigation, and visual parity
+remain open. No source, test, or documentation files changed. See the
+[macOS report](../../artifacts/phase10/p10-macos-c9-file-dialog-20261126T090735Z-4a8c0ccf/report.md).
+
+This is bounded current-source evidence, not Candidate 9 or Phase 10
+acceptance.
