@@ -414,3 +414,22 @@ resources successfully and the selected tests passed. See the [macOS report](../
 This gives Candidate 1 bounded macOS evidence, not Phase 10 acceptance. Phase
 10 remains In Progress and its cross-platform and native-interaction gates
 remain open.
+
+### 2026-11-26 — Candidate 2 macOS shell-command follow-up
+
+A subsequent independent verification confirmed bounded current-source
+offscreen evidence at `363f595cbb983abb2e4c05920fdd1aec7508808e`. Four
+focused CTests passed:
+Navigation 21/21, legacy About 3/3, legacy Exit 5/5, and legacy Edit 6/6.
+The separate Next About modal/parent/nested-license slot passed 3/3. The
+existing standard `macos-clang-debug` tree and universal (`arm64;x86_64`)
+binaries were used (Debug, `BUILD_TESTING=ON`); runtime execution was arm64
+only. No code or tests changed.
+
+The isolated Cocoa Exit/geometry slot exited 134 (SIGABRT) before its
+assertions because Qt reported “no screens available.” Independent review
+classified this as an environment observation; it establishes no product
+defect, and native Cocoa behavior remains open. See the [macOS artifact report](../../artifacts/phase10/p10-macos-c2-shell-commands-20261126T065213Z-363f595c/report.md).
+
+Candidate 2 remains unaccepted, and Phase 10's cross-platform and
+native-interaction gates remain open.
