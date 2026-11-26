@@ -139,7 +139,7 @@ docs/qt-rewrite/visual-baseline/next/phase-7/ and behavior/output evidence in
 the Phase 7, 7.5, 8, and 8a progress logs are references for discovery only;
 requalify against current source before calling a difference a defect.
 
-## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (Candidate 24 evidence recorded)
+## Next batch — Phase 10 Batch 2: Current-source Windows x64 visual follow-ups (Candidate 24 recorded; next: Candidate 25 Class Transfer)
 
 Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
 
@@ -159,8 +159,17 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
   Legacy and Next retain different page structures, so this remains
   observational and makes no pixel-parity claim.
 
+- **Candidate 25 — Class Transfer.** Read-only discovery found no current-source
+  Windows x64 capture package. The existing target can capture 12 Legacy/Next
+  export-selection, import-review, and schedule-conflict pairs across four
+  locale/theme combinations into a caller-supplied output path. The proposed
+  bounded run will build the Next workflow tests and capture target, run only
+  the Next workflow CTest, then review 24 PNGs and their manifest. The broad
+  Legacy aggregate has a historical failure of unknown origin and is outside
+  this slice. See the [discovery report](../../artifacts/phase10/p10-win-c25-class-transfer-discovery-20261126/discovery-report.md).
+
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
 separate. Native interaction, Windows ARM64, macOS, and cross-host Phase 10
-gates remain open. The next Windows x64 slice needs read-only discovery.
+gates remain open. Candidate 25 is a proposed bounded follow-up.
 Read-only discovery evidence:
 [report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).

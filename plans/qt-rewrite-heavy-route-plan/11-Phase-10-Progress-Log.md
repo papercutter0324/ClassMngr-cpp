@@ -4,6 +4,30 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 — Candidate 25 Windows x64 next-slice discovery
+
+Read-only discovery at source HEAD 2ad30f2cbf0aaf06d3ea325f3dd4da0489fa67c5
+found no current-source Windows x64 Class Transfer capture artifact. The
+historical Phase 7 package records 12 Legacy/Next state pairs (24 PNGs) for
+export selection, import review, and schedule-conflict feedback across four
+locale/theme pairs, but its README claims no Windows result and explicitly
+makes no visual-parity claim.
+
+The current source registers ClassMngrNextClassTransferWorkflowTests and
+ClassMngrNextClassTransferVisualCapture. CTest lists both; the capture target
+accepts a caller-provided output directory, so a follow-up can avoid its
+registered fixed build-tree path. The capture uses the tracked 96-class
+workspace fixture. The historical README also records one Legacy aggregate
+failure whose origin is unknown; the proposed slice is limited to the Next
+workflow test and paired capture.
+
+Proposed bounded follow-up: build both current-source targets for Windows x64
+Debug, run only the Next workflow CTest, capture into fresh artifact storage,
+and review the 24 images, manifest, states, and hashes. No build, test, or
+capture was run during discovery. The source inventory and discovery report
+are in artifacts/phase10/p10-win-c25-class-transfer-discovery-20261126/.
+Candidate 11's installed geometry/font task remains separate.
+
 ### 2026-11-26 — Candidate 24 Windows x64 Campus Directory and C46 states
 
 At source HEAD 9c01f4e40dd37ee3579f205891bd4c852918c5ed, the three Debug x64

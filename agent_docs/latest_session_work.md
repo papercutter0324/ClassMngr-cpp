@@ -4,12 +4,13 @@
 
 The user resumed Phase 10 for Windows x64 and requested a local commit after
 each slice. Phase 10 remains In Progress. Candidates 21–22 and the new
-Candidate 24 bounded Windows x64 evidence are recorded in the current slice
-tracker. Candidate 24's focused Campus Directory CTest and capability-gated
-Admin navigation slot passed. Its offscreen capture run produced 40 C41 route
-images and 12 C46 menu/authorized/read-only images across four locale/theme
-pairs. All 52 PNGs decoded and all nine source-input hashes match. Details,
-manifests, and logs are under
+Candidate 24 bounded Windows x64 evidence is recorded in the current slice
+tracker and committed as 2ad30f2c (Phase10 - Verify Windows x64 Campus
+Directory). Its focused Campus Directory CTest and capability-gated Admin
+navigation slot passed. Its offscreen capture run produced 40 C41 route images
+and 12 C46 menu/authorized/read-only images across four locale/theme pairs.
+All 52 PNGs decoded and all nine source-input hashes match. Details, manifests,
+and logs are under
 `artifacts/phase10/p10-win-c24-campus-directory-20261126/`. No product or test
 source changed.
 
@@ -19,10 +20,13 @@ x64 work and record the remaining native and cross-host limits accurately.
 Candidate 2 is not accepted, and Phase 10's Windows ARM64, macOS, native
 interaction, and cross-host gates remain open. No push was requested.
 
-Next entry point: perform read-only discovery for the next source-bound Windows
-x64 slice. Candidate 6 already provides current-source-equivalent Windows x64
-Document Viewer state captures, so do not duplicate Candidate 23. Candidate
-11's installed-runtime geometry/font follow-up remains separate and open.
+Next entry point: proposed Candidate 25, current-source Windows x64 Class
+Transfer workflow and paired captures. Discovery found no current-source
+Windows artifact; its two CTests are registered, and the capture target accepts
+a fresh output directory. Candidate 6 already provides current-source-
+equivalent Windows x64 Document Viewer state captures, so do not duplicate
+Candidate 23. Candidate 11's installed-runtime geometry/font follow-up
+remains separate and open.
 
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 
