@@ -808,3 +808,22 @@ Their bundle manifest SHA-256 values are respectively
 `4a3dc6e2d900ff1174df267df229b64a4d1da17fac6a4eaf03e458f9cdb64a06`,
 `71579bf376628937bab50cca746962a17ed9750845166d41198ed92af21e9178`, and
 `48394b106b7714cc3e4c9afa896fd63a50f6581de4791fbca224212d9f5b0e67`.
+
+### 2026-11-26 — Candidate 17 macOS Shared Staff Directory captures
+
+At source HEAD `870f2356f117b82f1c3a32eae44190d8151c4892`, the focused
+`ClassMngrNextSharedStaffDirectoryTests` CTest passed 1/1. Four offscreen
+Native-teacher/GS-team captures across English/light and Korean/dark produced
+eight 1024×768 PNGs and four manifests. Each manifest records 120 fixture rows
+and matched repository order. The standard universal executables contain
+`arm64;x86_64`; build and captures ran on arm64 only.
+
+All four scenes record a Legacy page-relative table bottom of 670 and Next
+bottom of 676, with 38 px headers and representative 42 px rows; viewport and
+scroll states are also recorded. These are descriptive measurements only:
+there is no geometry or pixel threshold and no parity claim. Native DPI and
+window behavior remain open. The existing fixed capture output was not
+targeted, but no before/after hash inventory was made, so no byte-hash
+preservation claim is recorded. No x86_64 runtime or Windows ARM64 result is
+included; Candidate 17 and broader Phase 10 acceptance remain open. No source,
+test, or tracked documentation changed. See the [macOS report](../../artifacts/phase10/p10-macos-c17-shared-staff-directory-20261126T115929Z-870f2356/report.md).
