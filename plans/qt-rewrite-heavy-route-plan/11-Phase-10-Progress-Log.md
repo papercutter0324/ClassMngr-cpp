@@ -634,3 +634,29 @@ remain open. No source, test, or documentation files changed. See the
 
 This is bounded current-source evidence, not Candidate 9 or Phase 10
 acceptance.
+
+### 2026-11-26 — Candidate 10 macOS injected external-launch checks
+
+Independent review accepted the hashes, provenance, and exact test scope at
+source HEAD `3b7d3446619f75619c021ddac6148a507d10bd70`. Five targets were built
+incrementally in the standard universal `macos-clang-debug` tree. The
+`ClassMngrNextUsefulLinksSelectionBehavior` CTest passed 1/1; it checks a
+completed shell-startup stage, not external URL dispatch. Five selected
+offscreen direct slots also passed with zero failures, errors, and skips:
+
+- Bootstrap AI composition used a capturing HTTPS handler.
+- Campus map links used an injected URL launcher.
+- Document print used an injected borrowed operation.
+- Speaking reports used a synthetic unsaved projection and batch-output paths.
+- Sub Prep folder open used an injected callback.
+
+Settings, home/XDG paths, temporary paths, workspaces, and generated files
+were isolated. All five test executables are universal (`arm64;x86_64`), but
+runtime was arm64 only. No default `QDesktopServices` dispatch, browser/Finder
+process, folder reveal, native file/print panel, real user path, or persistent
+product output was used. Actual macOS LaunchServices/browser/Finder behavior,
+x86_64 runtime, full suites, and visual captures remain open. No source, test,
+or tracked documentation changed.
+
+This is bounded launch-seam evidence, not Candidate 10 or Phase 10 acceptance.
+See the [macOS report](../../artifacts/phase10/p10-macos-c10-external-launches-20261126T092129Z-3b7d3446/report.md).
