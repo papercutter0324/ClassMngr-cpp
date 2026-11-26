@@ -4,6 +4,25 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 - Candidate 29 Windows x64 Testing Classes discovery
+
+Read-only discovery at source HEAD `59ffb201ca17da1812e4ff2de1cf1ef975a5b44f`
+confirmed current CMake/CTest registrations for
+`ClassMngrNextTestingClassesManagerTests` and
+`ClassMngrNextTestingClassesVisualCapture`; no matching Phase 10 Windows x64
+capture was found. The manager test contains 16 slots. Historical Phase 7
+materials specify 12 paired states (24 PNGs), but current capture source
+iterates Details, Notes, Roster, and Pending slot, predicting 16 pairs (32
+PNGs). The CMake comment and historical materials omit Roster, so execution
+will verify and report the actual manifest and file set.
+
+The bounded next slice will build the two Windows x64 Debug targets, run only
+their registered CTests, and capture to fresh artifact storage. It will
+validate manifest counts, fixture/selection, image dimensions and decoding,
+and representative English/light and Korean/dark images across each emitted
+state. This discovery ran no build, test, or capture. Report and source hashes:
+`artifacts/phase10/p10-win-c29-testing-classes-discovery-20261126/`.
+
 ### 2026-11-26 — Candidate 28 Windows x64 Classes Details/Co-Teacher requalification
 
 At source HEAD c6797a3a4f4e3e7bc3478735034fbbc8d137d09d, the Windows x64

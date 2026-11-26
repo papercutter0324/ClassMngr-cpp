@@ -69,6 +69,15 @@ made. See
 Candidate 11 and native/cross-host Phase 10 gates remain open. Continue with
 read-only discovery for the next bounded Windows x64 slice.
 
+Candidate 29 read-only discovery is complete at source HEAD `59ffb201`. It
+found no current Phase 10 Windows x64 Testing Classes artifact and confirmed
+the dedicated manager-test and capture registrations. Current capture source
+iterates four states, while the historical README and CMake comment describe
+three; the execution will verify the emitted scope. The next slice is the
+bounded Windows x64 Debug build, the two focused CTests, and a fresh paired
+capture. Discovery evidence is in
+`artifacts/phase10/p10-win-c29-testing-classes-discovery-20261126/`.
+
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 
 Deployment ID: `qtphase10-macos-20261126`; route: Heavy. At that handoff, the
