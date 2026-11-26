@@ -827,3 +827,24 @@ targeted, but no before/after hash inventory was made, so no byte-hash
 preservation claim is recorded. No x86_64 runtime or Windows ARM64 result is
 included; Candidate 17 and broader Phase 10 acceptance remain open. No source,
 test, or tracked documentation changed. See the [macOS report](../../artifacts/phase10/p10-macos-c17-shared-staff-directory-20261126T115929Z-870f2356/report.md).
+
+### 2026-11-26 — Candidate 18 macOS Upcoming Birthdays
+
+At source HEAD `ded5b8e8c9fc9c1765f0eb0189a48df6a87e3b04`, the focused
+`ClassMngrNextUpcomingBirthdaysFlowTests` CTest passed all seven flow slots.
+The visual-capture target was rebuilt; the test target was already current.
+Fresh offscreen en_US/dark and ko_KR/light runs produced eight 520×560 PNGs
+and two manifests. Both executables are universal (`arm64;x86_64`); runtime
+was arm64 only.
+
+Populated manifests record one birthday today, one this week, and two next
+week. Empty captures show localized messages, an unchecked dismissal checkbox,
+and Close. Independent review accepted this scoped evidence and found all four
+Legacy/Next image pairs byte-identical for these cases. It supplies no general
+pixel comparator or parity claim. The existing fixed output and history were not
+targeted, and no before/after hash inventory was made. No native Cocoa window
+or popup was used; native DPI/window behavior remains open. No source or test
+files changed.
+
+This evidence does not accept Candidate 18 or Phase 10. See the [macOS
+report](../../artifacts/phase10/p10-macos-c18-upcoming-birthdays-20261126T121421Z-ded5b8e8/report.md).
