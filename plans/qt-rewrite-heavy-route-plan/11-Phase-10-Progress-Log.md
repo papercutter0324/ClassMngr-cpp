@@ -690,3 +690,25 @@ result is accepted.
 
 See the [macOS report](../../artifacts/phase10/p10-macos-c11-installed-runtime-20261126T095442Z-4f4a3ee0/report.md); its SHA-256 is
 `bec76603fbcf52ed8f61e10510713b9bb2a0931b8373bbc387b26d7cfc2b0625`.
+
+### 2026-11-26 — Candidate 12 macOS My Classes captures
+
+Independent Tester verified the current-source evidence at source HEAD
+`d27bfd043acc96a12ad4f28d2472ed322ec3a123`: all 53 hashes and provenance,
+five selected page slots, three direct offscreen capture invocations, and 28
+PNGs. The standard universal Debug targets were rebuilt/current; executables
+contain `arm64;x86_64`, but runtime was arm64 only. The page slots and capture
+commands all passed. The existing fixed capture directory was preserved with
+its nine files and hashes unchanged.
+
+The 28 images cover populated (8), empty (8), and summary-error (12) states
+across four English/Korean and light/dark pairs; all are 1024×768 except the
+Legacy warning-dialog captures. Observations include Next navigation buttons
+in empty/error images where the corresponding Legacy page images lack them,
+and Legacy modal warning versus Next inline error presentation. There is no
+image comparator, so these observations establish neither parity nor a defect
+or acceptance conclusion. Full details are in the [visual observations](../../artifacts/phase10/p10-macos-c12-my-classes-20261126T102031Z-d27bfd04/visual-observations.md).
+
+Forced grade-tab overflow remains open; this run used four supported grades.
+Native Cocoa rendering and x86_64 runtime remain open. No source or test files
+changed. See the [macOS report](../../artifacts/phase10/p10-macos-c12-my-classes-20261126T102031Z-d27bfd04/report.md).
