@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
@@ -200,11 +201,37 @@ class ResourceBakerTests(unittest.TestCase):
             },
         )
 
-    def test_repeat_bake_is_byte_deterministic_and_replaces_only_owned_output(self) -> None:
+    def test_repeat_bake_reuses_validated_output_without_staging_or_replacing(self) -> None:
         self._bake()
         first = self._output_snapshot()
-        self._bake()
+        with (
+            patch("bake_resources.tempfile.mkdtemp") as make_stage,
+            patch("bake_resources.os.replace") as replace_output,
+        ):
+            manifest = self._bake()
+        make_stage.assert_not_called()
+        replace_output.assert_not_called()
         self.assertEqual(first, self._output_snapshot())
+        self.assertEqual(
+            manifest,
+            json.loads((self.output / "resource-manifest.json").read_text(encoding="utf-8")),
+        )
+
+    def test_empty_output_directory_is_staged_and_populated(self) -> None:
+        self.output.mkdir(parents=True)
+
+        manifest = self._bake()
+
+        self.assertEqual(len(manifest["direct_resources"]), 3)
+        self.assertEqual(
+            {path for path in self._output_snapshot()},
+            {
+                "assets/documents/documents.json",
+                "assets/documents/Guides/guide.pdf",
+                "assets/icons/sample.svg",
+                "resource-manifest.json",
+            },
+        )
 
     def test_edited_manifest_cannot_authorize_replacing_a_modified_output(self) -> None:
         self._bake()

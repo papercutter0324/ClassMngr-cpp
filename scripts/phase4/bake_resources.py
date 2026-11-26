@@ -438,14 +438,14 @@ def _actual_output_tree(output_root: Path) -> tuple[set[str], set[str]]:
     return files, directories
 
 
-def _check_reusable_output(output_root: Path, expected_manifest: dict[str, Any]) -> None:
+def _check_reusable_output(output_root: Path, expected_manifest: dict[str, Any]) -> bool:
     if not output_root.exists():
-        return
+        return False
     if not output_root.is_dir():
         raise BakeError(f"existing output is not a directory: {output_root}")
     files, directories = _actual_output_tree(output_root)
     if not files and not directories:
-        return
+        return False
     if MANIFEST_NAME not in files:
         raise BakeError(f"refusing to replace non-empty, unowned output directory: {output_root}")
     try:
@@ -484,6 +484,7 @@ def _check_reusable_output(output_root: Path, expected_manifest: dict[str, Any])
         data = (output_root / Path(*PurePosixPath(relative).parts)).read_bytes()
         if len(data) != size or hashlib.sha256(data).hexdigest() != digest:
             raise BakeError(f"existing baked file was modified: {relative}")
+    return True
 
 
 def _write_stage(stage: Path, manifest: dict[str, Any], source_root: Path, records: list[dict[str, Any]]) -> None:
@@ -576,7 +577,16 @@ def bake_resources(inventory_path: Path, source_root: Path, output_dir: Path) ->
     output_root = _canonical_output(output_dir)
     _check_output_collisions(output_root, root, records, inventory_file)
     manifest = _expected_manifest(inventory, inventory_raw, records, source_content_sha256)
-    _check_reusable_output(output_root, manifest)
+    if _check_reusable_output(output_root, manifest):
+        # Keep CMake's OUTPUT timestamp fresh after confirming the exact tree.
+        # This only updates metadata; the manifest bytes and resource files stay
+        # untouched. Timestamp refresh is best-effort because reuse is already
+        # safe if the filesystem does not allow it.
+        try:
+            os.utime(output_root / MANIFEST_NAME, None)
+        except OSError:
+            pass
+        return manifest
 
     output_root.parent.mkdir(parents=True, exist_ok=True)
     stage = Path(tempfile.mkdtemp(prefix=f".{output_root.name}.bake-", dir=output_root.parent))
