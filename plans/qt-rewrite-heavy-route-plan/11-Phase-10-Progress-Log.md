@@ -660,3 +660,33 @@ or tracked documentation changed.
 
 This is bounded launch-seam evidence, not Candidate 10 or Phase 10 acceptance.
 See the [macOS report](../../artifacts/phase10/p10-macos-c10-external-launches-20261126T092129Z-3b7d3446/report.md).
+
+### 2026-11-26 — Candidate 11 macOS staged Release follow-up
+
+Independent review accepted the focused checks and staged-package evidence at
+source HEAD `4f4a3ee07c46e090970a1cc4f2f91832a763d763`. The two selected Debug
+CTests, `ClassMngrNextResourceRootResolverTests` and
+`ClassMngrNextPlatformSettingsManagerWindowGeometryPortTests`, passed, as did
+the Bootstrap slot
+`loadsOnlySelectedLanguageThemeAndRequiredFontsBeforeShell`.
+
+The supported Release script produced a fresh staged, universal app and the
+package verifier accepted 919 paths: 498 SHA-256 files, 192 direct resource
+hashes, and 22 license/SBOM files. Strict deep code-signature verification
+passed; minimum deployment target is 14.4. Historical
+`build/macos-clang-release` and `dist/ClassMngr-macos` were preserved. The
+release script then failed DMG creation with `hdiutil: Device not configured`;
+no DMG or checksum was produced.
+
+Direct staged-app smoke was attempted with offscreen QPA but aborted before
+startup because the packaged Release app has Cocoa and no offscreen plugin.
+No startup trace or runtime metrics were produced; the controller sent no
+signal and did not force termination. This host/plugin limitation establishes
+no product defect. The staged package was not installed into `/Applications`
+or opened with Finder/open. No x86_64 runtime was executed. Candidate 11
+remains open for DMG creation, successful app runtime, close/relaunch geometry,
+window persistence, and native rendering; no geometry persistence or visual
+result is accepted.
+
+See the [macOS report](../../artifacts/phase10/p10-macos-c11-installed-runtime-20261126T095442Z-4f4a3ee0/report.md); its SHA-256 is
+`bec76603fbcf52ed8f61e10510713b9bb2a0931b8373bbc387b26d7cfc2b0625`.
