@@ -66,17 +66,26 @@ while Next shows Level 02, matching the known fixture/catalog limitation.
 No product or test source changed and no parity or native-window claim is
 made. See
 `artifacts/phase10/p10-win-c28-classes-details-coteacher-20261126/`.
-Candidate 11 and native/cross-host Phase 10 gates remain open. Continue with
-read-only discovery for the next bounded Windows x64 slice.
+Candidate 11 and native/cross-host Phase 10 gates remain open. Candidate 29
+discovery and execution are recorded below.
 
 Candidate 29 read-only discovery is complete at source HEAD `59ffb201`. It
 found no current Phase 10 Windows x64 Testing Classes artifact and confirmed
 the dedicated manager-test and capture registrations. Current capture source
 iterates four states, while the historical README and CMake comment describe
-three; the execution will verify the emitted scope. The next slice is the
-bounded Windows x64 Debug build, the two focused CTests, and a fresh paired
-capture. Discovery evidence is in
+three. The bounded Windows x64 Debug build, two focused CTests, and fresh
+paired capture are recorded below. Discovery evidence is in
 `artifacts/phase10/p10-win-c29-testing-classes-discovery-20261126/`.
+
+Candidate 29 execution at source HEAD `1cb3fa3a` passed the x64 Debug build
+and both focused CTests. The fresh capture contains 32 readable 1024x768
+images across four states; all 25 source hashes and 46 artifact inventory
+hashes match. Its current-source capture includes Roster even though historical
+Phase 7 materials describe three other states. No Roster acceptance, parity,
+or native Windows claim is made. See
+`artifacts/phase10/p10-win-c29-testing-classes-20261126/`. Candidate 11 and
+native/cross-host Phase 10 gates remain open; continue with read-only discovery
+for the next bounded Windows x64 slice.
 
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 

@@ -4,6 +4,25 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-26 - Candidate 29 Windows x64 Testing Classes requalification
+
+At source HEAD `1cb3fa3a8fc02c3c20934240ca1cb1066c994660`, the Visual Studio 18
+2026 x64 Debug build succeeded for the manager-test and capture targets. The
+focused CTest run passed 2/2 in 82.11 seconds, including all 16 declared
+manager slots and the capture registration. A separate direct offscreen run
+produced 32 decoded 1024x768 PNGs for Details, Notes, Roster, and Pending slot
+across en_US/ko_KR and light/dark. The manifest uses class 3 from the 96-class
+fixture; pending-slot state is Thursday at 10:00. All 25 source-input hashes
+and 46 artifact inventory hashes match.
+
+English and Korean labels are readable with no missing glyphs. The current
+four-state source output exceeds the historical three-state README/manifest
+and CMake comment; this evidence records current output without changing the
+historical package or making a separate Roster acceptance decision. No product
+or test source changed. Logs, captures, manifest, verification, and review are
+in `artifacts/phase10/p10-win-c29-testing-classes-20261126/`. The bounded
+offscreen result makes no pixel-parity or native-window claim.
+
 ### 2026-11-26 - Candidate 29 Windows x64 Testing Classes discovery
 
 Read-only discovery at source HEAD `59ffb201ca17da1812e4ff2de1cf1ef975a5b44f`

@@ -1,10 +1,12 @@
 # Current Slice Batches
 
-Candidate 29 read-only Windows x64 discovery is recorded. The manager-test
-and capture targets exist; current capture source includes a Roster state not
-listed in the historical three-state package. See the [discovery report](../../artifacts/phase10/p10-win-c29-testing-classes-discovery-20261126/discovery-report.md).
+Candidate 29 Windows x64 execution is recorded. The manager suite and capture
+CTest passed; the fresh offscreen capture produced 32 readable 1024x768 PNGs
+across four states and four locale/theme pairs. Current-source roster captures
+extend the historical three-state package. See the [execution report](../../artifacts/phase10/p10-win-c29-testing-classes-20261126/execution-report.md)
+and [visual review](../../artifacts/phase10/p10-win-c29-testing-classes-20261126/visual-review.md).
 
-## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 28)
+## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 29)
 
 Batch goal: requalify migrated behavior, appearance, and outputs against the
 legacy product on supported platforms using current-source evidence. Record
@@ -234,7 +236,8 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
 separate. Candidate 26's current-source Windows x64 requalification is
 recorded in the [execution report](../../artifacts/phase10/p10-win-c26-classes-analytics-20261126/execution-report.md).
-The next slice is Candidate 29 Windows x64 Testing Classes execution. Native
-interaction, Windows ARM64, macOS, and cross-host Phase 10 gates remain open.
+The next slice is read-only discovery of another bounded current-source
+Windows x64 follow-up. Native interaction, Windows ARM64, macOS, and cross-host
+Phase 10 gates remain open.
 Read-only discovery evidence:
 [report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).
