@@ -17,6 +17,21 @@ tests, and capture to a fresh `--c32` directory. `ctest -N` only was used.
 No build, test, or capture ran. Evidence:
 `artifacts/phase10/p10-win-c32-schedule-output-discovery-20261126/`.
 
+### 2026-11-26 - Candidate 32 Windows x64 Schedule output/printing verification
+
+At source HEAD `2a45dd9e37dc4bc041aa9faecf010e4b23ead5f0`, the Windows x64
+Debug build succeeded for the print-model, print-PDF, Next output-adapter, and
+visual-capture targets. The five focused CTests passed 5/5 under the Windows
+platform renderer. A separate offscreen run failed only the PDF target; its
+pixel/text diagnostics are preserved, and the PDF test passed under Windows
+QPA. The fresh `--c32` Windows QPA capture exited 0 and produced 12 dialog
+images plus a one-page PDF preview. The manifest references eight pending-slot
+manager images reused from Candidate 29. All 19 source input hashes match;
+every reference resolves and the reviewed Korean labels are readable. No
+pixel-parity or native interaction claim is made. See
+`artifacts/phase10/p10-win-c32-schedule-output-20261126/execution-report.md`
+and `visual-review.md`.
+
 ### 2026-11-26 - Candidate 31 Windows x64 Schedule Import discovery
 
 The existing P10-WIN-34 Windows x64 package already covers Candidate #31:

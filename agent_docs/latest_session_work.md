@@ -115,6 +115,17 @@ is a focused x64 Debug build, those tests, and a fresh direct `--c32` capture.
 Discovery evidence is in
 `artifacts/phase10/p10-win-c32-schedule-output-discovery-20261126/`.
 
+Candidate 32 execution is complete at source HEAD `2a45dd9e`. The four x64
+Debug targets built successfully; the five focused CTests passed 5/5 under
+Windows QPA. The separate offscreen PDF run failed and is retained as a
+renderer-specific diagnostic. A fresh Windows QPA `--c32` capture produced 12
+dialog images and one PDF preview, with eight pending-slot manager images
+referenced from Candidate 29. All 19 source hashes and manifest references
+match; English and Korean labels are readable in the reviewed samples. See
+`artifacts/phase10/p10-win-c32-schedule-output-20261126/`. No parity or native
+interaction claim is made. Candidate 11 and native/cross-host Phase 10 gates
+remain open; continue with read-only discovery for Candidate 33.
+
 ## Prior paused handoff — Phase 10 Batch 1 macOS follow-up after Candidate 20 — 2026-11-26 (superseded)
 
 Deployment ID: `qtphase10-macos-20261126`; route: Heavy. At that handoff, the

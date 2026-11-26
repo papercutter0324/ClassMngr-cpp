@@ -28,7 +28,15 @@ no Candidate32 assignment-editor/output-options capture. The current capture
 source has a dedicated `--c32` path and the print-model test executable is
 absent. See the [discovery report](../../artifacts/phase10/p10-win-c32-schedule-output-discovery-20261126/discovery-report.md).
 
-## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 30)
+Candidate 32's four x64 Debug targets built successfully, and its five focused
+CTest registrations passed under Windows QPA. The offscreen PDF failure is
+preserved as a renderer-specific diagnostic. The fresh `--c32` capture has 12
+dialog images, one PDF preview, and eight resolved manager-image references
+reused from Candidate 29. All 19 direct source hashes match. See the
+[execution report](../../artifacts/phase10/p10-win-c32-schedule-output-20261126/execution-report.md)
+and [visual review](../../artifacts/phase10/p10-win-c32-schedule-output-20261126/visual-review.md).
+
+## Phase 10 — Batch 1: Visual, behavioral, and cross-platform parity (In Progress; supplemental Windows x64 evidence recorded through Candidate 32)
 
 Batch goal: requalify migrated behavior, appearance, and outputs against the
 legacy product on supported platforms using current-source evidence. Record
@@ -258,8 +266,7 @@ Discovery at source HEAD `fe48d3484be80fbdc69ce9e299a1154192ed0fc6` found:
 Candidate 11's Windows x64 installed geometry/font follow-up remains open and
 separate. Candidate 26's current-source Windows x64 requalification is
 recorded in the [execution report](../../artifacts/phase10/p10-win-c26-classes-analytics-20261126/execution-report.md).
-The next slice is Candidate 32 Windows x64 Schedule output and printing
-execution. Native interaction, Windows ARM64, macOS, and cross-host Phase 10
-gates remain open.
+The next slice is read-only discovery for Candidate 33 Calendar. Native
+interaction, Windows ARM64, macOS, and cross-host Phase 10 gates remain open.
 Read-only discovery evidence:
 [report](../../artifacts/phase10/p10-win-next-batch-discovery-20261126/discovery-report.md).
