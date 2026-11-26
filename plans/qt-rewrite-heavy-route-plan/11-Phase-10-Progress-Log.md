@@ -487,3 +487,39 @@ printer, dialog, job, or physical output was used.
 This is bounded macOS evidence, not full Candidate 5 output-matrix closure or
 Phase 10 acceptance. Windows ARM64, x86_64 runtime, physical output, and the
 broader cross-platform gates remain open. See the [macOS C53 report](../../artifacts/phase10/p10-macos-c4-c53-20261126T073111Z-9dcba15b/report.md).
+
+### 2026-11-26 — Candidate 5 macOS output matrix
+
+Independent verification accepted the scoped macOS output evidence at source
+HEAD `75fd7d20739fad823bec7772abf72d0c81e0af59`. The standard universal
+`macos-clang-debug` tree was reused; built binaries include `arm64;x86_64`,
+but captured runtime evidence is arm64 only. No source or test changes were
+made. No print dialog, printer, job, or physical output was used; Office and
+automation were not launched.
+
+- **Schedule C51:** `ClassMngrNextNormalScheduleImportIntegrationTests` passed
+  18/18 QtTest slots. Legacy and Next each produced one landscape A4 page with
+  profile `Alice` and courses E6-Helios, E6-Poseidon, E6-Gaia, and E6-Hera.
+  At 150 DPI the same-host pair had zero changed pixels, within the existing
+  tolerance. The archived Phase 7 Schedule image differs and requests an
+  unavailable font;
+  it is not a cross-host gate.
+- **Roster:** `ClassMngrNextRosterOutputTests` passed 20/20 slots. By Day and
+  Daily each produced one page; Per Class produced two portrait and two
+  landscape pages. All six Legacy/Next page pairs matched in text, geometry,
+  orientation, synthetic content, and raster.
+- **Speaking:** The focused
+  `legacyAndNextOutputPathsMatchForStandardAndAdvanced` slot passed 3/3,
+  including setup/cleanup. Standard and Advanced each produced one 540×780 pt
+  page with expected synthetic content, matching extracted text, and zero
+  changed pixels at 150 DPI. Both adapter paths use a shared renderer, so this
+  is not independent-renderer parity.
+
+Candidate 4's C53 row was carried forward, not rerun: the selected grouping,
+17-page raster, and SQL result remain accepted, while raw PDF text-layer/copy
+fidelity remains open. Candidate 5 does not normalize that output or close the
+full text matrix; see the [Candidate 4 review](../../artifacts/phase10/p10-macos-c4-c53-20261126T073111Z-9dcba15b/report.md).
+
+This scoped macOS evidence is accepted; the full output matrix, Windows ARM64,
+x86_64 runtime, and Phase 10 cross-host gates remain open. See the [macOS
+report](../../artifacts/phase10/p10-macos-c5-output-matrix-20261126T075719Z-75fd7d20/report.md).
