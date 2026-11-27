@@ -66,6 +66,7 @@
 
 #include <algorithm>
 #include <array>
+#include <memory>
 #include <optional>
 #include <string>
 #include <utility>
@@ -1208,6 +1209,183 @@ void runSavePathMemoryDiagnostic(const bool usePlatformPersistence)
     QVERIFY(restorePreferences.restore());
 }
 #endif
+
+class ScopedCaptureFontResources final
+{
+public:
+    [[nodiscard]] static std::unique_ptr<ScopedCaptureFontResources> create(
+        QString* errorMessage
+        )
+    {
+        auto loadedCatalog = Resources::ResourceCatalog::load(
+            QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG),
+            QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_ROOT));
+        if (!loadedCatalog)
+        {
+            *errorMessage = loadedCatalog.error().message;
+            return {};
+        }
+        auto scope = Resources::ResourceScope::create(
+            Resources::ResourceScopeKind::Startup,
+            QStringLiteral("roster-import-transfer-capture"));
+        if (!scope)
+        {
+            *errorMessage = scope.error().message;
+            return {};
+        }
+
+        auto resources = std::unique_ptr<ScopedCaptureFontResources>(
+            new ScopedCaptureFontResources(
+                std::move(*loadedCatalog), std::move(*scope)));
+        if (!resources->registerFonts(errorMessage))
+        {
+            return {};
+        }
+        return resources;
+    }
+
+    [[nodiscard]] const QString& interFamily() const noexcept
+    {
+        return m_interFamily;
+    }
+
+    [[nodiscard]] const QString& pretendardFamily() const noexcept
+    {
+        return m_pretendardFamily;
+    }
+
+    [[nodiscard]] const QJsonArray& resources() const noexcept
+    {
+        return m_resources;
+    }
+
+private:
+    ScopedCaptureFontResources(
+        Resources::ResourceCatalog catalog,
+        Resources::ResourceScope scope
+        )
+        : m_loader(std::move(catalog))
+        , m_scope(std::move(scope))
+    {
+    }
+
+    [[nodiscard]] bool registerFonts(QString* errorMessage)
+    {
+        const std::array<QString, 6> interResources{
+            QStringLiteral("resource:assets/fonts/Inter-Regular.ttf"),
+            QStringLiteral("resource:assets/fonts/Inter-Medium.ttf"),
+            QStringLiteral("resource:assets/fonts/Inter-SemiBold.ttf"),
+            QStringLiteral("resource:assets/fonts/Inter-Bold.ttf"),
+            QStringLiteral("resource:assets/fonts/Inter-BoldItalic.ttf"),
+            QStringLiteral("resource:assets/fonts/Inter-Black.ttf")
+        };
+        m_interFontRegistrations.reserve(interResources.size());
+        for (const QString& resourceName : interResources)
+        {
+            const auto id = Resources::ResourceId::fromString(resourceName);
+            if (!id)
+            {
+                *errorMessage = QStringLiteral("Invalid packaged font ID: %1")
+                    .arg(resourceName);
+                return false;
+            }
+            const auto request = Resources::ResourceRequest::create(*id, m_scope);
+            if (!request)
+            {
+                *errorMessage = QStringLiteral("Could not create font request: %1")
+                    .arg(resourceName);
+                return false;
+            }
+            auto font = m_loader.loadFileBackedFont(*request);
+            if (!font)
+            {
+                *errorMessage = font.error().message;
+                return false;
+            }
+            const QStringList familyNames = font->get().familyNames();
+            if (familyNames.isEmpty())
+            {
+                *errorMessage = QStringLiteral("Registered font has no family: %1")
+                    .arg(resourceName);
+                return false;
+            }
+            if (m_interFamily.isEmpty())
+            {
+                m_interFamily = familyNames.front();
+            }
+            else if (m_interFamily != familyNames.front())
+            {
+                *errorMessage = QStringLiteral(
+                    "Inter font faces registered as different families: %1")
+                    .arg(resourceName);
+                return false;
+            }
+            m_resources.append(QJsonObject{
+                {QStringLiteral("resourceId"), resourceName},
+                {QStringLiteral("registrationPath"), QStringLiteral(
+                    "ResourceLoader::loadFileBackedFont")},
+                {QStringLiteral("registeredFamily"), familyNames.front()}
+            });
+            m_interFontRegistrations.emplace_back(std::move(*font));
+        }
+
+        const QString pretendardResource = QStringLiteral(
+            "resource:assets/fonts/PretendardVariable.ttf");
+        const auto pretendardId = Resources::ResourceId::fromString(
+            pretendardResource);
+        if (!pretendardId)
+        {
+            *errorMessage = QStringLiteral("Invalid packaged font ID: %1")
+                .arg(pretendardResource);
+            return false;
+        }
+        const auto pretendardRequest = Resources::ResourceRequest::create(
+            *pretendardId, m_scope);
+        if (!pretendardRequest)
+        {
+            *errorMessage = QStringLiteral("Could not create font request: %1")
+                .arg(pretendardResource);
+            return false;
+        }
+        auto pretendard = m_loader.loadFont(*pretendardRequest);
+        if (!pretendard)
+        {
+            *errorMessage = pretendard.error().message;
+            return false;
+        }
+        const QStringList pretendardFamilies = pretendard->get().familyNames();
+        if (pretendardFamilies.isEmpty())
+        {
+            *errorMessage = QStringLiteral("Pretendard registration has no family");
+            return false;
+        }
+        m_pretendardFamily = pretendardFamilies.front();
+        m_resources.append(QJsonObject{
+            {QStringLiteral("resourceId"), pretendardResource},
+            {QStringLiteral("registrationPath"), QStringLiteral(
+                "ResourceLoader::loadFont")},
+            {QStringLiteral("registeredFamily"), m_pretendardFamily}
+        });
+        m_pretendardFont.emplace(std::move(*pretendard));
+        if (m_resources.size() != 7)
+        {
+            *errorMessage = QStringLiteral(
+                "Capture font fixture did not register all seven packaged fonts");
+            return false;
+        }
+        return true;
+    }
+
+    Resources::ResourceLoader m_loader;
+    Resources::ResourceScope m_scope;
+    std::vector<Resources::ScopedResource<Resources::RegisteredFont>>
+        m_interFontRegistrations;
+    std::optional<Resources::ScopedResource<Resources::RegisteredFont>>
+        m_pretendardFont;
+    QString m_interFamily;
+    QString m_pretendardFamily;
+    QJsonArray m_resources;
+};
 
 } // namespace
 
@@ -3164,15 +3342,130 @@ capturesImportAndTransferStatesAcrossLocalesAndThemes()
     QVERIFY(QDir().mkpath(outputDirectory));
     auto* const application = qobject_cast<QApplication*>(QCoreApplication::instance());
     QVERIFY(application);
-    const QPalette originalPalette = application->palette();
-    const QLocale originalLocale;
+    QString fontError;
+    const auto captureFonts =
+        ScopedCaptureFontResources::create(&fontError);
+    QVERIFY2(captureFonts, qPrintable(fontError));
+
+    struct RestoreCaptureApplicationState final
+    {
+        QApplication& application;
+        QFont font;
+        QPalette palette;
+        QLocale locale;
+
+        ~RestoreCaptureApplicationState()
+        {
+            QLocale::setDefault(locale);
+            application.setPalette(palette);
+            application.setFont(font);
+        }
+    } restoreState{
+        *application, application->font(), application->palette(), QLocale()};
+
+    Platform::QtFontFamilyAvailabilityAdapter fontAvailability;
     QJsonArray captures;
+    QJsonArray fontPresentations;
+    struct RestoreCaptureTranslator final
+    {
+        QTranslator& translator;
+        bool installed = false;
+
+        [[nodiscard]] bool install()
+        {
+            installed = QCoreApplication::installTranslator(&translator);
+            return installed;
+        }
+
+        ~RestoreCaptureTranslator()
+        {
+            if (installed)
+            {
+                QCoreApplication::removeTranslator(&translator);
+            }
+        }
+    };
 
     for (const QString& locale : {QStringLiteral("en_US"), QStringLiteral("ko_KR")})
     {
+        const bool korean = locale == QStringLiteral("ko_KR");
         for (const QString& theme : {QStringLiteral("light"), QStringLiteral("dark")})
         {
             QLocale::setDefault(QLocale(locale));
+            Ui::FontSizePresenter fontSizePresenter(*application, fontAvailability);
+            fontSizePresenter.applyStartupPreference(
+                Application::FontSize::Normal,
+                locale,
+                captureFonts->interFamily(),
+                captureFonts->pretendardFamily());
+            QFont localeFont = application->font();
+            if (restoreState.font.pointSize() > 0)
+            {
+                localeFont.setPointSize(restoreState.font.pointSize());
+            }
+            else if (restoreState.font.pixelSize() > 0)
+            {
+                localeFont.setPixelSize(restoreState.font.pixelSize());
+            }
+            application->setFont(localeFont);
+
+            const QString expectedPrimaryFamily = korean
+                ? captureFonts->pretendardFamily()
+                : captureFonts->interFamily();
+            const QString expectedFallbackFamily = korean
+                ? captureFonts->interFamily()
+                : captureFonts->pretendardFamily();
+            const QFont applicationFont = application->font();
+            QCOMPARE(applicationFont.families().value(0), expectedPrimaryFamily);
+            QCOMPARE(applicationFont.families().value(1), expectedFallbackFamily);
+            QCOMPARE(QFontInfo(applicationFont).family(), expectedPrimaryFamily);
+            QCOMPARE(applicationFont.pointSize(), restoreState.font.pointSize());
+            QCOMPARE(applicationFont.pixelSize(), restoreState.font.pixelSize());
+
+            QFont latinProbeFont(captureFonts->interFamily());
+            latinProbeFont.setPointSize(12);
+            const QRawFont latinProbe = QRawFont::fromFont(latinProbeFont);
+            QVERIFY(latinProbe.isValid());
+            QVERIFY(latinProbe.supportsCharacter(static_cast<uint>('A')));
+            QCOMPARE(QFontInfo(latinProbeFont).family(),
+                captureFonts->interFamily());
+            const qreal latinProbeAdvance = QFontMetricsF(latinProbeFont)
+                .horizontalAdvance(QStringLiteral("Student A"));
+            QVERIFY(latinProbeAdvance > 0);
+
+            QFont hangulProbeFont(captureFonts->pretendardFamily());
+            hangulProbeFont.setPointSize(12);
+            const QRawFont hangulProbe = QRawFont::fromFont(hangulProbeFont);
+            QVERIFY(hangulProbe.isValid());
+            QVERIFY(hangulProbe.supportsCharacter(0xAC00));
+            QCOMPARE(QFontInfo(hangulProbeFont).family(),
+                captureFonts->pretendardFamily());
+            const qreal hangulProbeAdvance = QFontMetricsF(hangulProbeFont)
+                .horizontalAdvance(QStringLiteral("\uAC00"));
+            QVERIFY(hangulProbeAdvance > 0);
+            fontPresentations.append(QJsonObject{
+                {QStringLiteral("locale"), locale},
+                {QStringLiteral("theme"), theme},
+                {QStringLiteral("applicationFontFamilies"),
+                 QJsonArray::fromStringList(applicationFont.families())},
+                {QStringLiteral("resolvedApplicationFamily"),
+                 QFontInfo(applicationFont).family()},
+                {QStringLiteral("pointSizePreserved"),
+                 applicationFont.pointSize() == restoreState.font.pointSize()},
+                {QStringLiteral("latinFamily"), captureFonts->interFamily()},
+                {QStringLiteral("latinRawFontValid"), latinProbe.isValid()},
+                {QStringLiteral("latinProbeText"), QStringLiteral("Student A")},
+                {QStringLiteral("latinGlyphAvailable"),
+                 latinProbe.supportsCharacter(static_cast<uint>('A'))},
+                {QStringLiteral("latinProbeAdvance"), latinProbeAdvance},
+                {QStringLiteral("hangulFamily"),
+                 captureFonts->pretendardFamily()},
+                {QStringLiteral("hangulRawFontValid"), hangulProbe.isValid()},
+                {QStringLiteral("hangulProbeText"), QStringLiteral("\uAC00")},
+                {QStringLiteral("hangulGlyphAvailable"),
+                 hangulProbe.supportsCharacter(0xAC00)},
+                {QStringLiteral("hangulProbeAdvance"), hangulProbeAdvance}
+            });
             QPalette palette;
             const bool dark = theme == QStringLiteral("dark");
             palette.setColor(QPalette::Window,
@@ -3195,7 +3488,8 @@ capturesImportAndTransferStatesAcrossLocalesAndThemes()
             application->setPalette(palette);
 
             QTranslator translator;
-            if (locale == QStringLiteral("ko_KR"))
+            RestoreCaptureTranslator translatorRestore{translator};
+            if (korean)
             {
                 const QString translations = QStringLiteral(
                     CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY);
@@ -3203,7 +3497,7 @@ capturesImportAndTransferStatesAcrossLocalesAndThemes()
                     QStringLiteral("ClassMngr_ko_KR.qm"))),
                     qPrintable(QStringLiteral("Could not load translation from %1")
                         .arg(translations)));
-                QVERIFY(QCoreApplication::installTranslator(&translator));
+                QVERIFY(translatorRestore.install());
             }
 
             ActionProbe importProbe;
@@ -3212,9 +3506,25 @@ capturesImportAndTransferStatesAcrossLocalesAndThemes()
             importEditor.enterClassSection(
                 QStringLiteral("capture.tps"), typedClassId(12));
             importEditor.show();
-            importEditor.findChild<QPushButton*>(
-                QStringLiteral("nextRosterImportScores"))->click();
+            auto* const importButton = importEditor.findChild<QPushButton*>(
+                QStringLiteral("nextRosterImportScores"));
+            QVERIFY(importButton);
+            importButton->click();
             QApplication::processEvents();
+            QCOMPARE(importProbe.scoreReadCount, 1);
+            QCOMPARE(importProbe.saveCount, 0);
+            for (int column = 2; column <= 5; ++column)
+            {
+                QCOMPARE(importEditor.model()->index(0, column).data().toString(),
+                    QStringLiteral("A+"));
+            }
+            QVERIFY(importEditor.hasUnsavedChanges());
+            QCOMPARE(importEditor.model()->rowCount(), 25);
+            QCOMPARE(importEditor.model()->columnCount(), 6);
+            QCOMPARE(QFontInfo(importEditor.font()).family(),
+                expectedPrimaryFamily);
+            QCOMPARE(QFontInfo(importEditor.tableView()->font()).family(),
+                expectedPrimaryFamily);
             const QString importFile = QStringLiteral("roster_import_%1_%2.png")
                 .arg(locale, theme);
             const QString importPath = QDir(outputDirectory).filePath(importFile);
@@ -3226,7 +3536,16 @@ capturesImportAndTransferStatesAcrossLocalesAndThemes()
                 {QStringLiteral("state"), QStringLiteral("imported scores")},
                 {QStringLiteral("locale"), locale},
                 {QStringLiteral("theme"), theme},
-                {QStringLiteral("image"), importFile}
+                {QStringLiteral("image"), importFile},
+                {QStringLiteral("resolvedApplicationFamily"),
+                 QFontInfo(application->font()).family()},
+                {QStringLiteral("resolvedEditorFamily"),
+                 QFontInfo(importEditor.font()).family()},
+                {QStringLiteral("resolvedTableFamily"),
+                 QFontInfo(importEditor.tableView()->font()).family()},
+                {QStringLiteral("modelRows"), importEditor.model()->rowCount()},
+                {QStringLiteral("modelColumns"),
+                 importEditor.model()->columnCount()}
             });
 
             ActionProbe transferProbe;
@@ -3242,6 +3561,23 @@ capturesImportAndTransferStatesAcrossLocalesAndThemes()
                 QStringLiteral("nextRosterTransferStudent"))->click();
             QApplication::processEvents();
             QCOMPARE(transferProbe.transferSaveCount, 1);
+            QVERIFY(transferProbe.lastTransferSave.has_value());
+            QCOMPARE(QString::fromStdU16String(
+                transferProbe.lastTransferSave->targetRoster.rows[0][0]),
+                QStringLiteral("Student A"));
+            QCOMPARE(QString::fromStdU16String(
+                transferEditor.model()->snapshot().rows[0][0]),
+                QStringLiteral("Student B"));
+            QVERIFY(!transferEditor.hasUnsavedChanges());
+            auto* const transferTimer = transferEditor.findChild<QTimer*>(
+                QStringLiteral("nextRosterAutosaveTimer"));
+            QVERIFY(transferTimer && !transferTimer->isActive());
+            QCOMPARE(transferEditor.model()->rowCount(), 25);
+            QCOMPARE(transferEditor.model()->columnCount(), 6);
+            QCOMPARE(QFontInfo(transferEditor.font()).family(),
+                expectedPrimaryFamily);
+            QCOMPARE(QFontInfo(transferEditor.tableView()->font()).family(),
+                expectedPrimaryFamily);
             const QString transferFile = QStringLiteral("roster_transfer_%1_%2.png")
                 .arg(locale, theme);
             const QString transferPath = QDir(outputDirectory).filePath(transferFile);
@@ -3253,23 +3589,30 @@ capturesImportAndTransferStatesAcrossLocalesAndThemes()
                 {QStringLiteral("state"), QStringLiteral("student transferred")},
                 {QStringLiteral("locale"), locale},
                 {QStringLiteral("theme"), theme},
-                {QStringLiteral("image"), transferFile}
+                {QStringLiteral("image"), transferFile},
+                {QStringLiteral("resolvedApplicationFamily"),
+                 QFontInfo(application->font()).family()},
+                {QStringLiteral("resolvedEditorFamily"),
+                 QFontInfo(transferEditor.font()).family()},
+                {QStringLiteral("resolvedTableFamily"),
+                 QFontInfo(transferEditor.tableView()->font()).family()},
+                {QStringLiteral("modelRows"),
+                 transferEditor.model()->rowCount()},
+                {QStringLiteral("modelColumns"),
+                 transferEditor.model()->columnCount()}
             });
-
-            if (locale == QStringLiteral("ko_KR"))
-            {
-                QCoreApplication::removeTranslator(&translator);
-            }
         }
     }
-    QLocale::setDefault(originalLocale);
-    application->setPalette(originalPalette);
 
     const QJsonObject manifest{
         {QStringLiteral("scope"), QStringLiteral(
             "Roster score import and student transfer presentation captures")},
         {QStringLiteral("viewport"), QJsonObject{
             {QStringLiteral("width"), 1024}, {QStringLiteral("height"), 768}}},
+        {QStringLiteral("packagedFontResources"), captureFonts->resources()},
+        {QStringLiteral("fontPresentations"), fontPresentations},
+        {QStringLiteral("modelSchema"), QStringLiteral(
+            "25 resident rows and six base columns for import/transfer captures")},
         {QStringLiteral("limit"), QStringLiteral(
             "Presentation evidence only; images do not establish pixel parity.")},
         {QStringLiteral("captures"), captures}
