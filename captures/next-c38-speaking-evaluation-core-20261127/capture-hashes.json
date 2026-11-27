@@ -1,0 +1,30 @@
+﻿[
+    {
+        "File":  "page_en_US-light.png",
+        "Width":  1440,
+        "Height":  880,
+        "Bytes":  128145,
+        "SHA256":  "0f6de28bc86a7587e3d0d32123731d0b62142afbeb455df85464557d10e49692"
+    },
+    {
+        "File":  "page_en_US-dark.png",
+        "Width":  1440,
+        "Height":  880,
+        "Bytes":  122291,
+        "SHA256":  "09cce05ba2125ab4e88c1f0e051827fdd08f0b6917b4e576f6d396da6a5ad187"
+    },
+    {
+        "File":  "page_ko_KR-light.png",
+        "Width":  1440,
+        "Height":  880,
+        "Bytes":  134407,
+        "SHA256":  "850d31c5b90fabc65937f6dfc8caf734b2be3e16c3c72355a52dae71c240ce20"
+    },
+    {
+        "File":  "page_ko_KR-dark.png",
+        "Width":  1440,
+        "Height":  880,
+        "Bytes":  128721,
+        "SHA256":  "469e377690da5dcb9ce9e5e6356cefc889f61c2043e6686ac2ad53ac34fa8931"
+    }
+]

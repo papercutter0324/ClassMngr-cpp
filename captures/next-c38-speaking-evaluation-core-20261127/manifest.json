@@ -1,0 +1,65 @@
+﻿{
+  "taskId": "C38",
+  "task": "Phase 10 Candidate38 Windows x64 Speaking Evaluation core",
+  "sourceCommit": "428ce852500a3e573a1ba3a9e2fc4113de3afd87",
+  "captureDate": "2026-11-27",
+  "fixture": "Synthetic large-class Speaking Evaluation fixture; displayed student names and edited cells are synthetic.",
+  "claim": "Synthetic fixture only: English/Korean light/dark Windows x64 Qt offscreen presentation at 1440x880. No native-window, physical-printer, or pixel-parity claim.",
+  "captureSource": "build/windows-x64-debug/speaking-evaluation-ai-comment-visual-captures",
+  "fixtureFontSetup": "Registers six packaged Inter resources and Pretendard, applies the production FontSizePresenter locale family order, asserts Latin and Hangul glyph coverage, and restores application font, locale, palette, stylesheet, and translator state.",
+  "sourceTest": {
+    "path": "tests/next/speaking_evaluation_page_tests.cpp",
+    "sha256": "1fa59538fb598e932eaaff58f981b23dadc208e96f29d3a7487a63d96ce1d1a0"
+  },
+  "testExecutable": {
+    "path": "build/windows-x64-debug/Debug/ClassMngrNextSpeakingEvaluationPageTests.exe",
+    "sha256": "1657abe35839ec09ed4de01efbc6e7943c97e422935a9365470d7a4c1d8682e2"
+  },
+  "build": {
+    "command": "cmake --build build/windows-x64-debug --config Debug --target ClassMngrNextSpeakingEvaluationPageTests --parallel 8",
+    "exitCode": 0,
+    "log": "artifacts/phase10/p10-win-c38-speaking-evaluation-core-20261127/page-build-font-fixture-clean.log"
+  },
+  "selectedSlots": [
+    "matrixIsFixedSizeTracksExactDeltaValidationAndUndo",
+    "rowPreferencesDisplayExtrasExtendAndRetainTailRows",
+    "saveReopenPersistsUnicodeAndOnlyChangedCells",
+    "largeNavigationUsesOneMatrixAndReleasesItOnSuspension",
+    "splitterStateSavesOnSuspensionWithoutResettingRetainedPage",
+    "selectionSaveDiscardAndFailureRetryPreserveDrafts",
+    "saveOnSwitchPersistsBeforeLoadingAndFailureKeepsDraft",
+    "automaticModeDebouncesAndSavesOnce",
+    "rosterImportNotesAndValidationUseTypedRules",
+    "rosterNameImportUsesMaximumBeyondExtraDisplayRows",
+    "capturesEnglishKoreanLightAndDarkPresentation"
+  ],
+  "pageCtest": {
+    "registeredTestId": 332,
+    "name": "ClassMngrNextSpeakingEvaluationPageTests",
+    "exitCode": 0,
+    "log": "artifacts/phase10/p10-win-c38-speaking-evaluation-core-20261127/page-ctest-final-stability-reviewed.log"
+  },
+  "dependencyBoundaryCtest": {
+    "registeredTestId": 261,
+    "name": "NextStartupWorkspaceDependencyBoundary",
+    "exitCode": 0,
+    "log": "artifacts/phase10/p10-win-c38-speaking-evaluation-core-20261127/boundary-ctest-final-stability-reviewed.log"
+  },
+  "sourceInputHashStability": {
+    "count": 1769,
+    "differences": 0,
+    "before": "artifacts/phase10/p10-win-c38-speaking-evaluation-core-20261127/source-inputs-final-before.json",
+    "after": "artifacts/phase10/p10-win-c38-speaking-evaluation-core-20261127/source-inputs-final-after.json"
+  },
+  "sharedOutputRestoration": {
+    "trackedFiles": 29,
+    "restoredFiles": 29,
+    "sha256Differences": 0,
+    "reportsC40Differences": 0,
+    "before": "artifacts/phase10/p10-win-c38-speaking-evaluation-core-20261127/shared-c39-output-rerun-before.json",
+    "after": "artifacts/phase10/p10-win-c38-speaking-evaluation-core-20261127/shared-c39-output-final-after-restore.json"
+  },
+  "captureHashes": "capture-hashes.json",
+  "visualReviewStatus": "Readable",
+  "visualObservations": "All four English/Korean light/dark page PNGs show readable English and Hangul UI text, table labels, synthetic names, and notes. Light and dark themes render with contrasting palettes."
+}

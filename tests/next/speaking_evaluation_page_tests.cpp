@@ -14,6 +14,7 @@
 #include "next/resources/resource_catalog.h"
 #include "next/resources/resource_loader.h"
 #include "next/ui/page_host.h"
+#include "next/ui/font_size_presenter.h"
 #include "next/ui/speaking_evaluation_ai_dialogs.h"
 #include "next/ui/speaking_evaluation_page.h"
 #include "next/ui/speaking_evaluation_reports_dialog.h"
@@ -32,6 +33,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QFontDatabase>
+#include <QFontInfo>
 #include <QImage>
 #include <QKeySequence>
 #include <QJsonArray>
@@ -48,6 +50,7 @@
 #include <QPdfDocument>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QRawFont>
 #include <QStringList>
 #include <QStyle>
 #include <QStyleOptionButton>
@@ -3084,6 +3087,127 @@ workspaceStoreBatchApplySaveReopenPersistsComment()
 
 void SpeakingEvaluationPageTests::capturesEnglishKoreanLightAndDarkPresentation()
 {
+    auto* const application = qobject_cast<QApplication*>(QCoreApplication::instance());
+    QVERIFY(application);
+    struct RestoreCaptureApplicationState final
+    {
+        QApplication& application;
+        QFont font;
+        QPalette palette;
+        QLocale locale;
+        QString styleSheet;
+
+        ~RestoreCaptureApplicationState()
+        {
+            QLocale::setDefault(locale);
+            application.setPalette(palette);
+            application.setStyleSheet(styleSheet);
+            application.setFont(font);
+        }
+    } restoreState{
+        *application, application->font(), application->palette(), QLocale(),
+        application->styleSheet()};
+
+    auto loadedCatalog = Resources::ResourceCatalog::load(
+        QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG),
+        QStringLiteral(CLASSMNGR_NEXT_TEST_RESOURCE_ROOT));
+    if (!loadedCatalog)
+    {
+        const QString loadError = loadedCatalog.error().message;
+        QFAIL(qPrintable(loadError));
+    }
+    Resources::ResourceCatalog resourceCatalog(std::move(*loadedCatalog));
+    Resources::ResourceLoader fontResourceLoader(resourceCatalog);
+    const auto fontScope = Resources::ResourceScope::create(
+        Resources::ResourceScopeKind::Startup,
+        QStringLiteral("speaking-evaluation-page-capture"));
+    QVERIFY(fontScope);
+
+    const std::array<QString, 6> interResources{
+        QStringLiteral("resource:assets/fonts/Inter-Regular.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-Medium.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-SemiBold.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-Bold.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-BoldItalic.ttf"),
+        QStringLiteral("resource:assets/fonts/Inter-Black.ttf")
+    };
+    std::vector<Resources::ScopedResource<Resources::RegisteredFont>>
+        interFontRegistrations;
+    interFontRegistrations.reserve(interResources.size());
+    std::optional<Resources::ScopedResource<Resources::RegisteredFont>>
+        pretendardFont;
+    QString interFamily;
+    for (const QString& resourceName : interResources)
+    {
+        const auto id = Resources::ResourceId::fromString(resourceName);
+        QVERIFY2(id, qPrintable(resourceName));
+        const auto request = Resources::ResourceRequest::create(*id, *fontScope);
+        QVERIFY2(request, qPrintable(resourceName));
+        auto font = fontResourceLoader.loadFileBackedFont(*request);
+        if (!font)
+        {
+            const QString loadError = font.error().message;
+            QFAIL(qPrintable(loadError));
+        }
+        const auto& registeredFont = font->get();
+        const QStringList familyNames = registeredFont.familyNames();
+        QVERIFY2(!familyNames.isEmpty(), qPrintable(resourceName));
+        if (interFamily.isEmpty())
+        {
+            interFamily = familyNames.front();
+        }
+        interFontRegistrations.emplace_back(std::move(*font));
+    }
+    QCOMPARE(interFontRegistrations.size(), interResources.size());
+
+    const auto pretendardId = Resources::ResourceId::fromString(
+        QStringLiteral("resource:assets/fonts/PretendardVariable.ttf"));
+    QVERIFY(pretendardId);
+    const auto pretendardRequest = Resources::ResourceRequest::create(
+        *pretendardId, *fontScope);
+    QVERIFY(pretendardRequest);
+    auto loadedPretendard = fontResourceLoader.loadFont(*pretendardRequest);
+    if (!loadedPretendard)
+    {
+        const QString loadError = loadedPretendard.error().message;
+        QFAIL(qPrintable(loadError));
+    }
+    const QStringList pretendardFamilies = loadedPretendard->get().familyNames();
+    QVERIFY(!pretendardFamilies.isEmpty());
+    const QString pretendardFamily = pretendardFamilies.front();
+    pretendardFont.emplace(std::move(*loadedPretendard));
+
+    class CaptureFontPresentationPort final
+        : public Application::FontPresentationPort
+    {
+    public:
+        [[nodiscard]] int applicationBaseFontPointSize() const override
+        {
+            return 14;
+        }
+
+        [[nodiscard]] int teacherProfileKoreanFontPointSize() const override
+        {
+            return 15;
+        }
+    } fontPresentationPort;
+    Ui::FontSizePresenter fontSizePresenter(*application, fontPresentationPort);
+    const auto applyLocaleFont = [&](const QString& locale) {
+        fontSizePresenter.applyStartupPreference(
+            Application::FontSize::Normal, locale, interFamily, pretendardFamily);
+        QFont localeFont = application->font();
+        if (restoreState.font.pointSize() > 0)
+        {
+            localeFont.setPointSize(restoreState.font.pointSize());
+        }
+        else if (restoreState.font.pixelSize() > 0)
+        {
+            localeFont.setPixelSize(restoreState.font.pixelSize());
+        }
+        application->setFont(localeFont);
+    };
+    applyLocaleFont(QStringLiteral("en_US"));
+
     QTemporaryDir temporary;
     QString path;
     QVERIFY(copyLargeFixture(temporary, &path));
@@ -3117,7 +3241,19 @@ void SpeakingEvaluationPageTests::capturesEnglishKoreanLightAndDarkPresentation(
         CLASSMNGR_NEXT_TEST_RESOURCE_ROOT)).filePath(QStringLiteral("assets/styles"));
     QJsonArray outputs;
     QTranslator translator;
-    bool translatorInstalled = false;
+    struct RestoreCaptureTranslator final
+    {
+        QTranslator& translator;
+        bool installed = false;
+
+        ~RestoreCaptureTranslator()
+        {
+            if (installed)
+            {
+                QCoreApplication::removeTranslator(&translator);
+            }
+        }
+    } translatorRestore{translator};
     const auto capture = [&outputs, &outputDirectory](
         QWidget& widget,
         const QString& kind,
@@ -3149,16 +3285,43 @@ void SpeakingEvaluationPageTests::capturesEnglishKoreanLightAndDarkPresentation(
         {
             QVERIFY(translator.load(QDir(translationDirectory).filePath(
                 QStringLiteral("ClassMngr_ko_KR.qm"))));
-            translatorInstalled = qApp->installTranslator(&translator);
-            QVERIFY(translatorInstalled);
+            translatorRestore.installed =
+                qApp->installTranslator(&translator);
+            QVERIFY(translatorRestore.installed);
         }
         for (const QString& theme : {QStringLiteral("light"), QStringLiteral("dark")})
         {
             QLocale::setDefault(QLocale(locale));
+            applyLocaleFont(locale);
+            const bool korean = locale == QStringLiteral("ko_KR");
+            const QString expectedPrimaryFamily = korean
+                ? pretendardFamily : interFamily;
+            const QString expectedFallbackFamily = korean
+                ? interFamily : pretendardFamily;
+            const QFont applicationFont = application->font();
+            QCOMPARE(applicationFont.families().value(0), expectedPrimaryFamily);
+            QCOMPARE(applicationFont.families().value(1), expectedFallbackFamily);
+            QCOMPARE(QFontInfo(applicationFont).family(), expectedPrimaryFamily);
+
+            QFont latinProbeFont(interFamily);
+            latinProbeFont.setPointSize(12);
+            const QRawFont latinProbe = QRawFont::fromFont(latinProbeFont);
+            QVERIFY(latinProbe.isValid());
+            QVERIFY(latinProbe.supportsCharacter(static_cast<uint>('A')));
+
+            QFont hangulProbeFont(pretendardFamily);
+            hangulProbeFont.setPointSize(12);
+            const QRawFont hangulProbe = QRawFont::fromFont(hangulProbeFont);
+            QVERIFY(hangulProbe.isValid());
+            QVERIFY(hangulProbe.supportsCharacter(0xAC00));
+
             qApp->setPalette(themePalette(theme));
             qApp->setStyleSheet(readFile(QDir(styleDirectory).filePath(
                 theme + QStringLiteral(".qss"))));
             QCoreApplication::processEvents();
+            QCOMPARE(QFontInfo(page->font()).family(), expectedPrimaryFamily);
+            QCOMPARE(QFontInfo(page->tableView()->font()).family(),
+                expectedPrimaryFamily);
             for (const QString& objectName : {
                      QStringLiteral("speakingEvaluationImportNames"),
                      QStringLiteral("speakingEvaluationEditNotes"),
@@ -3254,11 +3417,6 @@ void SpeakingEvaluationPageTests::capturesEnglishKoreanLightAndDarkPresentation(
             QVERIFY(capture(batchDialog, QStringLiteral("ai-batch-review"),
                 locale, theme, QSize(1080, 760)));
             batchDialog.hide();
-        }
-        if (translatorInstalled)
-        {
-            qApp->removeTranslator(&translator);
-            translatorInstalled = false;
         }
     }
     QFile manifest(QDir(outputDirectory).filePath(QStringLiteral("manifest.json")));
