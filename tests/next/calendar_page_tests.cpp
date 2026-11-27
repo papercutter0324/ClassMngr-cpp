@@ -66,8 +66,10 @@
 #include <QSignalSpy>
 #include <QPushButton>
 #include <QQuickItem>
+#include <QQuickWindow>
 #include <QQuickWidget>
 #include <QRawFont>
+#include <QRegion>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSizePolicy>
@@ -95,6 +97,393 @@ using namespace ClassMngr::Next;
 
 namespace
 {
+
+QString calendarCaptureRootDirectory()
+{
+    const QString captureDirectoryOverride = qEnvironmentVariable(
+        "CLASSMNGR_PHASE10_C33_CALENDAR_CAPTURE_DIR").trimmed();
+    return captureDirectoryOverride.isEmpty()
+        ? QStringLiteral(CLASSMNGR_CALENDAR_CAPTURE_DIR)
+        : QDir::cleanPath(captureDirectoryOverride);
+}
+
+void appendCalendarQuickItems(QQuickItem* parent, QList<QQuickItem*>& items);
+
+QQuickItem* calendarMonthGridCellForDate(
+    QQuickItem* const root,
+    const QDate& date)
+{
+    QList<QQuickItem*> items;
+    appendCalendarQuickItems(root, items);
+    for (QQuickItem* const item : items)
+    {
+        const QMetaObject* const metaObject = item->metaObject();
+        if (metaObject->indexOfProperty("dayEvents") < 0
+            || metaObject->indexOfProperty("activeMonth") < 0
+            || metaObject->indexOfProperty("year") < 0
+            || metaObject->indexOfProperty("month") < 0
+            || metaObject->indexOfProperty("day") < 0
+            || !item->property("activeMonth").toBool())
+        {
+            continue;
+        }
+
+        const QDate cellDate(
+            item->property("year").toInt(),
+            item->property("month").toInt() + 1,
+            item->property("day").toInt());
+        if (cellDate == date)
+        {
+            return item;
+        }
+    }
+
+    return nullptr;
+}
+
+QQuickItem* calendarEventListViewForCell(QQuickItem* const cell)
+{
+    QList<QQuickItem*> items;
+    appendCalendarQuickItems(cell, items);
+    for (QQuickItem* const item : items)
+    {
+        if (item->metaObject()->indexOfProperty("count") >= 0
+            && item->metaObject()->indexOfMethod(
+                "itemAtIndex(int)") >= 0)
+        {
+            return item;
+        }
+    }
+
+    return nullptr;
+}
+
+bool invokeCalendarEventDelegateAtIndex(
+    QQuickItem* const listView,
+    const int index,
+    QQuickItem** const delegate)
+{
+    if (!listView || !delegate)
+    {
+        return false;
+    }
+
+    *delegate = nullptr;
+    return QMetaObject::invokeMethod(
+        listView,
+        "itemAtIndex",
+        Qt::DirectConnection,
+        Q_RETURN_ARG(QQuickItem*, *delegate),
+        Q_ARG(int, index));
+}
+
+QQuickItem* calendarLoadingOverlayLabel(QQuickItem* const root)
+{
+    QList<QQuickItem*> items;
+    appendCalendarQuickItems(root, items);
+    for (QQuickItem* const item : items)
+    {
+        if (item->metaObject()->indexOfProperty("text") >= 0
+            && item->property("text").toString().startsWith(
+                QStringLiteral("Loading events")))
+        {
+            return item;
+        }
+    }
+
+    return nullptr;
+}
+
+QStringList calendarEventProjectionRows(const QVariantList& events)
+{
+    QStringList rows;
+    for (const QVariant& event : events)
+    {
+        const QVariantMap values = event.toMap();
+        const QJsonObject row{
+            {QStringLiteral("id"), values.value(QStringLiteral("id")).toString()},
+            {QStringLiteral("title"), values.value(QStringLiteral("title")).toString()},
+            {QStringLiteral("eventType"), values.value(QStringLiteral("eventType")).toString()},
+            {QStringLiteral("allDay"), values.value(QStringLiteral("allDay")).toBool()},
+            {QStringLiteral("start"), values.value(QStringLiteral("start"))
+                .toDateTime().toString(Qt::ISODate)},
+            {QStringLiteral("end"), values.value(QStringLiteral("end"))
+                .toDateTime().toString(Qt::ISODate)}
+        };
+        rows.append(QString::fromUtf8(
+            QJsonDocument(row).toJson(QJsonDocument::Compact)));
+    }
+    return rows;
+}
+
+QJsonObject calendarFrameToCropComparison(
+    const QImage& frame,
+    const QImage& pageCrop)
+{
+    if (frame.isNull() || pageCrop.isNull())
+    {
+        return QJsonObject{
+            {QStringLiteral("performed"), false},
+            {QStringLiteral("reason"), QStringLiteral(
+                "frame or page crop is null")}
+        };
+    }
+
+    const QImage direct = frame.convertToFormat(QImage::Format_ARGB32);
+    QImage crop = pageCrop.convertToFormat(QImage::Format_ARGB32);
+    const bool rescaled = crop.size() != direct.size();
+    if (rescaled)
+    {
+        crop = crop.scaled(direct.size(), Qt::IgnoreAspectRatio,
+            Qt::SmoothTransformation);
+    }
+
+    quint64 exactDifferenceCount = 0;
+    quint64 thresholdDifferenceCount = 0;
+    quint64 absoluteChannelDifference = 0;
+    const quint64 pixelCount = static_cast<quint64>(direct.width())
+        * static_cast<quint64>(direct.height());
+    for (int y = 0; y < direct.height(); ++y)
+    {
+        const auto* const directRow = reinterpret_cast<const QRgb*>(
+            direct.constScanLine(y));
+        const auto* const cropRow = reinterpret_cast<const QRgb*>(
+            crop.constScanLine(y));
+        for (int x = 0; x < direct.width(); ++x)
+        {
+            const QRgb directPixel = directRow[x];
+            const QRgb cropPixel = cropRow[x];
+            if (directPixel != cropPixel)
+            {
+                ++exactDifferenceCount;
+            }
+
+            const int redDifference = qAbs(qRed(directPixel) - qRed(cropPixel));
+            const int greenDifference = qAbs(qGreen(directPixel) - qGreen(cropPixel));
+            const int blueDifference = qAbs(qBlue(directPixel) - qBlue(cropPixel));
+            const int alphaDifference = qAbs(qAlpha(directPixel) - qAlpha(cropPixel));
+            const int maxChannelDifference = qMax(
+                qMax(redDifference, greenDifference),
+                qMax(blueDifference, alphaDifference));
+            absoluteChannelDifference += static_cast<quint64>(redDifference
+                + greenDifference + blueDifference + alphaDifference);
+            if (maxChannelDifference > 8)
+            {
+                ++thresholdDifferenceCount;
+            }
+        }
+    }
+
+    const QList<QPair<QString, QPoint>> representativeCoordinates{
+        {QStringLiteral("October 6 Campus meeting row"), QPoint(
+            qRound(direct.width() * 0.244), qRound(direct.height() * 0.45))},
+        {QStringLiteral("October 15 Term planning row"), QPoint(
+            qRound(direct.width() * 0.5), qRound(direct.height() * 0.61))},
+        {QStringLiteral("October 26 School holiday row"), QPoint(
+            qRound(direct.width() * 0.114), qRound(direct.height() * 0.94))}
+    };
+    QJsonArray representativePixels;
+    for (const auto& sample : representativeCoordinates)
+    {
+        const QPoint point(
+            qBound(0, sample.second.x(), direct.width() - 1),
+            qBound(0, sample.second.y(), direct.height() - 1));
+        representativePixels.append(QJsonObject{
+            {QStringLiteral("name"), sample.first},
+            {QStringLiteral("x"), point.x()},
+            {QStringLiteral("y"), point.y()},
+            {QStringLiteral("directArgb"), QColor::fromRgba(
+                direct.pixel(point)).name(QColor::HexArgb)},
+            {QStringLiteral("cropArgb"), QColor::fromRgba(
+                crop.pixel(point)).name(QColor::HexArgb)}
+        });
+    }
+
+    const double exactDifferenceRatio = pixelCount == 0
+        ? 0.0
+        : static_cast<double>(exactDifferenceCount)
+            / static_cast<double>(pixelCount);
+    const double thresholdDifferenceRatio = pixelCount == 0
+        ? 0.0
+        : static_cast<double>(thresholdDifferenceCount)
+            / static_cast<double>(pixelCount);
+    const double meanAbsoluteChannelDifference = pixelCount == 0
+        ? 0.0
+        : static_cast<double>(absoluteChannelDifference)
+            / (static_cast<double>(pixelCount) * 4.0);
+
+    return QJsonObject{
+        {QStringLiteral("performed"), true},
+        {QStringLiteral("directSize"), QJsonArray{
+            direct.width(), direct.height()}},
+        {QStringLiteral("pageCropSizeBeforeNormalization"), QJsonArray{
+            pageCrop.width(), pageCrop.height()}},
+        {QStringLiteral("comparisonSize"), QJsonArray{
+            direct.width(), direct.height()}},
+        {QStringLiteral("pageCropRescaledToDirectSize"), rescaled},
+        {QStringLiteral("pixelCount"), static_cast<qint64>(pixelCount)},
+        {QStringLiteral("exactDifferenceCount"),
+         static_cast<qint64>(exactDifferenceCount)},
+        {QStringLiteral("exactDifferenceRatio"), exactDifferenceRatio},
+        {QStringLiteral("maxChannelDifferenceOver8Count"),
+         static_cast<qint64>(thresholdDifferenceCount)},
+        {QStringLiteral("maxChannelDifferenceOver8Ratio"),
+         thresholdDifferenceRatio},
+        {QStringLiteral("meanAbsoluteChannelDifference"),
+         meanAbsoluteChannelDifference},
+        {QStringLiteral("representativePixels"), representativePixels}
+    };
+}
+
+struct CalendarPageFrameComparison
+{
+    QImage crop;
+    QJsonObject details;
+};
+
+CalendarPageFrameComparison calendarComparePageFrame(
+    const QImage& directFrame,
+    const QImage& pageFrame,
+    QQuickWidget* const calendarView,
+    QWidget* const page,
+    const QSize& quickSceneSize)
+{
+    CalendarPageFrameComparison result;
+    const QPoint pageOrigin = calendarView->mapTo(page, QPoint(0, 0));
+    const qreal pageDevicePixelRatio = pageFrame.devicePixelRatio();
+    if (quickSceneSize.isEmpty())
+    {
+        result.details = QJsonObject{
+            {QStringLiteral("performed"), false},
+            {QStringLiteral("reason"), QStringLiteral(
+                "quick scene surface has no size")},
+            {QStringLiteral("cropUnclipped"), false},
+            {QStringLiteral("quickSceneSize"), QJsonArray{
+                quickSceneSize.width(), quickSceneSize.height()}}
+        };
+        return result;
+    }
+    const QRect requestedCrop(
+        qRound(pageOrigin.x() * pageDevicePixelRatio),
+        qRound(pageOrigin.y() * pageDevicePixelRatio),
+        qRound(quickSceneSize.width() * pageDevicePixelRatio),
+        qRound(quickSceneSize.height() * pageDevicePixelRatio));
+    const QRect clippedCrop = requestedCrop.intersected(pageFrame.rect());
+    result.crop = pageFrame.copy(clippedCrop);
+    result.details = calendarFrameToCropComparison(directFrame, result.crop);
+    result.details.insert(QStringLiteral("viewGeometry"), QJsonArray{
+        calendarView->geometry().x(), calendarView->geometry().y(),
+        calendarView->geometry().width(), calendarView->geometry().height()});
+    result.details.insert(QStringLiteral("quickSceneSize"), QJsonArray{
+        quickSceneSize.width(), quickSceneSize.height()});
+    if (QQuickItem* const rootItem = calendarView->rootObject())
+    {
+        result.details.insert(QStringLiteral("rootItemSize"), QJsonArray{
+            rootItem->width(), rootItem->height()});
+    }
+    if (QQuickWindow* const quickWindow = calendarView->quickWindow())
+    {
+        result.details.insert(QStringLiteral("quickWindowSize"), QJsonArray{
+            quickWindow->width(), quickWindow->height()});
+        result.details.insert(QStringLiteral("quickWindowDevicePixelRatio"),
+            quickWindow->effectiveDevicePixelRatio());
+    }
+    result.details.insert(QStringLiteral("pageMappedOrigin"), QJsonArray{
+        pageOrigin.x(), pageOrigin.y()});
+    result.details.insert(QStringLiteral("directDevicePixelRatio"),
+        directFrame.devicePixelRatio());
+    result.details.insert(QStringLiteral("pageDevicePixelRatio"),
+        pageDevicePixelRatio);
+    result.details.insert(QStringLiteral("requestedCropRect"), QJsonArray{
+        requestedCrop.x(), requestedCrop.y(),
+        requestedCrop.width(), requestedCrop.height()});
+    result.details.insert(QStringLiteral("clippedCropRect"), QJsonArray{
+        clippedCrop.x(), clippedCrop.y(),
+        clippedCrop.width(), clippedCrop.height()});
+    result.details.insert(QStringLiteral("cropUnclipped"),
+        clippedCrop == requestedCrop);
+    result.details.insert(QStringLiteral("cropSize"), QJsonArray{
+        result.crop.width(), result.crop.height()});
+    return result;
+}
+
+struct CalendarPageFrameGateFailureArtifacts
+{
+    bool enabled = false;
+    bool accepted = false;
+    QString outputDirectory;
+    QString mode;
+    QString captureMethod;
+    int attemptCount = 0;
+    QImage directFrameBefore;
+    QImage latestWidgetFrame;
+    QImage latestPageFrame;
+    QImage directFrameAfter;
+    QImage latestCrop;
+    QJsonObject latestComparison;
+    QJsonObject latestState;
+
+    ~CalendarPageFrameGateFailureArtifacts()
+    {
+        if (!enabled || accepted)
+        {
+            return;
+        }
+
+        const QString stem = QStringLiteral("calendar-frame-gate-") + mode;
+        const QString directFrameName = stem + QStringLiteral("-direct.png");
+        const QString widgetFrameName = stem
+            + QStringLiteral("-widget-latest.png");
+        const QString pageFrameName = stem + QStringLiteral("-page-latest.png");
+        const QString directFrameAfterName = stem
+            + QStringLiteral("-direct-after-latest.png");
+        const QString cropName = stem + QStringLiteral("-crop-latest.png");
+        const bool directFrameSaved = directFrameBefore.save(
+            outputDirectory + QLatin1Char('/') + directFrameName);
+        const bool widgetFrameSaved = latestWidgetFrame.save(
+            outputDirectory + QLatin1Char('/') + widgetFrameName);
+        const bool pageFrameSaved = latestPageFrame.save(
+            outputDirectory + QLatin1Char('/') + pageFrameName);
+        const bool directFrameAfterSaved = directFrameAfter.save(
+            outputDirectory + QLatin1Char('/') + directFrameAfterName);
+        const bool cropSaved = latestCrop.save(
+            outputDirectory + QLatin1Char('/') + cropName);
+
+        QJsonObject diagnostic{
+            {QStringLiteral("mode"), mode},
+            {QStringLiteral("captureMethod"), captureMethod},
+            {QStringLiteral("qpaPlatform"), QApplication::platformName()},
+            {QStringLiteral("attemptCount"), attemptCount},
+            {QStringLiteral("currentLocale"), QLocale().name()},
+            {QStringLiteral("directFrameFile"), directFrameName},
+            {QStringLiteral("widgetFrameFile"), widgetFrameName},
+            {QStringLiteral("pageFrameFile"), pageFrameName},
+            {QStringLiteral("directFrameAfterFile"), directFrameAfterName},
+            {QStringLiteral("cropFile"), cropName},
+            {QStringLiteral("savedFiles"), QJsonObject{
+                {QStringLiteral("directFrame"), directFrameSaved},
+                {QStringLiteral("widgetFrame"), widgetFrameSaved},
+                {QStringLiteral("pageFrame"), pageFrameSaved},
+                {QStringLiteral("directFrameAfter"), directFrameAfterSaved},
+                {QStringLiteral("crop"), cropSaved}}},
+            {QStringLiteral("comparison"), latestComparison},
+            {QStringLiteral("latestAttemptState"), latestState}
+        };
+        QFile output(outputDirectory + QLatin1Char('/') + stem
+            + QStringLiteral(".json"));
+        if (output.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        {
+            const QByteArray bytes = QJsonDocument(diagnostic).toJson(
+                QJsonDocument::Indented);
+            output.write(bytes);
+        }
+        else
+        {
+            qWarning().noquote() << "Could not write calendar frame gate diagnostics to"
+                << output.fileName() << output.errorString();
+        }
+    }
+};
 
 QStringList* capturedCalendarImportCheckpointMessages = nullptr;
 QtMessageHandler previousCalendarImportMessageHandler = nullptr;
@@ -1143,6 +1532,7 @@ class CalendarPageTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void captureEnglishAndKoreanLightAndDark();
     void calendarLifecycleDiagnosticsCaptureContentReadyAndSuspension();
     void calendarViewMemoryProbe();
     void calendarWidgetGridCandidatePreservesMonthAndActivation();
@@ -1172,7 +1562,6 @@ private slots:
     void calendarImportServiceDestructionCleansStagingWithoutWrites();
     void calendarImportQueryFailureIsVisibleAndWritesNothing();
     void calendarImportBatchSaveFailureRollsBackAllRows();
-    void captureEnglishAndKoreanLightAndDark();
     void calendarWidgetViewMatchesQmlCapturesAcrossContexts();
 };
 
@@ -3492,13 +3881,27 @@ void CalendarPageTests::calendarImportBatchSaveFailureRollsBackAllRows()
 
 void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
 {
+    struct EnvironmentRestore final
+    {
+        QLocale locale;
+        QPalette palette;
+
+        ~EnvironmentRestore()
+        {
+            QLocale::setDefault(locale);
+            QApplication::setPalette(palette);
+        }
+    } restore{QLocale(), QApplication::palette()};
+
     QFile importFixture(QStringLiteral(CLASSMNGR_SOURCE_DIR)
         + QStringLiteral("/tests/fixtures/imports/calendar_import_parity_2026.xlsx"));
     QVERIFY(importFixture.open(QIODevice::ReadOnly));
     const QByteArray importWorkbook = importFixture.readAll();
     QVERIFY(!importWorkbook.isEmpty());
 
-    const QString outputDirectory = QStringLiteral(CLASSMNGR_CALENDAR_CAPTURE_DIR);
+    const bool hasCaptureDirectoryOverride = !qEnvironmentVariable(
+        "CLASSMNGR_PHASE10_C33_CALENDAR_CAPTURE_DIR").trimmed().isEmpty();
+    const QString outputDirectory = calendarCaptureRootDirectory();
     QVERIFY(QDir().mkpath(outputDirectory));
     QJsonObject captures;
     PlatformProcessMemorySnapshotProvider memoryProvider;
@@ -3546,16 +3949,122 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
             QVERIFY(calendarView->rootObject()->setProperty(
                 "shownDate",
                 QDateTime(visibleMonth, QTime(0, 0))));
+            auto* const calendarRoot = calendarView->rootObject();
             auto* upcomingScope = fixture.page->findChild<QComboBox*>(
                 QStringLiteral("calendarUpcomingScope"));
             QVERIFY(upcomingScope);
             upcomingScope->setCurrentIndex(0);
             QApplication::processEvents();
+            CalendarEventModel* const eventModel = fixture.page->eventModel();
+            QVERIFY(eventModel);
             QTRY_VERIFY_WITH_TIMEOUT(
                 fixture.page->runtimeMetrics().cacheLoadedRangeCount > 0,
                 5000);
             QTRY_VERIFY_WITH_TIMEOUT(
+                eventModel->isMonthLoaded(visibleMonth.year(), visibleMonth.month()),
+                5000);
+            QTRY_VERIFY_WITH_TIMEOUT(
                 !fixture.page->runtimeMetrics().cacheLoading, 5000);
+            QTRY_COMPARE_WITH_TIMEOUT(
+                eventModel->eventsForDate(2026, 10, 6).size(), 1, 5000);
+            const QVariantMap meeting = eventModel->eventsForDate(
+                2026, 10, 6).constFirst().toMap();
+            QCOMPARE(meeting.value(QStringLiteral("title")).toString(),
+                QStringLiteral("Campus meeting"));
+            QCOMPARE(meeting.value(QStringLiteral("eventType")).toString(),
+                QStringLiteral("Meeting"));
+            QVERIFY(!meeting.value(QStringLiteral("allDay")).toBool());
+            QCOMPARE(meeting.value(QStringLiteral("start")).toDateTime(),
+                QDateTime(QDate(2026, 10, 6), QTime(9, 30)));
+            QCOMPARE(meeting.value(QStringLiteral("end")).toDateTime(),
+                QDateTime(QDate(2026, 10, 6), QTime(10, 30)));
+
+            QTRY_COMPARE_WITH_TIMEOUT(
+                eventModel->eventsForDate(2026, 10, 15).size(), 1, 5000);
+            const QVariantMap planning = eventModel->eventsForDate(
+                2026, 10, 15).constFirst().toMap();
+            QCOMPARE(planning.value(QStringLiteral("title")).toString(),
+                QStringLiteral("Term planning"));
+            QCOMPARE(planning.value(QStringLiteral("eventType")).toString(),
+                QStringLiteral("Workshop"));
+            QVERIFY(!planning.value(QStringLiteral("allDay")).toBool());
+            QCOMPARE(planning.value(QStringLiteral("start")).toDateTime(),
+                QDateTime(QDate(2026, 10, 15), QTime(9, 30)));
+            QCOMPARE(planning.value(QStringLiteral("end")).toDateTime(),
+                QDateTime(QDate(2026, 10, 15), QTime(10, 30)));
+
+            QTRY_COMPARE_WITH_TIMEOUT(
+                eventModel->eventsForDate(2026, 10, 26).size(), 1, 5000);
+            const QVariantMap holiday = eventModel->eventsForDate(
+                2026, 10, 26).constFirst().toMap();
+            QCOMPARE(holiday.value(QStringLiteral("title")).toString(),
+                QStringLiteral("School holiday"));
+            QCOMPARE(holiday.value(QStringLiteral("eventType")).toString(),
+                QStringLiteral("Holiday"));
+            QVERIFY(holiday.value(QStringLiteral("allDay")).toBool());
+
+            for (const QDate& date : {
+                    QDate(2026, 10, 6),
+                    QDate(2026, 10, 15),
+                    QDate(2026, 10, 26)})
+            {
+                QQuickItem* const cell = calendarMonthGridCellForDate(
+                    calendarRoot, date);
+                QVERIFY2(cell,
+                    qPrintable(QStringLiteral(
+                        "No active October month-grid cell for %1")
+                        .arg(date.toString(Qt::ISODate))));
+
+                const QVariantList expectedEvents = eventModel->eventsForDate(
+                    date.year(), date.month(), date.day());
+                QTRY_COMPARE_WITH_TIMEOUT(
+                    calendarEventProjectionRows(
+                        cell->property("dayEvents").toList()),
+                    calendarEventProjectionRows(expectedEvents),
+                    5000);
+
+                QQuickItem* const eventListView =
+                    calendarEventListViewForCell(cell);
+                QVERIFY2(eventListView,
+                    qPrintable(QStringLiteral(
+                        "No event ListView in October cell %1")
+                        .arg(date.toString(Qt::ISODate))));
+                QTRY_COMPARE_WITH_TIMEOUT(
+                    eventListView->property("count").toInt(),
+                    expectedEvents.size(),
+                    5000);
+
+                for (int index = 0; index < expectedEvents.size(); ++index)
+                {
+                    QQuickItem* delegate = nullptr;
+                    const auto delegateIsAvailable = [&]
+                    {
+                        delegate = nullptr;
+                        return invokeCalendarEventDelegateAtIndex(
+                            eventListView, index, &delegate)
+                            && delegate;
+                    };
+                    QTRY_VERIFY_WITH_TIMEOUT(delegateIsAvailable(), 5000);
+                    const QString expectedTitle = expectedEvents.at(index)
+                        .toMap().value(QStringLiteral("title")).toString();
+                    QCOMPARE(delegate->property("text").toString(),
+                        expectedTitle);
+                }
+            }
+
+            QVERIFY2(calendarRoot->property(
+                    "visibleMonthEventsLoading").isValid(),
+                "The calendar root does not expose its loading state.");
+            QTRY_VERIFY_WITH_TIMEOUT(
+                !calendarRoot->property(
+                    "visibleMonthEventsLoading").toBool(), 5000);
+            if (QQuickItem* const loadingLabel =
+                    calendarLoadingOverlayLabel(calendarRoot))
+            {
+                QTRY_VERIFY_WITH_TIMEOUT(
+                    !loadingLabel->property("visible").toBool(), 5000);
+            }
+
             auto* pageTitle = fixture.page->findChild<QLabel*>(
                 QStringLiteral("calendarPageTitle"));
             QVERIFY(pageTitle);
@@ -3582,9 +4091,236 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
             const QString imagePath = outputDirectory
                 + QLatin1Char('/') + QStringLiteral("calendar-") + mode
                 + QStringLiteral(".png");
-            const QImage image = fixture.page->grab().toImage();
-            QVERIFY(!image.isNull());
-            QVERIFY(image.save(imagePath));
+            constexpr double maximumThresholdDifferenceRatio = 0.005;
+            int compositionGateAttempts = 0;
+            QImage acceptedPageFrame;
+            QJsonObject acceptedFrameComparison;
+            CalendarPageFrameGateFailureArtifacts gateFailureArtifacts;
+            gateFailureArtifacts.enabled = hasCaptureDirectoryOverride;
+            gateFailureArtifacts.outputDirectory = outputDirectory;
+            gateFailureArtifacts.mode = mode;
+            gateFailureArtifacts.captureMethod = QStringLiteral(
+                "QQuickWidget frame / child grab / page grab / QQuickWidget frame");
+            gateFailureArtifacts.latestState = QJsonObject{
+                {QStringLiteral("locale"), QLocale().name()},
+                {QStringLiteral("mode"), mode},
+                {QStringLiteral("captureMethod"),
+                 gateFailureArtifacts.captureMethod},
+                {QStringLiteral("qpaPlatform"), QApplication::platformName()},
+                {QStringLiteral("stage"), QStringLiteral(
+                    "before-bracketed-frame-capture")}
+            };
+
+            const auto capturePageFrame = [&]
+            {
+                return fixture.page->grab().toImage();
+            };
+
+            const auto frameComparisonIsAccepted = [&]
+            (
+                const QJsonObject& comparison,
+                const bool requireUnclippedCrop)
+            {
+                return comparison.value(QStringLiteral("performed")).toBool()
+                    && !comparison.value(QStringLiteral(
+                        "pageCropRescaledToDirectSize")).toBool()
+                    && (!requireUnclippedCrop
+                        || comparison.value(QStringLiteral(
+                            "cropUnclipped")).toBool())
+                    && comparison.value(QStringLiteral(
+                        "maxChannelDifferenceOver8Ratio")).toDouble()
+                        <= maximumThresholdDifferenceRatio;
+            };
+
+            const auto pageFrameBracketMatches = [&]
+            {
+                ++compositionGateAttempts;
+                gateFailureArtifacts.attemptCount = compositionGateAttempts;
+                calendarView->update();
+                fixture.page->update();
+                QApplication::processEvents();
+
+                QQuickWindow* const quickWindow = calendarView->quickWindow();
+                const QSize quickSceneSizeBefore = quickWindow
+                    ? quickWindow->size() : QSize();
+                const QSizeF rootItemSizeBefore = calendarRoot->size();
+                const QRect widgetGeometryBefore = calendarView->geometry();
+                const QPoint pageOriginBefore = calendarView->mapTo(
+                    fixture.page, QPoint(0, 0));
+                const QImage directFrameBefore =
+                    calendarView->grabFramebuffer();
+                gateFailureArtifacts.directFrameBefore = directFrameBefore;
+
+                const QImage widgetSyncFrame = calendarView->grab().toImage();
+                gateFailureArtifacts.latestWidgetFrame = widgetSyncFrame;
+                const QImage candidatePageFrame = capturePageFrame();
+                gateFailureArtifacts.latestPageFrame = candidatePageFrame;
+                const QImage directFrameAfter =
+                    calendarView->grabFramebuffer();
+                gateFailureArtifacts.directFrameAfter = directFrameAfter;
+
+                const QSize quickSceneSizeAfter = quickWindow
+                    ? quickWindow->size() : QSize();
+                const QSizeF rootItemSizeAfter = calendarRoot->size();
+                const QRect widgetGeometryAfter = calendarView->geometry();
+                const QPoint pageOriginAfter = calendarView->mapTo(
+                    fixture.page, QPoint(0, 0));
+                const bool geometryStable = quickSceneSizeBefore
+                        == quickSceneSizeAfter
+                    && qFuzzyCompare(rootItemSizeBefore.width() + 1.0,
+                        rootItemSizeAfter.width() + 1.0)
+                    && qFuzzyCompare(rootItemSizeBefore.height() + 1.0,
+                        rootItemSizeAfter.height() + 1.0)
+                    && widgetGeometryBefore == widgetGeometryAfter
+                    && pageOriginBefore == pageOriginAfter;
+
+                const qreal widgetFrameDevicePixelRatio =
+                    widgetSyncFrame.devicePixelRatio();
+                const QRect requestedWidgetSceneCrop(
+                    0, 0,
+                    qRound(quickSceneSizeBefore.width()
+                        * widgetFrameDevicePixelRatio),
+                    qRound(quickSceneSizeBefore.height()
+                        * widgetFrameDevicePixelRatio));
+                const QRect clippedWidgetSceneCrop = requestedWidgetSceneCrop
+                    .intersected(widgetSyncFrame.rect());
+                const QImage widgetSceneCrop = widgetSyncFrame.copy(
+                    clippedWidgetSceneCrop);
+
+                const CalendarPageFrameComparison beforePageComparison =
+                    calendarComparePageFrame(
+                        directFrameBefore, candidatePageFrame,
+                        calendarView, fixture.page, quickSceneSizeBefore);
+                const CalendarPageFrameComparison afterPageComparison =
+                    calendarComparePageFrame(
+                        directFrameAfter, candidatePageFrame,
+                        calendarView, fixture.page, quickSceneSizeAfter);
+                const QJsonObject directBracketComparison =
+                    calendarFrameToCropComparison(
+                        directFrameBefore, directFrameAfter);
+                const QJsonObject directBeforeVsWidgetCrop =
+                    calendarFrameToCropComparison(
+                        directFrameBefore, widgetSceneCrop);
+                const QJsonObject directAfterVsWidgetCrop =
+                    calendarFrameToCropComparison(
+                        directFrameAfter, widgetSceneCrop);
+
+                gateFailureArtifacts.latestState = QJsonObject{
+                    {QStringLiteral("locale"), QLocale().name()},
+                    {QStringLiteral("mode"), mode},
+                    {QStringLiteral("captureMethod"),
+                     gateFailureArtifacts.captureMethod},
+                    {QStringLiteral("qpaPlatform"),
+                        QApplication::platformName()},
+                    {QStringLiteral("attemptCount"), compositionGateAttempts},
+                    {QStringLiteral("quickSceneSizeBefore"), QJsonArray{
+                        quickSceneSizeBefore.width(),
+                        quickSceneSizeBefore.height()}},
+                    {QStringLiteral("quickSceneSizeAfter"), QJsonArray{
+                        quickSceneSizeAfter.width(),
+                        quickSceneSizeAfter.height()}},
+                    {QStringLiteral("rootItemSizeBefore"), QJsonArray{
+                        rootItemSizeBefore.width(),
+                        rootItemSizeBefore.height()}},
+                    {QStringLiteral("rootItemSizeAfter"), QJsonArray{
+                        rootItemSizeAfter.width(),
+                        rootItemSizeAfter.height()}},
+                    {QStringLiteral("calendarViewGeometry"), QJsonArray{
+                        widgetGeometryAfter.x(), widgetGeometryAfter.y(),
+                        widgetGeometryAfter.width(), widgetGeometryAfter.height()}},
+                    {QStringLiteral("pageMappedOriginBefore"), QJsonArray{
+                        pageOriginBefore.x(), pageOriginBefore.y()}},
+                    {QStringLiteral("pageMappedOriginAfter"), QJsonArray{
+                        pageOriginAfter.x(), pageOriginAfter.y()}},
+                    {QStringLiteral("geometryStable"), geometryStable},
+                    {QStringLiteral("calendarViewDevicePixelRatio"),
+                        calendarView->devicePixelRatioF()},
+                    {QStringLiteral("quickWindowDevicePixelRatio"),
+                        quickWindow
+                            ? quickWindow->effectiveDevicePixelRatio() : 0.0},
+                    {QStringLiteral("pageDevicePixelRatio"),
+                        fixture.page->devicePixelRatioF()},
+                    {QStringLiteral("calendarViewVisible"),
+                        calendarView->isVisible()},
+                    {QStringLiteral("calendarViewUpdatesEnabled"),
+                        calendarView->updatesEnabled()},
+                    {QStringLiteral("pageFrameSize"), QJsonArray{
+                        candidatePageFrame.width(),
+                        candidatePageFrame.height()}},
+                    {QStringLiteral("pageFrameDevicePixelRatio"),
+                        candidatePageFrame.devicePixelRatio()},
+                    {QStringLiteral("widgetSyncFrameSize"), QJsonArray{
+                        widgetSyncFrame.width(), widgetSyncFrame.height()}},
+                    {QStringLiteral("widgetSyncDevicePixelRatio"),
+                        widgetFrameDevicePixelRatio},
+                    {QStringLiteral("directFrameBeforeSize"), QJsonArray{
+                        directFrameBefore.width(), directFrameBefore.height()}},
+                    {QStringLiteral("directFrameBeforeDevicePixelRatio"),
+                        directFrameBefore.devicePixelRatio()},
+                    {QStringLiteral("directFrameAfterSize"), QJsonArray{
+                        directFrameAfter.width(), directFrameAfter.height()}},
+                    {QStringLiteral("directFrameAfterDevicePixelRatio"),
+                        directFrameAfter.devicePixelRatio()},
+                    {QStringLiteral("requestedWidgetSceneCrop"), QJsonArray{
+                        requestedWidgetSceneCrop.x(),
+                        requestedWidgetSceneCrop.y(),
+                        requestedWidgetSceneCrop.width(),
+                        requestedWidgetSceneCrop.height()}},
+                    {QStringLiteral("clippedWidgetSceneCrop"), QJsonArray{
+                        clippedWidgetSceneCrop.x(),
+                        clippedWidgetSceneCrop.y(),
+                        clippedWidgetSceneCrop.width(),
+                        clippedWidgetSceneCrop.height()}},
+                    {QStringLiteral("widgetSceneCropUnclipped"),
+                        clippedWidgetSceneCrop == requestedWidgetSceneCrop}
+                };
+                gateFailureArtifacts.latestCrop = beforePageComparison.crop;
+                gateFailureArtifacts.latestComparison = QJsonObject{
+                    {QStringLiteral("geometryStable"), geometryStable},
+                    {QStringLiteral("directBeforeVsAfter"),
+                        directBracketComparison},
+                    {QStringLiteral("directBeforeVsWidgetSceneCrop"),
+                        directBeforeVsWidgetCrop},
+                    {QStringLiteral("directAfterVsWidgetSceneCrop"),
+                        directAfterVsWidgetCrop},
+                    {QStringLiteral("directBeforeVsPageSceneCrop"),
+                        beforePageComparison.details},
+                    {QStringLiteral("directAfterVsPageSceneCrop"),
+                        afterPageComparison.details}
+                };
+
+                const bool framesAvailable = !directFrameBefore.isNull()
+                    && !widgetSyncFrame.isNull()
+                    && !candidatePageFrame.isNull()
+                    && !directFrameAfter.isNull();
+                const bool directBracketAgrees =
+                    frameComparisonIsAccepted(
+                        directBracketComparison, false);
+                const bool beforePageAgrees = frameComparisonIsAccepted(
+                    beforePageComparison.details, true);
+                const bool afterPageAgrees = frameComparisonIsAccepted(
+                    afterPageComparison.details, true);
+                if (!framesAvailable
+                    || !geometryStable
+                    || !directBracketAgrees
+                    || !beforePageAgrees
+                    || !afterPageAgrees)
+                {
+                    return false;
+                }
+
+                acceptedPageFrame = candidatePageFrame;
+                acceptedFrameComparison = gateFailureArtifacts.latestComparison;
+                return true;
+            };
+            QTRY_VERIFY_WITH_TIMEOUT(pageFrameBracketMatches(), 5000);
+            QVERIFY2(!acceptedPageFrame.isNull(),
+                "The page composition gate accepted no full-page frame.");
+            QVERIFY2(acceptedPageFrame.save(imagePath),
+                qPrintable(QStringLiteral(
+                    "Could not save the accepted page frame to %1")
+                    .arg(imagePath)));
+            gateFailureArtifacts.accepted = true;
 
             auto* const service = fixture.page->findChild<
                 Ui::NextCalendarEventImportService*>(
@@ -3704,7 +4440,7 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
             QApplication::processEvents();
             const ProcessMemorySnapshot released = memoryProvider.snapshot();
             const auto releasedMetrics = fixture.page->runtimeMetrics();
-            captures.insert(mode, QJsonObject{
+            QJsonObject captureRecord{
                 {QStringLiteral("image"), QFileInfo(imagePath).fileName()},
                 {QStringLiteral("preferencesImage"),
                  QFileInfo(preferencesImagePath).fileName()},
@@ -3747,7 +4483,21 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
                     {QStringLiteral("active"), memoryJson(active)},
                     {QStringLiteral("released"), memoryJson(released)}
                 }}
-            });
+            };
+            if (hasCaptureDirectoryOverride)
+            {
+                captureRecord.insert(QStringLiteral("pageComposition"), QJsonObject{
+                    {QStringLiteral("maximumThresholdDifferenceRatio"),
+                     maximumThresholdDifferenceRatio},
+                    {QStringLiteral("captureMethod"),
+                     gateFailureArtifacts.captureMethod},
+                    {QStringLiteral("qpaPlatform"),
+                     QApplication::platformName()},
+                    {QStringLiteral("attemptCount"), compositionGateAttempts},
+                    {QStringLiteral("comparison"), acceptedFrameComparison}
+                });
+            }
+            captures.insert(mode, std::move(captureRecord));
         }
     }
 
@@ -3808,7 +4558,7 @@ void CalendarPageTests::calendarWidgetViewMatchesQmlCapturesAcrossContexts()
         + QLatin1Char('-')
         + QUuid::createUuid().toString(QUuid::WithoutBraces);
     const QString outputDirectory = QDir::cleanPath(
-        QStringLiteral(CLASSMNGR_CALENDAR_CAPTURE_DIR)
+        calendarCaptureRootDirectory()
         + QStringLiteral("/calendar-view-parity/") + runId);
     QVERIFY(QDir().mkpath(outputDirectory));
     const QString titleDiagnosticOutputDirectory = qEnvironmentVariable(
