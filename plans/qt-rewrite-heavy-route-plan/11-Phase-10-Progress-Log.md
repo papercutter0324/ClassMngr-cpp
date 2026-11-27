@@ -4,6 +4,32 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-27 — Candidate 39 macOS AI-assisted comments follow-up
+
+Accepted focused current-source macOS evidence at pushed HEAD
+`89c9abad70253ad028fab93225cf64a8e0dd43fa`. Five C39 policy CTests
+(#296, #297, #298, #301, #302), three provider/voice parity CTests
+(#125, #126, #127), and 11 named page-test slots passed. Nine targets have
+universal arm64 and x86_64 slices; execution was arm64 only. The final build
+command succeeded with all targets already up to date, so it performed no
+compile or link.
+
+The 16 current-source captures passed name, dimension, and checksum checks.
+Their hashes all differ from the historical C39 README images, which explicitly
+make no pixel-parity claim. Independent review established that the Reports
+row is later C40 UI and the Korean 25-candidate selection copy reflects the
+current C39 cap; record both as expected content evolution and retain the README
+images as historical. No AI network or browser was used. The independent report
+audit verified 2,354 input hashes and restoration of all 29 shared build
+outputs.
+
+The result is synthetic offscreen macOS evidence only; x86_64 runtime and
+Windows x64 acceptance remain open. The only available CI route was a full
+`refactoring-baseline.yml` matrix (up to 300 minutes) that does not retain the
+C39 PNG directory; GitHub MCP has no manual-dispatch operation and `gh` is not
+installed. No Windows workflow was triggered. Keep C39 queued for Windows x64
+and do not start C40. See the [verification report](../../artifacts/phase10/p10-macos-c39-ai-comments-20261127/VERIFICATION-REPORT.md).
+
 ### 2026-11-27 — macOS requalification of Candidates 34–38
 
 Accepted focused current-source macOS evidence at HEAD

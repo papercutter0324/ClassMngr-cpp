@@ -7,6 +7,9 @@ focused current-source macOS universal-build evidence with arm64 runtime only.
 The macOS follow-up does not establish x86_64 runtime or close Phase 10. See
 the [macOS requalification record](11-Phase-10-Progress-Log.md#L7).
 
+Candidate 39 has focused macOS arm64-runtime evidence, but remains queued for
+Windows x64 acceptance. Do not start Candidate 40 until that slice closes.
+
 | Slice | Status and scope / next action |
 | --- | --- |
 | Candidate 34 - Calendar import | Complete ([Phase 7 scope](08-Phase-7-Progress-Log.md#L950)) |
@@ -14,7 +17,7 @@ the [macOS requalification record](11-Phase-10-Progress-Log.md#L7).
 | Candidate 36 - Roster score import/student transfer | Complete ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1010)) |
 | Candidate 37 - Roster templates/printing | Complete ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1034)) |
 | Candidate 38 - Speaking Evaluation core | Complete ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1067)) |
-| Candidate 39 - AI-assisted comments/batch workflow | Queued - Next on resume: verify eligibility, prompt, selection, review, and apply cases. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1107)) |
+| Candidate 39 - AI-assisted comments/batch workflow | Queued - macOS arm64-runtime evidence accepted; next: Windows x64 verification of eligibility, prompt, selection, review, and apply cases. Do not start C40 until C39 closes. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1107)) |
 | Candidate 40 - Reports/PDF/PowerPoint/export jobs | Queued - Cover report widgets, batch reports, PDF output without a widget, and UI/export states; use injected or fake Office automation only. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1133)) |
 | Candidate 43 - Document viewer lifecycle/actions | Queued - Run Next viewer tests and Legacy/Next captures for PDF open/loading/error, close/release, and reopen behavior. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1354)) |
 | Candidate 44 - Sub Prep class information/output | Queued - Build current class-model/page and print targets, then capture the page and output. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1412)) |

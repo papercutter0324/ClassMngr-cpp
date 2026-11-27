@@ -1,5 +1,9 @@
 # Project Diary
 
+### Phase 10 Candidate 39 macOS follow-up — 2026-11-27
+
+Keep the current-source C39 captures separate from the older Phase 7 reference package. The current Speaking Evaluation page includes report controls added by C40, while the Korean batch-selection text now accurately describes the 25-candidate cap introduced after C39's original capture set. The C39 README disclaims pixel parity; document these expected content changes instead of treating PNG hash differences as a product failure. A macOS run validates only the macOS arm64 runtime leg even when its executables contain both universal slices. The C39 Windows x64 slice remains queued until a valid Windows runner can be dispatched.
+
 ### Phase 10 macOS requalification of supplemental Candidates 34–38 — 2026-11-27
 
 For a universal macOS build, report the architecture slices in the built binaries separately from the architecture that actually ran. The C34–C38 follow-up produced current-source arm64-runtime evidence from universal executables; it did not establish x86_64 runtime, native AppKit behavior, or cross-host pixel parity. Preserve CTest's diagnostic-only skip and explicitly exclude incidental C33 captures from C34 acceptance. For output review, verify each PDF's page/text content and compare its raster to the matching preview crop. Keep the rerun-hash auditability caveat visible when the run archive lacks paired hash lists.

@@ -8,6 +8,8 @@ Candidate 38's focused Windows x64 Debug build and selected CTests passed, with 
 
 After that handoff, Candidates 34–38 received focused current-source macOS follow-up at `ebb3950b1d45f8957a54c3d46cc955f63bd12aed`. The standard universal Debug build and selected tests passed; all built executables contained arm64 and x86_64 slices, but runtime was arm64 only. Independent review accepted 80 synthetic offscreen PNGs and eight C37 PDFs, including exact preview-crop/PDF-raster matches. No source or test changes were needed. Native AppKit behavior, x86_64 runtime, physical printing, cross-host pixel parity, and the Phase 10 exit gate remain open. Candidate 39 is still next.
 
+Candidate 39 then passed its focused macOS arm64-runtime follow-up at pushed commit `89c9abad70253ad028fab93225cf64a8e0dd43fa`: all eight policy/provider CTests, 11 selected page slots, and the 16 current-source captures passed their checks. Independent review accepted the current captures; the historical Phase 7 images predate C40's Reports controls and current 25-candidate selection copy. The active supplemental Windows x64 C39 run remains open: the GitHub connector has no workflow-dispatch action and `gh` is not installed, so no Windows workflow was triggered. See the current batch tracker and Phase 10 log. Candidate 39 Windows x64 is the resume point.
+
 On resume, continue with Candidate 39. No C39 work started in this deployment. Next-batch discovery remains due when Candidate 52 starts. Phase 9 remains In Progress and incomplete; its remaining gates are deferred to Phase 14 after Phase 13.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17

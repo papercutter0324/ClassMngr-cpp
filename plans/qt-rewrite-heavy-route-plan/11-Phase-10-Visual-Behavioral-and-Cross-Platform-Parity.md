@@ -39,10 +39,10 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Unassigned
 - Last updated: 2026-11-27
 - Current note: Phase 10 remains In progress. Candidates 34–38 have accepted
-  focused Windows x64 evidence and current-source macOS universal builds with
-  arm64-runtime follow-up; macOS x86_64 runtime and other Phase 10 gates remain
-  open. On resume, continue with Candidate 39 - AI-assisted comments/batch
-  workflow.
+  focused Windows x64 and current-source macOS arm64-runtime evidence. Candidate
+  39 has focused macOS arm64-runtime evidence, but Windows x64 acceptance is
+  still open; keep it queued as the next Windows slice and do not start C40.
+  macOS x86_64 runtime and other Phase 10 gates remain open.
   See the [current
   slice-batch tracker](Current-Slice-Batches.md) for live scope and the
   [Phase 10 progress log](11-Phase-10-Progress-Log.md) for historical
