@@ -4,6 +4,55 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-27 — Candidate 36 Windows x64 Roster score import/student transfer acceptance
+
+Accepted at source commit `f60f3b5a028088770da97f484798ef2bb215e27b`
+(`Phase10 - Verify roster score import and transfer captures`), changing only
+`tests/next/roster_editor_tests.cpp`. The standard incremental Debug build of
+`ClassMngrNextRosterEditorTests` succeeded after the ordinary MSBuild
+FileTracker `E_ACCESSDENIED` and reviewed-access retry. Registered CTest #335
+passed its filtered selection (1/1, 2.34 s) with these ten slots:
+`transferActionTracksCurrentRowContent`,
+`scoreImportMapsTrimmedPairsAndIsIdempotent`,
+`scoreImportRequiresNameColumnsAndUsesAvailableGradeColumns`,
+`scoreImportReadFailureDoesNotMutateAndAutosaveFailureRetries`,
+`transferCancelAndFailuresPreserveDirtySelectionAndTimer`,
+`transferMenuFiltersOtherGradesAndDisablesFullTargets`,
+`transferSuccessRemovesSourceOnlyAfterPairSave`,
+`pathRosterWorkflowActionsStayScopedAndPairSaveIsAtomic`,
+`transferTargetNamesMatchLegacyFormattingAndFallbacks`, and
+`capturesImportAndTransferStatesAcrossLocalesAndThemes`.
+
+Five supporting functional CTests also passed individually without forwarded
+arguments: `ClassMngrNextApplicationSpeakingEvaluationRosterScoreImportTests`,
+`ClassMngrNextApplicationSpeakingEvaluationRosterScoreRowAssignmentsTests`,
+`ClassMngrNextApplicationRosterRowTransferPreparationTests`,
+`ClassMngrNextApplicationRosterRowTransferUseCaseTests`, and
+`ClassMngrNextApplicationRosterTransferTargetEligibilityTests`. The separate
+`NextStartupWorkspaceDependencyBoundary` check passed. This is focused C36
+coverage, not an unfiltered #335 run or a project-suite pass. Candidate35
+editor/model slots, P9-17 diagnostics, and C37 output/printing tests were
+excluded.
+
+The capture slot produced eight readable 1024x768 English/Korean light/dark
+images: four scores visible after import and four transfer states showing
+Student A moved while Student B became the source roster's first row. The
+manifest and pre-grab assertions cover seven packaged fonts, locale-specific
+font resolution, Latin/Hangul coverage, and the 25-row/six-column model. The
+viewport shows about 14 rows at once with the remaining rows available by
+scrolling. Visual review found no defect; the captures make no pixel-parity
+claim.
+
+The 106-input record found no changes after the final build/test; the intended
+`tests/next/roster_editor_tests.cpp` working-tree edit was the only input that
+differed from the pre-build HEAD snapshot, while the other 105 inputs matched
+HEAD and the pre-build hashes. The generated Korean `.qm` was unchanged. All
+173 pre-existing root captures and all 59 shared Calendar captures remained
+byte-identical; the nine C36 PNG/manifest files are the only new root captures.
+The nine prior Debug app-directory outputs were restored, and C35 capture files
+remained unchanged. See the [C36 execution report](../../artifacts/phase10/p10-win-c36-roster-score-transfer-20261127/run-report.md)
+and [fresh capture set](../../captures/next-c36-roster-score-transfer-20261127/).
+
 ### 2026-11-27 — Candidate 35 Windows x64 Roster editor/student model acceptance
 
 Accepted at source commit `0e15866f6daff47b71b7303835b47dc1c40596ef`
