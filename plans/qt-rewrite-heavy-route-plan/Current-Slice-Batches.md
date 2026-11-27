@@ -6,9 +6,9 @@ Historical Phase 10 findings and discovery records belong in the [progress log](
 
 | Slice | Status and scope / next action |
 | --- | --- |
-| Candidate 34 — Calendar import | Complete — Six focused Windows x64 Debug CTests passed; current-source captures reviewed. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L950)) |
-| Candidate 35 — Roster editor/student model | In progress — Run focused `ClassMngrNextRosterEditorTests` and capture English/Korean light/dark states. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L992)) |
-| Candidate 36 — Roster score import/student transfer | Queued — Run editor import/transfer and WorkspaceStore action tests; capture the import/transfer flow. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1010)) |
+| Candidate 34 — Calendar import | Complete ([Phase 7 scope](08-Phase-7-Progress-Log.md#L950)) |
+| Candidate 35 — Roster editor/student model | Complete ([Phase 7 scope](08-Phase-7-Progress-Log.md#L992)) |
+| Candidate 36 — Roster score import/student transfer | In progress — Run editor import/transfer and WorkspaceStore action tests; capture the import/transfer flow. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1010)) |
 | Candidate 37 — Roster templates/printing | Queued — Confirm target definitions, run Next roster output/template-print tests, and cover Testing Classes and Extra Info. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1034)) |
 | Candidate 38 — Speaking Evaluation core | Queued — Run Next page tests and capture English/Korean light/dark states. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1067)) |
 | Candidate 39 — AI-assisted comments/batch workflow | Queued — Verify eligibility, prompt, selection, review, and apply cases. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1107)) |

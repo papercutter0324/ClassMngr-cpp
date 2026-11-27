@@ -4,6 +4,64 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-27 — Candidate 35 Windows x64 Roster editor/student model acceptance
+
+Accepted at source commit `0e15866f6daff47b71b7303835b47dc1c40596ef`
+(`Phase10 - Load packaged fonts in roster captures`), changing only
+`cmake/tests/next.cmake` and `tests/next/roster_editor_tests.cpp`. The capture
+fixture registers the six packaged Inter faces and Pretendard Variable through
+`ResourceLoader`, applies the production locale family order, checks resolved
+application/editor/table families and Latin `A`/Hangul U+AC00 glyph coverage,
+preserves the application font size, and restores font, palette, locale, and
+translator state.
+
+The standard incremental Debug build of
+`ClassMngrNextRosterEditorTests` succeeded. Registered CTest #335 passed the
+filtered C35 selection (1/1, 5.76 s; 19 named slots): 15 editor/model behavior
+slots — `editorLoadsOnDemandAndUsesOnlyActiveCellEditors`,
+`modelDisplayModeShowsExtraRowsAndExtendsOnEdit`,
+`safeCustomCellEditSkipsFullValidationAndMatchesCanonicalIssues`,
+`customCellLengthBoundaryCrossingsRevalidate`,
+`emptyRowTransitionsAndImportedGradesRevalidate`,
+`rowHasDataMatchesTrimmedCellContent`,
+`emptyRosterAndReadFailureHaveDifferentStatesAndNoFailureWrite`,
+`automaticManualAndFailedSaveRetryRetainLatestDraft`,
+`discardReloadsVisibleWindowAndClearsDraft`,
+`structuredCellIssuesLocalizeAndQuestionableKoreanRequiresConsent`,
+`exactWorkspacePathsPersistWidthsAndKeepSparseTailIndexes`,
+`customColumnTailDataRequiresTwoStageConfirmation`,
+`normalizedHeaderTailDataRequiresCancelOrExplicitDeletion`,
+`ambiguousNormalizedDuplicateHeadersFailClosed`, and
+`pathActionsRejectMalformedIdsBeforeOpeningWorkspace`; three editor
+diagnostics —
+`defaultHeapDiagnosticEventsCoverLoadedCellSaveAndSuccessfulLeave`,
+`saveStageDiagnosticsBracketSnapshotAndFollowSaveBoundaries`, and
+`defaultHeapAfterDeleteCheckpointFollowsWidgetAndChildDestruction`; and
+`capturesEnglishAndKoreanLightAndDarkRosterStates`. C36 score import/transfer,
+P9 diagnostics, C37 output/printing, and the unfiltered CTest were excluded.
+This is focused acceptance evidence, not a project-suite pass.
+
+The four fresh 1024x768 English/Korean light/dark captures show readable text
+and the expected theme states. The manifest records the 25-row, 156-column
+model and locale-specific font resolution. This is presentation evidence, not
+pixel-parity evidence. The 100-input source set remained unchanged during
+capture and verification; of 173 root capture files, only the five C35 outputs
+changed and the other 168 remained byte-identical. All 59 shared Calendar
+captures were unchanged, and the prior Debug app-directory outputs were
+restored.
+
+The first pre-font captures contained square glyphs. The first run after adding
+font registration opened an MSVC assertion because `QVERIFY2` eagerly evaluated
+a description that called `.error()` on a successful `std::expected`; it was
+manually stopped after 209.03 s, while CTest's configured timeout was 1500 s.
+The error access now occurs only in failure branches. A later default-sandbox
+capture could not read the generated font package; the focused capture and
+final filtered run passed using reviewed access. See the [execution report](../../artifacts/phase10/p10-win-c35-roster-editor-20261127/run-report.md),
+[visual review](../../artifacts/phase10/p10-win-c35-roster-editor-20261127/visual-review.md),
+[nested verification report](../../artifacts/phase10/p10-win-c35-roster-editor-20261127/font-fixture-fix-20261127/verification-report.md),
+[exact command](../../artifacts/phase10/p10-win-c35-roster-editor-20261127/font-fixture-fix-20261127/ctest-final-19-c35-slots-command.txt),
+and [fresh capture set](../../captures/next-c35-roster-editor-20261127/).
+
 ### 2026-11-27 — Candidate 33 Windows x64 Calendar acceptance
 
 Accepted at source commit `0ff229f52479481a66e4e624f1e88620928d7329`, which
