@@ -4,6 +4,43 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-27 - Candidate 37 Windows x64 Roster templates/printing acceptance
+
+Accepted at source commit `8c86505d83e9364afe30386d46737698eb81c246`
+(`Phase10 - Verify Testing roster Extra Info output`), changing only
+`tests/next/roster_output_tests.cpp`. The capture selects `FIXTURE EXTRA` in
+the Testing Classes dialog, checks the output request, and verifies the saved
+PDF contains `FIXTURE TEST`, `FIXTURE EXTRA`, and `FIXTURE VALUE`. Both regular
+and Testing previews require one populated page whose saved screenshot crop
+matches its independently rendered PDF raster.
+
+The incremental Debug build of the five focused targets succeeded in the
+standard `build/windows-x64-debug` directory after the ordinary MSBuild
+FileTracker `E_ACCESSDENIED` and reviewed-access retry. Five focused registered
+CTests passed: `ClassMngrNextRosterOutputTests` (#623, 20.59 s),
+`ClassMngrSubPrepRosterOutputParityTests` (#164, 2.12 s),
+`ClassMngrRosterTemplatePrintServiceTests` (#169, 4.71 s),
+`ClassMngrNextApplicationRosterTemplatePrintSourceReadQueryTests` (#279,
+0.02 s), and
+`ClassMngrNextPlatformApplicationServicesRosterTemplatePrintSourceReadPortTests`
+(#520, 0.33 s). The separate `NextStartupWorkspaceDependencyBoundary` check
+(#261, 0.02 s) passed. The Phase 7 history does not name its original five
+focused tests; this is the current C37 selection, not a reconstruction of that
+historical command. This is focused Windows evidence, not a full-suite pass.
+
+The fresh evidence set contains 16 English/Korean light/dark dialog and preview
+PNGs, eight generated PDFs, and eight rendered-page PNGs. The Testing previews
+show the selected Extra Info header and value; all eight screenshot page crops
+match their PDF rasters. Each Testing page has 25,760 non-white pixels and each
+regular page has 99,580. The independent review accepted all 16 captures.
+Source-input hashes remained stable across build and tests; all 182 prior root
+captures and 59 Calendar captures were unchanged, with only 33 new C37 outputs.
+Prior app-directory visual and PDF/page outputs were restored. This is synthetic
+Windows evidence only; no physical-printer or cross-platform screenshot-pixel
+parity claim is made. See the [C37 execution report](../../artifacts/phase10/p10-win-c37-roster-templates-printing-20261127/run-report.md),
+[visual review](../../artifacts/phase10/p10-win-c37-roster-templates-printing-20261127/visual-review.md),
+and [capture set](../../captures/next-c37-roster-templates-printing-20261127/).
+
 ### 2026-11-27 — Candidate 36 Windows x64 Roster score import/student transfer acceptance
 
 Accepted at source commit `f60f3b5a028088770da97f484798ef2bb215e27b`
