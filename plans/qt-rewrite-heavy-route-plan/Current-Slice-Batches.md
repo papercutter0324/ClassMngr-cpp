@@ -2,6 +2,11 @@
 
 ## Active batch - Phase 10 supplemental Windows x64 (Candidates 34-40, 43-53)
 
+Candidates 34–38 are complete for the supplemental Windows x64 batch and have
+focused current-source macOS universal-build evidence with arm64 runtime only.
+The macOS follow-up does not establish x86_64 runtime or close Phase 10. See
+the [macOS requalification record](11-Phase-10-Progress-Log.md#L7).
+
 | Slice | Status and scope / next action |
 | --- | --- |
 | Candidate 34 - Calendar import | Complete ([Phase 7 scope](08-Phase-7-Progress-Log.md#L950)) |

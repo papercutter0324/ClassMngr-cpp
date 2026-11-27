@@ -6,6 +6,8 @@ Deployment `p10_c38_finish_20261127` completed on Heavy at the user's direction 
 
 Candidate 38's focused Windows x64 Debug build and selected CTests passed, with independent acceptance review. The source change fixes font setup in the Speaking Evaluation capture fixture; no production code changed. Its four synthetic offscreen English/Korean light/dark captures are committed. See the Phase 10 tracker and progress log for exact tests, evidence, and limits.
 
+After that handoff, Candidates 34–38 received focused current-source macOS follow-up at `ebb3950b1d45f8957a54c3d46cc955f63bd12aed`. The standard universal Debug build and selected tests passed; all built executables contained arm64 and x86_64 slices, but runtime was arm64 only. Independent review accepted 80 synthetic offscreen PNGs and eight C37 PDFs, including exact preview-crop/PDF-raster matches. No source or test changes were needed. Native AppKit behavior, x86_64 runtime, physical printing, cross-host pixel parity, and the Phase 10 exit gate remain open. Candidate 39 is still next.
+
 On resume, continue with Candidate 39. No C39 work started in this deployment. Next-batch discovery remains due when Candidate 52 starts. Phase 9 remains In Progress and incomplete; its remaining gates are deferred to Phase 14 after Phase 13.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17

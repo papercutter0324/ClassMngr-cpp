@@ -7887,3 +7887,11 @@ Deployment `p10_c38_finish_20261127` completed on Heavy after the user directed 
 - Run report: `artifacts/phase10/p10-win-c38-speaking-evaluation-core-20261127/run-report.md`. C38 limits are synthetic Windows x64 offscreen evidence only; no native-window, physical-printer, or pixel-parity claim.
 
 On resume, continue with Candidate 39. No C39 work started here. Next-batch discovery remains due at Candidate 52. Preserve remaining untracked C34–C37 captures and C33 evidence; they were not staged. Phase 10 and Phase 9 remain In Progress.
+
+## 2026-11-27 — Phase 10 macOS requalification of Candidates 34–38
+
+At the user's direction, requalified the completed supplemental Windows x64 Candidates 34–38 on current macOS source HEAD `ebb3950b1d45f8957a54c3d46cc955f63bd12aed`. The standard `macos-clang-debug` build completed 152 Ninja steps for 18 targets. Selected CTests and filtered slots passed: C34 registrations 6/6; C35 19 slots; C36 10 slots plus six support registrations; C37 primary plus five support registrations; C38 11 slots plus the startup boundary. C34's Calendar page CTest reported one diagnostic-only probe skip, disclosed in the report.
+
+Independent evidence review accepted 80 synthetic offscreen PNGs across the candidates and eight C37 PDFs. Each PDF was one page with expected fixture text; each page raster exactly matched its preview crop. The 18 executables contained arm64 and x86_64 slices, but runtime evidence is arm64 only. Source hashes remained stable, no product/test source changed, and the pre-existing build outputs were restored. The audit noted that the C35/C36/C38 correct-working-directory rerun hash comparison is not independently reconstructible from the archived package because paired rerun hash lists are absent. This does not invalidate the passing tests or packaged captures.
+
+Full report, exact commands, logs, capture manifest, and checksums are in `artifacts/phase10/p10-macos-c34-c38-followup-20261127/`. This supplements the Windows x64 slices; it does not establish x86_64 runtime, native AppKit behavior, physical printer output, cross-host pixel parity, full-suite health, or Phase 10 exit acceptance. No commit or push was requested or performed. Candidate 39 remains the next queued slice; Phase 10 and Phase 9 remain In Progress.

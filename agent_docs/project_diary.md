@@ -1,5 +1,9 @@
 # Project Diary
 
+### Phase 10 macOS requalification of supplemental Candidates 34–38 — 2026-11-27
+
+For a universal macOS build, report the architecture slices in the built binaries separately from the architecture that actually ran. The C34–C38 follow-up produced current-source arm64-runtime evidence from universal executables; it did not establish x86_64 runtime, native AppKit behavior, or cross-host pixel parity. Preserve CTest's diagnostic-only skip and explicitly exclude incidental C33 captures from C34 acceptance. For output review, verify each PDF's page/text content and compare its raster to the matching preview crop. Keep the rerun-hash auditability caveat visible when the run archive lacks paired hash lists.
+
 ### Phase 10 macOS Batch 1 paused after Candidate 20 — 2026-11-26
 
 The user directed the macOS sequence to stop after Candidate 20, with one

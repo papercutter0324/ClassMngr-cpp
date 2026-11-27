@@ -4,6 +4,36 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-27 — macOS requalification of Candidates 34–38
+
+Accepted focused current-source macOS evidence at HEAD
+`ebb3950b1d45f8957a54c3d46cc955f63bd12aed`. The standard
+`macos-clang-debug` build completed 152 Ninja steps for 18 targets. All built
+executables contained arm64 and x86_64 slices; tests ran on arm64 only.
+
+- C34: six registrations passed; the Calendar page test had one disclosed
+  diagnostic-only probe skip.
+- C35: 19 selected roster editor/model slots passed.
+- C36: 10 selected import/transfer slots and six support CTests passed.
+- C37: roster output CTest and five support CTests passed.
+- C38: 11 selected Speaking Evaluation slots and startup-boundary CTest
+  passed.
+
+Independent review accepted 80 decoded PNGs and eight C37 PDFs. Each PDF was
+one page with expected fixture text; its raster matched the corresponding
+preview crop exactly. All 135 artifact checksums passed. Source hashes matched
+before and after, no code changed, and pre-existing build outputs were
+restored. The archived package does not contain paired rerun image hash lists
+for independently reconstructing the C35/C36/C38 rerun-hash comparison; this
+does not affect the test results or verified captures.
+
+This is synthetic offscreen evidence only. It does not establish x86_64
+runtime, native AppKit behavior, physical printing, cross-host pixel parity,
+full-suite health, or Phase 10 exit acceptance. See the [run report](../../artifacts/phase10/p10-macos-c34-c38-followup-20261127/run-report.md),
+[commands](../../artifacts/phase10/p10-macos-c34-c38-followup-20261127/commands.txt),
+[capture manifest](../../artifacts/phase10/p10-macos-c34-c38-followup-20261127/capture-output-manifest.json),
+and [checksums](../../artifacts/phase10/p10-macos-c34-c38-followup-20261127/SHA256SUMS).
+
 ### 2026-11-27 - Candidate 37 Windows x64 Roster templates/printing acceptance
 
 Accepted at source commit `8c86505d83e9364afe30386d46737698eb81c246`
