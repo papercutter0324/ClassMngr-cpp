@@ -7876,3 +7876,14 @@ Resume at Candidate 15, Teacher Profile visual disposition. Keep all existing un
 ## Current publish continuation — 2026-11-25
 
 After pausing Phase 10 at Candidate 14, the user authorized staging, committing, and pushing the current Phase 10 candidate changes as one commit. A read-only inventory found 49 modified tracked paths (3,258 insertions, 191 deletions), zero staged paths, and no nonignored untracked files. The branch is `Qt-Rewrite`, tracking `origin/Qt-Rewrite`; both refs were at `fb5828ab` with zero ahead/behind at inspection. Ignored `artifacts/` and `build/` trees are not part of the commit. The candidate and Phase 10 open-gate status is unchanged; see the tracker and prior Candidate 1–14 handoff above. The commit and remote result are reported in the publication handoff.
+
+## 2026-11-27 — Phase 10 Candidate 38 Windows x64 completion
+
+Deployment `p10_c38_finish_20261127` completed on Heavy after the user directed us to finish Candidate 38, commit, push, and stop. Branch `Qt-Rewrite` is pushed and even with `origin/Qt-Rewrite`; the index is clean.
+
+- Source/evidence commit: `0cdfe7a0f251f037e6651f74de7234ce3164c6ef` (`Phase10 - Fix Speaking Evaluation capture fonts`). It contains the capture-fixture font correction and four C38 English/Korean light/dark screenshots with manifest, hashes, and visual review.
+- Phase documentation commit: `f1ae576cc3d41037d573529bf5da2f5398f99313` (`Phase10 - Record Windows x64 Speaking Evaluation acceptance`). It marks C38 complete, leaves C39 queued for resume, and records C38 history in the Phase 10 progress log.
+- Verification: standard Windows x64 Debug target build passed; CTest #332 passed exactly 11 selected page slots; CTest #261 passed separately. Independent review confirmed capture hashes/readability, 1,769-input stability, and restoration of all 29 shared C39/C40 outputs.
+- Run report: `artifacts/phase10/p10-win-c38-speaking-evaluation-core-20261127/run-report.md`. C38 limits are synthetic Windows x64 offscreen evidence only; no native-window, physical-printer, or pixel-parity claim.
+
+On resume, continue with Candidate 39. No C39 work started here. Next-batch discovery remains due at Candidate 52. Preserve remaining untracked C34–C37 captures and C33 evidence; they were not staged. Phase 10 and Phase 9 remain In Progress.

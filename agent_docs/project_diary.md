@@ -10107,3 +10107,7 @@ open the Windows print route when it enumerates the user's default printer, or
 launch Office, installers, browser, or Explorer when the test cannot bind and
 clean up the exact process/window. Record these gates as open when isolation
 does not provide a safe route.
+
+## 2026-11-27 — Phase 10 Candidate 38 capture fonts
+
+Synthetic Qt page-capture fixtures need the same packaged font registration and locale-specific family ordering as production before visual review. Check Latin and Hangul glyph coverage and restore shared QApplication state after each locale/theme capture. A default-sandbox packaged-resource access failure may require a reviewed-access rerun; attribute that limitation to the execution context unless a product failure is reproduced. Candidate 38 required only a fixture correction, not production changes.

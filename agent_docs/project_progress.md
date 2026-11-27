@@ -1,36 +1,12 @@
 # Project Progress
 
-## Current position — Phase 10 Batch 1 macOS follow-up paused after Candidate 20 — 2026-11-26
+## Current position — Phase 10 supplemental Windows x64 — 2026-11-27
 
-Deployment `qtphase10-macos-20261126` is paused at the user's direction after
-Candidate 20. Phase 10 remains In Progress and its cross-platform exit gate is
-open. Candidate 20's documentation commit is `fdb31d2f`; no push was performed.
-The candidate tracker and Phase 10 progress log remain the canonical detailed
-status and evidence index.
+Deployment `p10_c38_finish_20261127` completed on Heavy at the user's direction after Candidate 38. Phase 10 remains In Progress with its cross-platform exit gate open. Candidate 38 is accepted and pushed in source/evidence commit `0cdfe7a0f251f037e6651f74de7234ce3164c6ef` and documentation commit `f1ae576cc3d41037d573529bf5da2f5398f99313` on `Qt-Rewrite`, now even with `origin/Qt-Rewrite`.
 
-macOS candidates 1–20 have bounded, independently reviewed evidence recorded,
-with one local documentation commit per candidate. The work in this continuation
-made no product-source changes. Most visual captures used offscreen Qt on the
-Apple Silicon arm64 host; universal binaries do not establish x86_64 runtime.
-Native Cocoa interaction remains unverified because the host has no available
-screen, and Rosetta is unavailable.
+Candidate 38's focused Windows x64 Debug build and selected CTests passed, with independent acceptance review. The source change fixes font setup in the Speaking Evaluation capture fixture; no production code changed. Its four synthetic offscreen English/Korean light/dark captures are committed. See the Phase 10 tracker and progress log for exact tests, evidence, and limits.
 
-Two material macOS gates remain open. Candidate 11's current-source staged
-universal app passed package verification, but DMG creation failed in `hdiutil`
-with “Device not configured”; the packaged app could not start with offscreen
-QPA because the bundle contains only Cocoa. Candidate 16's signature capture
-matrix still crashes during the English/dark stylesheet switch; crash reports
-map the caller to `QApplication::setStyleSheet` but do not establish the cause.
-
-Other capture observations requiring disposition remain in the Phase 10 log,
-including clipped labels/controls in Candidates 12–14 and 20 and the differing
-Candidate 19 Korean Legacy/Next shell labels. They are recorded as bounded
-observations, not product decisions. Windows ARM64 runtime, remaining native
-interactions, and the cross-platform exit requirements also remain open.
-
-On resume, continue with Candidate 21, then Candidate 22, and resolve the
-remaining Phase 10 gates. Phase 9 remains In Progress and incomplete; the user
-deferred its remaining gates to Phase 14 after Phase 13.
+On resume, continue with Candidate 39. No C39 work started in this deployment. Next-batch discovery remains due when Candidate 52 starts. Phase 9 remains In Progress and incomplete; its remaining gates are deferred to Phase 14 after Phase 13.
 
 ## Phase 8/8a exit-gate closeout — 2026-11-17
 
