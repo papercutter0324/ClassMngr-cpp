@@ -1473,19 +1473,22 @@ void RosterOutputTests::captures()
         QImage page;
         bool copied = false;
         int pages = 0;
-    } regularPdf;
+    } regularPdf, testingPdf;
     QString currentCaptureTag;
     const auto generate = source.savePdf;
     source.savePdf = [&](const QString& databasePath, const Output::RosterOutputRequest& request,
                          const QString& outputPath, const R::Fonts& fonts) {
         const auto result = generate(databasePath, request, outputPath, fonts);
-        if (!request.testingClass && result.status == DocumentOutputStatus::Sent)
+        if (result.status == DocumentOutputStatus::Sent)
         {
-            regularPdf = {};
-            regularPdf.path = evidenceFolder + QStringLiteral("/roster_preview_")
+            auto& evidence = request.testingClass ? testingPdf : regularPdf;
+            evidence = {};
+            evidence.path = evidenceFolder + (request.testingClass
+                ? QStringLiteral("/testing_roster_preview_")
+                : QStringLiteral("/roster_preview_"))
                 + currentCaptureTag + QStringLiteral(".pdf");
-            QFile::remove(regularPdf.path);
-            regularPdf.copied = QFile::copy(outputPath, regularPdf.path);
+            QFile::remove(evidence.path);
+            evidence.copied = QFile::copy(outputPath, evidence.path);
         }
         return result;
     };
@@ -1572,15 +1575,82 @@ void RosterOutputTests::captures()
             QVERIFY(regularCaptureVerified);
             Ui::RosterPrintDialog testingDialog(path, id(testingId), true, *testingChoices, source,
                 noOpGeometryPreferencesCallbacks()); testingDialog.show(); QCoreApplication::processEvents();
+            auto* extraColumns = testingDialog.findChild<QListWidget*>(
+                QStringLiteral("nextRosterExtraColumns"));
+            QVERIFY(extraColumns);
+            const auto extraItems = extraColumns->findItems(
+                QStringLiteral("FIXTURE EXTRA"), Qt::MatchExactly);
+            QCOMPARE(extraItems.size(), 1);
+            extraItems.front()->setCheckState(Qt::Checked);
+            QCOMPARE(testingDialog.request().extraColumns,
+                QStringList{QStringLiteral("FIXTURE EXTRA")});
+            bool testingCaptureVerified = false;
+            QJsonObject testingCaptureEvidence;
             QVERIFY(testingDialog.grab().save(folder + QStringLiteral("/testing_roster_templates_") + tag + QStringLiteral(".png")));
             QTimer::singleShot(0, &testingDialog, [&] {
-                auto* preview = testingDialog.findChild<QDialog*>(QStringLiteral("nextRosterPreviewDialog")); QVERIFY(preview); QCoreApplication::processEvents();
-                const auto pixmap = preview->findChild<QLabel*>(QStringLiteral("nextRosterPreviewPage"))->pixmap();
-                QVERIFY(pixmap.height() > pixmap.width());
-                QVERIFY(preview->grab().save(folder + QStringLiteral("/testing_roster_preview_") + tag + QStringLiteral(".png"))); preview->reject();
+                auto* preview = testingDialog.findChild<QDialog*>(
+                    QStringLiteral("nextRosterPreviewDialog"));
+                QVERIFY(preview);
+                const RejectPreviewOnExit closePreview{*preview};
+                QCoreApplication::processEvents();
+                const QString imagePath = folder
+                    + QStringLiteral("/testing_roster_preview_") + tag
+                    + QStringLiteral(".png");
+                const QPixmap screenshot = preview->grab();
+                QVERIFY(screenshot.save(imagePath));
+                QVERIFY(testingPdf.copied);
+                QPdfDocument reference;
+                QCOMPARE(reference.load(testingPdf.path), QPdfDocument::Error::None);
+                QCOMPARE(reference.status(), QPdfDocument::Status::Ready);
+                testingPdf.pages = reference.pageCount();
+                QCOMPARE(testingPdf.pages, 1);
+                testingPdf.text = reference.getAllText(0).text();
+                QVERIFY(testingPdf.text.contains(QStringLiteral("FIXTURE TEST")));
+                QVERIFY(testingPdf.text.contains(QStringLiteral("FIXTURE EXTRA")));
+                QVERIFY(testingPdf.text.contains(QStringLiteral("FIXTURE VALUE")));
+                const QSize size = reference.pagePointSize(0).toSize().scaled(
+                    QSize(820, 630), Qt::KeepAspectRatio);
+                testingPdf.page = reference.render(0, size);
+                QVERIFY(!testingPdf.page.isNull());
+                QVERIFY(testingPdf.page.height() > testingPdf.page.width());
+                const qsizetype paintedPixels = nonWhitePixelCount(testingPdf.page);
+                QVERIFY(paintedPixels > 10'000);
+                auto* pageLabel = preview->findChild<QLabel*>(
+                    QStringLiteral("nextRosterPreviewPage"));
+                QVERIFY(pageLabel);
+                const QPixmap page = pageLabel->pixmap();
+                QVERIFY(!page.isNull());
+                QCOMPARE(page.toImage().convertToFormat(QImage::Format_RGB32),
+                    testingPdf.page.convertToFormat(QImage::Format_RGB32));
+                QCOMPARE(screenshot.devicePixelRatio(), 1.0);
+                QRect pageRect = QStyle::alignedRect(pageLabel->layoutDirection(),
+                    pageLabel->alignment(), page.size(), pageLabel->contentsRect());
+                pageRect.translate(pageLabel->mapTo(preview, QPoint{}));
+                const QImage capturedPage = QImage(imagePath).copy(pageRect);
+                QCOMPARE(capturedPage.convertToFormat(QImage::Format_RGB32),
+                    testingPdf.page.convertToFormat(QImage::Format_RGB32));
+                const QString renderedPagePath = evidenceFolder
+                    + QStringLiteral("/testing_roster_preview_") + tag
+                    + QStringLiteral("-page.png");
+                QVERIFY(testingPdf.page.save(renderedPagePath));
+                testingCaptureEvidence = {
+                    {QStringLiteral("pdf"), testingPdf.path},
+                    {QStringLiteral("pdfSha256"), QString::fromLatin1(fileSha256(testingPdf.path))},
+                    {QStringLiteral("image"), imagePath},
+                    {QStringLiteral("imageSha256"), QString::fromLatin1(fileSha256(imagePath))},
+                    {QStringLiteral("renderedPage"), renderedPagePath},
+                    {QStringLiteral("pdfPageCount"), testingPdf.pages},
+                    {QStringLiteral("selectedExtraColumns"), QJsonArray{QStringLiteral("FIXTURE EXTRA")}},
+                    {QStringLiteral("expectedPdfText"), QJsonArray{QStringLiteral("FIXTURE TEST"), QStringLiteral("FIXTURE EXTRA"), QStringLiteral("FIXTURE VALUE")}},
+                    {QStringLiteral("pdfContainsExpectedFixtureText"), true},
+                    {QStringLiteral("visiblePageMatchesPdfRaster"), true},
+                    {QStringLiteral("pageNonWhitePixels"), static_cast<qint64>(paintedPixels)}
+                };
+                testingCaptureVerified = true;
             });
             findButton(testingDialog, "nextRosterPreview")->click();
-            captures.append(QJsonObject{{QStringLiteral("locale"), locale}, {QStringLiteral("theme"), dark ? QStringLiteral("dark") : QStringLiteral("light")}, {QStringLiteral("fixture"), QStringLiteral("Synthetic FIXTURE values only")}, {QStringLiteral("regularPreviewEvidence"), regularCaptureEvidence}});
+            QVERIFY(testingCaptureVerified);
+            captures.append(QJsonObject{{QStringLiteral("locale"), locale}, {QStringLiteral("theme"), dark ? QStringLiteral("dark") : QStringLiteral("light")}, {QStringLiteral("fixture"), QStringLiteral("Synthetic FIXTURE values only")}, {QStringLiteral("regularPreviewEvidence"), regularCaptureEvidence}, {QStringLiteral("testingPreviewEvidence"), testingCaptureEvidence}});
         }
         qApp->removeTranslator(&translator);
     }
