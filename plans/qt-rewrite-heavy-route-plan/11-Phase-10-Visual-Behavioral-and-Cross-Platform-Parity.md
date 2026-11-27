@@ -38,8 +38,9 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Blocks: Final release qualification
 - Owner: Unassigned
 - Last updated: 2026-11-27
-- Current note: Phase 10 remains In progress. Candidate 34 — Calendar import
-  is the active Phase 10 supplemental Windows x64 slice. See the [current
+- Current note: Phase 10 remains In progress. Candidate 35 — Roster
+  editor/student model is the active Phase 10 supplemental Windows x64 slice.
+  See the [current
   slice-batch tracker](Current-Slice-Batches.md) for live scope and the
   [Phase 10 progress log](11-Phase-10-Progress-Log.md) for historical
   findings.

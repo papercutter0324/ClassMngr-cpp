@@ -36,6 +36,46 @@ locale and palette for subsequent grid tests. The shared
 [parity review](../../artifacts/phase10/p10-win-c33-calendar-20261126/readiness-fix-20261127/independent-verification-20261127/capture-review-summary.txt),
 and the [fresh capture set](../../captures/next-independent-post-palette-fix-20261127/).
 
+### 2026-11-27 — Candidate 34 Windows x64 Calendar import acceptance
+
+Accepted at source commit `3d4f333b798cfd979d62ed4bbdbe7f9f2713ee85`
+(`Phase10 - Show full Calendar import error details`). The incremental build
+in `build/windows-x64-debug` emitted five executable targets; after an
+ordinary MSBuild FileTracker `E_ACCESSDENIED`, the same command succeeded on
+reviewed-escalation retry. One focused Windows x64 Debug CTest run passed all
+six registrations: #41 parser, #261 startup dependency boundary, #434 import
+use case, #552 campus-code adapter, #621 Next Calendar page/import, and #622
+WorkspaceStore actions under reviewed escalation. The independent post-layout
+run exited 0 in 32.525 s (CTest total 32.22 s); #621 reported 32 passed,
+0 failed, 1 skipped. This is focused evidence, not a project-suite pass.
+
+Early page-test runs failed without a useful LastTest diagnostic and emitted
+no post-change images. Pre-fix images showed the full English error but clipped
+Korean text after “The downloaded spreadsheet is missing”. The status label
+now sizes to `heightForWidth()`; Korean light/dark captures show the full
+`xl/workbook.xml.` detail, and the regression assertion covers both themes.
+Import/parser text is unchanged. C33 images were not reused because their
+manifest did not cover matching Candidate34 inputs. The fresh set contains 24
+PNGs plus `calendar-captures.json`; page, Preferences, and all four import
+outcomes were reviewed across English/Korean light/dark. The three page chips
+are present with no loading overlay. Parity is complete with zero differing
+pixels per context.
+
+The refreshed 40-input SHA-256 manifest matches the committed blobs at the
+Candidate34 commit; source snapshots before and after capture match, and the
+capture manifest hash is
+`0fecda98b905de7d52ae8280b2baabce4f25f1b91d8b7bcdec44f3d14e2fafd9`. The
+shared `build/windows-x64-debug/calendar-captures` tree remained 59/59 hashes.
+See the [post-fix CTest transcript](../../artifacts/phase10/p10-win-c34-calendar-import-20261127/independent-verification-layout-fix-20261127/ctest-six-layout-fix.stdout.log),
+[run context](../../artifacts/phase10/p10-win-c34-calendar-import-20261127/independent-verification-layout-fix-20261127/ctest-six-layout-fix.run.txt),
+[40-input manifest](../../artifacts/phase10/p10-win-c34-calendar-import-20261127/source-inputs.sha256),
+and [source refresh report](../../artifacts/phase10/p10-win-c34-calendar-import-20261127/source-refresh-summary.md).
+The [capture review](../../artifacts/phase10/p10-win-c34-calendar-import-20261127/independent-verification-layout-fix-20261127/capture-review-summary.txt),
+[59-file shared-tree comparison](../../artifacts/phase10/p10-win-c34-calendar-import-20261127/independent-verification-layout-fix-20261127/shared-captures-comparison.txt),
+[fresh capture set](../../captures/next-independent-c34-layout-fix-20261127/),
+and [capture manifest](../../captures/next-independent-c34-layout-fix-20261127/calendar-captures.json)
+hold the visual and hash evidence.
+
 ### 2026-11-27 — Phase 10 next-batch discovery (Candidates 34–53)
 
 Read-only discovery at source HEAD
