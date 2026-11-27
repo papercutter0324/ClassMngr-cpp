@@ -4,6 +4,38 @@ Read the [Phase 10 plan](11-Phase-10-Visual-Behavioral-and-Cross-Platform-Parity
 for current status, requirements, and contracts. This file is the historical
 progress record for Phase 10; do not put dated progress updates in the plan.
 
+### 2026-11-27 — Candidate 33 Windows x64 Calendar acceptance
+
+Accepted at source commit `0ff229f52479481a66e4e624f1e88620928d7329`, which
+changes only `tests/next/calendar_page_tests.cpp`. The first build and captures
+used nonstandard `build/windows-x64-debug-p10-c33` and did not qualify the
+slice. The later incremental `ClassMngrNextCalendarPageTests` build succeeded
+in standard `build/windows-x64-debug` after ordinary MSBuild FileTracker
+`E_ACCESSDENIED` and a reviewed-escalation retry; prior commit
+`d9f04bc9` contains the safe generated-resource recovery and exact-manifest
+no-op baker change that enabled standard-folder work. Focused CTest #621 with
+explicit `-C Debug` passed independently (1/1, 32.054 s); QtTest reported 32
+passed, 0 failed, 1 skipped. This is focused evidence, not a project-suite
+pass.
+
+An intermediate run showed stale parent-QWidget captures while direct QML was
+current. Capture readiness now brackets QWidget grabs with fresh `QQuickWidget`
+frames, synchronizes via `QQuickWidget::grab()`, and crops the actual Quick
+scene rather than the taller QWidget. A native-DPR probe found QWidget
+geometry 1240×535 versus the 1240×500 Quick scene. All four English/Korean
+light/dark page and Preferences captures were reviewed, with Campus meeting,
+Term planning, and School holiday visible and no loading overlay. At DPR 1, the
+unclipped, unscaled 1240×500 scene/root/window/direct/page comparisons had
+zero differing pixels out of 620,000 per context, below the unchanged 0.5%
+threshold, after four attempts per context. An RAII guard restores incoming
+locale and palette for subsequent grid tests. The shared
+`build/windows-x64-debug/calendar-captures` tree retained all 59/59 hashes;
+`git diff --check` passed. See the [execution and capture report](../../artifacts/phase10/p10-win-c33-calendar-20261126/readiness-fix-20261127/report-restore-global-state-20261127.md),
+[scene-bounds evidence](../../artifacts/phase10/p10-win-c33-calendar-20261126/readiness-fix-20261127/scene-bounds-bracket-report-20261127.md),
+[independent focused CTest transcript](../../artifacts/phase10/p10-win-c33-calendar-20261126/readiness-fix-20261127/independent-verification-20261127/ctest-post-palette-fix.stdout.log),
+[parity review](../../artifacts/phase10/p10-win-c33-calendar-20261126/readiness-fix-20261127/independent-verification-20261127/capture-review-summary.txt),
+and the [fresh capture set](../../captures/next-independent-post-palette-fix-20261127/).
+
 ### 2026-11-27 — Phase 10 next-batch discovery (Candidates 34–53)
 
 Read-only discovery at source HEAD

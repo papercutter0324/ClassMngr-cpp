@@ -37,12 +37,12 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Depends on: Phases 7 through 9
 - Blocks: Final release qualification
 - Owner: Unassigned
-- Last updated: 2026-11-25
-- Current note: The user authorized Phase 10 to start after the passing focused
-  Windows x64 Release precheck recorded in the progress log, while Phase 9
-  remains In progress with its remaining work deferred to Phase 14 after
-  Phase 13. The precheck establishes Phase 10 start only; all Phase 10 parity
-  and exit requirements remain unchanged.
+- Last updated: 2026-11-27
+- Current note: Phase 10 remains In progress. Candidate 34 — Calendar import
+  is the active Phase 10 supplemental Windows x64 slice. See the [current
+  slice-batch tracker](Current-Slice-Batches.md) for live scope and the
+  [Phase 10 progress log](11-Phase-10-Progress-Log.md) for historical
+  findings.
 
 ### Slice batches
 

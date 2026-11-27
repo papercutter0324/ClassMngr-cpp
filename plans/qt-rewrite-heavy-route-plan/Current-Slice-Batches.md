@@ -1,22 +1,12 @@
 # Current Slice Batches
 
-## Active batch — Phase 10 supplemental Windows x64 continuation (Candidates 29–33)
+## Active batch — Phase 10 supplemental Windows x64 (Candidates 34–40, 43–53)
 
 Historical Phase 10 findings and discovery records belong in the [progress log](11-Phase-10-Progress-Log.md).
 
-| Slice | Current status | Evidence / next work |
-| --- | --- | --- |
-| Candidate 29 — Testing Classes | Complete. | [execution report](../../artifacts/phase10/p10-win-c29-testing-classes-20261126/execution-report.md), [visual review](../../artifacts/phase10/p10-win-c29-testing-classes-20261126/visual-review.md) |
-| Candidate 30 — Schedule | Complete. | [discovery](../../artifacts/phase10/p10-win-c30-schedule-discovery-20261126/discovery-report.md), [execution](../../artifacts/phase10/p10-win-c30-schedule-20261126/execution-report.md) |
-| Candidate 31 — Schedule Import | Complete by current-source evidence reuse; focused tests and paired capture CTests passed. | [discovery and evidence](../../artifacts/phase10/p10-win-c31-schedule-import-discovery-20261126/discovery-report.md) |
-| Candidate 32 — Schedule output and printing | Complete. Five focused CTests passed; fresh capture produced 12 dialog images and a PDF preview. | [discovery](../../artifacts/phase10/p10-win-c32-schedule-output-discovery-20261126/discovery-report.md), [execution report](../../artifacts/phase10/p10-win-c32-schedule-output-20261126/execution-report.md), [visual review](../../artifacts/phase10/p10-win-c32-schedule-output-20261126/visual-review.md) |
-| Candidate 33 — Calendar events, preferences, and month grid | In progress. Initial configure/build and captures used the nonstandard `build/windows-x64-debug-p10-c33` folder, so standard-folder requalification remains open. The standard build attempt is blocked at `ZERO_CHECK` by MSBuild FileTracker `E_ACCESSDENIED`; the later elevated/serial attempt failed with WinError 5 while replacing the ignored generated `Resources` directory, before the Next page target linked. CTest #261 previously passed independently at HEAD `60af92d1`, but no CTests ran in the latest attempts. The shared 59-file capture tree is unchanged. Capture acceptance remains pending because the fixture does not wait for `isMonthLoaded(2026,10)` or hidden `visibleMonthEventsLoading` before capture. | [discovery](../../artifacts/phase10/p10-win-c33-calendar-discovery-20261126/discovery-report.md), [execution artifacts](../../artifacts/phase10/p10-win-c33-calendar-20261126/) |
-
-## Next batch — Phase 10 supplemental Windows x64 (18 slices)
-
 | Slice | Status and scope / next action |
 | --- | --- |
-| Candidate 34 — Calendar import | Queued — Run focused import-use-case and campus-code query tests, then capture Next Calendar import states. Reuse C33 visuals only if the manifest proves matching current inputs. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L950)) |
+| Candidate 34 — Calendar import | In progress — Run focused import-use-case and campus-code query tests, then capture Next Calendar import states. Reuse C33 visuals only if current input hashes match. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L950)) |
 | Candidate 35 — Roster editor/student model | Queued — Run `ClassMngrNextRosterEditorTests` and capture English/Korean light/dark states. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L992)) |
 | Candidate 36 — Roster score import/student transfer | Queued — Run editor import/transfer and WorkspaceStore action tests; capture the import/transfer flow. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1010)) |
 | Candidate 37 — Roster templates/printing | Queued — Confirm target definitions, run Next roster output/template-print tests, and cover Testing Classes and Extra Info. ([Phase 7 scope](08-Phase-7-Progress-Log.md#L1034)) |
