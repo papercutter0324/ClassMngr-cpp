@@ -1576,3 +1576,43 @@ and after capture, with source catalog hashes preserved. The existing fixed
 ran on arm64 only. Native AppKit and runtime behavior remain unverified. No
 source, test, or tracked documentation changed. See the [macOS report](../../artifacts/phase10/p10-macos-c20-classes-full-window-state-20261126T124035Z-b77be502/report.md)
 and [capture images/manifest](../../artifacts/phase10/p10-macos-c20-classes-full-window-state-20261126T124035Z-b77be502/captures/matched-full-window-state-captures.json).
+
+### 2026-11-27 — Candidate 38 Windows x64 Speaking Evaluation core
+
+Candidate 38 is accepted for the bounded supplemental Windows x64 slice at
+source commit `0cdfe7a0f251f037e6651f74de7234ce3164c6ef`. The standard
+`build/windows-x64-debug` Debug target build succeeded. Registered CTest #332
+`ClassMngrNextSpeakingEvaluationPageTests` passed these 11 selected slots, and
+CTest #261 `NextStartupWorkspaceDependencyBoundary` passed separately:
+
+- `matrixIsFixedSizeTracksExactDeltaValidationAndUndo`
+- `rowPreferencesDisplayExtrasExtendAndRetainTailRows`
+- `saveReopenPersistsUnicodeAndOnlyChangedCells`
+- `largeNavigationUsesOneMatrixAndReleasesItOnSuspension`
+- `splitterStateSavesOnSuspensionWithoutResettingRetainedPage`
+- `selectionSaveDiscardAndFailureRetryPreserveDrafts`
+- `saveOnSwitchPersistsBeforeLoadingAndFailureKeepsDraft`
+- `automaticModeDebouncesAndSavesOnce`
+- `rosterImportNotesAndValidationUseTypedRules`
+- `rosterNameImportUsesMaximumBeyondExtraDisplayRows`
+- `capturesEnglishKoreanLightAndDarkPresentation`
+
+This was focused verification, not a full-suite run.
+
+The capture fixture now registers packaged Inter and Pretendard fonts, applies
+the production locale-specific font family ordering through
+`FontSizePresenter`, checks Latin and Hangul glyph coverage, and restores
+application font, locale, palette, stylesheet, and translator state. This was
+a fixture-only correction; production code did not change. The first default
+sandbox run could not access packaged generated font resources (`E_ACCESSDENIED`);
+the reviewed-access build and tests passed after removing temporary tracing.
+The final 1,769-input source/test hash bracket had no changes.
+
+Independent review verified the four English/Korean light/dark PNG hashes and
+legibility. They are synthetic Windows x64 offscreen presentation evidence,
+not native-window, physical-printer, or pixel-parity evidence. All 29 shared
+C39/C40 output files matched their saved baseline hashes after the capture.
+See the [committed C38 captures](../../captures/next-c38-speaking-evaluation-core-20261127/visual-review.md)
+and [run report](../../artifacts/phase10/p10-win-c38-speaking-evaluation-core-20261127/run-report.md)
+for the selected slot names, commands, and detailed inventories. By user
+direction, stop after Candidate 38; Candidate 39 is next when work resumes.

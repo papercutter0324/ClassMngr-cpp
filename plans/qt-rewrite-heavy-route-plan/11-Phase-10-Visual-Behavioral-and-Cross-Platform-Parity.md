@@ -39,8 +39,8 @@ Read [00-Start-Here.md](00-Start-Here.md) first for the overall plan, workflow, 
 - Owner: Unassigned
 - Last updated: 2026-11-27
 - Current note: Phase 10 remains In progress. Candidate 38 - Speaking
-  Evaluation core is the active Phase 10 supplemental Windows x64 slice. Run
-  its Next page tests and capture English/Korean light/dark states.
+  Evaluation core is complete for its bounded Windows x64 slice. On resume,
+  continue with Candidate 39 - AI-assisted comments/batch workflow.
   See the [current
   slice-batch tracker](Current-Slice-Batches.md) for live scope and the
   [Phase 10 progress log](11-Phase-10-Progress-Log.md) for historical
