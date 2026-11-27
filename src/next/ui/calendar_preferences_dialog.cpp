@@ -91,6 +91,23 @@ bool sameSchedule(
 
 } // namespace
 
+void CalendarPreferencesDialog::setImportStatusText(const QString& text)
+{
+    m_importStatus->setMinimumHeight(0);
+    m_importStatus->setText(text);
+    m_importStatus->show();
+
+    const int statusWidth = m_importStatus->width();
+    if (statusWidth > 0)
+    {
+        const int wrappedHeight = m_importStatus->heightForWidth(statusWidth);
+        if (wrappedHeight > 0)
+        {
+            m_importStatus->setMinimumHeight(wrappedHeight);
+        }
+    }
+}
+
 CalendarPreferencesDialog::CalendarPreferencesDialog(
     QString databasePath,
     AcademicCalendarProvider* academicProvider,
@@ -153,42 +170,37 @@ CalendarPreferencesDialog::CalendarPreferencesDialog(
                 m_importEvents->setEnabled(!importing);
                 if (importing)
                 {
-                    m_importStatus->setText(
+                    setImportStatusText(
                         preferencesDialogText("Importing events..."));
-                    m_importStatus->show();
                 }
             });
         connect(service, &NextCalendarEventImportService::importFinished,
             this, [this](const int importedCount, const int skippedCount)
             {
-                m_importStatus->setText(
+                setImportStatusText(
                     preferencesDialogText(
                         "Imported %1 event(s). Skipped %2 existing or ignored item(s).")
                         .arg(importedCount)
                         .arg(skippedCount));
-                m_importStatus->show();
             });
         connect(service, &NextCalendarEventImportService::importFailed,
             this, [this](const QString& message)
             {
-                m_importStatus->setText(
+                setImportStatusText(
                     preferencesDialogText("Calendar import failed: %1")
                         .arg(message));
-                m_importStatus->show();
             });
         connect(service, &NextCalendarEventImportService::importCanceled,
             this, [this]
             {
-                m_importStatus->setText(
+                setImportStatusText(
                     preferencesDialogText("Calendar import was canceled."));
-                m_importStatus->show();
             });
         if (service->isImporting())
         {
             m_importEvents->setEnabled(false);
-            m_importStatus->setText(
+            setImportStatusText(
                 preferencesDialogText("Importing events..."));
-            m_importStatus->show();
         }
     }
     else

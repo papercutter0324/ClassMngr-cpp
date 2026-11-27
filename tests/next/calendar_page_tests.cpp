@@ -4412,6 +4412,23 @@ void CalendarPageTests::captureEnglishAndKoreanLightAndDark()
                     korean ? QStringLiteral("실패했습니다")
                            : QStringLiteral("Calendar import failed:")),
                 5000);
+            QVERIFY(importStatus->text().contains(
+                QStringLiteral("xl/workbook.xml.")));
+            if (korean)
+            {
+                QApplication::processEvents();
+                QVERIFY(importStatus->wordWrap());
+                QVERIFY(importStatus->hasHeightForWidth());
+                const int requiredStatusHeight = importStatus->heightForWidth(
+                    importStatus->width());
+                QVERIFY2(importStatus->height() >= requiredStatusHeight,
+                    qPrintable(QStringLiteral(
+                        "Korean calendar import error status is clipped: "
+                        "allocated %1 px, needs %2 px at width %3 px")
+                        .arg(importStatus->height())
+                        .arg(requiredStatusHeight)
+                        .arg(importStatus->width())));
+            }
             const QString errorImagePath = outputDirectory
                 + QLatin1Char('/') + QStringLiteral("calendar-import-error-")
                 + mode + QStringLiteral(".png");

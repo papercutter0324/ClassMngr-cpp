@@ -58,6 +58,7 @@ public:
         );
 
 private:
+    void setImportStatusText(const QString& text);
     void accept() override;
     void chooseColor(int typeIndex);
     void resetCalendar();
