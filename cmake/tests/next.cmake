@@ -4422,6 +4422,7 @@ set_tests_properties(ClassMngrNextTestingClassesManagerTests
 add_executable(ClassMngrNextRosterEditorTests
     tests/next/roster_editor_tests.cpp
     src/next/platform/workspace_store_roster_actions.cpp
+    src/next/platform/qt_font_family_availability_adapter.cpp
     src/next/ui/selected_class_editor.cpp
     src/next/ui/roster_editor_widget.cpp
     src/next/ui/roster_table_model.cpp
@@ -4439,12 +4440,15 @@ target_include_directories(ClassMngrNextRosterEditorTests
 target_compile_definitions(ClassMngrNextRosterEditorTests
     PRIVATE
         CLASSMNGR_NEXT_TEST_TRANSLATION_DIRECTORY="${_classmngr_next_translation_output_directory}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_CATALOG="${CLASSMNGR_NEXT_RESOURCE_CATALOG}"
+        CLASSMNGR_NEXT_TEST_RESOURCE_ROOT="${CLASSMNGR_NEXT_RESOURCE_ROOT}"
 )
 target_link_libraries(ClassMngrNextRosterEditorTests
     PRIVATE
         ClassMngrNextRosterOutput
         ClassMngrLegacyRuntimeClosure
         ClassMngrNext::Application
+        ClassMngrNext::Resources
         ClassMngrNextWorkspaceDomain
         ClassMngrScheduleImportParser
         Qt6::Sql
